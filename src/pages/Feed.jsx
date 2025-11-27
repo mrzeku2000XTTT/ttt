@@ -1486,9 +1486,10 @@ export default function FeedPage() {
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
+                      handleBadgeClick(post.author_name, 'dev');
                     }}
                     className="inline-flex items-center gap-1 bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 text-white border border-emerald-400/60 text-[10px] px-2 py-0.5 font-bold rounded-md hover:from-emerald-300 hover:via-green-400 hover:to-teal-500 transition-all shadow-lg hover:shadow-emerald-500/50 animate-pulse"
-                    title="Core Developer"
+                    title="View Contributions"
                     style={{ animationDuration: '3s' }}
                   >
                     <span className="text-[11px]">⚡</span>
