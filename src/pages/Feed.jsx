@@ -994,6 +994,11 @@ export default function FeedPage() {
     return kingUsers.some(u => u.toLowerCase() === username?.toLowerCase());
   };
 
+  const hasShillerBadge = (username) => {
+    const shillerUsers = ['brahim', 'brahimcrrypt'];
+    return shillerUsers.some(u => u.toLowerCase() === username?.toLowerCase());
+  };
+
   const loadUserBadges = async () => {
     try {
       const allBadges = await base44.entities.UserBadge.filter({ is_active: true });
@@ -1359,6 +1364,19 @@ export default function FeedPage() {
                   >
                     <span className="text-[11px]">👑</span>
                     KING
+                  </button>
+                )}
+                {hasShillerBadge(post.author_name) && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    className="inline-flex items-center gap-1 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-600 text-white border border-pink-400/50 text-[10px] px-2 py-0.5 font-bold rounded-md hover:from-pink-400 hover:via-purple-400 hover:to-indigo-500 transition-all shadow-lg hover:shadow-pink-500/50"
+                    title="Master Shiller"
+                  >
+                    <span className="text-[11px]">📢</span>
+                    SHILLER
                   </button>
                 )}
                 {post.author_agent_zk_id && (
