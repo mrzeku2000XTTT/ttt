@@ -990,8 +990,8 @@ export default function FeedPage() {
   };
 
   const hasKingBadge = (username) => {
-    const kingUsers = ['ayomuiz'];
-    return kingUsers.includes(username?.toLowerCase());
+    const kingUsers = ['ayomuiz', 'Ayomuiz'];
+    return kingUsers.some(u => u.toLowerCase() === username?.toLowerCase());
   };
 
   const loadUserBadges = async () => {
