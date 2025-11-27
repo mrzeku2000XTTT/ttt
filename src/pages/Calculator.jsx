@@ -263,26 +263,38 @@ export default function CalculatorPage() {
     // Try currency conversion first (no AI needed)
     if (handleCurrencyConversion()) return;
 
-    // For anything else, try to evaluate as math expression locally
+    // Use AI for natural language calculations
     setAiThinking(true);
     try {
-      // Try simple eval for basic math
-      const result = eval(
-        aiInput
-          .replace(/×/g, '*')
-          .replace(/÷/g, '/')
-          .replace(/kas/gi, kasPrice || 0)
-          .replace(/π/g, Math.PI)
-          .replace(/e/g, Math.E)
-      );
-      
-      setDisplay(result.toString());
-      setHistory([`${aiInput} = ${result}`, ...history.slice(0, 9)]);
+      const response = await base44.functions.invoke('calculateWithAI', {
+        query: aiInput,
+        kas_price: kasPrice
+      });
+
+      const result = response.data.result;
+      setDisplay(result);
+      setHistory([`AI: ${aiInput} = ${result}`, ...history.slice(0, 9)]);
       setAiInput("");
     } catch (err) {
-      console.error("Calculation failed:", err);
-      setDisplay("Invalid Input");
-      setTimeout(() => setDisplay("0"), 2000);
+      console.error("AI calculation failed:", err);
+      
+      // Fallback to local eval
+      try {
+        const result = eval(
+          aiInput
+            .replace(/×/g, '*')
+            .replace(/÷/g, '/')
+            .replace(/kas/gi, kasPrice || 0)
+            .replace(/π/g, Math.PI)
+            .replace(/e/g, Math.E)
+        );
+        setDisplay(result.toString());
+        setHistory([`${aiInput} = ${result}`, ...history.slice(0, 9)]);
+        setAiInput("");
+      } catch (evalErr) {
+        setDisplay("Error");
+        setTimeout(() => setDisplay("0"), 2000);
+      }
     } finally {
       setAiThinking(false);
     }
