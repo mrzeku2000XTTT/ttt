@@ -73,6 +73,14 @@ export default function FeedPage() {
   const [loadingArchitect, setLoadingArchitect] = useState(false);
   const [showBadgeManager, setShowBadgeManager] = useState(false);
   const [userBadges, setUserBadges] = useState({});
+  const [showKingModal, setShowKingModal] = useState(false);
+  const [kingUsername, setKingUsername] = useState(null);
+  const [kingContributions, setKingContributions] = useState({ feedPosts: 0, feedTips: 0, bullTips: 0 });
+  const [loadingKing, setLoadingKing] = useState(false);
+  const [showShillerModal, setShowShillerModal] = useState(false);
+  const [shillerUsername, setShillerUsername] = useState(null);
+  const [shillerContributions, setShillerContributions] = useState({ feedPosts: 0, feedTips: 0 });
+  const [loadingShiller, setLoadingShiller] = useState(false);
 
   const fileInputRef = useRef(null);
   const replyFileInputRef = useRef(null);
@@ -960,8 +968,71 @@ export default function FeedPage() {
     }
   };
 
-  const handleBadgeClick = async (username) => {
-    if (hasArchitectBadge(username)) {
+  const loadKingContributions = async (username) => {
+    setLoadingKing(true);
+    try {
+      const userPosts = await base44.entities.Post.filter({ author_name: username });
+      const mainPosts = userPosts.filter(p => !p.parent_post_id);
+      
+      const feedTransactions = await base44.entities.TipTransaction.filter({ 
+        source: 'feed',
+        recipient_name: username
+      });
+      const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+
+      const bullTransactions = await base44.entities.TipTransaction.filter({ 
+        source: 'reel',
+        recipient_name: username
+      });
+      const totalBullTips = bullTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+
+      setKingContributions({
+        feedPosts: mainPosts.length,
+        feedTips: totalFeedTips,
+        bullTips: totalBullTips
+      });
+    } catch (err) {
+      console.error('Failed to load king contributions:', err);
+      setKingContributions({ feedPosts: 0, feedTips: 0, bullTips: 0 });
+    } finally {
+      setLoadingKing(false);
+    }
+  };
+
+  const loadShillerContributions = async (username) => {
+    setLoadingShiller(true);
+    try {
+      const userPosts = await base44.entities.Post.filter({ author_name: username });
+      const mainPosts = userPosts.filter(p => !p.parent_post_id);
+      
+      const feedTransactions = await base44.entities.TipTransaction.filter({ 
+        source: 'feed',
+        recipient_name: username
+      });
+      const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+
+      setShillerContributions({
+        feedPosts: mainPosts.length,
+        feedTips: totalFeedTips
+      });
+    } catch (err) {
+      console.error('Failed to load shiller contributions:', err);
+      setShillerContributions({ feedPosts: 0, feedTips: 0 });
+    } finally {
+      setLoadingShiller(false);
+    }
+  };
+
+  const handleBadgeClick = async (username, badgeType) => {
+    if (badgeType === 'king') {
+      setKingUsername(username);
+      setShowKingModal(true);
+      await loadKingContributions(username);
+    } else if (badgeType === 'shiller') {
+      setShillerUsername(username);
+      setShowShillerModal(true);
+      await loadShillerContributions(username);
+    } else if (hasArchitectBadge(username)) {
       setArchitectUsername(username);
       setShowArchitectModal(true);
       await loadArchitectContributions(username);
@@ -1359,9 +1430,10 @@ export default function FeedPage() {
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
+                      handleBadgeClick(post.author_name, 'king');
                     }}
                     className="inline-flex items-center gap-1 bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-600 text-black border-2 border-yellow-400/80 text-[10px] px-2 py-0.5 font-bold rounded-md hover:from-amber-300 hover:via-yellow-400 hover:to-orange-500 transition-all shadow-lg shadow-yellow-500/50 hover:shadow-yellow-400/70 animate-pulse"
-                    title="King of TTT"
+                    title="View Contributions"
                     style={{ animationDuration: '2s' }}
                   >
                     <span className="text-[11px]">👑</span>
@@ -1373,9 +1445,10 @@ export default function FeedPage() {
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
+                      handleBadgeClick(post.author_name, 'shiller');
                     }}
                     className="inline-flex items-center gap-1 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-600 text-white border border-pink-400/50 text-[10px] px-2 py-0.5 font-bold rounded-md hover:from-pink-400 hover:via-purple-400 hover:to-indigo-500 transition-all shadow-lg hover:shadow-pink-500/50"
-                    title="Master Shiller"
+                    title="View Contributions"
                   >
                     <span className="text-[11px]">📢</span>
                     SHILLER
@@ -2244,7 +2317,191 @@ export default function FeedPage() {
         )}
       </AnimatePresence>
 
+      {/* KING Badge Contributions Modal */}
+      <AnimatePresence>
+        {showKingModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowKingModal(false)}
+            className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-yellow-500/30 rounded-2xl w-full max-w-md p-6 relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 rounded-full blur-3xl" />
+              
+              <div className="relative">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 bg-gradient-to-br from-amber-400 to-orange-600 rounded-full flex items-center justify-center shadow-lg animate-pulse" style={{ animationDuration: '2s' }}>
+                      <span className="text-3xl">👑</span>
+                    </div>
+                    <div>
+                      <h3 className="text-white font-bold text-xl">KING Badge</h3>
+                      <p className="text-yellow-400 text-sm font-semibold">{kingUsername}</p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => setShowKingModal(false)}
+                    variant="ghost"
+                    size="sm"
+                    className="text-white/60 hover:text-white h-8 w-8 p-0"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
 
+                <div className="space-y-4">
+                  <div className="bg-black/40 border border-yellow-500/20 rounded-xl p-4">
+                    <h4 className="text-yellow-400 font-semibold mb-3 text-sm">Platform Contributions</h4>
+                    
+                    {loadingKing ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-8 h-8 text-yellow-400 animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between bg-white/5 rounded-lg p-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-yellow-500/20 rounded-full flex items-center justify-center">
+                              <Users className="w-4 h-4 text-yellow-400" />
+                            </div>
+                            <span className="text-white/80 text-sm">Feed Posts</span>
+                          </div>
+                          <span className="text-white font-bold text-lg">{kingContributions.feedPosts}</span>
+                        </div>
+
+                        <div className="flex items-center justify-between bg-white/5 rounded-lg p-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-cyan-500/20 rounded-full flex items-center justify-center">
+                              <DollarSign className="w-4 h-4 text-cyan-400" />
+                            </div>
+                            <span className="text-white/80 text-sm">Feed Tips Received (KAS)</span>
+                          </div>
+                          <span className="text-cyan-400 font-bold text-lg">{kingContributions.feedTips.toFixed(2)}</span>
+                        </div>
+
+                        <div className="flex items-center justify-between bg-white/5 rounded-lg p-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-orange-500/20 rounded-full flex items-center justify-center">
+                              <DollarSign className="w-4 h-4 text-orange-400" />
+                            </div>
+                            <span className="text-white/80 text-sm">Bull Tips Received (KAS)</span>
+                          </div>
+                          <span className="text-orange-400 font-bold text-lg">{kingContributions.bullTips.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl p-4">
+                    <div className="flex items-start gap-2">
+                      <Sparkles className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-white/80 leading-relaxed">
+                        KING badge holders are the royalty of TTT - recognized for exceptional contributions and leadership in the community.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* SHILLER Badge Contributions Modal */}
+      <AnimatePresence>
+        {showShillerModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowShillerModal(false)}
+            className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-gradient-to-br from-pink-500/10 to-indigo-500/10 border border-pink-500/30 rounded-2xl w-full max-w-md p-6 relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/10 rounded-full blur-3xl" />
+              
+              <div className="relative">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 bg-gradient-to-br from-pink-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg">
+                      <span className="text-3xl">📢</span>
+                    </div>
+                    <div>
+                      <h3 className="text-white font-bold text-xl">SHILLER Badge</h3>
+                      <p className="text-pink-400 text-sm font-semibold">{shillerUsername}</p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => setShowShillerModal(false)}
+                    variant="ghost"
+                    size="sm"
+                    className="text-white/60 hover:text-white h-8 w-8 p-0"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="bg-black/40 border border-pink-500/20 rounded-xl p-4">
+                    <h4 className="text-pink-400 font-semibold mb-3 text-sm">Platform Contributions</h4>
+                    
+                    {loadingShiller ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-8 h-8 text-pink-400 animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between bg-white/5 rounded-lg p-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-pink-500/20 rounded-full flex items-center justify-center">
+                              <Users className="w-4 h-4 text-pink-400" />
+                            </div>
+                            <span className="text-white/80 text-sm">Feed Posts</span>
+                          </div>
+                          <span className="text-white font-bold text-lg">{shillerContributions.feedPosts}</span>
+                        </div>
+
+                        <div className="flex items-center justify-between bg-white/5 rounded-lg p-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center">
+                              <DollarSign className="w-4 h-4 text-purple-400" />
+                            </div>
+                            <span className="text-white/80 text-sm">Feed Tips Received (KAS)</span>
+                          </div>
+                          <span className="text-purple-400 font-bold text-lg">{shillerContributions.feedTips.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="bg-gradient-to-r from-pink-500/10 to-indigo-500/10 border border-pink-500/30 rounded-xl p-4">
+                    <div className="flex items-start gap-2">
+                      <Sparkles className="w-4 h-4 text-pink-400 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-white/80 leading-relaxed">
+                        SHILLER badge holders are master promoters who spread the word about TTT and drive community growth.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Gradient Customizer Modal */}
       <AnimatePresence>
