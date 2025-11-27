@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Search, TrendingUp, Crown, Star, Link2 } from "lucide-react";
+import { Search, TrendingUp, Crown, Star, Link2, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
+import ProposeAppModal from "@/components/appstore/ProposeAppModal";
 
 export default function AppStorePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState(null);
   const [appImages, setAppImages] = useState({});
+  const [showProposeModal, setShowProposeModal] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -63,10 +66,21 @@ export default function AppStorePage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-8 flex items-center justify-between"
         >
-          <h1 className="text-4xl font-black text-white mb-2">TTT App Store</h1>
-          <p className="text-white/60">Discover amazing apps</p>
+          <div>
+            <h1 className="text-4xl font-black text-white mb-2">TTT App Store</h1>
+            <p className="text-white/60">Discover amazing apps</p>
+          </div>
+          {user && (
+            <Button
+              onClick={() => setShowProposeModal(true)}
+              className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Propose App
+            </Button>
+          )}
         </motion.div>
 
         <div className="mb-8 relative">
@@ -119,6 +133,10 @@ export default function AppStorePage() {
           </div>
         )}
       </div>
+
+      {showProposeModal && user && (
+        <ProposeAppModal onClose={() => setShowProposeModal(false)} user={user} />
+      )}
     </div>
   );
 }
