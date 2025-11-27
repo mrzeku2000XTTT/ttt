@@ -975,7 +975,7 @@ export default function FeedPage() {
 
 
   const hasModzBadge = (username) => {
-    const modzUsers = ['Big-ayoolataiwol', 'Big-ayoolataiwo1', 'ayomuiz'];
+    const modzUsers = ['big-ayoolataiwol', 'big-ayoolataiwo1', 'ayomuiz'];
     return modzUsers.includes(username?.toLowerCase());
   };
 
@@ -1334,10 +1334,11 @@ export default function FeedPage() {
                       e.preventDefault();
                       e.stopPropagation();
                     }}
-                    className="inline-flex items-center gap-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white border border-green-500/50 text-[10px] px-2 py-0.5 font-bold rounded-md hover:from-green-400 hover:to-emerald-400 transition-all shadow-lg hover:shadow-green-500/50"
-                    title="Developer"
+                    className="inline-flex items-center gap-1 bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 text-white border border-emerald-400/60 text-[10px] px-2 py-0.5 font-bold rounded-md hover:from-emerald-300 hover:via-green-400 hover:to-teal-500 transition-all shadow-lg hover:shadow-emerald-500/50 animate-pulse"
+                    title="Core Developer"
+                    style={{ animationDuration: '3s' }}
                   >
-                    <span className="text-[10px]">💻</span>
+                    <span className="text-[11px]">⚡</span>
                     DEV
                   </button>
                 )}
