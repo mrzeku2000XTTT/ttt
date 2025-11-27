@@ -975,12 +975,12 @@ export default function FeedPage() {
 
 
   const hasModzBadge = (username) => {
-    const modzUsers = ['Big-ayoolataiwol', 'Big-ayoolataiwo1'];
-    return modzUsers.includes(username);
+    const modzUsers = ['Big-ayoolataiwol', 'Big-ayoolataiwo1', 'ayomuiz'];
+    return modzUsers.includes(username?.toLowerCase());
   };
 
   const hasArchitectBadge = (username) => {
-    const architectUsers = ['ayomuiz'];
+    const architectUsers = [];
     return architectUsers.includes(username?.toLowerCase());
   };
 
