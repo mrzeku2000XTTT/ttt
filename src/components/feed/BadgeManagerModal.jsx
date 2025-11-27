@@ -164,7 +164,8 @@ export default function BadgeManagerModal({ onClose }) {
               <select
                 value={newUsername}
                 onChange={(e) => setNewUsername(e.target.value)}
-                className="w-full bg-white/5 border border-white/20 text-white rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-white/40 transition-colors"
+                size="4"
+                className="w-full bg-white/5 border border-white/20 text-white rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-white/40 transition-colors max-h-24 overflow-y-auto"
               >
                 <option value="" className="bg-zinc-900 text-white/40">Choose a user...</option>
                 {feedUsernames.map(username => (
