@@ -984,6 +984,11 @@ export default function FeedPage() {
     return architectUsers.includes(username?.toLowerCase());
   };
 
+  const hasDevBadge = (username) => {
+    const devUsers = ['hayphase'];
+    return devUsers.includes(username?.toLowerCase());
+  };
+
   const loadUserBadges = async () => {
     try {
       const allBadges = await base44.entities.UserBadge.filter({ is_active: true });
