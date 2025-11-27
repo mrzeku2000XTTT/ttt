@@ -18,7 +18,7 @@ export default function VaultPage() {
       <iframe
         src="https://crypto-vault-copy-62ccec54.base44.app"
         className="w-full border-0"
-        style={{ height: 'calc(100vh - 3.5rem - 7rem)', minHeight: '600px' }}
+        style={{ height: 'calc(100vh - 3.5rem - 11rem)', minHeight: '500px' }}
         title="VAULT"
         allow="clipboard-write; payment"
         allowFullScreen
