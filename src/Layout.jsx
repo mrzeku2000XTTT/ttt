@@ -173,8 +173,9 @@ export default function Layout({ children, currentPageName }) {
   };
 
   const isHomePage = currentPageName === "Home";
+  const isFullscreenPage = ["Home", "HAYPHASE", "BRAHIM", "AYOMUIZ", "Kehinde", "Vault"].includes(currentPageName);
 
-  if (isHomePage) {
+  if (isFullscreenPage) {
     return (
       <VideoPlayerProvider>
         {children}
