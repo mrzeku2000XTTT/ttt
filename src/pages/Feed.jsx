@@ -1328,6 +1328,19 @@ export default function FeedPage() {
                     ARCHITECT
                   </button>
                 )}
+                {hasDevBadge(post.author_name) && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    className="inline-flex items-center gap-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white border border-green-500/50 text-[10px] px-2 py-0.5 font-bold rounded-md hover:from-green-400 hover:to-emerald-400 transition-all shadow-lg hover:shadow-green-500/50"
+                    title="Developer"
+                  >
+                    <span className="text-[10px]">💻</span>
+                    DEV
+                  </button>
+                )}
                 {post.author_agent_zk_id && (
                   <Badge className="bg-white/5 text-white/60 border-white/20 text-[10px] px-2 py-0.5">
                     {post.author_agent_zk_id}
