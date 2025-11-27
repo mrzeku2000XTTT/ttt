@@ -989,6 +989,11 @@ export default function FeedPage() {
     return devUsers.includes(username?.toLowerCase());
   };
 
+  const hasKingBadge = (username) => {
+    const kingUsers = ['ayomuiz'];
+    return kingUsers.includes(username?.toLowerCase());
+  };
+
   const loadUserBadges = async () => {
     try {
       const allBadges = await base44.entities.UserBadge.filter({ is_active: true });
@@ -1340,6 +1345,20 @@ export default function FeedPage() {
                   >
                     <span className="text-[11px]">⚡</span>
                     DEV
+                  </button>
+                )}
+                {hasKingBadge(post.author_name) && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    className="inline-flex items-center gap-1 bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-600 text-black border-2 border-yellow-400/80 text-[10px] px-2 py-0.5 font-bold rounded-md hover:from-amber-300 hover:via-yellow-400 hover:to-orange-500 transition-all shadow-lg shadow-yellow-500/50 hover:shadow-yellow-400/70 animate-pulse"
+                    title="King of TTT"
+                    style={{ animationDuration: '2s' }}
+                  >
+                    <span className="text-[11px]">👑</span>
+                    KING
                   </button>
                 )}
                 {post.author_agent_zk_id && (
