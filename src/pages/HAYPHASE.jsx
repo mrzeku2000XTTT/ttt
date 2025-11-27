@@ -20,6 +20,7 @@ export default function HAYPHASEPage() {
         className="w-full border-0 flex-1"
         title="HAYPHASE"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
         allowFullScreen
       />
     </div>

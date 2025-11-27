@@ -20,6 +20,7 @@ export default function KehindePage() {
         className="w-full border-0 flex-1"
         title="kehinde"
         allow="clipboard-write; payment"
+        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
       />
     </div>
   );
