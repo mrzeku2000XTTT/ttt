@@ -81,6 +81,10 @@ export default function FeedPage() {
   const [shillerUsername, setShillerUsername] = useState(null);
   const [shillerContributions, setShillerContributions] = useState({ feedPosts: 0, feedTips: 0 });
   const [loadingShiller, setLoadingShiller] = useState(false);
+  const [showMarkModal, setShowMarkModal] = useState(false);
+  const [markUsername, setMarkUsername] = useState(null);
+  const [markContributions, setMarkContributions] = useState({ feedPosts: 0, feedTips: 0 });
+  const [loadingMark, setLoadingMark] = useState(false);
 
   const fileInputRef = useRef(null);
   const replyFileInputRef = useRef(null);
@@ -1023,6 +1027,30 @@ export default function FeedPage() {
     }
   };
 
+  const loadMarkContributions = async (username) => {
+    setLoadingMark(true);
+    try {
+      const userPosts = await base44.entities.Post.filter({ author_name: username });
+      const mainPosts = userPosts.filter(p => !p.parent_post_id);
+      
+      const feedTransactions = await base44.entities.TipTransaction.filter({ 
+        source: 'feed',
+        recipient_name: username
+      });
+      const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+
+      setMarkContributions({
+        feedPosts: mainPosts.length,
+        feedTips: totalFeedTips
+      });
+    } catch (err) {
+      console.error('Failed to load mark contributions:', err);
+      setMarkContributions({ feedPosts: 0, feedTips: 0 });
+    } finally {
+      setLoadingMark(false);
+    }
+  };
+
   const handleBadgeClick = async (username, badgeType) => {
     if (badgeType === 'king') {
       setKingUsername(username);
@@ -1032,6 +1060,10 @@ export default function FeedPage() {
       setShillerUsername(username);
       setShowShillerModal(true);
       await loadShillerContributions(username);
+    } else if (badgeType === 'mark') {
+      setMarkUsername(username);
+      setShowMarkModal(true);
+      await loadMarkContributions(username);
     } else if (hasArchitectBadge(username)) {
       setArchitectUsername(username);
       setShowArchitectModal(true);
@@ -1070,6 +1102,12 @@ export default function FeedPage() {
     if (!username) return false;
     const normalized = username.toLowerCase().trim().replace(/\s+/g, '');
     return normalized === 'brahimcrrypt' || normalized === 'brahim';
+  };
+
+  const hasMarkBadge = (username) => {
+    if (!username) return false;
+    const normalized = username.toLowerCase().trim().replace(/\s+/g, '');
+    return normalized === 'kehinde' || normalized === 'kehindeayo';
   };
 
   const loadUserBadges = async () => {
@@ -1452,6 +1490,20 @@ export default function FeedPage() {
                   >
                     <span className="text-[11px]">📢</span>
                     SHILLER
+                  </button>
+                )}
+                {hasMarkBadge(post.author_name) && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleBadgeClick(post.author_name, 'mark');
+                    }}
+                    className="inline-flex items-center gap-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600 text-white border border-emerald-400/50 text-[10px] px-2 py-0.5 font-bold rounded-md hover:from-emerald-400 hover:via-teal-400 hover:to-cyan-500 transition-all shadow-lg hover:shadow-emerald-500/50"
+                    title="View Contributions"
+                  >
+                    <span className="text-[11px]">🎯</span>
+                    MARK
                   </button>
                 )}
                 {post.author_agent_zk_id && (
@@ -2493,6 +2545,94 @@ export default function FeedPage() {
                       <Sparkles className="w-4 h-4 text-pink-400 flex-shrink-0 mt-0.5" />
                       <p className="text-xs text-white/80 leading-relaxed">
                         SHILLER badge holders are master promoters who spread the word about TTT and drive community growth.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* MARK Badge Contributions Modal */}
+      <AnimatePresence>
+        {showMarkModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowMarkModal(false)}
+            className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border border-emerald-500/30 rounded-2xl w-full max-w-md p-6 relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl" />
+              
+              <div className="relative">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-cyan-600 rounded-full flex items-center justify-center shadow-lg">
+                      <span className="text-3xl">🎯</span>
+                    </div>
+                    <div>
+                      <h3 className="text-white font-bold text-xl">MARK Badge</h3>
+                      <p className="text-emerald-400 text-sm font-semibold">{markUsername}</p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => setShowMarkModal(false)}
+                    variant="ghost"
+                    size="sm"
+                    className="text-white/60 hover:text-white h-8 w-8 p-0"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="bg-black/40 border border-emerald-500/20 rounded-xl p-4">
+                    <h4 className="text-emerald-400 font-semibold mb-3 text-sm">Platform Contributions</h4>
+                    
+                    {loadingMark ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between bg-white/5 rounded-lg p-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-emerald-500/20 rounded-full flex items-center justify-center">
+                              <Users className="w-4 h-4 text-emerald-400" />
+                            </div>
+                            <span className="text-white/80 text-sm">Feed Posts</span>
+                          </div>
+                          <span className="text-white font-bold text-lg">{markContributions.feedPosts}</span>
+                        </div>
+
+                        <div className="flex items-center justify-between bg-white/5 rounded-lg p-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-teal-500/20 rounded-full flex items-center justify-center">
+                              <DollarSign className="w-4 h-4 text-teal-400" />
+                            </div>
+                            <span className="text-white/80 text-sm">Feed Tips Received (KAS)</span>
+                          </div>
+                          <span className="text-teal-400 font-bold text-lg">{markContributions.feedTips.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/30 rounded-xl p-4">
+                    <div className="flex items-start gap-2">
+                      <Sparkles className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-white/80 leading-relaxed">
+                        MARK badge holders are precision builders who hit the mark with exceptional quality and impact.
                       </p>
                     </div>
                   </div>
