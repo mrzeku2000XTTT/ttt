@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 
 export default function HAYPHASEPage() {
   return (
-    <div className="fixed inset-0 bg-black flex flex-col" style={{ top: 'calc(var(--sat, 0px) + 7.5rem)' }}>
+    <div className="fixed inset-0 lg:left-12 bg-black flex flex-col" style={{ top: 'calc(var(--sat, 0px) + 7.5rem)' }}>
       <div className="flex items-center gap-3 px-4 py-3 bg-black/80 backdrop-blur-sm border-b border-white/10 flex-shrink-0">
         <Link to={createPageUrl("AppStore")}>
           <button className="text-white/60 hover:text-white transition-colors">
