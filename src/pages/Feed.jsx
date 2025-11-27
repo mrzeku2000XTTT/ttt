@@ -17,6 +17,7 @@ import EncryptedNotepad from "@/components/feed/EncryptedNotepad";
 import CommentSection from "@/components/feed/CommentSection";
 import AgentYingChat from "@/components/AgentYingChat";
 import ImageEditor from "@/components/feed/ImageEditor";
+import BadgeManagerModal from "@/components/feed/BadgeManagerModal";
 
 export default function FeedPage() {
   const navigate = useNavigate();
@@ -70,6 +71,8 @@ export default function FeedPage() {
   const [architectUsername, setArchitectUsername] = useState(null);
   const [architectContributions, setArchitectContributions] = useState({ feedPosts: 0, feedTips: 0 });
   const [loadingArchitect, setLoadingArchitect] = useState(false);
+  const [showBadgeManager, setShowBadgeManager] = useState(false);
+  const [userBadges, setUserBadges] = useState({});
 
   const fileInputRef = useRef(null);
   const replyFileInputRef = useRef(null);
@@ -78,6 +81,7 @@ export default function FeedPage() {
     loadData();
     checkKasware();
     loadDraftFromStorage();
+    loadUserBadges();
   }, []);
 
 
@@ -980,6 +984,39 @@ export default function FeedPage() {
     return architectUsers.includes(username?.toLowerCase());
   };
 
+  const loadUserBadges = async () => {
+    try {
+      const allBadges = await base44.entities.UserBadge.filter({ is_active: true });
+      const badgesMap = {};
+      allBadges.forEach(badge => {
+        if (!badgesMap[badge.username]) {
+          badgesMap[badge.username] = [];
+        }
+        badgesMap[badge.username].push(badge);
+      });
+      setUserBadges(badgesMap);
+    } catch (err) {
+      console.error('Failed to load user badges:', err);
+    }
+  };
+
+  const getUserBadges = (username) => {
+    return userBadges[username] || [];
+  };
+
+  const getBadgeColorClass = (color) => {
+    const colorMap = {
+      cyan: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/40',
+      purple: 'bg-purple-500/20 text-purple-400 border-purple-500/40',
+      yellow: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/40',
+      red: 'bg-red-500/20 text-red-400 border-red-500/40',
+      green: 'bg-green-500/20 text-green-400 border-green-500/40',
+      blue: 'bg-blue-500/20 text-blue-400 border-blue-500/40',
+      pink: 'bg-pink-500/20 text-pink-400 border-pink-500/40'
+    };
+    return colorMap[color] || colorMap.cyan;
+  };
+
   const loadProfileData = async (username) => {
     setLoadingProfile(true);
     try {
@@ -1278,6 +1315,14 @@ export default function FeedPage() {
                     ARCHITECT
                   </button>
                 )}
+                {getUserBadges(post.author_name).map((badge, idx) => (
+                  <Badge
+                    key={badge.id || idx}
+                    className={`text-[10px] px-2 py-0.5 font-bold border ${getBadgeColorClass(badge.badge_color)}`}
+                  >
+                    {badge.badge_name}
+                  </Badge>
+                ))}
                 {post.author_agent_zk_id && (
                   <Badge className="bg-white/5 text-white/60 border-white/20 text-[10px] px-2 py-0.5">
                     {post.author_agent_zk_id}
@@ -2246,6 +2291,18 @@ export default function FeedPage() {
       {/* Agent Ying Chat - Floating on Right */}
       <AgentYingChat />
 
+      {/* Badge Manager Modal (Admin Only) */}
+      <AnimatePresence>
+        {showBadgeManager && (
+          <BadgeManagerModal 
+            onClose={() => {
+              setShowBadgeManager(false);
+              loadUserBadges();
+            }} 
+          />
+        )}
+      </AnimatePresence>
+
       <div className="relative z-10 p-6 md:p-8 lg:p-12">
         <div className="max-w-2xl mx-auto">
           <motion.div
@@ -2269,6 +2326,17 @@ export default function FeedPage() {
                   >
                     <Palette className="w-4 h-4" />
                   </Button>
+                  {user?.role === 'admin' && (
+                    <Button
+                      onClick={() => setShowBadgeManager(true)}
+                      size="sm"
+                      variant="ghost"
+                      className="text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10 h-8 px-2"
+                      title="Manage Badges"
+                    >
+                      <Trophy className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
                 <p className="text-white/40 text-sm">Community Posts</p>
               </div>
