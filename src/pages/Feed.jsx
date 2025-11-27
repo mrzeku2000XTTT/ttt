@@ -65,7 +65,7 @@ export default function FeedPage() {
   const [userLikes, setUserLikes] = useState({});
   const [showBadgeModal, setShowBadgeModal] = useState(false);
   const [badgeUsername, setBadgeUsername] = useState(null);
-  const [badgeContributions, setBadgeContributions] = useState({ bullReelsCount: 0, bullReelsTips: 0 });
+  const [badgeContributions, setBadgeContributions] = useState({ bullReelsCount: 0, bullReelsTips: 0, feedPosts: 0, tipsSent: 0 });
   const [loadingBadge, setLoadingBadge] = useState(false);
   const [showArchitectModal, setShowArchitectModal] = useState(false);
   const [architectUsername, setArchitectUsername] = useState(null);
@@ -909,10 +909,16 @@ export default function FeedPage() {
   const loadBadgeContributions = async (username) => {
     setLoadingBadge(true);
     try {
+      // Get feed posts
+      const userPosts = await base44.entities.Post.filter({ author_name: username });
+      const mainPosts = userPosts.filter(p => !p.parent_post_id);
+      
+      // Get all tip transactions
       const allReelTransactions = await base44.entities.TipTransaction.filter({ source: 'reel' });
+      const allFeedTransactions = await base44.entities.TipTransaction.filter({ source: 'feed' });
       
       // Find user's wallet address from their transactions
-      const userTransaction = allReelTransactions.find(tx => 
+      const userTransaction = [...allReelTransactions, ...allFeedTransactions].find(tx => 
         tx.sender_name === username || tx.recipient_name === username
       );
       const userWallet = userTransaction?.sender_wallet || userTransaction?.recipient_wallet;
@@ -927,21 +933,31 @@ export default function FeedPage() {
       // Get unique Bull Reels by reel_id
       const uniqueReelIds = new Set(bullReelsPosts.map(tx => tx.reel_id).filter(Boolean));
       
-      // Count tips received from others on Bull Reels
-      const tipsReceived = allReelTransactions
+      // Count tips received (all sources)
+      const tipsReceived = [...allReelTransactions, ...allFeedTransactions]
         .filter(tx => 
-          tx.recipient_wallet === userWallet &&
-          tx.sender_wallet !== tx.recipient_wallet // Exclude self-transactions
+          tx.recipient_name === username &&
+          tx.sender_wallet !== tx.recipient_wallet
+        )
+        .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+
+      // Count tips sent (all sources)
+      const tipsSent = [...allReelTransactions, ...allFeedTransactions]
+        .filter(tx => 
+          tx.sender_name === username &&
+          tx.sender_wallet !== tx.recipient_wallet
         )
         .reduce((sum, tx) => sum + (tx.amount || 0), 0);
 
       setBadgeContributions({
         bullReelsCount: uniqueReelIds.size || bullReelsPosts.length,
-        bullReelsTips: tipsReceived
+        bullReelsTips: tipsReceived,
+        feedPosts: mainPosts.length,
+        tipsSent: tipsSent
       });
     } catch (err) {
       console.error('Failed to load badge contributions:', err);
-      setBadgeContributions({ bullReelsCount: 0, bullReelsTips: 0 });
+      setBadgeContributions({ bullReelsCount: 0, bullReelsTips: 0, feedPosts: 0, tipsSent: 0 });
     } finally {
       setLoadingBadge(false);
     }
@@ -2267,7 +2283,7 @@ export default function FeedPage() {
 
                 <div className="space-y-4">
                   <div className="bg-black/40 border border-yellow-500/20 rounded-xl p-4">
-                    <h4 className="text-yellow-400 font-semibold mb-3 text-sm">Kaspa Network Contributions</h4>
+                    <h4 className="text-yellow-400 font-semibold mb-3 text-sm">Platform Contributions</h4>
                     
                     {loadingBadge ? (
                       <div className="flex items-center justify-center py-8">
@@ -2278,9 +2294,19 @@ export default function FeedPage() {
                         <div className="flex items-center justify-between bg-white/5 rounded-lg p-3">
                           <div className="flex items-center gap-2">
                             <div className="w-8 h-8 bg-yellow-500/20 rounded-full flex items-center justify-center">
-                              <Video className="w-4 h-4 text-yellow-400" />
+                              <Users className="w-4 h-4 text-yellow-400" />
                             </div>
-                            <span className="text-white/80 text-sm">Bull Reels Transactions</span>
+                            <span className="text-white/80 text-sm">Feed Posts</span>
+                          </div>
+                          <span className="text-white font-bold text-lg">{badgeContributions.feedPosts}</span>
+                        </div>
+
+                        <div className="flex items-center justify-between bg-white/5 rounded-lg p-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-orange-500/20 rounded-full flex items-center justify-center">
+                              <Video className="w-4 h-4 text-orange-400" />
+                            </div>
+                            <span className="text-white/80 text-sm">Bull Reels</span>
                           </div>
                           <span className="text-white font-bold text-lg">{badgeContributions.bullReelsCount}</span>
                         </div>
@@ -2293,6 +2319,16 @@ export default function FeedPage() {
                             <span className="text-white/80 text-sm">Tips Received (KAS)</span>
                           </div>
                           <span className="text-green-400 font-bold text-lg">{badgeContributions.bullReelsTips.toFixed(2)}</span>
+                        </div>
+
+                        <div className="flex items-center justify-between bg-white/5 rounded-lg p-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-cyan-500/20 rounded-full flex items-center justify-center">
+                              <DollarSign className="w-4 h-4 text-cyan-400" />
+                            </div>
+                            <span className="text-white/80 text-sm">Tips Sent (KAS)</span>
+                          </div>
+                          <span className="text-cyan-400 font-bold text-lg">{badgeContributions.tipsSent.toFixed(2)}</span>
                         </div>
                       </div>
                     )}
