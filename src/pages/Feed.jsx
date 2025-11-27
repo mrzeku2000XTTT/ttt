@@ -995,7 +995,7 @@ export default function FeedPage() {
   };
 
   const hasShillerBadge = (username) => {
-    const shillerUsers = ['brahim', 'brahimcrrypt'];
+    const shillerUsers = ['brahimcrrypt'];
     return shillerUsers.some(u => u.toLowerCase() === username?.toLowerCase());
   };
 
