@@ -193,95 +193,96 @@ export default function CalculatorPage() {
   };
 
   const handleCurrencyConversion = () => {
-    if (!aiInput.trim() || !kasPrice || !exchangeRates) return;
+    if (!aiInput.trim()) return false;
+    if (!kasPrice || !exchangeRates) return false;
 
-    const patterns = [
-      /(\d+\.?\d*)\s*[$]?\s*(naira|ngn|usd|eur|gbp|jpy|cad|aud|chf|cny|inr|mxn|brl|krw|sgd|hkd|nzd|sek|nok|dkk|pln|thb|idr|myr|php|zar|try|rub|aed|sar|egp|kwd|qar|omr|bhd|jod)?\s+to\s+kas/i,
-      /(\d+\.?\d*)\s*[$]?\s*(naira|ngn|usd|eur|gbp|jpy|cad|aud|chf|cny|inr|mxn|brl|krw|sgd|hkd|nzd|sek|nok|dkk|pln|thb|idr|myr|php|zar|try|rub|aed|sar|egp|kwd|qar|omr|bhd|jod)?\s+in\s+kas/i,
-      /(\d+\.?\d*)\s*kas\s+to\s+(naira|ngn|usd|eur|gbp|jpy|cad|aud|chf|cny|inr|mxn|brl|krw|sgd|hkd|nzd|sek|nok|dkk|pln|thb|idr|myr|php|zar|try|rub|aed|sar|egp|kwd|qar|omr|bhd|jod)/i,
-      /(\d+\.?\d*)\s*kas\s+in\s+(naira|ngn|usd|eur|gbp|jpy|cad|aud|chf|cny|inr|mxn|brl|krw|sgd|hkd|nzd|sek|nok|dkk|pln|thb|idr|myr|php|zar|try|rub|aed|sar|egp|kwd|qar|omr|bhd|jod)/i
-    ];
+    const input = aiInput.trim().toLowerCase();
 
-    for (const pattern of patterns) {
-      const match = aiInput.match(pattern);
-      if (match) {
-        const amount = parseFloat(match[1]);
-        const currency = match[2] 
-          ? (match[2].toLowerCase() === 'naira' ? 'NGN' : match[2].toUpperCase())
-          : 'USD'; // Default to USD if $ symbol used without currency name
-        
-        if (aiInput.toLowerCase().includes('kas to') || aiInput.toLowerCase().includes('kas in')) {
-          const kasInUSD = amount * kasPrice;
-          const result = currency === 'USD' ? kasInUSD : kasInUSD * exchangeRates[currency];
-          setDisplay(result.toFixed(2));
-          setHistory([`${amount} KAS → ${result.toFixed(2)} ${currency}`, ...history.slice(0, 9)]);
-        } else {
-          const amountInUSD = convertToUSD(amount, currency);
-          const kasAmount = amountInUSD / kasPrice;
-          setDisplay(kasAmount.toFixed(4));
-          setHistory([`${amount} ${currency} → ${kasAmount.toFixed(4)} KAS`, ...history.slice(0, 9)]);
-        }
+    // Pattern 1: "X [currency] to kas" or "X [currency] in kas"
+    const toCurrencyPattern = /(\d+\.?\d*)\s*[$₦€£¥]?\s*(naira|ngn|usd|eur|gbp|jpy|cad|aud|chf|cny|inr|mxn|brl|krw|sgd|hkd|nzd|sek|nok|dkk|pln|thb|idr|myr|php|zar|try|rub|aed|sar|egp|kwd|qar|omr|bhd|jod)?\s+(to|in)\s+kas/i;
+    const toCurrencyMatch = aiInput.match(toCurrencyPattern);
+    
+    if (toCurrencyMatch) {
+      const amount = parseFloat(toCurrencyMatch[1]);
+      let currency = toCurrencyMatch[2] 
+        ? (toCurrencyMatch[2].toLowerCase() === 'naira' ? 'NGN' : toCurrencyMatch[2].toUpperCase())
+        : 'USD';
+      
+      const amountInUSD = convertToUSD(amount, currency);
+      const kasAmount = amountInUSD / kasPrice;
+      setDisplay(kasAmount.toFixed(4));
+      setHistory([`${amount} ${currency} → ${kasAmount.toFixed(4)} KAS`, ...history.slice(0, 9)]);
+      setAiInput("");
+      return true;
+    }
+
+    // Pattern 2: "X kas to [currency]" or "X kas in [currency]"
+    const fromCurrencyPattern = /(\d+\.?\d*)\s*kas\s+(to|in)\s+(naira|ngn|usd|eur|gbp|jpy|cad|aud|chf|cny|inr|mxn|brl|krw|sgd|hkd|nzd|sek|nok|dkk|pln|thb|idr|myr|php|zar|try|rub|aed|sar|egp|kwd|qar|omr|bhd|jod)/i;
+    const fromCurrencyMatch = aiInput.match(fromCurrencyPattern);
+    
+    if (fromCurrencyMatch) {
+      const amount = parseFloat(fromCurrencyMatch[1]);
+      const currency = fromCurrencyMatch[3].toLowerCase() === 'naira' ? 'NGN' : fromCurrencyMatch[3].toUpperCase();
+      
+      const kasInUSD = amount * kasPrice;
+      const result = currency === 'USD' ? kasInUSD : kasInUSD * exchangeRates[currency];
+      setDisplay(result.toFixed(2));
+      setHistory([`${amount} KAS → ${result.toFixed(2)} ${currency}`, ...history.slice(0, 9)]);
+      setAiInput("");
+      return true;
+    }
+
+    // Pattern 3: Just "kas price"
+    if (input === 'kas price' || input === 'price') {
+      setDisplay(kasPrice.toFixed(6));
+      setHistory([`KAS Price: $${kasPrice.toFixed(6)}`, ...history.slice(0, 9)]);
+      setAiInput("");
+      return true;
+    }
+
+    // Pattern 4: Simple math operations (no AI needed)
+    const mathPattern = /^[\d\s\+\-\*\/\(\)\.]+$/;
+    if (mathPattern.test(aiInput)) {
+      try {
+        const result = eval(aiInput);
+        setDisplay(result.toString());
+        setHistory([`${aiInput} = ${result}`, ...history.slice(0, 9)]);
         setAiInput("");
         return true;
+      } catch (err) {
+        console.error('Math eval failed:', err);
       }
     }
+
     return false;
   };
 
   const handleAICalculate = async () => {
     if (!aiInput.trim()) return;
 
+    // Try currency conversion first (no AI needed)
     if (handleCurrencyConversion()) return;
 
+    // For anything else, try to evaluate as math expression locally
     setAiThinking(true);
     try {
-      const prompt = kasPrice 
-        ? `You are a mathematical calculator AI. KAS price = $${kasPrice.toFixed(6)} USD
-
-Query: "${aiInput}"
-
-STEP-BY-STEP CALCULATION RULES:
-
-When "kas" appears in the query:
-1. First convert "X kas" to its USD value: X × ${kasPrice.toFixed(6)}
-2. Then perform the requested operation
-
-Examples:
-- "$50 divide by 2 kas"
-  Step 1: 2 kas = 2 × ${kasPrice.toFixed(6)} = ${(2 * kasPrice).toFixed(6)}
-  Step 2: $50 ÷ ${(2 * kasPrice).toFixed(6)} = ${(50 / (2 * kasPrice)).toFixed(4)}
-  Answer: ${(50 / (2 * kasPrice)).toFixed(4)}
-
-- "$100 in kas"
-  Step 1: 100 ÷ ${kasPrice.toFixed(6)} = ${(100 / kasPrice).toFixed(4)}
-  Answer: ${(100 / kasPrice).toFixed(4)}
-
-- "50 kas in usd"
-  Step 1: 50 × ${kasPrice.toFixed(6)} = ${(50 * kasPrice).toFixed(2)}
-  Answer: ${(50 * kasPrice).toFixed(2)}
-
-Now calculate "${aiInput}" step by step.
-
-CRITICAL: Return ONLY the final number. No text, no currency symbols, just the number.`
-        : `Calculate: "${aiInput}"
-
-Return ONLY the final numerical result. No explanations.`;
-
-      const response = await base44.integrations.Core.InvokeLLM({
-        prompt,
-        add_context_from_internet: false
-      });
-
-      // Extract the cleanest number from response
-      const cleaned = response.trim().replace(/[^\d.\-]/g, '');
-      const result = cleaned || response.trim();
+      // Try simple eval for basic math
+      const result = eval(
+        aiInput
+          .replace(/×/g, '*')
+          .replace(/÷/g, '/')
+          .replace(/kas/gi, kasPrice || 0)
+          .replace(/π/g, Math.PI)
+          .replace(/e/g, Math.E)
+      );
       
-      setDisplay(result);
+      setDisplay(result.toString());
       setHistory([`${aiInput} = ${result}`, ...history.slice(0, 9)]);
       setAiInput("");
     } catch (err) {
-      console.error("AI calculation failed:", err);
-      setDisplay("Error");
+      console.error("Calculation failed:", err);
+      setDisplay("Invalid Input");
+      setTimeout(() => setDisplay("0"), 2000);
     } finally {
       setAiThinking(false);
     }
@@ -367,7 +368,7 @@ Return ONLY the final numerical result. No explanations.`;
                         value={aiInput}
                         onChange={(e) => setAiInput(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleAICalculate()}
-                        placeholder="100 NGN to KAS or 5000 Naira to KAS or 50 KAS to USD..."
+                        placeholder="20$ in kas, 5000 NGN to KAS, 50 KAS to USD, kas price..."
                         className="flex-1 bg-black/40 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-purple-500/50"
                       />
                       <Button
@@ -499,17 +500,17 @@ Return ONLY the final numerical result. No explanations.`;
           <div className="relative bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
             <h3 className="text-white font-bold mb-4 flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-purple-400" />
-              AI Features
+              Smart Calculator Features
             </h3>
             <div className="grid md:grid-cols-3 gap-4 text-sm">
               <div className="text-white/60">
-                <span className="text-green-400 font-semibold">NGN to KAS:</span> "5000 Naira to KAS"
+                <span className="text-green-400 font-semibold">Quick:</span> "20$ in kas"
               </div>
               <div className="text-white/60">
-                <span className="text-cyan-400 font-semibold">USD to KAS:</span> "100 USD to KAS"
+                <span className="text-cyan-400 font-semibold">Full:</span> "5000 NGN to KAS"
               </div>
               <div className="text-white/60">
-                <span className="text-purple-400 font-semibold">KAS to Any:</span> "50 KAS to EUR"
+                <span className="text-purple-400 font-semibold">Price:</span> "kas price"
               </div>
             </div>
             <div className="mt-3 text-xs text-white/40">
