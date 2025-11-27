@@ -16,6 +16,7 @@ export default function BadgeManagerModal({ onClose }) {
   const [badges, setBadges] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [feedUsernames, setFeedUsernames] = useState([]);
   
   // New badge form
   const [newUsername, setNewUsername] = useState("");
@@ -34,6 +35,7 @@ export default function BadgeManagerModal({ onClose }) {
 
   useEffect(() => {
     loadBadges();
+    loadFeedUsernames();
   }, []);
 
   const loadBadges = async () => {
@@ -45,6 +47,16 @@ export default function BadgeManagerModal({ onClose }) {
       console.error("Failed to load badges:", err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadFeedUsernames = async () => {
+    try {
+      const posts = await base44.entities.Post.list('-created_date', 500);
+      const uniqueUsernames = [...new Set(posts.map(p => p.author_name).filter(Boolean))];
+      setFeedUsernames(uniqueUsernames.sort());
+    } catch (err) {
+      console.error("Failed to load feed usernames:", err);
     }
   };
 
@@ -146,6 +158,25 @@ export default function BadgeManagerModal({ onClose }) {
         {/* Add Badge Form */}
         <div className="p-6 border-b border-white/10 bg-white/5">
           <div className="space-y-3">
+            {/* Feed Users Dropdown */}
+            {feedUsernames.length > 0 && (
+              <div>
+                <label className="text-xs text-white/60 mb-1.5 block">Select from Feed Users</label>
+                <Select value="" onValueChange={(value) => setNewUsername(value)}>
+                  <SelectTrigger className="bg-white/5 border-white/20 text-white">
+                    <SelectValue placeholder="Choose a user..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-700 max-h-60">
+                    {feedUsernames.map(username => (
+                      <SelectItem key={username} value={username} className="text-white">
+                        {username}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               <Input
                 value={newUsername}
