@@ -998,17 +998,37 @@ export default function FeedPage() {
       const userPosts = await base44.entities.Post.filter({ author_name: username });
       const mainPosts = userPosts.filter(p => !p.parent_post_id);
       
-      const feedTransactions = await base44.entities.TipTransaction.filter({ 
-        source: 'feed',
-        recipient_name: username
-      });
-      const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+      // Get user's email from their posts to fetch correct tip stats
+      const userEmail = mainPosts.length > 0 ? mainPosts[0].created_by : null;
 
-      const bullTransactions = await base44.entities.TipTransaction.filter({ 
-        source: 'reel',
-        recipient_name: username
-      });
-      const totalBullTips = bullTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+      let totalFeedTips = 0;
+      let totalBullTips = 0;
+
+      if (userEmail) {
+        // Fetch from UserTipStats entity using email (more reliable)
+        try {
+          const tipStats = await base44.entities.UserTipStats.filter({ user_email: userEmail });
+          if (tipStats.length > 0) {
+            totalFeedTips = tipStats[0].feed_tips_received || 0;
+            totalBullTips = tipStats[0].bull_tips_received || 0;
+          }
+        } catch (err) {
+          console.log('Failed to fetch UserTipStats, falling back to TipTransaction:', err);
+          
+          // Fallback to TipTransaction if UserTipStats is not accessible
+          const feedTransactions = await base44.entities.TipTransaction.filter({ 
+            recipient_email: userEmail,
+            source: 'feed'
+          });
+          totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+
+          const bullTransactions = await base44.entities.TipTransaction.filter({ 
+            recipient_email: userEmail,
+            source: 'reel'
+          });
+          totalBullTips = bullTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+        }
+      }
 
       setKingContributions({
         feedPosts: mainPosts.length,
