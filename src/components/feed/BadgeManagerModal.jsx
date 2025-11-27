@@ -132,38 +132,39 @@ export default function BadgeManagerModal({ onClose }) {
         initial={{ scale: 0.95, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-black border border-white/20 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-black border border-white/20 rounded-xl w-full max-w-lg max-h-[85vh] md:max-h-[90vh] overflow-hidden flex flex-col"
       >
         {/* Header */}
-        <div className="p-6 border-b border-white/10">
+        <div className="p-3 md:p-4 border-b border-white/10">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-purple-500 rounded-xl flex items-center justify-center">
-                <Award className="w-5 h-5 text-white" />
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-purple-500 rounded-lg flex items-center justify-center">
+                <Award className="w-4 h-4 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">Badge Manager</h2>
-                <p className="text-xs text-white/50">Assign custom badges to users</p>
+                <h2 className="text-base md:text-lg font-bold text-white">Badge Manager</h2>
+                <p className="text-[10px] md:text-xs text-white/50">Assign custom badges to users</p>
               </div>
             </div>
             <button
               onClick={onClose}
               className="text-white/60 hover:text-white transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 md:w-5 md:h-5" />
             </button>
           </div>
         </div>
 
         {/* Add Badge Form */}
-        <div className="p-6 border-b border-white/10 bg-white/5">
-          <div className="space-y-3">
+        <div className="p-3 md:p-4 border-b border-white/10 bg-white/5">
+          <div className="space-y-2">
             {/* Feed Users Dropdown */}
             <div>
-              <label className="text-xs text-white/60 mb-1.5 block">Select from Feed Users ({feedUsernames.length} active)</label>
+              <label className="text-[10px] md:text-xs text-white/60 mb-1 block">Select from Feed ({feedUsernames.length})</label>
               <select
+                value={newUsername}
                 onChange={(e) => setNewUsername(e.target.value)}
-                className="w-full bg-white/5 border border-white/20 text-white rounded-lg px-3 py-2 focus:outline-none focus:border-white/40 transition-colors"
+                className="w-full bg-white/5 border border-white/20 text-white rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-white/40 transition-colors"
               >
                 <option value="" className="bg-zinc-900 text-white/40">Choose a user...</option>
                 {feedUsernames.map(username => (
@@ -174,49 +175,45 @@ export default function BadgeManagerModal({ onClose }) {
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               <Input
                 value={newUsername}
                 onChange={(e) => setNewUsername(e.target.value)}
                 placeholder="Username"
-                className="bg-white/5 border-white/20 text-white"
+                className="bg-white/5 border-white/20 text-white text-sm h-9"
               />
               <Input
                 value={newBadgeName}
                 onChange={(e) => setNewBadgeName(e.target.value)}
-                placeholder="Badge Name (e.g., VIP, MOD)"
-                className="bg-white/5 border-white/20 text-white"
+                placeholder="Badge (VIP, MOD)"
+                className="bg-white/5 border-white/20 text-white text-sm h-9"
               />
             </div>
             
-            <div className="flex gap-3">
-              <Select value={newBadgeColor} onValueChange={setNewBadgeColor}>
-                <SelectTrigger className="flex-1 bg-white/5 border-white/20 text-white">
-                  <SelectValue placeholder="Color" />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-700">
-                  {colorOptions.map(color => (
-                    <SelectItem key={color.value} value={color.value} className="text-white">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${getColorClass(color.value)}`} />
-                        {color.label}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex gap-2">
+              <select
+                value={newBadgeColor}
+                onChange={(e) => setNewBadgeColor(e.target.value)}
+                className="flex-1 bg-white/5 border border-white/20 text-white rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-white/40"
+              >
+                {colorOptions.map(color => (
+                  <option key={color.value} value={color.value} className="bg-zinc-900">
+                    {color.label}
+                  </option>
+                ))}
+              </select>
 
               <Button
                 onClick={handleAddBadge}
                 disabled={isSaving || !newUsername.trim() || !newBadgeName.trim()}
-                className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600"
+                className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 h-9 px-3"
               >
                 {isSaving ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Badge
+                    <Plus className="w-3 h-3 md:w-4 md:h-4 mr-1" />
+                    <span className="text-xs md:text-sm">Add</span>
                   </>
                 )}
               </Button>
@@ -224,9 +221,9 @@ export default function BadgeManagerModal({ onClose }) {
 
             {/* Preview */}
             {newBadgeName && (
-              <div className="flex items-center gap-2 text-xs">
+              <div className="flex items-center gap-2 text-xs pt-1">
                 <span className="text-white/50">Preview:</span>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${getColorClass(newBadgeColor)}`}>
+                <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${getColorClass(newBadgeColor)}`}>
                   {newBadgeName.toUpperCase()}
                 </span>
               </div>
@@ -235,42 +232,42 @@ export default function BadgeManagerModal({ onClose }) {
         </div>
 
         {/* Badges List */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-3 md:p-4">
           {isLoading ? (
-            <div className="text-center py-8">
-              <Loader2 className="w-8 h-8 text-cyan-400 animate-spin mx-auto" />
+            <div className="text-center py-6">
+              <Loader2 className="w-6 h-6 text-cyan-400 animate-spin mx-auto" />
             </div>
           ) : badges.length === 0 ? (
-            <div className="text-center py-12">
-              <Shield className="w-12 h-12 text-white/20 mx-auto mb-3" />
-              <p className="text-white/50 text-sm">No badges assigned yet</p>
+            <div className="text-center py-8">
+              <Shield className="w-10 h-10 text-white/20 mx-auto mb-2" />
+              <p className="text-white/50 text-xs">No badges assigned yet</p>
             </div>
           ) : (
             <div className="space-y-2">
               {badges.map((badge) => (
                 <div
                   key={badge.id}
-                  className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center justify-between"
+                  className="bg-white/5 border border-white/10 rounded-lg p-2.5 md:p-3 flex items-center justify-between"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
                     <button
                       onClick={() => handleToggleBadge(badge)}
-                      className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                      className={`w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center transition-colors flex-shrink-0 ${
                         badge.is_active
                           ? 'bg-green-500/20 text-green-400'
                           : 'bg-red-500/20 text-red-400'
                       }`}
                     >
-                      <Shield className="w-5 h-5" />
+                      <Shield className="w-3 h-3 md:w-4 md:h-4" />
                     </button>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-white font-semibold">{badge.username}</span>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${getColorClass(badge.badge_color)}`}>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className="text-white font-semibold text-xs md:text-sm truncate">{badge.username}</span>
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${getColorClass(badge.badge_color)} flex-shrink-0`}>
                           {badge.badge_name}
                         </span>
                       </div>
-                      <p className="text-xs text-white/40">
+                      <p className="text-[10px] text-white/40">
                         {badge.is_active ? 'Active' : 'Inactive'}
                       </p>
                     </div>
@@ -279,9 +276,9 @@ export default function BadgeManagerModal({ onClose }) {
                     onClick={() => handleDeleteBadge(badge.id)}
                     variant="ghost"
                     size="sm"
-                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-7 w-7 p-0 flex-shrink-0"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
                   </Button>
                 </div>
               ))}
