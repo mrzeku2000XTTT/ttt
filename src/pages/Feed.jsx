@@ -1287,6 +1287,14 @@ export default function FeedPage() {
                     ADMIN
                   </Badge>
                 )}
+                {getUserBadges(post.author_name).map((badge, idx) => (
+                  <Badge
+                    key={badge.id || idx}
+                    className={`text-[10px] px-2 py-0.5 font-bold border ${getBadgeColorClass(badge.badge_color)}`}
+                  >
+                    {badge.badge_name}
+                  </Badge>
+                ))}
                 {hasModzBadge(post.author_name) && (
                   <button
                     onClick={(e) => {
@@ -1315,14 +1323,6 @@ export default function FeedPage() {
                     ARCHITECT
                   </button>
                 )}
-                {getUserBadges(post.author_name).map((badge, idx) => (
-                  <Badge
-                    key={badge.id || idx}
-                    className={`text-[10px] px-2 py-0.5 font-bold border ${getBadgeColorClass(badge.badge_color)}`}
-                  >
-                    {badge.badge_name}
-                  </Badge>
-                ))}
                 {post.author_agent_zk_id && (
                   <Badge className="bg-white/5 text-white/60 border-white/20 text-[10px] px-2 py-0.5">
                     {post.author_agent_zk_id}
