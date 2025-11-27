@@ -274,14 +274,14 @@ export default function CategoriesPage() {
               className="w-full h-full object-cover"
               src={backgroundImage}
             />
-            <div className="absolute inset-0 bg-black/40" />
+            <div className="absolute inset-0 bg-black/20" />
           </div>
         ) : (
           <div 
             className="fixed inset-0 bg-cover bg-center"
             style={{ backgroundImage: `url(${backgroundImage})` }}
           >
-            <div className="absolute inset-0 bg-black/40" />
+            <div className="absolute inset-0 bg-black/20" />
           </div>
         )
       ) : (
@@ -438,7 +438,7 @@ export default function CategoriesPage() {
                               <div className={`w-12 h-12 rounded-2xl ${
                                 app.blackOnBlack 
                                   ? 'bg-black border-black'
-                                  : 'bg-black/40 backdrop-blur-sm border border-white/10'
+                                  : 'bg-black/60 backdrop-blur-md border border-white/20'
                               } flex items-center justify-center relative overflow-hidden ${
                                 snapshot.isDragging ? 'shadow-2xl border-white/30' : ''
                               }`}>
