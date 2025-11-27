@@ -1733,7 +1733,41 @@ export default function FeedPage() {
                       {profileUsername?.[0]?.toUpperCase()}
                     </div>
                     <div>
-                      <h2 className="text-white font-bold text-xl">{profileUsername}</h2>
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <h2 className="text-white font-bold text-xl">{profileUsername}</h2>
+                        {getUserBadges(profileUsername).map((badge, idx) => (
+                          <Badge
+                            key={badge.id || idx}
+                            className={`text-[10px] px-2 py-0.5 font-bold border ${getBadgeColorClass(badge.badge_color)}`}
+                          >
+                            {badge.badge_name}
+                          </Badge>
+                        ))}
+                        {hasShillerBadge(profileUsername) && (
+                          <span className="inline-flex items-center gap-1 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-600 text-white border border-pink-400/50 text-[10px] px-2 py-0.5 font-bold rounded-md">
+                            <span className="text-[11px]">📢</span>
+                            SHILLER
+                          </span>
+                        )}
+                        {hasKingBadge(profileUsername) && (
+                          <span className="inline-flex items-center gap-1 bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-600 text-black border-2 border-yellow-400/80 text-[10px] px-2 py-0.5 font-bold rounded-md">
+                            <span className="text-[11px]">👑</span>
+                            KING
+                          </span>
+                        )}
+                        {hasDevBadge(profileUsername) && (
+                          <span className="inline-flex items-center gap-1 bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 text-white border border-emerald-400/60 text-[10px] px-2 py-0.5 font-bold rounded-md">
+                            <span className="text-[11px]">⚡</span>
+                            DEV
+                          </span>
+                        )}
+                        {hasModzBadge(profileUsername) && (
+                          <span className="inline-flex items-center gap-1 bg-gradient-to-br from-yellow-400 to-yellow-600 text-black border border-yellow-500/50 text-[10px] px-2 py-0.5 font-bold rounded-md">
+                            <Trophy className="w-3 h-3" />
+                            MODZ
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2">
                         <Badge className="bg-white/10 text-white/80 border-white/20 text-xs">
                           Trust Score: {profileData.trustScore}
