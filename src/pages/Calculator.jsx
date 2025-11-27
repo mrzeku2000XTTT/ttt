@@ -196,8 +196,8 @@ export default function CalculatorPage() {
     if (!aiInput.trim() || !kasPrice || !exchangeRates) return;
 
     const patterns = [
-      /(\d+\.?\d*)\s*(naira|ngn|usd|eur|gbp|jpy|cad|aud|chf|cny|inr|mxn|brl|krw|sgd|hkd|nzd|sek|nok|dkk|pln|thb|idr|myr|php|zar|try|rub|aed|sar|egp|kwd|qar|omr|bhd|jod)\s+to\s+kas/i,
-      /(\d+\.?\d*)\s*(naira|ngn|usd|eur|gbp|jpy|cad|aud|chf|cny|inr|mxn|brl|krw|sgd|hkd|nzd|sek|nok|dkk|pln|thb|idr|myr|php|zar|try|rub|aed|sar|egp|kwd|qar|omr|bhd|jod)\s+in\s+kas/i,
+      /(\d+\.?\d*)\s*[$]?\s*(naira|ngn|usd|eur|gbp|jpy|cad|aud|chf|cny|inr|mxn|brl|krw|sgd|hkd|nzd|sek|nok|dkk|pln|thb|idr|myr|php|zar|try|rub|aed|sar|egp|kwd|qar|omr|bhd|jod)?\s+to\s+kas/i,
+      /(\d+\.?\d*)\s*[$]?\s*(naira|ngn|usd|eur|gbp|jpy|cad|aud|chf|cny|inr|mxn|brl|krw|sgd|hkd|nzd|sek|nok|dkk|pln|thb|idr|myr|php|zar|try|rub|aed|sar|egp|kwd|qar|omr|bhd|jod)?\s+in\s+kas/i,
       /(\d+\.?\d*)\s*kas\s+to\s+(naira|ngn|usd|eur|gbp|jpy|cad|aud|chf|cny|inr|mxn|brl|krw|sgd|hkd|nzd|sek|nok|dkk|pln|thb|idr|myr|php|zar|try|rub|aed|sar|egp|kwd|qar|omr|bhd|jod)/i,
       /(\d+\.?\d*)\s*kas\s+in\s+(naira|ngn|usd|eur|gbp|jpy|cad|aud|chf|cny|inr|mxn|brl|krw|sgd|hkd|nzd|sek|nok|dkk|pln|thb|idr|myr|php|zar|try|rub|aed|sar|egp|kwd|qar|omr|bhd|jod)/i
     ];
@@ -206,7 +206,9 @@ export default function CalculatorPage() {
       const match = aiInput.match(pattern);
       if (match) {
         const amount = parseFloat(match[1]);
-        const currency = match[2].toLowerCase() === 'naira' ? 'NGN' : match[2].toUpperCase();
+        const currency = match[2] 
+          ? (match[2].toLowerCase() === 'naira' ? 'NGN' : match[2].toUpperCase())
+          : 'USD'; // Default to USD if $ symbol used without currency name
         
         if (aiInput.toLowerCase().includes('kas to') || aiInput.toLowerCase().includes('kas in')) {
           const kasInUSD = amount * kasPrice;
