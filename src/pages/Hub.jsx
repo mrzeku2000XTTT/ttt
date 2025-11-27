@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -23,7 +22,10 @@ import {
   Plus,
   Eye,
   ExternalLink,
-  MessageSquare
+  MessageSquare,
+  Sparkles,
+  Check,
+  X
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -55,6 +57,7 @@ export default function HubPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [copiedCode, setCopiedCode] = useState(null);
   const [activeTab, setActiveTab] = useState('platform');
+  const [appProposals, setAppProposals] = useState([]);
   
   // Platform Status
   const [platformHealth, setPlatformHealth] = useState(null);
@@ -91,13 +94,14 @@ export default function HubPage() {
   const loadAllData = async () => {
     try {
       // Use regular entities API - admin users can see everything via RLS
-      const [users, listings, trades, bridgeTransactions, agents, codes] = await Promise.all([
+      const [users, listings, trades, bridgeTransactions, agents, codes, proposals] = await Promise.all([
         base44.entities.User.list().catch(() => []), // Fallback to empty array if fails
         base44.entities.Listing.list(),
         base44.entities.Trade.list(),
         base44.entities.BridgeTransaction.list(),
         base44.entities.AgentZKProfile.list('-created_date'),
-        base44.entities.AgentZKAccessCode.list('-created_date')
+        base44.entities.AgentZKAccessCode.list('-created_date'),
+        base44.entities.AppProposal.list('-created_date')
       ]);
 
       setStats({
@@ -113,9 +117,11 @@ export default function HubPage() {
 
       setAgentProfiles(agents);
       setAccessCodes(codes);
+      setAppProposals(proposals);
 
       console.log('✅ Loaded', agents.length, 'Agent ZK profiles');
       console.log('🔑 Loaded', codes.length, 'access codes');
+      console.log('📱 Loaded', proposals.length, 'app proposals');
     } catch (error) {
       console.error('Failed to load stats:', error);
     }
@@ -344,6 +350,18 @@ export default function HubPage() {
               >
                 <Key className="w-4 h-4 inline mr-2" />
                 Access Codes ({stats.totalAccessCodes})
+              </button>
+
+              <button
+                onClick={() => setActiveTab('proposals')}
+                className={`px-6 py-2.5 rounded-lg transition-all text-sm font-semibold whitespace-nowrap ${
+                  activeTab === 'proposals'
+                    ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <Sparkles className="w-4 h-4 inline mr-2" />
+                App Proposals ({appProposals.filter(p => p.status === 'pending').length})
               </button>
             </div>
           </motion.div>
@@ -968,6 +986,132 @@ export default function HubPage() {
                             </div>
                           );
                         })
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {activeTab === 'proposals' && (
+              <motion.div
+                key="proposals"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-6"
+              >
+                <Card className="bg-zinc-950/80 backdrop-blur-xl border-cyan-500/30">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Sparkles className="w-6 h-6 text-cyan-400" />
+                        <div>
+                          <h3 className="text-xl font-bold text-white">App Proposals</h3>
+                          <p className="text-sm text-gray-400">{appProposals.length} total • {appProposals.filter(p => p.status === 'pending').length} pending</p>
+                        </div>
+                      </div>
+                      <Button onClick={loadAllData} size="sm" variant="outline" className="border-cyan-500/30">
+                        <RefreshCw className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                      {appProposals.length === 0 ? (
+                        <div className="text-center py-12">
+                          <Sparkles className="w-16 h-16 text-gray-700 mx-auto mb-4" />
+                          <p className="text-gray-400">No app proposals yet</p>
+                        </div>
+                      ) : (
+                        appProposals.map((proposal) => (
+                          <div
+                            key={proposal.id}
+                            className={`bg-black/40 border rounded-lg p-4 ${
+                              proposal.status === 'pending' ? 'border-cyan-500/30' :
+                              proposal.status === 'approved' ? 'border-green-500/30' :
+                              'border-red-500/30'
+                            }`}
+                          >
+                            <div className="flex items-start gap-4">
+                              {proposal.icon_url && (
+                                <img src={proposal.icon_url} alt={proposal.app_name} className="w-16 h-16 rounded-xl object-cover border border-white/20" />
+                              )}
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h4 className="text-white font-bold text-lg">{proposal.app_name}</h4>
+                                  <Badge className={
+                                    proposal.status === 'pending' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' :
+                                    proposal.status === 'approved' ? 'bg-green-500/20 text-green-300 border-green-500/30' :
+                                    'bg-red-500/20 text-red-300 border-red-500/30'
+                                  }>
+                                    {proposal.status}
+                                  </Badge>
+                                  <Badge variant="outline" className="border-white/20 text-white/60 text-xs">
+                                    {proposal.category}
+                                  </Badge>
+                                </div>
+                                <p className="text-white/80 text-sm mb-3">{proposal.description}</p>
+                                <div className="text-xs text-gray-400 space-y-1 mb-3">
+                                  <div>
+                                    <span className="text-gray-500">Link:</span>{' '}
+                                    <a href={proposal.app_link} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">
+                                      {proposal.app_link}
+                                    </a>
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-500">Submitted by:</span> {proposal.submitter_name} ({proposal.submitter_email})
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-500">Submitted:</span> {new Date(proposal.created_date).toLocaleString()}
+                                  </div>
+                                  {proposal.admin_notes && (
+                                    <div className="bg-white/5 rounded p-2 mt-2">
+                                      <span className="text-gray-500">Admin Notes:</span> {proposal.admin_notes}
+                                    </div>
+                                  )}
+                                </div>
+                                {proposal.status === 'pending' && (
+                                  <div className="flex gap-2">
+                                    <Button
+                                      onClick={async () => {
+                                        const notes = prompt('Add notes (optional):');
+                                        await base44.entities.AppProposal.update(proposal.id, {
+                                          status: 'approved',
+                                          admin_notes: notes || ''
+                                        });
+                                        loadAllData();
+                                      }}
+                                      size="sm"
+                                      className="bg-green-500 hover:bg-green-600"
+                                    >
+                                      <Check className="w-4 h-4 mr-2" />
+                                      Approve
+                                    </Button>
+                                    <Button
+                                      onClick={async () => {
+                                        const notes = prompt('Reason for rejection:');
+                                        if (notes) {
+                                          await base44.entities.AppProposal.update(proposal.id, {
+                                            status: 'rejected',
+                                            admin_notes: notes
+                                          });
+                                          loadAllData();
+                                        }
+                                      }}
+                                      size="sm"
+                                      variant="outline"
+                                      className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                                    >
+                                      <X className="w-4 h-4 mr-2" />
+                                      Reject
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))
                       )}
                     </div>
                   </CardContent>
