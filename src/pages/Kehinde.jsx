@@ -5,8 +5,8 @@ import { ArrowLeft } from "lucide-react";
 
 export default function KehindePage() {
   return (
-    <div className="bg-black -mt-28 sm:-mt-32" style={{ minHeight: 'calc(100vh + 7rem)' }}>
-      <div className="flex items-center gap-3 px-4 py-3 bg-black/80 backdrop-blur-sm border-b border-white/10">
+    <div className="fixed inset-0 bg-black flex flex-col" style={{ top: 'calc(var(--sat, 0px) + 7.5rem)' }}>
+      <div className="flex items-center gap-3 px-4 py-3 bg-black/80 backdrop-blur-sm border-b border-white/10 flex-shrink-0">
         <Link to={createPageUrl("AppStore")}>
           <button className="text-white/60 hover:text-white transition-colors">
             <ArrowLeft className="w-5 h-5" />
@@ -17,8 +17,7 @@ export default function KehindePage() {
 
       <iframe
         src="https://ttt-kaspa-earn-137c2f5c.base44.app"
-        className="w-full border-0"
-        style={{ height: 'calc(100vh - 3.5rem - 7rem)', minHeight: '600px' }}
+        className="w-full border-0 flex-1"
         title="kehinde"
         allow="clipboard-write; payment"
       />
