@@ -115,6 +115,7 @@ import AYOMUIZ from './pages/AYOMUIZ';
 import Kehinde from './pages/Kehinde';
 import HYPEMIND from './pages/HYPEMIND';
 import OriginStory from './pages/OriginStory';
+import HAYPHASE from './pages/HAYPHASE';
 import __Layout from './Layout.jsx';
 
 
@@ -236,6 +237,7 @@ export const PAGES = {
     "Kehinde": Kehinde,
     "HYPEMIND": HYPEMIND,
     "OriginStory": OriginStory,
+    "HAYPHASE": HAYPHASE,
 }
 
 export const pagesConfig = {

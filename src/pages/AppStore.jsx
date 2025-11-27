@@ -42,6 +42,7 @@ export default function AppStorePage() {
     { name: "BRAHIM", icon: "Link2", path: "BRAHIM", category: "Tools" },
     { name: "AYOMUIZ", icon: "Link2", path: "AYOMUIZ", category: "Games" },
     { name: "kehinde", icon: "Link2", path: "Kehinde", category: "Tools" },
+    { name: "HAYPHASE", icon: "Link2", path: "HAYPHASE", category: "Tools" },
   ];
 
   const getIconComponent = (iconName) => {
