@@ -173,9 +173,8 @@ export default function Layout({ children, currentPageName }) {
   };
 
   const isHomePage = currentPageName === "Home";
-  const isCategoriesPage = currentPageName === "Categories";
 
-  if (isHomePage || isCategoriesPage) {
+  if (isHomePage) {
     return (
       <VideoPlayerProvider>
         {children}
