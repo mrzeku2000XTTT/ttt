@@ -20,7 +20,6 @@ export default function VaultPage() {
         className="w-full border-0 flex-1"
         title="VAULT"
         allow="clipboard-write; payment"
-        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
         allowFullScreen
       />
     </div>
