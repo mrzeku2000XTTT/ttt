@@ -18,7 +18,7 @@ export default function HAYPHASEPage() {
       <iframe
         src="https://kas-shoe-42fadac5.base44.app"
         className="w-full border-0"
-        style={{ height: 'calc(100vh - 3.5rem - 11rem)', minHeight: '500px' }}
+        style={{ height: 'calc(100vh - 3.5rem - 7rem)', minHeight: '600px' }}
         title="HAYPHASE"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
