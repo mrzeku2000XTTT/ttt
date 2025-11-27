@@ -159,23 +159,20 @@ export default function BadgeManagerModal({ onClose }) {
         <div className="p-6 border-b border-white/10 bg-white/5">
           <div className="space-y-3">
             {/* Feed Users Dropdown */}
-            {feedUsernames.length > 0 && (
-              <div>
-                <label className="text-xs text-white/60 mb-1.5 block">Select from Feed Users</label>
-                <Select value="" onValueChange={(value) => setNewUsername(value)}>
-                  <SelectTrigger className="bg-white/5 border-white/20 text-white">
-                    <SelectValue placeholder="Choose a user..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-700 max-h-60">
-                    {feedUsernames.map(username => (
-                      <SelectItem key={username} value={username} className="text-white">
-                        {username}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <div>
+              <label className="text-xs text-white/60 mb-1.5 block">Select from Feed Users ({feedUsernames.length} active)</label>
+              <select
+                onChange={(e) => setNewUsername(e.target.value)}
+                className="w-full bg-white/5 border border-white/20 text-white rounded-lg px-3 py-2 focus:outline-none focus:border-white/40 transition-colors"
+              >
+                <option value="" className="bg-zinc-900 text-white/40">Choose a user...</option>
+                {feedUsernames.map(username => (
+                  <option key={username} value={username} className="bg-zinc-900 text-white">
+                    {username}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <div className="grid grid-cols-2 gap-3">
               <Input
