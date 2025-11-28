@@ -25,6 +25,7 @@ function AKContent() {
   const [loadingGenre, setLoadingGenre] = useState(false);
   const [lastMovie, setLastMovie] = useState(null);
   const { getSharedData, getAllSharedData } = useStarGate();
+  const messagesEndRef = React.useRef(null);
 
   const genres = ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Romance', 'Thriller', 'Animation'];
 
@@ -33,6 +34,10 @@ function AKContent() {
     loadSharedData();
     generateBackgroundIfNeeded();
   }, []);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, loading]);
 
   const generateBackgroundIfNeeded = async () => {
     const savedUrl = localStorage.getItem('ak_background_url');
@@ -360,6 +365,7 @@ function AKContent() {
               </div>
             </motion.div>
           )}
+          <div ref={messagesEndRef} />
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', flexShrink: 0, paddingTop: '0.5rem', paddingBottom: '0.25rem', background: 'linear-gradient(to bottom, transparent, rgba(59, 7, 100, 0.95) 5%, rgba(59, 7, 100, 1))', marginTop: 'auto' }}>
