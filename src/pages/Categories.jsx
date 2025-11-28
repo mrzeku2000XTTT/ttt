@@ -99,6 +99,7 @@ export default function CategoriesPage() {
 
     const defaultApps = [
       { id: "appstore", name: "App Store", icon: "LayoutGrid", path: "AppStore" },
+      { id: "gate", name: "Gate", icon: "Activity", path: "Gate" },
       { id: "bullmoon", name: "Bull Moon", icon: "Moon", path: "BullMoon" },
       { id: "tttv", name: "TTTV", icon: "Video", path: "Browser" },
       { id: "camera", name: "Camera", icon: "Camera", path: "QRScanner" },
