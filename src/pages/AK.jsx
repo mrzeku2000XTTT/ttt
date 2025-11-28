@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Send, Loader2, Bot, Sparkles, Share2, Download } from "lucide-react";
+import { Send, Loader2, Bot, Sparkles, Share2, Download, Film } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,7 +15,12 @@ function AKContent() {
   const [shareModal, setShareModal] = useState({ open: false, data: "" });
   const [backgroundUrl, setBackgroundUrl] = useState(() => localStorage.getItem('ak_background_url') || '');
   const [bgLoading, setBgLoading] = useState(false);
+  const [showGenres, setShowGenres] = useState(false);
+  const [genreMovies, setGenreMovies] = useState([]);
+  const [loadingGenre, setLoadingGenre] = useState(false);
   const { getSharedData, getAllSharedData } = useStarGate();
+
+  const genres = ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Romance', 'Thriller', 'Animation'];
 
   useEffect(() => {
     loadUser();
@@ -57,6 +62,33 @@ function AKContent() {
         setInput(latestData.data.content);
       }
     }
+  };
+
+  const handleGenreClick = async (genre) => {
+    setLoadingGenre(true);
+    setGenreMovies([]);
+    try {
+      const result = await base44.functions.invoke('scrapeMovieGenres', { genre });
+      setGenreMovies(result.data.movies || []);
+    } catch (err) {
+      console.error('Genre error:', err);
+    } finally {
+      setLoadingGenre(false);
+    }
+  };
+
+  const handleMovieSelect = (movie) => {
+    setMessages(prev => [...prev, { 
+      role: "assistant", 
+      content: `🎬 Now playing: ${movie.title}`,
+      movie: {
+        embed_url: movie.embed_url,
+        title: movie.title,
+        source: "0123Movie"
+      }
+    }]);
+    setShowGenres(false);
+    setGenreMovies([]);
   };
 
   const loadUser = async () => {
@@ -233,7 +265,7 @@ function AKContent() {
                         <iframe
                           src={msg.movie.embed_url}
                           width="100%"
-                          height="400"
+                          height="600"
                           frameBorder="0"
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                           allowFullScreen
@@ -269,28 +301,86 @@ function AKContent() {
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-            placeholder="Ask AK anything..."
-            className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40 resize-none"
-            rows={2}
-            style={{ fontSize: '16px' }}
-          />
-          <Button
-            onClick={handleSend}
-            disabled={loading || !input.trim()}
-            className="bg-purple-600 hover:bg-purple-700 text-white"
-          >
-            <Send className="w-5 h-5" />
-          </Button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <Button
+              onClick={() => setShowGenres(!showGenres)}
+              className="bg-white/5 hover:bg-white/10 text-white border border-white/10"
+              size="sm"
+            >
+              <Film className="w-4 h-4 mr-2" />
+              Browse Genres
+            </Button>
+          </div>
+
+          {showGenres && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-3"
+            >
+              <div className="flex flex-wrap gap-2 mb-3">
+                {genres.map(genre => (
+                  <button
+                    key={genre}
+                    onClick={() => handleGenreClick(genre)}
+                    className="px-3 py-1.5 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 rounded-lg text-white text-sm transition-colors"
+                  >
+                    {genre}
+                  </button>
+                ))}
+              </div>
+
+              {loadingGenre && (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="w-6 h-6 text-purple-400 animate-spin" />
+                </div>
+              )}
+
+              {genreMovies.length > 0 && (
+                <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                  {genreMovies.map((movie, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleMovieSelect(movie)}
+                      className="text-left p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition-colors"
+                    >
+                      <div className="text-white text-sm font-semibold">{movie.title}</div>
+                      {movie.rating && (
+                        <div className="text-yellow-400 text-xs">⭐ {movie.rating}</div>
+                      )}
+                      <div className="text-white/60 text-xs line-clamp-2 mt-1">{movie.description}</div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              placeholder="Ask AK anything..."
+              className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40 resize-none"
+              rows={2}
+              style={{ fontSize: '16px' }}
+            />
+            <Button
+              onClick={handleSend}
+              disabled={loading || !input.trim()}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              <Send className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
 
         <DataShareModal
