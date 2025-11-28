@@ -18,14 +18,8 @@ export default function GatePage() {
   }, []);
 
   const apps = [
-    { name: "BRAHIM", path: "BRAHIM", category: "Tools", color: "#8B5CF6" },
-    { name: "AYOMUIZ", path: "AYOMUIZ", category: "Games", color: "#EC4899" },
-    { name: "kehinde", path: "Kehinde", category: "Tools", color: "#06B6D4" },
-    { name: "HAYPHASE", path: "HAYPHASE", category: "Tools", color: "#F59E0B" },
-    { name: "VAULT", path: "Vault", category: "Finance", color: "#10B981" },
-    { name: "TTTV", path: "Browser", category: "Media", color: "#3B82F6" },
-    { name: "Agent ZK", path: "AgentZK", category: "AI", color: "#A855F7" },
-    { name: "Arcade", path: "Arcade", category: "Games", color: "#EF4444" },
+    // Add your apps here
+    // { name: "App Name", path: "PageName", category: "Category", color: "#HexColor" },
   ];
 
   const filteredApps = searchQuery
