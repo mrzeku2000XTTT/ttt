@@ -119,65 +119,103 @@ function AKContent() {
     setLoading(true);
 
     try {
-      // Check if it's a music request
-      const isMusicRequest = /play|music|song|listen|audio/i.test(query);
-      const isMovieRequest = /watch|movie|film|cinema/i.test(query);
-      
-      if (isMusicRequest) {
-        const musicResult = await base44.functions.invoke('searchMusic', { query });
-        
-        if (musicResult.data.embed_url) {
-          setMessages(prev => [...prev, { 
-            role: "assistant", 
-            content: `🎵 Now playing: ${musicResult.data.title}`,
-            music: {
-              embed_url: musicResult.data.embed_url,
-              title: musicResult.data.title,
-              source: musicResult.data.source
-            }
-          }]);
-        } else {
-          setMessages(prev => [...prev, { 
-            role: "assistant", 
-            content: "Sorry, I couldn't find that song. Please try a different search."
-          }]);
-        }
-      } else if (isMovieRequest) {
-        const movieResult = await base44.functions.invoke('searchMovie', { query });
-        
-        if (movieResult.data.embed_url) {
-          setMessages(prev => [...prev, { 
-            role: "assistant", 
-            content: `🎬 Now playing: ${movieResult.data.title}`,
-            movie: {
-              embed_url: movieResult.data.embed_url,
-              title: movieResult.data.title,
-              source: movieResult.data.source
-            }
-          }]);
-        } else {
-          setMessages(prev => [...prev, { 
-            role: "assistant", 
-            content: "Sorry, I couldn't find that movie. Please try a different search."
-          }]);
-        }
-      } else {
-        const response = await base44.integrations.Core.InvokeLLM({
-          prompt: query,
-          add_context_from_internet: false,
-        });
+        const isMusicRequest = /play|music|song|listen|audio/i.test(query);
+        const isMovieRequest = /watch|movie|film|cinema/i.test(query);
 
-        setMessages(prev => [...prev, { role: "assistant", content: response }]);
+        if (isMusicRequest) {
+          const musicResult = await base44.functions.invoke('searchMusic', { query });
+
+          if (musicResult.data.embed_url) {
+            setMessages(prev => [...prev, { 
+              role: "assistant", 
+              content: `🎵 Now playing: ${musicResult.data.title}`,
+              music: {
+                embed_url: musicResult.data.embed_url,
+                title: musicResult.data.title,
+                source: musicResult.data.source
+              }
+            }]);
+          } else {
+            setMessages(prev => [...prev, { 
+              role: "assistant", 
+              content: "Sorry, I couldn't find that song. Please try a different search."
+            }]);
+          }
+        } else if (isMovieRequest) {
+          // Check if user just typed "watch" without movie name
+          if (query.trim().toLowerCase() === 'watch') {
+            if (lastMovie) {
+              // Get AI response first, then show last movie
+              const aiResponse = await base44.integrations.Core.InvokeLLM({
+                prompt: "User wants to watch the last movie again. Give a friendly short response confirming you're reopening it.",
+                add_context_from_internet: false,
+              });
+
+              setMessages(prev => [...prev, 
+                { role: "assistant", content: aiResponse },
+                { 
+                  role: "assistant", 
+                  content: `🎬 Reopening: ${lastMovie.title}`,
+                  movie: lastMovie
+                }
+              ]);
+            } else {
+              setMessages(prev => [...prev, { 
+                role: "assistant", 
+                content: "No problem! You can type 'watch [movie name]' to search for a specific movie, or click 'Browse Genres' below to explore movies by category. 🎬"
+              }]);
+            }
+          } else {
+            // Search for specific movie
+            const movieResult = await base44.functions.invoke('searchMovie', { query });
+
+            if (movieResult.data.embed_url) {
+              const movieData = {
+                embed_url: movieResult.data.embed_url,
+                title: movieResult.data.title,
+                source: movieResult.data.source
+              };
+
+              setLastMovie(movieData);
+
+              // Get AI response first, then show movie
+              const aiResponse = await base44.integrations.Core.InvokeLLM({
+                prompt: `User wants to watch "${query}". Give a friendly short response about this movie (1-2 sentences).`,
+                add_context_from_internet: true,
+              });
+
+              setMessages(prev => [...prev, 
+                { role: "assistant", content: aiResponse },
+                { 
+                  role: "assistant", 
+                  content: `🎬 Now playing: ${movieData.title}`,
+                  movie: movieData
+                }
+              ]);
+            } else {
+              setMessages(prev => [...prev, { 
+                role: "assistant", 
+                content: "Sorry, I couldn't find that movie. Please try a different search or click 'Browse Genres' to explore."
+              }]);
+            }
+          }
+        } else {
+          const response = await base44.integrations.Core.InvokeLLM({
+            prompt: query,
+            add_context_from_internet: false,
+          });
+
+          setMessages(prev => [...prev, { role: "assistant", content: response }]);
+        }
+      } catch (err) {
+        console.error("AI error:", err);
+        setMessages(prev => [...prev, { 
+          role: "assistant", 
+          content: "Sorry, I encountered an error. Please try again." 
+        }]);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("AI error:", err);
-      setMessages(prev => [...prev, { 
-        role: "assistant", 
-        content: "Sorry, I encountered an error. Please try again." 
-      }]);
-    } finally {
-      setLoading(false);
-    }
   };
 
   return (
