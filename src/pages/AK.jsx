@@ -160,17 +160,30 @@ function AKContent() {
                 }
               ]);
             } else {
-              // Get AI response and open Browse Genres modal
+              // Get AI response and auto-load a random genre
               const aiResponse = await base44.integrations.Core.InvokeLLM({
-                prompt: "User wants to watch something. Give a friendly short response about opening the movie browser for them.",
+                prompt: "User wants to watch something. Give a friendly short response about finding movies for them.",
                 add_context_from_internet: false,
               });
               
-              setShowGenres(true);
               setMessages(prev => [...prev, { 
                 role: "assistant", 
                 content: aiResponse
               }]);
+              
+              // Auto-load random genre
+              const randomGenre = genres[Math.floor(Math.random() * genres.length)];
+              setShowGenres(true);
+              setLoadingGenre(true);
+              
+              try {
+                const result = await base44.functions.invoke('scrapeMovieGenres', { genre: randomGenre });
+                setGenreMovies(result.data.movies || []);
+              } catch (err) {
+                console.error('Genre error:', err);
+              } finally {
+                setLoadingGenre(false);
+              }
             }
           } else {
             // Search for specific movie
