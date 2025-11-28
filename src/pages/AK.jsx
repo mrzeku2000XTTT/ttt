@@ -160,9 +160,9 @@ function AKContent() {
                 }
               ]);
             } else {
-              // Get AI response and auto-load a random genre
+              // Get AI response
               const aiResponse = await base44.integrations.Core.InvokeLLM({
-                prompt: "User wants to watch something. Give a friendly short response about finding movies for them.",
+                prompt: "User wants to watch something. Give a friendly short response about finding a movie for them.",
                 add_context_from_internet: false,
               });
               
@@ -171,18 +171,34 @@ function AKContent() {
                 content: aiResponse
               }]);
               
-              // Auto-load random genre
+              // Auto-load random genre and pick first movie
               const randomGenre = genres[Math.floor(Math.random() * genres.length)];
-              setShowGenres(true);
-              setLoadingGenre(true);
               
               try {
                 const result = await base44.functions.invoke('scrapeMovieGenres', { genre: randomGenre });
-                setGenreMovies(result.data.movies || []);
+                const movies = result.data.movies || [];
+                
+                if (movies.length > 0) {
+                  const randomMovie = movies[Math.floor(Math.random() * movies.length)];
+                  const movieData = {
+                    embed_url: randomMovie.embed_url,
+                    title: randomMovie.title,
+                    source: "0123Movie"
+                  };
+                  
+                  setLastMovie(movieData);
+                  setMessages(prev => [...prev, { 
+                    role: "assistant", 
+                    content: `🎬 Now playing: ${movieData.title}`,
+                    movie: movieData
+                  }]);
+                }
               } catch (err) {
-                console.error('Genre error:', err);
-              } finally {
-                setLoadingGenre(false);
+                console.error('Movie error:', err);
+                setMessages(prev => [...prev, { 
+                  role: "assistant", 
+                  content: "Sorry, I couldn't load a movie. Try 'Browse Genres' to explore."
+                }]);
               }
             }
           } else {
