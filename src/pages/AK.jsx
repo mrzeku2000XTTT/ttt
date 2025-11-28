@@ -80,6 +80,7 @@ function AKContent() {
     try {
       // Check if it's a music request
       const isMusicRequest = /play|music|song|listen|audio/i.test(query);
+      const isMovieRequest = /watch|movie|film|cinema/i.test(query);
       
       if (isMusicRequest) {
         const musicResult = await base44.functions.invoke('searchMusic', { query });
@@ -98,6 +99,25 @@ function AKContent() {
           setMessages(prev => [...prev, { 
             role: "assistant", 
             content: "Sorry, I couldn't find that song. Please try a different search."
+          }]);
+        }
+      } else if (isMovieRequest) {
+        const movieResult = await base44.functions.invoke('searchMovie', { query });
+        
+        if (movieResult.data.embed_url) {
+          setMessages(prev => [...prev, { 
+            role: "assistant", 
+            content: `🎬 Now playing: ${movieResult.data.title}`,
+            movie: {
+              embed_url: movieResult.data.embed_url,
+              title: movieResult.data.title,
+              source: movieResult.data.source
+            }
+          }]);
+        } else {
+          setMessages(prev => [...prev, { 
+            role: "assistant", 
+            content: "Sorry, I couldn't find that movie. Please try a different search."
           }]);
         }
       } else {
@@ -201,6 +221,19 @@ function AKContent() {
                           src={msg.music.embed_url}
                           width="100%"
                           height="200"
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="rounded-lg"
+                        />
+                      </div>
+                    )}
+                    {msg.movie && (
+                      <div className="mt-3">
+                        <iframe
+                          src={msg.movie.embed_url}
+                          width="100%"
+                          height="400"
                           frameBorder="0"
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                           allowFullScreen
