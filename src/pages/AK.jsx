@@ -160,46 +160,24 @@ function AKContent() {
                 }
               ]);
             } else {
-              // Get AI response
+              // Get AI response and show 123movies home page
               const aiResponse = await base44.integrations.Core.InvokeLLM({
-                prompt: "User wants to watch something. Give a friendly short response about finding a movie for them.",
+                prompt: "User wants to watch something. Give a friendly short response about opening the movie browser for them.",
                 add_context_from_internet: false,
               });
               
-              setMessages(prev => [...prev, { 
-                role: "assistant", 
-                content: aiResponse
-              }]);
-              
-              // Auto-load random genre and pick first movie
-              const randomGenre = genres[Math.floor(Math.random() * genres.length)];
-              
-              try {
-                const result = await base44.functions.invoke('scrapeMovieGenres', { genre: randomGenre });
-                const movies = result.data.movies || [];
-                
-                if (movies.length > 0) {
-                  const randomMovie = movies[Math.floor(Math.random() * movies.length)];
-                  const movieData = {
-                    embed_url: randomMovie.embed_url,
-                    title: randomMovie.title,
-                    source: "0123Movie"
-                  };
-                  
-                  setLastMovie(movieData);
-                  setMessages(prev => [...prev, { 
-                    role: "assistant", 
-                    content: `🎬 Now playing: ${movieData.title}`,
-                    movie: movieData
-                  }]);
-                }
-              } catch (err) {
-                console.error('Movie error:', err);
-                setMessages(prev => [...prev, { 
+              setMessages(prev => [...prev, 
+                { role: "assistant", content: aiResponse },
+                { 
                   role: "assistant", 
-                  content: "Sorry, I couldn't load a movie. Try 'Browse Genres' to explore."
-                }]);
-              }
+                  content: "🎬 Opening movie browser...",
+                  movie: {
+                    embed_url: "https://ww22.0123movie.net",
+                    title: "0123Movie Browser",
+                    source: "0123Movie"
+                  }
+                }
+              ]);
             }
           } else {
             // Search for specific movie
