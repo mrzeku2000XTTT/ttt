@@ -74,27 +74,13 @@ function AKContent() {
       right: 0,
       display: 'flex', 
       flexDirection: 'column',
-      background: 'linear-gradient(to bottom right, rgb(59, 7, 100), rgb(0, 0, 0), rgb(59, 7, 100))',
+      backgroundImage: 'url(https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/9b7f870ef_image.png)',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
       overflow: 'hidden',
       paddingBottom: 'calc(var(--sab, 0px) + 4rem)'
     }}>
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        background: `radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 2%),
-                     radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.08) 0%, transparent 2%),
-                     radial-gradient(circle at 40% 70%, rgba(255, 255, 255, 0.06) 0%, transparent 1.5%),
-                     radial-gradient(circle at 60% 20%, rgba(255, 255, 255, 0.12) 0%, transparent 2%),
-                     radial-gradient(circle at 90% 60%, rgba(255, 255, 255, 0.1) 0%, transparent 2.5%),
-                     radial-gradient(circle at 15% 80%, rgba(255, 255, 255, 0.07) 0%, transparent 1.8%),
-                     radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 1%),
-                     radial-gradient(circle at 70% 75%, rgba(255, 255, 255, 0.09) 0%, transparent 2.2%),
-                     radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.06) 0%, transparent 1.5%),
-                     radial-gradient(circle at 85% 85%, rgba(255, 255, 255, 0.08) 0%, transparent 2%)`,
-        backgroundSize: '100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%',
-        pointerEvents: 'none',
-        zIndex: 0
-      }} />
       
       <div style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ 
