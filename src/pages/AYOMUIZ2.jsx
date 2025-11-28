@@ -6,7 +6,7 @@ export default function AYOMUIZ2Page() {
       style={{
         position: "fixed",
         top: "calc(var(--sat, 0px) + 7.5rem)",
-        bottom: "calc(var(--sab, 0px) + 4rem)",
+        bottom: 0,
         left: 0,
         right: 0,
         width: "100%",
