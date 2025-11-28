@@ -12,23 +12,22 @@ Deno.serve(async (req) => {
     const { query } = await req.json();
 
     const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `Search for the movie "${query}" and find a DIRECT VIDEO PLAYER EMBED URL (NOT the movie page).
+      prompt: `Search the web and find the EXACT movie page URL on 0123movie.net for: "${query}"
       
-      Look for:
-      1. Embed URLs from streaming sites (vidsrc, 2embed, etc.)
-      2. Format like: https://vidsrc.to/embed/movie/[tmdb-id] or https://www.2embed.cc/embed/[tmdb-id]
-      3. Or any iframe embed player URL without ads
-      
-      DO NOT return the movie page URL - we need the PLAYER embed URL.
+      IMPORTANT: 
+      1. Search for the movie on https://ww22.0123movie.net
+      2. Find the actual movie page URL (example: https://ww22.0123movie.net/movie/last-days-1630860241.html)
+      3. Return the EXACT URL you find - do NOT construct or guess it
+      4. The URL must include the full path with the unique movie ID number
       
       Return ONLY a JSON object:
       {
-        "embed_url": "Direct video player embed URL",
+        "embed_url": "EXACT URL from 0123movie.net including .html",
         "title": "Movie Title (Year)",
-        "source": "Source name"
+        "source": "0123Movie"
       }
       
-      If you cannot find it, return null for embed_url.`,
+      If you cannot find the exact URL, return null for embed_url.`,
       add_context_from_internet: true,
       response_json_schema: {
         type: "object",
