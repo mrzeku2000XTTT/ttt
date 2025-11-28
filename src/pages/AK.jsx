@@ -73,16 +73,41 @@ function AKContent() {
 
     const userMessage = { role: "user", content: input };
     setMessages(prev => [...prev, userMessage]);
+    const query = input;
     setInput("");
     setLoading(true);
 
     try {
-      const response = await base44.integrations.Core.InvokeLLM({
-        prompt: input,
-        add_context_from_internet: false,
-      });
+      // Check if it's a music request
+      const isMusicRequest = /play|music|song|listen|audio/i.test(query);
+      
+      if (isMusicRequest) {
+        const musicResult = await base44.functions.invoke('searchMusic', { query });
+        
+        if (musicResult.data.embed_url) {
+          setMessages(prev => [...prev, { 
+            role: "assistant", 
+            content: `🎵 Now playing: ${musicResult.data.title}`,
+            music: {
+              embed_url: musicResult.data.embed_url,
+              title: musicResult.data.title,
+              source: musicResult.data.source
+            }
+          }]);
+        } else {
+          setMessages(prev => [...prev, { 
+            role: "assistant", 
+            content: "Sorry, I couldn't find that song. Please try a different search."
+          }]);
+        }
+      } else {
+        const response = await base44.integrations.Core.InvokeLLM({
+          prompt: query,
+          add_context_from_internet: false,
+        });
 
-      setMessages(prev => [...prev, { role: "assistant", content: response }]);
+        setMessages(prev => [...prev, { role: "assistant", content: response }]);
+      }
     } catch (err) {
       console.error("AI error:", err);
       setMessages(prev => [...prev, { 
@@ -170,6 +195,19 @@ function AKContent() {
                     }`}
                   >
                     <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    {msg.music && (
+                      <div className="mt-3">
+                        <iframe
+                          src={msg.music.embed_url}
+                          width="100%"
+                          height="200"
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="rounded-lg"
+                        />
+                      </div>
+                    )}
                   </div>
                   {msg.role === "assistant" && (
                     <button
