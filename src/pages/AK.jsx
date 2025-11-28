@@ -299,7 +299,7 @@ function AKContent() {
               >
                 <div className="flex items-start gap-2 group">
                   <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                    className={`max-w-[80%] lg:max-w-[95%] rounded-2xl px-4 py-3 ${
                       msg.role === "user"
                         ? "bg-purple-600 text-white"
                         : "bg-white/10 text-white backdrop-blur-xl border border-white/10"
