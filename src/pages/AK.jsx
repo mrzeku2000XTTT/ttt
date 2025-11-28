@@ -66,22 +66,50 @@ function AKContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-950 via-black to-purple-950">
-      <div className="max-w-4xl mx-auto px-4 py-8 h-screen flex flex-col">
+    <div style={{ 
+      height: '100vh', 
+      display: 'flex', 
+      flexDirection: 'column',
+      background: 'linear-gradient(to bottom right, rgb(59, 7, 100), rgb(0, 0, 0), rgb(59, 7, 100))',
+      paddingTop: 'calc(var(--sat, 0px) + 7.5rem)',
+      paddingBottom: 'calc(var(--sab, 0px) + 4rem)'
+    }}>
+      <div style={{ 
+        maxWidth: '64rem', 
+        margin: '0 auto', 
+        width: '100%',
+        padding: '0 1rem',
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        overflow: 'hidden'
+      }}>
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-6 text-center"
+          style={{ 
+            marginBottom: '1rem', 
+            textAlign: 'center',
+            flexShrink: 0
+          }}
         >
-          <div className="flex items-center justify-center gap-3 mb-2">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
             <Bot className="w-8 h-8 text-purple-400" />
-            <h1 className="text-4xl font-black text-white">AK</h1>
+            <h1 style={{ fontSize: '2.25rem', fontWeight: 900, color: 'white' }}>AK</h1>
             <Sparkles className="w-6 h-6 text-purple-400" />
           </div>
-          <p className="text-white/60">Your AI Assistant</p>
+          <p style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Your AI Assistant</p>
         </motion.div>
 
-        <div className="flex-1 overflow-y-auto mb-4 space-y-4">
+        <div style={{ 
+          flex: 1, 
+          overflowY: 'auto', 
+          marginBottom: '1rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1rem',
+          minHeight: 0
+        }}>
           <AnimatePresence>
             {messages.map((msg, i) => (
               <motion.div
@@ -127,7 +155,7 @@ function AKContent() {
           )}
         </div>
 
-        <div className="flex gap-2">
+        <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -140,6 +168,7 @@ function AKContent() {
             placeholder="Ask AK anything..."
             className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40 resize-none"
             rows={2}
+            style={{ fontSize: '16px' }}
           />
           <Button
             onClick={handleSend}
