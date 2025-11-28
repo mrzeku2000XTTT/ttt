@@ -2,12 +2,15 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
-import { Search } from "lucide-react";
+import { Search, Share2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { StarGateProvider, useStarGate } from "@/components/stargate/StarGateContext";
 
-export default function GatePage() {
+function GateContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const { getAllSharedData, clearAllSharedData } = useStarGate();
+  const sharedData = getAllSharedData();
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -93,6 +96,25 @@ export default function GatePage() {
             STAR <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400">GATE</span>
           </h1>
           <p className="text-white/60 text-lg">Navigate the cosmic app universe</p>
+          
+          {Object.keys(sharedData).length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-purple-500/20 border border-purple-500/40 rounded-full"
+            >
+              <Share2 className="w-4 h-4 text-purple-400" />
+              <span className="text-sm text-white">
+                {Object.keys(sharedData).length} app{Object.keys(sharedData).length > 1 ? "s" : ""} sharing data
+              </span>
+              <button
+                onClick={clearAllSharedData}
+                className="text-xs text-white/60 hover:text-white underline ml-2"
+              >
+                Clear
+              </button>
+            </motion.div>
+          )}
         </motion.div>
 
         <div className="mb-12 relative max-w-2xl mx-auto">
@@ -224,5 +246,13 @@ export default function GatePage() {
         }}
       />
     </div>
+  );
+}
+
+export default function GatePage() {
+  return (
+    <StarGateProvider>
+      <GateContent />
+    </StarGateProvider>
   );
 }

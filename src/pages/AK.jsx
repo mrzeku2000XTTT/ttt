@@ -1,19 +1,34 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Send, Loader2, Bot, Sparkles } from "lucide-react";
+import { Send, Loader2, Bot, Sparkles, Share2, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { StarGateProvider, useStarGate } from "@/components/stargate/StarGateContext";
+import DataShareModal from "@/components/stargate/DataShareModal";
 
-export default function AKPage() {
+function AKContent() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
+  const [shareModal, setShareModal] = useState({ open: false, data: "" });
+  const { getSharedData, getAllSharedData } = useStarGate();
 
   useEffect(() => {
     loadUser();
+    loadSharedData();
   }, []);
+
+  const loadSharedData = () => {
+    const allData = getAllSharedData();
+    if (Object.keys(allData).length > 0) {
+      const latestData = Object.values(allData).sort((a, b) => b.timestamp - a.timestamp)[0];
+      if (latestData && latestData.data.content) {
+        setInput(latestData.data.content);
+      }
+    }
+  };
 
   const loadUser = async () => {
     try {
@@ -75,14 +90,25 @@ export default function AKPage() {
                 animate={{ opacity: 1, y: 0 }}
                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
-                <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                    msg.role === "user"
-                      ? "bg-purple-600 text-white"
-                      : "bg-white/10 text-white backdrop-blur-xl border border-white/10"
-                  }`}
-                >
-                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                <div className="flex items-start gap-2 group">
+                  <div
+                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                      msg.role === "user"
+                        ? "bg-purple-600 text-white"
+                        : "bg-white/10 text-white backdrop-blur-xl border border-white/10"
+                    }`}
+                  >
+                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                  </div>
+                  {msg.role === "assistant" && (
+                    <button
+                      onClick={() => setShareModal({ open: true, data: msg.content })}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-white/5 rounded-lg"
+                      title="Share response"
+                    >
+                      <Share2 className="w-4 h-4 text-white/60 hover:text-purple-400" />
+                    </button>
+                  )}
                 </div>
               </motion.div>
             ))}
@@ -123,7 +149,23 @@ export default function AKPage() {
             <Send className="w-5 h-5" />
           </Button>
         </div>
+
+        <DataShareModal
+          isOpen={shareModal.open}
+          onClose={() => setShareModal({ open: false, data: "" })}
+          sourceApp="AK"
+          dataToShare={shareModal.data}
+          dataType="text"
+        />
       </div>
     </div>
+  );
+}
+
+export default function AKPage() {
+  return (
+    <StarGateProvider>
+      <AKContent />
+    </StarGateProvider>
   );
 }
