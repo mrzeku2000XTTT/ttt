@@ -160,11 +160,16 @@ function AKContent() {
                 }
               ]);
             } else {
-              // Open Browse Genres modal automatically
+              // Get AI response and open Browse Genres modal
+              const aiResponse = await base44.integrations.Core.InvokeLLM({
+                prompt: "User wants to watch something. Give a friendly short response about opening the movie browser for them.",
+                add_context_from_internet: false,
+              });
+              
               setShowGenres(true);
               setMessages(prev => [...prev, { 
                 role: "assistant", 
-                content: "Let me open the movie browser for you! Choose a genre below to find something to watch. 🍿"
+                content: aiResponse
               }]);
             }
           } else {
