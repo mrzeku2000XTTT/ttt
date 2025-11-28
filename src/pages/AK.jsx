@@ -195,6 +195,7 @@ function AKContent() {
         margin: '0 auto', 
         width: '100%',
         padding: '0 0.75rem',
+        paddingBottom: 'calc(var(--sab, 0px) + 5rem)',
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
