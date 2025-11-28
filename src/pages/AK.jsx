@@ -11,7 +11,7 @@ function AKContent() {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      content: "Hey agent, I'm AK, Your Artificial K 🤖\n\n**Available Commands:**\n• Type 'play [song name]' - Search and play music\n• Type 'watch [movie name]' - Search and watch movies\n• Click 'Browse Genres' - Browse movies by genre\n• Ask me anything - I'm here to help!"
+      content: "Hey agent, I'm AK, Your Artificial K 🤖\n\n**Available Commands:**\n• Type 'play [song name]' - Search and play music\n• Type 'watch [movie name]' - Search and watch movies\n• Click 'Browse Genres' - Browse movies by genre\n• Ask me anything - I'm here to help!\n\n⚠️ **Movie Tip:** An ad will pop up when you start a movie. Just close it and the movie will play with no more ads unless the screen is clicked."
     }
   ]);
   const [input, setInput] = useState("");
