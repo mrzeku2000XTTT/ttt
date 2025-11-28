@@ -187,8 +187,7 @@ function AKContent() {
       backgroundAttachment: 'fixed',
       imageRendering: '-webkit-optimize-contrast',
       overflow: 'hidden',
-      paddingBottom: 'calc(var(--sab, 0px) + 4rem)',
-      minWidth: '1080px'
+      paddingBottom: 'calc(var(--sab, 0px) + 4rem)'
     }}>
       
       <div style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -196,7 +195,7 @@ function AKContent() {
         maxWidth: '64rem', 
         margin: '0 auto', 
         width: '100%',
-        padding: '0 1rem',
+        padding: '0 0.75rem',
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
@@ -261,15 +260,16 @@ function AKContent() {
                       </div>
                     )}
                     {msg.movie && (
-                      <div className="mt-3">
+                      <div className="mt-3 w-full" style={{ aspectRatio: '16/9', minHeight: '300px', maxHeight: '600px' }}>
                         <iframe
                           src={msg.movie.embed_url}
                           width="100%"
-                          height="600"
+                          height="100%"
                           frameBorder="0"
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                           allowFullScreen
                           className="rounded-lg"
+                          style={{ minHeight: '300px' }}
                         />
                       </div>
                     )}
@@ -339,16 +339,16 @@ function AKContent() {
               )}
 
               {genreMovies.length > 0 && (
-                <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
                   {genreMovies.map((movie, i) => (
                     <button
                       key={i}
                       onClick={() => handleMovieSelect(movie)}
-                      className="text-left p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition-colors"
+                      className="text-left p-2.5 bg-white/5 hover:bg-white/10 active:bg-white/15 border border-white/10 rounded-lg transition-colors"
                     >
-                      <div className="text-white text-sm font-semibold">{movie.title}</div>
+                      <div className="text-white text-sm font-semibold line-clamp-1">{movie.title}</div>
                       {movie.rating && (
-                        <div className="text-yellow-400 text-xs">⭐ {movie.rating}</div>
+                        <div className="text-yellow-400 text-xs mt-0.5">⭐ {movie.rating}</div>
                       )}
                       <div className="text-white/60 text-xs line-clamp-2 mt-1">{movie.description}</div>
                     </button>
