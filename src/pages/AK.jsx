@@ -23,6 +23,7 @@ function AKContent() {
   const [showGenres, setShowGenres] = useState(false);
   const [genreMovies, setGenreMovies] = useState([]);
   const [loadingGenre, setLoadingGenre] = useState(false);
+  const [lastMovie, setLastMovie] = useState(null);
   const { getSharedData, getAllSharedData } = useStarGate();
 
   const genres = ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Romance', 'Thriller', 'Animation'];
