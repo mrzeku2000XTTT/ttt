@@ -222,12 +222,12 @@ function AKContent() {
           flex: 1, 
           overflowY: 'auto', 
           overflowX: 'hidden',
-          marginBottom: '1rem',
           display: 'flex',
           flexDirection: 'column',
           gap: '0.75rem',
           minHeight: 0,
-          paddingBottom: '0.5rem'
+          paddingBottom: '0.5rem',
+          WebkitOverflowScrolling: 'touch'
         }}>
           <AnimatePresence>
             {messages.map((msg, i) => (
@@ -260,7 +260,7 @@ function AKContent() {
                       </div>
                     )}
                     {msg.movie && (
-                      <div className="mt-3 w-full" style={{ aspectRatio: '16/9', minHeight: '300px', maxHeight: '600px' }}>
+                      <div className="mt-3 w-full" style={{ aspectRatio: '16/9', height: 'clamp(250px, 50vh, 600px)' }}>
                         <iframe
                           src={msg.movie.embed_url}
                           width="100%"
@@ -269,7 +269,6 @@ function AKContent() {
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                           allowFullScreen
                           className="rounded-lg"
-                          style={{ minHeight: '300px' }}
                         />
                       </div>
                     )}
@@ -301,7 +300,7 @@ function AKContent() {
           )}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flexShrink: 0 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flexShrink: 0, paddingTop: '0.5rem', background: 'linear-gradient(to bottom, transparent, rgba(59, 7, 100, 0.8) 20%, rgba(59, 7, 100, 0.95))', marginTop: 'auto' }}>
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <Button
               onClick={() => setShowGenres(!showGenres)}
