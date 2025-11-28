@@ -117,6 +117,7 @@ import HYPEMIND from './pages/HYPEMIND';
 import OriginStory from './pages/OriginStory';
 import HAYPHASE from './pages/HAYPHASE';
 import Vault from './pages/Vault';
+import Gate from './pages/Gate';
 import __Layout from './Layout.jsx';
 
 
@@ -240,6 +241,7 @@ export const PAGES = {
     "OriginStory": OriginStory,
     "HAYPHASE": HAYPHASE,
     "Vault": Vault,
+    "Gate": Gate,
 }
 
 export const pagesConfig = {
