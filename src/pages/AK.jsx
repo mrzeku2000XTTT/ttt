@@ -160,9 +160,11 @@ function AKContent() {
                 }
               ]);
             } else {
+              // Open Browse Genres modal automatically
+              setShowGenres(true);
               setMessages(prev => [...prev, { 
                 role: "assistant", 
-                content: "No problem! You can type 'watch [movie name]' to search for a specific movie, or click 'Browse Genres' below to explore movies by category. 🎬"
+                content: "Let me open the movie browser for you! Choose a genre below to find something to watch. 🍿"
               }]);
             }
           } else {
