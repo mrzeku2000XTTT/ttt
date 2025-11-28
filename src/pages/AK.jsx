@@ -204,17 +204,16 @@ function AKContent() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           style={{ 
-            padding: '1rem 0', 
+            padding: '0.5rem 0', 
             textAlign: 'center',
             flexShrink: 0
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-            <Bot className="w-6 h-6 text-purple-400" />
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'white', margin: 0 }}>AK</h1>
-            <Sparkles className="w-4 h-4 text-purple-400" />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem' }}>
+            <Bot className="w-5 h-5 text-purple-400" />
+            <h1 style={{ fontSize: '1.25rem', fontWeight: 900, color: 'white', margin: 0 }}>AK</h1>
+            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
           </div>
-          <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.875rem', margin: 0 }}>Your AI Assistant</p>
         </motion.div>
 
         <div style={{ 
@@ -299,14 +298,13 @@ function AKContent() {
           )}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flexShrink: 0, paddingTop: '0.75rem', paddingBottom: '0.5rem', background: 'linear-gradient(to bottom, transparent, rgba(59, 7, 100, 0.9) 10%, rgba(59, 7, 100, 1))', marginTop: 'auto' }}>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', flexShrink: 0, paddingTop: '0.5rem', paddingBottom: '0.25rem', background: 'linear-gradient(to bottom, transparent, rgba(59, 7, 100, 0.95) 5%, rgba(59, 7, 100, 1))', marginTop: 'auto' }}>
+          <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center' }}>
             <Button
               onClick={() => setShowGenres(!showGenres)}
-              className="bg-white/5 hover:bg-white/10 text-white border border-white/10"
-              size="sm"
+              className="bg-white/5 hover:bg-white/10 text-white border border-white/10 h-8 text-xs px-2.5"
             >
-              <Film className="w-4 h-4 mr-2" />
+              <Film className="w-3.5 h-3.5 mr-1.5" />
               Browse Genres
             </Button>
           </div>
@@ -356,7 +354,7 @@ function AKContent() {
             </motion.div>
           )}
 
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.375rem' }}>
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -367,16 +365,16 @@ function AKContent() {
                 }
               }}
               placeholder="Ask AK anything..."
-              className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40 resize-none"
-              rows={2}
-              style={{ fontSize: '16px' }}
+              className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40 resize-none text-sm py-2"
+              rows={1}
+              style={{ fontSize: '16px', minHeight: '38px' }}
             />
             <Button
               onClick={handleSend}
               disabled={loading || !input.trim()}
-              className="bg-purple-600 hover:bg-purple-700 text-white"
+              className="bg-purple-600 hover:bg-purple-700 text-white h-[38px] w-[38px] p-0 flex-shrink-0"
             >
-              <Send className="w-5 h-5" />
+              <Send className="w-4 h-4" />
             </Button>
           </div>
         </div>
