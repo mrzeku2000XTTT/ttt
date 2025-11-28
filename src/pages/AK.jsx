@@ -91,27 +91,29 @@ function AKContent() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           style={{ 
-            marginBottom: '1rem', 
+            padding: '1rem 0', 
             textAlign: 'center',
             flexShrink: 0
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-            <Bot className="w-8 h-8 text-purple-400" />
-            <h1 style={{ fontSize: '2.25rem', fontWeight: 900, color: 'white' }}>AK</h1>
-            <Sparkles className="w-6 h-6 text-purple-400" />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+            <Bot className="w-6 h-6 text-purple-400" />
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'white', margin: 0 }}>AK</h1>
+            <Sparkles className="w-4 h-4 text-purple-400" />
           </div>
-          <p style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Your AI Assistant</p>
+          <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.875rem', margin: 0 }}>Your AI Assistant</p>
         </motion.div>
 
         <div style={{ 
           flex: 1, 
           overflowY: 'auto', 
+          overflowX: 'hidden',
           marginBottom: '1rem',
           display: 'flex',
           flexDirection: 'column',
-          gap: '1rem',
-          minHeight: 0
+          gap: '0.75rem',
+          minHeight: 0,
+          paddingBottom: '0.5rem'
         }}>
           <AnimatePresence>
             {messages.map((msg, i) => (
