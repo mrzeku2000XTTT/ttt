@@ -78,8 +78,11 @@ function AKContent() {
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat',
+      backgroundAttachment: 'fixed',
+      imageRendering: '-webkit-optimize-contrast',
       overflow: 'hidden',
-      paddingBottom: 'calc(var(--sab, 0px) + 4rem)'
+      paddingBottom: 'calc(var(--sab, 0px) + 4rem)',
+      minWidth: '1080px'
     }}>
       
       <div style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
