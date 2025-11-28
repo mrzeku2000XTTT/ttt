@@ -12,20 +12,22 @@ Deno.serve(async (req) => {
     const { query } = await req.json();
 
     const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `Find a movie streaming URL for: "${query}"
+      prompt: `Search the web and find the EXACT movie page URL on 0123movie.net for: "${query}"
       
-      Search for this movie on the web and construct a proper embed URL.
-      For 0123movie.net, the format is typically: https://ww22.0123movie.net/movie/[movie-slug]
+      IMPORTANT: 
+      1. Search for the movie on https://ww22.0123movie.net
+      2. Find the actual movie page URL (example: https://ww22.0123movie.net/movie/last-days-1630860241.html)
+      3. Return the EXACT URL you find - do NOT construct or guess it
+      4. The URL must include the full path with the unique movie ID number
       
-      Return ONLY a JSON object with this exact structure:
+      Return ONLY a JSON object:
       {
-        "embed_url": "https://ww22.0123movie.net/movie/movie-title-year",
+        "embed_url": "EXACT URL from 0123movie.net including .html",
         "title": "Movie Title (Year)",
         "source": "0123Movie"
       }
       
-      Make sure to format the movie slug properly (lowercase, hyphens for spaces).
-      If you cannot find it, return null for embed_url.`,
+      If you cannot find the exact URL, return null for embed_url.`,
       add_context_from_internet: true,
       response_json_schema: {
         type: "object",
