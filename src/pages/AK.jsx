@@ -306,7 +306,7 @@ function AKContent() {
                       </div>
                     )}
                     {msg.movie && (
-                      <div className="mt-3 w-full" style={{ aspectRatio: '16/9', height: 'clamp(250px, 50vh, 600px)' }}>
+                      <div className="mt-3 w-full" style={{ height: 'calc(100vh - 250px)', minHeight: '500px', maxHeight: '800px' }}>
                         <iframe
                           src={msg.movie.embed_url}
                           width="100%"
@@ -314,7 +314,9 @@ function AKContent() {
                           frameBorder="0"
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                           allowFullScreen
+                          scrolling="yes"
                           className="rounded-lg"
+                          style={{ overflow: 'auto' }}
                         />
                       </div>
                     )}
