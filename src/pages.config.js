@@ -118,6 +118,7 @@ import OriginStory from './pages/OriginStory';
 import HAYPHASE from './pages/HAYPHASE';
 import Vault from './pages/Vault';
 import Gate from './pages/Gate';
+import AK from './pages/AK';
 import __Layout from './Layout.jsx';
 
 
@@ -242,6 +243,7 @@ export const PAGES = {
     "HAYPHASE": HAYPHASE,
     "Vault": Vault,
     "Gate": Gate,
+    "AK": AK,
 }
 
 export const pagesConfig = {

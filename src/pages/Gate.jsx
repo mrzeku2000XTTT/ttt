@@ -18,8 +18,7 @@ export default function GatePage() {
   }, []);
 
   const apps = [
-    // Add your apps here
-    // { name: "App Name", path: "PageName", category: "Category", color: "#HexColor" },
+    { name: "AK", path: "AK", category: "AI", color: "#A855F7" },
   ];
 
   const filteredApps = searchQuery

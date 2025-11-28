@@ -1,0 +1,129 @@
+import React, { useState, useEffect } from "react";
+import { base44 } from "@/api/base44Client";
+import { Send, Loader2, Bot, Sparkles } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+
+export default function AKPage() {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    loadUser();
+  }, []);
+
+  const loadUser = async () => {
+    try {
+      const currentUser = await base44.auth.me();
+      setUser(currentUser);
+    } catch (err) {
+      console.log("User not logged in");
+    }
+  };
+
+  const handleSend = async () => {
+    if (!input.trim() || loading) return;
+
+    const userMessage = { role: "user", content: input };
+    setMessages(prev => [...prev, userMessage]);
+    setInput("");
+    setLoading(true);
+
+    try {
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: input,
+        add_context_from_internet: false,
+      });
+
+      setMessages(prev => [...prev, { role: "assistant", content: response }]);
+    } catch (err) {
+      console.error("AI error:", err);
+      setMessages(prev => [...prev, { 
+        role: "assistant", 
+        content: "Sorry, I encountered an error. Please try again." 
+      }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-950 via-black to-purple-950">
+      <div className="max-w-4xl mx-auto px-4 py-8 h-screen flex flex-col">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 text-center"
+        >
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <Bot className="w-8 h-8 text-purple-400" />
+            <h1 className="text-4xl font-black text-white">AK</h1>
+            <Sparkles className="w-6 h-6 text-purple-400" />
+          </div>
+          <p className="text-white/60">Your AI Assistant</p>
+        </motion.div>
+
+        <div className="flex-1 overflow-y-auto mb-4 space-y-4">
+          <AnimatePresence>
+            {messages.map((msg, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                    msg.role === "user"
+                      ? "bg-purple-600 text-white"
+                      : "bg-white/10 text-white backdrop-blur-xl border border-white/10"
+                  }`}
+                >
+                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          {loading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex justify-start"
+            >
+              <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl px-4 py-3">
+                <Loader2 className="w-5 h-5 text-purple-400 animate-spin" />
+              </div>
+            </motion.div>
+          )}
+        </div>
+
+        <div className="flex gap-2">
+          <Textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+            placeholder="Ask AK anything..."
+            className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40 resize-none"
+            rows={2}
+          />
+          <Button
+            onClick={handleSend}
+            disabled={loading || !input.trim()}
+            className="bg-purple-600 hover:bg-purple-700 text-white"
+          >
+            <Send className="w-5 h-5" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
