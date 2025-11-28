@@ -13,12 +13,41 @@ function AKContent() {
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
   const [shareModal, setShareModal] = useState({ open: false, data: "" });
+  const [backgroundUrl, setBackgroundUrl] = useState(() => localStorage.getItem('ak_background_url') || '');
+  const [bgLoading, setBgLoading] = useState(false);
   const { getSharedData, getAllSharedData } = useStarGate();
 
   useEffect(() => {
     loadUser();
     loadSharedData();
+    generateBackgroundIfNeeded();
   }, []);
+
+  const generateBackgroundIfNeeded = async () => {
+    const savedUrl = localStorage.getItem('ak_background_url');
+    if (savedUrl) {
+      setBackgroundUrl(savedUrl);
+      return;
+    }
+
+    setBgLoading(true);
+    try {
+      const result = await base44.integrations.Core.GenerateImage({
+        prompt: "Ultra high definition photorealistic deep space nebula background, cosmic purple and cyan nebula clouds, countless white stars scattered across black void, distant galaxies, ethereal glowing stardust, dreamy space atmosphere, professional astronomy photograph, 8K resolution, cinematic lighting"
+      });
+      
+      const newUrl = result.url;
+      setBackgroundUrl(newUrl);
+      localStorage.setItem('ak_background_url', newUrl);
+      
+      const img = new Image();
+      img.src = newUrl;
+    } catch (err) {
+      console.error('Failed to generate background:', err);
+    } finally {
+      setBgLoading(false);
+    }
+  };
 
   const loadSharedData = () => {
     const allData = getAllSharedData();
@@ -74,7 +103,7 @@ function AKContent() {
       right: 0,
       display: 'flex', 
       flexDirection: 'column',
-      backgroundImage: 'url(https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/9b7f870ef_image.png)',
+      backgroundImage: backgroundUrl ? `url(${backgroundUrl})` : 'linear-gradient(to bottom right, rgb(59, 7, 100), rgb(0, 0, 0), rgb(59, 7, 100))',
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat',
