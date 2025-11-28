@@ -175,7 +175,7 @@ function AKContent() {
     <div style={{ 
       position: 'fixed',
       top: 'calc(var(--sat, 0px) + 7.5rem)',
-      bottom: 0,
+      bottom: 'calc(var(--sab, 0px) + 4rem)',
       left: 0,
       right: 0,
       display: 'flex', 
@@ -186,8 +186,7 @@ function AKContent() {
       backgroundRepeat: 'no-repeat',
       backgroundAttachment: 'fixed',
       imageRendering: '-webkit-optimize-contrast',
-      overflow: 'hidden',
-      paddingBottom: 'calc(var(--sab, 0px) + 4rem)'
+      overflow: 'hidden'
     }}>
       
       <div style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -300,7 +299,7 @@ function AKContent() {
           )}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flexShrink: 0, paddingTop: '0.5rem', background: 'linear-gradient(to bottom, transparent, rgba(59, 7, 100, 0.8) 20%, rgba(59, 7, 100, 0.95))', marginTop: 'auto' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flexShrink: 0, paddingTop: '0.75rem', paddingBottom: '0.5rem', background: 'linear-gradient(to bottom, transparent, rgba(59, 7, 100, 0.9) 10%, rgba(59, 7, 100, 1))', marginTop: 'auto' }}>
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <Button
               onClick={() => setShowGenres(!showGenres)}
