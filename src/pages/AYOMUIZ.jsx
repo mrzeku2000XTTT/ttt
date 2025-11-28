@@ -36,6 +36,7 @@ export default function AYOMUIZPage() {
         className="flex-1 w-full border-0"
         title="AYOMUIZ App"
         allow="clipboard-read; clipboard-write; payment"
+        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
       />
     </div>
   );
