@@ -84,14 +84,17 @@ function AKContent() {
   };
 
   const handleMovieSelect = (movie) => {
+    const movieData = {
+      embed_url: movie.embed_url,
+      title: movie.title,
+      source: "0123Movie"
+    };
+    
+    setLastMovie(movieData);
     setMessages(prev => [...prev, { 
       role: "assistant", 
       content: `🎬 Now playing: ${movie.title}`,
-      movie: {
-        embed_url: movie.embed_url,
-        title: movie.title,
-        source: "0123Movie"
-      }
+      movie: movieData
     }]);
     setShowGenres(false);
     setGenreMovies([]);
