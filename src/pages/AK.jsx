@@ -8,7 +8,12 @@ import { StarGateProvider, useStarGate } from "@/components/stargate/StarGateCon
 import DataShareModal from "@/components/stargate/DataShareModal";
 
 function AKContent() {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState([
+    {
+      role: "assistant",
+      content: "Hey agent, I'm AK, Your Artificial K 🤖\n\n**Available Commands:**\n• Type 'play [song name]' - Search and play music\n• Type 'watch [movie name]' - Search and watch movies\n• Click 'Browse Genres' - Browse movies by genre\n• Ask me anything - I'm here to help!"
+    }
+  ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
