@@ -67,12 +67,15 @@ function AKContent() {
 
   return (
     <div style={{ 
-      height: '100vh', 
+      position: 'fixed',
+      top: 'calc(var(--sat, 0px) + 7.5rem)',
+      bottom: 'calc(var(--sab, 0px) + 4rem)',
+      left: 0,
+      right: 0,
       display: 'flex', 
       flexDirection: 'column',
       background: 'linear-gradient(to bottom right, rgb(59, 7, 100), rgb(0, 0, 0), rgb(59, 7, 100))',
-      paddingTop: 'calc(var(--sat, 0px) + 7.5rem)',
-      paddingBottom: 'calc(var(--sab, 0px) + 4rem)'
+      overflow: 'hidden'
     }}>
       <div style={{ 
         maxWidth: '64rem', 
