@@ -175,7 +175,7 @@ function AKContent() {
     <div style={{ 
       position: 'fixed',
       top: 'calc(var(--sat, 0px) + 7.5rem)',
-      bottom: 'calc(var(--sab, 0px) + 4rem)',
+      bottom: 0,
       left: 0,
       right: 0,
       display: 'flex', 
@@ -314,14 +314,14 @@ function AKContent() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-3"
+              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-2"
             >
-              <div className="flex flex-wrap gap-2 mb-3">
+              <div className="flex flex-wrap gap-1.5 mb-2">
                 {genres.map(genre => (
                   <button
                     key={genre}
                     onClick={() => handleGenreClick(genre)}
-                    className="px-3 py-1.5 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 rounded-lg text-white text-sm transition-colors"
+                    className="px-2 py-1 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 rounded text-white text-xs transition-colors"
                   >
                     {genre}
                   </button>
@@ -329,24 +329,24 @@ function AKContent() {
               </div>
 
               {loadingGenre && (
-                <div className="flex items-center justify-center py-4">
-                  <Loader2 className="w-6 h-6 text-purple-400 animate-spin" />
+                <div className="flex items-center justify-center py-2">
+                  <Loader2 className="w-5 h-5 text-purple-400 animate-spin" />
                 </div>
               )}
 
               {genreMovies.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                <div className="grid grid-cols-1 gap-1.5 max-h-40 overflow-y-auto">
                   {genreMovies.map((movie, i) => (
                     <button
                       key={i}
                       onClick={() => handleMovieSelect(movie)}
-                      className="text-left p-2.5 bg-white/5 hover:bg-white/10 active:bg-white/15 border border-white/10 rounded-lg transition-colors"
+                      className="text-left p-2 bg-white/5 hover:bg-white/10 active:bg-white/15 border border-white/10 rounded transition-colors"
                     >
-                      <div className="text-white text-sm font-semibold line-clamp-1">{movie.title}</div>
+                      <div className="text-white text-xs font-semibold line-clamp-1">{movie.title}</div>
                       {movie.rating && (
-                        <div className="text-yellow-400 text-xs mt-0.5">⭐ {movie.rating}</div>
+                        <div className="text-yellow-400 text-[10px] mt-0.5">⭐ {movie.rating}</div>
                       )}
-                      <div className="text-white/60 text-xs line-clamp-2 mt-1">{movie.description}</div>
+                      <div className="text-white/60 text-[10px] line-clamp-1 mt-0.5">{movie.description}</div>
                     </button>
                   ))}
                 </div>
