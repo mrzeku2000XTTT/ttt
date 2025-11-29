@@ -20,6 +20,7 @@ export default function PeculiarPage() {
           height: "100%",
           border: "none",
           display: "block",
+          zIndex: 1,
         }}
         title="Peculiar"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
