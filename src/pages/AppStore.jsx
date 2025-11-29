@@ -45,7 +45,7 @@ export default function AppStorePage() {
     { name: "BRAHIM", icon: "Link2", path: "BRAHIM", category: "Tools" },
     { name: "AYOMUIZ", icon: "Link2", path: "AYOMUIZ", category: "Games" },
     { name: "Ayomuiz2", icon: "Link2", path: "AYOMUIZ2", category: "Games" },
-    { name: "peculiar", icon: "Link2", path: "Peculiar", category: "Tools" },
+    { name: "peculiar", icon: "Link2", path: "Peculiar", category: "Tools", badge: 1 },
     { name: "kehinde", icon: "Link2", path: "Kehinde", category: "Tools" },
     { name: "HAYPHASE", icon: "Link2", path: "HAYPHASE", category: "Tools" },
     { name: "VAULT", icon: "Link2", path: "Vault", category: "Finance" },
