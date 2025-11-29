@@ -155,75 +155,61 @@ export default function TDPage() {
   }
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-purple-900/20 via-black to-blue-900/20 flex flex-col">
-      <div className="flex-1 flex flex-col max-w-7xl mx-auto w-full px-4 py-6 overflow-hidden">
+    <div className="fixed inset-0 bg-gradient-to-br from-purple-900/20 via-black to-blue-900/20 flex flex-col pt-32">
+      <div className="flex-1 flex flex-col max-w-5xl mx-auto w-full px-4 overflow-hidden">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-4 flex-shrink-0"
+          className="mb-3 flex-shrink-0"
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
-                <Brain className="w-7 h-7 text-white" />
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
+                <Brain className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-black text-white">Therapy Day</h1>
-                <p className="text-white/60 text-sm">AI-Powered Mental Wellness</p>
+                <h1 className="text-xl font-black text-white">Therapy Day</h1>
+                <p className="text-white/50 text-xs">AI Therapist</p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-1">
               <Button
                 onClick={() => setView('chat')}
-                variant={view === 'chat' ? 'default' : 'outline'}
+                variant={view === 'chat' ? 'default' : 'ghost'}
                 size="sm"
-                className={view === 'chat' ? 'bg-purple-500 hover:bg-purple-600' : 'border-white/20 text-white hover:bg-white/10'}
+                className={`h-8 px-3 ${view === 'chat' ? 'bg-purple-500 hover:bg-purple-600' : 'text-white/60 hover:bg-white/10'}`}
               >
-                <MessageCircle className="w-4 h-4 mr-2" />
-                Chat
+                <MessageCircle className="w-3.5 h-3.5 mr-1.5" />
+                <span className="text-xs">Chat</span>
               </Button>
               <Button
                 onClick={() => setView('sessions')}
-                variant={view === 'sessions' ? 'default' : 'outline'}
+                variant={view === 'sessions' ? 'default' : 'ghost'}
                 size="sm"
-                className={view === 'sessions' ? 'bg-purple-500 hover:bg-purple-600' : 'border-white/20 text-white hover:bg-white/10'}
+                className={`h-8 px-3 ${view === 'sessions' ? 'bg-purple-500 hover:bg-purple-600' : 'text-white/60 hover:bg-white/10'}`}
               >
-                <History className="w-4 h-4 mr-2" />
-                Sessions
-              </Button>
-              <Button
-                onClick={() => setView('insights')}
-                variant={view === 'insights' ? 'default' : 'outline'}
-                size="sm"
-                className={view === 'insights' ? 'bg-purple-500 hover:bg-purple-600' : 'border-white/20 text-white hover:bg-white/10'}
-              >
-                <BarChart3 className="w-4 h-4 mr-2" />
-                Insights
+                <History className="w-3.5 h-3.5 mr-1.5" />
+                <span className="text-xs">History</span>
               </Button>
             </div>
           </div>
 
           {activeSession && view === 'chat' && (
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+            <div className="bg-white/5 border border-white/10 rounded-lg p-2.5">
               <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-white font-semibold">{activeSession.session_title}</h3>
-                  <p className="text-white/60 text-xs mt-1">
-                    {activeSession.emotional_state && (
-                      <span className={getEmotionalColor(activeSession.emotional_state)}>
-                        {activeSession.emotional_state}
-                      </span>
-                    )}
-                    {activeSession.key_topics?.length > 0 && (
-                      <span className="ml-2">• {activeSession.key_topics.join(', ')}</span>
-                    )}
-                  </p>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-white text-sm font-semibold truncate">{activeSession.session_title}</h3>
+                  {activeSession.emotional_state && (
+                    <p className={`text-xs mt-0.5 ${getEmotionalColor(activeSession.emotional_state)}`}>
+                      {activeSession.emotional_state}
+                    </p>
+                  )}
                 </div>
                 {activeSession.progress_score && (
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-green-400" />
-                    <span className="text-white font-bold">{activeSession.progress_score}/10</span>
+                  <div className="flex items-center gap-1.5">
+                    <TrendingUp className="w-3.5 h-3.5 text-green-400" />
+                    <span className="text-white text-sm font-bold">{activeSession.progress_score}/10</span>
                   </div>
                 )}
               </div>
@@ -240,32 +226,33 @@ export default function TDPage() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
-                className="grid md:grid-cols-[300px_1fr] gap-6 h-full"
-              >
-              {/* Sidebar */}
-              <div className="hidden md:block">
-                <Button
-                  onClick={startNewSession}
-                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 mb-4"
+                className="grid md:grid-cols-[220px_1fr] gap-3 h-full"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Session
-                </Button>
-                <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                {/* Sidebar */}
+                <div className="hidden md:block">
+                  <Button
+                    onClick={startNewSession}
+                    size="sm"
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 mb-3 h-9 text-xs"
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1.5" />
+                    New Session
+                  </Button>
+                  <div className="space-y-1.5 max-h-[600px] overflow-y-auto">
                   {sessions.map((session) => (
                     <button
                       key={session.id}
                       onClick={() => loadSession(session)}
-                      className={`w-full text-left p-3 rounded-xl border transition-all ${
+                      className={`w-full text-left p-2 rounded-lg border transition-all ${
                         activeSession?.id === session.id
                           ? 'bg-purple-500/20 border-purple-500/50'
                           : 'bg-white/5 border-white/10 hover:bg-white/10'
                       }`}
                     >
-                      <div className="text-white text-sm font-semibold truncate">
+                      <div className="text-white text-xs font-semibold truncate">
                         {session.session_title}
                       </div>
-                      <div className="text-white/40 text-xs mt-1">
+                      <div className="text-white/40 text-[10px] mt-0.5">
                         {new Date(session.created_date).toLocaleDateString()}
                       </div>
                     </button>
@@ -274,28 +261,28 @@ export default function TDPage() {
               </div>
 
               {/* Chat Area */}
-              <div className="bg-black/40 border border-white/10 rounded-2xl flex flex-col h-full overflow-hidden">
+              <div className="bg-black/40 border border-white/10 rounded-xl flex flex-col h-full overflow-hidden">
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
                   {messages.length === 0 && (
-                    <div className="text-center py-20">
-                      <Brain className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-                      <h3 className="text-white text-xl font-bold mb-2">Welcome to Therapy Day</h3>
-                      <p className="text-white/60 max-w-md mx-auto">
-                        I'm here to listen, understand, and support you. Share what's on your mind, and we'll work through it together.
+                    <div className="text-center py-12">
+                      <Brain className="w-12 h-12 text-purple-400 mx-auto mb-3" />
+                      <h3 className="text-white text-lg font-bold mb-2">Welcome</h3>
+                      <p className="text-white/60 text-sm max-w-md mx-auto mb-4">
+                        I'm here to listen and support you. Share what's on your mind.
                       </p>
-                      <div className="mt-6 flex flex-wrap gap-2 justify-center">
-                        <Badge variant="outline" className="bg-purple-500/10 border-purple-500/30 text-purple-300">
-                          Anxiety Support
+                      <div className="flex flex-wrap gap-1.5 justify-center">
+                        <Badge variant="outline" className="bg-purple-500/10 border-purple-500/30 text-purple-300 text-xs">
+                          Anxiety
                         </Badge>
-                        <Badge variant="outline" className="bg-blue-500/10 border-blue-500/30 text-blue-300">
-                          Depression Care
+                        <Badge variant="outline" className="bg-blue-500/10 border-blue-500/30 text-blue-300 text-xs">
+                          Depression
                         </Badge>
-                        <Badge variant="outline" className="bg-pink-500/10 border-pink-500/30 text-pink-300">
-                          Relationship Guidance
+                        <Badge variant="outline" className="bg-pink-500/10 border-pink-500/30 text-pink-300 text-xs">
+                          Relationships
                         </Badge>
-                        <Badge variant="outline" className="bg-green-500/10 border-green-500/30 text-green-300">
-                          Stress Management
+                        <Badge variant="outline" className="bg-green-500/10 border-green-500/30 text-green-300 text-xs">
+                          Stress
                         </Badge>
                       </div>
                     </div>
@@ -306,19 +293,19 @@ export default function TDPage() {
                       key={idx}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       {msg.role === 'therapist' && (
-                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center flex-shrink-0">
-                          <Heart className="w-5 h-5 text-white" />
+                        <div className="w-7 h-7 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center flex-shrink-0">
+                          <Heart className="w-4 h-4 text-white" />
                         </div>
                       )}
-                      <div className={`max-w-[70%] rounded-2xl p-4 ${
+                      <div className={`max-w-[75%] rounded-xl p-3 ${
                         msg.role === 'user'
                           ? 'bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30'
                           : 'bg-white/5 border border-white/10'
                       }`}>
-                        <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">
+                        <p className="text-white text-xs leading-relaxed whitespace-pre-wrap">
                           {msg.content}
                         </p>
                       </div>
@@ -326,12 +313,12 @@ export default function TDPage() {
                   ))}
 
                   {isLoading && (
-                    <div className="flex gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                        <Loader2 className="w-5 h-5 text-white animate-spin" />
+                    <div className="flex gap-2">
+                      <div className="w-7 h-7 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                        <Loader2 className="w-4 h-4 text-white animate-spin" />
                       </div>
-                      <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                        <p className="text-white/60 text-sm">Listening and thinking...</p>
+                      <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+                        <p className="text-white/60 text-xs">Thinking...</p>
                       </div>
                     </div>
                   )}
@@ -340,22 +327,22 @@ export default function TDPage() {
                 </div>
 
                 {/* Input */}
-                <div className="p-4 border-t border-white/10">
+                <div className="p-3 border-t border-white/10">
                   <div className="flex gap-2">
                     <Textarea
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
                       placeholder="Share what's on your mind..."
-                      className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40 min-h-[60px] max-h-[120px]"
+                      className="flex-1 bg-white/5 border-white/10 text-white text-sm placeholder:text-white/40 min-h-[50px] max-h-[100px] resize-none"
                       disabled={isLoading}
                     />
                     <Button
                       onClick={sendMessage}
                       disabled={isLoading || !input.trim()}
-                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 h-[60px] px-6"
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 h-[50px] px-4"
                     >
-                      <Send className="w-5 h-5" />
+                      <Send className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
