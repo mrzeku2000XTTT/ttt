@@ -41,6 +41,12 @@ export default function Layout({ children, currentPageName }) {
     loadUnreadMessages();
     checkIfFromCategories();
     
+    // Add Impact.com verification meta tag
+    const metaTag = document.createElement('meta');
+    metaTag.name = 'impact-site-verification';
+    metaTag.content = 'f26ac8dc-9c99-4682-9297-d833462babed';
+    document.head.appendChild(metaTag);
+    
     const interval = setInterval(checkSubscription, 10000);
     const connectionsInterval = setInterval(loadPendingConnections, 5000);
     const messagesInterval = setInterval(loadUnreadMessages, 5000);
@@ -49,6 +55,7 @@ export default function Layout({ children, currentPageName }) {
       clearInterval(interval);
       clearInterval(connectionsInterval);
       clearInterval(messagesInterval);
+      document.head.removeChild(metaTag);
     };
   }, [currentPageName]);
 
