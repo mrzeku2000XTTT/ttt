@@ -155,13 +155,13 @@ export default function TDPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900/20 via-black to-blue-900/20 pb-20">
-      <div className="max-w-7xl mx-auto px-4 py-6">
+    <div className="fixed inset-0 bg-gradient-to-br from-purple-900/20 via-black to-blue-900/20 flex flex-col">
+      <div className="flex-1 flex flex-col max-w-7xl mx-auto w-full px-4 py-6 overflow-hidden">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-4 flex-shrink-0"
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
@@ -232,15 +232,16 @@ export default function TDPage() {
         </motion.div>
 
         {/* Views */}
-        <AnimatePresence mode="wait">
-          {view === 'chat' && (
-            <motion.div
-              key="chat"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="grid md:grid-cols-[300px_1fr] gap-6"
-            >
+        <div className="flex-1 overflow-hidden">
+          <AnimatePresence mode="wait">
+            {view === 'chat' && (
+              <motion.div
+                key="chat"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="grid md:grid-cols-[300px_1fr] gap-6 h-full"
+              >
               {/* Sidebar */}
               <div className="hidden md:block">
                 <Button
@@ -273,7 +274,7 @@ export default function TDPage() {
               </div>
 
               {/* Chat Area */}
-              <div className="bg-black/40 border border-white/10 rounded-2xl flex flex-col" style={{ height: 'calc(100vh - 250px)' }}>
+              <div className="bg-black/40 border border-white/10 rounded-2xl flex flex-col h-full overflow-hidden">
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-4">
                   {messages.length === 0 && (
@@ -362,14 +363,14 @@ export default function TDPage() {
             </motion.div>
           )}
 
-          {view === 'sessions' && (
-            <motion.div
-              key="sessions"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="grid md:grid-cols-2 lg:grid-cols-3 gap-4"
-            >
+            {view === 'sessions' && (
+              <motion.div
+                key="sessions"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 h-full overflow-y-auto"
+              >
               {sessions.map((session) => (
                 <div key={session.id} className="bg-white/5 border border-white/10 rounded-xl p-6 hover:bg-white/10 transition-all">
                   <div className="flex items-start justify-between mb-3">
@@ -427,14 +428,14 @@ export default function TDPage() {
             </motion.div>
           )}
 
-          {view === 'insights' && (
-            <motion.div
-              key="insights"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="space-y-4"
-            >
+            {view === 'insights' && (
+              <motion.div
+                key="insights"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="space-y-4 h-full overflow-y-auto"
+              >
               <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-xl p-6 mb-6">
                 <div className="flex items-center gap-3 mb-3">
                   <Sparkles className="w-6 h-6 text-yellow-400" />
@@ -470,7 +471,8 @@ export default function TDPage() {
               </div>
             </motion.div>
           )}
-        </AnimatePresence>
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );
