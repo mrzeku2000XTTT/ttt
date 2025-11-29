@@ -93,6 +93,10 @@ export default function FeedPage() {
   const [customBadgeData, setCustomBadgeData] = useState(null);
   const [customBadgeContributions, setCustomBadgeContributions] = useState({ feedPosts: 0, feedTips: 0 });
   const [loadingCustomBadge, setLoadingCustomBadge] = useState(false);
+  const [showOlatomiwaModal, setShowOlatomiwaModal] = useState(false);
+  const [olatomiwaUsername, setOlatomiwaUsername] = useState(null);
+  const [olatomiwaContributions, setOlatomiwaContributions] = useState({ feedPosts: 0, feedTips: 0 });
+  const [loadingOlatomiwa, setLoadingOlatomiwa] = useState(false);
 
   const fileInputRef = useRef(null);
   const replyFileInputRef = useRef(null);
@@ -1119,6 +1123,43 @@ export default function FeedPage() {
     }
   };
 
+  const loadOlatomiwaContributions = async (username) => {
+    setLoadingOlatomiwa(true);
+    try {
+      const userPosts = await base44.entities.Post.filter({ author_name: username });
+      const mainPosts = userPosts.filter(p => !p.parent_post_id);
+      
+      const userEmail = mainPosts.length > 0 ? mainPosts[0].created_by : null;
+      let totalFeedTips = 0;
+
+      if (userEmail) {
+        try {
+          const tipStats = await base44.entities.UserTipStats.filter({ user_email: userEmail });
+          if (tipStats.length > 0) {
+            totalFeedTips = tipStats[0].feed_tips_received || 0;
+          }
+        } catch (err) {
+          console.log('Failed to fetch UserTipStats, falling back to TipTransaction:', err);
+          const feedTransactions = await base44.entities.TipTransaction.filter({ 
+            recipient_email: userEmail,
+            source: 'feed'
+          });
+          totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+        }
+      }
+
+      setOlatomiwaContributions({
+        feedPosts: mainPosts.length,
+        feedTips: totalFeedTips
+      });
+    } catch (err) {
+      console.error('Failed to load olatomiwa contributions:', err);
+      setOlatomiwaContributions({ feedPosts: 0, feedTips: 0 });
+    } finally {
+      setLoadingOlatomiwa(false);
+    }
+  };
+
   const loadCustomBadgeContributions = async (username) => {
     setLoadingCustomBadge(true);
     try {
@@ -1173,6 +1214,10 @@ export default function FeedPage() {
       setDevUsername(username);
       setShowDevModal(true);
       await loadDevContributions(username);
+    } else if (badgeType === 'olatomiwa') {
+      setOlatomiwaUsername(username);
+      setShowOlatomiwaModal(true);
+      await loadOlatomiwaContributions(username);
     } else if (hasArchitectBadge(username)) {
       setArchitectUsername(username);
       setShowArchitectModal(true);
@@ -1217,6 +1262,12 @@ export default function FeedPage() {
     if (!username) return false;
     const normalized = username.toLowerCase().trim().replace(/\s+/g, '');
     return normalized === 'kehinde' || normalized === 'kehindeayo';
+  };
+
+  const hasOlatmiwaBadge = (username) => {
+    if (!username) return false;
+    const normalized = username.toLowerCase().trim().replace(/\s+/g, '');
+    return normalized === 'olatomiwa';
   };
 
   const loadUserBadges = async () => {
@@ -1621,6 +1672,20 @@ export default function FeedPage() {
                   >
                     <span className="text-[11px]">🎯</span>
                     MARK
+                  </button>
+                )}
+                {hasOlatmiwaBadge(post.author_name) && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleBadgeClick(post.author_name, 'olatomiwa');
+                    }}
+                    className="inline-flex items-center gap-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white border border-blue-400/50 text-[10px] px-2 py-0.5 font-bold rounded-md hover:from-blue-400 hover:via-indigo-400 hover:to-purple-500 transition-all shadow-lg hover:shadow-blue-500/50"
+                    title="View Contributions"
+                  >
+                    <span className="text-[11px]">💎</span>
+                    OLATOMIWA
                   </button>
                 )}
                 {post.author_agent_zk_id && (
@@ -2953,6 +3018,94 @@ export default function FeedPage() {
                       <Sparkles className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
                       <p className="text-xs text-white/80 leading-relaxed">
                         DEV badge holders are official Kaspa engineers who build and maintain the core infrastructure that powers the network.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* OLATOMIWA Badge Contributions Modal */}
+      <AnimatePresence>
+        {showOlatomiwaModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowOlatomiwaModal(false)}
+            className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-2xl w-full max-w-md p-6 relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl" />
+              
+              <div className="relative">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                      <span className="text-3xl">💎</span>
+                    </div>
+                    <div>
+                      <h3 className="text-white font-bold text-xl">OLATOMIWA Badge</h3>
+                      <p className="text-blue-400 text-sm font-semibold">{olatomiwaUsername}</p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => setShowOlatomiwaModal(false)}
+                    variant="ghost"
+                    size="sm"
+                    className="text-white/60 hover:text-white h-8 w-8 p-0"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="bg-black/40 border border-blue-500/20 rounded-xl p-4">
+                    <h4 className="text-blue-400 font-semibold mb-3 text-sm">Platform Contributions</h4>
+                    
+                    {loadingOlatomiwa ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between bg-white/5 rounded-lg p-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
+                              <Users className="w-4 h-4 text-blue-400" />
+                            </div>
+                            <span className="text-white/80 text-sm">Feed Posts</span>
+                          </div>
+                          <span className="text-white font-bold text-lg">{olatomiwaContributions.feedPosts}</span>
+                        </div>
+
+                        <div className="flex items-center justify-between bg-white/5 rounded-lg p-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center">
+                              <DollarSign className="w-4 h-4 text-purple-400" />
+                            </div>
+                            <span className="text-white/80 text-sm">Feed Tips Received (KAS)</span>
+                          </div>
+                          <span className="text-purple-400 font-bold text-lg">{olatomiwaContributions.feedTips.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-xl p-4">
+                    <div className="flex items-start gap-2">
+                      <Sparkles className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-white/80 leading-relaxed">
+                        OLATOMIWA badge holders are valuable community members recognized for their contributions and engagement on TTT.
                       </p>
                     </div>
                   </div>
