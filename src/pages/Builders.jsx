@@ -564,25 +564,25 @@ Provide a helpful, detailed response.`;
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl max-h-[80vh] z-50"
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-4xl h-[85vh] z-50 p-4"
             >
-              <Card className="bg-gradient-to-br from-zinc-900/95 to-black/95 border-cyan-500/30 backdrop-blur-xl shadow-2xl">
-                <CardContent className="p-0 flex flex-col h-full max-h-[80vh]">
+              <Card className="bg-gradient-to-br from-zinc-900/95 to-black/95 border-cyan-500/30 backdrop-blur-xl shadow-2xl h-full">
+                <CardContent className="p-0 flex flex-col h-full">
                   {/* Header */}
-                  <div className="p-6 border-b border-white/10">
-                    <div className="flex items-start justify-between">
-                      <div>
+                  <div className="p-4 border-b border-white/10 flex-shrink-0">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
                         <div className="text-xs font-bold text-cyan-400 bg-cyan-500/10 px-2 py-1 rounded inline-block mb-2">
                           {selectedPhase.phase}
                         </div>
-                        <h3 className="text-xl font-bold text-white">{selectedPhase.title}</h3>
-                        <p className="text-gray-400 text-sm mt-1">{selectedPhase.description}</p>
+                        <h3 className="text-lg font-bold text-white truncate">{selectedPhase.title}</h3>
+                        <p className="text-gray-400 text-xs mt-1 line-clamp-2">{selectedPhase.description}</p>
                       </div>
                       <Button
                         onClick={() => setSelectedPhase(null)}
                         variant="ghost"
                         size="sm"
-                        className="text-gray-400 hover:text-white"
+                        className="text-gray-400 hover:text-white flex-shrink-0"
                       >
                         ✕
                       </Button>
@@ -590,54 +590,62 @@ Provide a helpful, detailed response.`;
                   </div>
 
                   {/* Messages */}
-                  <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                    {chatMessages.length === 0 && isChatting && (
-                      <div className="flex items-center justify-center py-8">
-                        <Loader2 className="w-6 h-6 text-cyan-400 animate-spin" />
-                      </div>
-                    )}
-
-                    {chatMessages.map((msg, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div className={`max-w-[80%] rounded-lg p-4 ${
-                          msg.role === 'user'
-                            ? 'bg-cyan-500/20 border border-cyan-500/30 text-white'
-                            : 'bg-white/5 border border-white/10 text-gray-300'
-                        }`}>
-                          <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
-                        </div>
-                      </motion.div>
-                    ))}
-
-                    {isChatting && chatMessages.length > 0 && (
-                      <div className="flex justify-start">
-                        <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-                          <Loader2 className="w-5 h-5 text-cyan-400 animate-spin" />
+                  <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+                    {chatMessages.length === 0 && isChatting ? (
+                      <div className="flex items-center justify-center h-full">
+                        <div className="text-center">
+                          <Loader2 className="w-8 h-8 text-cyan-400 animate-spin mx-auto mb-2" />
+                          <p className="text-gray-400 text-sm">Loading guidance...</p>
                         </div>
                       </div>
+                    ) : chatMessages.length === 0 ? (
+                      <div className="flex items-center justify-center h-full">
+                        <p className="text-gray-500 text-sm">No messages yet</p>
+                      </div>
+                    ) : (
+                      <>
+                        {chatMessages.map((msg, i) => (
+                          <motion.div
+                            key={i}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                          >
+                            <div className={`max-w-[85%] rounded-xl p-3 ${
+                              msg.role === 'user'
+                                ? 'bg-cyan-500/20 border border-cyan-500/30 text-white'
+                                : 'bg-white/5 border border-white/10 text-gray-300'
+                            }`}>
+                              <div className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</div>
+                            </div>
+                          </motion.div>
+                        ))}
+                        {isChatting && (
+                          <div className="flex justify-start">
+                            <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+                              <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
 
                   {/* Input */}
-                  <div className="p-4 border-t border-white/10">
+                  <div className="p-4 border-t border-white/10 flex-shrink-0">
                     <div className="flex gap-2">
                       <Input
                         value={userMessage}
                         onChange={(e) => setUserMessage(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendChatMessage()}
                         placeholder="Ask for more details..."
-                        className="flex-1 bg-black/30 border-white/10 text-white placeholder:text-gray-500"
+                        className="flex-1 bg-black/30 border-white/10 text-white placeholder:text-gray-500 h-10"
                         disabled={isChatting}
                       />
                       <Button
                         onClick={sendChatMessage}
                         disabled={!userMessage.trim() || isChatting}
-                        className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600"
+                        className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 h-10 px-6"
                       >
                         {isChatting ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
