@@ -124,6 +124,7 @@ import Peculiar from './pages/Peculiar';
 import Bible from './pages/Bible';
 import TD from './pages/TD';
 import Builders from './pages/Builders';
+import Olatomiwa from './pages/Olatomiwa';
 import __Layout from './Layout.jsx';
 
 
@@ -254,6 +255,7 @@ export const PAGES = {
     "Bible": Bible,
     "TD": TD,
     "Builders": Builders,
+    "Olatomiwa": Olatomiwa,
 }
 
 export const pagesConfig = {
