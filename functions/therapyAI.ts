@@ -81,26 +81,29 @@ ${message}
 Give your response in a natural, conversational way as a world-class therapist would.`;
 
     // Get AI response
-    const aiResponse = await base44.integrations.Core.InvokeLLM({
+    const llmResult = await base44.integrations.Core.InvokeLLM({
       prompt: therapistPrompt,
       response_json_schema: {
         type: "object",
         properties: {
-          response: { type: "string" },
-          emotional_state: { type: "string" },
-          key_topics: { type: "array", items: { type: "string" } },
-          suggested_techniques: { type: "array", items: { type: "string" } },
-          progress_assessment: { type: "number" },
+          response: { type: "string", description: "Your therapeutic response to the user" },
+          emotional_state: { type: "string", description: "User's detected emotional state (anxious, depressed, stressed, calm, hopeful, neutral)" },
+          key_topics: { type: "array", items: { type: "string" }, description: "Main topics discussed" },
+          suggested_techniques: { type: "array", items: { type: "string" }, description: "Therapeutic techniques suggested" },
+          progress_assessment: { type: "number", description: "Progress score 1-10" },
           new_insights: { type: "array", items: { 
             type: "object",
             properties: {
               pattern: { type: "string" },
               category: { type: "string" }
             }
-          }}
-        }
+          }, description: "New patterns learned" }
+        },
+        required: ["response"]
       }
     });
+
+    const aiResponse = llmResult || { response: "I'm here to listen. Please tell me more about what's on your mind." };
 
     // Update or create session
     const newMessage = {
