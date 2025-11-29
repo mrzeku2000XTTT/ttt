@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Search, BookOpen, ChevronDown, Heart, Share2, MessageCircle, Send } from "lucide-react";
+import { Search, BookOpen, ChevronDown, Heart, Share2, MessageCircle, Send, Book } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
+import BookReader from "@/components/bible/BookReader";
 
 const books = [
   "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy",
@@ -42,7 +43,7 @@ export default function BiblePage() {
     reflection: ""
   });
   const [likedVerses, setLikedVerses] = useState(new Set());
-  const [activeTab, setActiveTab] = useState("read");
+  const [activeTab, setActiveTab] = useState("book");
 
   useEffect(() => {
     loadUser();
@@ -282,11 +283,18 @@ Include ALL verses from the chapter. Be accurate and complete.`,
         {/* Tabs */}
         <div className="flex gap-2 mb-6">
           <Button
+            onClick={() => setActiveTab("book")}
+            className={activeTab === "book" ? "bg-amber-600 text-white" : "bg-white text-amber-900 border-amber-200"}
+          >
+            <Book className="w-4 h-4 mr-2" />
+            Book View
+          </Button>
+          <Button
             onClick={() => setActiveTab("read")}
             className={activeTab === "read" ? "bg-amber-600 text-white" : "bg-white text-amber-900 border-amber-200"}
           >
             <BookOpen className="w-4 h-4 mr-2" />
-            Read Bible
+            Chapters
           </Button>
           <Button
             onClick={() => setActiveTab("community")}
@@ -296,6 +304,9 @@ Include ALL verses from the chapter. Be accurate and complete.`,
             Community
           </Button>
         </div>
+
+        {/* Book Reader Tab */}
+        {activeTab === "book" && <BookReader />}
 
         {/* Read Bible Tab */}
         {activeTab === "read" && selectedBook && !selectedChapter && (
