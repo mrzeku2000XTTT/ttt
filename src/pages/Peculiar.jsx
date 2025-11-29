@@ -6,7 +6,7 @@ export default function PeculiarPage() {
       className="lg:ml-12"
       style={{
         position: "fixed",
-        top: "calc(var(--sat, 0px) + 7.75rem)",
+        top: "calc(var(--sat, 0px) + 8rem)",
         bottom: 0,
         left: 0,
         right: 0,
