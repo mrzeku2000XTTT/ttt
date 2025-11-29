@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
@@ -17,7 +16,8 @@ export default function GlobalWarPage() {
   const [error, setError] = useState(null);
   const [kaswareWallet, setKaswareWallet] = useState({ connected: false, address: null });
   const [stampingNewsId, setStampingNewsId] = useState(null);
-  const [selectedNewsForAnalysis, setSelectedNewsForAnalysis] = useState(null); // Added state
+  const [selectedNewsForAnalysis, setSelectedNewsForAnalysis] = useState(null);
+  const [selectedRegion, setSelectedRegion] = useState("all"); // Added region filter
 
   useEffect(() => {
     loadWarNews();
@@ -101,12 +101,13 @@ export default function GlobalWarPage() {
           const llmResponse = await base44.integrations.Core.InvokeLLM({
             prompt: `Search for the LATEST global war, conflict, and crisis news from the past 24 hours. Include:
 - Ukraine war updates
-- Middle East conflicts (Gaza, Israel, Syria, Yemen)
+- Middle East conflicts (Gaza, Israel, Syria, Yemen, Lebanon)
+- Africa conflicts (Sudan, Ethiopia, DRC, Somalia, Sahel region, Nigeria)
 - Military operations worldwide
 - Humanitarian crises
 - Major conflicts and tensions
 
-Provide 15 unique news items with: title, summary (max 200 chars), category (conflict/humanitarian/military), location, source, timestamp.`,
+Provide 20 unique news items with: title, summary (max 200 chars), category (conflict/humanitarian/military), location (include continent: Europe/Middle East/Africa/Asia/Americas), source, timestamp.`,
             add_context_from_internet: true,
             response_json_schema: {
               type: "object",
@@ -429,12 +430,65 @@ Format the response as markdown with proper headings, paragraphs, and structure.
                 <p className="text-sm text-red-200">{error}</p>
               </div>
             )}
+
+            {/* Region Filter */}
+            <div className="mt-6 flex flex-wrap gap-2">
+              {["all", "Europe", "Middle East", "Africa", "Asia", "Americas"].map((region) => (
+                <Button
+                  key={region}
+                  onClick={() => setSelectedRegion(region)}
+                  size="sm"
+                  className={selectedRegion === region 
+                    ? "bg-red-500/30 border-red-500/50 text-white" 
+                    : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"}
+                >
+                  {region === "all" ? "🌍 All Regions" : region}
+                </Button>
+              ))}
+            </div>
           </motion.div>
 
           {/* News Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             <AnimatePresence>
-              {news.map((item, index) => (
+              {news
+                .filter(item => {
+                  if (selectedRegion === "all") return true;
+                  const location = item.location?.toLowerCase() || "";
+                  const region = selectedRegion.toLowerCase();
+                  
+                  // Check if location contains region keywords
+                  if (region === "africa") {
+                    return location.includes("africa") || 
+                           location.includes("sudan") || 
+                           location.includes("ethiopia") || 
+                           location.includes("somalia") ||
+                           location.includes("nigeria") ||
+                           location.includes("sahel") ||
+                           location.includes("drc") ||
+                           location.includes("congo");
+                  }
+                  if (region === "middle east") {
+                    return location.includes("middle east") ||
+                           location.includes("israel") ||
+                           location.includes("gaza") ||
+                           location.includes("palestine") ||
+                           location.includes("syria") ||
+                           location.includes("yemen") ||
+                           location.includes("lebanon") ||
+                           location.includes("iraq") ||
+                           location.includes("iran");
+                  }
+                  if (region === "europe") {
+                    return location.includes("europe") ||
+                           location.includes("ukraine") ||
+                           location.includes("russia") ||
+                           location.includes("poland") ||
+                           location.includes("belarus");
+                  }
+                  return location.includes(region);
+                })
+                .map((item, index) => (
                 <motion.div
                   key={`${item.title}-${index}`}
                   initial={{ opacity: 0, y: 20 }}
