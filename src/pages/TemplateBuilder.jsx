@@ -105,7 +105,9 @@ Format as a single, comprehensive paragraph.`
 
     setIsGenerating(true);
     try {
-      const imagePrompt = `Professional landing page website template mockup: ${prompt}. Modern, clean, high-quality web design preview. Desktop view. Professional UI/UX. No text, just visual design.`;
+      // Limit prompt to 800 characters to avoid API errors
+      const truncatedPrompt = prompt.length > 800 ? prompt.substring(0, 800) + '...' : prompt;
+      const imagePrompt = `Professional landing page website template mockup: ${truncatedPrompt}. Modern, clean, high-quality web design preview. Desktop view. Professional UI/UX.`;
 
       const response = await base44.integrations.Core.GenerateImage({
         prompt: imagePrompt
