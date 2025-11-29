@@ -9,7 +9,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { message, sessionId } = await req.json();
+    const body = await req.json();
+    const message = body.message;
+    const sessionId = body.sessionId;
+
+    if (!message) {
+      return Response.json({ error: 'Message is required' }, { status: 400 });
+    }
 
     // Load user's session history
     let sessions = [];
@@ -86,24 +92,25 @@ Give your response in a natural, conversational way as a world-class therapist w
       response_json_schema: {
         type: "object",
         properties: {
-          response: { type: "string", description: "Your therapeutic response to the user" },
-          emotional_state: { type: "string", description: "User's detected emotional state (anxious, depressed, stressed, calm, hopeful, neutral)" },
-          key_topics: { type: "array", items: { type: "string" }, description: "Main topics discussed" },
-          suggested_techniques: { type: "array", items: { type: "string" }, description: "Therapeutic techniques suggested" },
-          progress_assessment: { type: "number", description: "Progress score 1-10" },
-          new_insights: { type: "array", items: { 
-            type: "object",
-            properties: {
-              pattern: { type: "string" },
-              category: { type: "string" }
-            }
-          }, description: "New patterns learned" }
+          response: { type: "string" },
+          emotional_state: { type: "string" },
+          key_topics: { type: "array", items: { type: "string" } },
+          suggested_techniques: { type: "array", items: { type: "string" } },
+          progress_assessment: { type: "number" }
         },
         required: ["response"]
       }
     });
 
-    const aiResponse = llmResult || { response: "I'm here to listen. Please tell me more about what's on your mind." };
+    // Ensure we have valid data
+    const aiResponse = {
+      response: llmResult?.response || "I'm here to listen and support you. Could you tell me more about what's on your mind?",
+      emotional_state: llmResult?.emotional_state || "neutral",
+      key_topics: Array.isArray(llmResult?.key_topics) ? llmResult.key_topics : ["General discussion"],
+      suggested_techniques: Array.isArray(llmResult?.suggested_techniques) ? llmResult.suggested_techniques : [],
+      progress_assessment: typeof llmResult?.progress_assessment === 'number' ? llmResult.progress_assessment : 5,
+      new_insights: []
+    };
 
     // Update or create session
     const newMessage = {
@@ -120,6 +127,8 @@ Give your response in a natural, conversational way as a world-class therapist w
 
     const updatedMessages = [...conversationHistory, newMessage, aiMessage];
 
+    let returnSessionId = sessionId;
+
     if (sessionId && currentSession) {
       // Update existing session
       await base44.entities.TherapySession.update(sessionId, {
@@ -130,7 +139,10 @@ Give your response in a natural, conversational way as a world-class therapist w
       });
     } else {
       // Create new session
-      const sessionTitle = aiResponse.key_topics?.[0] || 'New Session';
+      const sessionTitle = (aiResponse.key_topics && aiResponse.key_topics.length > 0) 
+        ? aiResponse.key_topics[0].substring(0, 100) 
+        : 'New Session';
+      
       const newSession = await base44.entities.TherapySession.create({
         user_email: user.email,
         session_title: sessionTitle,
@@ -138,45 +150,19 @@ Give your response in a natural, conversational way as a world-class therapist w
         emotional_state: aiResponse.emotional_state,
         key_topics: aiResponse.key_topics,
         insights_generated: [],
-        progress_score: aiResponse.progress_assessment || 5
+        progress_score: aiResponse.progress_assessment
       });
       
-      aiResponse.sessionId = newSession.id;
+      returnSessionId = newSession.id;
     }
 
-    // Learn new insights
-    if (aiResponse.new_insights?.length > 0) {
-      for (const insight of aiResponse.new_insights) {
-        try {
-          // Check if similar insight exists
-          const existing = insights.find(i => 
-            i.pattern_detected.toLowerCase().includes(insight.pattern.toLowerCase().slice(0, 20))
-          );
-
-          if (existing) {
-            // Update success rate
-            await base44.asServiceRole.entities.TherapyInsight.update(existing.id, {
-              times_applied: (existing.times_applied || 0) + 1,
-              success_rate: Math.min(100, (existing.success_rate || 0) + 2)
-            });
-          } else {
-            // Create new insight
-            await base44.asServiceRole.entities.TherapyInsight.create({
-              insight_category: insight.category || 'general',
-              pattern_detected: insight.pattern,
-              therapeutic_approach: aiResponse.suggested_techniques?.[0] || 'Supportive therapy',
-              success_rate: 50,
-              times_applied: 1,
-              source_sessions: [sessionId || 'new']
-            });
-          }
-        } catch (err) {
-          console.error('Failed to save insight:', err);
-        }
-      }
-    }
-
-    return Response.json(aiResponse);
+    return Response.json({
+      response: aiResponse.response,
+      emotional_state: aiResponse.emotional_state,
+      key_topics: aiResponse.key_topics,
+      progress_assessment: aiResponse.progress_assessment,
+      sessionId: returnSessionId
+    });
   } catch (error) {
     console.error('Therapy AI error:', error);
     return Response.json({ 
