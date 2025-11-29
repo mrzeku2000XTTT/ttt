@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,8 +28,13 @@ export default function ArcadePage() {
 
   useEffect(() => {
     loadUser();
-    loadExistingGames();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      loadExistingGames();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (seedPhrase.trim()) {
@@ -52,7 +56,10 @@ export default function ArcadePage() {
 
   const loadExistingGames = async () => {
     try {
+      if (!user) return;
+      
       const games = await base44.entities.BingoGame.filter({
+        created_by: user.email,
         $or: [
           { status: 'active' },
           { status: 'waiting' }
@@ -69,9 +76,8 @@ export default function ArcadePage() {
 
     setIsDeletingGame(gameId);
     try {
-      await base44.entities.BingoGame.update(gameId, { status: 'expired' });
+      await base44.entities.BingoGame.delete(gameId);
       setExistingGames(prev => prev.filter(g => g.id !== gameId));
-      await loadExistingGames();
     } catch (err) {
       alert('Failed to delete: ' + err.message);
     } finally {
@@ -161,16 +167,17 @@ export default function ArcadePage() {
             <p className="text-gray-400">Blockchain Gaming & Competitions</p>
           </motion.div>
 
-          {(isAdmin || isAgentZK) && activeGame === 'bingo' && existingGames.length > 0 && (
+          {activeGame === 'bingo' && existingGames.length > 0 && (
             <Card className="bg-zinc-950/90 border-zinc-800 mb-6">
               <CardContent className="p-6">
                 <h3 className="text-white font-bold mb-4">Your Games ({existingGames.length})</h3>
                 <div className="space-y-3">
                   {existingGames.map(game => {
                     const isLobby = game.game_type === 'lobby';
+                    const canDelete = game.created_by === user?.email;
                     return (
                       <div key={game.id} className="bg-black/50 rounded-lg p-4 flex items-center justify-between border border-zinc-800">
-                        <div>
+                        <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             {isLobby && <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">Lobby</Badge>}
                             <code className="text-cyan-400">{isLobby ? game.game_code : game.wallet_address?.slice(-8)}</code>
@@ -186,15 +193,18 @@ export default function ArcadePage() {
                             {game.prize_amount} KAS {isLobby && `• ${game.players?.length || 0} players`}
                           </div>
                         </div>
-                        <Button
-                          onClick={() => handleDeleteGame(game.id)}
-                          disabled={isDeletingGame === game.id}
-                          size="sm"
-                          variant="ghost"
-                          className="text-red-400"
-                        >
-                          {isDeletingGame === game.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                        </Button>
+                        {canDelete && (
+                          <Button
+                            onClick={() => handleDeleteGame(game.id)}
+                            disabled={isDeletingGame === game.id}
+                            size="sm"
+                            variant="ghost"
+                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                            title="Delete game"
+                          >
+                            {isDeletingGame === game.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                          </Button>
+                        )}
                       </div>
                     );
                   })}
