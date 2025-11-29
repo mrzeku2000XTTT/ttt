@@ -120,6 +120,7 @@ import Vault from './pages/Vault';
 import Gate from './pages/Gate';
 import AK from './pages/AK';
 import AYOMUIZ2 from './pages/AYOMUIZ2';
+import Peculiar from './pages/Peculiar';
 import __Layout from './Layout.jsx';
 
 
@@ -246,6 +247,7 @@ export const PAGES = {
     "Gate": Gate,
     "AK": AK,
     "AYOMUIZ2": AYOMUIZ2,
+    "Peculiar": Peculiar,
 }
 
 export const pagesConfig = {
