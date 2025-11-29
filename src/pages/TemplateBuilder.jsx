@@ -7,10 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Loader2, Image as ImageIcon, Trash2, Eye, ShoppingCart, Wand2, BookOpen, Save, Plus } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { useStarGate } from "@/components/stargate/StarGateContext";
 
 export default function TemplateBuilderPage() {
-  const { sharedData } = useStarGate();
   const [user, setUser] = useState(null);
   const [templates, setTemplates] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
