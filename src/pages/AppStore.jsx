@@ -50,6 +50,7 @@ export default function AppStorePage() {
     { name: "HAYPHASE", icon: "Link2", path: "HAYPHASE", category: "Tools" },
     { name: "VAULT", icon: "Link2", path: "Vault", category: "Finance" },
     { name: "Olatomiwa", icon: "Link2", path: "Olatomiwa", category: "Tools" },
+    { name: "taiwo", icon: "Link2", path: "Taiwo", category: "Tools" },
   ];
 
   const getIconComponent = (iconName) => {
