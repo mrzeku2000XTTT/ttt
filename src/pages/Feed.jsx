@@ -1685,7 +1685,7 @@ export default function FeedPage() {
                     title="View Contributions"
                   >
                     <span className="text-[11px]">💎</span>
-                    OLATOMIWA
+                    FIRSTLADY
                   </button>
                 )}
                 {post.author_agent_zk_id && (
@@ -3054,7 +3054,7 @@ export default function FeedPage() {
                       <span className="text-3xl">💎</span>
                     </div>
                     <div>
-                      <h3 className="text-white font-bold text-xl">OLATOMIWA Badge</h3>
+                      <h3 className="text-white font-bold text-xl">FIRSTLADY Badge</h3>
                       <p className="text-blue-400 text-sm font-semibold">{olatomiwaUsername}</p>
                     </div>
                   </div>
@@ -3105,7 +3105,7 @@ export default function FeedPage() {
                     <div className="flex items-start gap-2">
                       <Sparkles className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
                       <p className="text-xs text-white/80 leading-relaxed">
-                        OLATOMIWA badge holders are valuable community members recognized for their contributions and engagement on TTT.
+                        FIRSTLADY badge holders are valuable community members recognized for their contributions and engagement on TTT.
                       </p>
                     </div>
                   </div>
