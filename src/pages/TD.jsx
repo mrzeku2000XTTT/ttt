@@ -155,7 +155,7 @@ export default function TDPage() {
   }
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-purple-900/20 via-black to-blue-900/20 flex flex-col pt-32">
+    <div className="fixed inset-0 bg-gradient-to-br from-purple-900/20 via-black to-blue-900/20 flex flex-col" style={{ paddingTop: 'calc(var(--sat, 0px) + 140px)' }}>
       <div className="flex-1 flex flex-col max-w-5xl mx-auto w-full px-4 overflow-hidden">
         {/* Header */}
         <motion.div
