@@ -3105,7 +3105,7 @@ export default function FeedPage() {
                     <div className="flex items-start gap-2">
                       <Sparkles className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
                       <p className="text-xs text-white/80 leading-relaxed">
-                        FIRSTLADY badge holders are valuable community members recognized for their contributions and engagement on TTT.
+                        FIRSTLADY carries the strong woman of TTT communities.
                       </p>
                     </div>
                   </div>
