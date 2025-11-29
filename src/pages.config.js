@@ -121,6 +121,7 @@ import Gate from './pages/Gate';
 import AK from './pages/AK';
 import AYOMUIZ2 from './pages/AYOMUIZ2';
 import Peculiar from './pages/Peculiar';
+import Bible from './pages/Bible';
 import __Layout from './Layout.jsx';
 
 
@@ -248,6 +249,7 @@ export const PAGES = {
     "AK": AK,
     "AYOMUIZ2": AYOMUIZ2,
     "Peculiar": Peculiar,
+    "Bible": Bible,
 }
 
 export const pagesConfig = {

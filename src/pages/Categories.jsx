@@ -134,6 +134,7 @@ export default function CategoriesPage() {
       { id: "vprogs", name: "VProgs", icon: "Terminal", path: "VProgs" },
       { id: "ios", name: "iOS", icon: "Settings", path: "IOS" },
       { id: "hypemind", name: "HYPEMIND", icon: "Brain", path: "HYPEMIND" },
+      { id: "bible", name: "Bible", icon: "BookOpen", path: "Bible" },
       ];
 
     if (isAdmin) {
