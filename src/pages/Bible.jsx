@@ -26,10 +26,13 @@ const books = [
 export default function BiblePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBook, setSelectedBook] = useState(null);
+  const [selectedChapter, setSelectedChapter] = useState(null);
+  const [chapterContent, setChapterContent] = useState(null);
   const [showBookList, setShowBookList] = useState(false);
   const [user, setUser] = useState(null);
   const [verses, setVerses] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingChapter, setLoadingChapter] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareData, setShareData] = useState({
     book: "",
@@ -39,6 +42,7 @@ export default function BiblePage() {
     reflection: ""
   });
   const [likedVerses, setLikedVerses] = useState(new Set());
+  const [activeTab, setActiveTab] = useState("read");
 
   useEffect(() => {
     loadUser();
@@ -137,6 +141,70 @@ export default function BiblePage() {
     }
   };
 
+  const loadChapter = async (book, chapter) => {
+    setLoadingChapter(true);
+    try {
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: `Fetch the full text of ${book} chapter ${chapter} from the King James Version (KJV) Bible. Return ONLY the verses in this exact JSON format:
+{
+  "book": "${book}",
+  "chapter": ${chapter},
+  "verses": [
+    {"number": 1, "text": "verse text here"},
+    {"number": 2, "text": "verse text here"}
+  ]
+}
+Include ALL verses from the chapter. Be accurate and complete.`,
+        add_context_from_internet: true,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            book: { type: "string" },
+            chapter: { type: "number" },
+            verses: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  number: { type: "number" },
+                  text: { type: "string" }
+                }
+              }
+            }
+          }
+        }
+      });
+      
+      setChapterContent(response);
+      setSelectedChapter(chapter);
+    } catch (err) {
+      console.error("Failed to load chapter:", err);
+      alert("Failed to load chapter. Please try again.");
+    } finally {
+      setLoadingChapter(false);
+    }
+  };
+
+  const getChapterCount = (book) => {
+    const chapterCounts = {
+      "Genesis": 50, "Exodus": 40, "Leviticus": 27, "Numbers": 36, "Deuteronomy": 34,
+      "Joshua": 24, "Judges": 21, "Ruth": 4, "1 Samuel": 31, "2 Samuel": 24,
+      "1 Kings": 22, "2 Kings": 25, "1 Chronicles": 29, "2 Chronicles": 36, "Ezra": 10,
+      "Nehemiah": 13, "Esther": 10, "Job": 42, "Psalms": 150, "Proverbs": 31,
+      "Ecclesiastes": 12, "Song of Solomon": 8, "Isaiah": 66, "Jeremiah": 52, "Lamentations": 5,
+      "Ezekiel": 48, "Daniel": 12, "Hosea": 14, "Joel": 3, "Amos": 9,
+      "Obadiah": 1, "Jonah": 4, "Micah": 7, "Nahum": 3, "Habakkuk": 3,
+      "Zephaniah": 3, "Haggai": 2, "Zechariah": 14, "Malachi": 4,
+      "Matthew": 28, "Mark": 16, "Luke": 24, "John": 21, "Acts": 28,
+      "Romans": 16, "1 Corinthians": 16, "2 Corinthians": 13, "Galatians": 6, "Ephesians": 6,
+      "Philippians": 4, "Colossians": 4, "1 Thessalonians": 5, "2 Thessalonians": 3, "1 Timothy": 6,
+      "2 Timothy": 4, "Titus": 3, "Philemon": 1, "Hebrews": 13, "James": 5,
+      "1 Peter": 5, "2 Peter": 3, "1 John": 5, "2 John": 1, "3 John": 1,
+      "Jude": 1, "Revelation": 22
+    };
+    return chapterCounts[book] || 50;
+  };
+
   const filteredBooks = books.filter(book =>
     book.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -211,27 +279,124 @@ export default function BiblePage() {
           )}
         </div>
 
-        {/* Selected Book Display */}
-        {selectedBook && (
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6">
+          <Button
+            onClick={() => setActiveTab("read")}
+            className={activeTab === "read" ? "bg-amber-600 text-white" : "bg-white text-amber-900 border-amber-200"}
+          >
+            <BookOpen className="w-4 h-4 mr-2" />
+            Read Bible
+          </Button>
+          <Button
+            onClick={() => setActiveTab("community")}
+            className={activeTab === "community" ? "bg-amber-600 text-white" : "bg-white text-amber-900 border-amber-200"}
+          >
+            <MessageCircle className="w-4 h-4 mr-2" />
+            Community
+          </Button>
+        </div>
+
+        {/* Read Bible Tab */}
+        {activeTab === "read" && selectedBook && !selectedChapter && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-xl shadow-lg border border-amber-100 p-6"
+            className="bg-white rounded-xl shadow-lg border border-amber-100 p-6 mb-6"
           >
-            <h3 className="text-2xl font-bold text-amber-900 mb-4">{selectedBook}</h3>
-            <div className="prose prose-amber max-w-none">
-              <p className="text-amber-800 leading-relaxed">
-                Select a chapter and verse to read from {selectedBook}.
-              </p>
-              <div className="mt-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
-                <p className="text-sm text-amber-700 italic">
-                  "For God so loved the world, that he gave his only begotten Son, 
-                  that whosoever believeth in him should not perish, but have everlasting life."
-                  <br />
-                  <span className="font-semibold">- John 3:16 (KJV)</span>
-                </p>
-              </div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-2xl font-bold text-amber-900">{selectedBook}</h3>
+              <Button
+                onClick={() => {
+                  setSelectedBook(null);
+                  setSelectedChapter(null);
+                  setChapterContent(null);
+                }}
+                variant="outline"
+                className="border-amber-200"
+              >
+                Back to Books
+              </Button>
             </div>
+            <p className="text-amber-700 mb-4">Select a chapter to read from {selectedBook}.</p>
+            
+            <div className="grid grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-2">
+              {Array.from({ length: getChapterCount(selectedBook) }, (_, i) => i + 1).map((chapter) => (
+                <Button
+                  key={chapter}
+                  onClick={() => loadChapter(selectedBook, chapter)}
+                  className="bg-amber-600 hover:bg-amber-700 text-white"
+                >
+                  {chapter}
+                </Button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Chapter Content Display */}
+        {activeTab === "read" && selectedBook && selectedChapter && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-xl shadow-lg border border-amber-100 p-6 mb-6"
+          >
+            {loadingChapter ? (
+              <div className="text-center py-12">
+                <div className="animate-spin w-12 h-12 border-4 border-amber-600 border-t-transparent rounded-full mx-auto mb-4" />
+                <p className="text-amber-700">Loading chapter...</p>
+              </div>
+            ) : chapterContent ? (
+              <>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-2xl font-bold text-amber-900">
+                    {chapterContent.book} {chapterContent.chapter}
+                  </h3>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => {
+                        setSelectedChapter(null);
+                        setChapterContent(null);
+                      }}
+                      variant="outline"
+                      className="border-amber-200"
+                    >
+                      Back to Chapters
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                  {chapterContent.verses?.map((verse) => (
+                    <div key={verse.number} className="flex gap-3">
+                      <span className="text-amber-600 font-bold text-sm flex-shrink-0 pt-1">
+                        {verse.number}
+                      </span>
+                      <p className="text-amber-900 leading-relaxed">{verse.text}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-6 pt-6 border-t border-amber-200">
+                  <Button
+                    onClick={() => {
+                      setShareData({
+                        book: chapterContent.book,
+                        chapter: chapterContent.chapter,
+                        verse: "",
+                        text: "",
+                        reflection: ""
+                      });
+                      setShowShareModal(true);
+                    }}
+                    className="bg-amber-600 hover:bg-amber-700"
+                  >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Share a Verse from this Chapter
+                  </Button>
+                </div>
+              </>
+            ) : null}
           </motion.div>
         )}
 
@@ -324,11 +489,12 @@ export default function BiblePage() {
         </AnimatePresence>
 
         {/* Verse Feed */}
-        <div className="bg-white rounded-xl shadow-lg border border-amber-100 p-6 mb-6">
-          <h2 className="text-xl font-bold text-amber-900 mb-4 flex items-center gap-2">
-            <MessageCircle className="w-5 h-5" />
-            Community Verses
-          </h2>
+        {activeTab === "community" && (
+          <div className="bg-white rounded-xl shadow-lg border border-amber-100 p-6 mb-6">
+            <h2 className="text-xl font-bold text-amber-900 mb-4 flex items-center gap-2">
+              <MessageCircle className="w-5 h-5" />
+              Community Verses
+            </h2>
 
           {loading ? (
             <div className="text-center py-8 text-amber-600">Loading verses...</div>
@@ -376,10 +542,11 @@ export default function BiblePage() {
               ))}
             </div>
           )}
-        </div>
+          </div>
+        )}
 
         {/* Default View */}
-        {!selectedBook && (
+        {activeTab === "read" && !selectedBook && (
           <div className="text-center py-12">
             <BookOpen className="w-16 h-16 text-amber-300 mx-auto mb-4" />
             <p className="text-amber-700">Select a book to begin reading</p>
