@@ -14,6 +14,10 @@ export default function BuildersPage() {
   const [roadmaps, setRoadmaps] = useState([]);
   const [activeRoadmap, setActiveRoadmap] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedPhase, setSelectedPhase] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [userMessage, setUserMessage] = useState("");
+  const [isChatting, setIsChatting] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -156,6 +160,90 @@ Return ONLY valid JSON in this exact format:
     setRoadmaps(filtered);
     if (activeRoadmap?.id === id) {
       setActiveRoadmap(filtered[0] || null);
+    }
+  };
+
+  const openPhaseChat = async (phase) => {
+    setSelectedPhase(phase);
+    setChatMessages([]);
+    setIsChatting(true);
+
+    try {
+      const prompt = `The user is working on this development phase for their app:
+
+Phase: ${phase.phase}
+Title: ${phase.title}
+Description: ${phase.description}
+Tasks: ${phase.tasks.join(', ')}
+
+Provide detailed, practical guidance on how to complete this phase. Be conversational, helpful, and specific. Break down the steps, recommend tools, and give actionable advice.`;
+
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: prompt
+      });
+
+      setChatMessages([
+        {
+          role: "assistant",
+          content: response
+        }
+      ]);
+    } catch (err) {
+      setChatMessages([
+        {
+          role: "assistant",
+          content: "Sorry, I couldn't load guidance for this phase. Please try again."
+        }
+      ]);
+    } finally {
+      setIsChatting(false);
+    }
+  };
+
+  const sendChatMessage = async () => {
+    if (!userMessage.trim() || isChatting || !selectedPhase) return;
+
+    const newUserMessage = {
+      role: "user",
+      content: userMessage
+    };
+
+    setChatMessages([...chatMessages, newUserMessage]);
+    setUserMessage("");
+    setIsChatting(true);
+
+    try {
+      const conversationContext = chatMessages
+        .map(m => `${m.role}: ${m.content}`)
+        .join('\n\n');
+
+      const prompt = `You're helping a developer build their Kaspa app. They're working on this phase:
+
+Phase: ${selectedPhase.phase} - ${selectedPhase.title}
+Description: ${selectedPhase.description}
+
+Previous conversation:
+${conversationContext}
+
+User's question: ${newUserMessage.content}
+
+Provide a helpful, detailed response.`;
+
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: prompt
+      });
+
+      setChatMessages([...chatMessages, newUserMessage, {
+        role: "assistant",
+        content: response
+      }]);
+    } catch (err) {
+      setChatMessages([...chatMessages, newUserMessage, {
+        role: "assistant",
+        content: "Sorry, I encountered an error. Please try again."
+      }]);
+    } finally {
+      setIsChatting(false);
     }
   };
 
@@ -387,11 +475,14 @@ Return ONLY valid JSON in this exact format:
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: stepIndex * 0.1 }}
                           >
-                            <Card className={`transition-all ${
-                              step.completed
-                                ? 'bg-green-500/5 border-green-500/30'
-                                : 'bg-white/5 border-white/10 hover:border-white/20'
-                            }`}>
+                            <Card 
+                              className={`transition-all cursor-pointer ${
+                                step.completed
+                                  ? 'bg-green-500/5 border-green-500/30'
+                                  : 'bg-white/5 border-white/10 hover:border-cyan-500/30'
+                              }`}
+                              onClick={() => openPhaseChat(step)}
+                            >
                               <CardContent className="p-6">
                                 <div className="flex items-start gap-4">
                                   <button
@@ -456,6 +547,112 @@ Return ONLY valid JSON in this exact format:
           )}
         </div>
       </div>
+
+      {/* Phase Chat Modal */}
+      <AnimatePresence>
+        {selectedPhase && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedPhase(null)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
+            />
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl max-h-[80vh] z-50"
+            >
+              <Card className="bg-gradient-to-br from-zinc-900/95 to-black/95 border-cyan-500/30 backdrop-blur-xl shadow-2xl">
+                <CardContent className="p-0 flex flex-col h-full max-h-[80vh]">
+                  {/* Header */}
+                  <div className="p-6 border-b border-white/10">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="text-xs font-bold text-cyan-400 bg-cyan-500/10 px-2 py-1 rounded inline-block mb-2">
+                          {selectedPhase.phase}
+                        </div>
+                        <h3 className="text-xl font-bold text-white">{selectedPhase.title}</h3>
+                        <p className="text-gray-400 text-sm mt-1">{selectedPhase.description}</p>
+                      </div>
+                      <Button
+                        onClick={() => setSelectedPhase(null)}
+                        variant="ghost"
+                        size="sm"
+                        className="text-gray-400 hover:text-white"
+                      >
+                        ✕
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Messages */}
+                  <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                    {chatMessages.length === 0 && isChatting && (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-6 h-6 text-cyan-400 animate-spin" />
+                      </div>
+                    )}
+
+                    {chatMessages.map((msg, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div className={`max-w-[80%] rounded-lg p-4 ${
+                          msg.role === 'user'
+                            ? 'bg-cyan-500/20 border border-cyan-500/30 text-white'
+                            : 'bg-white/5 border border-white/10 text-gray-300'
+                        }`}>
+                          <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
+                        </div>
+                      </motion.div>
+                    ))}
+
+                    {isChatting && chatMessages.length > 0 && (
+                      <div className="flex justify-start">
+                        <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+                          <Loader2 className="w-5 h-5 text-cyan-400 animate-spin" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Input */}
+                  <div className="p-4 border-t border-white/10">
+                    <div className="flex gap-2">
+                      <Input
+                        value={userMessage}
+                        onChange={(e) => setUserMessage(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendChatMessage()}
+                        placeholder="Ask for more details..."
+                        className="flex-1 bg-black/30 border-white/10 text-white placeholder:text-gray-500"
+                        disabled={isChatting}
+                      />
+                      <Button
+                        onClick={sendChatMessage}
+                        disabled={!userMessage.trim() || isChatting}
+                        className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600"
+                      >
+                        {isChatting ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          'Send'
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
