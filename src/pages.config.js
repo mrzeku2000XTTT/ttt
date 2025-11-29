@@ -123,6 +123,7 @@ import AYOMUIZ2 from './pages/AYOMUIZ2';
 import Peculiar from './pages/Peculiar';
 import Bible from './pages/Bible';
 import TD from './pages/TD';
+import Builders from './pages/Builders';
 import __Layout from './Layout.jsx';
 
 
@@ -252,6 +253,7 @@ export const PAGES = {
     "Peculiar": Peculiar,
     "Bible": Bible,
     "TD": TD,
+    "Builders": Builders,
 }
 
 export const pagesConfig = {
