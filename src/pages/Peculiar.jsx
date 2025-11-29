@@ -3,13 +3,13 @@ import React from "react";
 export default function PeculiarPage() {
   return (
     <div
+      className="lg:ml-12"
       style={{
         position: "fixed",
         top: "calc(var(--sat, 0px) + 7.75rem)",
         bottom: 0,
         left: 0,
         right: 0,
-        width: "100%",
         overflow: "hidden",
       }}
     >
