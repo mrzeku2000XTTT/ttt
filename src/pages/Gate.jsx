@@ -23,6 +23,7 @@ function GateContent() {
   const apps = [
     { name: "AK", path: "AK", category: "AI", color: "#A855F7" },
     { name: "TD", path: "TD", category: "App", color: "#06B6D4" },
+    { name: "Builders", path: "Builders", category: "Team", color: "#06B6D4" },
   ];
 
   const filteredApps = searchQuery
