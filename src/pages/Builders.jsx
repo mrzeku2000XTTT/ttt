@@ -557,17 +557,17 @@ Provide a helpful, detailed response.`;
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedPhase(null)}
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100]"
             />
             
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-4xl h-[85vh] z-50 p-4"
+              className="fixed inset-4 md:inset-8 lg:inset-16 z-[101] flex items-center justify-center"
             >
-              <Card className="bg-gradient-to-br from-zinc-900/95 to-black/95 border-cyan-500/30 backdrop-blur-xl shadow-2xl h-full">
-                <CardContent className="p-0 flex flex-col h-full">
+              <Card className="bg-gradient-to-br from-zinc-900/95 to-black/95 border-cyan-500/30 backdrop-blur-xl shadow-2xl w-full max-w-4xl h-full max-h-[85vh]">
+                <CardContent className="p-0 flex flex-col h-full max-h-[85vh]">
                   {/* Header */}
                   <div className="p-4 border-b border-white/10 flex-shrink-0">
                     <div className="flex items-start justify-between gap-4">
