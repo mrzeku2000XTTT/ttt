@@ -1125,11 +1125,24 @@ export default function FeedPage() {
       const userPosts = await base44.entities.Post.filter({ author_name: username });
       const mainPosts = userPosts.filter(p => !p.parent_post_id);
       
-      const feedTransactions = await base44.entities.TipTransaction.filter({ 
-        source: 'feed',
-        recipient_name: username
-      });
-      const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+      let totalFeedTips = 0;
+      const userEmail = mainPosts.length > 0 ? mainPosts[0].created_by : null;
+
+      if (userEmail) {
+        try {
+          const tipStats = await base44.entities.UserTipStats.filter({ user_email: userEmail });
+          if (tipStats.length > 0) {
+            totalFeedTips = tipStats[0].feed_tips_received || 0;
+          }
+        } catch (err) {
+          console.log('Failed to fetch UserTipStats, falling back to TipTransaction:', err);
+          const feedTransactions = await base44.entities.TipTransaction.filter({ 
+            recipient_email: userEmail,
+            source: 'feed'
+          });
+          totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+        }
+      }
 
       setCustomBadgeContributions({
         feedPosts: mainPosts.length,
