@@ -5,12 +5,11 @@ export default function PeculiarPage() {
     <div
       style={{
         position: "fixed",
-        top: "calc(var(--sat, 0px) + 7.5rem)",
+        top: "calc(var(--sat, 0px) + 7.75rem)",
         bottom: 0,
         left: 0,
         right: 0,
         width: "100%",
-        height: "auto",
         overflow: "hidden",
       }}
     >
