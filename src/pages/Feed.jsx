@@ -89,6 +89,10 @@ export default function FeedPage() {
   const [devUsername, setDevUsername] = useState(null);
   const [devContributions, setDevContributions] = useState({ feedPosts: 0, feedTips: 0 });
   const [loadingDev, setLoadingDev] = useState(false);
+  const [showCustomBadgeModal, setShowCustomBadgeModal] = useState(false);
+  const [customBadgeData, setCustomBadgeData] = useState(null);
+  const [customBadgeContributions, setCustomBadgeContributions] = useState({ feedPosts: 0, feedTips: 0 });
+  const [loadingCustomBadge, setLoadingCustomBadge] = useState(false);
 
   const fileInputRef = useRef(null);
   const replyFileInputRef = useRef(null);
@@ -1115,6 +1119,30 @@ export default function FeedPage() {
     }
   };
 
+  const loadCustomBadgeContributions = async (username) => {
+    setLoadingCustomBadge(true);
+    try {
+      const userPosts = await base44.entities.Post.filter({ author_name: username });
+      const mainPosts = userPosts.filter(p => !p.parent_post_id);
+      
+      const feedTransactions = await base44.entities.TipTransaction.filter({ 
+        source: 'feed',
+        recipient_name: username
+      });
+      const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+
+      setCustomBadgeContributions({
+        feedPosts: mainPosts.length,
+        feedTips: totalFeedTips
+      });
+    } catch (err) {
+      console.error('Failed to load custom badge contributions:', err);
+      setCustomBadgeContributions({ feedPosts: 0, feedTips: 0 });
+    } finally {
+      setLoadingCustomBadge(false);
+    }
+  };
+
   const handleBadgeClick = async (username, badgeType) => {
     if (badgeType === 'king') {
       setKingUsername(username);
@@ -1482,12 +1510,19 @@ export default function FeedPage() {
                   </Badge>
                 )}
                 {getUserBadges(post.author_name).map((badge, idx) => (
-                  <Badge
+                  <button
                     key={badge.id || idx}
-                    className={`text-[10px] px-2 py-0.5 font-bold border ${getBadgeColorClass(badge.badge_color)}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setCustomBadgeData({ username: post.author_name, badge });
+                      setShowCustomBadgeModal(true);
+                      loadCustomBadgeContributions(post.author_name);
+                    }}
+                    className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 font-bold border rounded-md transition-all ${getBadgeColorClass(badge.badge_color)} hover:opacity-80`}
                   >
                     {badge.badge_name}
-                  </Badge>
+                  </button>
                 ))}
                 {hasModzBadge(post.author_name) && (
                   <button
@@ -1932,12 +1967,19 @@ export default function FeedPage() {
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <h2 className="text-white font-bold text-xl">{profileUsername}</h2>
                         {getUserBadges(profileUsername).map((badge, idx) => (
-                          <Badge
+                          <button
                             key={badge.id || idx}
-                            className={`text-[10px] px-2 py-0.5 font-bold border ${getBadgeColorClass(badge.badge_color)}`}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setCustomBadgeData({ username: profileUsername, badge });
+                              setShowCustomBadgeModal(true);
+                              loadCustomBadgeContributions(profileUsername);
+                            }}
+                            className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 font-bold border rounded-md transition-all ${getBadgeColorClass(badge.badge_color)} hover:opacity-80`}
                           >
                             {badge.badge_name}
-                          </Badge>
+                          </button>
                         ))}
                         {hasShillerBadge(profileUsername) && (
                           <span className="inline-flex items-center gap-1 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-600 text-white border border-pink-400/50 text-[10px] px-2 py-0.5 font-bold rounded-md">
@@ -2722,6 +2764,94 @@ export default function FeedPage() {
                       <Sparkles className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
                       <p className="text-xs text-white/80 leading-relaxed">
                         MARK badge holders are precision builders who hit the mark with exceptional quality and impact.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Custom Badge Contributions Modal */}
+      <AnimatePresence>
+        {showCustomBadgeModal && customBadgeData && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowCustomBadgeModal(false)}
+            className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-2xl w-full max-w-md p-6 relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl" />
+              
+              <div className="relative">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg ${getBadgeColorClass(customBadgeData.badge.badge_color).replace('text-', 'bg-').replace('/20', '/30')}`}>
+                      <Trophy className="w-8 h-8 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-bold text-xl">{customBadgeData.badge.badge_name} Badge</h3>
+                      <p className="text-purple-400 text-sm font-semibold">{customBadgeData.username}</p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => setShowCustomBadgeModal(false)}
+                    variant="ghost"
+                    size="sm"
+                    className="text-white/60 hover:text-white h-8 w-8 p-0"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="bg-black/40 border border-purple-500/20 rounded-xl p-4">
+                    <h4 className="text-purple-400 font-semibold mb-3 text-sm">Platform Contributions</h4>
+                    
+                    {loadingCustomBadge ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between bg-white/5 rounded-lg p-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center">
+                              <Users className="w-4 h-4 text-purple-400" />
+                            </div>
+                            <span className="text-white/80 text-sm">Feed Posts</span>
+                          </div>
+                          <span className="text-white font-bold text-lg">{customBadgeContributions.feedPosts}</span>
+                        </div>
+
+                        <div className="flex items-center justify-between bg-white/5 rounded-lg p-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center">
+                              <DollarSign className="w-4 h-4 text-purple-400" />
+                            </div>
+                            <span className="text-white/80 text-sm">Feed Tips Received (KAS)</span>
+                          </div>
+                          <span className="text-purple-400 font-bold text-lg">{customBadgeContributions.feedTips.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-xl p-4">
+                    <div className="flex items-start gap-2">
+                      <Sparkles className="w-4 h-4 text-purple-400 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-white/80 leading-relaxed">
+                        {customBadgeData.badge.badge_name} badge holders are recognized for their valuable contributions to the TTT community.
                       </p>
                     </div>
                   </div>
