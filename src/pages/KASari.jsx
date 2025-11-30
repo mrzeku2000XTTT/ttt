@@ -6,7 +6,7 @@ export default function KASariPage() {
       top: 'calc(7.5rem + var(--sat, 0px))',
       left: 0,
       right: 0,
-      bottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))'
+      bottom: 0
     }}>
       <iframe
         src="https://kaspa-emergency-response-097a9b19.base44.app"
