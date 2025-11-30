@@ -3414,15 +3414,6 @@ export default function FeedPage() {
                 </Button>
               )}
 
-              {/* Active Ticker Badge */}
-              {selectedTicker && (
-                <div className="absolute left-10 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-green-500/20 border border-green-500/40 rounded-md px-2 py-1">
-                  <DollarSign className="w-3 h-3 text-green-400" />
-                  <span className="text-xs text-green-400 font-semibold">{selectedTicker}</span>
-                  <span className="text-xs text-white/40">({tickerCache[selectedTicker]?.length || 0})</span>
-                </div>
-              )}
-
               {/* Ticker Dropdown */}
               <AnimatePresence>
                 {tickerResults.length > 0 && !selectedTicker && (
@@ -3459,6 +3450,32 @@ export default function FeedPage() {
                 )}
               </AnimatePresence>
             </div>
+
+            {/* Active Ticker Filter Badge */}
+            {selectedTicker && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="flex items-center gap-2 bg-green-500/10 border border-green-500/30 rounded-lg px-4 py-2 mb-4"
+              >
+                <DollarSign className="w-4 h-4 text-green-400" />
+                <span className="text-sm text-green-400 font-semibold">{selectedTicker}</span>
+                <span className="text-sm text-white/40">• {tickerCache[selectedTicker]?.length || 0} posts</span>
+                <Button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedTicker(null);
+                    setVisiblePosts(20);
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="ml-auto h-6 w-6 p-0 text-white/40 hover:text-white"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </motion.div>
+            )}
 
             {!kaswareWallet.connected && (
               <Button
