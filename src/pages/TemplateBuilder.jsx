@@ -161,6 +161,29 @@ Format as a single, comprehensive paragraph.`
     }
   };
 
+  const handlePushToShop = async (template) => {
+    if (!confirm('Push this template to the Shop marketplace?')) return;
+
+    try {
+      await base44.entities.ShopItem.create({
+        name: template.title,
+        description: template.description,
+        price: template.price_kas,
+        image_url: template.preview_image_url,
+        category: "Digital",
+        stock_quantity: 999,
+        seller_wallet: template.creator_wallet,
+        seller_email: template.creator_email,
+        item_type: "template",
+        template_id: template.id
+      });
+
+      alert('Template pushed to Shop successfully! Buyers will need to pay to view.');
+    } catch (err) {
+      alert('Failed to push to shop: ' + err.message);
+    }
+  };
+
   const handleDeleteTemplate = async (id) => {
     if (!confirm('Delete this template?')) return;
 
@@ -317,6 +340,14 @@ Format as a single, comprehensive paragraph.`
                             >
                               <Eye className="w-3 h-3 mr-1" />
                               View
+                            </Button>
+                            <Button
+                              onClick={() => handlePushToShop(template)}
+                              size="sm"
+                              className="flex-1 bg-green-500/20 border border-green-500/30 hover:bg-green-500/30"
+                            >
+                              <ShoppingCart className="w-3 h-3 mr-1" />
+                              Shop
                             </Button>
                             <Button
                               onClick={() => handleDeleteTemplate(template.id)}
@@ -593,7 +624,7 @@ Format as a single, comprehensive paragraph.`
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-4xl max-h-[85vh] z-[101] overflow-y-auto"
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-4xl max-h-[85vh] z-[101] overflow-y-auto flex items-center justify-center"
             >
               <Card className="bg-gradient-to-br from-zinc-900/95 to-black/95 border-cyan-500/30">
                 <CardContent className="p-6">
