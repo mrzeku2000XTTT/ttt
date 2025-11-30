@@ -5,15 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Loader2, Image as ImageIcon, Trash2, Eye, ShoppingCart, Wand2, BookOpen, Save, Plus } from "lucide-react";
+import { Sparkles, Loader2, Image as ImageIcon, Trash2, Eye, ShoppingCart, Wand2, BookOpen, Save, Plus, Store, Wallet } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 export default function TemplateBuilderPage() {
   const [user, setUser] = useState(null);
   const [templates, setTemplates] = useState([]);
+  const [allTemplates, setAllTemplates] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [step, setStep] = useState('view'); // view, create, guide
+  const [step, setStep] = useState('view'); // view, create, guide, shop
   const [templateIdea, setTemplateIdea] = useState("");
+  const [purchasingTemplate, setPurchasingTemplate] = useState(null);
+  const [isPurchasing, setIsPurchasing] = useState(false);
   const [enhancedPrompt, setEnhancedPrompt] = useState("");
   const [previewImage, setPreviewImage] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -52,10 +55,41 @@ export default function TemplateBuilderPage() {
         creator_email: user.email
       }, '-created_date');
       setTemplates(userTemplates);
+      
+      const allAvailableTemplates = await base44.entities.Template.filter({}, '-created_date', 100);
+      setAllTemplates(allAvailableTemplates);
     } catch (err) {
       console.error('Failed to load templates:', err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handlePurchaseTemplate = async (template) => {
+    if (!user.created_wallet_address && !user.agent_zk_id) {
+      alert('Please connect your wallet first to purchase templates');
+      return;
+    }
+
+    setPurchasingTemplate(template);
+  };
+
+  const confirmPurchase = async () => {
+    if (!purchasingTemplate) return;
+
+    setIsPurchasing(true);
+    try {
+      const buyerWallet = user.created_wallet_address || user.agent_zk_id;
+      
+      // In a real implementation, this would verify blockchain payment
+      // For now, we'll create a purchase record
+      alert(`To complete purchase:\n\n1. Send ${purchasingTemplate.price_kas} KAS to:\n${purchasingTemplate.creator_wallet}\n\n2. Once paid, you'll receive access to the template HTML code.`);
+      
+      setPurchasingTemplate(null);
+    } catch (err) {
+      alert('Purchase failed: ' + err.message);
+    } finally {
+      setIsPurchasing(false);
     }
   };
 
@@ -264,6 +298,13 @@ Format as a single, comprehensive paragraph.`
           >
             <Eye className="w-4 h-4 mr-2" />
             My Templates ({templates.length})
+          </Button>
+          <Button
+            onClick={() => setStep('shop')}
+            className={step === 'shop' ? 'bg-green-500/20 border-green-500/50' : 'bg-white/5 border-white/10'}
+          >
+            <Store className="w-4 h-4 mr-2" />
+            Shop ({allTemplates.length})
           </Button>
           <Button
             onClick={() => setStep('create')}
@@ -518,6 +559,90 @@ Format as a single, comprehensive paragraph.`
             </motion.div>
           )}
 
+          {step === 'shop' && (
+            <motion.div
+              key="shop"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              {isLoading ? (
+                <div className="text-center py-20">
+                  <Loader2 className="w-8 h-8 text-cyan-400 animate-spin mx-auto" />
+                </div>
+              ) : allTemplates.length === 0 ? (
+                <div className="text-center py-20">
+                  <Store className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                  <h3 className="text-white font-bold text-xl mb-2">No Templates Available</h3>
+                  <p className="text-gray-400">Be the first to create and sell templates!</p>
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {allTemplates.map((template, i) => {
+                    const isOwnTemplate = template.creator_email === user.email;
+                    return (
+                      <motion.div
+                        key={template.id}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: i * 0.1 }}
+                      >
+                        <Card className="bg-white/5 border-white/10 hover:border-green-500/30 transition-all">
+                          <CardContent className="p-4">
+                            {template.preview_image_url && (
+                              <div className="relative">
+                                <img
+                                  src={template.preview_image_url}
+                                  alt={template.title}
+                                  className="w-full h-48 object-cover rounded-lg mb-4"
+                                />
+                                {isOwnTemplate && (
+                                  <div className="absolute top-2 right-2 bg-purple-500/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs text-white font-bold">
+                                    Your Template
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            <h3 className="text-white font-bold text-lg mb-2">{template.title}</h3>
+                            <p className="text-gray-400 text-sm mb-3 line-clamp-2">{template.description}</p>
+                            <div className="flex items-center justify-between mb-3">
+                              <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
+                                {template.price_kas} KAS
+                              </Badge>
+                              <div className="text-xs text-gray-500">
+                                by {template.creator_email?.split('@')[0]}
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={() => setSelectedTemplate(template)}
+                                size="sm"
+                                className="flex-1 bg-purple-500/20 border border-purple-500/30 hover:bg-purple-500/30"
+                              >
+                                <Eye className="w-3 h-3 mr-1" />
+                                View
+                              </Button>
+                              {!isOwnTemplate && (
+                                <Button
+                                  onClick={() => handlePurchaseTemplate(template)}
+                                  size="sm"
+                                  className="flex-1 bg-green-500/20 border border-green-500/30 hover:bg-green-500/30"
+                                >
+                                  <ShoppingCart className="w-3 h-3 mr-1" />
+                                  Buy
+                                </Button>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              )}
+            </motion.div>
+          )}
+
           {step === 'guide' && (
             <motion.div
               key="guide"
@@ -610,6 +735,94 @@ Format as a single, comprehensive paragraph.`
           )}
         </AnimatePresence>
       </div>
+
+      {/* Purchase Modal */}
+      <AnimatePresence>
+        {purchasingTemplate && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setPurchasingTemplate(null)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100]"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md z-[101]"
+            >
+              <Card className="bg-gradient-to-br from-zinc-900/95 to-black/95 border-green-500/30">
+                <CardContent className="p-6">
+                  <div className="text-center mb-6">
+                    <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <ShoppingCart className="w-8 h-8 text-green-400" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-white mb-2">Purchase Template</h3>
+                    <p className="text-gray-400 text-sm">Complete payment to access this template</p>
+                  </div>
+
+                  {purchasingTemplate.preview_image_url && (
+                    <img
+                      src={purchasingTemplate.preview_image_url}
+                      alt={purchasingTemplate.title}
+                      className="w-full rounded-lg mb-4 border border-green-500/30"
+                    />
+                  )}
+
+                  <h4 className="text-white font-bold text-lg mb-2">{purchasingTemplate.title}</h4>
+                  
+                  <div className="space-y-4 mb-6">
+                    <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
+                      <p className="text-sm text-gray-400 mb-2">Price:</p>
+                      <p className="text-2xl font-bold text-green-400">{purchasingTemplate.price_kas} KAS</p>
+                    </div>
+
+                    <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
+                      <p className="text-sm text-gray-400 mb-2">Send payment to:</p>
+                      <code className="text-cyan-400 text-xs break-all">{purchasingTemplate.creator_wallet}</code>
+                    </div>
+
+                    <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                      <p className="text-yellow-300 text-xs">
+                        💡 After payment confirmation, you'll receive the full HTML template code
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => setPurchasingTemplate(null)}
+                      variant="outline"
+                      className="flex-1 border-white/20 text-white"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={confirmPurchase}
+                      disabled={isPurchasing}
+                      className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500"
+                    >
+                      {isPurchasing ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <Wallet className="w-4 h-4 mr-2" />
+                          Confirm Purchase
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Template Preview Modal */}
       <AnimatePresence>
