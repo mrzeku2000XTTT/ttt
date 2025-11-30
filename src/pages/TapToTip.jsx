@@ -47,8 +47,22 @@ export default function TapToTipPage() {
     try {
       const allUsers = await base44.entities.User.list('-created_date', 100);
       const usersWithWallets = allUsers.filter(u => u.created_wallet_address || u.agent_zk_id);
-      setUsers(usersWithWallets);
-      setFilteredUsers(usersWithWallets);
+      
+      // Load ZK profiles for profile pictures
+      const zkProfiles = await base44.entities.AgentZKProfile.filter({});
+      const profileMap = {};
+      zkProfiles.forEach(p => {
+        profileMap[p.user_email] = p.profile_picture_url;
+      });
+      
+      // Attach profile pictures to users
+      const usersWithProfiles = usersWithWallets.map(u => ({
+        ...u,
+        profile_picture: profileMap[u.email] || null
+      }));
+      
+      setUsers(usersWithProfiles);
+      setFilteredUsers(usersWithProfiles);
     } catch (err) {
       console.error('Failed to load users:', err);
     } finally {
@@ -172,8 +186,12 @@ export default function TapToTipPage() {
                   <Card className="bg-white/5 border-white/10 hover:border-cyan-500/30 transition-all">
                     <CardContent className="p-4">
                       <div className="flex items-start gap-3 mb-3">
-                        <div className="w-12 h-12 border border-cyan-500/30 rounded-full flex items-center justify-center text-lg font-bold text-white bg-white/5 flex-shrink-0">
-                          {user.username ? user.username[0].toUpperCase() : user.email[0].toUpperCase()}
+                        <div className="w-12 h-12 border border-cyan-500/30 rounded-full flex items-center justify-center overflow-hidden text-lg font-bold text-white bg-white/5 flex-shrink-0">
+                          {user.profile_picture ? (
+                            <img src={user.profile_picture} alt={user.username} className="w-full h-full object-cover" />
+                          ) : (
+                            <span>{user.username ? user.username[0].toUpperCase() : user.email[0].toUpperCase()}</span>
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="text-white font-bold truncate">
@@ -221,31 +239,37 @@ export default function TapToTipPage() {
 
       {/* Tip Modal */}
       {selectedUser && (
-        <>
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4" style={{ margin: 0 }}>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             onClick={() => setSelectedUser(null)}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center"
-            style={{ top: 0, left: 0, right: 0, bottom: 0 }}
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md z-[201]"
-            style={{ maxHeight: '90vh', overflowY: 'auto' }}
+            className="relative w-full max-w-md max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
           >
             <Card className="bg-gradient-to-br from-zinc-900/95 to-black/95 border-cyan-500/30">
               <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-6">
-                  <div>
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-16 h-16 border border-cyan-500/30 rounded-full flex items-center justify-center overflow-hidden text-2xl font-bold text-white bg-white/5 flex-shrink-0">
+                    {selectedUser.profile_picture ? (
+                      <img src={selectedUser.profile_picture} alt={selectedUser.username} className="w-full h-full object-cover" />
+                    ) : (
+                      <span>{selectedUser.username ? selectedUser.username[0].toUpperCase() : selectedUser.email[0].toUpperCase()}</span>
+                    )}
+                  </div>
+                  <div className="flex-1">
                     <h3 className="text-2xl font-bold text-white">
-                      Tip {selectedUser.username || 'User'}
+                      {selectedUser.username || 'User'}
                     </h3>
                   </div>
                   <button
                     onClick={() => setSelectedUser(null)}
-                    className="text-gray-400 hover:text-white"
+                    className="text-gray-400 hover:text-white text-2xl leading-none"
                   >
                     ✕
                   </button>
@@ -312,7 +336,7 @@ export default function TapToTipPage() {
               </CardContent>
             </Card>
           </motion.div>
-        </>
+        </div>
       )}
     </div>
   );
