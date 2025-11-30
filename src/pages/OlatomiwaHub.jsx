@@ -42,7 +42,7 @@ export default function OlatomiwaHubPage() {
           <img 
             src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/9a93c0d01_image.png"
             alt="Olatomiwa Logo"
-            className="w-48 h-48 mx-auto mb-6 drop-shadow-2xl rounded-full"
+            className="w-48 h-48 mx-auto mb-6 drop-shadow-2xl object-contain"
           />
           <h1 className="text-5xl font-black text-white mb-3">
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-pink-400">
