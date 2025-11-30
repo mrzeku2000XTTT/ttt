@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Send, Loader2, Bot, Sparkles, Share2, Download, Film } from "lucide-react";
+import { Send, Loader2, Bot, Sparkles, Share2, Download, Film, Image as ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,6 +24,7 @@ function AKContent() {
   const [genreMovies, setGenreMovies] = useState([]);
   const [loadingGenre, setLoadingGenre] = useState(false);
   const [lastMovie, setLastMovie] = useState(null);
+  const [pastedImages, setPastedImages] = useState([]);
   const { getSharedData, getAllSharedData } = useStarGate();
   const messagesEndRef = React.useRef(null);
 
@@ -114,13 +115,37 @@ function AKContent() {
     }
   };
 
-  const handleSend = async () => {
-    if (!input.trim() || loading) return;
+  const handlePaste = async (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
 
-    const userMessage = { role: "user", content: input };
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        e.preventDefault();
+        const file = items[i].getAsFile();
+        try {
+          const { file_url } = await base44.integrations.Core.UploadFile({ file });
+          setPastedImages(prev => [...prev, file_url]);
+        } catch (err) {
+          console.error('Failed to upload pasted image:', err);
+        }
+      }
+    }
+  };
+
+  const handleSend = async () => {
+    if ((!input.trim() && pastedImages.length === 0) || loading) return;
+
+    const userMessage = { 
+      role: "user", 
+      content: input,
+      images: pastedImages.length > 0 ? [...pastedImages] : undefined
+    };
     setMessages(prev => [...prev, userMessage]);
     const query = input;
+    const imageUrls = [...pastedImages];
     setInput("");
+    setPastedImages([]);
     setLoading(true);
 
     try {
@@ -237,6 +262,7 @@ function AKContent() {
           const response = await base44.integrations.Core.InvokeLLM({
             prompt: query,
             add_context_from_internet: false,
+            file_urls: imageUrls.length > 0 ? imageUrls : undefined
           });
 
           setMessages(prev => [...prev, { role: "assistant", content: response }]);
@@ -325,6 +351,18 @@ function AKContent() {
                         : "bg-white/10 text-white backdrop-blur-xl border border-white/10"
                     }`}
                   >
+                    {msg.images && msg.images.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {msg.images.map((url, idx) => (
+                          <img 
+                            key={idx}
+                            src={url} 
+                            alt="Pasted" 
+                            className="max-w-[200px] max-h-[200px] rounded-lg object-cover"
+                          />
+                        ))}
+                      </div>
+                    )}
                     <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                     {msg.music && (
                       <div className="mt-3">
@@ -439,24 +477,45 @@ function AKContent() {
             </motion.div>
           )}
 
+          {pastedImages.length > 0 && (
+            <div className="flex flex-wrap gap-2 p-2 bg-white/5 rounded-lg mb-2">
+              {pastedImages.map((url, idx) => (
+                <div key={idx} className="relative group">
+                  <img 
+                    src={url} 
+                    alt="Pasted" 
+                    className="w-16 h-16 rounded object-cover"
+                  />
+                  <button
+                    onClick={() => setPastedImages(prev => prev.filter((_, i) => i !== idx))}
+                    className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <span className="text-white text-xs">×</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
           <div style={{ display: 'flex', gap: '0.375rem' }}>
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onPaste={handlePaste}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   handleSend();
                 }
               }}
-              placeholder="Ask AK anything..."
+              placeholder="Ask AK anything or paste images..."
               className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40 resize-none text-sm py-2"
               rows={1}
               style={{ fontSize: '16px', minHeight: '38px' }}
             />
             <Button
               onClick={handleSend}
-              disabled={loading || !input.trim()}
+              disabled={loading || (!input.trim() && pastedImages.length === 0)}
               className="bg-purple-600 hover:bg-purple-700 text-white h-[38px] w-[38px] p-0 flex-shrink-0"
             >
               <Send className="w-4 h-4" />
