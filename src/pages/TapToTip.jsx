@@ -49,7 +49,7 @@ export default function TapToTipPage() {
       const usersWithWallets = allUsers.filter(u => 
         (u.created_wallet_address || u.agent_zk_id) && 
         u.username?.toLowerCase() !== 'olatomiwa' &&
-        !(u.username?.toLowerCase() === 'ttt' && !u.username?.toLowerCase().includes('feq'))
+        !(u.username?.toLowerCase() === 'ttt' && !(u.created_wallet_address?.toLowerCase().endsWith('feq') || u.agent_zk_id?.toLowerCase().endsWith('feq')))
       );
       
       // Load all active badges
