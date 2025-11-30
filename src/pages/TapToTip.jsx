@@ -126,17 +126,22 @@ export default function TapToTipPage() {
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden" style={{ paddingTop: '8rem', paddingBottom: '6rem' }}>
-      {/* Background */}
+      {/* Galaxy Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
-          animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.3, 0.2] }}
-          transition={{ duration: 8, repeat: Infinity }}
-          className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-cyan-500/20 rounded-full blur-[150px]"
+          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3], rotate: [0, 180, 360] }}
+          transition={{ duration: 20, repeat: Infinity }}
+          className="absolute top-0 left-1/4 w-[800px] h-[800px] bg-gradient-to-br from-cyan-500/30 via-purple-500/20 to-pink-500/10 rounded-full blur-[120px]"
         />
         <motion.div
-          animate={{ scale: [1.2, 1, 1.2], opacity: [0.15, 0.25, 0.15] }}
-          transition={{ duration: 10, repeat: Infinity, delay: 1 }}
-          className="absolute bottom-0 right-1/4 w-[700px] h-[700px] bg-purple-500/10 rounded-full blur-[180px]"
+          animate={{ scale: [1.2, 1, 1.2], opacity: [0.2, 0.4, 0.2], rotate: [360, 180, 0] }}
+          transition={{ duration: 25, repeat: Infinity, delay: 2 }}
+          className="absolute bottom-0 right-1/4 w-[900px] h-[900px] bg-gradient-to-tl from-purple-500/20 via-blue-500/15 to-cyan-500/10 rounded-full blur-[150px]"
+        />
+        <motion.div
+          animate={{ scale: [1, 1.3, 1], opacity: [0.1, 0.3, 0.1] }}
+          transition={{ duration: 15, repeat: Infinity, delay: 5 }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-indigo-500/10 via-purple-500/20 to-pink-500/10 rounded-full blur-[100px]"
         />
       </div>
 
@@ -255,16 +260,16 @@ export default function TapToTipPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             onClick={() => setSelectedUser(null)}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center"
+            className="fixed inset-0 bg-black/90 backdrop-blur-md z-[200]"
             style={{ top: 0, left: 0, right: 0, bottom: 0 }}
           />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md z-[201]"
-            style={{ maxHeight: '90vh', overflowY: 'auto' }}
-          >
-            <Card className="bg-gradient-to-br from-zinc-900/95 to-black/95 border-cyan-500/30">
+          <div className="fixed inset-0 z-[201] flex items-center justify-center p-4" style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="w-full max-w-md"
+            >
+            <Card className="bg-gradient-to-br from-zinc-900/98 to-black/98 border-cyan-500/40 shadow-2xl shadow-cyan-500/20">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-6">
                   <div>
@@ -339,10 +344,11 @@ export default function TapToTipPage() {
                   </p>
                 </div>
               </CardContent>
-            </Card>
-          </motion.div>
-        </>
-      )}
+              </Card>
+              </motion.div>
+              </div>
+              </>
+              )}
     </div>
   );
 }
