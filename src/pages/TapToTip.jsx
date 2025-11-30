@@ -230,7 +230,12 @@ export default function TapToTipPage() {
                                 DEATH
                               </span>
                             )}
-                          </div>
+                            {user.username?.toLowerCase() === 'esp' && (
+                              <span className="px-2 py-0.5 bg-gradient-to-r from-yellow-500 to-orange-500 rounded text-[10px] font-bold text-white">
+                                GOD
+                              </span>
+                            )}
+                            </div>
                         </div>
                       </div>
 
