@@ -1692,6 +1692,9 @@ export default function FeedPage() {
                     FIRSTLADY
                   </button>
                 )}
+                <span className="px-2 py-0.5 bg-gradient-to-r from-green-500 to-emerald-600 rounded text-[10px] font-bold text-white">
+                  $KAS
+                </span>
                 {post.author_agent_zk_id && (
                   <Badge className="bg-white/5 text-white/60 border-white/20 text-[10px] px-2 py-0.5">
                     {post.author_agent_zk_id}
