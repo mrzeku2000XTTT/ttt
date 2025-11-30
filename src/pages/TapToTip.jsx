@@ -225,6 +225,11 @@ export default function TapToTipPage() {
                                 ZEKU
                               </span>
                             )}
+                            {user.username?.toLowerCase() === 'destroyer' && (
+                              <span className="px-2 py-0.5 bg-gradient-to-r from-red-600 to-black rounded text-[10px] font-bold text-white">
+                                DEATH
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
