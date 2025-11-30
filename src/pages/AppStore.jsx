@@ -53,6 +53,7 @@ export default function AppStorePage() {
     { name: "Olatomiwa", icon: "Link2", path: "Olatomiwa", category: "Tools" },
     { name: "taiwo", icon: "Link2", path: "Taiwo", category: "Tools" },
     { name: "Kolade", icon: "Link2", path: "Kolade", category: "Tools" },
+    { name: "KASDATE", icon: "Link2", path: "Kasdate", category: "Social" },
     ];
 
   const getIconComponent = (iconName) => {

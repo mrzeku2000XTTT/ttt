@@ -130,6 +130,7 @@ import Taiwo from './pages/Taiwo';
 import TTTAudit from './pages/TTTAudit';
 import TapToTip from './pages/TapToTip';
 import Kolade from './pages/Kolade';
+import Kasdate from './pages/Kasdate';
 import __Layout from './Layout.jsx';
 
 
@@ -266,6 +267,7 @@ export const PAGES = {
     "TTTAudit": TTTAudit,
     "TapToTip": TapToTip,
     "Kolade": Kolade,
+    "Kasdate": Kasdate,
 }
 
 export const pagesConfig = {
