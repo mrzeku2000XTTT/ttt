@@ -1802,16 +1802,16 @@ export default function FeedPage() {
                     FIRSTLADY
                   </button>
                 )}
-                <div className="flex items-center justify-center w-6 h-6 rounded-full overflow-hidden" style={{ backgroundColor: 'transparent' }}>
-                  <img 
-                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/2f324d501_image.png" 
-                    alt="$KAS" 
-                    className="w-full h-full object-contain"
-                    style={{ 
-                      filter: 'drop-shadow(0 0 4px rgba(6, 182, 212, 0.3))',
-                      mixBlendMode: 'screen'
-                    }}
-                  />
+                <div className="relative flex items-center justify-center">
+                  <div className="absolute top-0 w-5 h-8 bg-gradient-to-b from-yellow-500/80 to-yellow-600/60 transform -skew-x-12 blur-[1px]" style={{ left: '-2px' }} />
+                  <div className="absolute top-0 w-5 h-8 bg-gradient-to-b from-yellow-500/80 to-yellow-600/60 transform skew-x-12 blur-[1px]" style={{ right: '-2px' }} />
+                  <div className="relative w-7 h-7 rounded-full overflow-hidden ring-2 ring-yellow-400/50 shadow-lg shadow-yellow-500/30">
+                    <img 
+                      src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/360a9bc22_image.png" 
+                      alt="$KAS" 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                 </div>
                 {post.author_agent_zk_id && (
                   <Badge className="bg-white/5 text-white/60 border-white/20 text-[10px] px-2 py-0.5">
