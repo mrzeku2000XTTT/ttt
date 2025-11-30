@@ -175,7 +175,7 @@ export default function AppStorePage() {
         <ProposeAppModal onClose={() => setShowProposeModal(false)} user={user} />
       )}
       
-      {editingApp && (
+      {editingApp && user && user.role === 'admin' && (
         <AdminIconEditor
           app={editingApp}
           currentIcon={appImages[editingApp.path]}
