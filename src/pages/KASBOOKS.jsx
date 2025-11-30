@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
-export default function BRAHIMPage() {
+export default function KASBOOKSPage() {
   const navigate = useNavigate();
 
   return (
@@ -35,14 +35,14 @@ export default function BRAHIMPage() {
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h1 className="text-white font-bold text-lg">Kasconnect</h1>
+        <h1 className="text-white font-bold text-lg">KASBOOKS</h1>
       </div>
 
       {/* Fullscreen Iframe */}
       <iframe
-        src="https://kasware-connect-56d5622d.base44.app"
+        src="https://kas-books-4fcefced.base44.app"
         className="flex-1 w-full border-0 bg-black"
-        title="BRAHIM"
+        title="KASBOOKS"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
         allowFullScreen

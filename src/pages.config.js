@@ -137,6 +137,8 @@ import KASari from './pages/KASari';
 import KaspaSTORE from './pages/KaspaSTORE';
 import AYOMUIZHub from './pages/AYOMUIZHub';
 import OlatomiwaHub from './pages/OlatomiwaHub';
+import BRAHIMHub from './pages/BRAHIMHub';
+import KASBOOKS from './pages/KASBOOKS';
 import __Layout from './Layout.jsx';
 
 
@@ -280,6 +282,8 @@ export const PAGES = {
     "KaspaSTORE": KaspaSTORE,
     "AYOMUIZHub": AYOMUIZHub,
     "OlatomiwaHub": OlatomiwaHub,
+    "BRAHIMHub": BRAHIMHub,
+    "KASBOOKS": KASBOOKS,
 }
 
 export const pagesConfig = {
