@@ -1802,9 +1802,17 @@ export default function FeedPage() {
                     FIRSTLADY
                   </button>
                 )}
-                <span className="px-2 py-0.5 bg-gradient-to-r from-green-500 to-emerald-600 rounded text-[10px] font-bold text-white">
-                  $KAS
-                </span>
+                <div className="flex items-center justify-center w-6 h-6 rounded-full overflow-hidden" style={{ backgroundColor: 'transparent' }}>
+                  <img 
+                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/2f324d501_image.png" 
+                    alt="$KAS" 
+                    className="w-full h-full object-contain"
+                    style={{ 
+                      filter: 'drop-shadow(0 0 4px rgba(6, 182, 212, 0.3))',
+                      mixBlendMode: 'screen'
+                    }}
+                  />
+                </div>
                 {post.author_agent_zk_id && (
                   <Badge className="bg-white/5 text-white/60 border-white/20 text-[10px] px-2 py-0.5">
                     {post.author_agent_zk_id}
