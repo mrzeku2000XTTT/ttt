@@ -128,6 +128,7 @@ import Olatomiwa from './pages/Olatomiwa';
 import TemplateBuilder from './pages/TemplateBuilder';
 import Taiwo from './pages/Taiwo';
 import TTTAudit from './pages/TTTAudit';
+import TapToTip from './pages/TapToTip';
 import __Layout from './Layout.jsx';
 
 
@@ -262,6 +263,7 @@ export const PAGES = {
     "TemplateBuilder": TemplateBuilder,
     "Taiwo": Taiwo,
     "TTTAudit": TTTAudit,
+    "TapToTip": TapToTip,
 }
 
 export const pagesConfig = {
