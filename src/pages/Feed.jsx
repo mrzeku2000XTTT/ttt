@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   Send, Heart, MessageCircle, Trash2, Edit2,
-  Loader2, Image as ImageIcon, X, Sparkles, Eye, Users, Activity, Video, FileText, DollarSign, Wallet, Plus, CornerDownRight, Pencil, Share2, AlertCircle, Palette, Trophy, Hammer
+  Loader2, Image as ImageIcon, X, Sparkles, Eye, Users, Activity, Video, FileText, DollarSign, Wallet, Plus, CornerDownRight, Pencil, Share2, AlertCircle, Palette, Trophy, Hammer, Search
 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -97,6 +97,7 @@ export default function FeedPage() {
   const [olatomiwaUsername, setOlatomiwaUsername] = useState(null);
   const [olatomiwaContributions, setOlatomiwaContributions] = useState({ feedPosts: 0, feedTips: 0 });
   const [loadingOlatomiwa, setLoadingOlatomiwa] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fileInputRef = useRef(null);
   const replyFileInputRef = useRef(null);
@@ -1478,7 +1479,24 @@ export default function FeedPage() {
   };
 
   const getMainPosts = () => {
-    return posts.filter(p => !p.parent_post_id).sort((a, b) =>
+    let filtered = posts.filter(p => !p.parent_post_id);
+    
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(post => {
+        const content = post.content?.toLowerCase() || '';
+        const author = post.author_name?.toLowerCase() || '';
+        
+        // Search in content, author name, hashtags, mentions, and tickers
+        return content.includes(query) || 
+               author.includes(query) ||
+               content.includes('#' + query) ||
+               content.includes('@' + query) ||
+               content.includes('$' + query);
+      });
+    }
+    
+    return filtered.sort((a, b) =>
       new Date(b.created_date) - new Date(a.created_date)
     );
   };
@@ -3288,6 +3306,27 @@ export default function FeedPage() {
                 </div>
                 <p className="text-white/40 text-sm">Community Posts</p>
               </div>
+            </div>
+
+            {/* Search Bar */}
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search posts, @mentions, #hashtags, $tokens..."
+                className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-white/40 h-10"
+              />
+              {searchQuery && (
+                <Button
+                  onClick={() => setSearchQuery('')}
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 p-0 text-white/40 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
             </div>
 
             {!kaswareWallet.connected && (
