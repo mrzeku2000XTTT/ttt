@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Zap, Search, Wallet, User as UserIcon, Copy, Check, Send } from "lucide-react";
+import { Zap, Search, Wallet, User as UserIcon, Copy, Check, Send, CheckCircle } from "lucide-react";
 
 export default function TapToTipPage() {
   const [users, setUsers] = useState([]);
@@ -19,6 +19,13 @@ export default function TapToTipPage() {
   useEffect(() => {
     loadCurrentUser();
     loadUsers();
+    
+    // Auto-refresh users every 10 seconds to catch wallet updates
+    const interval = setInterval(() => {
+      loadUsers();
+    }, 10000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -186,17 +193,23 @@ export default function TapToTipPage() {
                   <Card className="bg-white/5 border-white/10 hover:border-cyan-500/30 transition-all">
                     <CardContent className="p-4">
                       <div className="flex items-start gap-3 mb-3">
-                        <div className="w-12 h-12 border border-cyan-500/30 rounded-full flex items-center justify-center overflow-hidden text-lg font-bold text-white bg-white/5 flex-shrink-0">
+                        <div className="relative w-12 h-12 border border-cyan-500/30 rounded-full flex items-center justify-center overflow-hidden text-lg font-bold text-white bg-white/5 flex-shrink-0">
                           {user.profile_picture ? (
                             <img src={user.profile_picture} alt={user.username} className="w-full h-full object-cover" />
                           ) : (
                             <span>{user.username ? user.username[0].toUpperCase() : user.email[0].toUpperCase()}</span>
                           )}
+                          <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-black flex items-center justify-center">
+                            <Check className="w-2.5 h-2.5 text-white" />
+                          </div>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-white font-bold truncate">
-                            {user.username || 'Anonymous'}
-                          </h3>
+                          <div className="flex items-center gap-1.5">
+                            <h3 className="text-white font-bold truncate">
+                              {user.username || 'Anonymous'}
+                            </h3>
+                            <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
+                          </div>
                         </div>
                       </div>
 
@@ -255,17 +268,24 @@ export default function TapToTipPage() {
             <Card className="bg-gradient-to-br from-zinc-900/95 to-black/95 border-cyan-500/30">
               <CardContent className="p-6">
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="w-16 h-16 border border-cyan-500/30 rounded-full flex items-center justify-center overflow-hidden text-2xl font-bold text-white bg-white/5 flex-shrink-0">
+                  <div className="relative w-16 h-16 border border-cyan-500/30 rounded-full flex items-center justify-center overflow-hidden text-2xl font-bold text-white bg-white/5 flex-shrink-0">
                     {selectedUser.profile_picture ? (
                       <img src={selectedUser.profile_picture} alt={selectedUser.username} className="w-full h-full object-cover" />
                     ) : (
                       <span>{selectedUser.username ? selectedUser.username[0].toUpperCase() : selectedUser.email[0].toUpperCase()}</span>
                     )}
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-zinc-900 flex items-center justify-center">
+                      <Check className="w-3.5 h-3.5 text-white" />
+                    </div>
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-2xl font-bold text-white">
-                      {selectedUser.username || 'User'}
-                    </h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-2xl font-bold text-white">
+                        {selectedUser.username || 'User'}
+                      </h3>
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-0.5">Verified TTT Wallet</p>
                   </div>
                   <button
                     onClick={() => setSelectedUser(null)}
