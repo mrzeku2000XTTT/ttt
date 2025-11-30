@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
-import { ShoppingBag, Gem } from "lucide-react";
+import { ShoppingBag, Gem, Zap } from "lucide-react";
 
 export default function MODZHubPage() {
   const apps = [
@@ -19,6 +19,13 @@ export default function MODZHubPage() {
       path: "KASari",
       description: "Kaspa Emergency Response",
       color: "from-purple-500 to-pink-500"
+    },
+    {
+      name: "Taiwo",
+      icon: Zap,
+      path: "Taiwo",
+      description: "Kasware Quest",
+      color: "from-yellow-500 to-orange-500"
     }
   ];
 
@@ -38,7 +45,7 @@ export default function MODZHubPage() {
           <p className="text-gray-400 text-lg">Choose an app to open</p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-3 gap-6">
           {apps.map((app, i) => {
             const Icon = app.icon;
             return (
