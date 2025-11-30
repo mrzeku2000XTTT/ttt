@@ -61,11 +61,18 @@ export default function TapToTipPage() {
         badgesMap[badge.username].push(badge);
       });
       
-      // Sort users: those with badges first
+      // Sort users: priority users first, then by badges
       const sortedUsers = usersWithWallets.sort((a, b) => {
+        const priorityUsers = ['destroyer', 'esp'];
+        const aIsPriority = priorityUsers.some(p => a.username?.toLowerCase().includes(p));
+        const bIsPriority = priorityUsers.some(p => b.username?.toLowerCase().includes(p));
+        
+        if (aIsPriority && !bIsPriority) return -1;
+        if (!aIsPriority && bIsPriority) return 1;
+        
         const aBadges = badgesMap[a.username]?.length || 0;
         const bBadges = badgesMap[b.username]?.length || 0;
-        return bBadges - aBadges; // Users with more badges come first
+        return bBadges - aBadges;
       });
       
       setUsers(sortedUsers);
