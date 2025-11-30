@@ -125,7 +125,7 @@ function AKContent() {
 
     try {
         // Check for !ASIAN command
-        if (query.trim() === '!ASIAN') {
+        if (query.trim().toLowerCase() === '!asian') {
           setMessages(prev => [...prev, { 
             role: "assistant", 
             content: "🎬 Opening Asian drama browser...",
