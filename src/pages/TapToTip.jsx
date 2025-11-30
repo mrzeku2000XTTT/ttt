@@ -80,8 +80,29 @@ export default function TapToTipPage() {
         badges: badgeMap[u.username] || []
       }));
       
-      setUsers(usersWithProfiles);
-      setFilteredUsers(usersWithProfiles);
+      // Priority users to display at the top
+      const priorityUsernames = ['kehindeayo', 'kehinde', 'ayomuiz', 'peculiar', 'olatomiwa', 'brahimcrrypt', 'brahim', 'hayphase', 'big-ayoolataiwo1', 'big-ayoolataiwol'];
+      
+      // Sort users: priority users first, then others
+      const sortedUsers = usersWithProfiles.sort((a, b) => {
+        const aIsPriority = priorityUsernames.includes(a.username?.toLowerCase());
+        const bIsPriority = priorityUsernames.includes(b.username?.toLowerCase());
+        
+        if (aIsPriority && !bIsPriority) return -1;
+        if (!aIsPriority && bIsPriority) return 1;
+        
+        // Among priority users, sort by index in priority list
+        if (aIsPriority && bIsPriority) {
+          const aIndex = priorityUsernames.indexOf(a.username?.toLowerCase());
+          const bIndex = priorityUsernames.indexOf(b.username?.toLowerCase());
+          return aIndex - bIndex;
+        }
+        
+        return 0; // Keep original order for non-priority users
+      });
+      
+      setUsers(sortedUsers);
+      setFilteredUsers(sortedUsers);
     } catch (err) {
       console.error('Failed to load users:', err);
     } finally {
