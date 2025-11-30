@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Zap, Search, Wallet, User as UserIcon, Copy, Check, Send, CheckCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 export default function TapToTipPage() {
   const [users, setUsers] = useState([]);
@@ -62,10 +63,19 @@ export default function TapToTipPage() {
         profileMap[p.user_email] = p.profile_picture_url;
       });
       
-      // Attach profile pictures to users
+      // Load user badges
+      const allBadges = await base44.entities.UserBadge.filter({ is_active: true });
+      const badgeMap = {};
+      allBadges.forEach(b => {
+        if (!badgeMap[b.username]) badgeMap[b.username] = [];
+        badgeMap[b.username].push({ name: b.badge_name, color: b.badge_color });
+      });
+      
+      // Attach profile pictures and badges to users
       const usersWithProfiles = usersWithWallets.map(u => ({
         ...u,
-        profile_picture: profileMap[u.email] || null
+        profile_picture: profileMap[u.email] || null,
+        badges: badgeMap[u.username] || []
       }));
       
       setUsers(usersWithProfiles);
@@ -204,11 +214,16 @@ export default function TapToTipPage() {
                           </div>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <h3 className="text-white font-bold truncate">
                               {user.username || 'Anonymous'}
                             </h3>
                             <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
+                            {user.badges?.map((badge, idx) => (
+                              <Badge key={idx} className={`text-[10px] px-1.5 py-0 bg-${badge.color}-500/20 text-${badge.color}-300 border-${badge.color}-500/30`}>
+                                {badge.name}
+                              </Badge>
+                            ))}
                           </div>
                         </div>
                       </div>
@@ -279,11 +294,16 @@ export default function TapToTipPage() {
                     </div>
                   </div>
                   <div className="flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="text-2xl font-bold text-white">
                         {selectedUser.username || 'User'}
                       </h3>
                       <CheckCircle className="w-5 h-5 text-green-400" />
+                      {selectedUser.badges?.map((badge, idx) => (
+                        <Badge key={idx} className={`text-xs bg-${badge.color}-500/20 text-${badge.color}-300 border-${badge.color}-500/30`}>
+                          {badge.name}
+                        </Badge>
+                      ))}
                     </div>
                     <p className="text-xs text-gray-500 mt-0.5">Verified TTT Wallet</p>
                   </div>
