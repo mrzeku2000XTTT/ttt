@@ -132,6 +132,8 @@ import TapToTip from './pages/TapToTip';
 import Kolade from './pages/Kolade';
 import Kasdate from './pages/Kasdate';
 import MODZ from './pages/MODZ';
+import MODZHub from './pages/MODZHub';
+import KASari from './pages/KASari';
 import __Layout from './Layout.jsx';
 
 
@@ -270,6 +272,8 @@ export const PAGES = {
     "Kolade": Kolade,
     "Kasdate": Kasdate,
     "MODZ": MODZ,
+    "MODZHub": MODZHub,
+    "KASari": KASari,
 }
 
 export const pagesConfig = {
