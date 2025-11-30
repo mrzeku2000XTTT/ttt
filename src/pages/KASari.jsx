@@ -2,9 +2,12 @@ import React from "react";
 
 export default function KASariPage() {
   return (
-    <div className="fixed inset-0 bg-black" style={{ 
+    <div className="fixed bg-black" style={{ 
       top: 'calc(7.5rem + var(--sat, 0px))',
-      bottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))'
+      left: 0,
+      right: 0,
+      bottom: 0,
+      paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 4rem)'
     }}>
       <iframe
         src="https://kaspa-emergency-response-097a9b19.base44.app"
