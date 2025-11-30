@@ -4,8 +4,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Zap, Search, Wallet, User as UserIcon, Copy, Check, QrCode, Send } from "lucide-react";
-import QRCode from "react-qr-code";
+import { Zap, Search, Wallet, User as UserIcon, Copy, Check, Send } from "lucide-react";
 
 export default function TapToTipPage() {
   const [users, setUsers] = useState([]);
@@ -252,12 +251,20 @@ export default function TapToTipPage() {
                   </button>
                 </div>
 
-                <div className="bg-white p-4 rounded-lg mb-6">
-                  <QRCode
-                    value={selectedUser.created_wallet_address || selectedUser.agent_zk_id}
-                    size={200}
-                    className="mx-auto"
-                  />
+                <div className="p-4 bg-black/30 rounded-lg mb-6 border border-cyan-500/30">
+                  <p className="text-gray-400 text-xs mb-2 text-center">Recipient Address</p>
+                  <div className="bg-white/5 p-3 rounded border border-white/10">
+                    <code className="text-cyan-400 text-xs break-all block text-center">
+                      {selectedUser.created_wallet_address || selectedUser.agent_zk_id}
+                    </code>
+                  </div>
+                  <button
+                    onClick={() => handleCopyAddress(selectedUser.created_wallet_address || selectedUser.agent_zk_id)}
+                    className="w-full mt-3 text-sm text-gray-400 hover:text-cyan-400 transition-colors"
+                  >
+                    <Copy className="w-4 h-4 inline mr-2" />
+                    Copy Address
+                  </button>
                 </div>
 
                 <div className="space-y-4">
