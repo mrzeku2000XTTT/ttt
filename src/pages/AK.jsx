@@ -271,7 +271,7 @@ function AKContent() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           style={{ 
-            padding: '0.5rem 0', 
+            padding: '1.5rem 0 0.5rem 0', 
             textAlign: 'center',
             flexShrink: 0
           }}
