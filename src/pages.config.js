@@ -135,6 +135,7 @@ import MODZ from './pages/MODZ';
 import MODZHub from './pages/MODZHub';
 import KASari from './pages/KASari';
 import KaspaSTORE from './pages/KaspaSTORE';
+import AYOMUIZHub from './pages/AYOMUIZHub';
 import __Layout from './Layout.jsx';
 
 
@@ -276,6 +277,7 @@ export const PAGES = {
     "MODZHub": MODZHub,
     "KASari": KASari,
     "KaspaSTORE": KaspaSTORE,
+    "AYOMUIZHub": AYOMUIZHub,
 }
 
 export const pagesConfig = {
