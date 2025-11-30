@@ -45,7 +45,7 @@ export default function AppStorePage() {
     { name: "TapToTip", icon: "Link2", path: "TapToTip", category: "Finance", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/416c87773_image.png" },
     { name: "BRAHIM", icon: "Link2", path: "BRAHIM", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/88322e438_image.png" },
     { name: "AYOMUIZ", icon: "Link2", path: "AYOMUIZHub", category: "Games", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/120ea91b8_image.png" },
-    { name: "peculiar", icon: "Link2", path: "Peculiar", category: "Tools", badge: 1 },
+    { name: "peculiar", icon: "Link2", path: "Peculiar", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/593d9f9eb_image.png" },
     { name: "kehinde", icon: "Link2", path: "Kehinde", category: "Tools" },
     { name: "HAYPHASE", icon: "Link2", path: "HAYPHASE", category: "Tools" },
     { name: "VAULT", icon: "Link2", path: "Vault", category: "Finance" },
