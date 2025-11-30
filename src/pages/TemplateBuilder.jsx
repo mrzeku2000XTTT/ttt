@@ -166,16 +166,18 @@ Format as a single, comprehensive paragraph.`
 
     try {
       await base44.entities.ShopItem.create({
-        name: template.title,
+        title: template.title,
         description: template.description,
-        price: template.price_kas,
-        image_url: template.preview_image_url,
-        category: "Digital",
-        stock_quantity: 999,
-        seller_wallet: template.creator_wallet,
+        price_kas: template.price_kas,
+        images: [template.preview_image_url],
+        category: "services",
+        condition: "new",
+        stock: 999,
+        seller_kaspa_address: template.creator_wallet,
         seller_email: template.creator_email,
-        item_type: "template",
-        template_id: template.id
+        seller_username: user.username || user.email.split('@')[0],
+        tags: ["template", "landing-page", template.category],
+        status: "active"
       });
 
       alert('Template pushed to Shop successfully! Buyers will need to pay to view.');
