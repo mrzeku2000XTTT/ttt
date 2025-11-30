@@ -1561,11 +1561,17 @@ export default function FeedPage() {
 
   useEffect(() => {
     if (searchQuery.startsWith('$')) {
+      const cleanQuery = searchQuery.replace('$', '').toUpperCase();
+      
+      // If query changed, show dropdown again
+      if (selectedTicker && cleanQuery !== selectedTicker) {
+        setSelectedTicker(null);
+      }
+      
       searchTickers(searchQuery);
       
-      // Check if exact ticker match
-      const cleanQuery = searchQuery.replace('$', '').toUpperCase();
-      if (tickerCache[cleanQuery]) {
+      // Auto-select if exact match
+      if (tickerCache[cleanQuery] && tickerResults.length === 1) {
         setSelectedTicker(cleanQuery);
       }
     } else {
@@ -3395,13 +3401,26 @@ export default function FeedPage() {
               />
               {searchQuery && (
                 <Button
-                  onClick={() => setSearchQuery('')}
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedTicker(null);
+                    setVisiblePosts(20);
+                  }}
                   variant="ghost"
                   size="sm"
                   className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 p-0 text-white/40 hover:text-white"
                 >
                   <X className="w-4 h-4" />
                 </Button>
+              )}
+
+              {/* Active Ticker Badge */}
+              {selectedTicker && (
+                <div className="absolute left-10 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-green-500/20 border border-green-500/40 rounded-md px-2 py-1">
+                  <DollarSign className="w-3 h-3 text-green-400" />
+                  <span className="text-xs text-green-400 font-semibold">{selectedTicker}</span>
+                  <span className="text-xs text-white/40">({tickerCache[selectedTicker]?.length || 0})</span>
+                </div>
               )}
 
               {/* Ticker Dropdown */}
