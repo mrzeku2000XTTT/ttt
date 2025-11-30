@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingBag, Gem, Zap } from "lucide-react";
 
 export default function MODZHubPage() {
+  const [showKNSCard, setShowKNSCard] = useState(false);
+
   const apps = [
     {
       name: "kaspaSTORE",
@@ -40,17 +42,77 @@ export default function MODZHubPage() {
           filter: 'brightness(0.4)'
         }}
       />
+
+      {/* Animated Fireflies Background */}
+      <div className="absolute inset-0 z-[5] pointer-events-none overflow-hidden">
+        {[...Array(15)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-2 h-2 bg-white/30 rounded-full"
+            initial={{
+              x: Math.random() * window.innerWidth,
+              y: Math.random() * window.innerHeight,
+              opacity: 0
+            }}
+            animate={{
+              x: [
+                Math.random() * window.innerWidth,
+                Math.random() * window.innerWidth,
+                Math.random() * window.innerWidth
+              ],
+              y: [
+                Math.random() * window.innerHeight,
+                Math.random() * window.innerHeight,
+                Math.random() * window.innerHeight
+              ],
+              opacity: [0, 0.6, 0, 0.4, 0],
+              scale: [0.8, 1.2, 0.9, 1.1, 0.8]
+            }}
+            transition={{
+              duration: 8 + Math.random() * 4,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: Math.random() * 2
+            }}
+          />
+        ))}
+      </div>
       <div className="max-w-4xl w-full relative z-10">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <img 
-            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/e4ca8d329_image.png"
-            alt="MODZ Logo"
-            className="w-32 h-32 mx-auto mb-6 drop-shadow-2xl object-contain"
-          />
+          <div className="relative inline-block mb-6">
+            <img 
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/e4ca8d329_image.png"
+              alt="MODZ Logo"
+              className="w-32 h-32 drop-shadow-2xl object-contain"
+            />
+            
+            {/* K.I.D Button */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowKNSCard(true)}
+              className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-xl border border-white/30 text-white px-3 py-1 rounded-lg text-xs font-bold hover:bg-white/10 transition-all shadow-lg"
+            >
+              K.I.D
+            </motion.button>
+
+            {/* X Button */}
+            <motion.a
+              href="https://x.com/AyoolaT23902055"
+              target="_blank"
+              rel="noopener noreferrer"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="absolute -top-2 -right-2 w-8 h-8 bg-black border border-white/30 rounded-lg flex items-center justify-center hover:bg-white/10 transition-all shadow-lg"
+            >
+              <span className="text-white font-black text-sm">𝕏</span>
+            </motion.a>
+          </div>
+
           <h1 className="text-5xl font-black text-white mb-3">
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-400">
               MODZ
@@ -94,6 +156,41 @@ export default function MODZHubPage() {
           })}
         </div>
       </div>
+
+      {/* KNS Card Modal */}
+      <AnimatePresence>
+        {showKNSCard && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowKNSCard(false)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100]"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-[90vw] max-w-md"
+            >
+              <div className="relative">
+                <img
+                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/aa7f06b84_image.png"
+                  alt="KNS Card"
+                  className="w-full rounded-2xl shadow-2xl border border-white/20"
+                />
+                <button
+                  onClick={() => setShowKNSCard(false)}
+                  className="absolute top-4 right-4 w-8 h-8 bg-black/80 backdrop-blur-xl border border-white/30 rounded-full flex items-center justify-center hover:bg-white/10 transition-all text-white"
+                >
+                  ✕
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
