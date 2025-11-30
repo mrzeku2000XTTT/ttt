@@ -28,17 +28,19 @@ export default function AdminIconEditor({ app, currentIcon, onClose, onSave }) {
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file: selectedFile });
       
-      const existing = await base44.entities.AppIconCustomization.filter({ app_id: app.path });
+      const existing = await base44.asServiceRole.entities.AppIconCustomization.filter({ app_id: app.path });
       
       if (existing.length > 0) {
-        await base44.entities.AppIconCustomization.update(existing[0].id, {
-          icon_url: file_url
+        await base44.asServiceRole.entities.AppIconCustomization.update(existing[0].id, {
+          icon_url: file_url,
+          icon_type: 'uploaded'
         });
       } else {
-        await base44.entities.AppIconCustomization.create({
+        await base44.asServiceRole.entities.AppIconCustomization.create({
           app_id: app.path,
           app_name: app.name,
-          icon_url: file_url
+          icon_url: file_url,
+          icon_type: 'uploaded'
         });
       }
       
@@ -46,7 +48,7 @@ export default function AdminIconEditor({ app, currentIcon, onClose, onSave }) {
       onClose();
     } catch (err) {
       console.error('Failed to save icon:', err);
-      alert('Failed to save icon');
+      alert('Failed to save icon: ' + err.message);
     } finally {
       setUploading(false);
     }
