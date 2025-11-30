@@ -28,21 +28,11 @@ export default function AdminIconEditor({ app, currentIcon, onClose, onSave }) {
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file: selectedFile });
       
-      const existing = await base44.asServiceRole.entities.AppIconCustomization.filter({ app_id: app.path });
-      
-      if (existing.length > 0) {
-        await base44.asServiceRole.entities.AppIconCustomization.update(existing[0].id, {
-          icon_url: file_url,
-          icon_type: 'uploaded'
-        });
-      } else {
-        await base44.asServiceRole.entities.AppIconCustomization.create({
-          app_id: app.path,
-          app_name: app.name,
-          icon_url: file_url,
-          icon_type: 'uploaded'
-        });
-      }
+      await base44.functions.invoke('saveAppIcon', {
+        app_id: app.path,
+        app_name: app.name,
+        icon_url: file_url
+      });
       
       onSave(file_url);
       onClose();
