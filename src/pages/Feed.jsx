@@ -3518,6 +3518,7 @@ export default function FeedPage() {
                   onClick={() => {
                     setSearchQuery('');
                     setSelectedTicker(null);
+                    setSelectedHashtag(null);
                     setVisiblePosts(20);
                   }}
                   variant="ghost"
