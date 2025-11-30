@@ -3667,6 +3667,36 @@ export default function FeedPage() {
                           <Textarea
                             value={newPost}
                             onChange={(e) => setNewPost(e.target.value)}
+                            onPaste={async (e) => {
+                              const items = e.clipboardData?.items;
+                              if (!items) return;
+
+                              for (const item of items) {
+                                // Handle pasted images
+                                if (item.type.indexOf('image') !== -1) {
+                                  e.preventDefault();
+                                  const file = item.getAsFile();
+                                  if (file) {
+                                    setIsUploadingFile(true);
+                                    try {
+                                      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                                      setUploadedFiles([...uploadedFiles, {
+                                        url: file_url,
+                                        type: 'image',
+                                        name: file.name || 'pasted-image.png',
+                                        size: file.size
+                                      }]);
+                                    } catch (err) {
+                                      console.error('Failed to upload pasted image:', err);
+                                      setError('Failed to upload pasted image');
+                                    } finally {
+                                      setIsUploadingFile(false);
+                                    }
+                                  }
+                                }
+                                // Text is handled automatically by the textarea
+                              }
+                            }}
                             placeholder={editingPost ? "Edit your post..." : "What's on your mind?"}
                             className="bg-white/5 border-white/10 text-white placeholder:text-white/30 min-h-[100px] resize-none"
                           />
@@ -3935,11 +3965,40 @@ export default function FeedPage() {
                                         localStorage.getItem('ttt_wallet_address')?.slice(0, 1).toUpperCase() || 'A'}
                                       </div>
                                       <Textarea
-                                        value={replyText}
-                                        onChange={(e) => setReplyText(e.target.value)}
-                                        placeholder="Write your reply..."
-                                        className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/30 min-h-[80px] resize-none"
-                                        autoFocus
+                                       value={replyText}
+                                       onChange={(e) => setReplyText(e.target.value)}
+                                       onPaste={async (e) => {
+                                         const items = e.clipboardData?.items;
+                                         if (!items) return;
+
+                                         for (const item of items) {
+                                           // Handle pasted images
+                                           if (item.type.indexOf('image') !== -1) {
+                                             e.preventDefault();
+                                             const file = item.getAsFile();
+                                             if (file) {
+                                               setIsUploadingFile(true);
+                                               try {
+                                                 const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                                                 setReplyFiles([...replyFiles, {
+                                                   url: file_url,
+                                                   type: 'image',
+                                                   name: file.name || 'pasted-image.png',
+                                                   size: file.size
+                                                 }]);
+                                               } catch (err) {
+                                                 console.error('Failed to upload pasted image:', err);
+                                                 setError('Failed to upload pasted image');
+                                               } finally {
+                                                 setIsUploadingFile(false);
+                                               }
+                                             }
+                                           }
+                                         }
+                                       }}
+                                       placeholder="Write your reply..."
+                                       className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/30 min-h-[80px] resize-none"
+                                       autoFocus
                                       />
                                     </div>
 
