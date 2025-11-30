@@ -49,7 +49,7 @@ export default function AppStorePage() {
     { name: "kehinde", icon: "Link2", path: "Kehinde", category: "Tools" },
     { name: "HAYPHASE", icon: "Link2", path: "HAYPHASE", category: "Tools" },
     { name: "VAULT", icon: "Link2", path: "Vault", category: "Finance" },
-    { name: "Olatomiwa", icon: "Link2", path: "Olatomiwa", category: "Tools" },
+    { name: "Olatomiwa", icon: "Link2", path: "OlatomiwaHub", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/9a93c0d01_image.png" },
     { name: "Kolade", icon: "Link2", path: "Kolade", category: "Tools" },
     { name: "KASDATE", icon: "Link2", path: "Kasdate", category: "Social" },
     { name: "MODZ", icon: "Link2", path: "MODZHub", category: "Tools" },
