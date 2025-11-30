@@ -23,8 +23,17 @@ export default function AYOMUIZHubPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 flex items-center justify-center p-6">
-      <div className="max-w-4xl w-full">
+    <div className="min-h-screen relative flex items-center justify-center p-6">
+      <div 
+        className="absolute inset-0 z-0"
+        style={{
+          backgroundImage: 'url(https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/f1f03d3d6_CreateanimageofhikingupMtEverest.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'brightness(0.4)'
+        }}
+      />
+      <div className="max-w-4xl w-full relative z-10">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -55,7 +64,7 @@ export default function AYOMUIZHubPage() {
                     style={{ background: `linear-gradient(to bottom right, var(--tw-gradient-stops))` }}
                   />
                   
-                  <div className={`relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 hover:border-white/20 transition-all`}>
+                  <div className={`relative bg-black/60 backdrop-blur-xl border border-white/20 rounded-2xl p-8 hover:border-white/30 transition-all shadow-2xl`}>
                     <div className={`w-20 h-20 mx-auto mb-6 bg-gradient-to-br ${app.color} rounded-2xl flex items-center justify-center shadow-lg`}>
                       <Icon className="w-10 h-10 text-white" strokeWidth={1.5} />
                     </div>
