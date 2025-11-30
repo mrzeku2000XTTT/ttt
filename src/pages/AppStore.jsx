@@ -44,7 +44,7 @@ export default function AppStorePage() {
   };
 
   const apps = [
-    { name: "TapToTip", icon: "Link2", path: "TapToTip", category: "Finance" },
+    { name: "TapToTip", icon: "Link2", path: "TapToTip", category: "Finance", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/416c87773_image.png" },
     { name: "BRAHIM", icon: "Link2", path: "BRAHIM", category: "Tools" },
     { name: "AYOMUIZ", icon: "Link2", path: "AYOMUIZ", category: "Games" },
     { name: "Ayomuiz2", icon: "Link2", path: "AYOMUIZ2", category: "Games" },
@@ -135,8 +135,8 @@ export default function AppStorePage() {
                       {app.premium && (
                         <Crown className="absolute -top-1 -right-1 w-3 h-3 text-yellow-400" />
                       )}
-                      {appImages[app.path] ? (
-                        <img src={appImages[app.path]} alt={app.name} className="w-full h-full object-cover rounded-xl" />
+                      {appImages[app.path] || app.defaultIcon ? (
+                        <img src={appImages[app.path] || app.defaultIcon} alt={app.name} className="w-full h-full object-cover rounded-xl" />
                       ) : (
                         <Icon className="w-8 h-8 text-white/80" strokeWidth={1.5} />
                       )}
