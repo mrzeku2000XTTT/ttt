@@ -47,8 +47,26 @@ export default function TapToTipPage() {
     try {
       const allUsers = await base44.entities.User.list('-created_date', 100);
       const usersWithWallets = allUsers.filter(u => u.created_wallet_address || u.agent_zk_id);
-      setUsers(usersWithWallets);
-      setFilteredUsers(usersWithWallets);
+      
+      // Load all active badges
+      const allBadges = await base44.entities.UserBadge.filter({ is_active: true });
+      const badgesMap = {};
+      allBadges.forEach(badge => {
+        if (!badgesMap[badge.username]) {
+          badgesMap[badge.username] = [];
+        }
+        badgesMap[badge.username].push(badge);
+      });
+      
+      // Sort users: those with badges first
+      const sortedUsers = usersWithWallets.sort((a, b) => {
+        const aBadges = badgesMap[a.username]?.length || 0;
+        const bBadges = badgesMap[b.username]?.length || 0;
+        return bBadges - aBadges; // Users with more badges come first
+      });
+      
+      setUsers(sortedUsers);
+      setFilteredUsers(sortedUsers);
     } catch (err) {
       console.error('Failed to load users:', err);
     } finally {
