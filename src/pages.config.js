@@ -131,6 +131,7 @@ import TTTAudit from './pages/TTTAudit';
 import TapToTip from './pages/TapToTip';
 import Kolade from './pages/Kolade';
 import Kasdate from './pages/Kasdate';
+import MODZ from './pages/MODZ';
 import __Layout from './Layout.jsx';
 
 
@@ -268,6 +269,7 @@ export const PAGES = {
     "TapToTip": TapToTip,
     "Kolade": Kolade,
     "Kasdate": Kasdate,
+    "MODZ": MODZ,
 }
 
 export const pagesConfig = {
