@@ -102,6 +102,9 @@ export default function FeedPage() {
   const [selectedTicker, setSelectedTicker] = useState(null);
   const [visiblePosts, setVisiblePosts] = useState(20);
   const [tickerCache, setTickerCache] = useState({});
+  const [hashtagCache, setHashtagCache] = useState({});
+  const [hashtagResults, setHashtagResults] = useState([]);
+  const [selectedHashtag, setSelectedHashtag] = useState(null);
   const [userResults, setUserResults] = useState([]);
 
   const fileInputRef = useRef(null);
@@ -1497,6 +1500,9 @@ export default function FeedPage() {
     if (selectedTicker) {
       // Use cached ticker posts for instant results
       filtered = tickerCache[selectedTicker] || [];
+    } else if (selectedHashtag) {
+      // Use cached hashtag posts for instant results
+      filtered = hashtagCache[selectedHashtag] || [];
     } else if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(post => {
@@ -1520,24 +1526,40 @@ export default function FeedPage() {
   const preloadTickerCache = () => {
     // Build ticker cache from all posts
     const tickerPattern = /\$([a-zA-Z0-9_]+)/gi;
-    const cache = {};
+    const hashtagPattern = /#([a-zA-Z0-9_]+)/gi;
+    const tickerCacheData = {};
+    const hashtagCacheData = {};
     
     posts.forEach(post => {
       if (post.parent_post_id) return; // Skip replies
       
-      const matches = post.content?.matchAll(tickerPattern);
-      if (matches) {
-        for (const match of matches) {
+      // Cache tickers
+      const tickerMatches = post.content?.matchAll(tickerPattern);
+      if (tickerMatches) {
+        for (const match of tickerMatches) {
           const ticker = match[1].toUpperCase();
-          if (!cache[ticker]) {
-            cache[ticker] = [];
+          if (!tickerCacheData[ticker]) {
+            tickerCacheData[ticker] = [];
           }
-          cache[ticker].push(post);
+          tickerCacheData[ticker].push(post);
+        }
+      }
+
+      // Cache hashtags
+      const hashtagMatches = post.content?.matchAll(hashtagPattern);
+      if (hashtagMatches) {
+        for (const match of hashtagMatches) {
+          const hashtag = match[1].toLowerCase();
+          if (!hashtagCacheData[hashtag]) {
+            hashtagCacheData[hashtag] = [];
+          }
+          hashtagCacheData[hashtag].push(post);
         }
       }
     });
     
-    setTickerCache(cache);
+    setTickerCache(tickerCacheData);
+    setHashtagCache(hashtagCacheData);
   };
 
   const searchTickers = (query) => {
@@ -1557,6 +1579,26 @@ export default function FeedPage() {
     setTickerResults(matchingTickers.map(ticker => ({
       ticker: ticker,
       count: tickerCache[ticker].length
+    })).sort((a, b) => b.count - a.count)); // Sort by post count
+  };
+
+  const searchHashtags = (query) => {
+    if (!query.trim()) {
+      setHashtagResults([]);
+      setSelectedHashtag(null);
+      return;
+    }
+
+    const cleanQuery = query.replace('#', '').toLowerCase();
+    
+    // Use cached hashtag data for instant results
+    const matchingHashtags = Object.keys(hashtagCache).filter(hashtag => 
+      hashtag.toLowerCase().includes(cleanQuery)
+    );
+
+    setHashtagResults(matchingHashtags.map(hashtag => ({
+      hashtag: hashtag,
+      count: hashtagCache[hashtag].length
     })).sort((a, b) => b.count - a.count)); // Sort by post count
   };
 
@@ -1606,24 +1648,43 @@ export default function FeedPage() {
       }
       
       searchTickers(searchQuery);
+      setHashtagResults([]);
       setUserResults([]);
       
       // Auto-select if exact match
       if (tickerCache[cleanQuery] && tickerResults.length === 1) {
         setSelectedTicker(cleanQuery);
       }
+    } else if (searchQuery.startsWith('#')) {
+      const cleanQuery = searchQuery.replace('#', '').toLowerCase();
+      
+      // If query changed, show dropdown again
+      if (selectedHashtag && cleanQuery !== selectedHashtag) {
+        setSelectedHashtag(null);
+      }
+      
+      searchHashtags(searchQuery);
+      setTickerResults([]);
+      setUserResults([]);
+      
+      // Auto-select if exact match
+      if (hashtagCache[cleanQuery] && hashtagResults.length === 1) {
+        setSelectedHashtag(cleanQuery);
+      }
     } else {
       setTickerResults([]);
+      setHashtagResults([]);
       setSelectedTicker(null);
+      setSelectedHashtag(null);
       
-      // Search users for non-ticker queries
+      // Search users for non-ticker/hashtag queries
       if (searchQuery.trim().length >= 2) {
         searchUsers(searchQuery);
       } else {
         setUserResults([]);
       }
     }
-  }, [searchQuery, tickerCache]);
+  }, [searchQuery, tickerCache, hashtagCache]);
 
   const renderTextWithLinks = (text) => {
     if (!text) return null;
@@ -3503,6 +3564,42 @@ export default function FeedPage() {
                 )}
               </AnimatePresence>
 
+              {/* Hashtag Dropdown */}
+              <AnimatePresence>
+                {hashtagResults.length > 0 && !selectedHashtag && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute top-full mt-2 left-0 right-0 bg-black/95 backdrop-blur-xl border border-white/20 rounded-lg overflow-hidden shadow-2xl z-50"
+                  >
+                    <div className="p-2">
+                      <div className="text-xs text-white/40 px-3 py-2">Hashtags</div>
+                      {hashtagResults.map((result, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            setSearchQuery(`#${result.hashtag}`);
+                            setSelectedHashtag(result.hashtag);
+                            setHashtagResults([]);
+                            setVisiblePosts(20);
+                          }}
+                          className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/10 transition-colors group"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-cyan-500/20 border border-cyan-500/30 rounded-lg flex items-center justify-center">
+                              <span className="text-cyan-400 font-bold">#</span>
+                            </div>
+                            <span className="text-white font-semibold">#{result.hashtag}</span>
+                          </div>
+                          <span className="text-white/40 text-xs">{result.count} posts</span>
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {/* User Search Dropdown */}
               <AnimatePresence>
                 {userResults.length > 0 && !searchQuery.startsWith('$') && (
@@ -3569,6 +3666,32 @@ export default function FeedPage() {
                   onClick={() => {
                     setSearchQuery('');
                     setSelectedTicker(null);
+                    setVisiblePosts(20);
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="ml-auto h-6 w-6 p-0 text-white/40 hover:text-white"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </motion.div>
+            )}
+
+            {/* Active Hashtag Filter Badge */}
+            {selectedHashtag && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="flex items-center gap-2 bg-cyan-500/10 border border-cyan-500/30 rounded-lg px-4 py-2 mb-4"
+              >
+                <span className="text-cyan-400 font-bold">#</span>
+                <span className="text-sm text-cyan-400 font-semibold">{selectedHashtag}</span>
+                <span className="text-sm text-white/40">• {hashtagCache[selectedHashtag]?.length || 0} posts</span>
+                <Button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedHashtag(null);
                     setVisiblePosts(20);
                   }}
                   variant="ghost"
