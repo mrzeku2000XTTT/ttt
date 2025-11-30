@@ -48,7 +48,8 @@ export default function TapToTipPage() {
       const allUsers = await base44.entities.User.list('-created_date', 100);
       const usersWithWallets = allUsers.filter(u => 
         (u.created_wallet_address || u.agent_zk_id) && 
-        u.username?.toLowerCase() !== 'olatomiwa'
+        u.username?.toLowerCase() !== 'olatomiwa' &&
+        u.username?.toLowerCase() !== 'ttt'
       );
       
       // Load all active badges
