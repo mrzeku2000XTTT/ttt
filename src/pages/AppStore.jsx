@@ -42,6 +42,7 @@ export default function AppStorePage() {
   };
 
   const apps = [
+    { name: "TapToTip", icon: "Link2", path: "TapToTip", category: "Finance" },
     { name: "BRAHIM", icon: "Link2", path: "BRAHIM", category: "Tools" },
     { name: "AYOMUIZ", icon: "Link2", path: "AYOMUIZ", category: "Games" },
     { name: "Ayomuiz2", icon: "Link2", path: "AYOMUIZ2", category: "Games" },
