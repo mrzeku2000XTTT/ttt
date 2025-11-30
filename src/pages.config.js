@@ -129,6 +129,7 @@ import TemplateBuilder from './pages/TemplateBuilder';
 import Taiwo from './pages/Taiwo';
 import TTTAudit from './pages/TTTAudit';
 import TapToTip from './pages/TapToTip';
+import Kolade from './pages/Kolade';
 import __Layout from './Layout.jsx';
 
 
@@ -264,6 +265,7 @@ export const PAGES = {
     "Taiwo": Taiwo,
     "TTTAudit": TTTAudit,
     "TapToTip": TapToTip,
+    "Kolade": Kolade,
 }
 
 export const pagesConfig = {
