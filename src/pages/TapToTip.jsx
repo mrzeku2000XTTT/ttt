@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Zap, Search, Wallet, User as UserIcon, Copy, Check, Send, CheckCircle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 
 export default function TapToTipPage() {
   const [users, setUsers] = useState([]);
@@ -16,12 +15,10 @@ export default function TapToTipPage() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [tipAmount, setTipAmount] = useState("");
   const [copiedAddress, setCopiedAddress] = useState("");
-  const [userBadges, setUserBadges] = useState({});
 
   useEffect(() => {
     loadCurrentUser();
     loadUsers();
-    loadUserBadges();
     
     // Auto-refresh users every 10 seconds to catch wallet updates
     const interval = setInterval(() => {
@@ -65,86 +62,19 @@ export default function TapToTipPage() {
         profileMap[p.user_email] = p.profile_picture_url;
       });
       
-      // Load user badges
-      const allBadges = await base44.entities.UserBadge.filter({ is_active: true });
-      const badgeMap = {};
-      allBadges.forEach(b => {
-        if (!badgeMap[b.username]) badgeMap[b.username] = [];
-        badgeMap[b.username].push({ name: b.badge_name, color: b.badge_color });
-      });
-      
-      // Attach profile pictures and badges to users
+      // Attach profile pictures to users
       const usersWithProfiles = usersWithWallets.map(u => ({
         ...u,
-        profile_picture: profileMap[u.email] || null,
-        badges: badgeMap[u.username] || []
+        profile_picture: profileMap[u.email] || null
       }));
       
-      // Priority users to display at the top - exact usernames from database
-      const priorityUsernames = ['Ayomuiz ', 'kehindeAyo', 'PECULIAR', 'Olatomiwa ', 'Brahimcrrypt', 'Hayphase', 'Big-ayoolataiwo1'];
-      
-      // Sort users: priority users first, then others
-      const sortedUsers = usersWithProfiles.sort((a, b) => {
-        const normalizeUsername = (username) => username?.toLowerCase().trim();
-        const aUsername = normalizeUsername(a.username);
-        const bUsername = normalizeUsername(b.username);
-        
-        const aIsPriority = priorityUsernames.some(pUser => normalizeUsername(pUser) === aUsername);
-        const bIsPriority = priorityUsernames.some(pUser => normalizeUsername(pUser) === bUsername);
-        
-        if (aIsPriority && !bIsPriority) return -1;
-        if (!aIsPriority && bIsPriority) return 1;
-        
-        // Among priority users, sort by index in priority list
-        if (aIsPriority && bIsPriority) {
-          const aIndex = priorityUsernames.findIndex(pUser => normalizeUsername(pUser) === aUsername);
-          const bIndex = priorityUsernames.findIndex(pUser => normalizeUsername(pUser) === bUsername);
-          return aIndex - bIndex;
-        }
-        
-        return 0; // Keep original order for non-priority users
-      });
-      
-      setUsers(sortedUsers);
-      setFilteredUsers(sortedUsers);
+      setUsers(usersWithProfiles);
+      setFilteredUsers(usersWithProfiles);
     } catch (err) {
       console.error('Failed to load users:', err);
     } finally {
       setLoading(false);
     }
-  };
-
-  const loadUserBadges = async () => {
-    try {
-      const allBadges = await base44.entities.UserBadge.filter({ is_active: true });
-      const badgesMap = {};
-      allBadges.forEach(badge => {
-        if (!badgesMap[badge.username]) {
-          badgesMap[badge.username] = [];
-        }
-        badgesMap[badge.username].push(badge);
-      });
-      setUserBadges(badgesMap);
-    } catch (err) {
-      console.error('Failed to load user badges:', err);
-    }
-  };
-
-  const getUserBadges = (username) => {
-    return userBadges[username] || [];
-  };
-
-  const getBadgeColorClass = (color) => {
-    const colorMap = {
-      cyan: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/40',
-      purple: 'bg-purple-500/20 text-purple-400 border-purple-500/40',
-      yellow: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/40',
-      red: 'bg-red-500/20 text-red-400 border-red-500/40',
-      green: 'bg-green-500/20 text-green-400 border-green-500/40',
-      blue: 'bg-blue-500/20 text-blue-400 border-blue-500/40',
-      pink: 'bg-pink-500/20 text-pink-400 border-pink-500/40'
-    };
-    return colorMap[color] || colorMap.cyan;
   };
 
   const handleCopyAddress = (address) => {
@@ -274,17 +204,12 @@ export default function TapToTipPage() {
                           </div>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                              <h3 className="text-white font-bold truncate">
-                                {user.username || 'Anonymous'}
-                              </h3>
-                              <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
-                              {getUserBadges(user.username).map((badge, idx) => (
-                                <Badge key={badge.id || idx} className={`text-[10px] px-1.5 py-0 border ${getBadgeColorClass(badge.badge_color)}`}>
-                                  {badge.badge_name}
-                                </Badge>
-                              ))}
-                            </div>
+                          <div className="flex items-center gap-1.5">
+                            <h3 className="text-white font-bold truncate">
+                              {user.username || 'Anonymous'}
+                            </h3>
+                            <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
+                          </div>
                         </div>
                       </div>
 
@@ -354,16 +279,11 @@ export default function TapToTipPage() {
                     </div>
                   </div>
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
                       <h3 className="text-2xl font-bold text-white">
                         {selectedUser.username || 'User'}
                       </h3>
                       <CheckCircle className="w-5 h-5 text-green-400" />
-                      {getUserBadges(selectedUser.username).map((badge, idx) => (
-                        <Badge key={badge.id || idx} className={`text-xs border ${getBadgeColorClass(badge.badge_color)}`}>
-                          {badge.badge_name}
-                        </Badge>
-                      ))}
                     </div>
                     <p className="text-xs text-gray-500 mt-0.5">Verified TTT Wallet</p>
                   </div>
