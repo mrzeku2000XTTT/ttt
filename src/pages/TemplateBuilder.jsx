@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Loader2, Image as ImageIcon, Trash2, Eye, ShoppingCart, Wand2, BookOpen, Save, Plus, Store, Wallet } from "lucide-react";
+import { Sparkles, Loader2, Image as ImageIcon, Trash2, Eye, ShoppingCart, Wand2, BookOpen, Save, Plus, Store, Wallet, Copy, CheckCircle2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 export default function TemplateBuilderPage() {
@@ -17,6 +17,9 @@ export default function TemplateBuilderPage() {
   const [templateIdea, setTemplateIdea] = useState("");
   const [purchasingTemplate, setPurchasingTemplate] = useState(null);
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const [buyerAddress, setBuyerAddress] = useState("");
+  const [copiedAddress, setCopiedAddress] = useState(false);
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
   const [enhancedPrompt, setEnhancedPrompt] = useState("");
   const [previewImage, setPreviewImage] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -74,22 +77,40 @@ export default function TemplateBuilderPage() {
     setPurchasingTemplate(template);
   };
 
-  const confirmPurchase = async () => {
-    if (!purchasingTemplate) return;
+  const handleCopyAddress = (address) => {
+    navigator.clipboard.writeText(address);
+    setCopiedAddress(true);
+    setTimeout(() => setCopiedAddress(false), 2000);
+  };
 
-    setIsPurchasing(true);
+  const confirmPurchase = async () => {
+    if (!purchasingTemplate || !buyerAddress.trim()) {
+      alert('Please enter your Kaspa wallet address');
+      return;
+    }
+
+    setVerifyingPayment(true);
     try {
-      const buyerWallet = user.created_wallet_address || user.agent_zk_id;
-      
-      // In a real implementation, this would verify blockchain payment
-      // For now, we'll create a purchase record
-      alert(`To complete purchase:\n\n1. Send ${purchasingTemplate.price_kas} KAS to:\n${purchasingTemplate.creator_wallet}\n\n2. Once paid, you'll receive access to the template HTML code.`);
-      
-      setPurchasingTemplate(null);
+      // Verify payment using Kaspa API
+      const response = await base44.functions.invoke('verifyTemplatePayment', {
+        buyer_address: buyerAddress,
+        seller_address: purchasingTemplate.creator_wallet,
+        expected_amount: purchasingTemplate.price_kas,
+        template_id: purchasingTemplate.id
+      });
+
+      if (response.data.verified) {
+        alert('Payment verified! You now have access to this template.');
+        await loadTemplates();
+        setPurchasingTemplate(null);
+        setBuyerAddress("");
+      } else {
+        alert('Payment not found. Please ensure you sent the exact amount from the address you provided.');
+      }
     } catch (err) {
-      alert('Purchase failed: ' + err.message);
+      alert('Payment verification failed: ' + err.message);
     } finally {
-      setIsPurchasing(false);
+      setVerifyingPayment(false);
     }
   };
 
@@ -781,12 +802,39 @@ Format as a single, comprehensive paragraph.`
 
                     <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
                       <p className="text-sm text-gray-400 mb-2">Send payment to:</p>
-                      <code className="text-cyan-400 text-xs break-all">{purchasingTemplate.creator_wallet}</code>
+                      <div className="flex items-center gap-2">
+                        <code className="text-cyan-400 text-xs flex-1 truncate">
+                          {purchasingTemplate.creator_wallet?.slice(0, 20)}...{purchasingTemplate.creator_wallet?.slice(-10)}
+                        </code>
+                        <button
+                          onClick={() => handleCopyAddress(purchasingTemplate.creator_wallet)}
+                          className="p-2 bg-cyan-500/10 hover:bg-cyan-500/20 rounded-lg transition-colors"
+                        >
+                          {copiedAddress ? (
+                            <CheckCircle2 className="w-4 h-4 text-green-400" />
+                          ) : (
+                            <Copy className="w-4 h-4 text-cyan-400" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
+                      <p className="text-sm text-gray-400 mb-2">Your Kaspa Address (buyer):</p>
+                      <Input
+                        value={buyerAddress}
+                        onChange={(e) => setBuyerAddress(e.target.value)}
+                        placeholder="kaspa:qqkv4p6nsqp7ufd5zza8szqrnh4dq..."
+                        className="bg-black/30 border-white/10 text-white text-xs"
+                      />
+                      <p className="text-xs text-gray-500 mt-2">
+                        Enter the address you're sending payment from
+                      </p>
                     </div>
 
                     <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
                       <p className="text-yellow-300 text-xs">
-                        💡 After payment confirmation, you'll receive the full HTML template code
+                        💡 Send exactly {purchasingTemplate.price_kas} KAS, then click "Verify Payment"
                       </p>
                     </div>
                   </div>
@@ -801,18 +849,18 @@ Format as a single, comprehensive paragraph.`
                     </Button>
                     <Button
                       onClick={confirmPurchase}
-                      disabled={isPurchasing}
+                      disabled={verifyingPayment || !buyerAddress.trim()}
                       className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500"
                     >
-                      {isPurchasing ? (
+                      {verifyingPayment ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Processing...
+                          Verifying Payment...
                         </>
                       ) : (
                         <>
-                          <Wallet className="w-4 h-4 mr-2" />
-                          Confirm Purchase
+                          <CheckCircle2 className="w-4 h-4 mr-2" />
+                          Verify Payment
                         </>
                       )}
                     </Button>
@@ -874,8 +922,22 @@ Format as a single, comprehensive paragraph.`
 
                   <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
                     <p className="text-sm text-gray-400 mb-2">Payment Address:</p>
-                    <code className="text-cyan-400 text-sm">{selectedTemplate.creator_wallet}</code>
+                    <div className="flex items-center gap-2">
+                      <code className="text-cyan-400 text-sm flex-1 truncate">
+                        {selectedTemplate.creator_wallet?.slice(0, 20)}...{selectedTemplate.creator_wallet?.slice(-10)}
+                      </code>
+                      <button
+                        onClick={() => handleCopyAddress(selectedTemplate.creator_wallet)}
+                        className="p-2 bg-cyan-500/10 hover:bg-cyan-500/20 rounded-lg transition-colors"
+                      >
+                        {copiedAddress ? (
+                          <CheckCircle2 className="w-4 h-4 text-green-400" />
+                        ) : (
+                          <Copy className="w-4 h-4 text-cyan-400" />
+                        )}
+                      </button>
                     </div>
+                  </div>
                     </CardContent>
                   </div>
                 </Card>
