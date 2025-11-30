@@ -251,20 +251,36 @@ export default function TapToTipPage() {
                   </button>
                 </div>
 
-                <div className="p-4 bg-black/30 rounded-lg mb-6 border border-cyan-500/30">
-                  <p className="text-gray-400 text-xs mb-2 text-center">Recipient Address</p>
-                  <div className="bg-white/5 p-3 rounded border border-white/10">
-                    <code className="text-cyan-400 text-xs break-all block text-center">
+                <div className="mb-6">
+                  <div className="bg-white p-4 rounded-lg mb-4">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(selectedUser.created_wallet_address || selectedUser.agent_zk_id)}`}
+                      alt="QR Code"
+                      className="w-full h-auto"
+                    />
+                  </div>
+                  <div className="p-3 bg-black/30 rounded-lg border border-cyan-500/30">
+                    <p className="text-gray-400 text-xs mb-2 text-center">Recipient Address</p>
+                    <code className="text-cyan-400 text-xs break-all block text-center mb-2">
                       {selectedUser.created_wallet_address || selectedUser.agent_zk_id}
                     </code>
+                    <button
+                      onClick={() => handleCopyAddress(selectedUser.created_wallet_address || selectedUser.agent_zk_id)}
+                      className="w-full text-sm text-gray-400 hover:text-cyan-400 transition-colors flex items-center justify-center gap-2"
+                    >
+                      {copiedAddress === (selectedUser.created_wallet_address || selectedUser.agent_zk_id) ? (
+                        <>
+                          <Check className="w-4 h-4" />
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4" />
+                          Copy Address
+                        </>
+                      )}
+                    </button>
                   </div>
-                  <button
-                    onClick={() => handleCopyAddress(selectedUser.created_wallet_address || selectedUser.agent_zk_id)}
-                    className="w-full mt-3 text-sm text-gray-400 hover:text-cyan-400 transition-colors"
-                  >
-                    <Copy className="w-4 h-4 inline mr-2" />
-                    Copy Address
-                  </button>
                 </div>
 
                 <div className="space-y-4">
