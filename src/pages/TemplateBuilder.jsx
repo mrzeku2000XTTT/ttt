@@ -839,9 +839,9 @@ Format as a single, comprehensive paragraph.`
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-4xl max-h-[85vh] z-[101] overflow-y-auto flex items-center justify-center"
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-4xl max-h-[85vh] z-[101]"
             >
-              <Card className="bg-gradient-to-br from-zinc-900/95 to-black/95 border-cyan-500/30">
+              <Card className="bg-gradient-to-br from-zinc-900/95 to-black/95 border-cyan-500/30 max-h-[85vh] overflow-y-auto">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-6">
                     <div>
