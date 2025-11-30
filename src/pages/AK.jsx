@@ -124,6 +124,21 @@ function AKContent() {
     setLoading(true);
 
     try {
+        // Check for !ASIAN command
+        if (query.trim() === '!ASIAN') {
+          setMessages(prev => [...prev, { 
+            role: "assistant", 
+            content: "🎬 Opening Asian drama browser...",
+            movie: {
+              embed_url: "https://kisskh.co/List?type=History",
+              title: "KissKH - Asian Drama Browser",
+              source: "KissKH"
+            }
+          }]);
+          setLoading(false);
+          return;
+        }
+
         const isMusicRequest = /play|music|song|listen|audio/i.test(query);
         const isMovieRequest = /watch|movie|film|cinema/i.test(query);
 
