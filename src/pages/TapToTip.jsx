@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Zap, Search, Wallet, User as UserIcon, Copy, Check, Send, CheckCircle } from "lucide-react";
+import { Zap, Search, Wallet, User as UserIcon, Copy, Check, Send } from "lucide-react";
 
 export default function TapToTipPage() {
   const [users, setUsers] = useState([]);
@@ -19,13 +19,6 @@ export default function TapToTipPage() {
   useEffect(() => {
     loadCurrentUser();
     loadUsers();
-    
-    // Auto-refresh users every 10 seconds to catch wallet updates
-    const interval = setInterval(() => {
-      loadUsers();
-    }, 10000);
-    
-    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -54,22 +47,8 @@ export default function TapToTipPage() {
     try {
       const allUsers = await base44.entities.User.list('-created_date', 100);
       const usersWithWallets = allUsers.filter(u => u.created_wallet_address || u.agent_zk_id);
-      
-      // Load ZK profiles for profile pictures
-      const zkProfiles = await base44.entities.AgentZKProfile.filter({});
-      const profileMap = {};
-      zkProfiles.forEach(p => {
-        profileMap[p.user_email] = p.profile_picture_url;
-      });
-      
-      // Attach profile pictures to users
-      const usersWithProfiles = usersWithWallets.map(u => ({
-        ...u,
-        profile_picture: profileMap[u.email] || null
-      }));
-      
-      setUsers(usersWithProfiles);
-      setFilteredUsers(usersWithProfiles);
+      setUsers(usersWithWallets);
+      setFilteredUsers(usersWithWallets);
     } catch (err) {
       console.error('Failed to load users:', err);
     } finally {
@@ -193,23 +172,13 @@ export default function TapToTipPage() {
                   <Card className="bg-white/5 border-white/10 hover:border-cyan-500/30 transition-all">
                     <CardContent className="p-4">
                       <div className="flex items-start gap-3 mb-3">
-                        <div className="relative w-12 h-12 border border-cyan-500/30 rounded-full flex items-center justify-center overflow-hidden text-lg font-bold text-white bg-white/5 flex-shrink-0">
-                          {user.profile_picture ? (
-                            <img src={user.profile_picture} alt={user.username} className="w-full h-full object-cover" />
-                          ) : (
-                            <span>{user.username ? user.username[0].toUpperCase() : user.email[0].toUpperCase()}</span>
-                          )}
-                          <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-black flex items-center justify-center">
-                            <Check className="w-2.5 h-2.5 text-white" />
-                          </div>
+                        <div className="w-12 h-12 border border-cyan-500/30 rounded-full flex items-center justify-center text-lg font-bold text-white bg-white/5 flex-shrink-0">
+                          {user.username ? user.username[0].toUpperCase() : user.email[0].toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <h3 className="text-white font-bold truncate">
-                              {user.username || 'Anonymous'}
-                            </h3>
-                            <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
-                          </div>
+                          <h3 className="text-white font-bold truncate">
+                            {user.username || 'Anonymous'}
+                          </h3>
                         </div>
                       </div>
 
@@ -252,44 +221,31 @@ export default function TapToTipPage() {
 
       {/* Tip Modal */}
       {selectedUser && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4" style={{ margin: 0 }}>
+        <>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             onClick={() => setSelectedUser(null)}
-            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center"
+            style={{ top: 0, left: 0, right: 0, bottom: 0 }}
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="relative w-full max-w-md max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md z-[201]"
+            style={{ maxHeight: '90vh', overflowY: 'auto' }}
           >
             <Card className="bg-gradient-to-br from-zinc-900/95 to-black/95 border-cyan-500/30">
               <CardContent className="p-6">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="relative w-16 h-16 border border-cyan-500/30 rounded-full flex items-center justify-center overflow-hidden text-2xl font-bold text-white bg-white/5 flex-shrink-0">
-                    {selectedUser.profile_picture ? (
-                      <img src={selectedUser.profile_picture} alt={selectedUser.username} className="w-full h-full object-cover" />
-                    ) : (
-                      <span>{selectedUser.username ? selectedUser.username[0].toUpperCase() : selectedUser.email[0].toUpperCase()}</span>
-                    )}
-                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-zinc-900 flex items-center justify-center">
-                      <Check className="w-3.5 h-3.5 text-white" />
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-2xl font-bold text-white">
-                        {selectedUser.username || 'User'}
-                      </h3>
-                      <CheckCircle className="w-5 h-5 text-green-400" />
-                    </div>
-                    <p className="text-xs text-gray-500 mt-0.5">Verified TTT Wallet</p>
+                <div className="flex items-start justify-between mb-6">
+                  <div>
+                    <h3 className="text-2xl font-bold text-white">
+                      Tip {selectedUser.username || 'User'}
+                    </h3>
                   </div>
                   <button
                     onClick={() => setSelectedUser(null)}
-                    className="text-gray-400 hover:text-white text-2xl leading-none"
+                    className="text-gray-400 hover:text-white"
                   >
                     ✕
                   </button>
@@ -356,7 +312,7 @@ export default function TapToTipPage() {
               </CardContent>
             </Card>
           </motion.div>
-        </div>
+        </>
       )}
     </div>
   );
