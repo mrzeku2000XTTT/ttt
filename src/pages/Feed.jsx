@@ -98,6 +98,7 @@ export default function FeedPage() {
   const [olatomiwaContributions, setOlatomiwaContributions] = useState({ feedPosts: 0, feedTips: 0 });
   const [loadingOlatomiwa, setLoadingOlatomiwa] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [tickerResults, setTickerResults] = useState([]);
 
   const fileInputRef = useRef(null);
   const replyFileInputRef = useRef(null);
@@ -1500,6 +1501,51 @@ export default function FeedPage() {
       new Date(b.created_date) - new Date(a.created_date)
     );
   };
+
+  const searchTickers = (query) => {
+    if (!query.trim()) {
+      setTickerResults([]);
+      return;
+    }
+
+    const cleanQuery = query.replace('$', '').toLowerCase();
+    
+    // Find all posts mentioning this ticker (case-insensitive)
+    const tickerRegex = new RegExp(`\\$${cleanQuery}`, 'i');
+    const matchingPosts = posts.filter(p => 
+      !p.parent_post_id && tickerRegex.test(p.content)
+    );
+
+    // Extract unique tickers from all posts
+    const tickerPattern = /\$([a-zA-Z0-9_]+)/g;
+    const allTickers = new Set();
+    posts.forEach(post => {
+      const matches = post.content?.matchAll(tickerPattern);
+      if (matches) {
+        for (const match of matches) {
+          allTickers.add(match[1].toUpperCase());
+        }
+      }
+    });
+
+    // Find matching tickers
+    const matchingTickers = Array.from(allTickers).filter(ticker => 
+      ticker.toLowerCase().includes(cleanQuery)
+    );
+
+    setTickerResults(matchingTickers.map(ticker => ({
+      ticker: ticker,
+      count: posts.filter(p => new RegExp(`\\$${ticker}`, 'i').test(p.content)).length
+    })));
+  };
+
+  useEffect(() => {
+    if (searchQuery.startsWith('$')) {
+      searchTickers(searchQuery);
+    } else {
+      setTickerResults([]);
+    }
+  }, [searchQuery, posts]);
 
   const renderTextWithLinks = (text) => {
     if (!text) return null;
@@ -3330,6 +3376,40 @@ export default function FeedPage() {
                   <X className="w-4 h-4" />
                 </Button>
               )}
+
+              {/* Ticker Dropdown */}
+              <AnimatePresence>
+                {tickerResults.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute top-full mt-2 left-0 right-0 bg-black/95 backdrop-blur-xl border border-white/20 rounded-lg overflow-hidden shadow-2xl z-50"
+                  >
+                    <div className="p-2">
+                      <div className="text-xs text-white/40 px-3 py-2">Tickers</div>
+                      {tickerResults.map((result, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            setSearchQuery(`$${result.ticker}`);
+                            setTickerResults([]);
+                          }}
+                          className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/10 transition-colors group"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-green-500/20 border border-green-500/30 rounded-lg flex items-center justify-center">
+                              <DollarSign className="w-4 h-4 text-green-400" />
+                            </div>
+                            <span className="text-white font-semibold">${result.ticker}</span>
+                          </div>
+                          <span className="text-white/40 text-xs">{result.count} posts</span>
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {!kaswareWallet.connected && (
