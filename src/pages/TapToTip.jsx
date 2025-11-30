@@ -221,35 +221,23 @@ export default function TapToTipPage() {
                               {user.username || 'Anonymous'}
                             </h3>
                             {user.username?.toLowerCase() === 'ttt' && (
-                              <>
-                                <span className="px-2 py-0.5 bg-gradient-to-r from-cyan-500 to-purple-500 rounded text-[10px] font-bold text-white">
-                                  ZEKU
-                                </span>
-                                <span className="px-2 py-0.5 bg-gradient-to-r from-green-500 to-emerald-600 rounded text-[10px] font-bold text-white">
-                                  $KAS
-                                </span>
-                              </>
+                              <span className="px-2 py-0.5 bg-gradient-to-r from-cyan-500 to-purple-500 rounded text-[10px] font-bold text-white">
+                                ZEKU
+                              </span>
                             )}
                             {user.username?.toLowerCase() === 'destroyer' && (
-                              <>
-                                <span className="px-2 py-0.5 bg-gradient-to-r from-red-600 to-black rounded text-[10px] font-bold text-white">
-                                  DEATH
-                                </span>
-                                <span className="px-2 py-0.5 bg-gradient-to-r from-green-500 to-emerald-600 rounded text-[10px] font-bold text-white">
-                                  $KAS
-                                </span>
-                              </>
+                              <span className="px-2 py-0.5 bg-gradient-to-r from-red-600 to-black rounded text-[10px] font-bold text-white">
+                                DEATH
+                              </span>
                             )}
                             {user.username?.toLowerCase() === 'esp' && (
-                              <>
-                                <span className="px-2 py-0.5 bg-gradient-to-r from-yellow-500 to-orange-500 rounded text-[10px] font-bold text-white">
-                                  GOD
-                                </span>
-                                <span className="px-2 py-0.5 bg-gradient-to-r from-green-500 to-emerald-600 rounded text-[10px] font-bold text-white">
-                                  $KAS
-                                </span>
-                              </>
+                              <span className="px-2 py-0.5 bg-gradient-to-r from-yellow-500 to-orange-500 rounded text-[10px] font-bold text-white">
+                                GOD
+                              </span>
                             )}
+                            <span className="px-2 py-0.5 bg-gradient-to-r from-green-500 to-emerald-600 rounded text-[10px] font-bold text-white">
+                              $KAS
+                            </span>
                           </div>
                         </div>
                       </div>
