@@ -62,15 +62,21 @@ export default function TapToTipPage() {
         badgesMap[badge.username].push(badge);
       });
       
-      // Sort users: priority users first, then by badges
+      // Sort users: TTT first, then priority users, then by badges
       const sortedUsers = usersWithWallets.sort((a, b) => {
-        const priorityUsers = ['destroyer', 'esp'];
+        const aIsTTT = a.username?.toLowerCase() === 'ttt';
+        const bIsTTT = b.username?.toLowerCase() === 'ttt';
+
+        if (aIsTTT && !bIsTTT) return -1;
+        if (!aIsTTT && bIsTTT) return 1;
+
+        const priorityUsers = ['destroyer', 'esp', 'zeku'];
         const aIsPriority = priorityUsers.some(p => a.username?.toLowerCase().includes(p));
         const bIsPriority = priorityUsers.some(p => b.username?.toLowerCase().includes(p));
-        
+
         if (aIsPriority && !bIsPriority) return -1;
         if (!aIsPriority && bIsPriority) return 1;
-        
+
         const aBadges = badgesMap[a.username]?.length || 0;
         const bBadges = badgesMap[b.username]?.length || 0;
         return bBadges - aBadges;
@@ -210,9 +216,16 @@ export default function TapToTipPage() {
                           {user.username ? user.username[0].toUpperCase() : user.email[0].toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-white font-bold truncate">
-                            {user.username || 'Anonymous'}
-                          </h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-white font-bold truncate">
+                              {user.username || 'Anonymous'}
+                            </h3>
+                            {user.username?.toLowerCase() === 'ttt' && (
+                              <span className="px-2 py-0.5 bg-gradient-to-r from-cyan-500 to-purple-500 rounded text-[10px] font-bold text-white">
+                                ZEKU
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
