@@ -227,12 +227,14 @@ export default function TapToTipPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             onClick={() => setSelectedUser(null)}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center"
+            style={{ top: 0, left: 0, right: 0, bottom: 0 }}
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md z-[60]"
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md z-[201]"
+            style={{ maxHeight: '90vh', overflowY: 'auto' }}
           >
             <Card className="bg-gradient-to-br from-zinc-900/95 to-black/95 border-cyan-500/30">
               <CardContent className="p-6">
