@@ -102,6 +102,7 @@ export default function FeedPage() {
   const [selectedTicker, setSelectedTicker] = useState(null);
   const [visiblePosts, setVisiblePosts] = useState(20);
   const [tickerCache, setTickerCache] = useState({});
+  const [userResults, setUserResults] = useState([]);
 
   const fileInputRef = useRef(null);
   const replyFileInputRef = useRef(null);
@@ -1559,6 +1560,26 @@ export default function FeedPage() {
     })).sort((a, b) => b.count - a.count)); // Sort by post count
   };
 
+  const searchUsers = async (query) => {
+    if (!query.trim() || query.startsWith('$') || query.startsWith('#') || query.startsWith('@')) {
+      setUserResults([]);
+      return;
+    }
+
+    try {
+      const allUsers = await base44.entities.User.list('-created_date', 100);
+      const matchingUsers = allUsers.filter(u => 
+        u.username?.toLowerCase().includes(query.toLowerCase()) ||
+        u.email?.toLowerCase().includes(query.toLowerCase())
+      ).slice(0, 5); // Limit to 5 results
+      
+      setUserResults(matchingUsers);
+    } catch (err) {
+      console.error('Failed to search users:', err);
+      setUserResults([]);
+    }
+  };
+
   useEffect(() => {
     if (searchQuery.startsWith('$')) {
       const cleanQuery = searchQuery.replace('$', '').toUpperCase();
@@ -1569,6 +1590,7 @@ export default function FeedPage() {
       }
       
       searchTickers(searchQuery);
+      setUserResults([]);
       
       // Auto-select if exact match
       if (tickerCache[cleanQuery] && tickerResults.length === 1) {
@@ -1577,6 +1599,13 @@ export default function FeedPage() {
     } else {
       setTickerResults([]);
       setSelectedTicker(null);
+      
+      // Search users for non-ticker queries
+      if (searchQuery.trim().length >= 2) {
+        searchUsers(searchQuery);
+      } else {
+        setUserResults([]);
+      }
     }
   }, [searchQuery, tickerCache]);
 
@@ -3432,7 +3461,7 @@ export default function FeedPage() {
                             setSearchQuery(`$${result.ticker}`);
                             setSelectedTicker(result.ticker);
                             setTickerResults([]);
-                            setVisiblePosts(20); // Reset pagination
+                            setVisiblePosts(20);
                           }}
                           className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/10 transition-colors group"
                         >
@@ -3443,6 +3472,43 @@ export default function FeedPage() {
                             <span className="text-white font-semibold">${result.ticker}</span>
                           </div>
                           <span className="text-white/40 text-xs">{result.count} posts</span>
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* User Search Dropdown */}
+              <AnimatePresence>
+                {userResults.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute top-full mt-2 left-0 right-0 bg-black/95 backdrop-blur-xl border border-white/20 rounded-lg overflow-hidden shadow-2xl z-50"
+                  >
+                    <div className="p-2">
+                      <div className="text-xs text-white/40 px-3 py-2">Users</div>
+                      {userResults.map((result) => (
+                        <button
+                          key={result.id}
+                          onClick={async () => {
+                            setProfileUsername(result.username || result.email);
+                            setShowProfileModal(true);
+                            setUserResults([]);
+                            setSearchQuery('');
+                            await loadProfileData(result.username || result.email);
+                          }}
+                          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
+                        >
+                          <div className="w-8 h-8 bg-white/10 border border-white/20 rounded-full flex items-center justify-center text-sm font-bold text-white">
+                            {(result.username || result.email)[0].toUpperCase()}
+                          </div>
+                          <div className="flex-1 text-left">
+                            <div className="text-white font-semibold text-sm">{result.username || 'Anonymous'}</div>
+                            <div className="text-white/40 text-xs truncate">{result.email}</div>
+                          </div>
                         </button>
                       ))}
                     </div>
