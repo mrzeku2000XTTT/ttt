@@ -7,13 +7,20 @@ Deno.serve(async (req) => {
     // Verify admin user
     const user = await base44.auth.me();
     if (!user || user.role !== 'admin') {
-      return Response.json({ error: 'Unauthorized - Admin only' }, { status: 403 });
+      return new Response(JSON.stringify({ error: 'Unauthorized - Admin only' }), { 
+        status: 403,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
-    const { app_id, app_name, icon_url } = await req.json();
+    const body = await req.json();
+    const { app_id, app_name, icon_url } = body;
 
     if (!app_id || !icon_url) {
-      return Response.json({ error: 'Missing required fields' }, { status: 400 });
+      return new Response(JSON.stringify({ error: 'Missing required fields' }), { 
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     // Use service role to bypass RLS
@@ -36,9 +43,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    return Response.json({ success: true, result });
+    return new Response(JSON.stringify({ success: true, result }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
   } catch (error) {
     console.error('Save app icon error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    return new Response(JSON.stringify({ error: error.message, stack: error.stack }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 });
