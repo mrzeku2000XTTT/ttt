@@ -1568,13 +1568,27 @@ export default function FeedPage() {
 
     try {
       const cleanQuery = query.startsWith('@') ? query.slice(1) : query;
-      const allUsers = await base44.entities.User.list('-created_date', 100);
-      const matchingUsers = allUsers.filter(u => 
-        (u.username?.toLowerCase().includes(cleanQuery.toLowerCase()) ||
-        u.email?.toLowerCase().includes(cleanQuery.toLowerCase())) &&
-        u.username // Only show users with usernames
-      ).slice(0, 8); // Limit to 8 results
       
+      // Search through posts to find users (publicly accessible)
+      const allPosts = await base44.entities.Post.list('-created_date', 200);
+      const uniqueUsers = new Map();
+      
+      allPosts.forEach(post => {
+        if (post.author_name && 
+            post.author_name.toLowerCase().includes(cleanQuery.toLowerCase()) &&
+            !uniqueUsers.has(post.author_name)) {
+          uniqueUsers.set(post.author_name, {
+            id: post.id,
+            username: post.author_name,
+            email: post.created_by,
+            role: post.author_role,
+            created_wallet_address: post.author_wallet_address,
+            agent_zk_id: post.author_agent_zk_id
+          });
+        }
+      });
+      
+      const matchingUsers = Array.from(uniqueUsers.values()).slice(0, 8);
       setUserResults(matchingUsers);
     } catch (err) {
       console.error('Failed to search users:', err);
