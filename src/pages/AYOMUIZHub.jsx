@@ -39,6 +39,11 @@ export default function AYOMUIZHubPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
+          <img 
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/120ea91b8_image.png"
+            alt="AYOMUIZ Logo"
+            className="w-48 h-48 mx-auto mb-6 drop-shadow-2xl"
+          />
           <h1 className="text-5xl font-black text-white mb-3">
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">
               AYOMUIZ
