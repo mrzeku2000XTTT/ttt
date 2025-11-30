@@ -1588,21 +1588,7 @@ export default function FeedPage() {
                     {badge.badge_name}
                   </button>
                 ))}
-                {hasModzBadge(post.author_name) && (
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleBadgeClick(post.author_name);
-                    }}
-                    className="inline-flex items-center gap-1 bg-gradient-to-br from-yellow-400 to-yellow-600 text-black border border-yellow-500/50 text-[10px] px-2 py-0.5 font-bold rounded-md hover:from-yellow-300 hover:to-yellow-500 transition-all shadow-lg hover:shadow-yellow-500/50"
-                    title="View Contributions"
-                  >
-                    <Trophy className="w-3 h-3" />
-                    MODZ
-                  </button>
-                )}
-                {hasArchitectBadge(post.author_name) && (
+                {!getUserBadges(post.author_name).some(b => b.badge_name === 'ARCHITECT') && hasArchitectBadge(post.author_name) && (
                   <button
                     onClick={(e) => {
                       e.preventDefault();
@@ -1616,7 +1602,7 @@ export default function FeedPage() {
                     ARCHITECT
                   </button>
                 )}
-                {hasDevBadge(post.author_name) && (
+                {!getUserBadges(post.author_name).some(b => b.badge_name === 'DEV') && hasDevBadge(post.author_name) && (
                   <button
                     onClick={(e) => {
                       e.preventDefault();
@@ -1631,7 +1617,7 @@ export default function FeedPage() {
                     DEV
                   </button>
                 )}
-                {hasKingBadge(post.author_name) && (
+                {!getUserBadges(post.author_name).some(b => b.badge_name === 'KING') && hasKingBadge(post.author_name) && (
                   <button
                     onClick={(e) => {
                       e.preventDefault();
@@ -1646,7 +1632,7 @@ export default function FeedPage() {
                     KING
                   </button>
                 )}
-                {hasShillerBadge(post.author_name) && (
+                {!getUserBadges(post.author_name).some(b => b.badge_name === 'SHILLER') && hasShillerBadge(post.author_name) && (
                   <button
                     onClick={(e) => {
                       e.preventDefault();
@@ -1660,7 +1646,7 @@ export default function FeedPage() {
                     SHILLER
                   </button>
                 )}
-                {hasMarkBadge(post.author_name) && (
+                {!getUserBadges(post.author_name).some(b => b.badge_name === 'MARK') && hasMarkBadge(post.author_name) && (
                   <button
                     onClick={(e) => {
                       e.preventDefault();
@@ -1674,7 +1660,7 @@ export default function FeedPage() {
                     MARK
                   </button>
                 )}
-                {hasOlatmiwaBadge(post.author_name) && (
+                {!getUserBadges(post.author_name).some(b => b.badge_name === 'FIRSTLADY') && hasOlatmiwaBadge(post.author_name) && (
                   <button
                     onClick={(e) => {
                       e.preventDefault();
