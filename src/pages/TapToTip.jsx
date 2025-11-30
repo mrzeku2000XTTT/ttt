@@ -80,21 +80,25 @@ export default function TapToTipPage() {
         badges: badgeMap[u.username] || []
       }));
       
-      // Priority users to display at the top
-      const priorityUsernames = ['ayomuiz', 'kehindeayo', 'kehinde', 'peculiar', 'olatomiwa', 'brahimcrrypt', 'brahim', 'hayphase', 'big-ayoolataiwo1', 'big-ayoolataiwol'];
+      // Priority users to display at the top - exact usernames from database
+      const priorityUsernames = ['ayomuiz ', 'ayomuiz', 'kehindeayo', 'kehinde', 'peculiar', 'olatomiwa ', 'olatomiwa', 'brahimcrrypt', 'brahim', 'hayphase', 'big-ayoolataiwo1', 'big-ayoolataiwol'];
       
       // Sort users: priority users first, then others
       const sortedUsers = usersWithProfiles.sort((a, b) => {
-        const aIsPriority = priorityUsernames.includes(a.username?.toLowerCase());
-        const bIsPriority = priorityUsernames.includes(b.username?.toLowerCase());
+        const normalizeUsername = (username) => username?.toLowerCase().trim();
+        const aUsername = normalizeUsername(a.username);
+        const bUsername = normalizeUsername(b.username);
+        
+        const aIsPriority = priorityUsernames.some(pUser => normalizeUsername(pUser) === aUsername);
+        const bIsPriority = priorityUsernames.some(pUser => normalizeUsername(pUser) === bUsername);
         
         if (aIsPriority && !bIsPriority) return -1;
         if (!aIsPriority && bIsPriority) return 1;
         
         // Among priority users, sort by index in priority list
         if (aIsPriority && bIsPriority) {
-          const aIndex = priorityUsernames.indexOf(a.username?.toLowerCase());
-          const bIndex = priorityUsernames.indexOf(b.username?.toLowerCase());
+          const aIndex = priorityUsernames.findIndex(pUser => normalizeUsername(pUser) === aUsername);
+          const bIndex = priorityUsernames.findIndex(pUser => normalizeUsername(pUser) === bUsername);
           return aIndex - bIndex;
         }
         
