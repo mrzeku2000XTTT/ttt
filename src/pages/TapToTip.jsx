@@ -179,7 +179,6 @@ export default function TapToTipPage() {
                           <h3 className="text-white font-bold truncate">
                             {user.username || 'Anonymous'}
                           </h3>
-                          <p className="text-gray-500 text-xs truncate">{user.email}</p>
                         </div>
                       </div>
 
@@ -240,10 +239,9 @@ export default function TapToTipPage() {
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-6">
                   <div>
-                    <h3 className="text-2xl font-bold text-white mb-1">
+                    <h3 className="text-2xl font-bold text-white">
                       Tip {selectedUser.username || 'User'}
                     </h3>
-                    <p className="text-gray-400 text-sm">{selectedUser.email}</p>
                   </div>
                   <button
                     onClick={() => setSelectedUser(null)}
