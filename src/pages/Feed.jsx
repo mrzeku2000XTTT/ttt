@@ -99,6 +99,9 @@ export default function FeedPage() {
   const [loadingOlatomiwa, setLoadingOlatomiwa] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [tickerResults, setTickerResults] = useState([]);
+  const [selectedTicker, setSelectedTicker] = useState(null);
+  const [visiblePosts, setVisiblePosts] = useState(20);
+  const [tickerCache, setTickerCache] = useState({});
 
   const fileInputRef = useRef(null);
   const replyFileInputRef = useRef(null);
@@ -108,7 +111,15 @@ export default function FeedPage() {
     checkKasware();
     loadDraftFromStorage();
     loadUserBadges();
+    preloadTickerCache();
   }, []);
+
+  useEffect(() => {
+    // Update ticker cache when posts change
+    if (posts.length > 0) {
+      preloadTickerCache();
+    }
+  }, [posts]);
 
 
 
@@ -1482,7 +1493,10 @@ export default function FeedPage() {
   const getMainPosts = () => {
     let filtered = posts.filter(p => !p.parent_post_id);
     
-    if (searchQuery.trim()) {
+    if (selectedTicker) {
+      // Use cached ticker posts for instant results
+      filtered = tickerCache[selectedTicker] || [];
+    } else if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(post => {
         const content = post.content?.toLowerCase() || '';
@@ -1502,50 +1516,63 @@ export default function FeedPage() {
     );
   };
 
+  const preloadTickerCache = () => {
+    // Build ticker cache from all posts
+    const tickerPattern = /\$([a-zA-Z0-9_]+)/gi;
+    const cache = {};
+    
+    posts.forEach(post => {
+      if (post.parent_post_id) return; // Skip replies
+      
+      const matches = post.content?.matchAll(tickerPattern);
+      if (matches) {
+        for (const match of matches) {
+          const ticker = match[1].toUpperCase();
+          if (!cache[ticker]) {
+            cache[ticker] = [];
+          }
+          cache[ticker].push(post);
+        }
+      }
+    });
+    
+    setTickerCache(cache);
+  };
+
   const searchTickers = (query) => {
     if (!query.trim()) {
       setTickerResults([]);
+      setSelectedTicker(null);
       return;
     }
 
     const cleanQuery = query.replace('$', '').toLowerCase();
     
-    // Find all posts mentioning this ticker (case-insensitive)
-    const tickerRegex = new RegExp(`\\$${cleanQuery}`, 'i');
-    const matchingPosts = posts.filter(p => 
-      !p.parent_post_id && tickerRegex.test(p.content)
-    );
-
-    // Extract unique tickers from all posts
-    const tickerPattern = /\$([a-zA-Z0-9_]+)/g;
-    const allTickers = new Set();
-    posts.forEach(post => {
-      const matches = post.content?.matchAll(tickerPattern);
-      if (matches) {
-        for (const match of matches) {
-          allTickers.add(match[1].toUpperCase());
-        }
-      }
-    });
-
-    // Find matching tickers
-    const matchingTickers = Array.from(allTickers).filter(ticker => 
+    // Use cached ticker data for instant results
+    const matchingTickers = Object.keys(tickerCache).filter(ticker => 
       ticker.toLowerCase().includes(cleanQuery)
     );
 
     setTickerResults(matchingTickers.map(ticker => ({
       ticker: ticker,
-      count: posts.filter(p => new RegExp(`\\$${ticker}`, 'i').test(p.content)).length
-    })));
+      count: tickerCache[ticker].length
+    })).sort((a, b) => b.count - a.count)); // Sort by post count
   };
 
   useEffect(() => {
     if (searchQuery.startsWith('$')) {
       searchTickers(searchQuery);
+      
+      // Check if exact ticker match
+      const cleanQuery = searchQuery.replace('$', '').toUpperCase();
+      if (tickerCache[cleanQuery]) {
+        setSelectedTicker(cleanQuery);
+      }
     } else {
       setTickerResults([]);
+      setSelectedTicker(null);
     }
-  }, [searchQuery, posts]);
+  }, [searchQuery, tickerCache]);
 
   const renderTextWithLinks = (text) => {
     if (!text) return null;
@@ -3379,7 +3406,7 @@ export default function FeedPage() {
 
               {/* Ticker Dropdown */}
               <AnimatePresence>
-                {tickerResults.length > 0 && (
+                {tickerResults.length > 0 && !selectedTicker && (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -3393,7 +3420,9 @@ export default function FeedPage() {
                           key={idx}
                           onClick={() => {
                             setSearchQuery(`$${result.ticker}`);
+                            setSelectedTicker(result.ticker);
                             setTickerResults([]);
+                            setVisiblePosts(20); // Reset pagination
                           }}
                           className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/10 transition-colors group"
                         >
@@ -3725,7 +3754,7 @@ export default function FeedPage() {
 
                 <div className="space-y-6">
                   <AnimatePresence>
-                    {mainPosts.map((post, index) => {
+                    {mainPosts.slice(0, visiblePosts).map((post, index) => {
                       const replies = getPostReplies(post.id);
 
                       return (
@@ -3734,7 +3763,7 @@ export default function FeedPage() {
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -20 }}
-                          transition={{ delay: index * 0.05 }}
+                          transition={{ delay: Math.min(index * 0.05, 0.3) }}
                         >
                           {renderPost(post, false)}
 
@@ -3961,8 +3990,20 @@ export default function FeedPage() {
                     <Users className="w-16 h-16 text-white/20 mx-auto mb-4" />
                     <p className="text-white/40 text-lg">No posts yet</p>
                     <p className="text-white/20 text-sm">Be the first to share something!</p>
-                    </div>
-                    )}
+                  </div>
+                )}
+
+                {/* Load More Button */}
+                {mainPosts.length > visiblePosts && (
+                  <div className="text-center py-6">
+                    <Button
+                      onClick={() => setVisiblePosts(prev => prev + 20)}
+                      className="bg-white/10 border border-white/20 text-white hover:bg-white/20"
+                    >
+                      Load More Posts ({mainPosts.length - visiblePosts} remaining)
+                    </Button>
+                  </div>
+                )}
                     </motion.div>
         </div>
       </div>
