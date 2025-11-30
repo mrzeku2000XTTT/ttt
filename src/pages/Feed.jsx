@@ -1561,17 +1561,19 @@ export default function FeedPage() {
   };
 
   const searchUsers = async (query) => {
-    if (!query.trim() || query.startsWith('$') || query.startsWith('#') || query.startsWith('@')) {
+    if (!query.trim() || query.startsWith('$') || query.startsWith('#')) {
       setUserResults([]);
       return;
     }
 
     try {
+      const cleanQuery = query.startsWith('@') ? query.slice(1) : query;
       const allUsers = await base44.entities.User.list('-created_date', 100);
       const matchingUsers = allUsers.filter(u => 
-        u.username?.toLowerCase().includes(query.toLowerCase()) ||
-        u.email?.toLowerCase().includes(query.toLowerCase())
-      ).slice(0, 5); // Limit to 5 results
+        (u.username?.toLowerCase().includes(cleanQuery.toLowerCase()) ||
+        u.email?.toLowerCase().includes(cleanQuery.toLowerCase())) &&
+        u.username // Only show users with usernames
+      ).slice(0, 8); // Limit to 8 results
       
       setUserResults(matchingUsers);
     } catch (err) {
@@ -3481,7 +3483,7 @@ export default function FeedPage() {
 
               {/* User Search Dropdown */}
               <AnimatePresence>
-                {userResults.length > 0 && (
+                {userResults.length > 0 && !searchQuery.startsWith('$') && (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -3490,27 +3492,40 @@ export default function FeedPage() {
                   >
                     <div className="p-2">
                       <div className="text-xs text-white/40 px-3 py-2">Users</div>
-                      {userResults.map((result) => (
-                        <button
-                          key={result.id}
-                          onClick={async () => {
-                            setProfileUsername(result.username || result.email);
-                            setShowProfileModal(true);
-                            setUserResults([]);
-                            setSearchQuery('');
-                            await loadProfileData(result.username || result.email);
-                          }}
-                          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
-                        >
-                          <div className="w-8 h-8 bg-white/10 border border-white/20 rounded-full flex items-center justify-center text-sm font-bold text-white">
-                            {(result.username || result.email)[0].toUpperCase()}
-                          </div>
-                          <div className="flex-1 text-left">
-                            <div className="text-white font-semibold text-sm">{result.username || 'Anonymous'}</div>
-                            <div className="text-white/40 text-xs truncate">{result.email}</div>
-                          </div>
-                        </button>
-                      ))}
+                      {userResults.map((result) => {
+                        const badges = getUserBadges(result.username);
+                        return (
+                          <button
+                            key={result.id}
+                            onClick={async () => {
+                              setProfileUsername(result.username || result.email);
+                              setShowProfileModal(true);
+                              setUserResults([]);
+                              setSearchQuery('');
+                              await loadProfileData(result.username || result.email);
+                            }}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors"
+                          >
+                            <div className="w-10 h-10 bg-white/10 border border-white/20 rounded-full flex items-center justify-center text-sm font-bold text-white">
+                              {(result.username || result.email)[0].toUpperCase()}
+                            </div>
+                            <div className="flex-1 text-left">
+                              <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                                <span className="text-white font-semibold text-sm">{result.username || 'Anonymous'}</span>
+                                {result.role === 'admin' && (
+                                  <span className="text-[9px] px-1.5 py-0.5 bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded font-bold">ADMIN</span>
+                                )}
+                                {badges.slice(0, 2).map((badge) => (
+                                  <span key={badge.id} className={`text-[9px] px-1.5 py-0.5 border rounded font-bold ${getBadgeColorClass(badge.badge_color)}`}>
+                                    {badge.badge_name}
+                                  </span>
+                                ))}
+                              </div>
+                              <div className="text-white/40 text-xs truncate">@{result.username || result.email.split('@')[0]}</div>
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
                   </motion.div>
                 )}
