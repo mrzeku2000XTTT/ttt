@@ -315,11 +315,11 @@ function AKContent() {
                 key={i}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} ${msg.movie ? "w-full" : ""}`}
               >
-                <div className="flex items-start gap-2 group">
+                <div className="flex items-start gap-2 group w-full">
                   <div
-                    className={`max-w-[80%] lg:max-w-[95%] rounded-2xl px-4 py-3 ${
+                    className={`${msg.movie ? "w-full" : "max-w-[80%] lg:max-w-[95%]"} rounded-2xl ${msg.movie ? "px-2 py-2" : "px-4 py-3"} ${
                       msg.role === "user"
                         ? "bg-purple-600 text-white"
                         : "bg-white/10 text-white backdrop-blur-xl border border-white/10"
@@ -340,7 +340,7 @@ function AKContent() {
                       </div>
                     )}
                     {msg.movie && (
-                      <div className="mt-3 w-full" style={{ height: 'calc(100vh - 250px)', minHeight: '500px', maxHeight: '800px' }}>
+                      <div className="mt-2 w-full" style={{ height: 'calc(100vh - 200px)', minHeight: '600px', maxHeight: '900px' }}>
                         <iframe
                           src={msg.movie.embed_url}
                           width="100%"
@@ -355,7 +355,7 @@ function AKContent() {
                       </div>
                     )}
                   </div>
-                  {msg.role === "assistant" && (
+                  {msg.role === "assistant" && !msg.movie && (
                     <button
                       onClick={() => setShareModal({ open: true, data: msg.content })}
                       className="opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-white/5 rounded-lg"
