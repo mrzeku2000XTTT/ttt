@@ -216,26 +216,41 @@ export default function TapToTipPage() {
                           {user.username ? user.username[0].toUpperCase() : user.email[0].toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <h3 className="text-white font-bold truncate">
                               {user.username || 'Anonymous'}
                             </h3>
                             {user.username?.toLowerCase() === 'ttt' && (
-                              <span className="px-2 py-0.5 bg-gradient-to-r from-cyan-500 to-purple-500 rounded text-[10px] font-bold text-white">
-                                ZEKU
-                              </span>
+                              <>
+                                <span className="px-2 py-0.5 bg-gradient-to-r from-cyan-500 to-purple-500 rounded text-[10px] font-bold text-white">
+                                  ZEKU
+                                </span>
+                                <span className="px-2 py-0.5 bg-gradient-to-r from-green-500 to-emerald-600 rounded text-[10px] font-bold text-white">
+                                  $KAS
+                                </span>
+                              </>
                             )}
                             {user.username?.toLowerCase() === 'destroyer' && (
-                              <span className="px-2 py-0.5 bg-gradient-to-r from-red-600 to-black rounded text-[10px] font-bold text-white">
-                                DEATH
-                              </span>
+                              <>
+                                <span className="px-2 py-0.5 bg-gradient-to-r from-red-600 to-black rounded text-[10px] font-bold text-white">
+                                  DEATH
+                                </span>
+                                <span className="px-2 py-0.5 bg-gradient-to-r from-green-500 to-emerald-600 rounded text-[10px] font-bold text-white">
+                                  $KAS
+                                </span>
+                              </>
                             )}
                             {user.username?.toLowerCase() === 'esp' && (
-                              <span className="px-2 py-0.5 bg-gradient-to-r from-yellow-500 to-orange-500 rounded text-[10px] font-bold text-white">
-                                GOD
-                              </span>
+                              <>
+                                <span className="px-2 py-0.5 bg-gradient-to-r from-yellow-500 to-orange-500 rounded text-[10px] font-bold text-white">
+                                  GOD
+                                </span>
+                                <span className="px-2 py-0.5 bg-gradient-to-r from-green-500 to-emerald-600 rounded text-[10px] font-bold text-white">
+                                  $KAS
+                                </span>
+                              </>
                             )}
-                            </div>
+                          </div>
                         </div>
                       </div>
 
