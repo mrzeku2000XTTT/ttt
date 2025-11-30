@@ -81,7 +81,7 @@ export default function TapToTipPage() {
       }));
       
       // Priority users to display at the top - exact usernames from database
-      const priorityUsernames = ['ayomuiz ', 'ayomuiz', 'kehindeayo', 'kehinde', 'peculiar', 'olatomiwa ', 'olatomiwa', 'brahimcrrypt', 'brahim', 'hayphase', 'big-ayoolataiwo1', 'big-ayoolataiwol'];
+      const priorityUsernames = ['Ayomuiz ', 'kehindeAyo', 'PECULIAR', 'Olatomiwa ', 'Brahimcrrypt', 'Hayphase', 'Big-ayoolataiwo1'];
       
       // Sort users: priority users first, then others
       const sortedUsers = usersWithProfiles.sort((a, b) => {
