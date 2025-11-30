@@ -835,14 +835,16 @@ Format as a single, comprehensive paragraph.`
               onClick={() => setSelectedTemplate(null)}
               className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100]"
             />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-4xl max-h-[85vh] z-[101]"
-            >
-              <Card className="bg-gradient-to-br from-zinc-900/95 to-black/95 border-cyan-500/30 max-h-[85vh] overflow-y-auto">
-                <CardContent className="p-6">
+            <div className="fixed inset-0 z-[101] flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="w-full max-w-4xl max-h-[90vh] overflow-hidden"
+              >
+                <Card className="bg-gradient-to-br from-zinc-900/95 to-black/95 border-cyan-500/30 shadow-2xl">
+                  <div className="max-h-[90vh] overflow-y-auto">
+                    <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-6">
                     <div>
                       <h3 className="text-2xl font-bold text-white mb-2">{selectedTemplate.title}</h3>
@@ -873,10 +875,12 @@ Format as a single, comprehensive paragraph.`
                   <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
                     <p className="text-sm text-gray-400 mb-2">Payment Address:</p>
                     <code className="text-cyan-400 text-sm">{selectedTemplate.creator_wallet}</code>
+                    </div>
+                    </CardContent>
                   </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+                </Card>
+              </motion.div>
+            </div>
           </>
         )}
       </AnimatePresence>
