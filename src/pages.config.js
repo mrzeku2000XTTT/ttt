@@ -127,6 +127,7 @@ import Builders from './pages/Builders';
 import Olatomiwa from './pages/Olatomiwa';
 import TemplateBuilder from './pages/TemplateBuilder';
 import Taiwo from './pages/Taiwo';
+import TTTAudit from './pages/TTTAudit';
 import __Layout from './Layout.jsx';
 
 
@@ -260,6 +261,7 @@ export const PAGES = {
     "Olatomiwa": Olatomiwa,
     "TemplateBuilder": TemplateBuilder,
     "Taiwo": Taiwo,
+    "TTTAudit": TTTAudit,
 }
 
 export const pagesConfig = {
