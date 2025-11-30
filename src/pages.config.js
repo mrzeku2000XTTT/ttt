@@ -134,6 +134,7 @@ import Kasdate from './pages/Kasdate';
 import MODZ from './pages/MODZ';
 import MODZHub from './pages/MODZHub';
 import KASari from './pages/KASari';
+import KaspaSTORE from './pages/KaspaSTORE';
 import __Layout from './Layout.jsx';
 
 
@@ -274,6 +275,7 @@ export const PAGES = {
     "MODZ": MODZ,
     "MODZHub": MODZHub,
     "KASari": KASari,
+    "KaspaSTORE": KaspaSTORE,
 }
 
 export const pagesConfig = {

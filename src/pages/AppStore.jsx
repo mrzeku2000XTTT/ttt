@@ -54,7 +54,7 @@ export default function AppStorePage() {
     { name: "taiwo", icon: "Link2", path: "Taiwo", category: "Tools" },
     { name: "Kolade", icon: "Link2", path: "Kolade", category: "Tools" },
     { name: "KASDATE", icon: "Link2", path: "Kasdate", category: "Social" },
-    { name: "MODZ", icon: "Link2", path: "MODZ", category: "Tools" },
+    { name: "MODZ", icon: "Link2", path: "MODZHub", category: "Tools" },
     ];
 
   const getIconComponent = (iconName) => {
