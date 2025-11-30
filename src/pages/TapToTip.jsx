@@ -39,12 +39,14 @@ export default function TapToTipPage() {
       const user = await base44.auth.me();
       setCurrentUser(user);
     } catch (err) {
-      console.error('Failed to load user:', err);
+      console.log('User not logged in');
+      setCurrentUser(null);
     }
   };
 
   const loadUsers = async () => {
     try {
+      setLoading(true);
       const allUsers = await base44.entities.User.list('-created_date', 100);
       const usersWithWallets = allUsers.filter(u => 
         (u.created_wallet_address || u.agent_zk_id) && 
@@ -109,26 +111,6 @@ export default function TapToTipPage() {
     const kaswareUrl = `kasware://send?address=${address}&amount=${parseFloat(tipAmount)}`;
     window.location.href = kaswareUrl;
   };
-
-  if (!currentUser) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-6">
-        <Card className="bg-white/5 border-white/10 backdrop-blur-xl max-w-md">
-          <CardContent className="p-8 text-center">
-            <Zap className="w-16 h-16 text-cyan-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-white mb-2">Login Required</h2>
-            <p className="text-gray-400 mb-6">Sign in to use TapToTip</p>
-            <Button
-              onClick={() => base44.auth.redirectToLogin()}
-              className="bg-gradient-to-r from-cyan-500 to-purple-500"
-            >
-              Login
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden" style={{ paddingTop: '8rem', paddingBottom: '6rem' }}>
