@@ -140,6 +140,7 @@ import OlatomiwaHub from './pages/OlatomiwaHub';
 import BRAHIMHub from './pages/BRAHIMHub';
 import KASBOOKS from './pages/KASBOOKS';
 import Movies from './pages/Movies';
+import Creator from './pages/Creator';
 import __Layout from './Layout.jsx';
 
 
@@ -286,6 +287,7 @@ export const PAGES = {
     "BRAHIMHub": BRAHIMHub,
     "KASBOOKS": KASBOOKS,
     "Movies": Movies,
+    "Creator": Creator,
 }
 
 export const pagesConfig = {
