@@ -217,9 +217,9 @@ function AKContent() {
                   role: "assistant", 
                   content: "🎬 Opening movie browser...",
                   movie: {
-                    embed_url: "https://fbox.to",
+                    embed_url: "https://fmovies-co.net",
                     title: "Movie Browser",
-                    source: "FBox"
+                    source: "FMovies"
                   }
                 }
               ]);
