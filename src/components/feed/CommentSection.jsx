@@ -15,6 +15,8 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
     const saved = localStorage.getItem('liked_comments');
     return saved ? JSON.parse(saved) : {};
   });
+  const [tipModal, setTipModal] = useState(null);
+  const [tipAmount, setTipAmount] = useState('');
 
   useEffect(() => {
     loadComments();
@@ -154,21 +156,22 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
     }
   };
 
-  const handleTipCommenter = (walletAddress, commenterName) => {
-    if (!walletAddress) {
+  const handleTipCommenter = (comment) => {
+    if (!comment.author_wallet_address) {
       alert('This user has not connected a wallet yet');
       return;
     }
+    setTipModal(comment);
+  };
+
+  const sendTipToCommenter = () => {
+    if (!tipAmount || parseFloat(tipAmount) <= 0) return;
     
-    // Open Kasware to send tip
-    try {
-      const kaswareUrl = `kasware://send?address=${walletAddress}`;
-      window.location.href = kaswareUrl;
-    } catch (err) {
-      console.error('Failed to open Kasware:', err);
-      // Fallback: show tip modal with address
-      alert(`Send KAS to ${commenterName}:\n${walletAddress}`);
-    }
+    const kaswareUrl = `kasware://send?address=${tipModal.author_wallet_address}&amount=${parseFloat(tipAmount)}`;
+    window.location.href = kaswareUrl;
+    
+    setTipModal(null);
+    setTipAmount('');
   };
 
   return (
@@ -236,7 +239,7 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                               {comment.author_wallet_address.slice(0, 6)}...{comment.author_wallet_address.slice(-4)}
                             </code>
                             <button
-                              onClick={() => handleTipCommenter(comment.author_wallet_address, comment.author_name || comment.commenter_name)}
+                              onClick={() => handleTipCommenter(comment)}
                               className="p-1 bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 rounded transition-colors hover:scale-110 active:scale-95"
                               title="Tip this commenter with KAS"
                             >
@@ -283,6 +286,59 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
             ))}
           </AnimatePresence>
         </div>
+      )}
+
+      {/* Tip Modal */}
+      {tipModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
+          onClick={() => setTipModal(null)}
+        >
+          <motion.div
+            initial={{ scale: 0.9, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
+            exit={{ scale: 0.9, y: 20 }}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-zinc-900 border border-white/20 rounded-xl p-6 w-full max-w-md"
+          >
+            <h3 className="text-xl font-bold text-white mb-4">
+              Tip {tipModal.author_name || tipModal.commenter_name}
+            </h3>
+            
+            <div className="mb-4">
+              <label className="text-sm text-gray-400 mb-2 block">Amount (KAS)</label>
+              <Input
+                type="number"
+                step="0.01"
+                value={tipAmount}
+                onChange={(e) => setTipAmount(e.target.value)}
+                placeholder="0.00"
+                className="bg-black border-white/20 text-white text-center text-2xl h-14"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                onClick={() => setTipModal(null)}
+                variant="outline"
+                className="flex-1 border-white/20 text-white"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={sendTipToCommenter}
+                disabled={!tipAmount || parseFloat(tipAmount) <= 0}
+                className="flex-1 bg-green-500 hover:bg-green-600"
+              >
+                Send Tip
+              </Button>
+            </div>
+          </motion.div>
+        </motion.div>
       )}
     </div>
   );
