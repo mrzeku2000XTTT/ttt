@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Zap, Search, Wallet, User as UserIcon, Copy, Check, Send, CheckCircle2 } from "lucide-react";
+import { Zap, Search, Wallet, User as UserIcon, Copy, Check, Send, CheckCircle2, Upload } from "lucide-react";
 
 export default function TapToTipPage() {
   const [users, setUsers] = useState([]);
@@ -15,11 +15,45 @@ export default function TapToTipPage() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [tipAmount, setTipAmount] = useState("");
   const [copiedAddress, setCopiedAddress] = useState("");
+  const [backgroundMedia, setBackgroundMedia] = useState(null);
+  const [isVideo, setIsVideo] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = React.useRef(null);
 
   useEffect(() => {
     loadCurrentUser();
     loadUsers();
+    loadBackgroundMedia();
   }, []);
+
+  const loadBackgroundMedia = () => {
+    const saved = localStorage.getItem('taptotip_background');
+    const savedType = localStorage.getItem('taptotip_background_type');
+    if (saved) {
+      setBackgroundMedia(saved);
+      setIsVideo(savedType === 'video');
+    }
+  };
+
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const isVideoFile = file.type.startsWith('video/');
+    
+    setIsUploading(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setBackgroundMedia(file_url);
+      setIsVideo(isVideoFile);
+      localStorage.setItem('taptotip_background', file_url);
+      localStorage.setItem('taptotip_background_type', isVideoFile ? 'video' : 'image');
+    } catch (err) {
+      console.error('Failed to upload background:', err);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   useEffect(() => {
     if (searchQuery.trim()) {
@@ -149,20 +183,74 @@ export default function TapToTipPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Static HD Background - Fixed Position */}
-      <div 
-        className="fixed inset-0 pointer-events-none"
-        style={{
-          backgroundImage: 'url(https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/0e4fb0d03_image.png)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center center',
-          backgroundRepeat: 'no-repeat',
-          backgroundAttachment: 'fixed',
-          filter: 'brightness(1.3) saturate(1.4) contrast(1.1)'
-        }}
+      {/* Background - Static Image or Video */}
+      {backgroundMedia ? (
+        isVideo ? (
+          <div className="fixed inset-0">
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full h-full object-cover"
+              src={backgroundMedia}
+            />
+            <div className="absolute inset-0 bg-black/30" />
+          </div>
+        ) : (
+          <div 
+            className="fixed inset-0"
+            style={{
+              backgroundImage: `url(${backgroundMedia})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center center',
+              backgroundRepeat: 'no-repeat',
+              backgroundAttachment: 'fixed'
+            }}
+          >
+            <div className="absolute inset-0 bg-black/30" />
+          </div>
+        )
+      ) : (
+        <>
+          <div 
+            className="fixed inset-0 pointer-events-none"
+            style={{
+              backgroundImage: 'url(https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/0e4fb0d03_image.png)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center center',
+              backgroundRepeat: 'no-repeat',
+              backgroundAttachment: 'fixed',
+              filter: 'brightness(1.3) saturate(1.4) contrast(1.1)'
+            }}
+          />
+          <div className="fixed inset-0 bg-black/30 pointer-events-none" />
+        </>
+      )}
+
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,video/*"
+        onChange={handleFileSelect}
+        className="hidden"
       />
-      {/* Dark overlay for readability */}
-      <div className="fixed inset-0 bg-black/30 pointer-events-none" />
+
+      {/* Background Upload Button */}
+      <motion.button
+        initial={{ opacity: 0, scale: 0 }}
+        animate={{ opacity: 1, scale: 1 }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => fileInputRef.current?.click()}
+        disabled={isUploading}
+        className="fixed right-4 md:right-6 z-[100] w-10 h-10 md:w-12 md:h-12 bg-black/80 border border-white/20 hover:border-white/40 rounded-full flex items-center justify-center shadow-lg transition-all disabled:opacity-50"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 5rem)' }}
+        title="Upload Background"
+      >
+        <Upload className="w-4 h-4 md:w-5 md:h-5 text-white/80" strokeWidth={2} />
+      </motion.button>
 
       <div className="relative z-10 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto" style={{ paddingTop: 'calc(9rem + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))' }}>
         {/* Header */}
