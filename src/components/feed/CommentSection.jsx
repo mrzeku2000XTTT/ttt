@@ -154,15 +154,21 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
     }
   };
 
-  const handleTipCommenter = (walletAddress) => {
+  const handleTipCommenter = (walletAddress, commenterName) => {
     if (!walletAddress) {
       alert('This user has not connected a wallet yet');
       return;
     }
     
     // Open Kasware to send tip
-    const kaswareUrl = `kasware://send?address=${walletAddress}`;
-    window.location.href = kaswareUrl;
+    try {
+      const kaswareUrl = `kasware://send?address=${walletAddress}`;
+      window.location.href = kaswareUrl;
+    } catch (err) {
+      console.error('Failed to open Kasware:', err);
+      // Fallback: show tip modal with address
+      alert(`Send KAS to ${commenterName}:\n${walletAddress}`);
+    }
   };
 
   return (
@@ -230,9 +236,9 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                               {comment.author_wallet_address.slice(0, 6)}...{comment.author_wallet_address.slice(-4)}
                             </code>
                             <button
-                              onClick={() => handleTipCommenter(comment.author_wallet_address)}
-                              className="p-1 bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 rounded transition-colors"
-                              title="Tip this commenter"
+                              onClick={() => handleTipCommenter(comment.author_wallet_address, comment.author_name || comment.commenter_name)}
+                              className="p-1 bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 rounded transition-colors hover:scale-110 active:scale-95"
+                              title="Tip this commenter with KAS"
                             >
                               <DollarSign className="w-3 h-3 text-green-400" />
                             </button>
