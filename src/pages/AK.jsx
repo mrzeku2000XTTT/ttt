@@ -217,9 +217,9 @@ function AKContent() {
                   role: "assistant", 
                   content: "🎬 Opening movie browser...",
                   movie: {
-                    embed_url: "https://ww22.0123movie.net",
-                    title: "0123Movie Browser",
-                    source: "0123Movie"
+                    embed_url: "https://fmovies24.to",
+                    title: "FMovies Browser",
+                    source: "FMovies"
                   }
                 }
               ]);
