@@ -294,6 +294,11 @@ export default function TapToTipPage() {
                                 ⚔️ KNIGHT
                               </span>
                             )}
+                            {user.username?.toLowerCase().trim().replace(/\s+/g, '') === 'big-ayoolataiwo1' && user.created_wallet_address?.toLowerCase().endsWith('9pd') && (
+                              <span className="px-2 py-0.5 bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 rounded text-[10px] font-bold text-black">
+                                🎮 MODZ
+                              </span>
+                            )}
                             <span className="px-2 py-0.5 bg-gradient-to-r from-green-500 to-emerald-600 rounded text-[10px] font-bold text-white">
                               $KAS
                             </span>
