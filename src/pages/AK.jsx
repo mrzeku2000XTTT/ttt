@@ -179,6 +179,21 @@ function AKContent() {
           return;
         }
 
+        // Check for !POPCORN command
+        if (query.trim().toLowerCase() === '!popcorn') {
+          setMessages(prev => [...prev, { 
+            role: "assistant", 
+            content: "🎬 Opening Popcornflix browser...",
+            movie: {
+              embed_url: "https://popcornflix.com",
+              title: "Popcornflix - Free Movies Browser",
+              source: "Popcornflix"
+            }
+          }]);
+          setLoading(false);
+          return;
+        }
+
         const isMusicRequest = /play|music|song|listen|audio/i.test(query);
         const isMovieRequest = /watch|movie|film|cinema/i.test(query);
 
