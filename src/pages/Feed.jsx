@@ -633,9 +633,33 @@ export default function FeedPage() {
     }
   };
 
+  const callZKBot = async (prompt, parentPostId = null) => {
+    try {
+      const result = await base44.functions.invoke('zkBotRespond', { 
+        prompt, 
+        parent_post_id: parentPostId 
+      });
+      await loadData();
+      return result.data;
+    } catch (err) {
+      console.error('Failed to call ZK bot:', err);
+      setError('Failed to call ZK bot');
+    }
+  };
+
   const handlePost = async () => {
     if (!newPost.trim() && uploadedFiles.length === 0) {
       setError('Please enter some content or upload files');
+      return;
+    }
+
+    // Check if user is calling ZK bot
+    if (newPost.trim().toLowerCase().startsWith('@zk ')) {
+      const prompt = newPost.trim().substring(4);
+      setIsPosting(true);
+      await callZKBot(prompt);
+      setNewPost("");
+      setIsPosting(false);
       return;
     }
 
