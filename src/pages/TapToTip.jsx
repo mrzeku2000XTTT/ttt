@@ -148,16 +148,10 @@ export default function TapToTipPage() {
   };
 
   return (
-    <div 
-      className="min-h-screen relative overflow-hidden" 
-      style={{ 
-        paddingTop: '8rem', 
-        paddingBottom: '6rem'
-      }}
-    >
-      {/* HD Background Image - No Stretch */}
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Static HD Background - Fixed Position */}
       <div 
-        className="absolute inset-0 pointer-events-none"
+        className="fixed inset-0 pointer-events-none"
         style={{
           backgroundImage: 'url(https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/0e4fb0d03_image.png)',
           backgroundSize: 'cover',
@@ -168,9 +162,9 @@ export default function TapToTipPage() {
         }}
       />
       {/* Dark overlay for readability */}
-      <div className="absolute inset-0 bg-black/30 pointer-events-none" />
+      <div className="fixed inset-0 bg-black/30 pointer-events-none" />
 
-      <div className="relative z-10 p-6 md:p-12 max-w-7xl mx-auto">
+      <div className="relative z-10 p-6 md:p-12 max-w-7xl mx-auto" style={{ paddingTop: '8rem', paddingBottom: '6rem' }}>
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
