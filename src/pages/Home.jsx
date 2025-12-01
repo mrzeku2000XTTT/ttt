@@ -131,14 +131,16 @@ export default function HomePage() {
         transition={{ delay: 0.5 }}
         className="absolute top-8 right-8 z-20"
       >
-        <Button
-          onClick={handleLogout}
-          variant="outline"
-          className="border-white/20 text-white hover:bg-white/10 rounded-xl backdrop-blur-sm"
-        >
-          <LogOut className="w-4 h-4 mr-2" />
-          Logout
-        </Button>
+        <div className="relative group">
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 rounded-xl blur opacity-40 group-hover:opacity-70 transition-opacity" />
+          <Button
+            onClick={handleLogout}
+            className="relative bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-cyan-600/20 backdrop-blur-xl border border-purple-500/30 text-white hover:border-purple-400/50 rounded-xl"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Logout
+          </Button>
+        </div>
       </motion.div>
 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-4 text-center">
