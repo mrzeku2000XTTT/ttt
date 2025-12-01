@@ -701,17 +701,18 @@ export default function FeedPage() {
       setUploadedFiles([]);
       setError(null);
 
-      // If ZK was called, have it comment on the post
-      if (isZKCall && createdPost && zkMatch) {
+      // Check if @zk is mentioned anywhere in the post (not just at start)
+      const postContent = newPost.toLowerCase();
+      if (postContent.includes('@zk') && createdPost) {
         try {
           await base44.functions.invoke('zkBotRespond', { 
-            prompt: zkMatch[1], 
+            prompt: newPost.trim(), 
             post_id: createdPost.id 
           });
           // Expand comments to show ZK's response
           setExpandedComments(prev => ({ ...prev, [createdPost.id]: true }));
           // Reload to show ZK's comment
-          setTimeout(() => loadData(), 1000);
+          setTimeout(() => loadData(), 1500);
         } catch (err) {
           console.error('ZK bot failed:', err);
         }
@@ -794,17 +795,17 @@ export default function FeedPage() {
       const freshPosts = await base44.entities.Post.list('-created_date', 200);
       setPosts(freshPosts);
 
-      // If ZK was called, have it comment on the reply
-      if (zkMatch && createdReply) {
+      // Check if @zk is mentioned anywhere in the reply
+      if (replyText.toLowerCase().includes('@zk') && createdReply) {
         try {
           await base44.functions.invoke('zkBotRespond', { 
-            prompt: zkMatch[1], 
+            prompt: replyText.trim(), 
             post_id: createdReply.id 
           });
           // Expand comments on the reply to show ZK's response
           setExpandedComments(prev => ({ ...prev, [createdReply.id]: true }));
           // Reload to show ZK's comment
-          setTimeout(() => loadData(), 1000);
+          setTimeout(() => loadData(), 1500);
         } catch (err) {
           console.error('ZK bot failed:', err);
         }
