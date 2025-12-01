@@ -6,6 +6,7 @@ import { ShoppingBag, Gem, Zap } from "lucide-react";
 
 export default function MODZHubPage() {
   const [showKNSCard, setShowKNSCard] = useState(false);
+  const [showBack, setShowBack] = useState(false);
 
   const apps = [
     {
@@ -174,15 +175,62 @@ export default function MODZHubPage() {
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-[90vw] max-w-md"
             >
-              <div className="relative">
-                <img
-                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/aa7f06b84_image.png"
-                  alt="KNS Card"
-                  className="w-full rounded-2xl shadow-2xl border border-white/20"
-                />
+              <div className="relative perspective-1000">
+                <motion.div
+                  animate={{ rotateY: showBack ? 180 : 0 }}
+                  transition={{ duration: 0.6 }}
+                  className="relative w-full"
+                  style={{ transformStyle: 'preserve-3d' }}
+                >
+                  {/* Front */}
+                  <div 
+                    className="w-full"
+                    style={{ 
+                      backfaceVisibility: 'hidden',
+                      display: showBack ? 'none' : 'block'
+                    }}
+                  >
+                    <img
+                      src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/ba6aeaa41_image.png"
+                      alt="K.I.D Profile Card"
+                      className="w-full rounded-2xl shadow-2xl border border-white/20"
+                    />
+                    <button
+                      onClick={() => setShowBack(true)}
+                      className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-xl border border-white/30 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-white/10 transition-all"
+                    >
+                      View Wallet
+                    </button>
+                  </div>
+
+                  {/* Back */}
+                  <div 
+                    className="w-full"
+                    style={{ 
+                      backfaceVisibility: 'hidden',
+                      display: showBack ? 'block' : 'none'
+                    }}
+                  >
+                    <img
+                      src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/7933b4e32_image.png"
+                      alt="Wallet Receive"
+                      className="w-full rounded-2xl shadow-2xl border border-white/20"
+                    />
+                    <button
+                      onClick={() => setShowBack(false)}
+                      className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-xl border border-white/30 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-white/10 transition-all"
+                    >
+                      ← Back
+                    </button>
+                  </div>
+                </motion.div>
+
                 <button
-                  onClick={() => setShowKNSCard(false)}
-                  className="absolute top-4 right-4 w-8 h-8 bg-black/80 backdrop-blur-xl border border-white/30 rounded-full flex items-center justify-center hover:bg-white/10 transition-all text-white"
+                  onClick={() => {
+                    setShowKNSCard(false);
+                    setShowBack(false);
+                  }}
+                  className="absolute top-4 right-4 w-8 h-8 bg-black/80 backdrop-blur-xl border border-white/30 rounded-full flex items-center justify-center hover:bg-white/10 transition-all text-white z-10"
                 >
                   ✕
                 </button>
