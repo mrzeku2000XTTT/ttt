@@ -170,9 +170,9 @@ function AKContent() {
             role: "assistant", 
             content: "🎬 Opening African content browser...",
             movie: {
-              embed_url: "https://www.afrolandtv.com/app",
-              title: "AfrolandTV - African Content Browser",
-              source: "AfrolandTV"
+              embed_url: "https://www.naijaplay.com.ng",
+              title: "NaijaPlay - African Movies Browser",
+              source: "NaijaPlay"
             }
           }]);
           setLoading(false);
