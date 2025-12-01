@@ -290,13 +290,16 @@ export default function WalletPage() {
       if (currentUser.email) {
         const zkId = addr.slice(-10).toUpperCase();
         const agentZKId = `ZK-${zkId}`;
-        const truncatedUsername = `Agent-${addr.substring(0, 10)}`;
         
-        console.log('🤖 [Wallet] Checking Agent ZK Profile...');
+        // Use existing username if available, otherwise create truncated one
+        const existingUsername = currentUser.username || `Agent-${addr.substring(0, 10)}`;
+        
+        console.log('🤖 [Wallet] Updating Agent ZK Profile...');
         
         try {
-          const existingProfiles = await base44.entities.AgentZKProfile.filter({
-            wallet_address: addr
+          // Check for ANY existing profile by user email
+          const existingProfilesByEmail = await base44.entities.AgentZKProfile.filter({
+            user_email: currentUser.email
           });
 
           const profileData = {
@@ -304,29 +307,27 @@ export default function WalletPage() {
             wallet_address: addr,
             ttt_wallet_address: addr,
             agent_zk_id: agentZKId,
-            username: truncatedUsername,
-            bio: 'TTT Wallet User - Kaspa Network',
-            role: 'Other',
-            skills: ['Kaspa', 'Web3', 'TTT Wallet'],
-            agent_zk_photo: `https://ui-avatars.com/api/?name=${encodeURIComponent(truncatedUsername)}&size=400&background=0ea5e9&color=fff&bold=true`,
+            username: existingUsername,
+            bio: existingProfilesByEmail.length > 0 ? existingProfilesByEmail[0].bio : 'TTT Wallet User - Kaspa Network',
+            role: existingProfilesByEmail.length > 0 ? existingProfilesByEmail[0].role : 'Other',
+            skills: existingProfilesByEmail.length > 0 ? existingProfilesByEmail[0].skills : ['Kaspa', 'Web3', 'TTT Wallet'],
+            agent_zk_photo: existingProfilesByEmail.length > 0 ? existingProfilesByEmail[0].agent_zk_photo : `https://ui-avatars.com/api/?name=${encodeURIComponent(existingUsername)}&size=400&background=0ea5e9&color=fff&bold=true`,
             is_public: true,
-            is_hireable: true,
-            availability: 'available',
-            verification_count: 0,
+            is_hireable: existingProfilesByEmail.length > 0 ? existingProfilesByEmail[0].is_hireable : true,
+            availability: existingProfilesByEmail.length > 0 ? existingProfilesByEmail[0].availability : 'available',
+            verification_count: existingProfilesByEmail.length > 0 ? existingProfilesByEmail[0].verification_count : 0,
             last_active: new Date().toISOString(),
-            social_links: {},
-            portfolio: [],
-            work_type: ['worker']
+            social_links: existingProfilesByEmail.length > 0 ? existingProfilesByEmail[0].social_links : {},
+            portfolio: existingProfilesByEmail.length > 0 ? existingProfilesByEmail[0].portfolio : [],
+            work_type: existingProfilesByEmail.length > 0 ? existingProfilesByEmail[0].work_type : ['worker']
           };
 
-          if (existingProfiles.length > 0) {
-            await base44.entities.AgentZKProfile.update(existingProfiles[0].id, {
-              user_email: currentUser.email,
-              ttt_wallet_address: addr,
-              last_active: new Date().toISOString()
-            });
-            console.log(`✅ [Wallet] Profile updated`);
+          if (existingProfilesByEmail.length > 0) {
+            // Update existing profile with new wallet
+            await base44.entities.AgentZKProfile.update(existingProfilesByEmail[0].id, profileData);
+            console.log(`✅ [Wallet] Profile updated with new wallet`);
           } else {
+            // Create new profile
             await base44.entities.AgentZKProfile.create(profileData);
             console.log(`✅ [Wallet] Profile created`);
           }
