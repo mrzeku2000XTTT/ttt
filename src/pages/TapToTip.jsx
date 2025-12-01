@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Zap, Search, Wallet, User as UserIcon, Copy, Check, Send, CheckCircle2, Upload } from "lucide-react";
 
 export default function TapToTipPage() {
-  const defaultVideo = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/b4b2c9ab1_file.mp4';
+  const defaultBackground = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/165624785_image.png';
   
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
@@ -17,8 +17,8 @@ export default function TapToTipPage() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [tipAmount, setTipAmount] = useState("");
   const [copiedAddress, setCopiedAddress] = useState("");
-  const [backgroundMedia, setBackgroundMedia] = useState(defaultVideo);
-  const [isVideo, setIsVideo] = useState(true);
+  const [backgroundMedia, setBackgroundMedia] = useState(defaultBackground);
+  const [isVideo, setIsVideo] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = React.useRef(null);
 
@@ -127,18 +127,32 @@ export default function TapToTipPage() {
       const usersWithWallets = allUsers.filter(u => {
         // Must have a wallet
         if (!u.created_wallet_address && !u.agent_zk_id) return false;
-        
+
         // Exclude specific olatomiwa wallet
         if (u.username?.toLowerCase() === 'olatomiwa' && u.created_wallet_address?.toLowerCase().endsWith('x82')) {
           return false;
         }
-        
+
         // Exclude imposter TTT wallet
         if (u.username?.toLowerCase() === 'ttt' && u.created_wallet_address?.toLowerCase().endsWith('6ft')) {
           return false;
         }
-        
-        // Include all other users including TTT
+
+        // For TTT users, only keep vru, feq, kq3
+        if (u.username?.toLowerCase() === 'ttt') {
+          const addr = (u.created_wallet_address || u.agent_zk_id || '').toLowerCase();
+          const allowedEndings = ['vru', 'feq', 'kq3'];
+          const isAllowed = allowedEndings.some(ending => addr.endsWith(ending));
+
+          // Remove these specific TTT accounts
+          const blockedEndings = ['x61', 'n78', 'ynd', '55a', 'e92', '244', 'v21', '9fe', 'zg8', 'v7k'];
+          const isBlocked = blockedEndings.some(ending => addr.endsWith(ending));
+
+          if (isBlocked) return false;
+          return isAllowed;
+        }
+
+        // Include all other users
         return true;
       });
       
@@ -209,20 +223,28 @@ export default function TapToTipPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Background - Video */}
+      {/* Background */}
       <div className="fixed inset-0">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
-          className="w-full h-full object-cover"
-          src={backgroundMedia}
-          key={backgroundMedia}
-        >
-          <source src={backgroundMedia} type="video/mp4" />
-        </video>
+        {isVideo ? (
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            className="w-full h-full object-cover"
+            src={backgroundMedia}
+            key={backgroundMedia}
+          >
+            <source src={backgroundMedia} type="video/mp4" />
+          </video>
+        ) : (
+          <img
+            src={backgroundMedia}
+            alt="Background"
+            className="w-full h-full object-cover"
+          />
+        )}
         <div className="absolute inset-0 bg-black/30" />
       </div>
 
