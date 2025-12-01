@@ -42,6 +42,9 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
   const handleComment = async () => {
     if (!newComment.trim()) return;
 
+    // Check if calling ZK bot
+    const zkMatch = newComment.trim().match(/^@zk\s+(.+)/i);
+
     setIsCommenting(true);
     try {
       // Try to get AgentZK profile
@@ -68,7 +71,7 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
           : currentUser.email.split('@')[0];
       }
 
-      await base44.entities.PostComment.create({
+      const createdComment = await base44.entities.PostComment.create({
         post_id: postId,
         author_name: authorName,
         author_wallet_address: authorWalletAddress,
@@ -76,10 +79,28 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
       });
 
       setNewComment("");
-      await loadComments();
       
       if (onCommentAdded) {
         onCommentAdded();
+      }
+
+      // If ZK was called, have it respond
+      if (zkMatch) {
+        try {
+          await base44.functions.invoke('zkBotRespond', { 
+            prompt: zkMatch[1], 
+            post_id: postId 
+          });
+          // Wait a bit then reload to show ZK's response
+          setTimeout(() => {
+            loadComments();
+            if (onCommentAdded) onCommentAdded();
+          }, 1000);
+        } catch (err) {
+          console.error('ZK bot failed:', err);
+        }
+      } else {
+        await loadComments();
       }
     } catch (err) {
       console.error('Failed to comment:', err);
@@ -146,7 +167,7 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && handleComment()}
-          placeholder="Write a comment..."
+          placeholder="Write a comment... (@zk to call ZK bot)"
           className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/30 h-9"
           disabled={isCommenting}
         />

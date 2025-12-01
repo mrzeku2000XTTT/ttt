@@ -730,6 +730,9 @@ export default function FeedPage() {
       return;
     }
 
+    // Check if calling ZK bot
+    const zkMatch = replyText.trim().match(/^@zk\s+(.+)/i);
+
     // Get wallet from Kasware or TTT wallet
     let walletAddress = '';
     if (kaswareWallet.connected) {
@@ -770,16 +773,12 @@ export default function FeedPage() {
         replyData.media_files = replyFiles;
       }
 
-      await base44.entities.Post.create(replyData);
+      const createdReply = await base44.entities.Post.create(replyData);
 
       // Update parent post's replies count
       await base44.entities.Post.update(parentPost.id, {
         replies_count: (parentPost.replies_count || 0) + 1
       });
-
-      // Reload all posts to get fresh data
-      const freshPosts = await base44.entities.Post.list('-created_date', 200);
-      setPosts(freshPosts);
 
       setReplyText("");
       setReplyFiles([]);
@@ -789,6 +788,26 @@ export default function FeedPage() {
       // Automatically expand replies
       if (!expandedReplies[parentPost.id]) {
         setExpandedReplies(prev => ({ ...prev, [parentPost.id]: true }));
+      }
+
+      // Reload all posts to get fresh data
+      const freshPosts = await base44.entities.Post.list('-created_date', 200);
+      setPosts(freshPosts);
+
+      // If ZK was called, have it comment on the reply
+      if (zkMatch && createdReply) {
+        try {
+          await base44.functions.invoke('zkBotRespond', { 
+            prompt: zkMatch[1], 
+            post_id: createdReply.id 
+          });
+          // Expand comments on the reply to show ZK's response
+          setExpandedComments(prev => ({ ...prev, [createdReply.id]: true }));
+          // Reload to show ZK's comment
+          setTimeout(() => loadData(), 1000);
+        } catch (err) {
+          console.error('ZK bot failed:', err);
+        }
       }
     } catch (err) {
       console.error('Failed to reply:', err);
@@ -3843,7 +3862,7 @@ export default function FeedPage() {
                                 // Text is handled automatically by the textarea
                               }
                             }}
-                            placeholder={editingPost ? "Edit your post..." : "What's on your mind?"}
+                            placeholder={editingPost ? "Edit your post..." : "What's on your mind? (@zk to call ZK bot)"}
                             className="bg-white/5 border-white/10 text-white placeholder:text-white/30 min-h-[100px] resize-none"
                           />
                         </div>
@@ -4142,7 +4161,7 @@ export default function FeedPage() {
                                            }
                                          }
                                        }}
-                                       placeholder="Write your reply..."
+                                       placeholder="Write your reply... (@zk to call ZK bot)"
                                        className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/30 min-h-[80px] resize-none"
                                        autoFocus
                                       />
