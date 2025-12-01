@@ -19,20 +19,7 @@ export default function TapToTipPage() {
   useEffect(() => {
     loadCurrentUser();
     loadUsers();
-    
-    // Auto-detect wallet changes every 5 seconds
-    const interval = setInterval(async () => {
-      if (currentUser) {
-        const updatedUser = await base44.auth.me();
-        if (updatedUser.created_wallet_address !== currentUser.created_wallet_address) {
-          setCurrentUser(updatedUser);
-          await loadUsers();
-        }
-      }
-    }, 5000);
-    
-    return () => clearInterval(interval);
-  }, [currentUser]);
+  }, []);
 
   useEffect(() => {
     if (searchQuery.trim()) {
@@ -51,6 +38,22 @@ export default function TapToTipPage() {
     try {
       const user = await base44.auth.me();
       setCurrentUser(user);
+      
+      // Set up listener for wallet changes
+      const checkWalletChange = setInterval(async () => {
+        try {
+          const updatedUser = await base44.auth.me();
+          if (updatedUser.created_wallet_address !== user.created_wallet_address) {
+            setCurrentUser(updatedUser);
+            loadUsers(); // Reload users list when wallet changes
+            clearInterval(checkWalletChange);
+          }
+        } catch (err) {
+          clearInterval(checkWalletChange);
+        }
+      }, 3000);
+      
+      return () => clearInterval(checkWalletChange);
     } catch (err) {
       console.log('User not logged in');
       setCurrentUser(null);
@@ -61,11 +64,18 @@ export default function TapToTipPage() {
     try {
       setLoading(true);
       const allUsers = await base44.entities.User.list('-created_date', 100);
-      const usersWithWallets = allUsers.filter(u => 
-        (u.created_wallet_address || u.agent_zk_id) && 
-        !(u.username?.toLowerCase() === 'ttt' && !(u.created_wallet_address?.toLowerCase().endsWith('feq') || u.agent_zk_id?.toLowerCase().endsWith('feq'))) &&
-        !(u.username?.toLowerCase() === 'olatomiwa' && u.created_wallet_address?.toLowerCase().endsWith('x82'))
-      );
+      const usersWithWallets = allUsers.filter(u => {
+        // Must have a wallet
+        if (!u.created_wallet_address && !u.agent_zk_id) return false;
+        
+        // Exclude specific olatomiwa wallet
+        if (u.username?.toLowerCase() === 'olatomiwa' && u.created_wallet_address?.toLowerCase().endsWith('x82')) {
+          return false;
+        }
+        
+        // Include all other users including TTT
+        return true;
+      });
       
       // Load all active badges
       const allBadges = await base44.entities.UserBadge.filter({ is_active: true });
