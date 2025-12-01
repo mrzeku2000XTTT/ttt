@@ -21,8 +21,8 @@ Deno.serve(async (req) => {
     const botComment = await base44.asServiceRole.entities.PostComment.create({
       post_id: post_id,
       author_name: "ZK",
-      author_wallet: "zk_bot_official",
-      comment: response,
+      author_wallet_address: "zk_bot_official",
+      comment_text: response,
     });
 
     // Increment post's comments count
