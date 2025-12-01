@@ -28,6 +28,7 @@ export default function CreatorPage() {
   });
   const [chartData, setChartData] = useState([]);
   const [activeTab, setActiveTab] = useState('referrals');
+  const [clickHistory, setClickHistory] = useState([]);
   const [products, setProducts] = useState([]);
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [productForm, setProductForm] = useState({
@@ -40,6 +41,9 @@ export default function CreatorPage() {
   });
   const [isGeneratingProduct, setIsGeneratingProduct] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
+  const [orders, setOrders] = useState([]);
+  const [showOrders, setShowOrders] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -63,6 +67,9 @@ export default function CreatorPage() {
       
       // Load dropshipping products
       await loadProducts(currentUser.email);
+      
+      // Load orders
+      await loadOrders(currentUser.email);
     } catch (err) {
       console.error('Failed to load:', err);
       base44.auth.redirectToLogin();
@@ -76,6 +83,8 @@ export default function CreatorPage() {
       const referrals = await base44.entities.CreatorReferral.filter({
         creator_email: email
       });
+      
+      setClickHistory(referrals.slice(0, 10));
 
       const today = new Date().setHours(0, 0, 0, 0);
       const todayRefs = referrals.filter(r => 
@@ -131,6 +140,27 @@ export default function CreatorPage() {
       setProducts(prods);
     } catch (err) {
       console.error('Failed to load products:', err);
+    }
+  };
+
+  const loadOrders = async (email) => {
+    try {
+      const ordersList = await base44.entities.DropshippingOrder.filter({
+        creator_email: email
+      }, '-created_date', 100);
+      setOrders(ordersList);
+    } catch (err) {
+      console.error('Failed to load orders:', err);
+    }
+  };
+
+  const deleteProduct = async (productId) => {
+    if (!confirm('Delete this product?')) return;
+    try {
+      await base44.entities.DropshippingProduct.delete(productId);
+      await loadProducts(user.email);
+    } catch (err) {
+      console.error('Failed to delete product:', err);
     }
   };
 
@@ -290,22 +320,38 @@ export default function CreatorPage() {
                         className="bg-black border-white/20 text-white"
                       />
                     </div>
-                    <Button
-                      onClick={copyReferralLink}
-                      className="w-full bg-cyan-500 hover:bg-cyan-600 text-white"
-                    >
-                      {copiedLink ? (
-                        <>
-                          <CheckCircle2 className="w-4 h-4 mr-2" />
-                          Copied!
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-4 h-4 mr-2" />
-                          Create & Copy Link
-                        </>
-                      )}
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={copyReferralLink}
+                        className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white"
+                      >
+                        {copiedLink ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4 mr-2" />
+                            Copy
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          const link = generateReferralLink();
+                          const shareText = `Join Base44 - The AI-Powered App Builder!\n\nBuild apps without code, powered by AI.\n${link}`;
+                          if (navigator.share) {
+                            navigator.share({ title: 'Base44', text: shareText });
+                          } else {
+                            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`, '_blank');
+                          }
+                        }}
+                        className="bg-white/10 border border-white/20 hover:bg-white/20"
+                      >
+                        <Share2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                     <div className="bg-black border border-white/20 rounded-lg p-3">
                       <p className="text-xs text-gray-400 mb-2">Your referral link:</p>
                       <code className="text-xs text-cyan-400 break-all">
@@ -378,6 +424,39 @@ export default function CreatorPage() {
               </Card>
             </div>
 
+            {/* Recent Clicks */}
+            {clickHistory.length > 0 && (
+              <Card className="bg-zinc-900 border-white/10">
+                <CardHeader className="border-b border-white/10">
+                  <h3 className="text-white font-bold">Recent Clicks</h3>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="space-y-2">
+                    {clickHistory.map((click) => (
+                      <div key={click.id} className="flex items-center justify-between py-2 border-b border-white/5">
+                        <div>
+                          <div className="text-sm text-white">
+                            {click.converted ? '✅ Converted' : '👁️ Click'}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {new Date(click.clicked_at).toLocaleString()}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          {click.earnings > 0 && (
+                            <div className="text-sm text-green-400 font-bold">
+                              +${click.earnings.toFixed(2)}
+                            </div>
+                          )}
+                          <div className="text-xs text-gray-500">{click.conversion_type}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Performance Chart */}
             <Card className="bg-zinc-900 border-white/10">
               <CardHeader className="border-b border-white/10">
@@ -435,6 +514,52 @@ export default function CreatorPage() {
         {/* Dropshipping Tab */}
         {activeTab === 'dropshipping' && (
           <div className="space-y-6">
+            {/* Dropshipping Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card className="bg-zinc-900 border-white/10">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Package className="w-4 h-4 text-blue-400" />
+                    <span className="text-gray-400 text-sm">Products</span>
+                  </div>
+                  <div className="text-2xl font-bold text-white">{products.length}</div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-zinc-900 border-white/10">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <ShoppingBag className="w-4 h-4 text-green-400" />
+                    <span className="text-gray-400 text-sm">Orders</span>
+                  </div>
+                  <div className="text-2xl font-bold text-white">{orders.length}</div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-zinc-900 border-white/10">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <DollarSign className="w-4 h-4 text-yellow-400" />
+                    <span className="text-gray-400 text-sm">Revenue</span>
+                  </div>
+                  <div className="text-2xl font-bold text-white">
+                    ${products.reduce((sum, p) => sum + (p.total_revenue || 0), 0).toFixed(2)}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-zinc-900 border-white/10">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="w-4 h-4 text-cyan-400" />
+                    <span className="text-gray-400 text-sm">Profit</span>
+                  </div>
+                  <div className="text-2xl font-bold text-green-400">
+                    ${orders.reduce((sum, o) => sum + (o.profit || 0), 0).toFixed(2)}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
             {/* AI Product Generator */}
             <Card className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/30">
               <CardContent className="p-6">
@@ -579,13 +704,23 @@ export default function CreatorPage() {
             {/* Products Grid */}
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-white">Your Products</h3>
-              <Button
-                onClick={() => setShowAddProduct(true)}
-                className="bg-white/10 border border-white/20 hover:bg-white/20"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Product
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setShowOrders(true)}
+                  variant="outline"
+                  className="border-white/20 text-white hover:bg-white/10"
+                >
+                  <ShoppingBag className="w-4 h-4 mr-2" />
+                  Orders ({orders.length})
+                </Button>
+                <Button
+                  onClick={() => setShowAddProduct(true)}
+                  className="bg-white/10 border border-white/20 hover:bg-white/20"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Product
+                </Button>
+              </div>
             </div>
 
             {products.length === 0 ? (
@@ -635,9 +770,18 @@ export default function CreatorPage() {
                             <ExternalLink className="w-3 h-3 mr-1" />
                             Source
                           </Button>
-                          <div className="px-3 py-2 bg-white/5 rounded-lg text-xs text-gray-400">
-                            {product.orders_count} orders
-                          </div>
+                          <Button
+                            onClick={() => deleteProduct(product.id)}
+                            size="sm"
+                            variant="ghost"
+                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between text-xs">
+                          <span className="text-gray-500">{product.orders_count} orders</span>
+                          <span className="text-green-400">${product.total_revenue?.toFixed(2) || '0.00'} revenue</span>
                         </div>
                       </div>
                     </CardContent>
@@ -645,6 +789,89 @@ export default function CreatorPage() {
                 ))}
               </div>
             )}
+
+            {/* Orders Modal */}
+            <AnimatePresence>
+              {showOrders && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
+                  onClick={() => setShowOrders(false)}
+                >
+                  <motion.div
+                    initial={{ scale: 0.9, y: 20 }}
+                    animate={{ scale: 1, y: 0 }}
+                    exit={{ scale: 0.9, y: 20 }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="bg-zinc-900 border border-white/20 rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+                  >
+                    <div className="sticky top-0 bg-zinc-900 border-b border-white/10 p-6 z-10">
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-2xl font-bold text-white">Orders</h2>
+                        <Button
+                          onClick={() => setShowOrders(false)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-white/60 hover:text-white"
+                        >
+                          <X className="w-5 h-5" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="p-6">
+                      {orders.length === 0 ? (
+                        <div className="text-center py-20">
+                          <ShoppingBag className="w-16 h-16 text-white/20 mx-auto mb-4" />
+                          <p className="text-white/40">No orders yet</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {orders.map((order) => (
+                            <Card key={order.id} className="bg-black border-white/10">
+                              <CardContent className="p-4">
+                                <div className="flex items-start justify-between mb-3">
+                                  <div>
+                                    <h4 className="text-white font-bold">{order.product_name}</h4>
+                                    <p className="text-sm text-gray-400">{order.customer_name}</p>
+                                  </div>
+                                  <div className={`px-2 py-1 rounded text-xs font-semibold ${
+                                    order.status === 'delivered' ? 'bg-green-500/20 text-green-400' :
+                                    order.status === 'shipped' ? 'bg-blue-500/20 text-blue-400' :
+                                    order.status === 'cancelled' ? 'bg-red-500/20 text-red-400' :
+                                    'bg-yellow-500/20 text-yellow-400'
+                                  }`}>
+                                    {order.status}
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-4 text-sm">
+                                  <div>
+                                    <span className="text-gray-500">Amount:</span>
+                                    <div className="text-white font-semibold">${order.order_amount.toFixed(2)}</div>
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-500">Profit:</span>
+                                    <div className="text-green-400 font-semibold">${order.profit.toFixed(2)}</div>
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-500">Date:</span>
+                                    <div className="text-white font-semibold">
+                                      {new Date(order.created_date).toLocaleDateString()}
+                                    </div>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         )}
       </div>
