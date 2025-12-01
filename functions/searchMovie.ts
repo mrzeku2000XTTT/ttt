@@ -12,19 +12,19 @@ Deno.serve(async (req) => {
     const { query } = await req.json();
 
     const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `Search the web and find the EXACT movie page URL on 0123movie.net for: "${query}"
+      prompt: `Search the web and find the EXACT movie page URL for: "${query}"
       
       IMPORTANT: 
-      1. Search for the movie on https://ww22.0123movie.net
-      2. Find the actual movie page URL (example: https://ww22.0123movie.net/movie/last-days-1630860241.html)
+      1. Try these sites in order: fmovies24.to, fbox.to, movies7.to
+      2. Find the actual movie page URL that can be embedded in iframe
       3. Return the EXACT URL you find - do NOT construct or guess it
-      4. The URL must include the full path with the unique movie ID number
+      4. Make sure the site allows iframe embedding
       
       Return ONLY a JSON object:
       {
-        "embed_url": "EXACT URL from 0123movie.net including .html",
+        "embed_url": "EXACT URL that supports iframe",
         "title": "Movie Title (Year)",
-        "source": "0123Movie"
+        "source": "Site Name"
       }
       
       If you cannot find the exact URL, return null for embed_url.`,
