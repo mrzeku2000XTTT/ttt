@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import LiveChat from "../components/movies/LiveChat";
 
 export default function MoviesPage() {
   const [user, setUser] = useState(null);
@@ -145,25 +146,30 @@ export default function MoviesPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-900/20 via-black to-black">
       {activeParty ? (
-        <div className="fixed inset-0 z-50 bg-black">
-          <div className="h-full flex flex-col">
-            <div className="flex items-center justify-between p-4 bg-black/50 backdrop-blur-xl border-b border-white/10">
+        <div className="fixed inset-0 z-50 bg-black flex" style={{ top: 'calc(var(--sat, 0px) + 7.5rem)' }}>
+          {/* Left Side - Video Player (70%) */}
+          <div className="flex-[7] flex flex-col">
+            {/* Header */}
+            <div className="bg-black/80 backdrop-blur-xl border-b border-white/10 p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Film className="w-6 h-6 text-purple-400" />
                 <div>
-                  <h2 className="text-white font-bold">{activeParty.title}</h2>
-                  <p className="text-white/60 text-sm flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    {activeParty.participants?.length || 0} watching
-                  </p>
+                  <h2 className="text-xl font-bold text-white">{activeParty.title}</h2>
+                  <p className="text-gray-400 text-sm">Hosted by {activeParty.host_name}</p>
                 </div>
               </div>
-              <Button onClick={leaveParty} variant="ghost" className="text-white hover:bg-white/10">
+              <Button
+                onClick={leaveParty}
+                variant="ghost"
+                size="sm"
+                className="text-red-400 hover:bg-red-500/10"
+              >
                 <X className="w-5 h-5" />
               </Button>
             </div>
 
-            <div className="flex-1 relative">
+            {/* Video Player */}
+            <div className="flex-1 bg-black">
               <iframe
                 src={activeParty.embed_url}
                 className="w-full h-full"
@@ -173,15 +179,28 @@ export default function MoviesPage() {
               />
             </div>
 
-            <div className="p-4 bg-black/50 backdrop-blur-xl border-t border-white/10">
-              <div className="flex flex-wrap gap-2">
-                {activeParty.participants?.map((p, i) => (
-                  <div key={i} className="px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-full text-white text-sm">
-                    {p.name}
-                  </div>
-                ))}
+            {/* Bottom Info */}
+            <div className="bg-black/80 backdrop-blur-xl border-t border-white/10 p-4">
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-2 text-gray-400">
+                  <Users className="w-4 h-4" />
+                  <span>{activeParty.participants?.length || 0} watching</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {activeParty.participants?.slice(0, 5).map((p, i) => (
+                    <div key={i} className="w-6 h-6 bg-gradient-to-br from-cyan-500 to-purple-500 rounded-full border border-white/20" />
+                  ))}
+                  {activeParty.participants?.length > 5 && (
+                    <span className="text-gray-400 text-xs">+{activeParty.participants.length - 5}</span>
+                  )}
+                </div>
               </div>
             </div>
+          </div>
+
+          {/* Right Side - Live Chat (30%) */}
+          <div className="flex-[3] bg-zinc-900 border-l border-white/10">
+            <LiveChat partyId={activeParty.id} currentUser={user} />
           </div>
         </div>
       ) : (
