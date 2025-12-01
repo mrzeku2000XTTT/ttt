@@ -164,12 +164,12 @@ export default function TapToTipPage() {
       {/* Dark overlay for readability */}
       <div className="fixed inset-0 bg-black/30 pointer-events-none" />
 
-      <div className="relative z-10 p-6 md:p-12 max-w-7xl mx-auto" style={{ paddingTop: '8rem', paddingBottom: '6rem' }}>
+      <div className="relative z-10 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto" style={{ paddingTop: 'calc(9rem + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))' }}>
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8 text-center"
+          className="mb-6 sm:mb-8 text-center"
         >
           <div className="w-20 h-20 mx-auto mb-6 relative">
             <div className="absolute inset-0 bg-black/60 rounded-2xl overflow-hidden border border-green-500/30">
@@ -205,7 +205,7 @@ export default function TapToTipPage() {
         </motion.div>
 
         {/* Search */}
-        <div className="max-w-2xl mx-auto mb-8">
+        <div className="max-w-2xl mx-auto mb-6 sm:mb-8">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
             <Input
@@ -229,7 +229,7 @@ export default function TapToTipPage() {
             <p className="text-gray-400">Try a different search</p>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredUsers.map((user, i) => {
               const address = user.created_wallet_address || user.agent_zk_id;
               const isCopied = copiedAddress === address;
