@@ -214,50 +214,18 @@ export default function TapToTipPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Background - Static Image or Video */}
-      {backgroundMedia ? (
-        isVideo ? (
-          <div className="fixed inset-0">
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="w-full h-full object-cover"
-              src={backgroundMedia}
-            />
-            <div className="absolute inset-0 bg-black/30" />
-          </div>
-        ) : (
-          <div 
-            className="fixed inset-0"
-            style={{
-              backgroundImage: `url(${backgroundMedia})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center center',
-              backgroundRepeat: 'no-repeat',
-              backgroundAttachment: 'fixed'
-            }}
-          >
-            <div className="absolute inset-0 bg-black/30" />
-          </div>
-        )
-      ) : (
-        <>
-          <div 
-            className="fixed inset-0 pointer-events-none"
-            style={{
-              backgroundImage: 'url(https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/0e4fb0d03_image.png)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center center',
-              backgroundRepeat: 'no-repeat',
-              backgroundAttachment: 'fixed',
-              filter: 'brightness(1.3) saturate(1.4) contrast(1.1)'
-            }}
-          />
-          <div className="fixed inset-0 bg-black/30 pointer-events-none" />
-        </>
-      )}
+      {/* Background - Video */}
+      <div className="fixed inset-0">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="w-full h-full object-cover"
+          src={backgroundMedia || 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/b4b2c9ab1_file.mp4'}
+        />
+        <div className="absolute inset-0 bg-black/30" />
+      </div>
 
 
 
