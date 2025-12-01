@@ -227,7 +227,31 @@ export default function TapToTipPage() {
         <div className="absolute inset-0 bg-black/30" />
       </div>
 
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,video/*"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
 
+      {/* Background Upload Button - Admin Only */}
+      {currentUser?.role === 'admin' && (
+        <motion.button
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: 1, scale: 1 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+          className="fixed right-4 md:right-6 z-[100] w-10 h-10 md:w-12 md:h-12 bg-black/80 border border-white/20 hover:border-white/40 rounded-full flex items-center justify-center shadow-lg transition-all disabled:opacity-50"
+          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 5rem)' }}
+          title="Upload Background"
+        >
+          <Upload className="w-4 h-4 md:w-5 md:h-5 text-white/80" strokeWidth={2} />
+        </motion.button>
+      )}
 
       <div className="relative z-10 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto" style={{ paddingTop: 'calc(9rem + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))' }}>
         {/* Header */}
