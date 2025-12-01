@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Heart, Send, Loader2, Trash2 } from "lucide-react";
+import { Heart, Send, Loader2, Trash2, DollarSign } from "lucide-react";
 import { format } from "date-fns";
 
 export default function CommentSection({ postId, currentUser, onCommentAdded }) {
@@ -154,6 +154,17 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
     }
   };
 
+  const handleTipCommenter = (walletAddress) => {
+    if (!walletAddress) {
+      alert('This user has not connected a wallet yet');
+      return;
+    }
+    
+    // Open Kasware to send tip
+    const kaswareUrl = `kasware://send?address=${walletAddress}`;
+    window.location.href = kaswareUrl;
+  };
+
   return (
     <div className="mt-4 pt-4 border-t border-white/10">
       {/* Comment Input */}
@@ -211,7 +222,23 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <div className="text-white/80 text-sm font-semibold">{comment.author_name || comment.commenter_name || 'Anonymous'}</div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <div className="text-white/80 text-sm font-semibold">{comment.author_name || comment.commenter_name || 'Anonymous'}</div>
+                        {comment.author_wallet_address && (
+                          <>
+                            <code className="text-xs text-cyan-400">
+                              {comment.author_wallet_address.slice(0, 6)}...{comment.author_wallet_address.slice(-4)}
+                            </code>
+                            <button
+                              onClick={() => handleTipCommenter(comment.author_wallet_address)}
+                              className="p-1 bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 rounded transition-colors"
+                              title="Tip this commenter"
+                            >
+                              <DollarSign className="w-3 h-3 text-green-400" />
+                            </button>
+                          </>
+                        )}
+                      </div>
                       <div className="text-white/30 text-xs">
                         {comment.created_date ? format(new Date(comment.created_date), 'MMM d, yyyy HH:mm') + ' UTC' : 'Unknown date'}
                       </div>
