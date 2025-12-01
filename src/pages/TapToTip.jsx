@@ -148,25 +148,19 @@ export default function TapToTipPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden" style={{ paddingTop: '8rem', paddingBottom: '6rem' }}>
-      {/* Galaxy Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div
-          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3], rotate: [0, 180, 360] }}
-          transition={{ duration: 20, repeat: Infinity }}
-          className="absolute top-0 left-1/4 w-[800px] h-[800px] bg-gradient-to-br from-cyan-500/30 via-purple-500/20 to-pink-500/10 rounded-full blur-[120px]"
-        />
-        <motion.div
-          animate={{ scale: [1.2, 1, 1.2], opacity: [0.2, 0.4, 0.2], rotate: [360, 180, 0] }}
-          transition={{ duration: 25, repeat: Infinity, delay: 2 }}
-          className="absolute bottom-0 right-1/4 w-[900px] h-[900px] bg-gradient-to-tl from-purple-500/20 via-blue-500/15 to-cyan-500/10 rounded-full blur-[150px]"
-        />
-        <motion.div
-          animate={{ scale: [1, 1.3, 1], opacity: [0.1, 0.3, 0.1] }}
-          transition={{ duration: 15, repeat: Infinity, delay: 5 }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-indigo-500/10 via-purple-500/20 to-pink-500/10 rounded-full blur-[100px]"
-        />
-      </div>
+    <div 
+      className="min-h-screen relative overflow-hidden" 
+      style={{ 
+        paddingTop: '8rem', 
+        paddingBottom: '6rem',
+        backgroundImage: 'url(https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/0e4fb0d03_image.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
+      {/* Dark overlay for readability */}
+      <div className="absolute inset-0 bg-black/40 pointer-events-none" />
 
       <div className="relative z-10 p-6 md:p-12 max-w-7xl mx-auto">
         {/* Header */}
