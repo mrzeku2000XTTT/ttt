@@ -1268,10 +1268,14 @@ export default function FeedPage() {
       setMarkUsername(username);
       setShowMarkModal(true);
       await loadMarkContributions(username);
-    } else if (badgeType === 'dev') {
+    } else if (badgeType === 'pov') {
       setDevUsername(username);
       setShowDevModal(true);
       await loadDevContributions(username);
+    } else if (badgeType === 'knight') {
+      setBadgeUsername(username);
+      setShowBadgeModal(true);
+      await loadBadgeContributions(username);
     } else if (badgeType === 'olatomiwa') {
       setOlatomiwaUsername(username);
       setShowOlatomiwaModal(true);
@@ -1299,9 +1303,16 @@ export default function FeedPage() {
     return architectUsers.includes(username?.toLowerCase());
   };
 
-  const hasDevBadge = (username) => {
-    const devUsers = ['hayphase'];
-    return devUsers.includes(username?.toLowerCase());
+  const hasPOVBadge = (username) => {
+    if (!username) return false;
+    const normalized = username.toLowerCase().trim().replace(/\s+/g, '');
+    return normalized === 'hayphase';
+  };
+
+  const hasKnightBadge = (username) => {
+    if (!username) return false;
+    const normalized = username.toLowerCase().trim().replace(/\s+/g, '');
+    return normalized === 'peculiar';
   };
 
   const hasKingBadge = (username) => {
@@ -1846,19 +1857,33 @@ export default function FeedPage() {
                     ARCHITECT
                   </button>
                 )}
-                {!getUserBadges(post.author_name).some(b => b.badge_name === 'DEV') && hasDevBadge(post.author_name) && (
+                {!getUserBadges(post.author_name).some(b => b.badge_name === 'POV') && hasPOVBadge(post.author_name) && (
                   <button
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      handleBadgeClick(post.author_name, 'dev');
+                      handleBadgeClick(post.author_name, 'pov');
                     }}
                     className="inline-flex items-center gap-1 bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 text-white border border-emerald-400/60 text-[10px] px-2 py-0.5 font-bold rounded-md hover:from-emerald-300 hover:via-green-400 hover:to-teal-500 transition-all shadow-lg hover:shadow-emerald-500/50 animate-pulse"
                     title="View Contributions"
                     style={{ animationDuration: '3s' }}
                   >
-                    <span className="text-[11px]">⚡</span>
-                    DEV
+                    <span className="text-[11px]">👁️</span>
+                    POV
+                  </button>
+                )}
+                {!getUserBadges(post.author_name).some(b => b.badge_name === 'KNIGHT') && hasKnightBadge(post.author_name) && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleBadgeClick(post.author_name, 'knight');
+                    }}
+                    className="inline-flex items-center gap-1 bg-gradient-to-br from-slate-400 via-gray-500 to-zinc-600 text-white border border-slate-400/60 text-[10px] px-2 py-0.5 font-bold rounded-md hover:from-slate-300 hover:via-gray-400 hover:to-zinc-500 transition-all shadow-lg hover:shadow-slate-500/50"
+                    title="View Contributions"
+                  >
+                    <span className="text-[11px]">⚔️</span>
+                    KNIGHT
                   </button>
                 )}
                 {!getUserBadges(post.author_name).some(b => b.badge_name === 'KING') && hasKingBadge(post.author_name) && (
@@ -2312,10 +2337,16 @@ export default function FeedPage() {
                             KING
                           </span>
                         )}
-                        {hasDevBadge(profileUsername) && (
+                        {hasPOVBadge(profileUsername) && (
                           <span className="inline-flex items-center gap-1 bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 text-white border border-emerald-400/60 text-[10px] px-2 py-0.5 font-bold rounded-md">
-                            <span className="text-[11px]">⚡</span>
-                            DEV
+                            <span className="text-[11px]">👁️</span>
+                            POV
+                          </span>
+                        )}
+                        {hasKnightBadge(profileUsername) && (
+                          <span className="inline-flex items-center gap-1 bg-gradient-to-br from-slate-400 via-gray-500 to-zinc-600 text-white border border-slate-400/60 text-[10px] px-2 py-0.5 font-bold rounded-md">
+                            <span className="text-[11px]">⚔️</span>
+                            KNIGHT
                           </span>
                         )}
                         {hasModzBadge(profileUsername) && (
