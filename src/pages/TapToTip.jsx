@@ -222,7 +222,7 @@ export default function TapToTipPage() {
                                 👁️ POV
                               </span>
                             )}
-                            {user.username?.toLowerCase() === 'olatomiwa' && (
+                            {user.username?.toLowerCase() === 'olatomiwa' && user.created_wallet_address?.toLowerCase().endsWith('du4') && (
                               <span className="px-2 py-0.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 rounded text-[10px] font-bold text-white">
                                 💎 FIRSTLADY
                               </span>
