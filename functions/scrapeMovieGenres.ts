@@ -12,23 +12,25 @@ Deno.serve(async (req) => {
     const { genre } = await req.json();
 
     const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `Search for top movies in the ${genre} genre on 0123movie.net.
+      prompt: `Search for top movies in the ${genre} genre.
       
       Return a list of popular ${genre} movies with their details.
+      For embed_url, use this format: https://fmovies-co.net/search?q=MOVIE_TITLE
+      
       Return ONLY a JSON object with this exact structure:
       {
         "genre": "${genre}",
         "movies": [
           {
             "title": "Movie Title (Year)",
-            "embed_url": "https://ww22.0123movie.net/movie/movie-slug",
+            "embed_url": "https://fmovies-co.net/search?q=movie+title",
             "description": "Brief description",
             "rating": "Rating if available"
           }
         ]
       }
       
-      Include 6-8 popular movies. Format movie slugs properly (lowercase, hyphens).`,
+      Include 6-8 popular movies. Encode movie titles in URL properly.`,
       add_context_from_internet: true,
       response_json_schema: {
         type: "object",
