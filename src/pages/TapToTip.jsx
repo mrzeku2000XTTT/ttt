@@ -50,7 +50,6 @@ export default function TapToTipPage() {
       const allUsers = await base44.entities.User.list('-created_date', 100);
       const usersWithWallets = allUsers.filter(u => 
         (u.created_wallet_address || u.agent_zk_id) && 
-        u.username?.toLowerCase() !== 'olatomiwa' &&
         !(u.username?.toLowerCase() === 'ttt' && !(u.created_wallet_address?.toLowerCase().endsWith('feq') || u.agent_zk_id?.toLowerCase().endsWith('feq')))
       );
       
@@ -215,6 +214,11 @@ export default function TapToTipPage() {
                             {user.username?.toLowerCase() === 'esp' && (
                               <span className="px-2 py-0.5 bg-gradient-to-r from-yellow-500 to-orange-500 rounded text-[10px] font-bold text-white">
                                 GOD
+                              </span>
+                            )}
+                            {user.username?.toLowerCase() === 'olatomiwa' && (
+                              <span className="px-2 py-0.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 rounded text-[10px] font-bold text-white">
+                                💎 FIRSTLADY
                               </span>
                             )}
                             <span className="px-2 py-0.5 bg-gradient-to-r from-green-500 to-emerald-600 rounded text-[10px] font-bold text-white">
