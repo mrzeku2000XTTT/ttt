@@ -104,7 +104,31 @@ export default function TapToTipPage() {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const allUsers = await base44.entities.User.list('-created_date', 100);
+      
+      // Fetch all posts to get unique users (posts are publicly readable)
+      const allPosts = await base44.entities.Post.list('-created_date', 500);
+      
+      // Extract unique users from posts
+      const uniqueUsersMap = new Map();
+      allPosts.forEach(post => {
+        if ((post.author_wallet_address || post.author_agent_zk_id) && post.author_name) {
+          const key = post.author_wallet_address || post.author_agent_zk_id;
+          if (!uniqueUsersMap.has(key)) {
+            uniqueUsersMap.set(key, {
+              id: post.id,
+              username: post.author_name,
+              email: post.created_by,
+              created_wallet_address: post.author_wallet_address,
+              agent_zk_id: post.author_agent_zk_id,
+              role: post.author_role || 'user',
+              created_date: post.created_date
+            });
+          }
+        }
+      });
+      
+      const allUsers = Array.from(uniqueUsersMap.values());
+      
       const usersWithWallets = allUsers.filter(u => {
         // Must have a wallet
         if (!u.created_wallet_address && !u.agent_zk_id) return false;
