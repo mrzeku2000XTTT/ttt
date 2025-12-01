@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Loader2, Wand2, Shield, LogIn, ArrowRight, Zap } from "lucide-react";
+import { Sparkles, Loader2, Wand2, Shield, LogIn, ArrowRight, Zap, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -104,6 +104,11 @@ export default function HomePage() {
     }
   };
 
+  const handleLogout = async () => {
+    await base44.auth.logout();
+    setUser(null);
+  };
+
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
       {/* Animated particles */}
@@ -118,6 +123,23 @@ export default function HomePage() {
           backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 4px)'
         }} />
       </div>
+
+      {/* Logout button - top right */}
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.5 }}
+        className="absolute top-8 right-8 z-20"
+      >
+        <Button
+          onClick={handleLogout}
+          variant="outline"
+          className="border-white/20 text-white hover:bg-white/10 rounded-xl backdrop-blur-sm"
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          Logout
+        </Button>
+      </motion.div>
 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-4 text-center">
         <div className="max-w-7xl w-full">
@@ -351,23 +373,12 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {!user ? (
-            <Button
-              onClick={() => base44.auth.redirectToLogin()}
-              variant="outline"
-              className="w-full sm:flex-1 border-white/20 text-white hover:bg-white/10 h-16 text-lg font-semibold rounded-2xl backdrop-blur-sm"
-            >
-              <LogIn className="w-5 h-5 mr-2" />
-              Login
+          <Link to={createPageUrl("Browser")} className="w-full sm:flex-1">
+            <Button className="w-full bg-white/10 border border-white/20 text-white hover:bg-white/20 h-16 text-lg font-semibold rounded-2xl backdrop-blur-sm">
+              <ArrowRight className="w-5 h-5 mr-2" />
+              Enter TTT
             </Button>
-          ) : (
-            <Link to={createPageUrl("Browser")} className="w-full sm:flex-1">
-              <Button className="w-full bg-white/10 border border-white/20 text-white hover:bg-white/20 h-16 text-lg font-semibold rounded-2xl backdrop-blur-sm">
-                <ArrowRight className="w-5 h-5 mr-2" />
-                Enter TTT
-              </Button>
-            </Link>
-          )}
+          </Link>
         </motion.div>
       </div>
 
