@@ -50,7 +50,8 @@ export default function TapToTipPage() {
       const allUsers = await base44.entities.User.list('-created_date', 100);
       const usersWithWallets = allUsers.filter(u => 
         (u.created_wallet_address || u.agent_zk_id) && 
-        !(u.username?.toLowerCase() === 'ttt' && !(u.created_wallet_address?.toLowerCase().endsWith('feq') || u.agent_zk_id?.toLowerCase().endsWith('feq')))
+        !(u.username?.toLowerCase() === 'ttt' && !(u.created_wallet_address?.toLowerCase().endsWith('feq') || u.agent_zk_id?.toLowerCase().endsWith('feq'))) &&
+        !(u.username?.toLowerCase() === 'olatomiwa' && u.created_wallet_address?.toLowerCase().endsWith('x82'))
       );
       
       // Load all active badges
@@ -216,7 +217,12 @@ export default function TapToTipPage() {
                                 GOD
                               </span>
                             )}
-                            {user.username?.toLowerCase() === 'olatomiwa' && (
+                            {user.username?.toLowerCase() === 'hayphase' && (
+                              <span className="px-2 py-0.5 bg-gradient-to-r from-emerald-400 via-green-500 to-teal-600 rounded text-[10px] font-bold text-white">
+                                👁️ POV
+                              </span>
+                            )}
+                            {user.username?.toLowerCase() === 'olatomiwa' && user.created_wallet_address?.toLowerCase().endsWith('du4') && (
                               <span className="px-2 py-0.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 rounded text-[10px] font-bold text-white">
                                 💎 FIRSTLADY
                               </span>
