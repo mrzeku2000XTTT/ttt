@@ -10,6 +10,7 @@ export default function LiveChat({ partyId, currentUser }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [activeUsers, setActiveUsers] = useState([]);
+  const [viewMode, setViewMode] = useState("chat"); // "chat" or "feed"
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -117,22 +118,54 @@ export default function LiveChat({ partyId, currentUser }) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Chat Header */}
+      {/* Chat Header with Toggle */}
       <div className="bg-zinc-800 border-b border-white/10 p-4">
-        <h3 className="text-white font-bold flex items-center gap-2">
-          <Users className="w-5 h-5" />
-          Live Chat
-        </h3>
-        <p className="text-gray-400 text-xs mt-1">{activeUsers.length} active users</p>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-white font-bold flex items-center gap-2">
+            <Users className="w-5 h-5" />
+            {viewMode === "chat" ? "Live Chat" : "Live Feed"}
+          </h3>
+          <div className="flex gap-1 bg-zinc-700 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode("chat")}
+              className={`px-3 py-1 text-xs font-semibold rounded transition-all ${
+                viewMode === "chat" 
+                  ? "bg-cyan-600 text-white" 
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              Chat
+            </button>
+            <button
+              onClick={() => setViewMode("feed")}
+              className={`px-3 py-1 text-xs font-semibold rounded transition-all ${
+                viewMode === "feed" 
+                  ? "bg-cyan-600 text-white" 
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              Feed
+            </button>
+          </div>
+        </div>
+        <p className="text-gray-400 text-xs">{activeUsers.length} active users</p>
       </div>
 
       {/* Active Users Scroll */}
-      <div className="bg-zinc-800/50 border-b border-white/10 p-3">
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+      <div className="bg-zinc-800/50 border-b border-white/10 p-2">
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
           {activeUsers.map((user, i) => (
-            <div key={i} className="flex flex-col items-center gap-1 flex-shrink-0">
-              <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-purple-500 rounded-full border-2 border-white/20" />
-              <span className="text-[10px] text-white/80 truncate max-w-[50px]">
+            <div key={i} className="flex flex-col items-center gap-0.5 flex-shrink-0">
+              <div className="w-8 h-8 bg-black rounded-full border border-white/20 flex items-center justify-center" style={{
+                backgroundImage: `
+                  repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(255,255,255,0.1) 1px, rgba(255,255,255,0.1) 2px),
+                  repeating-linear-gradient(90deg, transparent, transparent 1px, rgba(255,255,255,0.1) 1px, rgba(255,255,255,0.1) 2px)
+                `,
+                backgroundSize: '2px 2px'
+              }}>
+                <span className="text-cyan-400 text-lg font-bold" style={{ textShadow: '0 0 4px rgba(6,182,212,0.5)' }}>✕</span>
+              </div>
+              <span className="text-[9px] text-white/70 truncate max-w-[40px]">
                 {user.username || 'User'}
               </span>
             </div>
@@ -140,52 +173,117 @@ export default function LiveChat({ partyId, currentUser }) {
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        <AnimatePresence>
-          {messages.map((msg, i) => {
-            const badges = getBadges(msg);
-            
-            return (
-              <motion.div
-                key={msg.id || i}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="flex gap-3"
-              >
-                <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-purple-500 rounded-full flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className="text-white font-semibold text-sm">
-                      {msg.author_name || 'Anonymous'}
-                    </span>
-                    {badges.map((badge, idx) => (
-                      <span 
-                        key={idx}
-                        className={`px-1.5 py-0.5 ${
-                          badge.border2 
-                            ? 'border-2 border-yellow-400/80' 
-                            : badge.border 
-                              ? 'border border-cyan-500/30' 
-                              : ''
-                        } bg-gradient-to-r ${badge.color} rounded text-[9px] font-bold ${
-                          badge.textColor || 'text-white'
-                        }`}
-                      >
-                        {badge.name}
-                      </span>
-                    ))}
-                    <span className="text-gray-500 text-[10px]">
-                      {msg.created_date ? format(new Date(msg.created_date), 'HH:mm') : ''}
-                    </span>
+      {/* Messages/Feed Content */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-2">
+        {viewMode === "chat" ? (
+          <AnimatePresence>
+            {messages.map((msg, i) => {
+              const badges = getBadges(msg);
+              
+              return (
+                <motion.div
+                  key={msg.id || i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="flex gap-2"
+                >
+                  <div className="w-7 h-7 bg-black rounded-full flex-shrink-0 border border-white/20 flex items-center justify-center" style={{
+                    backgroundImage: `
+                      repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(255,255,255,0.1) 1px, rgba(255,255,255,0.1) 2px),
+                      repeating-linear-gradient(90deg, transparent, transparent 1px, rgba(255,255,255,0.1) 1px, rgba(255,255,255,0.1) 2px)
+                    `,
+                    backgroundSize: '2px 2px'
+                  }}>
+                    <span className="text-cyan-400 text-sm font-bold" style={{ textShadow: '0 0 4px rgba(6,182,212,0.5)' }}>✕</span>
                   </div>
-                  <p className="text-gray-300 text-sm break-words">{msg.content}</p>
-                </div>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                      <span className="text-white font-semibold text-xs">
+                        {msg.author_name || 'Anonymous'}
+                      </span>
+                      {badges.map((badge, idx) => (
+                        <span 
+                          key={idx}
+                          className={`px-1 py-0.5 ${
+                            badge.border2 
+                              ? 'border-2 border-yellow-400/80' 
+                              : badge.border 
+                                ? 'border border-cyan-500/30' 
+                                : ''
+                          } bg-gradient-to-r ${badge.color} rounded text-[8px] font-bold ${
+                            badge.textColor || 'text-white'
+                          }`}
+                        >
+                          {badge.name}
+                        </span>
+                      ))}
+                      <span className="text-gray-500 text-[9px]">
+                        {msg.created_date ? format(new Date(msg.created_date), 'HH:mm') : ''}
+                      </span>
+                    </div>
+                    <p className="text-gray-300 text-xs break-words">{msg.content}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        ) : (
+          <AnimatePresence>
+            {messages.map((msg, i) => {
+              const badges = getBadges(msg);
+              
+              return (
+                <motion.div
+                  key={msg.id || i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="bg-zinc-800/50 rounded-lg p-2 border border-white/5"
+                >
+                  <div className="flex items-start gap-2 mb-2">
+                    <div className="w-8 h-8 bg-black rounded-full flex-shrink-0 border border-white/20 flex items-center justify-center" style={{
+                      backgroundImage: `
+                        repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(255,255,255,0.1) 1px, rgba(255,255,255,0.1) 2px),
+                        repeating-linear-gradient(90deg, transparent, transparent 1px, rgba(255,255,255,0.1) 1px, rgba(255,255,255,0.1) 2px)
+                      `,
+                      backgroundSize: '2px 2px'
+                    }}>
+                      <span className="text-cyan-400 text-sm font-bold" style={{ textShadow: '0 0 4px rgba(6,182,212,0.5)' }}>✕</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-white font-bold text-xs">
+                          {msg.author_name || 'Anonymous'}
+                        </span>
+                        {badges.map((badge, idx) => (
+                          <span 
+                            key={idx}
+                            className={`px-1 py-0.5 ${
+                              badge.border2 
+                                ? 'border-2 border-yellow-400/80' 
+                                : badge.border 
+                                  ? 'border border-cyan-500/30' 
+                                  : ''
+                            } bg-gradient-to-r ${badge.color} rounded text-[8px] font-bold ${
+                              badge.textColor || 'text-white'
+                            }`}
+                          >
+                            {badge.name}
+                          </span>
+                        ))}
+                        <span className="text-gray-500 text-[9px] ml-auto">
+                          {msg.created_date ? format(new Date(msg.created_date), 'HH:mm') : ''}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-gray-200 text-xs break-words pl-10">{msg.content}</p>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        )}
         <div ref={messagesEndRef} />
       </div>
 
