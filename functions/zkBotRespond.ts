@@ -9,39 +9,33 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { prompt, parent_post_id } = await req.json();
+    const { prompt, post_id } = await req.json();
 
-    // Get AI response as ZK
+    // Get AI response as ZK with real-time internet data
     const response = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are ZK, an advanced AI agent living in the TTT Feed. You're knowledgeable about Kaspa, crypto, technology, and help users with insights. Be concise, friendly, and helpful. Respond to: ${prompt}`,
+      prompt: `You are ZK, an advanced AI agent in the TTT Feed. You have access to real-time data, news, and the entire internet. You know everything about TTT apps, Kaspa blockchain, crypto markets, and more. Be concise, insightful, and helpful. Answer: ${prompt}`,
       add_context_from_internet: true,
     });
 
-    // Create post as ZK bot
-    const botPost = await base44.asServiceRole.entities.Post.create({
-      content: response,
-      author_name: "ZK Bot",
-      author_wallet_address: "zk_bot_official",
-      author_role: "admin",
-      parent_post_id: parent_post_id || null,
-      replies_count: 0,
-      likes: 0,
-      comments_count: 0,
+    // Create comment as ZK bot on the user's post
+    const botComment = await base44.asServiceRole.entities.PostComment.create({
+      post_id: post_id,
+      author_name: "ZK",
+      author_wallet: "zk_bot_official",
+      comment: response,
     });
 
-    // If replying to a post, increment parent's replies count
-    if (parent_post_id) {
-      const parentPost = await base44.asServiceRole.entities.Post.filter({ id: parent_post_id });
-      if (parentPost.length > 0) {
-        await base44.asServiceRole.entities.Post.update(parent_post_id, {
-          replies_count: (parentPost[0].replies_count || 0) + 1
-        });
-      }
+    // Increment post's comments count
+    const post = await base44.asServiceRole.entities.Post.filter({ id: post_id });
+    if (post.length > 0) {
+      await base44.asServiceRole.entities.Post.update(post_id, {
+        comments_count: (post[0].comments_count || 0) + 1
+      });
     }
 
     return Response.json({ 
       success: true, 
-      post: botPost,
+      comment: botComment,
       message: "ZK has responded!" 
     });
   } catch (error) {

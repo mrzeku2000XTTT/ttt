@@ -633,20 +633,6 @@ export default function FeedPage() {
     }
   };
 
-  const callZKBot = async (prompt, parentPostId = null) => {
-    try {
-      const result = await base44.functions.invoke('zkBotRespond', { 
-        prompt, 
-        parent_post_id: parentPostId 
-      });
-      await loadData();
-      return result.data;
-    } catch (err) {
-      console.error('Failed to call ZK bot:', err);
-      setError('Failed to call ZK bot');
-    }
-  };
-
   const handlePost = async () => {
     if (!newPost.trim() && uploadedFiles.length === 0) {
       setError('Please enter some content or upload files');
@@ -654,14 +640,8 @@ export default function FeedPage() {
     }
 
     // Check if user is calling ZK bot
-    if (newPost.trim().toLowerCase().startsWith('@zk ')) {
-      const prompt = newPost.trim().substring(4);
-      setIsPosting(true);
-      await callZKBot(prompt);
-      setNewPost("");
-      setIsPosting(false);
-      return;
-    }
+    const zkMatch = newPost.trim().match(/^@zk\s+(.+)/i);
+    const isZKCall = zkMatch !== null;
 
     // Get wallet from Kasware or TTT wallet
     let walletAddress = '';
@@ -703,12 +683,14 @@ export default function FeedPage() {
         postData.media_files = uploadedFiles;
       }
 
+      let createdPost = null;
+
       if (editingPost) {
         await base44.entities.Post.update(editingPost.id, postData);
         setPosts(posts.map(p => p.id === editingPost.id ? { ...editingPost, ...postData, updated_date: new Date().toISOString() } : p));
         setEditingPost(null);
       } else {
-        await base44.entities.Post.create(postData);
+        createdPost = await base44.entities.Post.create(postData);
 
         // Reload all posts to get fresh data from server
         const freshPosts = await base44.entities.Post.list('-created_date', 200);
@@ -718,6 +700,22 @@ export default function FeedPage() {
       setNewPost("");
       setUploadedFiles([]);
       setError(null);
+
+      // If ZK was called, have it comment on the post
+      if (isZKCall && createdPost && zkMatch) {
+        try {
+          await base44.functions.invoke('zkBotRespond', { 
+            prompt: zkMatch[1], 
+            post_id: createdPost.id 
+          });
+          // Expand comments to show ZK's response
+          setExpandedComments(prev => ({ ...prev, [createdPost.id]: true }));
+          // Reload to show ZK's comment
+          setTimeout(() => loadData(), 1000);
+        } catch (err) {
+          console.error('ZK bot failed:', err);
+        }
+      }
     } catch (err) {
       console.error('Failed to post:', err);
       setError('Failed to create post');
