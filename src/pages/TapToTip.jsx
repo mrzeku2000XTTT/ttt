@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Zap, Search, Wallet, User as UserIcon, Copy, Check, Send } from "lucide-react";
+import { Zap, Search, Wallet, User as UserIcon, Copy, Check, Send, CheckCircle2 } from "lucide-react";
 
 export default function TapToTipPage() {
   const [users, setUsers] = useState([]);
@@ -19,7 +19,20 @@ export default function TapToTipPage() {
   useEffect(() => {
     loadCurrentUser();
     loadUsers();
-  }, []);
+    
+    // Auto-detect wallet changes every 5 seconds
+    const interval = setInterval(async () => {
+      if (currentUser) {
+        const updatedUser = await base44.auth.me();
+        if (updatedUser.created_wallet_address !== currentUser.created_wallet_address) {
+          setCurrentUser(updatedUser);
+          await loadUsers();
+        }
+      }
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, [currentUser]);
 
   useEffect(() => {
     if (searchQuery.trim()) {
@@ -64,8 +77,15 @@ export default function TapToTipPage() {
         badgesMap[badge.username].push(badge);
       });
       
-      // Sort users: TTT first, then priority users, then by badges
+      // Sort users: Current user FIRST, then TTT, then priority users, then by badges
       const sortedUsers = usersWithWallets.sort((a, b) => {
+        // Current user always first
+        const aIsCurrentUser = currentUser && a.email === currentUser.email;
+        const bIsCurrentUser = currentUser && b.email === currentUser.email;
+        
+        if (aIsCurrentUser && !bIsCurrentUser) return -1;
+        if (!aIsCurrentUser && bIsCurrentUser) return 1;
+
         const aIsTTT = a.username?.toLowerCase() === 'ttt';
         const bIsTTT = b.username?.toLowerCase() === 'ttt';
 
@@ -183,6 +203,8 @@ export default function TapToTipPage() {
             {filteredUsers.map((user, i) => {
               const address = user.created_wallet_address || user.agent_zk_id;
               const isCopied = copiedAddress === address;
+              const isCurrentUser = currentUser && user.email === currentUser.email;
+              const hasActiveWallet = !!user.created_wallet_address;
               
               return (
                 <motion.div
@@ -191,17 +213,27 @@ export default function TapToTipPage() {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: i * 0.05 }}
                 >
-                  <Card className="bg-white/5 border-white/10 hover:border-cyan-500/30 transition-all">
+                  <Card className={`bg-white/5 hover:border-cyan-500/30 transition-all ${isCurrentUser ? 'border-cyan-500/50 ring-2 ring-cyan-500/20' : 'border-white/10'}`}>
                     <CardContent className="p-4">
                       <div className="flex items-start gap-3 mb-3">
-                        <div className="w-12 h-12 border border-cyan-500/30 rounded-full flex items-center justify-center text-lg font-bold text-white bg-white/5 flex-shrink-0">
+                        <div className="w-12 h-12 border border-cyan-500/30 rounded-full flex items-center justify-center text-lg font-bold text-white bg-white/5 flex-shrink-0 relative">
                           {user.username ? user.username[0].toUpperCase() : user.email[0].toUpperCase()}
+                          {hasActiveWallet && (
+                            <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center border-2 border-black">
+                              <CheckCircle2 className="w-3 h-3 text-white" />
+                            </div>
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <h3 className="text-white font-bold truncate">
                               {user.username || 'Anonymous'}
                             </h3>
+                            {isCurrentUser && (
+                              <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded text-[10px] font-bold">
+                                YOU
+                              </span>
+                            )}
                             {user.username?.toLowerCase() === 'ttt' && (
                               <span className="px-2 py-0.5 bg-gradient-to-r from-cyan-500 to-purple-500 rounded text-[10px] font-bold text-white">
                                 ZEKU
