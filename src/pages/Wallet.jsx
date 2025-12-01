@@ -270,7 +270,10 @@ export default function WalletPage() {
       const existingWallets = currentUser.created_wallets || [];
       const walletExists = existingWallets.some(w => w.address === addr);
       
-      const updates = { created_wallet_address: addr };
+      const updates = { 
+        created_wallet_address: addr,
+        username: currentUser.username || currentUser.email.split('@')[0]
+      };
       
       if (!walletExists) {
         updates.created_wallets = [...existingWallets, { 
