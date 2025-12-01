@@ -3,16 +3,28 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Zap, Eye, Moon, Sun, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { base44 } from "@/api/base44Client";
 
 export default function GodPage() {
   const [wisdom, setWisdom] = useState("");
   const [isRevealing, setIsRevealing] = useState(false);
   const [timeOfDay, setTimeOfDay] = useState("day");
+  const [verses, setVerses] = useState([]);
 
   useEffect(() => {
     const hour = new Date().getHours();
     setTimeOfDay(hour >= 6 && hour < 18 ? "day" : "night");
+    loadVerses();
   }, []);
+
+  const loadVerses = async () => {
+    try {
+      const allVerses = await base44.entities.BibleVerse.list();
+      setVerses(allVerses);
+    } catch (err) {
+      console.error('Failed to load verses:', err);
+    }
+  };
 
   const wisdoms = [
     "For I know the plans I have for you, declares the Lord, plans to prosper you and not to harm you, plans to give you hope and a future. - Jeremiah 29:11",
@@ -35,10 +47,23 @@ export default function GodPage() {
     "If any of you lacks wisdom, you should ask God, who gives generously to all without finding fault, and it will be given to you. - James 1:5",
   ];
 
-  const revealWisdom = () => {
+  const revealWisdom = async () => {
     setIsRevealing(true);
+    
+    // Fetch fresh verses from database
+    await loadVerses();
+    
     setTimeout(() => {
-      const randomWisdom = wisdoms[Math.floor(Math.random() * wisdoms.length)];
+      // Combine hardcoded and database verses
+      const allWisdoms = [...wisdoms];
+      
+      if (verses.length > 0) {
+        verses.forEach(v => {
+          allWisdoms.push(`${v.text} - ${v.book} ${v.chapter}:${v.verse}`);
+        });
+      }
+      
+      const randomWisdom = allWisdoms[Math.floor(Math.random() * allWisdoms.length)];
       setWisdom(randomWisdom);
       setIsRevealing(false);
     }, 2000);
