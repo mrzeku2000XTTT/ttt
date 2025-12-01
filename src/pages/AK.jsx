@@ -164,6 +164,21 @@ function AKContent() {
           return;
         }
 
+        // Check for !AFRICAN command
+        if (query.trim().toLowerCase() === '!african') {
+          setMessages(prev => [...prev, { 
+            role: "assistant", 
+            content: "🎬 Opening African content browser...",
+            movie: {
+              embed_url: "https://www.afrolandtv.com/app",
+              title: "AfrolandTV - African Content Browser",
+              source: "AfrolandTV"
+            }
+          }]);
+          setLoading(false);
+          return;
+        }
+
         const isMusicRequest = /play|music|song|listen|audio/i.test(query);
         const isMovieRequest = /watch|movie|film|cinema/i.test(query);
 
