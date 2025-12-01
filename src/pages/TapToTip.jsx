@@ -152,15 +152,23 @@ export default function TapToTipPage() {
       className="min-h-screen relative overflow-hidden" 
       style={{ 
         paddingTop: '8rem', 
-        paddingBottom: '6rem',
-        backgroundImage: 'url(https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/0e4fb0d03_image.png)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
+        paddingBottom: '6rem'
       }}
     >
+      {/* HD Background Image - No Stretch */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: 'url(https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/0e4fb0d03_image.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center center',
+          backgroundRepeat: 'no-repeat',
+          backgroundAttachment: 'fixed',
+          filter: 'brightness(1.3) saturate(1.4) contrast(1.1)'
+        }}
+      />
       {/* Dark overlay for readability */}
-      <div className="absolute inset-0 bg-black/40 pointer-events-none" />
+      <div className="absolute inset-0 bg-black/30 pointer-events-none" />
 
       <div className="relative z-10 p-6 md:p-12 max-w-7xl mx-auto">
         {/* Header */}
@@ -170,9 +178,28 @@ export default function TapToTipPage() {
           className="mb-8 text-center"
         >
           <div className="w-20 h-20 mx-auto mb-6 relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-purple-500/20 rounded-2xl blur-xl" />
-            <div className="relative w-full h-full bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border border-cyan-500/30 rounded-2xl flex items-center justify-center backdrop-blur-sm">
-              <Zap className="w-10 h-10 text-cyan-400" strokeWidth={1.5} />
+            <div className="absolute inset-0 bg-black/60 rounded-2xl overflow-hidden border border-green-500/30">
+              {/* Matrix Falling Numbers Animation */}
+              {[...Array(8)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ y: -100 }}
+                  animate={{ y: 100 }}
+                  transition={{
+                    duration: 2 + Math.random() * 2,
+                    repeat: Infinity,
+                    delay: Math.random() * 2,
+                    ease: "linear"
+                  }}
+                  className="absolute text-green-400 font-mono text-xs opacity-70"
+                  style={{ 
+                    left: `${i * 12}%`,
+                    textShadow: '0 0 5px rgba(34, 197, 94, 0.8)'
+                  }}
+                >
+                  {Math.floor(Math.random() * 2)}
+                </motion.div>
+              ))}
             </div>
           </div>
           <h1 className="text-5xl font-black text-white mb-3 tracking-tight">
@@ -322,7 +349,7 @@ export default function TapToTipPage() {
 
                         <Button
                           onClick={() => handleSelectUser(user)}
-                          className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600"
+                          className="w-full bg-black border border-green-500/30 text-green-400 hover:bg-green-500/10 hover:border-green-500/50"
                         >
                           <Zap className="w-4 h-4 mr-2" />
                           Tip User
