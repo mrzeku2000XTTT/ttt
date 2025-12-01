@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Zap, Search, Wallet, User as UserIcon, Copy, Check, Send, CheckCircle2, Upload } from "lucide-react";
 
 export default function TapToTipPage() {
+  const defaultVideo = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/b4b2c9ab1_file.mp4';
+  
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -15,8 +17,8 @@ export default function TapToTipPage() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [tipAmount, setTipAmount] = useState("");
   const [copiedAddress, setCopiedAddress] = useState("");
-  const [backgroundMedia, setBackgroundMedia] = useState(null);
-  const [isVideo, setIsVideo] = useState(false);
+  const [backgroundMedia, setBackgroundMedia] = useState(defaultVideo);
+  const [isVideo, setIsVideo] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = React.useRef(null);
 
@@ -32,13 +34,6 @@ export default function TapToTipPage() {
     if (saved) {
       setBackgroundMedia(saved);
       setIsVideo(savedType === 'video');
-    } else {
-      // Set default video background
-      const defaultVideo = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/b4b2c9ab1_file.mp4';
-      setBackgroundMedia(defaultVideo);
-      setIsVideo(true);
-      localStorage.setItem('taptotip_background', defaultVideo);
-      localStorage.setItem('taptotip_background_type', 'video');
     }
   };
 
@@ -221,9 +216,13 @@ export default function TapToTipPage() {
           loop
           muted
           playsInline
+          preload="auto"
           className="w-full h-full object-cover"
-          src={backgroundMedia || 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/b4b2c9ab1_file.mp4'}
-        />
+          src={backgroundMedia}
+          key={backgroundMedia}
+        >
+          <source src={backgroundMedia} type="video/mp4" />
+        </video>
         <div className="absolute inset-0 bg-black/30" />
       </div>
 
