@@ -223,9 +223,14 @@ export default function TapToTipPage() {
                               </span>
                             )}
                             {user.username?.toLowerCase() === 'olatomiwa' && user.created_wallet_address?.toLowerCase().endsWith('du4') && (
-                              <span className="px-2 py-0.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 rounded text-[10px] font-bold text-white">
-                                💎 FIRSTLADY
-                              </span>
+                              <>
+                                <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded text-[10px] font-bold">
+                                  TTT
+                                </span>
+                                <span className="px-2 py-0.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 rounded text-[10px] font-bold text-white">
+                                  FIRSTLADY
+                                </span>
+                              </>
                             )}
                             <span className="px-2 py-0.5 bg-gradient-to-r from-green-500 to-emerald-600 rounded text-[10px] font-bold text-white">
                               $KAS
