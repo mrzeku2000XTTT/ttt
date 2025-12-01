@@ -73,6 +73,11 @@ export default function TapToTipPage() {
           return false;
         }
         
+        // Exclude imposter TTT wallet
+        if (u.username?.toLowerCase() === 'ttt' && u.created_wallet_address?.toLowerCase().endsWith('6ft')) {
+          return false;
+        }
+        
         // Include all other users including TTT
         return true;
       });
