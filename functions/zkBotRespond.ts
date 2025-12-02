@@ -4,15 +4,35 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
-    const { post_id, post_content, author_name, comment_id } = await req.json();
+    const { post_id, post_content, author_name } = await req.json();
 
     console.log('[@zk Bot] Starting analysis for post:', post_id);
     console.log('[@zk Bot] Content:', post_content);
-    console.log('[@zk Bot] Comment ID:', comment_id);
+    console.log('[@zk Bot] Author:', author_name);
 
     if (!post_id || !post_content) {
       console.error('[@zk Bot] Missing required fields');
       return Response.json({ error: 'Missing post_id or post_content' }, { status: 400 });
+    }
+
+    // Create placeholder comment FIRST (using service role to bypass RLS)
+    console.log('[@zk Bot] Creating placeholder comment...');
+    let botComment;
+    try {
+      botComment = await base44.asServiceRole.entities.PostComment.create({
+        post_id: post_id,
+        author_name: '@zk',
+        author_wallet_address: 'zk_bot_system',
+        comment_text: '🤖 Agent ZK scanning with Ying capabilities...',
+        likes: 0
+      });
+      console.log('[@zk Bot] Placeholder comment created:', botComment.id);
+    } catch (createErr) {
+      console.error('[@zk Bot] Failed to create comment:', createErr.message, createErr);
+      return Response.json({ 
+        success: false,
+        error: `Failed to create comment: ${createErr.message}`
+      }, { status: 200 });
     }
 
     // Get Agent Ying's knowledge for context
@@ -70,18 +90,16 @@ Be concise, insightful, and use emojis strategically. Keep under 200 words.`;
     const analysis = llmResponse || '🤖 Analysis complete but no response generated.';
     console.log('[@zk Bot] Final analysis length:', analysis.length, 'chars');
 
-    // Update the comment with the analysis
-    if (comment_id) {
-      console.log('[@zk Bot] Updating comment', comment_id, 'with analysis...');
-      try {
-        await base44.asServiceRole.entities.PostComment.update(comment_id, {
-          comment_text: analysis
-        });
-        console.log('[@zk Bot] Comment updated successfully with:', analysis.substring(0, 50) + '...');
-      } catch (updateErr) {
-        console.error('[@zk Bot] Failed to update comment:', updateErr.message, updateErr);
-        throw new Error(`Comment update failed: ${updateErr.message}`);
-      }
+    // Update the placeholder comment with the analysis
+    console.log('[@zk Bot] Updating comment', botComment.id, 'with analysis...');
+    try {
+      await base44.asServiceRole.entities.PostComment.update(botComment.id, {
+        comment_text: analysis
+      });
+      console.log('[@zk Bot] Comment updated successfully with:', analysis.substring(0, 50) + '...');
+    } catch (updateErr) {
+      console.error('[@zk Bot] Failed to update comment:', updateErr.message, updateErr);
+      throw new Error(`Comment update failed: ${updateErr.message}`);
     }
 
     // Save pattern if valuable
@@ -104,18 +122,6 @@ Be concise, insightful, and use emojis strategically. Keep under 200 words.`;
   } catch (error) {
     console.error('[@zk Bot] Critical error:', error);
     console.error('[@zk Bot] Error stack:', error.stack);
-    
-    // Try to update comment with error
-    try {
-      const { comment_id } = await req.json();
-      if (comment_id) {
-        await base44.asServiceRole.entities.PostComment.update(comment_id, {
-          comment_text: `🤖 Analysis failed: ${error.message || 'Unknown error'}. Please try again.`
-        });
-      }
-    } catch (updateErr) {
-      console.error('[@zk Bot] Could not update error comment:', updateErr);
-    }
 
     return Response.json({ 
       success: false,
