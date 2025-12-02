@@ -113,13 +113,16 @@ export default function LobbyPage() {
               boxShadow: i % 2 === 0 ? '0 0 4px #ffffff' : '0 0 2px #000000',
             }}
             animate={{
+              x: [0, Math.random() * 100 - 50],
+              y: [0, Math.random() * 100 - 50],
               opacity: [0.3, 1, 0.3],
               scale: [0.8, 1.2, 0.8],
             }}
             transition={{
-              duration: 2 + Math.random() * 3,
+              duration: 3 + Math.random() * 4,
               repeat: Infinity,
               delay: Math.random() * 5,
+              ease: "linear",
             }}
           />
         ))}
