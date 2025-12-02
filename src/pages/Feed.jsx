@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   Send, Heart, MessageCircle, Trash2, Edit2,
-  Loader2, Image as ImageIcon, X, Sparkles, Eye, Users, Activity, Video, FileText, DollarSign, Wallet, Plus, CornerDownRight, Pencil, Share, AlertCircle, Palette, Trophy, Hammer, Search, CircleDot
+  Loader2, Image as ImageIcon, X, Sparkles, Eye, Users, Activity, Video, FileText, DollarSign, Wallet, Plus, CornerDownRight, Pencil, Share, AlertCircle, Palette, Trophy, Hammer, Search, CircleDot, Newspaper
 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -108,6 +108,7 @@ export default function FeedPage() {
   const [selectedHashtag, setSelectedHashtag] = useState(null);
   const [userResults, setUserResults] = useState([]);
   const [explainerPost, setExplainerPost] = useState(null);
+  const [showNewsModal, setShowNewsModal] = useState(false);
 
   const fileInputRef = useRef(null);
   const replyFileInputRef = useRef(null);
@@ -3620,6 +3621,58 @@ export default function FeedPage() {
         )}
       </AnimatePresence>
 
+      {/* Kaspa News Modal */}
+      <AnimatePresence>
+        {showNewsModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowNewsModal(false)}
+            className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-black border border-white/20 rounded-2xl w-full max-w-6xl h-[85vh] overflow-hidden flex flex-col"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b border-white/10 bg-black/80 backdrop-blur-xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 rounded-lg flex items-center justify-center">
+                    <Newspaper className="w-5 h-5 text-cyan-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold text-lg">Kaspa News</h3>
+                    <p className="text-white/60 text-xs">Latest updates from kaspa.news</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => setShowNewsModal(false)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-white/60 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+
+              {/* Iframe */}
+              <div className="flex-1 bg-white">
+                <iframe
+                  src="https://kaspa.news"
+                  className="w-full h-full border-0"
+                  title="Kaspa News"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="relative z-10 p-6 md:p-8 lg:p-12">
         <div className="max-w-2xl mx-auto">
           <motion.div
@@ -3651,6 +3704,15 @@ export default function FeedPage() {
                     >
                       <CircleDot className="w-4 h-4 text-cyan-400 group-hover:text-yellow-400 transition-colors" />
                     </motion.div>
+                  </Button>
+                  <Button
+                    onClick={() => setShowNewsModal(true)}
+                    size="sm"
+                    variant="ghost"
+                    className="text-white/60 hover:text-white hover:bg-white/10 h-8 w-8 p-0"
+                    title="Kaspa News"
+                  >
+                    <Newspaper className="w-4 h-4" />
                   </Button>
                   <Button
                     onClick={() => {
