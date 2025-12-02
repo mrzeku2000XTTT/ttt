@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { createPageUrl } from "@/utils";
 
 export default function CreatorPage() {
   const [user, setUser] = useState(null);
@@ -448,6 +449,21 @@ export default function CreatorPage() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Live Stats Iframe */}
+            <Card className="bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border-cyan-500/30 mb-6">
+              <CardHeader className="border-b border-white/10">
+                <h3 className="text-white font-bold">Live Earnings Dashboard</h3>
+                <p className="text-sm text-gray-400">Auto-refreshes every 10 seconds</p>
+              </CardHeader>
+              <CardContent className="p-0">
+                <iframe
+                  src={`${createPageUrl('CreatorStatsWidget')}?email=${encodeURIComponent(user?.email || '')}`}
+                  className="w-full h-64 border-0"
+                  title="Live Stats"
+                />
+              </CardContent>
+            </Card>
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
