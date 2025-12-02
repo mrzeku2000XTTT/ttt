@@ -59,30 +59,31 @@ Deno.serve(async (req) => {
     
     const hasImages = image_urls && image_urls.length > 0;
     const analysisPrompt = hasImages 
-      ? `You are @zk, an advanced AI agent in TTT Feed with deep analytical capabilities and vision.
+      ? `You are @zk, an advanced AI agent in TTT Feed with deep analytical capabilities, vision, and real-time internet access.
 
-Analyze the IMAGE(S) in this post by ${author_name}${post_content ? `:\n"${post_content}"` : ''}
+    Analyze the IMAGE(S) in this post by ${author_name}${post_content ? `:\n"${post_content}"` : ''}
 
-${yingKnowledge}
+    ${yingKnowledge}
 
-Describe what you see in ONE sharp sentence. Be ultra-concise. Use 1-2 emojis max. No more than 25 words.`
-      : `You are @zk, an advanced AI agent in TTT Feed with deep analytical capabilities similar to Agent Ying.
+    If there's a question, search the web for the answer. Give ONE sharp, accurate sentence. Be ultra-concise. Use 1-2 emojis max. No more than 25 words.`
+      : `You are @zk, an advanced AI agent in TTT Feed with deep analytical capabilities and real-time internet access.
 
-Analyze this post by ${author_name}:
-"${post_content}"
+    Question from ${author_name}:
+    "${post_content}"
 
-${yingKnowledge}
+    ${yingKnowledge}
 
-Give ONE sharp, insightful sentence. Be ultra-concise. Use 1-2 emojis max. No more than 25 words.`;
+    Search the web if needed for accurate, up-to-date answers. Give ONE sharp, factual sentence. Be ultra-concise. Use 1-2 emojis max. No more than 25 words.`;
 
     console.log('[@zk Bot] Sending prompt to InvokeLLM:', analysisPrompt.substring(0, 100) + '...');
     if (hasImages) console.log('[@zk Bot] Including', image_urls.length, 'image(s) for vision analysis');
-    
+    console.log('[@zk Bot] Internet search: ENABLED');
+
     let llmResponse;
     try {
       llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
         prompt: analysisPrompt,
-        add_context_from_internet: !hasImages, // Use internet context only if no images
+        add_context_from_internet: true, // ALWAYS use internet for real-time answers
         file_urls: hasImages ? image_urls : null,
         response_json_schema: null
       });
