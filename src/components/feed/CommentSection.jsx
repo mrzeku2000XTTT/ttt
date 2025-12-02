@@ -19,6 +19,7 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
   const [tipAmount, setTipAmount] = useState('');
   const [isSendingTip, setIsSendingTip] = useState(false);
   const [commenterTips, setCommenterTips] = useState({});
+  const [zkIsResponding, setZkIsResponding] = useState(false);
 
   useEffect(() => {
     loadComments();
@@ -139,6 +140,7 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
       // If @zk was mentioned anywhere, have it respond
       const zkMentioned = newComment.toLowerCase().includes('@zk');
       if (zkMentioned) {
+        setZkIsResponding(true);
         try {
           // Get the post data to find images
           const post = await base44.entities.Post.filter({ id: postId });
@@ -146,19 +148,36 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
             ? post[0].media_files.filter(f => f.type === 'image').map(f => f.url)
             : (post[0]?.image_url ? [post[0].image_url] : []);
 
-          await base44.functions.invoke('zkBotRespond', { 
+          // Call zkBot (don't wait for response)
+          base44.functions.invoke('zkBotRespond', { 
             post_id: postId,
             post_content: newComment.trim(),
             author_name: authorName,
             image_urls: imageUrls
           });
-          // Wait a bit then reload to show ZK's response
-          setTimeout(() => {
-            loadComments();
+
+          // Poll for updates every 2 seconds for up to 30 seconds
+          let pollCount = 0;
+          const pollInterval = setInterval(async () => {
+            pollCount++;
+            await loadComments();
             if (onCommentAdded) onCommentAdded();
-          }, 1000);
+            
+            // Stop after 30 seconds (15 polls)
+            if (pollCount >= 15) {
+              clearInterval(pollInterval);
+              setZkIsResponding(false);
+            }
+          }, 2000);
+
+          // Also stop if component unmounts
+          return () => {
+            clearInterval(pollInterval);
+            setZkIsResponding(false);
+          };
         } catch (err) {
           console.error('ZK bot failed:', err);
+          setZkIsResponding(false);
         }
       } else {
         await loadComments();
@@ -365,6 +384,14 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
 
   return (
     <div className="mt-4 pt-4 border-t border-white/10">
+      {/* ZK Responding Indicator */}
+      {zkIsResponding && (
+        <div className="mb-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-3 flex items-center gap-3">
+          <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
+          <span className="text-cyan-400 text-sm font-medium">@zk is analyzing with vision + internet...</span>
+        </div>
+      )}
+
       {/* Comment Input */}
       <div className="flex gap-2 mb-4">
         <div className="w-8 h-8 bg-white/10 border border-white/20 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
