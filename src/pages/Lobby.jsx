@@ -168,10 +168,10 @@ export default function LobbyPage() {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.2, delay: 1.5 }}
-            className="mt-auto pb-12"
+            className="mt-auto pb-8 px-4"
           >
             <h1 
-              className="text-5xl md:text-7xl lg:text-8xl font-black text-white/40 tracking-tight"
+              className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-black text-white/40 tracking-tight text-center"
               style={{
                 transform: 'scaleY(-1)',
                 textShadow: '0 -8px 32px rgba(0, 0, 0, 0.3), 0 0 60px rgba(6, 182, 212, 0.2)',
