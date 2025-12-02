@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { StarGateProvider, useStarGate } from "@/components/stargate/StarGateContext";
 import DataShareModal from "@/components/stargate/DataShareModal";
+import MultiStreamModal from "@/components/MultiStreamModal";
 
 function AKContent() {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      content: "Hey agent, I'm AK, Your Artificial K 🤖\n\n**Available Commands:**\n• Type 'play [song name]' - Search and play music\n• Type 'watch [movie name]' - Search and watch movies\n• Type '!Sports' - Watch live sports\n• Type '!Asian' - Browse Asian dramas\n• Type '!African' - Browse African content\n• Type '!Popcorn' - Browse Popcornflix\n• Click 'Browse Genres' - Browse movies by genre\n• Click 'Split Screen' button on any video to watch two things at once!\n• Ask me anything - I'm here to help!\n\n⚠️ **Movie Tip:** An ad will pop up when you start a movie. Just close it and the movie will play with no more ads unless the screen is clicked."
+      content: "Hey agent, I'm AK, Your Artificial K 🤖\n\n**Available Commands:**\n• Type 'play [song name]' - Search and play music\n• Type 'watch [movie name]' - Search and watch movies\n• Type '!Split' - Multi-stream mode (watch up to 4 streams!)\n• Type '!Sports' - Watch live sports\n• Type '!Asian' - Browse Asian dramas\n• Type '!African' - Browse African content\n• Type '!Popcorn' - Browse Popcornflix\n• Click 'Browse Genres' - Browse movies by genre\n• Ask me anything - I'm here to help!\n\n⚠️ **Movie Tip:** An ad will pop up when you start a movie. Just close it and the movie will play with no more ads unless the screen is clicked."
     }
   ]);
   const [input, setInput] = useState("");
@@ -27,6 +28,8 @@ function AKContent() {
   const [pastedImages, setPastedImages] = useState([]);
   const [splitScreen, setSplitScreen] = useState(false);
   const [splitScreenContent, setSplitScreenContent] = useState(null);
+  const [multiStreamModal, setMultiStreamModal] = useState(false);
+  const [multiStreams, setMultiStreams] = useState([]);
   const { getSharedData, getAllSharedData } = useStarGate();
   const messagesEndRef = React.useRef(null);
 
@@ -196,31 +199,30 @@ function AKContent() {
           return;
         }
 
+        // Check for !SPLIT command
+        if (query.trim().toLowerCase() === '!split') {
+          setMultiStreamModal(true);
+          setMessages(prev => [...prev, { 
+            role: "assistant", 
+            content: "🎬 Opening multi-stream selector..."
+          }]);
+          setLoading(false);
+          return;
+        }
+
         // Check for !SPORTS command
         if (query.trim().toLowerCase() === '!sports') {
           const sportsContent = {
-            embed_url: "https://istreameast.app/v5",
-            title: "iStreamEast - Live Sports",
-            source: "iStreamEast"
+            embed_url: "https://sportsurge.io",
+            title: "SportsurGe - Live Sports",
+            source: "Sportsurge"
           };
 
-          // Check if there's already a movie/content playing and enable split screen
-          const hasActiveContent = messages.some(m => m.movie);
-          
-          if (hasActiveContent && !splitScreen) {
-            setSplitScreen(true);
-            setSplitScreenContent(sportsContent);
-            setMessages(prev => [...prev, { 
-              role: "assistant", 
-              content: "🏆 Opening Sports in split screen mode!"
-            }]);
-          } else {
-            setMessages(prev => [...prev, { 
-              role: "assistant", 
-              content: "🏆 Opening Sports Streams...",
-              movie: sportsContent
-            }]);
-          }
+          setMessages(prev => [...prev, { 
+            role: "assistant", 
+            content: "🏆 Opening Sports Streams...",
+            movie: sportsContent
+          }]);
           setLoading(false);
           return;
         }
@@ -440,11 +442,36 @@ function AKContent() {
                     )}
                     {msg.movie && (
                       <div className="mt-2 w-full relative" style={{ height: 'calc(100vh - 200px)', minHeight: '600px', maxHeight: '900px' }}>
-                        {splitScreen && splitScreenContent ? (
-                          <div className="flex gap-2 h-full">
-                            <div className="flex-1 h-full">
+                        <iframe
+                          src={msg.movie.embed_url}
+                          width="100%"
+                          height="100%"
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          scrolling="yes"
+                          className="rounded-lg"
+                          style={{ overflow: 'auto' }}
+                        />
+                      </div>
+                    )}
+                    {msg.multiStreams && (
+                      <div className="mt-2 w-full" style={{ height: 'calc(100vh - 200px)', minHeight: '600px', maxHeight: '900px' }}>
+                        <div className={`grid gap-2 h-full ${
+                          msg.multiStreams.length === 1 ? 'grid-cols-1' :
+                          msg.multiStreams.length === 2 ? 'grid-cols-2' :
+                          msg.multiStreams.length === 3 ? 'grid-cols-2' :
+                          'grid-cols-2'
+                        } ${msg.multiStreams.length === 3 ? 'grid-rows-2' : ''}`}>
+                          {msg.multiStreams.map((stream, idx) => (
+                            <div key={idx} className={`relative ${
+                              msg.multiStreams.length === 3 && idx === 0 ? 'col-span-2' : ''
+                            }`}>
+                              <div className="absolute top-2 left-2 z-10 bg-black/80 backdrop-blur-xl border border-white/20 rounded px-2 py-1">
+                                <span className="text-white text-xs font-bold">{stream.name}</span>
+                              </div>
                               <iframe
-                                src={msg.movie.embed_url}
+                                src={stream.url}
                                 width="100%"
                                 height="100%"
                                 frameBorder="0"
@@ -455,54 +482,8 @@ function AKContent() {
                                 style={{ overflow: 'auto' }}
                               />
                             </div>
-                            <div className="flex-1 h-full relative">
-                              <button
-                                onClick={() => {
-                                  setSplitScreen(false);
-                                  setSplitScreenContent(null);
-                                }}
-                                className="absolute top-2 right-2 z-10 bg-red-500/80 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
-                              >
-                                ×
-                              </button>
-                              <iframe
-                                src={splitScreenContent.embed_url}
-                                width="100%"
-                                height="100%"
-                                frameBorder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                                scrolling="yes"
-                                className="rounded-lg"
-                                style={{ overflow: 'auto' }}
-                              />
-                            </div>
-                          </div>
-                        ) : (
-                          <iframe
-                            src={msg.movie.embed_url}
-                            width="100%"
-                            height="100%"
-                            frameBorder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                            scrolling="yes"
-                            className="rounded-lg"
-                            style={{ overflow: 'auto' }}
-                          />
-                        )}
-                        {!splitScreen && (
-                          <button
-                            onClick={() => {
-                              setSplitScreen(true);
-                              setSplitScreenContent(msg.movie);
-                            }}
-                            className="absolute bottom-2 right-2 bg-white/10 hover:bg-white/20 backdrop-blur-xl border border-white/20 text-white rounded-lg px-3 py-1.5 text-xs flex items-center gap-1.5"
-                          >
-                            <Film className="w-3.5 h-3.5" />
-                            Split Screen
-                          </button>
-                        )}
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -642,6 +623,19 @@ function AKContent() {
           sourceApp="AK"
           dataToShare={shareModal.data}
           dataType="text"
+        />
+
+        <MultiStreamModal
+          isOpen={multiStreamModal}
+          onClose={() => setMultiStreamModal(false)}
+          onConfirm={(streams) => {
+            setMultiStreams(streams);
+            setMessages(prev => [...prev, { 
+              role: "assistant", 
+              content: `🎬 Starting ${streams.length} streams...`,
+              multiStreams: streams
+            }]);
+          }}
         />
       </div>
       </div>
