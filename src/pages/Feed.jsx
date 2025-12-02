@@ -52,7 +52,7 @@ export default function FeedPage() {
   const [fullscreenImage, setFullscreenImage] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileUsername, setProfileUsername] = useState(null);
-  const [profileData, setProfileData] = useState({ posts: [], followers: 0, following: 0, trustScore: 0, isFollowing: false, zekuBalance: 0, feedTipsSent: 0, feedTipsReceived: 0, bullTipsSent: 0, bullTipsReceived: 0 });
+  const [profileData, setProfileData] = useState({ posts: [], followers: 0, following: 0, trustScore: 0, isFollowing: false, zekuBalance: 0, feedTipsSent: 0, feedTipsReceived: 0, bullTipsSent: 0, bullTipsReceived: 0, commentTipsSent: 0, commentTipsReceived: 0 });
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [isFollowingUser, setIsFollowingUser] = useState(false);
   const [showProfileStats, setShowProfileStats] = useState(false);
@@ -1430,6 +1430,8 @@ export default function FeedPage() {
       let feedTipsReceived = 0;
       let bullTipsSent = 0;
       let bullTipsReceived = 0;
+      let commentTipsSent = 0;
+      let commentTipsReceived = 0;
       
       if (targetEmail) {
         try {
@@ -1439,6 +1441,8 @@ export default function FeedPage() {
             feedTipsReceived = tipStats[0].feed_tips_received || 0;
             bullTipsSent = tipStats[0].bull_tips_sent || 0;
             bullTipsReceived = tipStats[0].bull_tips_received || 0;
+            commentTipsSent = tipStats[0].comment_tips_sent || 0;
+            commentTipsReceived = tipStats[0].comment_tips_received || 0;
           }
         } catch (err) {
           console.log('Tip stats not accessible:', err);
@@ -1532,7 +1536,9 @@ export default function FeedPage() {
         feedTipsSent,
         feedTipsReceived,
         bullTipsSent,
-        bullTipsReceived
+        bullTipsReceived,
+        commentTipsSent,
+        commentTipsReceived
       });
     } catch (err) {
       console.error('Failed to load profile:', err);
@@ -2443,6 +2449,14 @@ export default function FeedPage() {
                       <div className="bg-white/5 rounded-lg p-2 border border-white/10">
                         <div className="text-white/40 text-xs mb-0.5">Bull Tips Received</div>
                         <div className="text-pink-400 font-bold text-sm">{profileData.bullTipsReceived?.toFixed(2) || '0.00'}</div>
+                      </div>
+                      <div className="bg-white/5 rounded-lg p-2 border border-white/10">
+                        <div className="text-white/40 text-xs mb-0.5">Comment Tips Sent</div>
+                        <div className="text-purple-400 font-bold text-sm">{profileData.commentTipsSent?.toFixed(2) || '0.00'}</div>
+                      </div>
+                      <div className="bg-white/5 rounded-lg p-2 border border-white/10">
+                        <div className="text-white/40 text-xs mb-0.5">Comment Tips Received</div>
+                        <div className="text-yellow-400 font-bold text-sm">{profileData.commentTipsReceived?.toFixed(2) || '0.00'}</div>
                       </div>
                       <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg p-2 border border-purple-500/30">
                         <div className="text-purple-300 text-xs mb-0.5">Zeku Tokens</div>
