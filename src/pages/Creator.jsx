@@ -383,13 +383,13 @@ export default function CreatorPage() {
                 <CardContent className="p-6 space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-400">Purchase</span>
-                    <span className="text-white font-bold">Earn USD 100.00</span>
+                    <span className="text-white font-bold">Earn 30 KAS</span>
                   </div>
                   <div className="text-xs text-gray-500">Referred spend: 30 DAY</div>
                   
                   <div className="flex justify-between items-center pt-3 border-t border-white/10">
                     <span className="text-gray-400">Sign Up</span>
-                    <span className="text-white font-bold">Earn USD 8.00</span>
+                    <span className="text-white font-bold">Earn 1 KAS</span>
                   </div>
                   <div className="text-xs text-gray-500">Referred spend: 30 DAY</div>
                 </CardContent>
