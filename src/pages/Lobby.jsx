@@ -60,19 +60,18 @@ export default function LobbyPage() {
       <div className="absolute inset-0">
         {/* Cosmic Portal Background - Full Screen Spinning Zoomed */}
         <motion.div
-          initial={{ opacity: 0, scale: 3 }}
-          animate={{ opacity: 1, scale: 3, rotate: 360 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1, rotate: 360 }}
           transition={{ 
             opacity: { duration: 2, delay: 2 },
-            scale: { duration: 2, delay: 2 },
             rotate: { duration: 20, repeat: Infinity, ease: "linear" }
           }}
-          className="absolute inset-0 flex items-center justify-center"
+          className="absolute inset-0 flex items-center justify-center scale-[3]"
         >
           <img
             src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/e91d0d293_image.png"
             alt="Cosmic Portal"
-            className="min-w-[300%] min-h-[300%] object-cover"
+            className="w-full h-full object-cover"
           />
         </motion.div>
 
