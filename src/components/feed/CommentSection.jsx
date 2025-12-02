@@ -18,10 +18,17 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
   const [tipModal, setTipModal] = useState(null);
   const [tipAmount, setTipAmount] = useState('');
   const [isSendingTip, setIsSendingTip] = useState(false);
+  const [commenterTips, setCommenterTips] = useState({});
 
   useEffect(() => {
     loadComments();
   }, [postId]);
+
+  useEffect(() => {
+    if (comments.length > 0) {
+      loadCommenterTips();
+    }
+  }, [comments]);
 
   useEffect(() => {
     localStorage.setItem('liked_comments', JSON.stringify(likedComments));
@@ -39,6 +46,29 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
       console.error('Failed to load comments:', err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadCommenterTips = async () => {
+    try {
+      const allTips = await base44.entities.TipTransaction.filter({
+        post_id: postId,
+        source: 'feed_comment'
+      });
+
+      const tipsMap = {};
+      allTips.forEach(tip => {
+        if (tip.recipient_wallet) {
+          if (!tipsMap[tip.recipient_wallet]) {
+            tipsMap[tip.recipient_wallet] = 0;
+          }
+          tipsMap[tip.recipient_wallet] += tip.amount || 0;
+        }
+      });
+
+      setCommenterTips(tipsMap);
+    } catch (err) {
+      console.error('Failed to load commenter tips:', err);
     }
   };
 
@@ -198,6 +228,9 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
       setTipModal(null);
       setTipAmount('');
 
+      // Reload tips to update display
+      await loadCommenterTips();
+
       // Show notification
       const notification = document.createElement('div');
       notification.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[1000] max-w-xs';
@@ -304,6 +337,11 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                             >
                               <DollarSign className="w-3 h-3 text-green-400" />
                             </button>
+                            {commenterTips[comment.author_wallet_address] > 0 && (
+                              <span className="text-xs text-green-400 font-semibold">
+                                {commenterTips[comment.author_wallet_address].toFixed(2)} KAS
+                              </span>
+                            )}
                           </>
                         )}
                       </div>
