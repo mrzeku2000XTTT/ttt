@@ -44,6 +44,7 @@ export default function CreatorPage() {
   const [orders, setOrders] = useState([]);
   const [showOrders, setShowOrders] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isAddingProduct, setIsAddingProduct] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -211,8 +212,12 @@ export default function CreatorPage() {
   };
 
   const handleAddProduct = async () => {
-    if (!productForm.product_name || !productForm.cost_price || !productForm.selling_price) return;
+    if (!productForm.product_name || !productForm.cost_price || !productForm.selling_price) {
+      alert('Please fill in product name, cost price, and selling price');
+      return;
+    }
 
+    setIsAddingProduct(true);
     try {
       const cost = parseFloat(productForm.cost_price);
       const price = parseFloat(productForm.selling_price);
@@ -256,6 +261,9 @@ export default function CreatorPage() {
       await loadProducts(user.email);
     } catch (err) {
       console.error('Failed to add product:', err);
+      alert('Failed to add product. Please try again.');
+    } finally {
+      setIsAddingProduct(false);
     }
   };
 
@@ -690,10 +698,20 @@ export default function CreatorPage() {
 
                       <Button
                         onClick={handleAddProduct}
+                        disabled={isAddingProduct}
                         className="w-full bg-cyan-500 hover:bg-cyan-600 h-12"
                       >
-                        <Package className="w-5 h-5 mr-2" />
-                        Add Product to Store
+                        {isAddingProduct ? (
+                          <>
+                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                            Adding Product...
+                          </>
+                        ) : (
+                          <>
+                            <Package className="w-5 h-5 mr-2" />
+                            Add Product to Store
+                          </>
+                        )}
                       </Button>
                     </div>
                   </motion.div>
