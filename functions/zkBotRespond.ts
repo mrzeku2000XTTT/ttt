@@ -4,42 +4,49 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
-    const user = await base44.auth.me();
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    const { post_id, post_content, author_name } = await req.json();
+
+    if (!post_id || !post_content) {
+      return Response.json({ error: 'Missing post_id or post_content' }, { status: 400 });
     }
 
-    const { prompt, post_id } = await req.json();
-
-    // Get AI response as ZK with real-time internet data
-    const response = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are ZK, an advanced AI agent in the TTT Feed. You have access to real-time data, news, and the entire internet. You know everything about TTT apps, Kaspa blockchain, crypto markets, and more. Be concise, insightful, and helpful. Answer: ${prompt}`,
-      add_context_from_internet: true,
+    // Use Grok via X API to analyze the post
+    const X_API_KEY = Deno.env.get('X_API_KEY');
+    
+    const grokResponse = await fetch('https://api.x.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${X_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        messages: [
+          {
+            role: 'system',
+            content: 'You are @zk, an advanced AI agent in TTT Feed. You analyze posts with deep insight about crypto, Kaspa blockchain, TTT ecosystem, and current events. Be concise, sharp, and helpful. Use emojis when appropriate.'
+          },
+          {
+            role: 'user',
+            content: `Post by ${author_name}: "${post_content}"\n\nAnalyze this post and provide a thoughtful response.`
+          }
+        ],
+        model: 'grok-beta',
+        temperature: 0.7
+      })
     });
 
-    // Create comment as ZK bot on the user's post
-    const botComment = await base44.asServiceRole.entities.PostComment.create({
-      post_id: post_id,
-      author_name: "ZK",
-      author_wallet_address: "zk_bot_official",
-      comment_text: response,
-    });
-
-    // Increment post's comments count
-    const post = await base44.asServiceRole.entities.Post.filter({ id: post_id });
-    if (post.length > 0) {
-      await base44.asServiceRole.entities.Post.update(post_id, {
-        comments_count: (post[0].comments_count || 0) + 1
-      });
-    }
+    const grokData = await grokResponse.json();
+    const analysis = grokData.choices?.[0]?.message?.content || '🤖 Unable to analyze at the moment.';
 
     return Response.json({ 
       success: true, 
-      comment: botComment,
-      message: "ZK has responded!" 
+      analysis: analysis
     });
   } catch (error) {
     console.error('ZK Bot error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ 
+      success: false,
+      analysis: '🤖 Agent ZK encountered an error analyzing this post.'
+    }, { status: 200 });
   }
 });
