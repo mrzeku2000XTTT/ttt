@@ -141,6 +141,12 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
       const zkMentioned = newComment.toLowerCase().includes('@zk');
       if (zkMentioned) {
         setZkIsResponding(true);
+        
+        // Start polling immediately for updates
+        const pollInterval = setInterval(async () => {
+          await loadComments();
+        }, 1000);
+        
         try {
           // Get the post data to find images
           const post = await base44.entities.Post.filter({ id: postId });
@@ -156,14 +162,15 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
             image_urls: imageUrls
           });
 
-          // Reload once after bot completes
+          // Final reload after bot completes
           await loadComments();
           if (onCommentAdded) onCommentAdded();
-          setZkIsResponding(false);
         } catch (err) {
           console.error('ZK bot failed:', err);
-          setZkIsResponding(false);
           await loadComments();
+        } finally {
+          clearInterval(pollInterval);
+          setZkIsResponding(false);
         }
       } else {
         await loadComments();
