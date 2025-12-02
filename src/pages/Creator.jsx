@@ -49,6 +49,9 @@ export default function CreatorPage() {
   const [showAddLink, setShowAddLink] = useState(false);
   const [linkForm, setLinkForm] = useState({ name: '', url: '', description: '' });
   const [copiedCustomLink, setCopiedCustomLink] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [productImageFile, setProductImageFile] = useState(null);
+  const [productImagePreview, setProductImagePreview] = useState('');
 
   useEffect(() => {
     loadData();
@@ -253,6 +256,14 @@ export default function CreatorPage() {
     }
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setProductImageFile(file);
+    setProductImagePreview(URL.createObjectURL(file));
+  };
+
   const handleAddProduct = async () => {
     if (!productForm.product_name || !productForm.cost_price || !productForm.selling_price) {
       alert('Please fill in product name, cost price, and selling price');
@@ -265,8 +276,20 @@ export default function CreatorPage() {
       const price = parseFloat(productForm.selling_price);
       const profit = price - cost;
 
-      // Use default product image
-      const imageUrl = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop';
+      let imageUrl = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop';
+
+      // Upload image if provided
+      if (productImageFile) {
+        setUploadingImage(true);
+        try {
+          const uploadRes = await base44.integrations.Core.UploadFile({ file: productImageFile });
+          imageUrl = uploadRes.file_url;
+        } catch (err) {
+          console.error('Image upload failed:', err);
+        } finally {
+          setUploadingImage(false);
+        }
+      }
 
       await base44.entities.DropshippingProduct.create({
         creator_email: user.email,
@@ -291,6 +314,8 @@ export default function CreatorPage() {
         selling_price: '',
         category: 'other'
       });
+      setProductImageFile(null);
+      setProductImagePreview('');
       setShowAddProduct(false);
       await loadProducts(user.email);
     } catch (err) {
@@ -839,6 +864,24 @@ export default function CreatorPage() {
 
                     <div className="space-y-4">
                       <div>
+                        <label className="text-sm text-gray-400 mb-2 block">Product Image</label>
+                        <div className="space-y-2">
+                          {productImagePreview && (
+                            <div className="w-full h-48 bg-black border border-white/20 rounded-lg overflow-hidden">
+                              <img src={productImagePreview} alt="Preview" className="w-full h-full object-cover" />
+                            </div>
+                          )}
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="bg-black border-white/20 text-white"
+                          />
+                          <p className="text-xs text-gray-500">Upload a product photo (recommended)</p>
+                        </div>
+                      </div>
+
+                      <div>
                         <label className="text-sm text-gray-400 mb-2 block">Product Name</label>
                         <Input
                           value={productForm.product_name}
@@ -899,10 +942,15 @@ export default function CreatorPage() {
 
                       <Button
                         onClick={handleAddProduct}
-                        disabled={isAddingProduct}
+                        disabled={isAddingProduct || uploadingImage}
                         className="w-full bg-cyan-500 hover:bg-cyan-600 h-12"
                       >
-                        {isAddingProduct ? (
+                        {uploadingImage ? (
+                          <>
+                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                            Uploading Image...
+                          </>
+                        ) : isAddingProduct ? (
                           <>
                             <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                             Adding Product...
