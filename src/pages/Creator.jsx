@@ -50,10 +50,21 @@ export default function CreatorPage() {
   const [showAddLink, setShowAddLink] = useState(false);
   const [linkForm, setLinkForm] = useState({ name: '', url: '', description: '' });
   const [copiedCustomLink, setCopiedCustomLink] = useState('');
+  const [kasPrice, setKasPrice] = useState(null);
 
   useEffect(() => {
     loadData();
+    loadKasPrice();
   }, []);
+
+  const loadKasPrice = async () => {
+    try {
+      const response = await base44.functions.invoke('getKaspaPrice');
+      setKasPrice(response.data.price);
+    } catch (err) {
+      console.error('Failed to load KAS price:', err);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -449,6 +460,11 @@ export default function CreatorPage() {
                   <div className="text-3xl font-bold text-white mb-1">
                     ${stats.todayEarnings.toFixed(2)}
                   </div>
+                  {kasPrice && (
+                    <p className="text-sm text-cyan-400">
+                      ≈ {(stats.todayEarnings / kasPrice).toFixed(2)} KAS
+                    </p>
+                  )}
                   <p className="text-xs text-gray-500">$0.00 so far this last week</p>
                 </CardContent>
               </Card>
@@ -459,9 +475,14 @@ export default function CreatorPage() {
                     <h3 className="text-gray-400 text-sm">Total Pending</h3>
                     <DollarSign className="w-4 h-4 text-yellow-400" />
                   </div>
-                  <div className="text-3xl font-bold text-white">
+                  <div className="text-3xl font-bold text-white mb-1">
                     ${stats.totalPending.toFixed(2)}
                   </div>
+                  {kasPrice && (
+                    <p className="text-sm text-cyan-400">
+                      ≈ {(stats.totalPending / kasPrice).toFixed(2)} KAS
+                    </p>
+                  )}
                 </CardContent>
               </Card>
 
@@ -471,9 +492,14 @@ export default function CreatorPage() {
                     <h3 className="text-gray-400 text-sm">Balance</h3>
                     <CheckCircle2 className="w-4 h-4 text-cyan-400" />
                   </div>
-                  <div className="text-3xl font-bold text-white">
+                  <div className="text-3xl font-bold text-white mb-1">
                     ${stats.balance.toFixed(2)}
                   </div>
+                  {kasPrice && (
+                    <p className="text-sm text-cyan-400">
+                      ≈ {(stats.balance / kasPrice).toFixed(2)} KAS
+                    </p>
+                  )}
                   <p className="text-xs text-gray-500">Auto-Withdraw min ($10.00 KAS)</p>
                 </CardContent>
               </Card>
