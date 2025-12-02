@@ -166,11 +166,17 @@ export default function CreatorPage() {
   const deleteProduct = async (productId) => {
     if (!confirm('Delete this product?')) return;
     try {
+      const product = products.find(p => p.id === productId);
+      if (product && product.creator_email !== user.email) {
+        alert('You can only delete your own products');
+        return;
+      }
+      
       await base44.entities.DropshippingProduct.delete(productId);
       setProducts(products.filter(p => p.id !== productId));
     } catch (err) {
       console.error('Failed to delete product:', err);
-      alert('Failed to delete product');
+      alert(`Failed to delete product: ${err.message || 'Unknown error'}`);
     }
   };
 
