@@ -136,12 +136,21 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
         onCommentAdded();
       }
 
-      // If ZK was called, have it respond
-      if (zkMatch) {
+      // If @zk was mentioned anywhere, have it respond
+      const zkMentioned = newComment.toLowerCase().includes('@zk');
+      if (zkMentioned) {
         try {
+          // Get the post data to find images
+          const post = await base44.entities.Post.filter({ id: postId });
+          const imageUrls = post[0]?.media_files 
+            ? post[0].media_files.filter(f => f.type === 'image').map(f => f.url)
+            : (post[0]?.image_url ? [post[0].image_url] : []);
+
           await base44.functions.invoke('zkBotRespond', { 
-            prompt: zkMatch[1], 
-            post_id: postId 
+            post_id: postId,
+            post_content: newComment.trim(),
+            author_name: authorName,
+            image_urls: imageUrls
           });
           // Wait a bit then reload to show ZK's response
           setTimeout(() => {
