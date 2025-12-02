@@ -180,8 +180,9 @@ export default function Layout({ children, currentPageName }) {
   };
 
   const isHomePage = currentPageName === "Home";
+  const isLobbyPage = currentPageName === "Lobby";
 
-  if (isHomePage) {
+  if (isHomePage || isLobbyPage) {
     return (
       <VideoPlayerProvider>
         {children}
