@@ -18,6 +18,7 @@ import CommentSection from "@/components/feed/CommentSection";
 import AgentYingChat from "@/components/AgentYingChat";
 import ImageEditor from "@/components/feed/ImageEditor";
 import BadgeManagerModal from "@/components/feed/BadgeManagerModal";
+import PostExplainerModal from "@/components/feed/PostExplainerModal";
 
 export default function FeedPage() {
   const navigate = useNavigate();
@@ -106,6 +107,7 @@ export default function FeedPage() {
   const [hashtagResults, setHashtagResults] = useState([]);
   const [selectedHashtag, setSelectedHashtag] = useState(null);
   const [userResults, setUserResults] = useState([]);
+  const [explainerPost, setExplainerPost] = useState(null);
 
   const fileInputRef = useRef(null);
   const replyFileInputRef = useRef(null);
@@ -2023,31 +2025,42 @@ export default function FeedPage() {
             </div>
           </div>
 
-          {(post.created_by === user?.email || 
-            (post.author_wallet_address && (
-              post.author_wallet_address === kaswareWallet.address ||
-              post.author_wallet_address === user?.created_wallet_address ||
-              post.author_wallet_address === localStorage.getItem('ttt_wallet_address')
-            ))) && (
-            <div className="flex gap-2">
-              <Button
-                onClick={() => handleEdit(post)}
-                variant="ghost"
-                size="sm"
-                className="text-white/40 hover:text-white h-8 w-8 p-0"
-              >
-                <Edit2 className="w-4 h-4" />
-              </Button>
-              <Button
-                onClick={() => handleDelete(post.id)}
-                variant="ghost"
-                size="sm"
-                className="text-red-400/60 hover:text-red-400 h-8 w-8 p-0"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
-          )}
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setExplainerPost(post)}
+              variant="ghost"
+              size="sm"
+              className="text-white/40 hover:text-purple-400 h-8 w-8 p-0"
+              title="Explain this post"
+            >
+              <Sparkles className="w-4 h-4" />
+            </Button>
+            {(post.created_by === user?.email || 
+              (post.author_wallet_address && (
+                post.author_wallet_address === kaswareWallet.address ||
+                post.author_wallet_address === user?.created_wallet_address ||
+                post.author_wallet_address === localStorage.getItem('ttt_wallet_address')
+              ))) && (
+              <>
+                <Button
+                  onClick={() => handleEdit(post)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-white/40 hover:text-white h-8 w-8 p-0"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </Button>
+                <Button
+                  onClick={() => handleDelete(post.id)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-400/60 hover:text-red-400 h-8 w-8 p-0"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </>
+            )}
+          </div>
         </div>
 
         <p className="text-white mb-4 leading-relaxed whitespace-pre-wrap break-words">
@@ -3592,6 +3605,16 @@ export default function FeedPage() {
               setShowBadgeManager(false);
               loadUserBadges();
             }} 
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Post Explainer Modal */}
+      <AnimatePresence>
+        {explainerPost && (
+          <PostExplainerModal
+            post={explainerPost}
+            onClose={() => setExplainerPost(null)}
           />
         )}
       </AnimatePresence>
