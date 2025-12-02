@@ -148,36 +148,22 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
             ? post[0].media_files.filter(f => f.type === 'image').map(f => f.url)
             : (post[0]?.image_url ? [post[0].image_url] : []);
 
-          // Call zkBot (don't wait for response)
-          base44.functions.invoke('zkBotRespond', { 
+          // Call zkBot and wait for initial response
+          await base44.functions.invoke('zkBotRespond', { 
             post_id: postId,
             post_content: newComment.trim(),
             author_name: authorName,
             image_urls: imageUrls
           });
 
-          // Poll for updates every 2 seconds for up to 30 seconds
-          let pollCount = 0;
-          const pollInterval = setInterval(async () => {
-            pollCount++;
-            await loadComments();
-            if (onCommentAdded) onCommentAdded();
-            
-            // Stop after 30 seconds (15 polls)
-            if (pollCount >= 15) {
-              clearInterval(pollInterval);
-              setZkIsResponding(false);
-            }
-          }, 2000);
-
-          // Also stop if component unmounts
-          return () => {
-            clearInterval(pollInterval);
-            setZkIsResponding(false);
-          };
+          // Reload once after bot completes
+          await loadComments();
+          if (onCommentAdded) onCommentAdded();
+          setZkIsResponding(false);
         } catch (err) {
           console.error('ZK bot failed:', err);
           setZkIsResponding(false);
+          await loadComments();
         }
       } else {
         await loadComments();
@@ -475,29 +461,15 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                     </div>
                     <p className="text-white text-sm mb-2">{comment.comment_text}</p>
                     <div className="flex items-center gap-3">
-                      <Button
-                        onClick={() => handleLikeComment(comment)}
-                        variant="ghost"
-                        size="sm"
-                        className={`h-auto p-0 text-xs transition-colors ${
-                          likedComments[comment.id]
-                            ? 'text-red-400 hover:text-red-300'
-                            : 'text-white/40 hover:text-red-400'
-                        }`}
-                      >
-                        <Heart 
-                          className={`w-3 h-3 mr-1 ${likedComments[comment.id] ? 'fill-red-400' : ''}`}
-                        />
-                        {comment.likes || 0}
-                      </Button>
                       {comment.created_by === currentUser?.email && (
                         <Button
                           onClick={() => handleDeleteComment(comment.id)}
                           variant="ghost"
                           size="sm"
-                          className="text-white/30 hover:text-red-400 h-auto p-0 text-xs"
+                          className="text-white/40 hover:text-red-400 h-auto p-0 text-xs flex items-center gap-1"
                         >
                           <Trash2 className="w-3 h-3" />
+                          Delete
                         </Button>
                       )}
                     </div>
