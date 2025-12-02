@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   Send, Heart, MessageCircle, Trash2, Edit2,
-  Loader2, Image as ImageIcon, X, Sparkles, Eye, Users, Activity, Video, FileText, DollarSign, Wallet, Plus, CornerDownRight, Pencil, Share2, AlertCircle, Palette, Trophy, Hammer, Search, CircleDot
+  Loader2, Image as ImageIcon, X, Sparkles, Eye, Users, Activity, Video, FileText, DollarSign, Wallet, Plus, CornerDownRight, Pencil, Share, AlertCircle, Palette, Trophy, Hammer, Search, CircleDot
 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -2128,7 +2128,7 @@ export default function FeedPage() {
             className="text-white/40 hover:text-cyan-400 h-auto p-0"
             title="Share post"
           >
-            <Share2 className="w-5 h-5 mr-2" />
+            <Share className="w-5 h-5 mr-2" />
             {copiedPostId === post.id && (
               <span className="text-xs text-cyan-400">Copied!</span>
             )}
