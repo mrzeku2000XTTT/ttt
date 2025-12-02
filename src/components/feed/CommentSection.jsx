@@ -225,6 +225,50 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
         source: 'feed_comment'
       });
 
+      // Track comment tip stats by EMAIL - SENDER
+      if (currentUser?.email) {
+        const senderStats = await base44.entities.UserTipStats.filter({ user_email: currentUser.email });
+        if (senderStats.length > 0) {
+          await base44.entities.UserTipStats.update(senderStats[0].id, {
+            comment_tips_sent: (senderStats[0].comment_tips_sent || 0) + tipAmountKAS,
+            username: currentUser?.username || 'Anonymous'
+          });
+        } else {
+          await base44.entities.UserTipStats.create({
+            user_email: currentUser.email,
+            username: currentUser?.username || 'Anonymous',
+            feed_tips_sent: 0,
+            feed_tips_received: 0,
+            bull_tips_sent: 0,
+            bull_tips_received: 0,
+            comment_tips_sent: tipAmountKAS,
+            comment_tips_received: 0
+          });
+        }
+      }
+
+      // Track comment tip stats by EMAIL - RECIPIENT
+      if (tipModal.created_by) {
+        const recipientStats = await base44.entities.UserTipStats.filter({ user_email: tipModal.created_by });
+        if (recipientStats.length > 0) {
+          await base44.entities.UserTipStats.update(recipientStats[0].id, {
+            comment_tips_received: (recipientStats[0].comment_tips_received || 0) + tipAmountKAS,
+            username: tipModal.author_name || tipModal.commenter_name
+          });
+        } else {
+          await base44.entities.UserTipStats.create({
+            user_email: tipModal.created_by,
+            username: tipModal.author_name || tipModal.commenter_name,
+            feed_tips_sent: 0,
+            feed_tips_received: 0,
+            bull_tips_sent: 0,
+            bull_tips_received: 0,
+            comment_tips_sent: 0,
+            comment_tips_received: tipAmountKAS
+          });
+        }
+      }
+
       setTipModal(null);
       setTipAmount('');
 
