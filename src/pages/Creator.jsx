@@ -346,12 +346,17 @@ export default function CreatorPage() {
                         )}
                       </Button>
                       <Button
-                        onClick={() => {
+                        onClick={async () => {
                           const link = generateReferralLink();
                           const shareText = `Join Base44 - The AI-Powered App Builder!\n\nBuild apps without code, powered by AI.\n${link}`;
-                          if (navigator.share) {
-                            navigator.share({ title: 'Base44', text: shareText });
-                          } else {
+                          try {
+                            if (navigator.share) {
+                              await navigator.share({ title: 'Base44', text: shareText });
+                            } else {
+                              window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`, '_blank');
+                            }
+                          } catch (err) {
+                            // Fallback to Twitter share if navigator.share fails
                             window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`, '_blank');
                           }
                         }}
