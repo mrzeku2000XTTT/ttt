@@ -7,11 +7,6 @@ import { Button } from "@/components/ui/button";
 
 export default function LobbyPage() {
   const navigate = useNavigate();
-  const [isEntering, setIsEntering] = useState(true);
-
-  useEffect(() => {
-    setTimeout(() => setIsEntering(false), 2000);
-  }, []);
 
   return (
     <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-black">
@@ -19,42 +14,6 @@ export default function LobbyPage() {
       <audio autoPlay loop>
         <source src="https://cdn.pixabay.com/audio/2022/05/13/audio_c8c8e99d9c.mp3" type="audio/mpeg" />
       </audio>
-
-      {/* Portal Entry Animation - Angled with Glow */}
-      <AnimatePresence>
-        {isEntering && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-teal-900/50 via-green-900/50 to-cyan-900/50"
-          >
-            <motion.div
-              initial={{ scale: 1.5, rotateY: -45, rotateX: 20 }}
-              animate={{ 
-                scale: 1.5,
-                rotateY: 0,
-                rotateX: 0
-              }}
-              transition={{ duration: 2, ease: "easeOut" }}
-              className="relative w-[600px] h-[600px]"
-              style={{ perspective: '1000px' }}
-            >
-              {/* Glowing background */}
-              <div className="absolute inset-0 bg-gradient-to-r from-teal-400/60 via-green-400/60 to-cyan-400/60 rounded-lg blur-[120px]" />
-              
-              {/* Portal Image */}
-              <motion.img
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/e91d0d293_image.png"
-                alt="Portal"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                className="absolute inset-0 w-full h-full object-cover rounded-full shadow-2xl"
-              />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* The Lobby Room */}
       <div className="absolute inset-0">
