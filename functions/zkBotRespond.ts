@@ -123,6 +123,26 @@ Be concise, insightful, and use emojis strategically. Keep under 200 words.`;
     console.error('[@zk Bot] Critical error:', error);
     console.error('[@zk Bot] Error stack:', error.stack);
 
+    // Try to create an error comment if one doesn't exist yet
+    try {
+      const base44 = createClientFromRequest(req);
+      const { post_id } = await req.json();
+      
+      if (post_id) {
+        console.log('[@zk Bot] Attempting to create error comment...');
+        await base44.asServiceRole.entities.PostComment.create({
+          post_id: post_id,
+          author_name: '@zk',
+          author_wallet_address: 'zk_bot_system',
+          comment_text: `🤖 Agent ZK encountered an error: ${error.message}\n\nTrying again should work!`,
+          likes: 0
+        });
+        console.log('[@zk Bot] Error comment created');
+      }
+    } catch (fallbackErr) {
+      console.error('[@zk Bot] Could not create error comment:', fallbackErr);
+    }
+
     return Response.json({ 
       success: false,
       analysis: `🤖 Agent ZK encountered an error: ${error.message}`,
