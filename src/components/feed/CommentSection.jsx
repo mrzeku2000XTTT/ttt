@@ -156,12 +156,7 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
       const zkMentioned = newComment.toLowerCase().includes('@zk');
       if (zkMentioned) {
         setZkIsResponding(true);
-        
-        // Start polling immediately for updates
-        const pollInterval = setInterval(async () => {
-          await loadComments();
-        }, 1000);
-        
+
         try {
           // Get the post data to find images
           const post = await base44.entities.Post.filter({ id: postId });
@@ -169,7 +164,7 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
             ? post[0].media_files.filter(f => f.type === 'image').map(f => f.url)
             : (post[0]?.image_url ? [post[0].image_url] : []);
 
-          // Call zkBot and wait for initial response
+          // Call zkBot and wait for response (no polling, just wait)
           await base44.functions.invoke('zkBotRespond', { 
             post_id: postId,
             post_content: newComment.trim(),
@@ -177,19 +172,18 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
             image_urls: imageUrls
           });
 
-          // Final reload after bot completes
+          // Single reload after bot completes
           await loadComments();
           if (onCommentAdded) onCommentAdded();
         } catch (err) {
           console.error('ZK bot failed:', err);
           await loadComments();
         } finally {
-          clearInterval(pollInterval);
           setZkIsResponding(false);
         }
       } else {
         await loadComments();
-        }
+      }
         } catch (err) {
         console.error('Failed to comment:', err);
         } finally {
@@ -448,12 +442,25 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
   return (
     <div className="mt-4 pt-4 border-t border-white/10">
       {/* ZK Responding Indicator */}
-      {zkIsResponding && (
-        <div className="mb-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-3 flex items-center gap-3">
-          <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
-          <span className="text-cyan-400 text-sm font-medium">@zk is analyzing with vision + internet...</span>
-        </div>
-      )}
+      <AnimatePresence>
+        {zkIsResponding && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="mb-3 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-500/30 rounded-lg p-3 overflow-hidden relative"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-purple-500/5 to-cyan-500/5 animate-pulse" style={{ animationDuration: '2s' }} />
+            <div className="relative flex items-center gap-3">
+              <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
+              <div className="flex-1">
+                <span className="text-cyan-400 text-sm font-medium">@zk analyzing...</span>
+                <div className="text-white/40 text-xs mt-0.5">Searching web + processing context</div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Comment Input */}
       <div className="flex gap-2 mb-4">
