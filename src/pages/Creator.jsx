@@ -265,23 +265,15 @@ export default function CreatorPage() {
       const price = parseFloat(productForm.selling_price);
       const profit = price - cost;
 
-      // Generate product image with AI
-      let imageUrl = '';
-      try {
-        const imgRes = await base44.integrations.Core.GenerateImage({
-          prompt: `Professional product photo of ${productForm.product_name} on white background, e-commerce style, high quality`
-        });
-        imageUrl = imgRes.url;
-      } catch (err) {
-        imageUrl = 'https://via.placeholder.com/400x400?text=Product';
-      }
+      // Use placeholder image instead of AI generation to avoid delays/errors
+      const imageUrl = 'https://via.placeholder.com/400x400?text=Product';
 
       await base44.entities.DropshippingProduct.create({
         creator_email: user.email,
         product_name: productForm.product_name,
-        product_description: productForm.product_description,
+        product_description: productForm.product_description || '',
         product_image: imageUrl,
-        supplier_url: productForm.supplier_url,
+        supplier_url: productForm.supplier_url || '',
         cost_price: cost,
         selling_price: price,
         profit_margin: profit,
@@ -303,7 +295,7 @@ export default function CreatorPage() {
       await loadProducts(user.email);
     } catch (err) {
       console.error('Failed to add product:', err);
-      alert('Failed to add product. Please try again.');
+      alert(`Error: ${err.message || 'Failed to add product. Please try again.'}`);
     } finally {
       setIsAddingProduct(false);
     }
