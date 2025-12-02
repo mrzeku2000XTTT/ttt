@@ -167,9 +167,10 @@ export default function CreatorPage() {
     if (!confirm('Delete this product?')) return;
     try {
       await base44.entities.DropshippingProduct.delete(productId);
-      await loadProducts(user.email);
+      setProducts(products.filter(p => p.id !== productId));
     } catch (err) {
       console.error('Failed to delete product:', err);
+      alert('Failed to delete product');
     }
   };
 
@@ -225,7 +226,7 @@ export default function CreatorPage() {
     setIsGeneratingProduct(true);
     try {
       const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are an expert dropshipping product researcher. Based on this request: "${aiPrompt}", find a trending profitable product to sell. Include: product name, compelling description, estimated supplier cost, recommended selling price, category, and a realistic Aliexpress-style product URL.`,
+        prompt: `You are an expert affiliate product researcher. Based on this request: "${aiPrompt}", find a trending popular product to promote. Include: product name, compelling description, estimated cost, recommended retail price, category, and a realistic product URL from Amazon or similar.`,
         add_context_from_internet: true,
         response_json_schema: {
           type: "object",
@@ -339,7 +340,7 @@ export default function CreatorPage() {
                 : 'border-transparent text-gray-400 hover:text-white'
             }`}
           >
-            Dropshipping
+            Products to Promote
           </button>
         </div>
 
@@ -721,10 +722,10 @@ export default function CreatorPage() {
           </div>
         )}
 
-        {/* Dropshipping Tab */}
+        {/* Products Tab */}
         {activeTab === 'dropshipping' && (
           <div className="space-y-6">
-            {/* Dropshipping Stats */}
+            {/* Product Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Card className="bg-zinc-900 border-white/10">
                 <CardContent className="p-4">
@@ -770,7 +771,7 @@ export default function CreatorPage() {
                 </CardContent>
               </Card>
             </div>
-            {/* AI Product Generator */}
+            {/* AI Product Finder */}
             <Card className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/30">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3 mb-4">
@@ -778,8 +779,8 @@ export default function CreatorPage() {
                     <Sparkles className="w-5 h-5 text-purple-400" />
                   </div>
                   <div>
-                    <h3 className="text-white font-bold">AI Dropshipping Assistant</h3>
-                    <p className="text-sm text-gray-400">Find trending products to sell</p>
+                    <h3 className="text-white font-bold">AI Product Finder</h3>
+                    <p className="text-sm text-gray-400">Find trending products to promote</p>
                   </div>
                 </div>
 
@@ -787,7 +788,7 @@ export default function CreatorPage() {
                   <Input
                     value={aiPrompt}
                     onChange={(e) => setAiPrompt(e.target.value)}
-                    placeholder="e.g., 'trending tech gadgets under $30' or 'best selling home decor'"
+                    placeholder="e.g., 'trending tech gadgets' or 'popular fitness products'"
                     className="flex-1 bg-black border-white/20 text-white"
                     onKeyPress={(e) => e.key === 'Enter' && handleAIProductGeneration()}
                   />
@@ -868,18 +869,18 @@ export default function CreatorPage() {
                       </div>
 
                       <div>
-                        <label className="text-sm text-gray-400 mb-2 block">Supplier URL</label>
+                        <label className="text-sm text-gray-400 mb-2 block">Product URL</label>
                         <Input
                           value={productForm.supplier_url}
                           onChange={(e) => setProductForm({...productForm, supplier_url: e.target.value})}
-                          placeholder="https://aliexpress.com/item/..."
+                          placeholder="https://amazon.com/..."
                           className="bg-black border-white/20 text-white"
                         />
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="text-sm text-gray-400 mb-2 block">Cost Price ($)</label>
+                          <label className="text-sm text-gray-400 mb-2 block">Your Cost ($)</label>
                           <Input
                             type="number"
                             step="0.01"
@@ -889,7 +890,7 @@ export default function CreatorPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-sm text-gray-400 mb-2 block">Selling Price ($)</label>
+                          <label className="text-sm text-gray-400 mb-2 block">Retail Price ($)</label>
                           <Input
                             type="number"
                             step="0.01"
@@ -903,7 +904,7 @@ export default function CreatorPage() {
                       {productForm.cost_price && productForm.selling_price && (
                         <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3">
                           <div className="text-sm text-green-400">
-                            Profit per sale: ${(parseFloat(productForm.selling_price) - parseFloat(productForm.cost_price)).toFixed(2)}
+                            Potential commission: ${(parseFloat(productForm.selling_price) - parseFloat(productForm.cost_price)).toFixed(2)}
                           </div>
                         </div>
                       )}
@@ -921,7 +922,7 @@ export default function CreatorPage() {
                         ) : (
                           <>
                             <Package className="w-5 h-5 mr-2" />
-                            Add Product to Store
+                            Add Product
                           </>
                         )}
                       </Button>
