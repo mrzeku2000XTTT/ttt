@@ -49,7 +49,7 @@ export default function LobbyPage() {
                 alt="Portal"
                 animate={{ rotate: 360 }}
                 transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                className="absolute inset-0 w-full h-full object-cover rounded-lg shadow-2xl"
+                className="absolute inset-0 w-full h-full object-cover rounded-full shadow-2xl"
               />
             </motion.div>
           </motion.div>
@@ -71,7 +71,7 @@ export default function LobbyPage() {
           <img
             src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/e91d0d293_image.png"
             alt="Cosmic Portal"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover rounded-full"
           />
         </motion.div>
 
