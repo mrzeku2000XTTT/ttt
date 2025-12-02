@@ -4,11 +4,12 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
-    const { post_id, post_content, author_name } = await req.json();
+    const { post_id, post_content, author_name, image_urls } = await req.json();
 
     console.log('[@zk Bot] Starting analysis for post:', post_id);
     console.log('[@zk Bot] Content:', post_content);
     console.log('[@zk Bot] Author:', author_name);
+    console.log('[@zk Bot] Image URLs:', image_urls);
 
     if (!post_id || !post_content) {
       console.error('[@zk Bot] Missing required fields');
@@ -53,9 +54,19 @@ Deno.serve(async (req) => {
       console.error('[@zk Bot] Could not load Ying knowledge:', err.message, err);
     }
 
-    // Use InvokeLLM with internet context (Agent Ying's power)
+    // Use InvokeLLM with internet context AND vision (Agent Ying's power)
     console.log('[@zk Bot] Invoking LLM with internet context...');
-    const analysisPrompt = `You are @zk, an advanced AI agent in TTT Feed with deep analytical capabilities similar to Agent Ying.
+    
+    const hasImages = image_urls && image_urls.length > 0;
+    const analysisPrompt = hasImages 
+      ? `You are @zk, an advanced AI agent in TTT Feed with deep analytical capabilities and vision.
+
+Analyze the IMAGE(S) in this post by ${author_name}${post_content ? `:\n"${post_content}"` : ''}
+
+${yingKnowledge}
+
+Describe what you see in ONE sharp sentence. Be ultra-concise. Use 1-2 emojis max. No more than 25 words.`
+      : `You are @zk, an advanced AI agent in TTT Feed with deep analytical capabilities similar to Agent Ying.
 
 Analyze this post by ${author_name}:
 "${post_content}"
@@ -65,12 +76,14 @@ ${yingKnowledge}
 Give ONE sharp, insightful sentence. Be ultra-concise. Use 1-2 emojis max. No more than 25 words.`;
 
     console.log('[@zk Bot] Sending prompt to InvokeLLM:', analysisPrompt.substring(0, 100) + '...');
+    if (hasImages) console.log('[@zk Bot] Including', image_urls.length, 'image(s) for vision analysis');
     
     let llmResponse;
     try {
       llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
         prompt: analysisPrompt,
-        add_context_from_internet: true,
+        add_context_from_internet: !hasImages, // Use internet context only if no images
+        file_urls: hasImages ? image_urls : null,
         response_json_schema: null
       });
       console.log('[@zk Bot] LLM Response received, type:', typeof llmResponse);
