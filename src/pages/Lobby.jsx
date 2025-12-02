@@ -46,11 +46,15 @@ export default function LobbyPage() {
 
       {/* The Lobby Room */}
       <div className="absolute inset-0">
-        {/* Cosmic Portal Background - Full View */}
+        {/* Cosmic Portal Background - Full Screen Spinning */}
         <motion.div
           initial={{ opacity: 0, scale: 1.2 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 2, delay: 2 }}
+          animate={{ opacity: 1, scale: 1, rotate: 360 }}
+          transition={{ 
+            opacity: { duration: 2, delay: 2 },
+            scale: { duration: 2, delay: 2 },
+            rotate: { duration: 20, repeat: Infinity, ease: "linear" }
+          }}
           className="absolute inset-0"
         >
           <img
