@@ -66,7 +66,7 @@ export default function LobbyPage() {
             opacity: { duration: 2, delay: 2 },
             rotate: { duration: 20, repeat: Infinity, ease: "linear" }
           }}
-          className="absolute inset-0 scale-[2.5]"
+          className="absolute inset-0 scale-[8]"
         >
           <img
             src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/e91d0d293_image.png"
