@@ -52,6 +52,7 @@ export default function AppStorePage() {
     { name: "Olatomiwa", icon: "Link2", path: "OlatomiwaHub", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/9a93c0d01_image.png" },
     { name: "Kolade", icon: "Link2", path: "Kolade", category: "Tools" },
     { name: "MODZ", icon: "Link2", path: "MODZHub", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/e4ca8d329_image.png" },
+    { name: "KFANS", icon: "Link2", path: "KasFans", category: "Community", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/85ce776d9_image.png" },
   ];
 
   const getIconComponent = (iconName) => {
