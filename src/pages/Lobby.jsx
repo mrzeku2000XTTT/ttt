@@ -20,29 +20,36 @@ export default function LobbyPage() {
         <source src="https://cdn.pixabay.com/audio/2022/05/13/audio_c8c8e99d9c.mp3" type="audio/mpeg" />
       </audio>
 
-      {/* Portal Entry Animation */}
+      {/* Portal Entry Animation - Angled with Glow */}
       <AnimatePresence>
         {isEntering && (
           <motion.div
-            initial={{ scale: 0, rotate: 0 }}
-            animate={{ scale: [0, 1.5, 1], rotate: [0, 360, 720] }}
-            exit={{ opacity: 0, scale: 0 }}
-            transition={{ duration: 2, ease: "easeInOut" }}
-            className="absolute inset-0 z-50 flex items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-teal-900/50 via-green-900/50 to-cyan-900/50"
           >
             <motion.div
-              className="relative w-[500px] h-[500px]"
-              animate={{
-                scale: [1, 1.2, 1],
+              initial={{ scale: 0.5, rotateY: -45, rotateX: 20 }}
+              animate={{ 
+                scale: [0.5, 1.2, 1.5],
+                rotateY: [-45, 0, 0],
+                rotateX: [20, 0, 0]
               }}
-              transition={{ duration: 1.5, repeat: Infinity }}
+              transition={{ duration: 2, ease: "easeOut" }}
+              className="relative w-[600px] h-[600px]"
+              style={{ perspective: '1000px' }}
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-teal-400 to-cyan-400 rounded-full blur-[100px]" />
-              <img
+              {/* Glowing background */}
+              <div className="absolute inset-0 bg-gradient-to-r from-teal-400/60 via-green-400/60 to-cyan-400/60 rounded-lg blur-[120px]" />
+              
+              {/* Portal Image */}
+              <motion.img
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/8b2da12ef_image.png"
                 alt="Portal"
-                className="absolute inset-0 w-full h-full object-contain animate-spin"
-                style={{ animationDuration: '20s' }}
+                animate={{ rotate: 360 }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                className="absolute inset-0 w-full h-full object-cover rounded-lg shadow-2xl"
               />
             </motion.div>
           </motion.div>
@@ -51,10 +58,10 @@ export default function LobbyPage() {
 
       {/* The Lobby Room */}
       <div className="absolute inset-0">
-        {/* Cosmic Portal Background - Full Screen Spinning */}
+        {/* Cosmic Portal Background - Full Screen Spinning Zoomed */}
         <motion.div
-          initial={{ opacity: 0, scale: 1.5 }}
-          animate={{ opacity: 1, scale: 1.5, rotate: 360 }}
+          initial={{ opacity: 0, scale: 2 }}
+          animate={{ opacity: 1, scale: 2, rotate: 360 }}
           transition={{ 
             opacity: { duration: 2, delay: 2 },
             scale: { duration: 2, delay: 2 },
@@ -65,9 +72,12 @@ export default function LobbyPage() {
           <img
             src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/8b2da12ef_image.png"
             alt="Cosmic Portal"
-            className="min-w-[150%] min-h-[150%] object-cover"
+            className="min-w-[200%] min-h-[200%] object-cover"
           />
         </motion.div>
+
+        {/* Darker Black Overlay */}
+        <div className="absolute inset-0 bg-black/60 pointer-events-none" />
 
         {/* Glowing Overlay Effects */}
         <motion.div
