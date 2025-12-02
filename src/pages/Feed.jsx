@@ -709,13 +709,20 @@ export default function FeedPage() {
         // Expand comments immediately to show @zk is responding
         setExpandedComments(prev => ({ ...prev, [createdPost.id]: true }));
 
+        // Gather image URLs for vision analysis
+        const imageUrls = createdPost.media_files 
+          ? createdPost.media_files.filter(f => f.type === 'image').map(f => f.url)
+          : (createdPost.image_url ? [createdPost.image_url] : []);
+
         // Call backend - it will create AND update the comment
         try {
           console.log('[Feed] Invoking zkBotRespond function...');
+          console.log('[Feed] Image URLs:', imageUrls);
           const response = await base44.functions.invoke('zkBotRespond', { 
             post_id: createdPost.id,
             post_content: newPost.trim(),
-            author_name: authorName
+            author_name: authorName,
+            image_urls: imageUrls
           });
           console.log('[Feed] Response received:', response.data);
 
@@ -817,13 +824,20 @@ export default function FeedPage() {
         // Expand comments immediately
         setExpandedComments(prev => ({ ...prev, [createdReply.id]: true }));
 
+        // Gather image URLs for vision analysis
+        const replyImageUrls = createdReply.media_files 
+          ? createdReply.media_files.filter(f => f.type === 'image').map(f => f.url)
+          : (createdReply.image_url ? [createdReply.image_url] : []);
+
         // Call backend - it will create AND update the comment
         try {
           console.log('[Feed] Invoking zkBotRespond for reply...');
+          console.log('[Feed] Reply Image URLs:', replyImageUrls);
           const response = await base44.functions.invoke('zkBotRespond', { 
             post_id: createdReply.id,
             post_content: replyText.trim(),
-            author_name: authorName
+            author_name: authorName,
+            image_urls: replyImageUrls
           });
           console.log('[Feed] Reply response received:', response.data);
 
