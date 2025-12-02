@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
-import { Search, Share2 } from "lucide-react";
+import { Search, Share } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { StarGateProvider, useStarGate } from "@/components/stargate/StarGateContext";
 
@@ -108,7 +108,7 @@ function GateContent() {
               animate={{ opacity: 1, y: 0 }}
               className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-purple-500/20 border border-purple-500/40 rounded-full"
             >
-              <Share2 className="w-4 h-4 text-purple-400" />
+              <Share className="w-4 h-4 text-purple-400" />
               <span className="text-sm text-white">
                 {Object.keys(sharedData).length} app{Object.keys(sharedData).length > 1 ? "s" : ""} sharing data
               </span>
