@@ -15,6 +15,11 @@ export default function LobbyPage() {
 
   return (
     <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-black">
+      {/* Background Alien Music */}
+      <audio autoPlay loop>
+        <source src="https://cdn.pixabay.com/audio/2022/05/13/audio_c8c8e99d9c.mp3" type="audio/mpeg" />
+      </audio>
+
       {/* Portal Entry Animation */}
       <AnimatePresence>
         {isEntering && (
