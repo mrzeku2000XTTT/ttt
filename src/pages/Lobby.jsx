@@ -99,7 +99,7 @@ export default function LobbyPage() {
           />
         </motion.div>
 
-        {/* Floating Energy Particles - More Trippy */}
+        {/* White and Black Stars */}
         {[...Array(100)].map((_, i) => (
           <motion.div
             key={i}
@@ -107,23 +107,19 @@ export default function LobbyPage() {
             style={{
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
-              width: `${2 + Math.random() * 6}px`,
-              height: `${2 + Math.random() * 6}px`,
-              background: i % 5 === 0 ? '#ff00ff' : i % 5 === 1 ? '#00ff00' : i % 5 === 2 ? '#fbbf24' : i % 5 === 3 ? '#ff1493' : '#7c3aed',
-              boxShadow: `0 0 ${10 + Math.random() * 20}px ${i % 5 === 0 ? '#ff00ff' : i % 5 === 1 ? '#00ff00' : i % 5 === 2 ? '#fbbf24' : i % 5 === 3 ? '#ff1493' : '#7c3aed'}`,
+              width: `${1 + Math.random() * 3}px`,
+              height: `${1 + Math.random() * 3}px`,
+              background: i % 2 === 0 ? '#ffffff' : '#000000',
+              boxShadow: i % 2 === 0 ? '0 0 4px #ffffff' : '0 0 2px #000000',
             }}
             animate={{
-              y: [0, Math.random() * -100 - 50, 0],
-              x: [0, Math.random() * 60 - 30, 0],
               opacity: [0.3, 1, 0.3],
-              scale: [0.5, Math.random() * 2 + 1, 0.5],
-              rotate: [0, 360],
+              scale: [0.8, 1.2, 0.8],
             }}
             transition={{
-              duration: 3 + Math.random() * 4,
+              duration: 2 + Math.random() * 3,
               repeat: Infinity,
               delay: Math.random() * 5,
-              ease: "easeInOut",
             }}
           />
         ))}
