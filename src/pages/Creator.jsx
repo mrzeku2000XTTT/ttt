@@ -265,8 +265,8 @@ export default function CreatorPage() {
       const price = parseFloat(productForm.selling_price);
       const profit = price - cost;
 
-      // Use placeholder image instead of AI generation to avoid delays/errors
-      const imageUrl = 'https://via.placeholder.com/400x400?text=Product';
+      // Use default product image
+      const imageUrl = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop';
 
       await base44.entities.DropshippingProduct.create({
         creator_email: user.email,
@@ -926,15 +926,14 @@ export default function CreatorPage() {
               <div className="flex gap-2">
                 <Button
                   onClick={() => setShowOrders(true)}
-                  variant="outline"
-                  className="border-white/20 text-white hover:bg-white/10"
+                  className="bg-purple-500/20 border border-purple-500/30 text-purple-400 hover:bg-purple-500/30"
                 >
                   <ShoppingBag className="w-4 h-4 mr-2" />
                   Orders ({orders.length})
                 </Button>
                 <Button
                   onClick={() => setShowAddProduct(true)}
-                  className="bg-white/10 border border-white/20 hover:bg-white/20"
+                  className="bg-cyan-500 hover:bg-cyan-600 text-white"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Add Product
@@ -983,8 +982,7 @@ export default function CreatorPage() {
                           <Button
                             onClick={() => window.open(product.supplier_url, '_blank')}
                             size="sm"
-                            variant="outline"
-                            className="flex-1 border-white/20 text-white hover:bg-white/10"
+                            className="flex-1 bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/30"
                           >
                             <ExternalLink className="w-3 h-3 mr-1" />
                             Source
@@ -992,8 +990,7 @@ export default function CreatorPage() {
                           <Button
                             onClick={() => deleteProduct(product.id)}
                             size="sm"
-                            variant="ghost"
-                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                            className="bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30"
                           >
                             <X className="w-4 h-4" />
                           </Button>
