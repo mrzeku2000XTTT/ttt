@@ -80,11 +80,11 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
 
     setIsCommenting(true);
     try {
-      // Try to get AgentZK profile
-      let authorName = currentUser.username;
+      // Prioritize TTT username, fallback to AgentZK profile
+      let authorName = currentUser.username || '';
       let authorWalletAddress = currentUser.created_wallet_address || '';
 
-      // Only check AgentZK if no username set
+      // Only use AgentZK username if no TTT username exists
       if (!authorName && currentUser.created_wallet_address) {
         try {
           const profiles = await base44.entities.AgentZKProfile.filter({
