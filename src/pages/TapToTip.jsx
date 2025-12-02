@@ -152,6 +152,12 @@ export default function TapToTipPage() {
           return isAllowed;
         }
 
+        // For ESP users, only keep the correct wallet ending in cd7
+        if (u.username?.toLowerCase() === 'esp') {
+          const addr = (u.created_wallet_address || u.agent_zk_id || '').toLowerCase();
+          return addr.endsWith('cd7');
+        }
+
         // Include all other users
         return true;
       });
