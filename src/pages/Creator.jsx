@@ -52,6 +52,7 @@ export default function CreatorPage() {
   const [linkForm, setLinkForm] = useState({ name: '', url: '', description: '' });
   const [copiedCustomLink, setCopiedCustomLink] = useState('');
   const [kasPrice, setKasPrice] = useState(null);
+  const [actualWalletBalance, setActualWalletBalance] = useState(0);
 
   useEffect(() => {
     loadData();
@@ -64,6 +65,15 @@ export default function CreatorPage() {
       setKasPrice(response.data.price);
     } catch (err) {
       console.error('Failed to load KAS price:', err);
+    }
+  };
+
+  const loadActualBalance = async (address) => {
+    try {
+      const response = await base44.functions.invoke('getKaspaBalance', { address });
+      setActualWalletBalance(response.data.balance || 0);
+    } catch (err) {
+      console.error('Failed to load wallet balance:', err);
     }
   };
 
@@ -82,6 +92,11 @@ export default function CreatorPage() {
 
       // Load custom referral links
       setCustomLinks(currentUser.custom_referral_links || []);
+
+      // Load actual wallet balance
+      if (currentUser.created_wallet_address) {
+        await loadActualBalance(currentUser.created_wallet_address);
+      }
 
       // Load referral stats
       await loadReferralStats(currentUser.email);
@@ -513,18 +528,18 @@ export default function CreatorPage() {
                   {kasPrice ? (
                     <>
                       <div className="text-3xl font-bold text-white mb-1">
-                        {stats.balance.toFixed(2)} KAS
+                        {actualWalletBalance.toFixed(2)} KAS
                       </div>
                       <p className="text-sm text-cyan-400">
-                        ≈ ${(stats.balance * kasPrice).toFixed(2)}
+                        ≈ ${(actualWalletBalance * kasPrice).toFixed(2)}
                       </p>
                     </>
                   ) : (
                     <div className="text-3xl font-bold text-white mb-1">
-                      {stats.balance.toFixed(2)} KAS
+                      {actualWalletBalance.toFixed(2)} KAS
                     </div>
                   )}
-                  <p className="text-xs text-gray-500">Total Tips Balance</p>
+                  <p className="text-xs text-gray-500">Blockchain Balance</p>
                 </CardContent>
               </Card>
             </div>
