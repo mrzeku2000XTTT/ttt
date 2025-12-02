@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Heart, Send, Loader2, Trash2, DollarSign, X, Wallet, Sparkles } from "lucide-react";
+import { Heart, Send, Loader2, Trash2, DollarSign, X, Wallet, Sparkles, CornerDownRight } from "lucide-react";
 import { format } from "date-fns";
 
 export default function CommentSection({ postId, currentUser, onCommentAdded }) {
@@ -11,6 +11,9 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
   const [newComment, setNewComment] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isCommenting, setIsCommenting] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyText, setReplyText] = useState("");
+  const [expandedReplies, setExpandedReplies] = useState({});
   const [likedComments, setLikedComments] = useState(() => {
     const saved = localStorage.getItem('liked_comments');
     return saved ? JSON.parse(saved) : {};
@@ -66,6 +69,18 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const getCommentReplies = (commentId) => {
+    return comments.filter(c => c.parent_comment_id === commentId).sort((a, b) =>
+      new Date(a.created_date) - new Date(b.created_date)
+    );
+  };
+
+  const getMainComments = () => {
+    return comments.filter(c => !c.parent_comment_id).sort((a, b) =>
+      new Date(b.created_date) - new Date(a.created_date)
+    );
   };
 
   const loadCommenterTips = async () => {
@@ -174,13 +189,68 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
         }
       } else {
         await loadComments();
-      }
-    } catch (err) {
-      console.error('Failed to comment:', err);
-    } finally {
-      setIsCommenting(false);
-    }
-  };
+        }
+        } catch (err) {
+        console.error('Failed to comment:', err);
+        } finally {
+        setIsCommenting(false);
+        }
+        };
+
+        const handleReplyToComment = async (parentComment) => {
+        if (!replyText.trim()) return;
+
+        setIsCommenting(true);
+        try {
+        let authorName = currentUser.username || '';
+        let authorWalletAddress = currentUser.created_wallet_address || '';
+
+        if (!authorName && currentUser.created_wallet_address) {
+        try {
+          const profiles = await base44.entities.AgentZKProfile.filter({
+            wallet_address: currentUser.created_wallet_address
+          });
+          if (profiles.length > 0 && profiles[0].username) {
+            authorName = profiles[0].username;
+          }
+        } catch (err) {
+          console.log('No AgentZK profile found');
+        }
+        }
+
+        if (!authorName) {
+        authorName = currentUser.created_wallet_address 
+          ? `${currentUser.created_wallet_address.slice(0, 6)}...${currentUser.created_wallet_address.slice(-4)}`
+          : currentUser.email.split('@')[0];
+        }
+
+        await base44.entities.PostComment.create({
+        post_id: postId,
+        parent_comment_id: parentComment.id,
+        author_name: authorName,
+        author_wallet_address: authorWalletAddress,
+        comment_text: replyText.trim()
+        });
+
+        // Update parent comment replies count
+        await base44.entities.PostComment.update(parentComment.id, {
+        replies_count: (parentComment.replies_count || 0) + 1
+        });
+
+        setReplyText("");
+        setReplyingTo(null);
+
+        if (onCommentAdded) {
+        onCommentAdded();
+        }
+
+        await loadComments();
+        } catch (err) {
+        console.error('Failed to reply to comment:', err);
+        } finally {
+        setIsCommenting(false);
+        }
+        };
 
   const handleLikeComment = async (comment) => {
     if (!currentUser) {
@@ -426,64 +496,187 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
       ) : (
         <div className="space-y-3">
           <AnimatePresence>
-            {comments.map((comment) => (
-              <motion.div
-                key={comment.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="bg-white/5 border border-white/10 rounded-lg p-3"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-white/10 border border-white/20 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                    {(comment.author_name || comment.commenter_name)?.[0]?.toUpperCase() || '?'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <div className="text-white/80 text-sm font-semibold">{comment.author_name || comment.commenter_name || 'Anonymous'}</div>
-                        {comment.author_wallet_address && (
-                          <>
-                            <code className="text-xs text-cyan-400">
-                              {comment.author_wallet_address.slice(0, 6)}...{comment.author_wallet_address.slice(-4)}
-                            </code>
-                            <button
-                              onClick={() => handleTipCommenter(comment)}
-                              className="p-1 bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 rounded transition-colors hover:scale-110 active:scale-95"
-                              title="Tip this commenter with KAS"
-                            >
-                              <DollarSign className="w-3 h-3 text-green-400" />
-                            </button>
-                            {commenterTips[comment.author_wallet_address] > 0 && (
-                              <span className="text-xs text-green-400 font-semibold">
-                                {commenterTips[comment.author_wallet_address].toFixed(2)} KAS
-                              </span>
-                            )}
-                          </>
-                        )}
+            {getMainComments().map((comment) => {
+              const replies = getCommentReplies(comment.id);
+
+              return (
+                <motion.div
+                  key={comment.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                >
+                  <div className="bg-white/5 border border-white/10 rounded-lg p-3">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-white/10 border border-white/20 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+                        {(comment.author_name || comment.commenter_name)?.[0]?.toUpperCase() || '?'}
                       </div>
-                      <div className="text-white/30 text-xs">
-                        {comment.created_date ? format(new Date(comment.created_date), 'MMM d, yyyy HH:mm') + ' UTC' : 'Unknown date'}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <div className="text-white/80 text-sm font-semibold">{comment.author_name || comment.commenter_name || 'Anonymous'}</div>
+                            {comment.author_wallet_address && (
+                              <>
+                                <code className="text-xs text-cyan-400">
+                                  {comment.author_wallet_address.slice(0, 6)}...{comment.author_wallet_address.slice(-4)}
+                                </code>
+                                <button
+                                  onClick={() => handleTipCommenter(comment)}
+                                  className="p-1 bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 rounded transition-colors hover:scale-110 active:scale-95"
+                                  title="Tip this commenter with KAS"
+                                >
+                                  <DollarSign className="w-3 h-3 text-green-400" />
+                                </button>
+                                {commenterTips[comment.author_wallet_address] > 0 && (
+                                  <span className="text-xs text-green-400 font-semibold">
+                                    {commenterTips[comment.author_wallet_address].toFixed(2)} KAS
+                                  </span>
+                                )}
+                              </>
+                            )}
+                          </div>
+                          <div className="text-white/30 text-xs">
+                            {comment.created_date ? format(new Date(comment.created_date), 'MMM d, yyyy HH:mm') + ' UTC' : 'Unknown date'}
+                          </div>
+                        </div>
+                        <p className="text-white text-sm mb-2">{comment.comment_text}</p>
+                        <div className="flex items-center gap-3">
+                          <Button
+                            onClick={() => setReplyingTo(replyingTo?.id === comment.id ? null : comment)}
+                            variant="ghost"
+                            size="sm"
+                            className={`h-auto p-0 text-xs flex items-center gap-1 ${replyingTo?.id === comment.id ? 'text-cyan-400' : 'text-white/40 hover:text-cyan-400'}`}
+                          >
+                            <CornerDownRight className="w-3 h-3" />
+                            Reply {comment.replies_count > 0 && `(${comment.replies_count})`}
+                          </Button>
+                          {comment.created_by === currentUser?.email && (
+                            <Button
+                              onClick={() => handleDeleteComment(comment.id)}
+                              variant="ghost"
+                              size="sm"
+                              className="text-white/40 hover:text-red-400 h-auto p-0 text-xs flex items-center gap-1"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              Delete
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <p className="text-white text-sm mb-2">{comment.comment_text}</p>
-                    <div className="flex items-center gap-3">
-                      {comment.created_by === currentUser?.email && (
+                  </div>
+
+                  {/* Reply Input */}
+                  <AnimatePresence>
+                    {replyingTo?.id === comment.id && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="ml-11 mt-2"
+                      >
+                        <div className="bg-white/5 border border-cyan-500/30 rounded-lg p-3 border-l-2 border-l-cyan-500">
+                          <div className="flex items-center gap-2 mb-2 text-xs text-cyan-400">
+                            <CornerDownRight className="w-3 h-3" />
+                            <span>Replying to {comment.author_name}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <Input
+                              value={replyText}
+                              onChange={(e) => setReplyText(e.target.value)}
+                              onKeyPress={(e) => e.key === 'Enter' && handleReplyToComment(comment)}
+                              placeholder="Write a reply..."
+                              className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/30 h-8 text-sm"
+                              disabled={isCommenting}
+                              autoFocus
+                            />
+                            <Button
+                              onClick={() => {
+                                setReplyingTo(null);
+                                setReplyText("");
+                              }}
+                              variant="ghost"
+                              size="sm"
+                              className="text-white/40 hover:text-white h-8 px-2"
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              onClick={() => handleReplyToComment(comment)}
+                              disabled={isCommenting || !replyText.trim()}
+                              size="sm"
+                              className="bg-cyan-500 text-white hover:bg-cyan-600 h-8 px-3"
+                            >
+                              {isCommenting ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Send className="w-3 h-3" />
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Nested Replies */}
+                  {replies.length > 0 && (
+                    <div className="ml-11 mt-2 space-y-2 relative">
+                      <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-cyan-500/40 via-cyan-500/20 to-transparent" />
+
+                      <AnimatePresence>
+                        {(expandedReplies[comment.id] ? replies : replies.slice(0, 2)).map((reply) => (
+                          <motion.div
+                            key={reply.id}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -10 }}
+                            className="bg-white/5 border border-white/10 rounded-lg p-3 ml-3"
+                          >
+                            <div className="flex items-start gap-2">
+                              <div className="w-6 h-6 bg-white/10 border border-white/20 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+                                {reply.author_name?.[0]?.toUpperCase() || '?'}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <div className="text-white/80 text-xs font-semibold">{reply.author_name || 'Anonymous'}</div>
+                                  <div className="text-white/30 text-xs">
+                                    {reply.created_date ? format(new Date(reply.created_date), 'MMM d, HH:mm') : ''}
+                                  </div>
+                                </div>
+                                <p className="text-white text-xs mb-1">{reply.comment_text}</p>
+                                {reply.created_by === currentUser?.email && (
+                                  <Button
+                                    onClick={() => handleDeleteComment(reply.id)}
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-white/30 hover:text-red-400 h-auto p-0 text-xs flex items-center gap-1"
+                                  >
+                                    <Trash2 className="w-2 h-2" />
+                                    Delete
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
+
+                      {replies.length > 2 && (
                         <Button
-                          onClick={() => handleDeleteComment(comment.id)}
+                          onClick={() => setExpandedReplies(prev => ({ ...prev, [comment.id]: !prev[comment.id] }))}
                           variant="ghost"
                           size="sm"
-                          className="text-white/40 hover:text-red-400 h-auto p-0 text-xs flex items-center gap-1"
+                          className="ml-3 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 h-auto p-2 text-xs"
                         >
-                          <Trash2 className="w-3 h-3" />
-                          Delete
+                          {expandedReplies[comment.id] ? `Hide ${replies.length - 2} replies` : `Show ${replies.length - 2} more replies`}
                         </Button>
                       )}
                     </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+                  )}
+                </motion.div>
+              );
+            })}
           </AnimatePresence>
         </div>
       )}
