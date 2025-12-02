@@ -60,16 +60,9 @@ Deno.serve(async (req) => {
 Analyze this post by ${author_name}:
 "${post_content}"
 
-Provide sharp insights considering:
-- Sentiment and key topics
-- Crypto/Kaspa/TTT ecosystem implications
-- Market insights if crypto-related
-- Patterns or trends detected
-- Actionable takeaways
-
 ${yingKnowledge}
 
-Be concise, insightful, and use emojis strategically. Keep under 200 words.`;
+Give ONE sharp, insightful sentence. Be ultra-concise. Use 1-2 emojis max. No more than 25 words.`;
 
     console.log('[@zk Bot] Sending prompt to InvokeLLM:', analysisPrompt.substring(0, 100) + '...');
     
