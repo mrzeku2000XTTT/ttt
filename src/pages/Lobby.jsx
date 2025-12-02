@@ -39,63 +39,91 @@ export default function LobbyPage() {
         {/* Darker Black Overlay */}
         <div className="absolute inset-0 bg-black/60 pointer-events-none" />
 
-        {/* Glowing Overlay Effects */}
+        {/* Glowing Overlay Effects - Trippy Mushroom Vibes */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 2.5 }}
           className="absolute inset-0"
         >
-          {/* Gold Glow */}
+          {/* Magenta Mushroom Glow */}
           <motion.div
             animate={{
-              scale: [1, 1.3, 1],
-              opacity: [0.2, 0.4, 0.2],
+              scale: [1, 1.5, 1],
+              opacity: [0.3, 0.6, 0.3],
+              x: [0, 50, 0],
+              y: [0, -30, 0],
             }}
-            transition={{ duration: 5, repeat: Infinity }}
-            className="absolute top-1/4 left-1/4 w-96 h-96 bg-yellow-400/30 rounded-full blur-[120px]"
+            transition={{ duration: 4, repeat: Infinity }}
+            className="absolute top-1/4 left-1/4 w-96 h-96 bg-pink-500/40 rounded-full blur-[120px]"
           />
-          {/* Teal Glow */}
+          {/* Purple Dream Glow */}
           <motion.div
             animate={{
               scale: [1.2, 1, 1.2],
-              opacity: [0.3, 0.5, 0.3],
+              opacity: [0.4, 0.7, 0.4],
+              x: [0, -40, 0],
             }}
-            transition={{ duration: 6, repeat: Infinity, delay: 1 }}
-            className="absolute top-1/2 right-1/4 w-[500px] h-[500px] bg-teal-500/40 rounded-full blur-[150px]"
+            transition={{ duration: 5, repeat: Infinity, delay: 1 }}
+            className="absolute top-1/2 right-1/4 w-[500px] h-[500px] bg-purple-600/50 rounded-full blur-[150px]"
           />
-          {/* Cyan Glow */}
+          {/* Lime Green Psychedelic */}
           <motion.div
             animate={{
-              scale: [1, 1.4, 1],
-              opacity: [0.2, 0.4, 0.2],
+              scale: [1, 1.6, 1],
+              opacity: [0.3, 0.5, 0.3],
+              y: [0, 40, 0],
             }}
-            transition={{ duration: 7, repeat: Infinity, delay: 2 }}
-            className="absolute bottom-1/4 left-1/2 w-[400px] h-[400px] bg-cyan-400/35 rounded-full blur-[130px]"
+            transition={{ duration: 6, repeat: Infinity, delay: 2 }}
+            className="absolute bottom-1/4 left-1/2 w-[400px] h-[400px] bg-lime-400/40 rounded-full blur-[130px]"
+          />
+          {/* Orange Mushroom Cap */}
+          <motion.div
+            animate={{
+              scale: [1, 1.3, 1],
+              opacity: [0.25, 0.5, 0.25],
+              rotate: [0, 180, 360],
+            }}
+            transition={{ duration: 8, repeat: Infinity, delay: 0.5 }}
+            className="absolute top-1/3 right-1/3 w-[600px] h-[600px] bg-orange-500/35 rounded-full blur-[140px]"
+          />
+          {/* Electric Blue Trip */}
+          <motion.div
+            animate={{
+              scale: [1.1, 1, 1.1],
+              opacity: [0.3, 0.6, 0.3],
+              x: [0, 60, 0],
+            }}
+            transition={{ duration: 7, repeat: Infinity, delay: 3 }}
+            className="absolute bottom-1/3 right-1/2 w-[450px] h-[450px] bg-blue-400/45 rounded-full blur-[160px]"
           />
         </motion.div>
 
-        {/* Floating Energy Particles */}
-        {[...Array(40)].map((_, i) => (
+        {/* Floating Energy Particles - More Trippy */}
+        {[...Array(100)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-1 h-1 rounded-full"
+            className="absolute rounded-full"
             style={{
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
-              background: i % 3 === 0 ? '#fbbf24' : i % 3 === 1 ? '#14b8a6' : '#06b6d4',
-              boxShadow: `0 0 15px ${i % 3 === 0 ? '#fbbf24' : i % 3 === 1 ? '#14b8a6' : '#06b6d4'}`,
+              width: `${2 + Math.random() * 6}px`,
+              height: `${2 + Math.random() * 6}px`,
+              background: i % 5 === 0 ? '#ff00ff' : i % 5 === 1 ? '#00ff00' : i % 5 === 2 ? '#fbbf24' : i % 5 === 3 ? '#ff1493' : '#7c3aed',
+              boxShadow: `0 0 ${10 + Math.random() * 20}px ${i % 5 === 0 ? '#ff00ff' : i % 5 === 1 ? '#00ff00' : i % 5 === 2 ? '#fbbf24' : i % 5 === 3 ? '#ff1493' : '#7c3aed'}`,
             }}
             animate={{
-              y: [0, -50, 0],
-              x: [0, Math.random() * 30 - 15, 0],
-              opacity: [0.2, 1, 0.2],
-              scale: [0.5, 1.5, 0.5],
+              y: [0, Math.random() * -100 - 50, 0],
+              x: [0, Math.random() * 60 - 30, 0],
+              opacity: [0.3, 1, 0.3],
+              scale: [0.5, Math.random() * 2 + 1, 0.5],
+              rotate: [0, 360],
             }}
             transition={{
-              duration: 4 + Math.random() * 3,
+              duration: 3 + Math.random() * 4,
               repeat: Infinity,
-              delay: Math.random() * 3,
+              delay: Math.random() * 5,
+              ease: "easeInOut",
             }}
           />
         ))}
