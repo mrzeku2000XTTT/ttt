@@ -112,10 +112,39 @@ export default function CreatorPage() {
         new Date(r.created_date).setHours(0, 0, 0, 0) === today
       );
 
+      // Load tips from TipTransaction
+      const tips = await base44.entities.TipTransaction.filter({
+        to_address: user.created_wallet_address
+      });
+
+      const todayTips = tips.filter(t => 
+        new Date(t.created_date).setHours(0, 0, 0, 0) === today
+      );
+
+      const todayTipsTotal = todayTips.reduce((sum, t) => sum + (t.amount || 0), 0);
+
+      // Load ProofOfBullish tips
+      const bullTips = await base44.entities.ProofOfBullish.filter({
+        wallet_address: user.created_wallet_address
+      });
+
+      const todayBullTips = bullTips.filter(b => 
+        new Date(b.created_date).setHours(0, 0, 0, 0) === today
+      );
+
+      const todayBullTipsTotal = todayBullTips.reduce((sum, b) => sum + (b.kas_amount || 0), 0);
+
       const clicks = referrals.length;
       const conversions = referrals.filter(r => r.converted).length;
       const totalEarnings = referrals.reduce((sum, r) => sum + (r.earnings || 0), 0);
       const todayEarnings = todayRefs.reduce((sum, r) => sum + (r.earnings || 0), 0);
+
+      // Calculate today's total earnings (referrals + tips + bull tips)
+      const todayTotal = todayEarnings + todayTipsTotal + todayBullTipsTotal;
+
+      // Calculate wallet balance (all tips combined)
+      const walletBalance = tips.reduce((sum, t) => sum + (t.amount || 0), 0) + 
+                           bullTips.reduce((sum, b) => sum + (b.kas_amount || 0), 0);
 
       // Generate chart data (last 7 days)
       const chartDataArr = [];
@@ -138,9 +167,8 @@ export default function CreatorPage() {
       }
 
       setStats({
-        todayEarnings,
-        totalPending: totalEarnings * 0.7, // 70% pending
-        balance: totalEarnings * 0.3, // 30% available
+        todayEarnings: todayTotal,
+        balance: walletBalance,
         clicks,
         conversions,
         conversionRate: clicks > 0 ? ((conversions / clicks) * 100).toFixed(2) : 0,
@@ -450,73 +478,53 @@ export default function CreatorPage() {
               </Card>
             </div>
 
-            {/* Live Stats Iframe */}
-            <Card className="bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border-cyan-500/30 mb-6">
-              <CardHeader className="border-b border-white/10">
-                <h3 className="text-white font-bold">Live Earnings Dashboard</h3>
-                <p className="text-sm text-gray-400">Auto-refreshes every 10 seconds</p>
-              </CardHeader>
-              <CardContent className="p-0">
-                <iframe
-                  src={`${createPageUrl('CreatorStatsWidget')}?email=${encodeURIComponent(user?.email || '')}`}
-                  className="w-full h-64 border-0"
-                  title="Live Stats"
-                />
-              </CardContent>
-            </Card>
-
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="bg-zinc-900 border-white/10">
                 <CardContent className="p-6">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="text-gray-400 text-sm">Today's Earnings</h3>
                     <TrendingUp className="w-4 h-4 text-green-400" />
                   </div>
-                  <div className="text-3xl font-bold text-white mb-1">
-                    ${stats.todayEarnings.toFixed(2)}
-                  </div>
-                  {kasPrice && (
-                    <p className="text-sm text-cyan-400">
-                      ≈ {(stats.todayEarnings / kasPrice).toFixed(2)} KAS
-                    </p>
+                  {kasPrice ? (
+                    <>
+                      <div className="text-3xl font-bold text-white mb-1">
+                        {stats.todayEarnings.toFixed(2)} KAS
+                      </div>
+                      <p className="text-sm text-cyan-400">
+                        ≈ ${(stats.todayEarnings * kasPrice).toFixed(2)}
+                      </p>
+                    </>
+                  ) : (
+                    <div className="text-3xl font-bold text-white mb-1">
+                      {stats.todayEarnings.toFixed(2)} KAS
+                    </div>
                   )}
-                  <p className="text-xs text-gray-500">$0.00 so far this last week</p>
+                  <p className="text-xs text-gray-500">Referrals + Tips + Bull Tips</p>
                 </CardContent>
               </Card>
 
               <Card className="bg-zinc-900 border-white/10">
                 <CardContent className="p-6">
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-gray-400 text-sm">Total Pending</h3>
-                    <DollarSign className="w-4 h-4 text-yellow-400" />
-                  </div>
-                  <div className="text-3xl font-bold text-white mb-1">
-                    ${stats.totalPending.toFixed(2)}
-                  </div>
-                  {kasPrice && (
-                    <p className="text-sm text-cyan-400">
-                      ≈ {(stats.totalPending / kasPrice).toFixed(2)} KAS
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card className="bg-zinc-900 border-white/10">
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-gray-400 text-sm">Balance</h3>
+                    <h3 className="text-gray-400 text-sm">Wallet Balance</h3>
                     <CheckCircle2 className="w-4 h-4 text-cyan-400" />
                   </div>
-                  <div className="text-3xl font-bold text-white mb-1">
-                    ${stats.balance.toFixed(2)}
-                  </div>
-                  {kasPrice && (
-                    <p className="text-sm text-cyan-400">
-                      ≈ {(stats.balance / kasPrice).toFixed(2)} KAS
-                    </p>
+                  {kasPrice ? (
+                    <>
+                      <div className="text-3xl font-bold text-white mb-1">
+                        {stats.balance.toFixed(2)} KAS
+                      </div>
+                      <p className="text-sm text-cyan-400">
+                        ≈ ${(stats.balance * kasPrice).toFixed(2)}
+                      </p>
+                    </>
+                  ) : (
+                    <div className="text-3xl font-bold text-white mb-1">
+                      {stats.balance.toFixed(2)} KAS
+                    </div>
                   )}
-                  <p className="text-xs text-gray-500">Auto-Withdraw min ($10.00 KAS)</p>
+                  <p className="text-xs text-gray-500">Total Tips Balance</p>
                 </CardContent>
               </Card>
             </div>

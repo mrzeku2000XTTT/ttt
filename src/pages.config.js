@@ -142,7 +142,6 @@ import KASBOOKS from './pages/KASBOOKS';
 import Movies from './pages/Movies';
 import Creator from './pages/Creator';
 import Lobby from './pages/Lobby';
-import CreatorStatsWidget from './pages/CreatorStatsWidget';
 import __Layout from './Layout.jsx';
 
 
@@ -291,7 +290,6 @@ export const PAGES = {
     "Movies": Movies,
     "Creator": Creator,
     "Lobby": Lobby,
-    "CreatorStatsWidget": CreatorStatsWidget,
 }
 
 export const pagesConfig = {
