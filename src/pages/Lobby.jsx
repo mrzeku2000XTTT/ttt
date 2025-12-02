@@ -30,11 +30,11 @@ export default function LobbyPage() {
             className="absolute inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-teal-900/50 via-green-900/50 to-cyan-900/50"
           >
             <motion.div
-              initial={{ scale: 0.5, rotateY: -45, rotateX: 20 }}
+              initial={{ scale: 1.5, rotateY: -45, rotateX: 20 }}
               animate={{ 
-                scale: [0.5, 1.2, 1.5],
-                rotateY: [-45, 0, 0],
-                rotateX: [20, 0, 0]
+                scale: 1.5,
+                rotateY: 0,
+                rotateX: 0
               }}
               transition={{ duration: 2, ease: "easeOut" }}
               className="relative w-[600px] h-[600px]"
