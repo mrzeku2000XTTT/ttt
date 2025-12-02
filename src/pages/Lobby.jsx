@@ -148,10 +148,10 @@ export default function LobbyPage() {
           transition={{ delay: 3 }}
           className="absolute bottom-20 left-0 right-0 text-center z-10"
         >
-          <h1 className="text-7xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-teal-400 to-cyan-400 mb-4 drop-shadow-[0_0_30px_rgba(6,182,212,0.5)]">
+          <h1 className="text-7xl md:text-8xl font-black text-black/80 mb-4 drop-shadow-[0_0_20px_rgba(0,0,0,0.8)]">
             THE LOBBY
           </h1>
-          <p className="text-white/70 text-xl">A space between worlds</p>
+          <p className="text-black/60 text-xl">A space between worlds</p>
         </motion.div>
       </div>
     </div>
