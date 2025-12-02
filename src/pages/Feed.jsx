@@ -704,14 +704,16 @@ export default function FeedPage() {
       // Check if @zk is mentioned anywhere in the post (not just at start)
       const postContent = newPost.toLowerCase();
       if (postContent.includes('@zk') && createdPost) {
+        console.log('[Feed] @zk mentioned, creating comment...');
         // Immediately create @zk comment placeholder
         const botComment = await base44.entities.PostComment.create({
           post_id: createdPost.id,
           author_name: '@zk',
           author_wallet_address: 'zk_bot_system',
-          comment_text: '🤖 Analyzing your post...',
+          comment_text: '🤖 Agent ZK scanning post...',
           likes: 0
         });
+        console.log('[Feed] Comment created:', botComment.id);
 
         // Expand comments immediately to show @zk is responding
         setExpandedComments(prev => ({ ...prev, [createdPost.id]: true }));
@@ -719,26 +721,32 @@ export default function FeedPage() {
 
         // Call backend to get real response
         try {
+          console.log('[Feed] Invoking zkBotRespond function...');
           const response = await base44.functions.invoke('zkBotRespond', { 
             post_id: createdPost.id,
             post_content: newPost.trim(),
-            author_name: authorName
+            author_name: authorName,
+            comment_id: botComment.id
           });
+          console.log('[Feed] Response received:', response.data);
 
-          // Update comment with actual response
-          if (response.data?.analysis) {
-            await base44.entities.PostComment.update(botComment.id, {
-              comment_text: response.data.analysis
-            });
-            setTimeout(() => loadData(), 300);
+          // Reload to see updated comment (backend updates it directly)
+          if (response.data?.success) {
+            console.log('[Feed] Analysis successful!');
+            setTimeout(() => loadData(), 500);
+          } else {
+            console.error('[Feed] Analysis failed:', response.data);
           }
         } catch (err) {
-          console.error('ZK bot failed:', err);
-          // Update with error message
-          await base44.entities.PostComment.update(botComment.id, {
-            comment_text: '🤖 Agent ZK encountered an error. Please try again.'
-          });
-          setTimeout(() => loadData(), 300);
+          console.error('[Feed] ZK bot error:', err.message, err);
+          try {
+            await base44.entities.PostComment.update(botComment.id, {
+              comment_text: `🤖 Agent ZK error: ${err.message || 'Unknown error'}`
+            });
+            setTimeout(() => loadData(), 300);
+          } catch (updateErr) {
+            console.error('[Feed] Could not update error comment:', updateErr);
+          }
         }
       }
     } catch (err) {
@@ -821,14 +829,15 @@ export default function FeedPage() {
 
       // Check if @zk is mentioned anywhere in the reply
       if (replyText.toLowerCase().includes('@zk') && createdReply) {
-        // Immediately create @zk comment placeholder
+        console.log('[Feed] @zk mentioned in reply, creating comment...');
         const botComment = await base44.entities.PostComment.create({
           post_id: createdReply.id,
           author_name: '@zk',
           author_wallet_address: 'zk_bot_system',
-          comment_text: '🤖 Analyzing your reply...',
+          comment_text: '🤖 Agent ZK scanning reply...',
           likes: 0
         });
+        console.log('[Feed] Reply comment created:', botComment.id);
 
         // Expand comments immediately
         setExpandedComments(prev => ({ ...prev, [createdReply.id]: true }));
@@ -836,25 +845,32 @@ export default function FeedPage() {
 
         // Call backend to get real response
         try {
+          console.log('[Feed] Invoking zkBotRespond for reply...');
           const response = await base44.functions.invoke('zkBotRespond', { 
             post_id: createdReply.id,
             post_content: replyText.trim(),
-            author_name: authorName
+            author_name: authorName,
+            comment_id: botComment.id
           });
+          console.log('[Feed] Reply response received:', response.data);
 
-          // Update comment with actual response
-          if (response.data?.analysis) {
-            await base44.entities.PostComment.update(botComment.id, {
-              comment_text: response.data.analysis
-            });
-            setTimeout(() => loadData(), 300);
+          // Reload to see updated comment
+          if (response.data?.success) {
+            console.log('[Feed] Reply analysis successful!');
+            setTimeout(() => loadData(), 500);
+          } else {
+            console.error('[Feed] Reply analysis failed:', response.data);
           }
         } catch (err) {
-          console.error('ZK bot failed:', err);
-          await base44.entities.PostComment.update(botComment.id, {
-            comment_text: '🤖 Agent ZK encountered an error. Please try again.'
-          });
-          setTimeout(() => loadData(), 300);
+          console.error('[Feed] ZK bot reply error:', err.message, err);
+          try {
+            await base44.entities.PostComment.update(botComment.id, {
+              comment_text: `🤖 Agent ZK error: ${err.message || 'Unknown error'}`
+            });
+            setTimeout(() => loadData(), 300);
+          } catch (updateErr) {
+            console.error('[Feed] Could not update error comment:', updateErr);
+          }
         }
       }
     } catch (err) {
