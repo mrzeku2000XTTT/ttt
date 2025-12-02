@@ -732,10 +732,12 @@ export default function FeedPage() {
 
           // Reload to see updated comment (backend updates it directly)
           if (response.data?.success) {
-            console.log('[Feed] Analysis successful!');
+            console.log('[Feed] Analysis successful! Response:', response.data.analysis);
             setTimeout(() => loadData(), 500);
           } else {
-            console.error('[Feed] Analysis failed:', response.data);
+            console.error('[Feed] Analysis failed. Full response:', JSON.stringify(response.data));
+            console.error('[Feed] Error message:', response.data?.error);
+            console.error('[Feed] Analysis text:', response.data?.analysis);
           }
         } catch (err) {
           console.error('[Feed] ZK bot error:', err.message, err);
@@ -856,10 +858,12 @@ export default function FeedPage() {
 
           // Reload to see updated comment
           if (response.data?.success) {
-            console.log('[Feed] Reply analysis successful!');
+            console.log('[Feed] Reply analysis successful! Response:', response.data.analysis);
             setTimeout(() => loadData(), 500);
           } else {
-            console.error('[Feed] Reply analysis failed:', response.data);
+            console.error('[Feed] Reply analysis failed. Full response:', JSON.stringify(response.data));
+            console.error('[Feed] Error message:', response.data?.error);
+            console.error('[Feed] Analysis text:', response.data?.analysis);
           }
         } catch (err) {
           console.error('[Feed] ZK bot reply error:', err.message, err);
