@@ -31,6 +31,8 @@ export default function LobbyPage() {
             src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/e91d0d293_image.png"
             alt="Cosmic Portal"
             className="w-full h-full object-cover scale-[10]"
+            loading="eager"
+            style={{ imageRendering: 'high-quality' }}
           />
         </motion.div>
 
