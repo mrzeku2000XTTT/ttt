@@ -54,17 +54,12 @@ export default function PostExplainerModal({ post, onClose, currentUser }) {
       const hasMedia = post.media_files?.length > 0 || post.image_url;
       const mediaContext = hasMedia ? "\n\nPost includes media attachments." : "";
       
-      const prompt = `You are an expert post analyzer. Analyze this social media post and provide:
-
-1. **Main Topic**: What is this post about?
-2. **Context**: Any relevant background or references
-3. **Key Points**: Main takeaways or insights
-4. **Sentiment**: Overall tone (positive, neutral, critical, etc.)
+      const prompt = `You are an expert post analyzer on TTT Feed. Explain this post in TWO detailed, specific sentences.
 
 Post by ${post.author_name}:
 "${postContent}"${mediaContext}
 
-Provide a clear, structured explanation in 3-4 short paragraphs. Be factual and insightful.`;
+Provide TWO informative sentences that give context, meaning, and key insights. Be specific and detailed. Use 1-2 emojis.`;
 
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: prompt,
