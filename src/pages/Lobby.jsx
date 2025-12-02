@@ -127,34 +127,41 @@ export default function LobbyPage() {
             KASPA L1 ←→ KASPLEX L2
           </motion.p>
 
-          {/* Buttons - Vertical Stack */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 1.2 }}
-            className="flex flex-col items-center gap-4 mb-16"
-          >
+          {/* Buttons - Vertical Stack Centered */}
+          <div className="flex flex-col items-center gap-4 mb-16">
             {/* Claim Agent ZK Button - Centered */}
-            <Button
-              onClick={() => navigate(createPageUrl("AgentZK"))}
-              className="h-16 px-12 text-lg font-bold bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 hover:from-cyan-400 hover:via-blue-400 hover:to-purple-400 text-white border-0 shadow-[0_0_40px_rgba(6,182,212,0.5)] hover:shadow-[0_0_60px_rgba(6,182,212,0.7)] transition-all duration-300"
-              style={{
-                backdropFilter: 'blur(10px)',
-              }}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 1.2 }}
             >
-              <span className="mr-2">○</span>
-              Claim Agent ZK Identity
-            </Button>
+              <Button
+                onClick={() => navigate(createPageUrl("AgentZK"))}
+                className="h-16 px-12 text-lg font-bold bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 hover:from-cyan-400 hover:via-blue-400 hover:to-purple-400 text-white border-0 shadow-[0_0_40px_rgba(6,182,212,0.5)] hover:shadow-[0_0_60px_rgba(6,182,212,0.7)] transition-all duration-300"
+                style={{
+                  backdropFilter: 'blur(10px)',
+                }}
+              >
+                <span className="mr-2">○</span>
+                Claim Agent ZK Identity
+              </Button>
+            </motion.div>
 
             {/* Enter TTT Button - Below */}
-            <Button
-              onClick={() => navigate(createPageUrl("Feed"))}
-              className="h-14 px-10 text-base font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/30 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300"
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 1.4 }}
             >
-              <span className="mr-2">→</span>
-              Enter TTT
-            </Button>
-          </motion.div>
+              <Button
+                onClick={() => navigate(createPageUrl("Feed"))}
+                className="h-14 px-10 text-base font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/30 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                <span className="mr-2">→</span>
+                Enter TTT
+              </Button>
+            </motion.div>
+          </div>
 
           {/* Bottom UNCHAIN REALITY - Mirror/Reflection Effect (Upside Down + Glassy) */}
           <motion.div
