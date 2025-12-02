@@ -3614,6 +3614,7 @@ export default function FeedPage() {
         {explainerPost && (
           <PostExplainerModal
             post={explainerPost}
+            currentUser={user}
             onClose={() => setExplainerPost(null)}
           />
         )}

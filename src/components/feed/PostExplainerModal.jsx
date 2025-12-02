@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sparkles, Loader2 } from "lucide-react";
+import { X, Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
 
-export default function PostExplainerModal({ post, onClose }) {
+export default function PostExplainerModal({ post, onClose, currentUser }) {
   const [explanation, setExplanation] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [rateLimitError, setRateLimitError] = useState(null);
+  const [queriesUsed, setQueriesUsed] = useState(0);
 
   useEffect(() => {
     if (post) {
@@ -16,7 +18,37 @@ export default function PostExplainerModal({ post, onClose }) {
 
   const explainPost = async () => {
     setIsLoading(true);
+    setRateLimitError(null);
     try {
+      // Check rate limit for non-admins
+      const isAdmin = currentUser?.role === 'admin';
+      
+      if (!isAdmin && currentUser) {
+        const today = new Date().toISOString().split('T')[0];
+        const todayQueries = await base44.entities.PostExplanationQuery.filter({
+          user_email: currentUser.email,
+          query_date: today
+        });
+        
+        setQueriesUsed(todayQueries.length);
+        
+        if (todayQueries.length >= 3) {
+          setRateLimitError(`Daily limit reached (3/3). Resets tomorrow.`);
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // Record query for non-admins
+      if (!isAdmin && currentUser) {
+        const today = new Date().toISOString().split('T')[0];
+        await base44.entities.PostExplanationQuery.create({
+          user_email: currentUser.email,
+          post_id: post.id,
+          query_date: today
+        });
+        setQueriesUsed(prev => prev + 1);
+      }
       // Gather post context
       const postContent = post.content || "";
       const hasMedia = post.media_files?.length > 0 || post.image_url;
@@ -107,10 +139,26 @@ Provide a clear, structured explanation in 3-4 short paragraphs. Be factual and 
 
           {/* Explanation Content */}
           <div className="flex-1 overflow-y-auto p-4">
-            {isLoading ? (
+            {rateLimitError ? (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <div className="text-red-400 font-semibold text-sm mb-1">Rate Limit Reached</div>
+                    <p className="text-white/80 text-sm">{rateLimitError}</p>
+                  </div>
+                </div>
+              </div>
+            ) : isLoading ? (
               <div className="flex flex-col items-center justify-center py-12 gap-4">
-                <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
-                <p className="text-white/60 text-sm">Analyzing post with AI...</p>
+                <div className="relative">
+                  <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
+                  <div className="absolute inset-0 w-8 h-8 border-2 border-cyan-400/20 rounded-full animate-ping" />
+                </div>
+                <div className="text-center space-y-2">
+                  <p className="text-white/60 text-sm font-medium">Analyzing post...</p>
+                  <p className="text-white/40 text-xs">Searching web + processing context</p>
+                </div>
               </div>
             ) : (
               <div className="bg-white/5 border border-white/10 rounded-lg p-4">
@@ -131,9 +179,16 @@ Provide a clear, structured explanation in 3-4 short paragraphs. Be factual and 
 
           {/* Footer */}
           <div className="p-4 border-t border-white/10 bg-white/5">
-            <div className="flex items-center gap-2 text-xs text-white/40">
-              <Sparkles className="w-3 h-3" />
-              <span>Powered by AI with real-time internet context</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs text-white/40">
+                <Sparkles className="w-3 h-3" />
+                <span>Powered by AI with real-time internet context</span>
+              </div>
+              {currentUser?.role !== 'admin' && !rateLimitError && (
+                <div className="text-xs text-white/40">
+                  {queriesUsed}/3 used today
+                </div>
+              )}
             </div>
           </div>
         </motion.div>
