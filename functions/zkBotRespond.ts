@@ -10,7 +10,26 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing post_id or post_content' }, { status: 400 });
     }
 
-    // Use Grok via X API to analyze the post
+    // Get Agent Ying's knowledge and patterns for enhanced analysis
+    let agentContext = '';
+    try {
+      const yingPatterns = await base44.asServiceRole.entities.AgentYingPattern.list('-created_date', 50);
+      const yingVisions = await base44.asServiceRole.entities.AgentYingVision.list('-created_date', 30);
+      
+      if (yingPatterns.length > 0 || yingVisions.length > 0) {
+        agentContext = `\n\nAgent Knowledge Context:\n`;
+        if (yingPatterns.length > 0) {
+          agentContext += `Patterns: ${yingPatterns.slice(0, 5).map(p => p.pattern_text).join('; ')}\n`;
+        }
+        if (yingVisions.length > 0) {
+          agentContext += `Visions: ${yingVisions.slice(0, 3).map(v => v.vision_text).join('; ')}`;
+        }
+      }
+    } catch (err) {
+      console.log('Could not load Agent context:', err);
+    }
+
+    // Use Grok via X API to analyze the post with Agent Ying-like capabilities
     const X_API_KEY = Deno.env.get('X_API_KEY');
     
     const grokResponse = await fetch('https://api.x.ai/v1/chat/completions', {
@@ -23,15 +42,25 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are @zk, an advanced AI agent in TTT Feed. You analyze posts with deep insight about crypto, Kaspa blockchain, TTT ecosystem, and current events. Be concise, sharp, and helpful. Use emojis when appropriate.'
+            content: `You are @zk, an advanced AI agent in TTT Feed with deep analytical capabilities similar to Agent Ying. You have access to real-time knowledge, market data, and blockchain insights. 
+
+Your abilities:
+- Analyze crypto market trends, Kaspa blockchain developments, and TTT ecosystem updates
+- Interpret user intent and provide actionable insights
+- Detect sentiment, patterns, and emerging trends
+- Provide concise but highly valuable responses
+- Use emojis strategically for clarity
+
+Style: Sharp, insightful, helpful. Get to the point quickly but with depth.${agentContext}`
           },
           {
             role: 'user',
-            content: `Post by ${author_name}: "${post_content}"\n\nAnalyze this post and provide a thoughtful response.`
+            content: `Post by ${author_name}: "${post_content}"\n\nAnalyze this post deeply. Consider: sentiment, key topics, crypto/market implications, actionable insights, and provide a thoughtful response.`
           }
         ],
         model: 'grok-beta',
-        temperature: 0.7
+        temperature: 0.8,
+        max_tokens: 300
       })
     });
 
@@ -46,7 +75,7 @@ Deno.serve(async (req) => {
     console.error('ZK Bot error:', error);
     return Response.json({ 
       success: false,
-      analysis: '🤖 Agent ZK encountered an error analyzing this post.'
+      analysis: '🤖 Agent ZK is currently offline. Please try again later.'
     }, { status: 200 });
   }
 });

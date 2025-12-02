@@ -707,8 +707,8 @@ export default function FeedPage() {
         // Immediately create @zk comment placeholder
         const botComment = await base44.entities.PostComment.create({
           post_id: createdPost.id,
-          commenter_name: '@zk',
-          commenter_wallet_address: 'zk_bot_system',
+          author_name: '@zk',
+          author_wallet_address: 'zk_bot_system',
           comment_text: '🤖 Analyzing your post...',
           likes: 0
         });
@@ -824,8 +824,8 @@ export default function FeedPage() {
         // Immediately create @zk comment placeholder
         const botComment = await base44.entities.PostComment.create({
           post_id: createdReply.id,
-          commenter_name: '@zk',
-          commenter_wallet_address: 'zk_bot_system',
+          author_name: '@zk',
+          author_wallet_address: 'zk_bot_system',
           comment_text: '🤖 Analyzing your reply...',
           likes: 0
         });
