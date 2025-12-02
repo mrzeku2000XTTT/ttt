@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   Send, Heart, MessageCircle, Trash2, Edit2,
-  Loader2, Image as ImageIcon, X, Sparkles, Eye, Users, Activity, Video, FileText, DollarSign, Wallet, Plus, CornerDownRight, Pencil, Share2, AlertCircle, Palette, Trophy, Hammer, Search
+  Loader2, Image as ImageIcon, X, Sparkles, Eye, Users, Activity, Video, FileText, DollarSign, Wallet, Plus, CornerDownRight, Pencil, Share2, AlertCircle, Palette, Trophy, Hammer, Search, CircleDot
 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -3549,6 +3549,27 @@ export default function FeedPage() {
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <h1 className="text-3xl font-bold text-white tracking-tight">TTT Feed</h1>
+                  <Button
+                    onClick={() => navigate(createPageUrl("Lobby"))}
+                    size="sm"
+                    variant="ghost"
+                    className="relative text-white/60 hover:text-white hover:bg-white/10 h-8 w-8 p-0 group"
+                    title="Enter The Lobby"
+                  >
+                    <motion.div
+                      animate={{
+                        rotate: 360,
+                        scale: [1, 1.1, 1],
+                      }}
+                      transition={{
+                        rotate: { duration: 20, repeat: Infinity, ease: "linear" },
+                        scale: { duration: 2, repeat: Infinity },
+                      }}
+                      className="w-4 h-4"
+                    >
+                      <CircleDot className="w-4 h-4 text-cyan-400 group-hover:text-yellow-400 transition-colors" />
+                    </motion.div>
+                  </Button>
                   <Button
                     onClick={() => {
                       setTempGradientColors(gradientColors);

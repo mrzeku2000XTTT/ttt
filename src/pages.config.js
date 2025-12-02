@@ -141,6 +141,7 @@ import BRAHIMHub from './pages/BRAHIMHub';
 import KASBOOKS from './pages/KASBOOKS';
 import Movies from './pages/Movies';
 import Creator from './pages/Creator';
+import Lobby from './pages/Lobby';
 import __Layout from './Layout.jsx';
 
 
@@ -288,6 +289,7 @@ export const PAGES = {
     "KASBOOKS": KASBOOKS,
     "Movies": Movies,
     "Creator": Creator,
+    "Lobby": Lobby,
 }
 
 export const pagesConfig = {
