@@ -45,7 +45,7 @@ export default function LobbyPage() {
               
               {/* Portal Image */}
               <motion.img
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/8b2da12ef_image.png"
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/e91d0d293_image.png"
                 alt="Portal"
                 animate={{ rotate: 360 }}
                 transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
@@ -60,8 +60,8 @@ export default function LobbyPage() {
       <div className="absolute inset-0">
         {/* Cosmic Portal Background - Full Screen Spinning Zoomed */}
         <motion.div
-          initial={{ opacity: 0, scale: 2 }}
-          animate={{ opacity: 1, scale: 2, rotate: 360 }}
+          initial={{ opacity: 0, scale: 3 }}
+          animate={{ opacity: 1, scale: 3, rotate: 360 }}
           transition={{ 
             opacity: { duration: 2, delay: 2 },
             scale: { duration: 2, delay: 2 },
@@ -70,9 +70,9 @@ export default function LobbyPage() {
           className="absolute inset-0 flex items-center justify-center"
         >
           <img
-            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/8b2da12ef_image.png"
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/e91d0d293_image.png"
             alt="Cosmic Portal"
-            className="min-w-[200%] min-h-[200%] object-cover"
+            className="min-w-[300%] min-h-[300%] object-cover"
           />
         </motion.div>
 
