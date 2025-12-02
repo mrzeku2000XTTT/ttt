@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { 
   Copy, CheckCircle2, TrendingUp, DollarSign, Users, 
   Package, Plus, Loader2, BarChart3, ExternalLink, Sparkles,
-  ShoppingBag, Search, X
+  ShoppingBag, Search, X, Share
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
@@ -349,7 +349,7 @@ export default function CreatorPage() {
                         }}
                         className="bg-white/10 border border-white/20 hover:bg-white/20"
                       >
-                        <Share2 className="w-4 h-4" />
+                        <Share className="w-4 h-4" />
                       </Button>
                     </div>
                     <div className="bg-black border border-white/20 rounded-lg p-3">
