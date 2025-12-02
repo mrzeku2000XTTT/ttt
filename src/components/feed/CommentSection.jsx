@@ -84,7 +84,8 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
       let authorName = currentUser.username;
       let authorWalletAddress = currentUser.created_wallet_address || '';
 
-      if (currentUser.created_wallet_address) {
+      // Only check AgentZK if no username set
+      if (!authorName && currentUser.created_wallet_address) {
         try {
           const profiles = await base44.entities.AgentZKProfile.filter({
             wallet_address: currentUser.created_wallet_address
