@@ -1,161 +1,186 @@
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { base44 } from "@/api/base44Client";
 
 export default function LobbyPage() {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    loadUser();
+  }, []);
+
+  const loadUser = async () => {
+    try {
+      const currentUser = await base44.auth.me();
+      setUser(currentUser);
+    } catch (err) {
+      console.log("User not logged in");
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await base44.auth.logout();
+      window.location.href = createPageUrl("Home");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   return (
     <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-black">
-      {/* Background Alien Music */}
-      <audio autoPlay loop>
-        <source src="https://cdn.pixabay.com/audio/2022/05/13/audio_c8c8e99d9c.mp3" type="audio/mpeg" />
-      </audio>
-
-      {/* The Lobby Room */}
+      {/* Water Background */}
       <div className="absolute inset-0">
-        {/* Cosmic Portal Background - Full Screen Spinning Zoomed */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1, rotate: 360 }}
-          transition={{ 
-            opacity: { duration: 2, delay: 2 },
-            rotate: { duration: 20, repeat: Infinity, ease: "linear" }
+        <img
+          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/cb2f8e8f0_image.png"
+          alt="Dark Water"
+          className="w-full h-full object-cover"
+          style={{ 
+            imageRendering: 'high-quality',
+            filter: 'brightness(0.7) contrast(1.1)'
           }}
-          className="absolute inset-0"
-        >
-          <img
-            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/e91d0d293_image.png"
-            alt="Cosmic Portal"
-            className="w-full h-full object-cover scale-[10]"
-            loading="eager"
-            style={{ imageRendering: 'high-quality' }}
-          />
-        </motion.div>
-
-        {/* Darker Black Overlay */}
-        <div className="absolute inset-0 bg-black/60 pointer-events-none" />
-
-        {/* Glowing Overlay Effects - Trippy Mushroom Vibes */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 2.5 }}
-          className="absolute inset-0"
-        >
-          {/* Magenta Mushroom Glow */}
+        />
+        
+        {/* TTT Text Behind Everything - Made More Visible */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 1 }}>
           <motion.div
             animate={{
-              scale: [1, 1.5, 1],
-              opacity: [0.3, 0.6, 0.3],
-              x: [0, 50, 0],
-              y: [0, -30, 0],
-            }}
-            transition={{ duration: 4, repeat: Infinity }}
-            className="absolute top-1/4 left-1/4 w-96 h-96 bg-pink-500/40 rounded-full blur-[120px]"
-          />
-          {/* Purple Dream Glow */}
-          <motion.div
-            animate={{
-              scale: [1.2, 1, 1.2],
-              opacity: [0.4, 0.7, 0.4],
-              x: [0, -40, 0],
-            }}
-            transition={{ duration: 5, repeat: Infinity, delay: 1 }}
-            className="absolute top-1/2 right-1/4 w-[500px] h-[500px] bg-purple-600/50 rounded-full blur-[150px]"
-          />
-          {/* Lime Green Psychedelic */}
-          <motion.div
-            animate={{
-              scale: [1, 1.6, 1],
+              scale: [1, 1.05, 1],
               opacity: [0.3, 0.5, 0.3],
-              y: [0, 40, 0],
-            }}
-            transition={{ duration: 6, repeat: Infinity, delay: 2 }}
-            className="absolute bottom-1/4 left-1/2 w-[400px] h-[400px] bg-lime-400/40 rounded-full blur-[130px]"
-          />
-          {/* Orange Mushroom Cap */}
-          <motion.div
-            animate={{
-              scale: [1, 1.3, 1],
-              opacity: [0.25, 0.5, 0.25],
-              rotate: [0, 180, 360],
-            }}
-            transition={{ duration: 8, repeat: Infinity, delay: 0.5 }}
-            className="absolute top-1/3 right-1/3 w-[600px] h-[600px] bg-orange-500/35 rounded-full blur-[140px]"
-          />
-          {/* Electric Blue Trip */}
-          <motion.div
-            animate={{
-              scale: [1.1, 1, 1.1],
-              opacity: [0.3, 0.6, 0.3],
-              x: [0, 60, 0],
-            }}
-            transition={{ duration: 7, repeat: Infinity, delay: 3 }}
-            className="absolute bottom-1/3 right-1/2 w-[450px] h-[450px] bg-blue-400/45 rounded-full blur-[160px]"
-          />
-        </motion.div>
-
-        {/* White and Black Stars */}
-        {[...Array(100)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              width: `${1 + Math.random() * 3}px`,
-              height: `${1 + Math.random() * 3}px`,
-              background: i % 2 === 0 ? '#ffffff' : '#000000',
-              boxShadow: i % 2 === 0 ? '0 0 4px #ffffff' : '0 0 2px #000000',
-            }}
-            animate={{
-              x: [0, Math.random() * 100 - 50],
-              y: [0, Math.random() * 100 - 50],
-              opacity: [0.3, 1, 0.3],
-              scale: [0.8, 1.2, 0.8],
             }}
             transition={{
-              duration: 3 + Math.random() * 4,
+              duration: 4,
               repeat: Infinity,
-              delay: Math.random() * 5,
-              ease: "linear",
+              ease: "easeInOut",
             }}
-          />
-        ))}
-
-        {/* Back Button */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 2.5 }}
-          className="absolute top-6 left-6 z-50"
-        >
-          <Button
-            onClick={() => navigate(createPageUrl("Feed"))}
-            className="bg-black/70 hover:bg-black/90 border border-white/30 text-white backdrop-blur-xl"
-            size="sm"
+            className="text-[40vw] font-black text-white/20"
+            style={{
+              textShadow: '0 0 100px rgba(255, 255, 255, 0.3), 0 0 200px rgba(6, 182, 212, 0.2)',
+              letterSpacing: '-0.05em'
+            }}
           >
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            Back to Feed
-          </Button>
-        </motion.div>
+            TTT
+          </motion.div>
+        </div>
 
-        {/* Ambient Text */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 3 }}
-          className="absolute bottom-20 left-0 right-0 text-center z-10"
-        >
-          <h1 className="text-7xl md:text-8xl font-black text-black/80 mb-4 drop-shadow-[0_0_20px_rgba(0,0,0,0.8)]">
-            THE LOBBY
-          </h1>
-          <p className="text-black/60 text-xl">A space between worlds</p>
-        </motion.div>
+        {/* Dark Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" style={{ zIndex: 2 }} />
+
+        {/* Logout Button */}
+        {user && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1 }}
+            className="absolute top-6 right-6 z-50"
+          >
+            <Button
+              onClick={handleLogout}
+              className="bg-cyan-900/80 hover:bg-cyan-800/90 border border-cyan-400/30 text-white backdrop-blur-xl"
+              size="sm"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+          </motion.div>
+        )}
+
+        {/* Main Content - Centered */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ zIndex: 10 }}>
+          {/* Top UNCHAIN REALITY - Glassy Effect */}
+          <motion.div
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.2, delay: 0.5 }}
+            className="mb-8"
+          >
+            <h1 
+              className="text-6xl md:text-8xl lg:text-9xl font-black text-white mb-2 tracking-tight"
+              style={{
+                textShadow: '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 80px rgba(6, 182, 212, 0.3)',
+                background: 'linear-gradient(to bottom, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.8))',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backdropFilter: 'blur(20px)',
+                filter: 'drop-shadow(0 0 40px rgba(255, 255, 255, 0.5))',
+              }}
+            >
+              UNCHAIN REALITY
+            </h1>
+          </motion.div>
+
+          {/* Subtitle */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 0.8 }}
+            className="text-white/70 text-lg md:text-xl mb-12 tracking-[0.3em] font-light"
+            style={{
+              textShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
+            }}
+          >
+            KASPA L1 ←→ KASPLEX L2
+          </motion.p>
+
+          {/* Buttons - Vertical Stack */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 1.2 }}
+            className="flex flex-col items-center gap-4 mb-16"
+          >
+            {/* Claim Agent ZK Button - Centered */}
+            <Button
+              onClick={() => navigate(createPageUrl("AgentZK"))}
+              className="h-16 px-12 text-lg font-bold bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 hover:from-cyan-400 hover:via-blue-400 hover:to-purple-400 text-white border-0 shadow-[0_0_40px_rgba(6,182,212,0.5)] hover:shadow-[0_0_60px_rgba(6,182,212,0.7)] transition-all duration-300"
+              style={{
+                backdropFilter: 'blur(10px)',
+              }}
+            >
+              <span className="mr-2">○</span>
+              Claim Agent ZK Identity
+            </Button>
+
+            {/* Enter TTT Button - Below */}
+            <Button
+              onClick={() => navigate(createPageUrl("Feed"))}
+              className="h-14 px-10 text-base font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/30 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              <span className="mr-2">→</span>
+              Enter TTT
+            </Button>
+          </motion.div>
+
+          {/* Bottom UNCHAIN REALITY - Mirror/Reflection Effect (Upside Down + Glassy) */}
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.2, delay: 1.5 }}
+            className="mt-auto pb-12"
+          >
+            <h1 
+              className="text-5xl md:text-7xl lg:text-8xl font-black text-white/40 tracking-tight"
+              style={{
+                transform: 'scaleY(-1)',
+                textShadow: '0 -8px 32px rgba(0, 0, 0, 0.3), 0 0 60px rgba(6, 182, 212, 0.2)',
+                background: 'linear-gradient(to top, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.2))',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backdropFilter: 'blur(15px)',
+                filter: 'blur(1px) drop-shadow(0 0 30px rgba(255, 255, 255, 0.2))',
+                maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.3) 70%, rgba(0,0,0,0) 100%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.3) 70%, rgba(0,0,0,0) 100%)',
+              }}
+            >
+              UNCHAIN REALITY
+            </h1>
+          </motion.div>
+        </div>
       </div>
     </div>
   );
