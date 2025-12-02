@@ -27,6 +27,7 @@ function GateContent() {
     { name: "Templates", path: "TemplateBuilder", category: "Creator", color: "#EC4899" },
     { name: "Movies", path: "Movies", category: "Watch", color: "#8B5CF6" },
     { name: "Creator", path: "Creator", category: "Business", color: "#10B981" },
+    { name: "Focus", path: "Focus", category: "Zen", color: "#3B82F6" },
   ];
 
   const filteredApps = searchQuery
