@@ -45,6 +45,10 @@ export default function CreatorPage() {
   const [showOrders, setShowOrders] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isAddingProduct, setIsAddingProduct] = useState(false);
+  const [customLinks, setCustomLinks] = useState([]);
+  const [showAddLink, setShowAddLink] = useState(false);
+  const [linkForm, setLinkForm] = useState({ name: '', url: '', description: '' });
+  const [copiedCustomLink, setCopiedCustomLink] = useState('');
 
   useEffect(() => {
     loadData();
@@ -62,6 +66,9 @@ export default function CreatorPage() {
         await base44.auth.updateMe({ referral_code: code });
       }
       setReferralCode(code);
+
+      // Load custom referral links
+      setCustomLinks(currentUser.custom_referral_links || []);
 
       // Load referral stats
       await loadReferralStats(currentUser.email);
@@ -174,6 +181,41 @@ export default function CreatorPage() {
     await navigator.clipboard.writeText(link);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
+  };
+
+  const handleAddCustomLink = async () => {
+    if (!linkForm.name || !linkForm.url) {
+      alert('Please fill in link name and URL');
+      return;
+    }
+
+    try {
+      const updatedLinks = [...customLinks, linkForm];
+      await base44.auth.updateMe({ custom_referral_links: updatedLinks });
+      setCustomLinks(updatedLinks);
+      setLinkForm({ name: '', url: '', description: '' });
+      setShowAddLink(false);
+    } catch (err) {
+      console.error('Failed to add link:', err);
+      alert('Failed to add link');
+    }
+  };
+
+  const handleDeleteCustomLink = async (index) => {
+    if (!confirm('Delete this referral link?')) return;
+    try {
+      const updatedLinks = customLinks.filter((_, i) => i !== index);
+      await base44.auth.updateMe({ custom_referral_links: updatedLinks });
+      setCustomLinks(updatedLinks);
+    } catch (err) {
+      console.error('Failed to delete link:', err);
+    }
+  };
+
+  const copyCustomLink = async (url) => {
+    await navigator.clipboard.writeText(url);
+    setCopiedCustomLink(url);
+    setTimeout(() => setCopiedCustomLink(''), 2000);
   };
 
   const handleAIProductGeneration = async () => {
@@ -315,8 +357,8 @@ export default function CreatorPage() {
               {/* Create Link Card */}
               <Card className="bg-zinc-900 border-white/10">
                 <CardHeader className="border-b border-white/10">
-                  <h3 className="text-white font-bold">Create a Link</h3>
-                  <p className="text-sm text-gray-400">Promote any brand with a simple link</p>
+                  <h3 className="text-white font-bold">TTT Referral Link</h3>
+                  <p className="text-sm text-gray-400">Promote TTT and earn KAS</p>
                 </CardHeader>
                 <CardContent className="p-6">
                   <div className="space-y-4">
@@ -436,6 +478,168 @@ export default function CreatorPage() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Your Referral Links Section */}
+            <Card className="bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border-cyan-500/30">
+              <CardHeader className="border-b border-white/10">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-white font-bold">Your Referral Links</h3>
+                    <p className="text-sm text-gray-400">Add and manage your affiliate links</p>
+                  </div>
+                  <Button
+                    onClick={() => setShowAddLink(true)}
+                    size="sm"
+                    className="bg-cyan-500 hover:bg-cyan-600"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Link
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-6">
+                {customLinks.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-400 text-sm mb-2">No custom referral links yet</p>
+                    <p className="text-gray-500 text-xs">Add your affiliate links to share them in posts</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {customLinks.map((link, index) => (
+                      <div key={index} className="bg-black/30 border border-white/10 rounded-lg p-4">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <h4 className="text-white font-semibold mb-1">{link.name}</h4>
+                            {link.description && (
+                              <p className="text-gray-400 text-xs mb-2">{link.description}</p>
+                            )}
+                            <code className="text-cyan-400 text-xs break-all">{link.url}</code>
+                          </div>
+                          <Button
+                            onClick={() => handleDeleteCustomLink(index)}
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10 ml-2"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <div className="flex gap-2 mt-3">
+                          <Button
+                            onClick={() => copyCustomLink(link.url)}
+                            size="sm"
+                            className="flex-1 bg-white/10 hover:bg-white/20"
+                          >
+                            {copiedCustomLink === link.url ? (
+                              <>
+                                <CheckCircle2 className="w-3 h-3 mr-1" />
+                                Copied!
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3 h-3 mr-1" />
+                                Copy Link
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            onClick={async () => {
+                              try {
+                                if (navigator.share) {
+                                  await navigator.share({ title: link.name, url: link.url });
+                                } else {
+                                  window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(link.name + '\n' + link.url)}`, '_blank');
+                                }
+                              } catch (err) {
+                                window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(link.name + '\n' + link.url)}`, '_blank');
+                              }
+                            }}
+                            size="sm"
+                            className="bg-white/10 hover:bg-white/20"
+                          >
+                            <Share className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Add Link Modal */}
+            <AnimatePresence>
+              {showAddLink && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
+                  onClick={() => setShowAddLink(false)}
+                >
+                  <motion.div
+                    initial={{ scale: 0.9, y: 20 }}
+                    animate={{ scale: 1, y: 0 }}
+                    exit={{ scale: 0.9, y: 20 }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="bg-zinc-900 border border-white/20 rounded-xl w-full max-w-md p-6"
+                  >
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-2xl font-bold text-white">Add Referral Link</h2>
+                      <Button
+                        onClick={() => setShowAddLink(false)}
+                        variant="ghost"
+                        size="sm"
+                        className="text-white/60 hover:text-white"
+                      >
+                        <X className="w-5 h-5" />
+                      </Button>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm text-gray-400 mb-2 block">Link Name</label>
+                        <Input
+                          value={linkForm.name}
+                          onChange={(e) => setLinkForm({...linkForm, name: e.target.value})}
+                          placeholder="e.g., My Shopify Store"
+                          className="bg-black border-white/20 text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm text-gray-400 mb-2 block">URL</label>
+                        <Input
+                          value={linkForm.url}
+                          onChange={(e) => setLinkForm({...linkForm, url: e.target.value})}
+                          placeholder="https://..."
+                          className="bg-black border-white/20 text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm text-gray-400 mb-2 block">Description (optional)</label>
+                        <Textarea
+                          value={linkForm.description}
+                          onChange={(e) => setLinkForm({...linkForm, description: e.target.value})}
+                          placeholder="What's this link for?"
+                          className="bg-black border-white/20 text-white"
+                          rows={2}
+                        />
+                      </div>
+
+                      <Button
+                        onClick={handleAddCustomLink}
+                        className="w-full bg-cyan-500 hover:bg-cyan-600 h-12"
+                      >
+                        <Plus className="w-5 h-5 mr-2" />
+                        Add Referral Link
+                      </Button>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Recent Clicks */}
             {clickHistory.length > 0 && (
