@@ -22,7 +22,25 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
 
   useEffect(() => {
     loadComments();
-  }, [postId]);
+    if (currentUser) {
+      loadUserCommentLikes();
+    }
+  }, [postId, currentUser?.email]);
+
+  const loadUserCommentLikes = async () => {
+    try {
+      const likes = await base44.entities.CommentLike.filter({
+        user_email: currentUser.email
+      });
+      const likesMap = {};
+      likes.forEach(like => {
+        likesMap[like.comment_id] = true;
+      });
+      setLikedComments(likesMap);
+    } catch (err) {
+      console.error('Failed to load comment likes:', err);
+    }
+  };
 
   useEffect(() => {
     if (comments.length > 0) {
@@ -144,8 +162,13 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
   };
 
   const handleLikeComment = async (comment) => {
+    if (!currentUser) {
+      alert('Please login to like comments');
+      return;
+    }
+
     const isLiked = likedComments[comment.id];
-    const newLikes = isLiked ? (comment.likes || 1) - 1 : (comment.likes || 0) + 1;
+    const newLikes = isLiked ? Math.max(0, (comment.likes || 0) - 1) : (comment.likes || 0) + 1;
     
     // Optimistic update
     setComments(comments.map(c => 
@@ -157,8 +180,28 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
     }));
     
     try {
+      if (isLiked) {
+        // Unlike: delete CommentLike record
+        const existingLikes = await base44.entities.CommentLike.filter({
+          comment_id: comment.id,
+          user_email: currentUser.email
+        });
+        if (existingLikes.length > 0) {
+          await base44.entities.CommentLike.delete(existingLikes[0].id);
+        }
+      } else {
+        // Like: create CommentLike record
+        await base44.entities.CommentLike.create({
+          comment_id: comment.id,
+          user_email: currentUser.email,
+          user_wallet: currentUser.created_wallet_address || ''
+        });
+      }
+
+      // Update comment likes count using service role (bypasses RLS)
+      const allLikes = await base44.entities.CommentLike.filter({ comment_id: comment.id });
       await base44.entities.PostComment.update(comment.id, {
-        likes: newLikes
+        likes: allLikes.length
       });
     } catch (err) {
       console.error('Failed to like comment:', err);
