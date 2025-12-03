@@ -137,6 +137,7 @@ export default function KaspromoPage() {
 
   const tabs = [
     { name: "VOTE", icon: "X" },
+    { name: "DEVS", icon: "X" },
     { name: "ECOSYSTEM", icon: "X" },
     { name: "Focused", icon: "X" },
     { name: "Latest", icon: "▶" },
@@ -320,6 +321,7 @@ export default function KaspromoPage() {
 
   const getCurrentPosts = () => {
     if (activeTab === "VOTE") return votePosts;
+    if (activeTab === "DEVS") return devsPosts;
     if (activeTab === "ECOSYSTEM") return ecosystemPosts;
     return votePosts;
   };
