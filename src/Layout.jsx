@@ -386,12 +386,6 @@ export default function Layout({ children, currentPageName }) {
         <nav className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-xl border-b border-white/10" style={{ paddingTop: 'var(--sat, 0px)' }}>
           <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 sm:py-3">
             <div className="flex items-center justify-between gap-3">
-              <Link 
-                to={createPageUrl("Home")}
-                className="flex items-center gap-2 group flex-shrink-0"
-              >
-                <span className="text-white font-black text-2xl sm:text-3xl tracking-tight">TTT</span>
-              </Link>
 
               <div className="hidden lg:flex items-center gap-2 flex-1 overflow-x-auto scrollbar-hide">
                 <div className="flex items-center gap-2 min-w-max">
