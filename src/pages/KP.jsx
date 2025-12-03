@@ -488,8 +488,30 @@ export default function KaspromoPage() {
                   <Wallet className="w-4 h-4" />
                   <span>Tip Dev</span>
                 </motion.button>
-              )}
-            </div>
+                )}
+
+                {user?.username === post.author && (
+                <motion.button
+                  onClick={async () => {
+                    if (confirm('Are you sure you want to delete your developer profile?')) {
+                      try {
+                        await base44.entities.KaspaDev.delete(post.id);
+                        loadDevs();
+                      } catch (err) {
+                        console.error('Failed to delete:', err);
+                        alert('Failed to delete profile');
+                      }
+                    }
+                  }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-all font-medium text-sm"
+                >
+                  <X className="w-4 h-4" />
+                  <span>Delete Profile</span>
+                </motion.button>
+                )}
+                </div>
           </motion.div>
         ))}
       </div>
