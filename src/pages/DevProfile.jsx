@@ -50,18 +50,47 @@ export default function DevProfilePage() {
       return;
     }
 
+    if (typeof window.kasware === 'undefined') {
+      alert('Kasware wallet not detected. Please install Kasware extension.');
+      return;
+    }
+
     try {
+      // Convert KAS to sompi (1 KAS = 100,000,000 sompi)
+      const sompiAmount = Math.floor(parseFloat(tipAmount) * 100000000);
+      
+      // Send KAS via Kasware
+      const txResponse = await window.kasware.sendKaspa(dev.kaspa_address, sompiAmount);
+      
+      // Extract transaction ID
+      let txid;
+      if (typeof txResponse === 'string') {
+        try {
+          const parsed = JSON.parse(txResponse);
+          txid = parsed.id;
+        } catch {
+          txid = txResponse;
+        }
+      } else if (txResponse && typeof txResponse === 'object') {
+        txid = txResponse.id;
+      }
+      
+      if (!txid || !/^[a-f0-9]{64}$/i.test(txid)) {
+        throw new Error('Invalid transaction ID');
+      }
+
+      // Update dev's total tips after successful transaction
       await base44.entities.KaspaDev.update(dev.id, {
         total_tips: (dev.total_tips || 0) + parseFloat(tipAmount)
       });
       
-      alert(`Tipped ${tipAmount} KAS to ${dev.username}! 🚀`);
+      alert(`✅ Tipped ${tipAmount} KAS to ${dev.username}! 🚀\n\nTX: ${txid.substring(0, 8)}...`);
       setShowTipModal(false);
       setTipAmount("");
       loadDev();
     } catch (err) {
       console.error('Failed to tip:', err);
-      alert('Failed to send tip');
+      alert(`Failed to send tip: ${err.message || 'Transaction cancelled'}`);
     }
   };
 
