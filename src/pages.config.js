@@ -146,6 +146,7 @@ import KaspaLFG from './pages/KaspaLFG';
 import KP from './pages/KP';
 import DevProfile from './pages/DevProfile';
 import SendTip from './pages/SendTip';
+import TestZelcore from './pages/TestZelcore';
 import __Layout from './Layout.jsx';
 
 
@@ -298,6 +299,7 @@ export const PAGES = {
     "KP": KP,
     "DevProfile": DevProfile,
     "SendTip": SendTip,
+    "TestZelcore": TestZelcore,
 }
 
 export const pagesConfig = {
