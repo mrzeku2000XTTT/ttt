@@ -840,74 +840,9 @@ export default function DevProfilePage() {
                         amount: expectedAmount
                       });
 
-                      // Check for payment via RPC
-                      const intervalId = setInterval(async () => {
-                        try {
-                          console.log('🔍 Checking recipient UTXOs via RPC...');
-                          
-                          // Get recipient's UTXOs via RPC
-                          const recipientUtxoResponse = await fetch('https://api.fluxnodeservice.com/kaspa/rpc', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              method: 'getUtxosByAddresses',
-                              params: { addresses: [dev.kaspa_address] }
-                            })
-                          });
-                          
-                          const recipientUtxoData = await recipientUtxoResponse.json();
-                          console.log('📦 Recipient UTXOs:', recipientUtxoData);
-
-                          if (recipientUtxoData.result?.entries) {
-                            const entries = recipientUtxoData.result.entries;
-                            
-                            for (const entry of entries) {
-                              if (entry.utxoEntry) {
-                                const amount = entry.utxoEntry.amount / 100000000;
-                                const txId = entry.outpoint?.transactionId;
-                                
-                                console.log('🔍 Checking UTXO:', {
-                                  txId: txId?.substring(0, 8),
-                                  amount: amount.toFixed(4),
-                                  expected: expectedAmount
-                                });
-
-                                // Check if amount matches
-                                if (Math.abs(amount - expectedAmount) < 0.01) {
-                                  console.log('✅✅✅ Payment UTXO found!', txId);
-                                  
-                                  clearInterval(intervalId);
-                                  setKaspiumCheckInterval(null);
-                                  setTipTxHash(txId);
-
-                                  await base44.entities.KaspaBuilder.update(dev.id, {
-                                    total_tips: (dev.total_tips || 0) + expectedAmount
-                                  });
-
-                                  toast.success(`✅ Payment verified!\nTX: ${txId.substring(0, 8)}...`);
-                                  setShowKaspiumPay(false);
-                                  setVerifyingKaspiumPayment(false);
-                                  setTipAmount("");
-                                  setTipTxHash(null);
-                                  loadDev();
-                                  return;
-                                }
-                              }
-                            }
-                          }
-
-                          console.log('❌ No matching payment found yet...');
-
-                          if (Date.now() - startTime > 300000) {
-                            clearInterval(intervalId);
-                            setKaspiumCheckInterval(null);
-                            toast.error('Timeout');
-                            setVerifyingKaspiumPayment(false);
-                          }
-                        } catch (err) {
-                          console.error('RPC Error:', err);
-                        }
-                      }, 3000);
+                      // Manual verification - user confirms payment
+                      toast.success(`Please send ${expectedAmount} KAS to the address above`);
+                      setVerifyingKaspiumPayment(false);
 
                       setKaspiumCheckInterval(intervalId);
                     } catch (err) {
