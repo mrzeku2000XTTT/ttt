@@ -17,6 +17,11 @@ export default function DevProfilePage() {
   const [showTipModal, setShowTipModal] = useState(false);
   const [tipAmount, setTipAmount] = useState("");
   const [showAppPreview, setShowAppPreview] = useState(false);
+  const [showZkVerification, setShowZkVerification] = useState(false);
+  const [zkTimestamp, setZkTimestamp] = useState(null);
+  const [zkVerifying, setZkVerifying] = useState(false);
+  const [zkWalletBalance, setZkWalletBalance] = useState(null);
+  const [tipTxHash, setTipTxHash] = useState(null);
   const [copied, setCopied] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
@@ -35,7 +40,21 @@ export default function DevProfilePage() {
 
   useEffect(() => {
     loadDev();
+    if (currentUser?.created_wallet_address) {
+      loadZkWalletBalance(currentUser.created_wallet_address);
+    }
   }, []);
+
+  const loadZkWalletBalance = async (address) => {
+    try {
+      const response = await base44.functions.invoke('getKaspaBalance', { address });
+      if (response.data?.balance) {
+        setZkWalletBalance(response.data.balance);
+      }
+    } catch (err) {
+      console.error('Failed to load balance:', err);
+    }
+  };
 
   const loadDev = async () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -170,7 +189,7 @@ export default function DevProfilePage() {
     }
   };
 
-  const handleTip = async () => {
+  const handleKaswareTip = async () => {
     if (!tipAmount || parseFloat(tipAmount) <= 0) {
       alert('Please enter a valid tip amount');
       return;
@@ -205,18 +224,115 @@ export default function DevProfilePage() {
         throw new Error('Invalid transaction ID');
       }
 
+      setTipTxHash(txid);
+
       // Update dev's total tips after successful transaction
       await base44.entities.KaspaBuilder.update(dev.id, {
         total_tips: (dev.total_tips || 0) + parseFloat(tipAmount)
       });
       
-      toast.success(`Tipped ${tipAmount} KAS to ${dev.username}`);
+      toast.success(`Tipped ${tipAmount} KAS to ${dev.username}! 🚀`);
       setShowTipModal(false);
       setTipAmount("");
+      setTipTxHash(null);
       loadDev();
     } catch (err) {
       console.error('Failed to tip:', err);
       alert(`Failed to send tip: ${err.message || 'Transaction cancelled'}`);
+    }
+  };
+
+  const handleZkTip = async () => {
+    if (!currentUser?.created_wallet_address) {
+      alert('Please connect your TTT wallet first');
+      return;
+    }
+
+    if (!tipAmount || parseFloat(tipAmount) <= 0) {
+      alert('Please enter a valid tip amount');
+      return;
+    }
+
+    // Record timestamp NOW - transactions must be sent AFTER this moment
+    const timestamp = Date.now();
+    setZkTimestamp(timestamp);
+    setZkVerifying(true);
+    setShowTipModal(false);
+    setShowZkVerification(true);
+
+    console.log('🚀 Starting ZK tip verification:', {
+      from: currentUser.created_wallet_address,
+      to: dev.kaspa_address,
+      amount: tipAmount,
+      timestamp: new Date(timestamp)
+    });
+
+    try {
+      const targetAmount = parseFloat(tipAmount);
+      let attempts = 0;
+      const maxAttempts = 200; // 10 minutes (3s intervals)
+
+      const checkTransaction = async () => {
+        attempts++;
+        console.log(`Attempt ${attempts}/${maxAttempts} - Checking for transaction...`);
+
+        try {
+          const response = await base44.functions.invoke('verifyKaspaSelfTransaction', {
+            address: currentUser.created_wallet_address,
+            expectedAmount: targetAmount,
+            timestamp: timestamp
+          });
+
+          console.log('Backend response:', response.data);
+
+          if (response.data?.verified && response.data?.transaction) {
+            console.log('✅ Transaction verified!', response.data.transaction);
+            setTipTxHash(response.data.transaction.id);
+            setZkVerifying(false);
+            
+            // Update dev's total tips
+            await base44.entities.KaspaBuilder.update(dev.id, {
+              total_tips: (dev.total_tips || 0) + targetAmount
+            });
+
+            toast.success(`Tipped ${tipAmount} KAS to ${dev.username} via ZK! 🚀`);
+            setShowZkVerification(false);
+            setTipAmount("");
+            setTipTxHash(null);
+            setZkTimestamp(null);
+            loadDev();
+
+            return true;
+          }
+
+          // Continue checking
+          if (attempts < maxAttempts) {
+            setTimeout(checkTransaction, 3000);
+          } else {
+            console.error('⏱️ Verification timeout');
+            setZkVerifying(false);
+            alert('Verification timeout. Transaction not detected within 10 minutes.');
+          }
+        } catch (err) {
+          console.error('❌ Verification error:', err);
+          
+          // Retry on error
+          if (attempts < maxAttempts) {
+            console.log('Retrying in 3 seconds...');
+            setTimeout(checkTransaction, 3000);
+          } else {
+            setZkVerifying(false);
+            alert('Failed to verify transaction. Please try again.');
+          }
+        }
+      };
+
+      // Start checking immediately
+      checkTransaction();
+    } catch (err) {
+      console.error('ZK verification setup error:', err);
+      setZkVerifying(false);
+      alert('Verification failed to start. Please try again.');
     }
   };
 
