@@ -345,8 +345,8 @@ export default function TipModal({ isOpen, onClose }) {
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-[#4fd1c5]/30 border-t-[#4fd1c5] rounded-full animate-spin" />
-                      <span className="text-sm text-white/80">Waiting for payment...</span>
+                      <Loader2 className="w-4 h-4 text-[#4fd1c5] animate-spin" />
+                      <span className="text-sm text-white/80">Monitoring blockchain via Zelcore API...</span>
                     </div>
                   </div>
 
