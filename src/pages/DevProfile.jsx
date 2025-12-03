@@ -831,98 +831,101 @@ export default function DevProfilePage() {
                     setVerifyingKaspiumPayment(true);
 
                     try {
-                      // Get dev's current balance
-                      const balanceResponse = await base44.functions.invoke('getKaspaBalance', { 
-                        address: dev.kaspa_address 
+                      // Get initial balances for both sender and receiver
+                      const [senderBalanceRes, receiverBalanceRes] = await Promise.all([
+                        base44.functions.invoke('getKaspaBalance', { address: currentUser.created_wallet_address }),
+                        base44.functions.invoke('getKaspaBalance', { address: dev.kaspa_address })
+                      ]);
+
+                      const initialSenderBalance = senderBalanceRes.data?.balance || 0;
+                      const initialReceiverBalance = receiverBalanceRes.data?.balance || 0;
+                      const expectedAmount = parseFloat(tipAmount);
+
+                      console.log('💰 Initial balances:', {
+                        sender: initialSenderBalance,
+                        receiver: initialReceiverBalance,
+                        expectedTip: expectedAmount
                       });
 
-                      if (balanceResponse.data?.balance) {
-                        setDevInitialBalance(balanceResponse.data.balance);
-                      }
-
-                      // Start checking for payment every 3 seconds using Kaspa API
+                      // Start checking for balance changes every 3 seconds
                       const startTime = Date.now();
                       const intervalId = setInterval(async () => {
                         try {
-                          // Fetch recent transactions directly from Kaspa API
-                          const apiUrl = `https://api.kaspa.org/addresses/${dev.kaspa_address}/full-transactions?limit=10`;
-                          console.log('🔍 Fetching transactions from:', apiUrl);
-                          
-                          const response = await fetch(apiUrl);
-                          if (!response.ok) {
-                            console.error('Kaspa API error:', response.status);
-                            return;
-                          }
+                          // Check current balances
+                          const [newSenderBalanceRes, newReceiverBalanceRes] = await Promise.all([
+                            base44.functions.invoke('getKaspaBalance', { address: currentUser.created_wallet_address }),
+                            base44.functions.invoke('getKaspaBalance', { address: dev.kaspa_address })
+                          ]);
 
-                          const data = await response.json();
-                          console.log('📦 Received data:', data);
+                          const newSenderBalance = newSenderBalanceRes.data?.balance || 0;
+                          const newReceiverBalance = newReceiverBalanceRes.data?.balance || 0;
 
-                          if (data && Array.isArray(data)) {
-                            const expectedAmount = parseFloat(tipAmount);
-                            const senderAddress = currentUser?.created_wallet_address;
+                          const senderDiff = initialSenderBalance - newSenderBalance;
+                          const receiverDiff = newReceiverBalance - initialReceiverBalance;
 
-                            // Look for transaction from current user's TTT wallet
-                            const matchingTx = data.find(tx => {
-                              const txTime = new Date(parseInt(tx.block_time)).getTime();
-                              const isRecent = txTime >= startTime - 30000; // 30s tolerance
-                              
-                              // Check amount to dev (in sompi, convert to KAS)
-                              const amountToDev = (tx.outputs || [])
-                                .filter(out => out.script_public_key_address === dev.kaspa_address)
-                                .reduce((sum, out) => sum + (out.amount || 0), 0) / 100000000;
-                              const amountMatch = Math.abs(amountToDev - expectedAmount) < 0.01;
+                          console.log('🔍 Balance check:', {
+                            senderDiff: senderDiff.toFixed(4),
+                            receiverDiff: receiverDiff.toFixed(4),
+                            expected: expectedAmount,
+                            senderMatch: Math.abs(senderDiff - expectedAmount) < 0.1,
+                            receiverMatch: Math.abs(receiverDiff - expectedAmount) < 0.01
+                          });
 
-                              // Check if ANY input is from sender's address
-                              const fromSender = (tx.inputs || [])
-                                .some(input => {
-                                  const inputAddr = input.previous_outpoint_address;
-                                  return inputAddr === senderAddress;
+                          // Check if both balances match the expected amount (with tolerance for fees on sender side)
+                          const senderBalanceDecreased = senderDiff >= expectedAmount - 0.01 && senderDiff <= expectedAmount + 0.5;
+                          const receiverBalanceIncreased = Math.abs(receiverDiff - expectedAmount) < 0.01;
+
+                          if (senderBalanceDecreased && receiverBalanceIncreased) {
+                            clearInterval(intervalId);
+                            setKaspiumCheckInterval(null);
+
+                            console.log('✅ Payment verified via balance check!');
+
+                            // Fetch transaction ID from recent transactions
+                            try {
+                              const apiUrl = `https://api.kaspa.org/addresses/${dev.kaspa_address}/full-transactions?limit=5`;
+                              const response = await fetch(apiUrl);
+                              if (response.ok) {
+                                const data = await response.json();
+                                const recentTx = data.find(tx => {
+                                  const txTime = new Date(parseInt(tx.block_time)).getTime();
+                                  const isRecent = txTime >= startTime - 30000;
+                                  const amountToDev = (tx.outputs || [])
+                                    .filter(out => out.script_public_key_address === dev.kaspa_address)
+                                    .reduce((sum, out) => sum + (out.amount || 0), 0) / 100000000;
+                                  return isRecent && Math.abs(amountToDev - expectedAmount) < 0.01;
                                 });
+                                if (recentTx) {
+                                  setTipTxHash(recentTx.transaction_id);
+                                }
+                              }
+                            } catch (err) {
+                              console.log('Could not fetch TX ID:', err);
+                            }
 
-                              console.log('🔍 Checking TX:', {
-                                txId: tx.transaction_id,
-                                time: new Date(parseInt(tx.block_time)),
-                                isRecent,
-                                amountToDev: amountToDev.toFixed(4),
-                                expectedAmount,
-                                amountMatch,
-                                inputs: tx.inputs?.map(i => i.previous_outpoint_address),
-                                senderAddress,
-                                fromSender
-                              });
-
-                              return isRecent && amountMatch && fromSender;
+                            // Payment verified! Update total tips
+                            await base44.entities.KaspaBuilder.update(dev.id, {
+                              total_tips: (dev.total_tips || 0) + expectedAmount
                             });
 
-                            if (matchingTx) {
-                              clearInterval(intervalId);
-                              setKaspiumCheckInterval(null);
+                            toast.success(`✅ Payment verified! ${tipAmount} KAS sent to ${dev.username}`);
+                            setShowKaspiumPay(false);
+                            setVerifyingKaspiumPayment(false);
+                            setTipAmount("");
+                            setDevInitialBalance(null);
+                            setTipTxHash(null);
+                            loadDev();
+                          }
 
-                              console.log('✅ Payment verified!', {
-                                txId: matchingTx.transaction_id,
-                                from: senderAddress,
-                                to: dev.kaspa_address,
-                                amount: expectedAmount
-                              });
-
-                              setTipTxHash(matchingTx.transaction_id);
-
-                              // Payment verified! Update total tips
-                              await base44.entities.KaspaBuilder.update(dev.id, {
-                                total_tips: (dev.total_tips || 0) + expectedAmount
-                              });
-
-                              toast.success(`✅ Payment verified! ${tipAmount} KAS sent to ${dev.username}\n\nTX: ${matchingTx.transaction_id.substring(0, 8)}...`);
-                              setShowKaspiumPay(false);
-                              setVerifyingKaspiumPayment(false);
-                              setTipAmount("");
-                              setDevInitialBalance(null);
-                              setTipTxHash(null);
-                              loadDev();
-                            }
+                          // Timeout after 3 minutes
+                          if (Date.now() - startTime > 180000) {
+                            clearInterval(intervalId);
+                            setKaspiumCheckInterval(null);
+                            toast.error('Payment verification timeout. Please try again.');
+                            setVerifyingKaspiumPayment(false);
                           }
                         } catch (err) {
-                          console.error('Payment check error:', err);
+                          console.error('Balance check error:', err);
                         }
                       }, 3000);
 
