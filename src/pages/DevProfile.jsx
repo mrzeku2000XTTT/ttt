@@ -212,7 +212,11 @@ export default function DevProfilePage() {
   }
 
   if (!dev) {
-    return null;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-950/30 via-black to-blue-900/25 flex items-center justify-center">
+        <div className="text-white text-xl">Developer not found</div>
+      </div>
+    );
   }
 
   const fundingProgress = dev.funding_goal > 0 ? (dev.total_tips / dev.funding_goal) * 100 : 0;
