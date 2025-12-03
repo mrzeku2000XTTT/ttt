@@ -23,7 +23,11 @@ export default function DevProfilePage() {
   const [editedCover, setEditedCover] = useState("");
   const [editedBio, setEditedBio] = useState("");
   const [editedKnsId, setEditedKnsId] = useState("");
+  const [editedFundingGoal, setEditedFundingGoal] = useState("");
+  const [editedHowFundsUsed, setEditedHowFundsUsed] = useState("");
+  const [editedAvatar, setEditedAvatar] = useState("");
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [showKnsModal, setShowKnsModal] = useState(false);
 
   useEffect(() => {
@@ -50,6 +54,9 @@ export default function DevProfilePage() {
         setEditedCover(devProfile.cover_photo || "");
         setEditedBio(devProfile.description || "");
         setEditedKnsId(devProfile.kns_id || "");
+        setEditedFundingGoal(devProfile.funding_goal || "");
+        setEditedHowFundsUsed(devProfile.how_funds_used || "");
+        setEditedAvatar(devProfile.avatar || "");
         
         // Check if current user owns this profile
         if (user && user.username === devProfile.username) {
@@ -81,14 +88,32 @@ export default function DevProfilePage() {
     setUploadingCover(false);
   };
 
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingAvatar(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setEditedAvatar(file_url);
+    } catch (err) {
+      console.error('Failed to upload avatar:', err);
+      alert('Failed to upload avatar');
+    }
+    setUploadingAvatar(false);
+  };
+
   const handleSaveProfile = async () => {
     if (!isOwner) return;
 
     try {
       await base44.entities.KaspaDev.update(dev.id, {
+        avatar: editedAvatar,
         cover_photo: editedCover,
         description: editedBio,
-        kns_id: editedKnsId
+        kns_id: editedKnsId,
+        funding_goal: editedFundingGoal ? parseFloat(editedFundingGoal) : 0,
+        how_funds_used: editedHowFundsUsed
       });
       
       alert('✅ Profile updated successfully!');
@@ -278,23 +303,45 @@ export default function DevProfilePage() {
         {/* Profile Header */}
         <div className="flex items-end gap-6 mb-8">
           <div className="relative group">
-            <img 
-              src={dev.avatar || "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/53badb4f2_image.png"} 
-              alt={dev.username}
-              className="w-32 h-32 rounded-full border-4 border-black bg-black object-cover"
-            />
-            {dev.verified && (
-              <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center border-4 border-black">
-                <CheckCircle className="w-5 h-5 text-white" />
+            {editMode ? (
+              <div className="relative">
+                <img 
+                  src={editedAvatar || dev.avatar || "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/53badb4f2_image.png"} 
+                  alt={dev.username}
+                  className="w-32 h-32 rounded-full border-4 border-black bg-black object-cover"
+                />
+                <label className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center cursor-pointer hover:bg-black/80 transition-all">
+                  <Upload className="w-8 h-8 text-white" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                    disabled={uploadingAvatar}
+                  />
+                </label>
               </div>
-            )}
-            {isOwner && (
-              <button
-                onClick={() => setEditMode(!editMode)}
-                className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <Edit2 className="w-8 h-8 text-white" />
-              </button>
+            ) : (
+              <>
+                <img 
+                  src={dev.avatar || "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/53badb4f2_image.png"} 
+                  alt={dev.username}
+                  className="w-32 h-32 rounded-full border-4 border-black bg-black object-cover"
+                />
+                {dev.verified && (
+                  <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center border-4 border-black">
+                    <CheckCircle className="w-5 h-5 text-white" />
+                  </div>
+                )}
+                {isOwner && (
+                  <button
+                    onClick={() => setEditMode(true)}
+                    className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Edit2 className="w-8 h-8 text-white" />
+                  </button>
+                )}
+              </>
             )}
           </div>
 
@@ -336,36 +383,7 @@ export default function DevProfilePage() {
           </Button>
         </div>
 
-        {/* Funding Goal */}
-        {dev.funding_goal > 0 && (
-          <Card className="bg-black/60 backdrop-blur-xl border-cyan-500/30 mb-6">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Target className="w-5 h-5 text-cyan-400" />
-                  <span className="text-white font-bold">Funding Goal</span>
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-black text-white">{dev.total_tips.toFixed(2)} KAS</div>
-                  <div className="text-sm text-white/60">of {dev.funding_goal.toFixed(2)} KAS</div>
-                </div>
-              </div>
 
-              <div className="w-full bg-white/10 rounded-full h-4 overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${Math.min(fundingProgress, 100)}%` }}
-                  transition={{ duration: 1, ease: "easeOut" }}
-                  className="h-full bg-gradient-to-r from-yellow-500 to-orange-500"
-                />
-              </div>
-
-              <div className="text-sm text-white/60 mt-2 text-center">
-                {fundingProgress.toFixed(1)}% funded
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Description */}
         {(dev.description || editMode) && (
@@ -386,15 +404,67 @@ export default function DevProfilePage() {
           </Card>
         )}
 
+        {/* Funding Goal */}
+        {(dev.funding_goal > 0 || editMode) && (
+          <Card className="bg-black/60 backdrop-blur-xl border-cyan-500/30 mb-6">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 mb-3">
+                <Target className="w-5 h-5 text-cyan-400" />
+                <h2 className="text-xl font-bold text-white">Funding Goal</h2>
+              </div>
+              {editMode ? (
+                <Input
+                  type="number"
+                  value={editedFundingGoal}
+                  onChange={(e) => setEditedFundingGoal(e.target.value)}
+                  placeholder="1000"
+                  className="bg-white/5 border-cyan-500/30 text-white h-12 rounded-xl"
+                />
+              ) : (
+                dev.funding_goal > 0 && (
+                  <>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="text-right">
+                        <div className="text-2xl font-black text-white">{dev.total_tips.toFixed(2)} KAS</div>
+                        <div className="text-sm text-white/60">of {dev.funding_goal.toFixed(2)} KAS</div>
+                      </div>
+                    </div>
+                    <div className="w-full bg-white/10 rounded-full h-4 overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.min(fundingProgress, 100)}%` }}
+                        transition={{ duration: 1, ease: "easeOut" }}
+                        className="h-full bg-gradient-to-r from-yellow-500 to-orange-500"
+                      />
+                    </div>
+                    <div className="text-sm text-white/60 mt-2 text-center">
+                      {fundingProgress.toFixed(1)}% funded
+                    </div>
+                  </>
+                )
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* How Funds Will Be Used */}
-        {dev.how_funds_used && (
+        {(dev.how_funds_used || editMode) && (
           <Card className="bg-black/60 backdrop-blur-xl border-green-500/30 mb-6">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-3">
                 <DollarSign className="w-5 h-5 text-green-400" />
                 <h2 className="text-xl font-bold text-white">How Funds Will Be Used</h2>
               </div>
-              <p className="text-white/80 leading-relaxed whitespace-pre-wrap">{dev.how_funds_used}</p>
+              {editMode ? (
+                <Textarea
+                  value={editedHowFundsUsed}
+                  onChange={(e) => setEditedHowFundsUsed(e.target.value)}
+                  placeholder="Server costs, development, marketing..."
+                  className="bg-white/5 border-green-500/30 text-white rounded-xl resize-none min-h-[120px]"
+                />
+              ) : (
+                <p className="text-white/80 leading-relaxed whitespace-pre-wrap">{dev.how_funds_used}</p>
+              )}
             </CardContent>
           </Card>
         )}
