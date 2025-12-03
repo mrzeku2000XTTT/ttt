@@ -861,10 +861,11 @@ export default function DevProfilePage() {
                               console.log('📦 Sender TXs:', data?.length, data);
 
                               if (data && Array.isArray(data)) {
-                                // Find ANY transaction sent to dev after start time
+                                // Find ANY transaction sent to dev in the last 5 minutes
                                 const matchingTx = data.find(tx => {
                                   const txTime = parseInt(tx.block_time);
-                                  const isRecent = txTime >= (startTime - 60000);
+                                  const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+                                  const isRecent = txTime >= fiveMinutesAgo;
                                   
                                   // Check outputs to dev
                                   const hasSentToDev = (tx.outputs || []).some(out => 
