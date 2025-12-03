@@ -16,8 +16,9 @@ export default function KasFansPage() {
           height: 'max(150vh, 1500px)',
           minHeight: 'calc(100vh + 500px)'
         }}
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; wallet"
         allowFullScreen
+        sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals"
       />
     </div>
   );
