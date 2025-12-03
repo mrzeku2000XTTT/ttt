@@ -29,17 +29,25 @@ export default function Layout({ children, currentPageName }) {
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [showBackButton, setShowBackButton] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    const saved = localStorage.getItem('sidebar_collapsed');
-    return saved ? JSON.parse(saved) : false;
+    try {
+      const saved = localStorage.getItem('sidebar_collapsed');
+      return saved ? JSON.parse(saved) : false;
+    } catch {
+      return false;
+    }
   });
   
   useEffect(() => {
-    loadUser();
-    checkSubscription();
-    checkNotificationPermission();
-    loadPendingConnections();
-    loadUnreadMessages();
-    checkIfFromCategories();
+    try {
+      loadUser();
+      checkSubscription();
+      checkNotificationPermission();
+      loadPendingConnections();
+      loadUnreadMessages();
+      checkIfFromCategories();
+    } catch (err) {
+      console.error('Layout init error:', err);
+    }
     
     // Add Impact.com verification meta tag
     const metaTag = document.createElement('meta');
@@ -100,15 +108,19 @@ export default function Layout({ children, currentPageName }) {
   };
 
   const checkSubscription = () => {
-    const saved = localStorage.getItem('subscription');
-    if (saved) {
-      const data = JSON.parse(saved);
-      
-      if (data.isActive && data.expiresAt < Date.now()) {
-        data.isActive = false;
+    try {
+      const saved = localStorage.getItem('subscription');
+      if (saved) {
+        const data = JSON.parse(saved);
+        
+        if (data.isActive && data.expiresAt < Date.now()) {
+          data.isActive = false;
+        }
+        
+        setSubscription(data);
       }
-      
-      setSubscription(data);
+    } catch (err) {
+      console.error('Subscription check error:', err);
     }
   };
 
