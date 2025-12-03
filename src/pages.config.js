@@ -18,7 +18,6 @@ import Feed from './pages/Feed';
 import Arcade from './pages/Arcade';
 import Analytics from './pages/Analytics';
 import MobileTest from './pages/MobileTest';
-import GlobalWar from './pages/GlobalWar';
 import Settings from './pages/Settings';
 import Career from './pages/Career';
 import ContributorHistory from './pages/ContributorHistory';
@@ -146,6 +145,7 @@ import Focus from './pages/Focus';
 import KaspaLFG from './pages/KaspaLFG';
 import KP from './pages/KP';
 import DevProfile from './pages/DevProfile';
+import GlobalWar from './pages/GlobalWar';
 import __Layout from './Layout.jsx';
 
 
@@ -170,7 +170,6 @@ export const PAGES = {
     "Arcade": Arcade,
     "Analytics": Analytics,
     "MobileTest": MobileTest,
-    "GlobalWar": GlobalWar,
     "Settings": Settings,
     "Career": Career,
     "ContributorHistory": ContributorHistory,
@@ -298,6 +297,7 @@ export const PAGES = {
     "KaspaLFG": KaspaLFG,
     "KP": KP,
     "DevProfile": DevProfile,
+    "GlobalWar": GlobalWar,
 }
 
 export const pagesConfig = {
