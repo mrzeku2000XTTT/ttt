@@ -29,6 +29,8 @@ export default function DevProfilePage() {
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [showKnsModal, setShowKnsModal] = useState(false);
+  const [editedKnsPhoto, setEditedKnsPhoto] = useState("");
+  const [uploadingKnsPhoto, setUploadingKnsPhoto] = useState(false);
 
   useEffect(() => {
     loadDev();
@@ -64,6 +66,7 @@ export default function DevProfilePage() {
         setEditedFundingGoal(devProfile.funding_goal || "");
         setEditedHowFundsUsed(devProfile.how_funds_used || "");
         setEditedAvatar(devProfile.avatar || "");
+        setEditedKnsPhoto(devProfile.kns_photo || "");
         
         // Check if current user owns this profile (by email/created_by OR username)
         console.log('Ownership check:', {
@@ -119,6 +122,30 @@ export default function DevProfilePage() {
     setUploadingAvatar(false);
   };
 
+  const handleKnsPhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingKnsPhoto(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setEditedKnsPhoto(file_url);
+      
+      // Auto-save if we're viewing the modal
+      if (showKnsModal && isOwner) {
+        await base44.entities.KaspaBuilder.update(dev.id, {
+          kns_photo: file_url
+        });
+        alert('✅ KNS ID photo uploaded!');
+        loadDev();
+      }
+    } catch (err) {
+      console.error('Failed to upload KNS photo:', err);
+      alert('Failed to upload KNS ID photo');
+    }
+    setUploadingKnsPhoto(false);
+  };
+
   const handleSaveProfile = async () => {
     if (!isOwner) return;
 
@@ -128,6 +155,7 @@ export default function DevProfilePage() {
         cover_photo: editedCover,
         description: editedBio,
         kns_id: editedKnsId,
+        kns_photo: editedKnsPhoto,
         funding_goal: editedFundingGoal ? parseFloat(editedFundingGoal) : 0,
         how_funds_used: editedHowFundsUsed
       });
