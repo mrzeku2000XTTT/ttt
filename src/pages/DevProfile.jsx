@@ -22,6 +22,7 @@ export default function DevProfilePage() {
   const [zkVerifying, setZkVerifying] = useState(false);
   const [zkWalletBalance, setZkWalletBalance] = useState(null);
   const [tipTxHash, setTipTxHash] = useState(null);
+  const [showKaspiumPay, setShowKaspiumPay] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
@@ -790,21 +791,34 @@ export default function DevProfilePage() {
                 ))}
               </div>
 
-              <Button
-                onClick={handleZkTip}
-                disabled={!tipAmount || parseFloat(tipAmount) <= 0 || !currentUser?.created_wallet_address}
-                className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white h-12 rounded-xl font-bold shadow-lg shadow-cyan-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                ZK
-              </Button>
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  onClick={handleZkTip}
+                  disabled={!tipAmount || parseFloat(tipAmount) <= 0 || !currentUser?.created_wallet_address}
+                  className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white h-12 rounded-xl font-bold shadow-lg shadow-cyan-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ZK
+                </Button>
 
-              <Button
-                onClick={handleKaswareTip}
-                disabled={!tipAmount || parseFloat(tipAmount) <= 0}
-                className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-white h-12 rounded-xl font-bold shadow-lg shadow-yellow-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Send KAS (Kasware)
-              </Button>
+                <Button
+                  onClick={handleKaswareTip}
+                  disabled={!tipAmount || parseFloat(tipAmount) <= 0}
+                  className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-white h-12 rounded-xl font-bold shadow-lg shadow-yellow-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Kasware
+                </Button>
+
+                <Button
+                  onClick={() => {
+                    setShowTipModal(false);
+                    setShowKaspiumPay(true);
+                  }}
+                  disabled={!tipAmount || parseFloat(tipAmount) <= 0}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white h-12 rounded-xl font-bold shadow-lg shadow-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Kaspium
+                </Button>
+              </div>
             </div>
           </motion.div>
         </motion.div>
@@ -937,6 +951,103 @@ export default function DevProfilePage() {
                 </Button>
               </div>
             )}
+          </motion.div>
+        </motion.div>
+      )}
+
+      {/* Kaspium Payment Modal */}
+      {showKaspiumPay && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setShowKaspiumPay(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.9, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-gradient-to-br from-[#1a1d2e] to-[#0a0a0a] border border-purple-500/30 rounded-3xl p-8 max-w-md w-full"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                  <Wallet className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Pay with Kaspium</h2>
+                  <p className="text-xs text-purple-400/60">Scan QR to send {tipAmount} KAS</p>
+                </div>
+              </div>
+              <Button
+                onClick={() => setShowKaspiumPay(false)}
+                variant="ghost"
+                size="icon"
+                className="text-white/60 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+
+            <div className="bg-white/5 rounded-2xl p-6 mb-4 border border-purple-500/20 text-center">
+              <div className="w-12 h-12 rounded-full bg-purple-500/20 border border-purple-500/40 mx-auto mb-3 flex items-center justify-center">
+                <img 
+                  src={dev.avatar || "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/53badb4f2_image.png"} 
+                  alt={dev.username}
+                  className="w-full h-full rounded-full object-cover"
+                />
+              </div>
+              <div className="text-lg font-bold text-white mb-1">{dev.username}</div>
+              <div className="text-sm text-purple-400 mb-4">@{dev.twitter_handle}</div>
+
+              {/* QR Code */}
+              <div className="bg-white p-4 rounded-xl mb-4 inline-block">
+                <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${dev.kaspa_address}`}
+                  alt="QR Code"
+                  className="w-48 h-48"
+                />
+              </div>
+
+              <div className="text-sm font-bold text-yellow-400 mb-2">
+                Send {tipAmount} KAS
+              </div>
+            </div>
+
+            <div className="bg-white/5 rounded-xl p-4 mb-4 border border-white/10">
+              <p className="text-white/40 text-xs mb-2">Recipient Address</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-white text-xs font-mono break-all">
+                  {dev.kaspa_address}
+                </p>
+                <Button
+                  onClick={() => {
+                    navigator.clipboard.writeText(dev.kaspa_address);
+                    toast.success('Address copied');
+                  }}
+                  size="sm"
+                  className="bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 text-xs h-7 flex-shrink-0"
+                >
+                  <Copy className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3 mb-4">
+              <p className="text-purple-400 text-xs font-semibold mb-2">📱 Instructions:</p>
+              <ol className="text-white/60 text-xs space-y-1 list-decimal list-inside">
+                <li>Open Kaspium app on your phone</li>
+                <li>Scan the QR code or copy the address</li>
+                <li>Send exactly {tipAmount} KAS</li>
+              </ol>
+            </div>
+
+            <Button
+              onClick={() => setShowKaspiumPay(false)}
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white h-12 rounded-xl font-bold"
+            >
+              Done
+            </Button>
           </motion.div>
         </motion.div>
       )}
