@@ -26,6 +26,7 @@ export default function DevProfilePage() {
   const [kaspiumTipData, setKaspiumTipData] = useState(null);
   const [kaspiumTimeRemaining, setKaspiumTimeRemaining] = useState(1800);
   const [kaspiumStatus, setKaspiumStatus] = useState('pending');
+  const [creatingKaspiumTip, setCreatingKaspiumTip] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
