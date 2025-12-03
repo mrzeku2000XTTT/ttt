@@ -795,7 +795,7 @@ export default function DevProfilePage() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <Button
                   onClick={handleZkTip}
                   disabled={!tipAmount || parseFloat(tipAmount) <= 0 || !currentUser?.created_wallet_address}
@@ -810,85 +810,6 @@ export default function DevProfilePage() {
                   className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-white h-12 rounded-xl font-bold shadow-lg shadow-yellow-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Kasware
-                </Button>
-
-                <Button
-                  onClick={async () => {
-                    console.log('🔵 Kaspium button clicked!');
-                    
-                    if (!tipAmount || parseFloat(tipAmount) <= 0) {
-                      toast.error('Please enter a valid tip amount');
-                      return;
-                    }
-
-                    setCreatingKaspiumTip(true);
-                    console.log('📡 Creating tip request...');
-
-                    try {
-                      const response = await fetch('https://kaspa-node-proxy-nebulouslabs.replit.app/api/tip/create', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          recipientAddress: dev.kaspa_address,
-                          amount: parseFloat(tipAmount),
-                          senderName: currentUser?.username || 'Anonymous',
-                          message: `Tip from ${currentUser?.username || 'Anonymous'} via TTT`
-                        })
-                      });
-
-                      const data = await response.json();
-                      console.log('✅ API response:', data);
-
-                      if (data.success) {
-                        setKaspiumTipData(data);
-                        setShowTipModal(false);
-                        setShowKaspiumPay(true);
-                        setKaspiumStatus('pending');
-
-                        // Start polling for payment
-                        const interval = setInterval(async () => {
-                          const statusRes = await fetch(`https://kaspa-node-proxy-nebulouslabs.replit.app/api/tip/status/${data.tipId}`);
-                          const status = await statusRes.json();
-
-                          if (status.status === 'confirmed') {
-                            clearInterval(interval);
-                            setKaspiumStatus('confirmed');
-                            await base44.entities.KaspaBuilder.update(dev.id, {
-                              total_tips: (dev.total_tips || 0) + parseFloat(tipAmount)
-                            });
-                            toast.success(`✅ Payment verified! ${status.amountReceived} KAS`);
-                            setTimeout(() => {
-                              setShowKaspiumPay(false);
-                              setTipAmount("");
-                              loadDev();
-                            }, 3000);
-                          } else if (status.status === 'expired') {
-                            clearInterval(interval);
-                            setKaspiumStatus('expired');
-                          }
-                        }, 5000);
-
-                        // Timer countdown
-                        const timerInterval = setInterval(() => {
-                          const expires = new Date(data.expiresAt).getTime();
-                          const remaining = Math.max(0, Math.floor((expires - Date.now()) / 1000));
-                          setKaspiumTimeRemaining(remaining);
-                          if (remaining === 0) clearInterval(timerInterval);
-                        }, 1000);
-                      } else {
-                        toast.error('Failed to create payment request');
-                      }
-                    } catch (err) {
-                      console.error('❌ Kaspium error:', err);
-                      toast.error('Failed to create payment request');
-                    } finally {
-                      setCreatingKaspiumTip(false);
-                    }
-                  }}
-                  disabled={!tipAmount || parseFloat(tipAmount) <= 0 || creatingKaspiumTip}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white h-12 rounded-xl font-bold shadow-lg shadow-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {creatingKaspiumTip ? 'Loading...' : 'Kaspium'}
                 </Button>
               </div>
             </div>
