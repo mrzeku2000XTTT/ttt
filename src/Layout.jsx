@@ -9,7 +9,6 @@ import SearchBar from "@/components/SearchBar";
 import { motion, AnimatePresence } from "framer-motion";
 import MiniPlayer from "@/components/MiniPlayer";
 import { VideoPlayerProvider } from "@/components/VideoPlayerContext";
-import MobileMoreMenu from "@/components/MobileMoreMenu";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -572,7 +571,7 @@ export default function Layout({ children, currentPageName }) {
                     <Crown className="w-3 h-3 text-yellow-400 absolute -top-0.5 -right-0.5" />
                   </Button>
                 </Link>
-
+                
                 <Link to={createPageUrl("Marketplace")}>
                   <Button
                     variant="ghost"
@@ -586,8 +585,6 @@ export default function Layout({ children, currentPageName }) {
                     <ShoppingBag className="w-5 h-5" />
                   </Button>
                 </Link>
-
-                <MobileMoreMenu currentUser={user} />
 
 
 
