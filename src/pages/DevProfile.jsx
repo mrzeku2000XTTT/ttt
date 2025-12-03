@@ -52,7 +52,9 @@ export default function DevProfilePage() {
         console.log('User not logged in');
       }
       
-      const devData = await base44.entities.KaspaDev.filter({ id: devId });
+      const allDevs = await base44.entities.KaspaDev.list();
+      const devData = allDevs.filter(d => d.id === devId);
+      console.log('Found dev:', devData);
       if (devData.length > 0) {
         const devProfile = devData[0];
         setDev(devProfile);
