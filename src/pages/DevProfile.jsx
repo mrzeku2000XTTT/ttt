@@ -813,6 +813,8 @@ export default function DevProfilePage() {
 
                 <Button
                   onClick={async () => {
+                    console.log('Kaspium button clicked', { currentUser, tipAmount });
+
                     if (!currentUser?.created_wallet_address) {
                       toast.error('Please connect your TTT wallet first');
                       return;
@@ -823,104 +825,104 @@ export default function DevProfilePage() {
                       return;
                     }
 
+                    // Show modal immediately
+                    setShowTipModal(false);
+                    setShowKaspiumPay(true);
+                    setVerifyingKaspiumPayment(true);
+
                     try {
-                      // Get dev's current balance before showing QR
+                      // Get dev's current balance
                       const balanceResponse = await base44.functions.invoke('getKaspaBalance', { 
                         address: dev.kaspa_address 
                       });
+
                       if (balanceResponse.data?.balance) {
                         setDevInitialBalance(balanceResponse.data.balance);
-                        setShowTipModal(false);
-                        setShowKaspiumPay(true);
-                        setVerifyingKaspiumPayment(true);
+                      }
 
-                        // Start checking for payment every 3 seconds using UTXO verification
-                        const startTime = Date.now();
-                        const intervalId = setInterval(async () => {
-                          try {
-                            // Scan dev's wallet for recent transactions
-                            const txResponse = await base44.functions.invoke('scanWalletTransactions', { 
-                              address: dev.kaspa_address 
-                            });
+                      // Start checking for payment every 3 seconds using UTXO verification
+                      const startTime = Date.now();
+                      const intervalId = setInterval(async () => {
+                        try {
+                          // Scan dev's wallet for recent transactions
+                          const txResponse = await base44.functions.invoke('scanWalletTransactions', { 
+                            address: dev.kaspa_address 
+                          });
 
-                            if (txResponse.data?.transactions) {
-                              const expectedAmount = parseFloat(tipAmount);
-                              const senderAddress = currentUser?.created_wallet_address;
+                          if (txResponse.data?.transactions) {
+                            const expectedAmount = parseFloat(tipAmount);
+                            const senderAddress = currentUser?.created_wallet_address;
 
-                              // Look for transaction from current user's TTT wallet
-                              const matchingTx = txResponse.data.transactions.find(tx => {
-                                const txTime = new Date(tx.block_time).getTime();
-                                const isRecent = txTime >= startTime - 5000; // Started checking within 5s tolerance
-                                const amountMatch = Math.abs((tx.outputs || [])
+                            // Look for transaction from current user's TTT wallet
+                            const matchingTx = txResponse.data.transactions.find(tx => {
+                              const txTime = new Date(tx.block_time).getTime();
+                              const isRecent = txTime >= startTime - 5000;
+                              const amountMatch = Math.abs((tx.outputs || [])
+                                .filter(out => out.script_public_key_address === dev.kaspa_address)
+                                .reduce((sum, out) => sum + (out.amount / 100000000), 0) - expectedAmount) < 0.01;
+
+                              const fromSender = (tx.inputs || [])
+                                .some(input => input.previous_outpoint_address === senderAddress);
+
+                              console.log('🔍 Checking TX:', {
+                                txId: tx.transaction_id,
+                                time: tx.block_time,
+                                isRecent,
+                                amount: (tx.outputs || [])
                                   .filter(out => out.script_public_key_address === dev.kaspa_address)
-                                  .reduce((sum, out) => sum + (out.amount / 100000000), 0) - expectedAmount) < 0.01;
-
-                                const fromSender = (tx.inputs || [])
-                                  .some(input => input.previous_outpoint_address === senderAddress);
-
-                                console.log('🔍 Checking TX:', {
-                                  txId: tx.transaction_id,
-                                  time: tx.block_time,
-                                  isRecent,
-                                  amount: (tx.outputs || [])
-                                    .filter(out => out.script_public_key_address === dev.kaspa_address)
-                                    .reduce((sum, out) => sum + (out.amount / 100000000), 0),
-                                  expectedAmount,
-                                  amountMatch,
-                                  fromSender,
-                                  senderAddress
-                                });
-
-                                return isRecent && amountMatch && fromSender;
+                                  .reduce((sum, out) => sum + (out.amount / 100000000), 0),
+                                expectedAmount,
+                                amountMatch,
+                                fromSender,
+                                senderAddress
                               });
 
-                              if (matchingTx) {
-                                clearInterval(intervalId);
-                                setKaspiumCheckInterval(null);
+                              return isRecent && amountMatch && fromSender;
+                            });
 
-                                console.log('✅ Payment verified via UTXO:', {
-                                  txId: matchingTx.transaction_id,
-                                  from: senderAddress,
-                                  to: dev.kaspa_address,
-                                  amount: expectedAmount
-                                });
+                            if (matchingTx) {
+                              clearInterval(intervalId);
+                              setKaspiumCheckInterval(null);
 
-                                setTipTxHash(matchingTx.transaction_id);
+                              console.log('✅ Payment verified via UTXO:', {
+                                txId: matchingTx.transaction_id,
+                                from: senderAddress,
+                                to: dev.kaspa_address,
+                                amount: expectedAmount
+                              });
 
-                                // Payment verified! Update total tips
-                                await base44.entities.KaspaBuilder.update(dev.id, {
-                                  total_tips: (dev.total_tips || 0) + expectedAmount
-                                });
+                              setTipTxHash(matchingTx.transaction_id);
 
-                                toast.success(`✅ Payment verified! ${tipAmount} KAS sent to ${dev.username}\n\nTX: ${matchingTx.transaction_id.substring(0, 8)}...`);
-                                setShowKaspiumPay(false);
-                                setVerifyingKaspiumPayment(false);
-                                setTipAmount("");
-                                setDevInitialBalance(null);
-                                setTipTxHash(null);
-                                loadDev();
-                              }
+                              // Payment verified! Update total tips
+                              await base44.entities.KaspaBuilder.update(dev.id, {
+                                total_tips: (dev.total_tips || 0) + expectedAmount
+                              });
+
+                              toast.success(`✅ Payment verified! ${tipAmount} KAS sent to ${dev.username}\n\nTX: ${matchingTx.transaction_id.substring(0, 8)}...`);
+                              setShowKaspiumPay(false);
+                              setVerifyingKaspiumPayment(false);
+                              setTipAmount("");
+                              setDevInitialBalance(null);
+                              setTipTxHash(null);
+                              loadDev();
                             }
-                          } catch (err) {
-                            console.error('UTXO check error:', err);
                           }
-                        }, 3000);
+                        } catch (err) {
+                          console.error('UTXO check error:', err);
+                        }
+                      }, 3000);
 
-                        setKaspiumCheckInterval(intervalId);
-                      }
-                      } catch (err) {
-                      console.error('Failed to get initial balance:', err);
+                      setKaspiumCheckInterval(intervalId);
+                    } catch (err) {
+                      console.error('Failed to initialize payment:', err);
                       toast.error('Failed to initialize payment verification');
-                      setShowTipModal(true);
-                      setShowKaspiumPay(false);
-                      setVerifyingKaspiumPayment(false);
-                      }
-                      }}
-                      disabled={!tipAmount || parseFloat(tipAmount) <= 0 || !currentUser?.created_wallet_address}
-                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white h-12 rounded-xl font-bold shadow-lg shadow-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                      Kaspium
-                      </Button>
+                    }
+                  }}
+                  disabled={!tipAmount || parseFloat(tipAmount) <= 0 || !currentUser?.created_wallet_address}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white h-12 rounded-xl font-bold shadow-lg shadow-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Kaspium
+                </Button>
               </div>
             </div>
           </motion.div>
