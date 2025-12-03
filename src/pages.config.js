@@ -143,6 +143,7 @@ import Movies from './pages/Movies';
 import Creator from './pages/Creator';
 import Lobby from './pages/Lobby';
 import Focus from './pages/Focus';
+import KaspaLFG from './pages/KaspaLFG';
 import __Layout from './Layout.jsx';
 
 
@@ -292,6 +293,7 @@ export const PAGES = {
     "Creator": Creator,
     "Lobby": Lobby,
     "Focus": Focus,
+    "KaspaLFG": KaspaLFG,
 }
 
 export const pagesConfig = {
