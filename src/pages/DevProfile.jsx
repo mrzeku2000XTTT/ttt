@@ -812,93 +812,13 @@ export default function DevProfilePage() {
                 </Button>
 
                 <Button
-                  onClick={async () => {
-                    console.log('Kaspium button clicked', { currentUser, tipAmount });
-
-                    if (!currentUser?.created_wallet_address) {
-                      toast.error('Please connect your TTT wallet first');
-                      return;
-                    }
-
+                  onClick={() => {
                     if (!tipAmount || parseFloat(tipAmount) <= 0) {
                       toast.error('Please enter a valid tip amount');
                       return;
                     }
-
-                    // Get initial balances
-                    try {
-                      const senderBalanceRes = await base44.functions.invoke('getKaspaBalance', { 
-                        address: currentUser.created_wallet_address 
-                      });
-                      const recipientBalanceRes = await base44.functions.invoke('getKaspaBalance', { 
-                        address: dev.kaspa_address 
-                      });
-
-                      const initialSenderBalance = senderBalanceRes.data?.balance || 0;
-                      const initialRecipientBalance = recipientBalanceRes.data?.balance || 0;
-
-                      console.log('💰 Initial balances:', {
-                        sender: initialSenderBalance,
-                        recipient: initialRecipientBalance
-                      });
-
-                      // Show modal
-                      setShowTipModal(false);
-                      setShowKaspiumPay(true);
-                      setVerifyingKaspiumPayment(true);
-
-                      const expectedAmount = parseFloat(tipAmount);
-                      const startTime = Date.now();
-
-                      // Balance-based verification
-                      const intervalId = setInterval(async () => {
-                        try {
-                          console.log('🔍 Checking balances...');
-
-                          const response = await base44.functions.invoke('verifyKaspiumPayment', {
-                            senderAddress: currentUser.created_wallet_address,
-                            recipientAddress: dev.kaspa_address,
-                            expectedAmount: expectedAmount,
-                            initialSenderBalance: initialSenderBalance,
-                            initialRecipientBalance: initialRecipientBalance
-                          });
-
-                          console.log('📦 Verification:', response.data);
-
-                          if (response.data?.verified) {
-                            console.log('✅✅✅ Payment verified via balance!');
-
-                            clearInterval(intervalId);
-                            setKaspiumCheckInterval(null);
-
-                            await base44.entities.KaspaBuilder.update(dev.id, {
-                              total_tips: (dev.total_tips || 0) + expectedAmount
-                            });
-
-                            toast.success(`✅ Payment verified!`);
-                            setShowKaspiumPay(false);
-                            setVerifyingKaspiumPayment(false);
-                            setTipAmount("");
-                            loadDev();
-                            return;
-                          }
-
-                          if (Date.now() - startTime > 300000) {
-                            clearInterval(intervalId);
-                            setKaspiumCheckInterval(null);
-                            toast.error('Timeout');
-                            setVerifyingKaspiumPayment(false);
-                          }
-                        } catch (err) {
-                          console.error('Verification error:', err);
-                        }
-                      }, 3000);
-
-                      setKaspiumCheckInterval(intervalId);
-                    } catch (err) {
-                      console.error('Failed to get balances:', err);
-                      toast.error('Failed to initialize payment');
-                    }
+                    setShowTipModal(false);
+                    setShowKaspiumPay(true);
                   }}
                   disabled={!tipAmount || parseFloat(tipAmount) <= 0 || !currentUser?.created_wallet_address}
                   className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white h-12 rounded-xl font-bold shadow-lg shadow-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1144,62 +1064,34 @@ export default function DevProfilePage() {
             <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-2 mb-3">
               <p className="text-purple-400 text-[10px] font-semibold mb-1.5">📱 Instructions:</p>
               <ol className="text-white/60 text-[10px] space-y-0.5 list-decimal list-inside">
-                <li>Import TTT seed into Kaspium</li>
-                <li>Send from: {currentUser?.created_wallet_address?.substring(0, 12)}...</li>
-                <li>Scan QR or copy address</li>
+                <li>Scan QR or tap "Open in Kaspium"</li>
+                <li>Confirm payment in Kaspium</li>
                 <li>Send exactly {tipAmount} KAS</li>
-                <li>Wait for verification</li>
+                <li>Done! 🎉</li>
               </ol>
-              {verifyingKaspiumPayment && (
-                <div className="mt-2 pt-2 border-t border-purple-500/20">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <div className="w-3 h-3 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin" />
-                    <span className="text-purple-400 text-[10px] font-semibold">
-                      Waiting for payment...
-                    </span>
-                  </div>
-                  {tipTxHash && (
-                    <div className="text-green-400 text-[10px] font-mono">
-                      TX: {tipTxHash.substring(0, 16)}...
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
 
             <div className="flex gap-2">
               <Button
                 onClick={() => {
-                  if (kaspiumCheckInterval) {
-                    clearInterval(kaspiumCheckInterval);
-                    setKaspiumCheckInterval(null);
-                  }
                   setShowKaspiumPay(false);
-                  setVerifyingKaspiumPayment(false);
                   setTipAmount("");
-                  setDevInitialBalance(null);
-                  setTipTxHash(null);
                 }}
                 variant="outline"
                 className="flex-1 border-white/20 text-white hover:bg-white/10 h-10 rounded-lg text-sm"
               >
                 Cancel
               </Button>
-              <Button
-                onClick={() => {
-                  if (kaspiumCheckInterval) {
-                    clearInterval(kaspiumCheckInterval);
-                    setKaspiumCheckInterval(null);
-                  }
-                  setShowKaspiumPay(false);
-                  setVerifyingKaspiumPayment(false);
-                  setShowTipModal(true);
-                  setDevInitialBalance(null);
-                }}
-                className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white h-10 rounded-lg font-bold text-sm"
+              <a
+                href={`kaspa:${dev.kaspa_address}?amount=${parseFloat(tipAmount) * 100000000}`}
+                className="flex-1"
               >
-                Back
-              </Button>
+                <Button
+                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white h-10 rounded-lg font-bold text-sm"
+                >
+                  Open in Kaspium
+                </Button>
+              </a>
             </div>
           </motion.div>
         </motion.div>
