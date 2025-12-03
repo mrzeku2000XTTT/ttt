@@ -23,6 +23,8 @@ export default function DevProfilePage() {
   const [zkWalletBalance, setZkWalletBalance] = useState(null);
   const [tipTxHash, setTipTxHash] = useState(null);
   const [showKaspiumPay, setShowKaspiumPay] = useState(false);
+  const [devInitialBalance, setDevInitialBalance] = useState(null);
+  const [verifyingKaspiumPayment, setVerifyingKaspiumPayment] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
@@ -809,9 +811,22 @@ export default function DevProfilePage() {
                 </Button>
 
                 <Button
-                  onClick={() => {
-                    setShowTipModal(false);
-                    setShowKaspiumPay(true);
+                  onClick={async () => {
+                    try {
+                      // Get dev's current balance before showing QR
+                      const balanceResponse = await base44.functions.invoke('getKaspaBalance', { 
+                        address: dev.kaspa_address 
+                      });
+                      if (balanceResponse.data?.balance) {
+                        setDevInitialBalance(balanceResponse.data.balance);
+                      }
+                      setShowTipModal(false);
+                      setShowKaspiumPay(true);
+                    } catch (err) {
+                      console.error('Failed to get initial balance:', err);
+                      setShowTipModal(false);
+                      setShowKaspiumPay(true);
+                    }
                   }}
                   disabled={!tipAmount || parseFloat(tipAmount) <= 0}
                   className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white h-12 rounded-xl font-bold shadow-lg shadow-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1043,10 +1058,47 @@ export default function DevProfilePage() {
             </div>
 
             <Button
-              onClick={() => setShowKaspiumPay(false)}
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white h-12 rounded-xl font-bold"
+              onClick={async () => {
+                setVerifyingKaspiumPayment(true);
+                try {
+                  // Check dev's balance after payment
+                  const balanceResponse = await base44.functions.invoke('getKaspaBalance', { 
+                    address: dev.kaspa_address 
+                  });
+                  
+                  if (balanceResponse.data?.balance && devInitialBalance !== null) {
+                    const newBalance = balanceResponse.data.balance;
+                    const balanceIncrease = newBalance - devInitialBalance;
+                    const expectedAmount = parseFloat(tipAmount);
+                    
+                    // Check if balance increased by approximately the tip amount (allow 0.01 KAS tolerance)
+                    if (Math.abs(balanceIncrease - expectedAmount) < 0.01) {
+                      // Payment verified! Update total tips
+                      await base44.entities.KaspaBuilder.update(dev.id, {
+                        total_tips: (dev.total_tips || 0) + expectedAmount
+                      });
+                      
+                      toast.success(`✅ Payment verified! ${tipAmount} KAS received by ${dev.username}`);
+                      setShowKaspiumPay(false);
+                      setTipAmount("");
+                      setDevInitialBalance(null);
+                      loadDev();
+                    } else {
+                      toast.error('Payment not detected yet. Please try again after transaction confirms.');
+                    }
+                  } else {
+                    toast.error('Could not verify payment. Please check manually.');
+                  }
+                } catch (err) {
+                  console.error('Payment verification error:', err);
+                  toast.error('Failed to verify payment');
+                }
+                setVerifyingKaspiumPayment(false);
+              }}
+              disabled={verifyingKaspiumPayment}
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white h-12 rounded-xl font-bold disabled:opacity-50"
             >
-              Done
+              {verifyingKaspiumPayment ? 'Verifying Payment...' : 'Done'}
             </Button>
           </motion.div>
         </motion.div>
