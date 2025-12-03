@@ -145,6 +145,7 @@ import Focus from './pages/Focus';
 import KaspaLFG from './pages/KaspaLFG';
 import KP from './pages/KP';
 import DevProfile from './pages/DevProfile';
+import SendTip from './pages/SendTip';
 import __Layout from './Layout.jsx';
 
 
@@ -296,6 +297,7 @@ export const PAGES = {
     "KaspaLFG": KaspaLFG,
     "KP": KP,
     "DevProfile": DevProfile,
+    "SendTip": SendTip,
 }
 
 export const pagesConfig = {
