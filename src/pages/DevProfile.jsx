@@ -237,32 +237,34 @@ export default function DevProfilePage() {
         {/* Action Buttons */}
         <div className="absolute top-4 right-4 flex gap-2">
           {isOwner && (
-            <Button
-              onClick={() => {
-                if (editMode) {
-                  handleSaveProfile();
-                } else {
-                  setEditMode(true);
-                }
-              }}
-              className={`${
-                editMode 
-                  ? 'bg-green-500/80 hover:bg-green-500' 
-                  : 'bg-purple-500/80 hover:bg-purple-500'
-              } backdrop-blur-sm border border-white/20`}
-            >
-              {editMode ? (
-                <>
-                  <Save className="w-4 h-4 mr-2" />
-                  Save
-                </>
-              ) : (
-                <>
-                  <Edit2 className="w-4 h-4 mr-2" />
-                  Edit
-                </>
-              )}
-            </Button>
+            {isOwner && (
+              <Button
+                onClick={() => {
+                  if (editMode) {
+                    handleSaveProfile();
+                  } else {
+                    setEditMode(true);
+                  }
+                }}
+                className={`${
+                  editMode 
+                    ? 'bg-green-500 hover:bg-green-600' 
+                    : 'bg-purple-500 hover:bg-purple-600'
+                } text-white border-0 shadow-lg`}
+              >
+                {editMode ? (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Profile
+                  </>
+                ) : (
+                  <>
+                    <Edit2 className="w-4 h-4 mr-2" />
+                    Edit Profile
+                  </>
+                )}
+              </Button>
+            )}
           )}
           <Button
             onClick={handleCopyLink}
@@ -277,7 +279,7 @@ export default function DevProfilePage() {
       <div className="max-w-4xl mx-auto px-4 -mt-16 relative z-10 pb-8">
         {/* Profile Header */}
         <div className="flex items-end gap-6 mb-8">
-          <div className="relative">
+          <div className="relative group">
             <img 
               src={dev.avatar || "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/53badb4f2_image.png"} 
               alt={dev.username}
@@ -287,6 +289,14 @@ export default function DevProfilePage() {
               <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center border-4 border-black">
                 <CheckCircle className="w-5 h-5 text-white" />
               </div>
+            )}
+            {isOwner && (
+              <button
+                onClick={() => setEditMode(!editMode)}
+                className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <Edit2 className="w-8 h-8 text-white" />
+              </button>
             )}
           </div>
 
