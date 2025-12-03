@@ -304,15 +304,28 @@ export default function KaspromoPage() {
       </div>
 
       {/* Add Dev Button - Only on DEVS tab */}
-      {activeTab === "DEVS" && user?.username && (
+      {activeTab === "DEVS" && (
         <div className="p-4">
-          <Button
-            onClick={() => setShowAddDevModal(true)}
-            className="w-full bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/30"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Yourself as a Kaspa Dev
-          </Button>
+          {user?.username ? (
+            <motion.button
+              onClick={() => setShowAddDevModal(true)}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/40 text-white hover:border-cyan-400 transition-all rounded-xl py-4 px-6 flex items-center justify-center gap-3 group shadow-lg shadow-cyan-500/10"
+            >
+              <div className="w-10 h-10 bg-cyan-500 rounded-full flex items-center justify-center group-hover:bg-cyan-400 transition-colors">
+                <Plus className="w-5 h-5 text-black" />
+              </div>
+              <div className="text-left">
+                <div className="text-sm font-bold">Add Yourself as a KASPA DEV!</div>
+                <div className="text-xs text-cyan-400">Showcase your Kaspa contributions</div>
+              </div>
+            </motion.button>
+          ) : (
+            <div className="text-center py-6 bg-white/5 rounded-xl border border-white/10">
+              <p className="text-white/60 text-sm">Login with TTT to add yourself as a dev</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -324,51 +337,162 @@ export default function KaspromoPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="bg-[#15171c] border border-white/10 rounded-2xl p-4 hover:border-cyan-500/30 transition-all group"
+            className="relative bg-gradient-to-br from-[#15171c] to-[#0a0a0a] border border-white/10 rounded-2xl p-5 hover:border-cyan-500/50 hover:shadow-lg hover:shadow-cyan-500/10 transition-all group"
           >
-            {/* Header */}
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-cyan-500/20 border border-cyan-500/40 rounded-full flex items-center justify-center text-lg">
-                  {post.author[0]}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1">
-                    <div className="text-sm font-bold text-white truncate">{post.author}</div>
-                    {post.verified && (
-                      <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-white text-[10px]">✓</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-xs text-white/40">{post.handle}</div>
+            {/* Verified badge glow */}
+            {post.verified && (
+              <div className="absolute top-2 right-2">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/50">
+                  <span className="text-white text-sm">✓</span>
                 </div>
               </div>
-              <button className="text-white/40 hover:text-white">
-                <X className="w-4 h-4" />
-              </button>
+            )}
+
+            {/* Header */}
+            <div className="flex items-start gap-3 mb-4">
+              <div className="relative">
+                <img 
+                  src={post.avatar || defaultAvatar} 
+                  alt={post.author}
+                  className="w-14 h-14 rounded-full border-2 border-cyan-500/40 object-cover"
+                />
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full flex items-center justify-center border-2 border-[#15171c]">
+                  <span className="text-[10px]">K</span>
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-bold text-white truncate">{post.author}</div>
+                <div className="text-xs text-cyan-400/60">{post.handle}</div>
+                {post.kaspa_address && (
+                  <div className="text-[10px] text-white/30 mt-1 truncate">
+                    {post.kaspa_address.slice(0, 12)}...{post.kaspa_address.slice(-8)}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Votes */}
-            <div className="flex items-center justify-between text-xs">
-              <button
-                onClick={() => handleVote(post.handle)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
-                  userVotes[post.handle]
-                    ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/40"
-                    : "text-white/60 hover:text-cyan-400 hover:bg-white/5"
-                }`}
-              >
-                <span className="text-base">
-                  {userVotes[post.handle] ? "✓" : "○"}
-                </span>
-                <span className="text-sm font-bold">{getVoteCount(post.handle)}</span>
-                <span className="text-xs">votes</span>
-              </button>
-            </div>
+            <motion.button
+              onClick={() => handleVote(post.handle)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold ${
+                userVotes[post.handle]
+                  ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/30"
+                  : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-cyan-400 border border-white/10"
+              }`}
+            >
+              <span className="text-xl">
+                {userVotes[post.handle] ? "✓" : "○"}
+              </span>
+              <span className="text-sm">{userVotes[post.handle] ? "VOTED" : "VOTE"}</span>
+              <span className="text-xs bg-black/30 px-2 py-1 rounded-full">
+                {getVoteCount(post.handle)}
+              </span>
+            </motion.button>
           </motion.div>
         ))}
       </div>
+
+      {/* Add Dev Modal */}
+      {showAddDevModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 bg-black/90 backdrop-blur-md z-[100] flex items-center justify-center p-4"
+          onClick={() => setShowAddDevModal(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.9, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-gradient-to-br from-[#1a1d2e] to-[#0a0a0a] border border-cyan-500/30 rounded-3xl p-8 max-w-md w-full shadow-2xl shadow-cyan-500/20"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full flex items-center justify-center">
+                <Plus className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">Add Yourself as a KASPA DEV!</h2>
+                <p className="text-xs text-cyan-400/60">Join the builder community</p>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm text-cyan-400 font-medium mb-2 block">Username (from TTT)</label>
+                <Input
+                  value={user?.username || ""}
+                  disabled
+                  className="bg-white/5 border-cyan-500/30 text-white h-12 rounded-xl"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-cyan-400 font-medium mb-2 block">Kaspa Address (from KNS)</label>
+                <Input
+                  value={user?.created_wallet_address || ""}
+                  disabled
+                  className="bg-white/5 border-cyan-500/30 text-white text-xs h-12 rounded-xl"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-cyan-400 font-medium mb-2 block">Avatar (Optional)</label>
+                {newAvatar ? (
+                  <div className="flex items-center gap-4">
+                    <img src={newAvatar} alt="Avatar" className="w-20 h-20 rounded-full border-2 border-cyan-500/40" />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setNewAvatar("")}
+                      className="border-red-500/40 text-red-400 hover:bg-red-500/10"
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ) : (
+                  <label className="flex items-center justify-center gap-3 px-6 py-4 bg-white/5 border-2 border-dashed border-cyan-500/30 rounded-xl cursor-pointer hover:bg-cyan-500/10 hover:border-cyan-500/50 transition-all group">
+                    <Upload className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform" />
+                    <span className="text-sm text-cyan-400 font-medium">
+                      {uploadingAvatar ? "Uploading..." : "Upload Custom Avatar"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      className="hidden"
+                      disabled={uploadingAvatar}
+                    />
+                  </label>
+                )}
+                <p className="text-xs text-white/40 mt-2 text-center">
+                  Leave empty to use default Kaspa logo
+                </p>
+              </div>
+
+              <div className="flex gap-3 mt-8 pt-6 border-t border-white/10">
+                <Button
+                  onClick={() => {
+                    setShowAddDevModal(false);
+                    setNewAvatar("");
+                  }}
+                  variant="outline"
+                  className="flex-1 border-white/20 text-white hover:bg-white/10 h-12 rounded-xl"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleAddDev}
+                  className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white h-12 rounded-xl font-bold shadow-lg shadow-cyan-500/30"
+                >
+                  Register as Dev
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 }
