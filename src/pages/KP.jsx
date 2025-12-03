@@ -11,7 +11,10 @@ import { Textarea } from "@/components/ui/textarea";
 export default function KaspromoPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("VOTE");
-  const [userVotes, setUserVotes] = useState({});
+  const [userVotes, setUserVotes] = useState(() => {
+    const saved = localStorage.getItem('kp_votes');
+    return saved ? JSON.parse(saved) : {};
+  });
   const [user, setUser] = useState(null);
   const [devs, setDevs] = useState([]);
   const [showAddDevModal, setShowAddDevModal] = useState(false);
@@ -24,15 +27,7 @@ export default function KaspromoPage() {
   useEffect(() => {
     loadUser();
     loadDevs();
-    loadUserVotes();
   }, []);
-
-  const loadUserVotes = () => {
-    const saved = localStorage.getItem('kp_user_votes');
-    if (saved) {
-      setUserVotes(JSON.parse(saved));
-    }
-  };
 
   const loadUser = async () => {
     try {
@@ -45,8 +40,7 @@ export default function KaspromoPage() {
 
   const loadDevs = async () => {
     try {
-      const devsData = await base44.entities.KaspaBuilder.list('-votes');
-      console.log('Loaded devs:', devsData);
+      const devsData = await base44.entities.KaspaBuilder.list();
       setDevs(devsData);
     } catch (err) {
       console.error("Failed to load devs:", err);
@@ -310,37 +304,19 @@ export default function KaspromoPage() {
     },
   ];
 
-  const handleVote = async (post) => {
-    if (!post.id) return; // Only DEVS tab has IDs
-    
-    const hasVoted = userVotes[post.id];
+  const handleVote = (handle) => {
     const newVotes = { ...userVotes };
-    
-    try {
-      if (hasVoted) {
-        // Unvote
-        delete newVotes[post.id];
-        await base44.entities.KaspaBuilder.update(post.id, {
-          votes: Math.max(0, (post.votes || 0) - 1)
-        });
-      } else {
-        // Vote
-        newVotes[post.id] = true;
-        await base44.entities.KaspaBuilder.update(post.id, {
-          votes: (post.votes || 0) + 1
-        });
-      }
-      
-      setUserVotes(newVotes);
-      localStorage.setItem('kp_user_votes', JSON.stringify(newVotes));
-      await loadDevs(); // Refresh to show updated vote count
-    } catch (err) {
-      console.error('Failed to vote:', err);
+    if (newVotes[handle]) {
+      delete newVotes[handle];
+    } else {
+      newVotes[handle] = true;
     }
+    setUserVotes(newVotes);
+    localStorage.setItem('kp_votes', JSON.stringify(newVotes));
   };
 
-  const getVoteCount = (post) => {
-    return post.votes || 0;
+  const getVoteCount = (handle) => {
+    return userVotes[handle] ? 1 : 0;
   };
 
   const getCurrentPosts = () => {
@@ -481,22 +457,21 @@ export default function KaspromoPage() {
             {/* Actions */}
             <div className="space-y-2">
               <motion.button
-                onClick={() => handleVote(post)}
+                onClick={() => handleVote(post.handle)}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold ${
-                  post.id && userVotes[post.id]
+                  userVotes[post.handle]
                     ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/30"
                     : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-cyan-400 border border-white/10"
                 }`}
-                disabled={!post.id}
               >
                 <span className="text-xl">
-                  {post.id && userVotes[post.id] ? "✓" : "○"}
+                  {userVotes[post.handle] ? "✓" : "○"}
                 </span>
-                <span className="text-sm">{post.id && userVotes[post.id] ? "VOTED" : "VOTE"}</span>
+                <span className="text-sm">{userVotes[post.handle] ? "VOTED" : "VOTE"}</span>
                 <span className="text-xs bg-black/30 px-2 py-1 rounded-full">
-                  {getVoteCount(post)}
+                  {getVoteCount(post.handle)}
                 </span>
               </motion.button>
 

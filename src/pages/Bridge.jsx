@@ -280,49 +280,34 @@ export default function BridgePage() {
           console.log('💰 Fetching MetaMask balance for:', accounts[0]);
           
           try {
-            // Force a fresh balance check with multiple retries
-            let balanceWei;
-            let retries = 3;
+            // Get balance with proper error handling
+            const balanceWei = await window.ethereum.request({
+              method: 'eth_getBalance',
+              params: [accounts[0], 'latest']
+            });
             
-            while (retries > 0) {
-              try {
-                balanceWei = await window.ethereum.request({
-                  method: 'eth_getBalance',
-                  params: [accounts[0], 'latest']
-                });
-                
-                console.log('📦 Raw balance response:', balanceWei);
-                
-                if (balanceWei !== undefined && balanceWei !== null) {
-                  break;
-                }
-              } catch (e) {
-                console.warn(`⚠️ Balance fetch attempt ${4 - retries} failed:`, e);
-                retries--;
-                if (retries > 0) {
-                  await new Promise(resolve => setTimeout(resolve, 500));
-                }
-              }
-            }
+            console.log('📦 Raw balance response:', balanceWei);
+            console.log('📦 Type of balance:', typeof balanceWei);
             
-            if (!balanceWei && balanceWei !== '0x0') {
-              throw new Error('Failed to fetch balance after retries');
-            }
-            
-            // Convert from hex to decimal
+            // Convert from hex to decimal using BigInt for precision
             let balanceNum;
             if (typeof balanceWei === 'string' && balanceWei.startsWith('0x')) {
               balanceNum = BigInt(balanceWei);
+              console.log('✅ Parsed as BigInt:', balanceNum.toString());
             } else if (typeof balanceWei === 'number') {
-              balanceNum = BigInt(Math.floor(balanceWei));
+              balanceNum = BigInt(Math.floor(balanceWei)); // Convert number to BigInt
             } else {
-              balanceNum = BigInt(balanceWei);
+              console.warn('⚠️ Unexpected balance format, attempting BigInt conversion from string');
+              balanceNum = BigInt(balanceWei); // Try to convert directly
             }
             
+            // Convert Wei to KAS (divide by 10^18)
+            // Use Number() to convert BigInt to a regular number for division and toFixed
             const balanceInKAS = Number(balanceNum) / 1e18;
             
-            console.log('✅ MetaMask balance:', balanceInKAS, 'KAS');
-            console.log('   Wei:', balanceNum.toString());
+            console.log('✅ MetaMask balance:', balanceInKAS.toFixed(6), 'KAS');
+            console.log('   Wei value:', balanceNum.toString());
+            console.log('   Original hex:', balanceWei);
             
             const walletData = { 
               connected: true, 
@@ -338,7 +323,7 @@ export default function BridgePage() {
           } catch (balanceError) {
             console.error('❌ Failed to fetch balance:', balanceError);
             
-            // Set connected with 0 balance and show error
+            // Still set wallet as connected but with 0 balance
             const walletData = { 
               connected: true, 
               address: accounts[0], 
@@ -349,9 +334,6 @@ export default function BridgePage() {
             updateBridgeWalletsState({ metamask: walletData });
             
             await detectMetaMaskNetwork();
-            
-            // Try to refresh balance after a delay
-            setTimeout(() => checkWallets(), 2000);
           }
         } else {
           setMetamaskWallet({ connected: false, address: null, balance: 0 });

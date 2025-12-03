@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowUpDown, TrendingUp, Activity, LogOut, AlertCircle, Crown, User as UserIcon, Menu, X, Clock, Bot, Search, Users, Gamepad2, BarChart3, AlertTriangle, Settings, Bell, Briefcase, ShoppingBag, Brain, Shield, Wallet, Network, Key, MoreHorizontal, FileText, History, Download, ShoppingCart, Trophy, MessageSquare, LayoutGrid, ArrowLeft, Skull } from "lucide-react";
+import { ArrowUpDown, TrendingUp, Activity, LogOut, AlertCircle, Crown, User as UserIcon, Menu, X, Clock, Bot, Search, Users, Gamepad2, BarChart3, AlertTriangle, Settings, Bell, Briefcase, ShoppingBag, Brain, Shield, Wallet, Network, Key, MoreHorizontal, FileText, History, Download, ShoppingCart, Trophy, MessageSquare, LayoutGrid, ArrowLeft } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -259,7 +259,7 @@ export default function Layout({ children, currentPageName }) {
   const subNavItems = [
     { name: "TTT", label: "Encrypted Feed", icon: Users, path: "Feed" },
     { name: "NFT", label: "Mint NFTs", icon: Trophy, path: "NFTMint" },
-    { name: "War", label: "War Monitor", icon: Skull, path: "War" },
+    { name: "Global War", label: "War Monitor", icon: AlertTriangle, path: "GlobalWar" },
     { name: "Arcade", icon: Gamepad2, path: "Arcade" },
     { name: "Analytics", icon: TrendingUp, path: "Analytics" },
     { name: "Wallet", icon: Wallet, path: "Wallet" },
@@ -386,6 +386,12 @@ export default function Layout({ children, currentPageName }) {
         <nav className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-xl border-b border-white/10" style={{ paddingTop: 'var(--sat, 0px)' }}>
           <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 sm:py-3">
             <div className="flex items-center justify-between gap-3">
+              <Link 
+                to={createPageUrl("Home")}
+                className="flex items-center gap-2 group flex-shrink-0"
+              >
+                <span className="text-white font-black text-2xl sm:text-3xl tracking-tight">TTT</span>
+              </Link>
 
               <div className="hidden lg:flex items-center gap-2 flex-1 overflow-x-auto scrollbar-hide">
                 <div className="flex items-center gap-2 min-w-max">
