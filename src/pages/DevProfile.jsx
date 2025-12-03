@@ -833,20 +833,29 @@ export default function DevProfilePage() {
 
                             if (checkResponse.data?.balance) {
                               const newBalance = checkResponse.data.balance;
-                              const balanceIncrease = newBalance - balanceResponse.data.balance;
+                              const initialBalance = balanceResponse.data.balance;
+                              const balanceIncrease = newBalance - initialBalance;
                               const expectedAmount = parseFloat(tipAmount);
 
-                              console.log('Balance check:', {
-                                initial: balanceResponse.data.balance,
-                                current: newBalance,
-                                increase: balanceIncrease,
-                                expected: expectedAmount
+                              console.log('🔍 Kaspium Payment Check:', {
+                                devAddress: dev.kaspa_address,
+                                initialBalance: initialBalance.toFixed(2),
+                                currentBalance: newBalance.toFixed(2),
+                                increase: balanceIncrease.toFixed(2),
+                                expectedAmount: expectedAmount.toFixed(2),
+                                difference: (balanceIncrease - expectedAmount).toFixed(2)
                               });
 
-                              // Check if balance increased by approximately the tip amount (allow 0.01 KAS tolerance)
-                              if (balanceIncrease >= expectedAmount - 0.01) {
+                              // Verify exact amount received (allow 0.001 KAS tolerance for rounding)
+                              if (balanceIncrease >= expectedAmount && balanceIncrease < expectedAmount + 0.1) {
                                 clearInterval(intervalId);
                                 setKaspiumCheckInterval(null);
+
+                                console.log('✅ Payment verified:', {
+                                  dev: dev.username,
+                                  amount: expectedAmount,
+                                  actualIncrease: balanceIncrease.toFixed(2)
+                                });
 
                                 // Payment verified! Update total tips
                                 await base44.entities.KaspaBuilder.update(dev.id, {
