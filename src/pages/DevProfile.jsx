@@ -237,34 +237,32 @@ export default function DevProfilePage() {
         {/* Action Buttons */}
         <div className="absolute top-4 right-4 flex gap-2">
           {isOwner && (
-            {isOwner && (
-              <Button
-                onClick={() => {
-                  if (editMode) {
-                    handleSaveProfile();
-                  } else {
-                    setEditMode(true);
-                  }
-                }}
-                className={`${
-                  editMode 
-                    ? 'bg-green-500 hover:bg-green-600' 
-                    : 'bg-purple-500 hover:bg-purple-600'
-                } text-white border-0 shadow-lg`}
-              >
-                {editMode ? (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Save Profile
-                  </>
-                ) : (
-                  <>
-                    <Edit2 className="w-4 h-4 mr-2" />
-                    Edit Profile
-                  </>
-                )}
-              </Button>
-            )}
+            <Button
+              onClick={() => {
+                if (editMode) {
+                  handleSaveProfile();
+                } else {
+                  setEditMode(true);
+                }
+              }}
+              className={`${
+                editMode 
+                  ? 'bg-green-500 hover:bg-green-600' 
+                  : 'bg-purple-500 hover:bg-purple-600'
+              } text-white border-0 shadow-lg`}
+            >
+              {editMode ? (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Profile
+                </>
+              ) : (
+                <>
+                  <Edit2 className="w-4 h-4 mr-2" />
+                  Edit Profile
+                </>
+              )}
+            </Button>
           )}
           <Button
             onClick={handleCopyLink}
