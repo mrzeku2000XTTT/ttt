@@ -225,7 +225,7 @@ export default function TipModal({ isOpen, onClose }) {
                   </div>
                 </div>
                 <Button
-                  onClick={onClose}
+                  onClick={handleClose}
                   variant="ghost"
                   size="icon"
                   className="text-white/60 hover:text-white"
