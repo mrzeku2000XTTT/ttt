@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Shield, Loader2, CheckCircle, Copy, QrCode, AlertCircle, Wallet } from "lucide-react";
+import { X, Shield, Loader2, CheckCircle, Copy, AlertCircle, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
-import QRCode from "react-qr-code";
 
 export default function ZKVerificationModal({ isOpen, onClose, currentUser }) {
   const [kaswareAddress, setKaswareAddress] = useState("");
@@ -190,25 +189,16 @@ export default function ZKVerificationModal({ isOpen, onClose, currentUser }) {
                 {kaswareAddress && (
                   <div className="bg-white/5 border border-white/10 rounded-lg p-4">
                     <div className="text-white/60 text-xs mb-3">Your Kasware Wallet Address</div>
-                    
-                    {/* QR Code */}
-                    <div className="bg-white p-4 rounded-lg mb-3 flex items-center justify-center">
-                      <QRCode
-                        value={kaswareAddress}
-                        size={200}
-                        level="H"
-                      />
-                    </div>
 
                     {/* Address Text */}
-                    <div className="bg-black/50 border border-white/10 rounded-lg p-3 mb-3">
-                      <div className="text-white font-mono text-xs break-all mb-2">
+                    <div className="bg-gradient-to-r from-purple-500/10 to-cyan-500/10 border border-purple-500/30 rounded-lg p-4 mb-3">
+                      <div className="text-white font-mono text-sm break-all mb-3 text-center">
                         {kaswareAddress}
                       </div>
                       <Button
                         onClick={copyAddress}
                         size="sm"
-                        className="w-full bg-white/10 hover:bg-white/20 text-white"
+                        className="w-full bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 text-white font-semibold"
                       >
                         <Copy className="w-4 h-4 mr-2" />
                         Copy Address
