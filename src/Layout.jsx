@@ -5,10 +5,13 @@ import { ArrowUpDown, TrendingUp, Activity, LogOut, AlertCircle, Crown, User as 
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import SearchBar from "@/components/SearchBar";
 import { motion, AnimatePresence } from "framer-motion";
-import MiniPlayer from "@/components/MiniPlayer";
-import { VideoPlayerProvider } from "@/components/VideoPlayerContext";
+
+// Lazy load components with error handling
+const SearchBar = React.lazy(() => import("@/components/SearchBar").catch(() => ({ default: () => <div className="w-full max-w-md h-10 bg-white/5 rounded-lg" /> })));
+const MiniPlayer = React.lazy(() => import("@/components/MiniPlayer").catch(() => ({ default: () => null })));
+const VideoPlayerProvider = React.lazy(() => import("@/components/VideoPlayerContext").then(m => ({ default: m.VideoPlayerProvider })).catch(() => ({ default: ({ children }) => <>{children}</> })));
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -196,9 +199,11 @@ export default function Layout({ children, currentPageName }) {
 
   if (isHomePage || isLobbyPage) {
     return (
-      <VideoPlayerProvider>
-        {children}
-      </VideoPlayerProvider>
+      <React.Suspense fallback={<div className="min-h-screen bg-black" />}>
+        <VideoPlayerProvider>
+          {children}
+        </VideoPlayerProvider>
+      </React.Suspense>
     );
   }
 
@@ -271,8 +276,9 @@ export default function Layout({ children, currentPageName }) {
     : subNavItems;
 
   return (
-    <VideoPlayerProvider>
-      <div className="min-h-screen bg-black">
+    <React.Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><div className="text-white">Loading...</div></div>}>
+      <VideoPlayerProvider>
+        <div className="min-h-screen bg-black">
         {/* Compact Desktop Sidebar */}
         <motion.div
           initial={false}
@@ -752,7 +758,9 @@ export default function Layout({ children, currentPageName }) {
                 </div>
 
                 <div className="flex-1 max-w-md mx-auto">
-                  <SearchBar />
+                  <React.Suspense fallback={<div className="w-full h-10 bg-white/5 rounded-lg" />}>
+                    <SearchBar />
+                  </React.Suspense>
                 </div>
 
                 <div className="hidden lg:flex items-center gap-1">
@@ -826,7 +834,10 @@ export default function Layout({ children, currentPageName }) {
         </div>
         </div>
       </div>
-      <MiniPlayer currentPage={currentPageName} />
+      <React.Suspense fallback={null}>
+        <MiniPlayer currentPage={currentPageName} />
+      </React.Suspense>
     </VideoPlayerProvider>
+    </React.Suspense>
   );
 }
