@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { X, Plus, Upload } from "lucide-react";
+import { X, Plus, Upload, ExternalLink, Wallet } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,11 @@ export default function KaspromoPage() {
   const [devs, setDevs] = useState([]);
   const [showAddDevModal, setShowAddDevModal] = useState(false);
   const [newAvatar, setNewAvatar] = useState("");
+  const [appUrl, setAppUrl] = useState("");
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [showTipModal, setShowTipModal] = useState(false);
+  const [selectedDev, setSelectedDev] = useState(null);
+  const [tipAmount, setTipAmount] = useState("");
 
   useEffect(() => {
     loadUser();
@@ -58,15 +62,41 @@ export default function KaspromoPage() {
         kaspa_address: user.created_wallet_address,
         twitter_handle: user.username,
         avatar: newAvatar || "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/53badb4f2_image.png",
+        app_url: appUrl || "",
         verified: false,
-        votes: 0
+        votes: 0,
+        total_tips: 0
       });
       setShowAddDevModal(false);
       setNewAvatar("");
+      setAppUrl("");
       loadDevs();
     } catch (err) {
       console.error("Failed to add dev:", err);
       alert("Failed to register as dev");
+    }
+  };
+
+  const handleTip = async () => {
+    if (!tipAmount || parseFloat(tipAmount) <= 0) {
+      alert("Please enter a valid tip amount");
+      return;
+    }
+
+    try {
+      // Update dev's total tips
+      await base44.entities.KaspaDev.update(selectedDev.id, {
+        total_tips: (selectedDev.total_tips || 0) + parseFloat(tipAmount)
+      });
+      
+      alert(`Tipped ${tipAmount} KAS to ${selectedDev.username}! 🚀`);
+      setShowTipModal(false);
+      setTipAmount("");
+      setSelectedDev(null);
+      loadDevs();
+    } catch (err) {
+      console.error("Failed to tip:", err);
+      alert("Failed to send tip");
     }
   };
 
@@ -206,12 +236,15 @@ export default function KaspromoPage() {
   ];
 
   const devsPosts = devs.map(dev => ({
+    id: dev.id,
     author: dev.username,
     handle: `@${dev.twitter_handle}`,
     avatar: dev.avatar,
     votes: dev.votes,
     verified: dev.verified,
-    kaspa_address: dev.kaspa_address
+    kaspa_address: dev.kaspa_address,
+    app_url: dev.app_url,
+    total_tips: dev.total_tips || 0
   }));
 
   const ecosystemPosts = [
@@ -361,35 +394,71 @@ export default function KaspromoPage() {
                 </div>
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-bold text-white truncate">{post.author}</div>
+                {post.app_url ? (
+                  <a 
+                    href={post.app_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-sm font-bold text-cyan-400 hover:text-cyan-300 transition-colors group"
+                  >
+                    {post.author}
+                    <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </a>
+                ) : (
+                  <div className="text-sm font-bold text-white truncate">{post.author}</div>
+                )}
                 <div className="text-xs text-cyan-400/60">{post.handle}</div>
                 {post.kaspa_address && (
                   <div className="text-[10px] text-white/30 mt-1 truncate">
                     {post.kaspa_address.slice(0, 12)}...{post.kaspa_address.slice(-8)}
                   </div>
                 )}
+                {activeTab === "DEVS" && post.total_tips > 0 && (
+                  <div className="flex items-center gap-1 mt-1 text-xs text-yellow-400">
+                    <Wallet className="w-3 h-3" />
+                    <span className="font-bold">{post.total_tips.toFixed(2)} KAS</span>
+                    <span className="text-white/40">tips</span>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Votes */}
-            <motion.button
-              onClick={() => handleVote(post.handle)}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold ${
-                userVotes[post.handle]
-                  ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/30"
-                  : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-cyan-400 border border-white/10"
-              }`}
-            >
-              <span className="text-xl">
-                {userVotes[post.handle] ? "✓" : "○"}
-              </span>
-              <span className="text-sm">{userVotes[post.handle] ? "VOTED" : "VOTE"}</span>
-              <span className="text-xs bg-black/30 px-2 py-1 rounded-full">
-                {getVoteCount(post.handle)}
-              </span>
-            </motion.button>
+            {/* Actions */}
+            <div className="space-y-2">
+              <motion.button
+                onClick={() => handleVote(post.handle)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold ${
+                  userVotes[post.handle]
+                    ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/30"
+                    : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-cyan-400 border border-white/10"
+                }`}
+              >
+                <span className="text-xl">
+                  {userVotes[post.handle] ? "✓" : "○"}
+                </span>
+                <span className="text-sm">{userVotes[post.handle] ? "VOTED" : "VOTE"}</span>
+                <span className="text-xs bg-black/30 px-2 py-1 rounded-full">
+                  {getVoteCount(post.handle)}
+                </span>
+              </motion.button>
+
+              {activeTab === "DEVS" && post.kaspa_address && (
+                <motion.button
+                  onClick={() => {
+                    setSelectedDev(post);
+                    setShowTipModal(true);
+                  }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/20 transition-all font-medium text-sm"
+                >
+                  <Wallet className="w-4 h-4" />
+                  <span>Tip Dev</span>
+                </motion.button>
+              )}
+            </div>
           </motion.div>
         ))}
       </div>
@@ -438,6 +507,17 @@ export default function KaspromoPage() {
               </div>
 
               <div>
+                <label className="text-sm text-cyan-400 font-medium mb-2 block">App URL (Optional)</label>
+                <Input
+                  value={appUrl}
+                  onChange={(e) => setAppUrl(e.target.value)}
+                  placeholder="https://your-app.com"
+                  className="bg-white/5 border-cyan-500/30 text-white h-12 rounded-xl"
+                />
+                <p className="text-xs text-white/40 mt-1">Link to your Kaspa project or app</p>
+              </div>
+
+              <div>
                 <label className="text-sm text-cyan-400 font-medium mb-2 block">Avatar (Optional)</label>
                 {newAvatar ? (
                   <div className="flex items-center gap-4">
@@ -476,6 +556,7 @@ export default function KaspromoPage() {
                   onClick={() => {
                     setShowAddDevModal(false);
                     setNewAvatar("");
+                    setAppUrl("");
                   }}
                   variant="outline"
                   className="flex-1 border-white/20 text-white hover:bg-white/10 h-12 rounded-xl"
@@ -487,6 +568,102 @@ export default function KaspromoPage() {
                   className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white h-12 rounded-xl font-bold shadow-lg shadow-cyan-500/30"
                 >
                   Register as Dev
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+
+      {/* Tip Modal */}
+      {showTipModal && selectedDev && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 bg-black/90 backdrop-blur-md z-[100] flex items-center justify-center p-4"
+          onClick={() => setShowTipModal(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.9, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-gradient-to-br from-[#1a1d2e] to-[#0a0a0a] border border-yellow-500/30 rounded-3xl p-8 max-w-md w-full shadow-2xl shadow-yellow-500/20"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full flex items-center justify-center">
+                <Wallet className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">Tip {selectedDev.author}</h2>
+                <p className="text-xs text-yellow-400/60">Support this developer</p>
+              </div>
+            </div>
+
+            <div className="bg-white/5 rounded-2xl p-4 mb-6 border border-yellow-500/20">
+              <div className="flex items-center gap-3 mb-3">
+                <img 
+                  src={selectedDev.avatar || defaultAvatar} 
+                  alt={selectedDev.author}
+                  className="w-12 h-12 rounded-full border-2 border-yellow-500/40"
+                />
+                <div>
+                  <div className="text-sm font-bold text-white">{selectedDev.author}</div>
+                  <div className="text-xs text-white/60">{selectedDev.handle}</div>
+                </div>
+              </div>
+              <div className="text-xs text-white/40">
+                Address: {selectedDev.kaspa_address?.slice(0, 12)}...{selectedDev.kaspa_address?.slice(-8)}
+              </div>
+              {selectedDev.total_tips > 0 && (
+                <div className="mt-3 pt-3 border-t border-white/10 flex items-center gap-2">
+                  <span className="text-xs text-white/60">Total tips received:</span>
+                  <span className="text-sm font-bold text-yellow-400">{selectedDev.total_tips.toFixed(2)} KAS</span>
+                </div>
+              )}
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm text-yellow-400 font-medium mb-2 block">Tip Amount (KAS)</label>
+                <Input
+                  type="number"
+                  value={tipAmount}
+                  onChange={(e) => setTipAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="bg-white/5 border-yellow-500/30 text-white h-12 rounded-xl text-lg font-bold"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                {[1, 5, 10, 25].map((amount) => (
+                  <button
+                    key={amount}
+                    onClick={() => setTipAmount(amount.toString())}
+                    className="flex-1 px-3 py-2 bg-white/5 border border-yellow-500/30 rounded-lg text-yellow-400 hover:bg-yellow-500/10 transition-all text-sm font-medium"
+                  >
+                    {amount} KAS
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex gap-3 mt-6 pt-6 border-t border-white/10">
+                <Button
+                  onClick={() => {
+                    setShowTipModal(false);
+                    setTipAmount("");
+                    setSelectedDev(null);
+                  }}
+                  variant="outline"
+                  className="flex-1 border-white/20 text-white hover:bg-white/10 h-12 rounded-xl"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleTip}
+                  disabled={!tipAmount || parseFloat(tipAmount) <= 0}
+                  className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-white h-12 rounded-xl font-bold shadow-lg shadow-yellow-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Send Tip
                 </Button>
               </div>
             </div>
