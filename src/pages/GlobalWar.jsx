@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, ExternalLink, RefreshCw, Loader2, MapPin, Clock, Globe, Stamp, Sparkles, Brain } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import NewsAnalysisModal from "../components/NewsAnalysisModal"; // Added import
+import NewsAnalysisModal from "@/components/NewsAnalysisModal";
 
 export default function GlobalWarPage() {
   const [news, setNews] = useState([]);
@@ -102,7 +102,8 @@ export default function GlobalWarPage() {
             prompt: `Search for the LATEST global war, conflict, and crisis news from the past 24 hours. Include:
 - Ukraine war updates
 - Middle East conflicts (Gaza, Israel, Syria, Yemen, Lebanon)
-- Africa conflicts (Sudan, Ethiopia, DRC, Somalia, Sahel region, Nigeria)
+- Africa conflicts (Sudan, Ethiopia, DRC, Somalia, Sahel region, Nigeria, Kenya, South Africa, Mali, Burkina Faso)
+- African local news and regional conflicts
 - Military operations worldwide
 - Humanitarian crises
 - Major conflicts and tensions
@@ -466,7 +467,22 @@ Format the response as markdown with proper headings, paragraphs, and structure.
                            location.includes("nigeria") ||
                            location.includes("sahel") ||
                            location.includes("drc") ||
-                           location.includes("congo");
+                           location.includes("congo") ||
+                           location.includes("kenya") ||
+                           location.includes("south africa") ||
+                           location.includes("mali") ||
+                           location.includes("burkina faso") ||
+                           location.includes("niger") ||
+                           location.includes("chad") ||
+                           location.includes("mozambique") ||
+                           location.includes("uganda") ||
+                           location.includes("rwanda") ||
+                           location.includes("zimbabwe") ||
+                           location.includes("libya") ||
+                           location.includes("egypt") ||
+                           location.includes("tunisia") ||
+                           location.includes("algeria") ||
+                           location.includes("morocco");
                   }
                   if (region === "middle east") {
                     return location.includes("middle east") ||
