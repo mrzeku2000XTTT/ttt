@@ -44,8 +44,13 @@ export default function DevProfilePage() {
     }
 
     try {
-      const user = await base44.auth.me();
-      setCurrentUser(user);
+      let user = null;
+      try {
+        user = await base44.auth.me();
+        setCurrentUser(user);
+      } catch (authErr) {
+        console.log('User not logged in');
+      }
       
       const devData = await base44.entities.KaspaDev.filter({ id: devId });
       if (devData.length > 0) {
