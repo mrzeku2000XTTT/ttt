@@ -79,10 +79,20 @@ export default function GlobalWarPage() {
       
       // Load from localStorage first
       const cached = localStorage.getItem('global_war_news');
-      if (cached && !isAutoRefresh) {
-        const cachedData = JSON.parse(cached);
-        setNews(cachedData);
-        console.log(`📦 Loaded ${cachedData.length} cached news items`);
+      let cachedData = [];
+      
+      if (cached) {
+        try {
+          cachedData = JSON.parse(cached);
+          if (!isAutoRefresh && cachedData.length > 0) {
+            setNews(cachedData);
+            console.log(`📦 Loaded ${cachedData.length} cached news items`);
+          }
+        } catch (parseErr) {
+          console.log('⚠️ Failed to parse cached data:', parseErr);
+          localStorage.removeItem('global_war_news');
+          cachedData = [];
+        }
       }
 
       let allNewItems = [];
@@ -92,12 +102,12 @@ export default function GlobalWarPage() {
         console.log('📰 Trying aggregateWarNews...');
         const response = await base44.functions.invoke('aggregateWarNews', {});
         
-        if (response.data && response.data.news && response.data.news.length > 0) {
+        if (response?.data?.news && Array.isArray(response.data.news) && response.data.news.length > 0) {
           console.log(`✅ Got ${response.data.news.length} items from aggregateWarNews`);
           allNewItems = response.data.news;
         }
       } catch (e) {
-        console.log('⚠️ aggregateWarNews failed:', e.message);
+        console.log('⚠️ aggregateWarNews failed:', e?.message || e);
       }
 
       // Fallback to InvokeLLM
