@@ -724,17 +724,17 @@ export default function DevProfilePage() {
               </Button>
             </div>
 
-            {dev.kns_id ? (
-              <div className="space-y-4">
-                {/* KNS ID Photo */}
-                {dev.kns_photo ? (
-                  <div className="relative group">
-                    <img 
-                      src={dev.kns_photo} 
-                      alt="KNS ID"
-                      className="w-full h-auto rounded-2xl border-2 border-purple-500/40 object-contain max-h-96"
-                    />
-                    {isOwner && (
+            <div className="space-y-4">
+              {/* KNS ID Photo Upload - Always visible for owner */}
+              {isOwner && (
+                <div>
+                  {dev.kns_photo ? (
+                    <div className="relative group">
+                      <img 
+                        src={dev.kns_photo} 
+                        alt="KNS ID"
+                        className="w-full h-auto rounded-2xl border-2 border-purple-500/40 object-contain max-h-96"
+                      />
                       <label className="absolute inset-0 bg-black/60 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                         <div className="text-center">
                           <Upload className="w-8 h-8 text-white mx-auto mb-2" />
@@ -745,31 +745,47 @@ export default function DevProfilePage() {
                         <input
                           type="file"
                           accept="image/*"
+                          capture="environment"
                           onChange={handleKnsPhotoUpload}
                           className="hidden"
                           disabled={uploadingKnsPhoto}
                         />
                       </label>
-                    )}
-                  </div>
-                ) : isOwner ? (
-                  <label className="block w-full border-2 border-dashed border-purple-500/40 rounded-2xl p-8 text-center hover:border-purple-500/60 transition-colors cursor-pointer bg-purple-500/5">
-                    <Upload className="w-12 h-12 text-purple-400 mx-auto mb-3" />
-                    <p className="text-white font-semibold mb-1">Upload KNS ID Photo</p>
-                    <p className="text-xs text-purple-400/60">
-                      {uploadingKnsPhoto ? "Uploading..." : "Tap to upload your KNS badge/card"}
-                    </p>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleKnsPhotoUpload}
-                      className="hidden"
-                      disabled={uploadingKnsPhoto}
-                    />
-                  </label>
-                ) : null}
+                    </div>
+                  ) : (
+                    <label className="block w-full border-2 border-dashed border-purple-500/40 rounded-2xl p-12 text-center hover:border-purple-500/60 transition-colors cursor-pointer bg-purple-500/5">
+                      <Upload className="w-16 h-16 text-purple-400 mx-auto mb-4" />
+                      <p className="text-white font-bold mb-2 text-lg">Upload KNS ID Photo</p>
+                      <p className="text-sm text-purple-400/80 mb-4">
+                        {uploadingKnsPhoto ? "Uploading..." : "Tap here to upload your KNS badge/card"}
+                      </p>
+                      <div className="bg-purple-500/20 rounded-lg px-4 py-2 inline-block">
+                        <span className="text-xs text-purple-300">📸 Camera or Gallery</span>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handleKnsPhotoUpload}
+                        className="hidden"
+                        disabled={uploadingKnsPhoto}
+                      />
+                    </label>
+                  )}
+                </div>
+              )}
 
-                {/* ID Card Info */}
+              {/* Show existing photo for non-owners */}
+              {!isOwner && dev.kns_photo && (
+                <img 
+                  src={dev.kns_photo} 
+                  alt="KNS ID"
+                  className="w-full h-auto rounded-2xl border-2 border-purple-500/40 object-contain max-h-96"
+                />
+              )}
+
+              {/* ID Card Info */}
+              {dev.kns_id ? (
                 <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-2 border-purple-500/40 rounded-2xl p-4 sm:p-6">
                   <div className="text-center mb-4">
                     <img 
@@ -796,32 +812,33 @@ export default function DevProfilePage() {
                     )}
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="text-center py-8 sm:py-12">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CreditCard className="w-8 h-8 sm:w-10 sm:h-10 text-purple-400" />
+              ) : (
+                <div className="text-center py-6">
+                  <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <CreditCard className="w-8 h-8 text-purple-400" />
+                  </div>
+                  <p className="text-white/60 text-sm px-4">
+                    {isOwner 
+                      ? "Set your KNS ID in Edit Profile to complete your card"
+                      : "This developer hasn't set up their KNS ID yet"
+                    }
+                  </p>
+                  {isOwner && (
+                    <Button
+                      onClick={() => {
+                        setShowKnsModal(false);
+                        setEditMode(true);
+                      }}
+                      size="sm"
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white mt-4"
+                    >
+                      <Edit2 className="w-3 h-3 mr-2" />
+                      Add KNS ID
+                    </Button>
+                  )}
                 </div>
-                <p className="text-white/60 mb-6 text-sm sm:text-base px-4">
-                  {isOwner 
-                    ? "You haven't set up your KNS ID yet. Click Edit to add it!"
-                    : "This developer hasn't set up their KNS ID yet."
-                  }
-                </p>
-                {isOwner && (
-                  <Button
-                    onClick={() => {
-                      setShowKnsModal(false);
-                      setEditMode(true);
-                    }}
-                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-                  >
-                    <Edit2 className="w-4 h-4 mr-2" />
-                    Add KNS ID
-                  </Button>
-                )}
-              </div>
-            )}
+              )}
+            </div>
           </motion.div>
         </motion.div>
       )}
