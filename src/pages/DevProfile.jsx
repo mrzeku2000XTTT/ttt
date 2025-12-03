@@ -52,7 +52,7 @@ export default function DevProfilePage() {
         console.log('User not logged in');
       }
       
-      const allDevs = await base44.entities.KaspaDev.list();
+      const allDevs = await base44.entities.KaspaBuilder.list();
       const devData = allDevs.filter(d => d.id === devId);
       console.log('Found dev:', devData);
       if (devData.length > 0) {
@@ -177,7 +177,7 @@ export default function DevProfilePage() {
       }
 
       // Update dev's total tips after successful transaction
-      await base44.entities.KaspaDev.update(dev.id, {
+      await base44.entities.KaspaBuilder.update(dev.id, {
         total_tips: (dev.total_tips || 0) + parseFloat(tipAmount)
       });
       

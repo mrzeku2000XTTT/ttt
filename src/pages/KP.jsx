@@ -40,7 +40,7 @@ export default function KaspromoPage() {
 
   const loadDevs = async () => {
     try {
-      const devsData = await base44.entities.KaspaDev.list();
+      const devsData = await base44.entities.KaspaBuilder.list();
       setDevs(devsData);
     } catch (err) {
       console.error("Failed to load devs:", err);
@@ -61,7 +61,7 @@ export default function KaspromoPage() {
     }
 
     try {
-      const newDev = await base44.entities.KaspaDev.create({
+      const newDev = await base44.entities.KaspaBuilder.create({
         username: user.username,
         kaspa_address: user.created_wallet_address,
         twitter_handle: user.username,
