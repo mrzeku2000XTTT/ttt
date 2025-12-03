@@ -840,72 +840,63 @@ export default function DevProfilePage() {
                         amount: expectedAmount
                       });
 
-                      // Check for transaction using getKaspaUTXOs
+                      // Check for payment via RPC
                       const intervalId = setInterval(async () => {
                         try {
-                          // Use our UTXO checker to get sender's recent transactions
-                          const utxoResponse = await base44.functions.invoke('getKaspaUTXOs', { 
-                            address: currentUser.created_wallet_address 
+                          console.log('🔍 Checking recipient UTXOs via RPC...');
+                          
+                          // Get recipient's UTXOs via RPC
+                          const recipientUtxoResponse = await fetch('https://api.fluxnodeservice.com/kaspa/rpc', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              method: 'getUtxosByAddresses',
+                              params: { addresses: [dev.kaspa_address] }
+                            })
                           });
+                          
+                          const recipientUtxoData = await recipientUtxoResponse.json();
+                          console.log('📦 Recipient UTXOs:', recipientUtxoData);
 
-                          console.log('📦 UTXO Response:', utxoResponse.data);
-
-                          if (utxoResponse.data?.utxos) {
-                            // Check if any UTXO was recently spent (check for recent outgoing transactions)
-                            // Also fetch recent transactions from Kaspa API
-                            const apiUrl = `https://api.kaspa.org/addresses/${currentUser.created_wallet_address}/full-transactions?limit=10&resolve_previous_outpoints=light`;
-                            const response = await fetch(apiUrl);
+                          if (recipientUtxoData.result?.entries) {
+                            const entries = recipientUtxoData.result.entries;
                             
-                            if (response.ok) {
-                              const data = await response.json();
-                              console.log('📦 Sender TXs:', data?.length, data);
-
-                              if (data && Array.isArray(data)) {
-                                console.log('🔍 Checking', data.length, 'transactions for dev:', dev.kaspa_address);
+                            for (const entry of entries) {
+                              if (entry.utxoEntry) {
+                                const amount = entry.utxoEntry.amount / 100000000;
+                                const txId = entry.outpoint?.transactionId;
                                 
-                                // Find ANY transaction sent to dev in the last 10 minutes
-                                for (const tx of data) {
-                                  const txTime = parseInt(tx.block_time);
-                                  const tenMinutesAgo = Date.now() - (10 * 60 * 1000);
-                                  const isRecent = txTime >= tenMinutesAgo;
-                                  
-                                  // Check if ANY output goes to dev's address
-                                  const hasSentToDev = (tx.outputs || []).some(out => 
-                                    out.script_public_key_address === dev.kaspa_address
-                                  );
+                                console.log('🔍 Checking UTXO:', {
+                                  txId: txId?.substring(0, 8),
+                                  amount: amount.toFixed(4),
+                                  expected: expectedAmount
+                                });
 
-                                  console.log('🔍 TX:', tx.transaction_id?.substring(0,8), {
-                                    time: new Date(txTime),
-                                    isRecent,
-                                    hasSentToDev,
-                                    devAddress: dev.kaspa_address?.substring(0, 20) + '...',
-                                    outputAddresses: tx.outputs?.map(o => o.script_public_key_address?.substring(0, 20) + '...')
+                                // Check if amount matches
+                                if (Math.abs(amount - expectedAmount) < 0.01) {
+                                  console.log('✅✅✅ Payment UTXO found!', txId);
+                                  
+                                  clearInterval(intervalId);
+                                  setKaspiumCheckInterval(null);
+                                  setTipTxHash(txId);
+
+                                  await base44.entities.KaspaBuilder.update(dev.id, {
+                                    total_tips: (dev.total_tips || 0) + expectedAmount
                                   });
 
-                                  if (isRecent && hasSentToDev) {
-                                    console.log('✅✅✅ MATCH FOUND! Verifying payment...', tx.transaction_id);
-                                    
-                                    clearInterval(intervalId);
-                                    setKaspiumCheckInterval(null);
-                                    setTipTxHash(tx.transaction_id);
-
-                                    await base44.entities.KaspaBuilder.update(dev.id, {
-                                      total_tips: (dev.total_tips || 0) + expectedAmount
-                                    });
-
-                                    toast.success(`✅ Payment verified!\nTX: ${tx.transaction_id.substring(0, 8)}...`);
-                                    setShowKaspiumPay(false);
-                                    setVerifyingKaspiumPayment(false);
-                                    setTipAmount("");
-                                    setTipTxHash(null);
-                                    loadDev();
-                                    return;
-                                  }
+                                  toast.success(`✅ Payment verified!\nTX: ${txId.substring(0, 8)}...`);
+                                  setShowKaspiumPay(false);
+                                  setVerifyingKaspiumPayment(false);
+                                  setTipAmount("");
+                                  setTipTxHash(null);
+                                  loadDev();
+                                  return;
                                 }
-                                console.log('❌ No matching transaction found yet...');
                               }
                             }
                           }
+
+                          console.log('❌ No matching payment found yet...');
 
                           if (Date.now() - startTime > 300000) {
                             clearInterval(intervalId);
@@ -914,7 +905,7 @@ export default function DevProfilePage() {
                             setVerifyingKaspiumPayment(false);
                           }
                         } catch (err) {
-                          console.error('Error:', err);
+                          console.error('RPC Error:', err);
                         }
                       }, 3000);
 
