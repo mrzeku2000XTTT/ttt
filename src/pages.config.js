@@ -144,6 +144,7 @@ import Creator from './pages/Creator';
 import Lobby from './pages/Lobby';
 import Focus from './pages/Focus';
 import KaspaLFG from './pages/KaspaLFG';
+import KP from './pages/KP';
 import __Layout from './Layout.jsx';
 
 
@@ -294,6 +295,7 @@ export const PAGES = {
     "Lobby": Lobby,
     "Focus": Focus,
     "KaspaLFG": KaspaLFG,
+    "KP": KP,
 }
 
 export const pagesConfig = {

@@ -29,6 +29,7 @@ function GateContent() {
     { name: "Creator", path: "Creator", category: "Business", color: "#10B981" },
     { name: "Focus", path: "Focus", category: "Zen", color: "#3B82F6" },
     { name: "Kaspa LFG", path: "KaspaLFG", category: "DeFi", color: "#10B981" },
+    { name: "KP", path: "KP", category: "News", color: "#06B6D4" },
   ];
 
   const filteredApps = searchQuery
