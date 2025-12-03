@@ -201,8 +201,9 @@ Provide 20 unique news items with: title, summary (max 200 chars), category (con
     } catch (error) {
       console.error('❌ Failed to load war news:', error);
       setError('Failed to load news. Click refresh to try again.');
+      
       // Load fallback news to prevent white screen
-      if (!cached || JSON.parse(cached).length === 0) {
+      if (cachedData.length === 0) {
         setNews([{
           title: "News Loading Issue",
           summary: "Unable to fetch latest news. Please try refreshing.",
@@ -211,6 +212,8 @@ Provide 20 unique news items with: title, summary (max 200 chars), category (con
           source: "TTT Monitor",
           timestamp: new Date().toISOString()
         }]);
+      } else {
+        setNews(cachedData);
       }
     } finally {
       setIsLoading(false);
