@@ -21,12 +21,27 @@ export default function TapToTipPage() {
   const [isVideo, setIsVideo] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = React.useRef(null);
+  const [showZkVerification, setShowZkVerification] = useState(false);
+  const [zkTimestamp, setZkTimestamp] = useState(null);
+  const [zkVerifying, setZkVerifying] = useState(false);
+  const [zkWalletBalance, setZkWalletBalance] = useState(null);
 
   useEffect(() => {
     loadCurrentUser();
     loadUsers();
     loadBackgroundMedia();
   }, []);
+
+  const loadZkWalletBalance = async (address) => {
+    try {
+      const response = await base44.functions.invoke('getKaspaBalance', { address });
+      if (response.data?.balance) {
+        setZkWalletBalance(response.data.balance);
+      }
+    } catch (err) {
+      console.error('Failed to load balance:', err);
+    }
+  };
 
   const loadBackgroundMedia = () => {
     const saved = localStorage.getItem('taptotip_background');
@@ -74,6 +89,10 @@ export default function TapToTipPage() {
     try {
       const user = await base44.auth.me();
       setCurrentUser(user);
+      
+      if (user?.created_wallet_address) {
+        loadZkWalletBalance(user.created_wallet_address);
+      }
       
       // Set up listener for wallet changes
       const checkWalletChange = setInterval(async () => {
@@ -219,12 +238,111 @@ export default function TapToTipPage() {
     setTipAmount("");
   };
 
-  const handleSendTip = () => {
+  const handleKaswareTip = async () => {
     if (!selectedUser || !tipAmount) return;
     
-    const address = selectedUser.created_wallet_address || selectedUser.agent_zk_id;
-    const kaswareUrl = `kasware://send?address=${address}&amount=${parseFloat(tipAmount)}`;
-    window.location.href = kaswareUrl;
+    if (typeof window.kasware === 'undefined') {
+      alert('Kasware wallet not detected. Please install Kasware extension.');
+      return;
+    }
+
+    try {
+      const address = selectedUser.created_wallet_address || selectedUser.agent_zk_id;
+      const sompiAmount = Math.floor(parseFloat(tipAmount) * 100000000);
+      
+      const txResponse = await window.kasware.sendKaspa(address, sompiAmount);
+      
+      let txid;
+      if (typeof txResponse === 'string') {
+        try {
+          const parsed = JSON.parse(txResponse);
+          txid = parsed.id;
+        } catch {
+          txid = txResponse;
+        }
+      } else if (txResponse && typeof txResponse === 'object') {
+        txid = txResponse.id;
+      }
+      
+      if (!txid || !/^[a-f0-9]{64}$/i.test(txid)) {
+        throw new Error('Invalid transaction ID');
+      }
+
+      alert(`✅ Sent ${tipAmount} KAS to ${selectedUser.username}! 🚀`);
+      setSelectedUser(null);
+      setTipAmount("");
+    } catch (err) {
+      console.error('Failed to tip:', err);
+      alert(`Failed to send tip: ${err.message || 'Transaction cancelled'}`);
+    }
+  };
+
+  const handleZkTip = async () => {
+    if (!currentUser?.created_wallet_address) {
+      alert('Please connect your TTT wallet first');
+      return;
+    }
+
+    if (!tipAmount || parseFloat(tipAmount) <= 0) {
+      alert('Please enter a valid tip amount');
+      return;
+    }
+
+    const timestamp = Date.now();
+    setZkTimestamp(timestamp);
+    setZkVerifying(true);
+    setShowZkVerification(true);
+
+    try {
+      const targetAmount = parseFloat(tipAmount);
+      let attempts = 0;
+      const maxAttempts = 200;
+
+      const checkTransaction = async () => {
+        attempts++;
+        console.log(`Attempt ${attempts}/${maxAttempts} - Checking for transaction...`);
+
+        try {
+          const response = await base44.functions.invoke('verifyKaspaSelfTransaction', {
+            address: currentUser.created_wallet_address,
+            expectedAmount: targetAmount,
+            timestamp: timestamp
+          });
+
+          if (response.data?.verified && response.data?.transaction) {
+            console.log('✅ Transaction verified!', response.data.transaction);
+            setZkVerifying(false);
+            
+            alert(`✅ Sent ${tipAmount} KAS to ${selectedUser.username} via ZK! 🚀`);
+            setShowZkVerification(false);
+            setSelectedUser(null);
+            setTipAmount("");
+            setZkTimestamp(null);
+
+            return true;
+          }
+
+          if (attempts < maxAttempts) {
+            setTimeout(checkTransaction, 3000);
+          } else {
+            setZkVerifying(false);
+            alert('Verification timeout. Transaction not detected within 10 minutes.');
+          }
+        } catch (err) {
+          if (attempts < maxAttempts) {
+            setTimeout(checkTransaction, 3000);
+          } else {
+            setZkVerifying(false);
+            alert('Failed to verify transaction. Please try again.');
+          }
+        }
+      };
+
+      checkTransaction();
+    } catch (err) {
+      setZkVerifying(false);
+      alert('Verification failed to start. Please try again.');
+    }
   };
 
   return (
@@ -550,16 +668,25 @@ export default function TapToTipPage() {
                   </div>
 
                   <Button
-                    onClick={handleSendTip}
+                    onClick={handleZkTip}
                     disabled={!tipAmount || parseFloat(tipAmount) <= 0}
-                    className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 h-12"
+                    className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 h-12"
+                  >
+                    <Wallet className="w-5 h-5 mr-2" />
+                    ZK (Send in Kaspium)
+                  </Button>
+
+                  <Button
+                    onClick={handleKaswareTip}
+                    disabled={!tipAmount || parseFloat(tipAmount) <= 0}
+                    className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 h-12"
                   >
                     <Send className="w-5 h-5 mr-2" />
-                    Send {tipAmount || '0'} KAS
+                    Send KAS (Kasware)
                   </Button>
 
                   <p className="text-xs text-gray-500 text-center">
-                    This will open Kasware to complete the transaction
+                    ZK verifies automatically when you send to yourself
                   </p>
                 </div>
               </CardContent>
@@ -568,6 +695,79 @@ export default function TapToTipPage() {
               </div>
               </>
               )}
+
+      {/* ZK Verification Modal */}
+      {showZkVerification && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-md z-[300]"
+          />
+          <div className="fixed inset-0 z-[301] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="bg-black/90 border border-cyan-500/30 rounded-2xl p-6 max-w-md w-full"
+            >
+              <h3 className="text-2xl font-bold text-white mb-2">ZK Verification</h3>
+              <p className="text-white/60 text-sm mb-6">
+                Send {tipAmount} KAS to yourself in Kaspium to verify this tip
+              </p>
+
+              {zkVerifying && (
+                <div className="text-center py-6">
+                  <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4" />
+                  <p className="text-cyan-400 font-semibold mb-2">Waiting for Transaction...</p>
+                  <p className="text-white/60 text-sm mb-4">
+                    Send {tipAmount} KAS to yourself in Kaspium
+                  </p>
+
+                  {zkWalletBalance !== null && (
+                    <div className="bg-white/5 rounded-lg p-3 border border-white/10 mb-4">
+                      <p className="text-white/40 text-xs mb-1">Current Balance</p>
+                      <p className="text-white text-lg font-bold">{zkWalletBalance.toFixed(2)} KAS</p>
+                    </div>
+                  )}
+
+                  <div className="bg-white/5 rounded-lg p-3 mb-4">
+                    <p className="text-white/40 text-xs mb-1">Your Address</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-white text-xs font-mono break-all">
+                        {currentUser?.created_wallet_address}
+                      </p>
+                      <Button
+                        onClick={() => {
+                          navigator.clipboard.writeText(currentUser?.created_wallet_address || '');
+                          alert('Address copied');
+                        }}
+                        size="sm"
+                        className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 text-xs h-7"
+                      >
+                        Copy
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-white/40 text-xs mb-4">
+                    Verification will happen automatically when the transaction is detected
+                  </p>
+                  <Button
+                    onClick={() => {
+                      setZkVerifying(false);
+                      setShowZkVerification(false);
+                      setTipAmount('');
+                    }}
+                    variant="outline"
+                    className="w-full border-white/10 text-white/60"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
