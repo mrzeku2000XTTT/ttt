@@ -117,10 +117,16 @@ export default function KaspromoPage() {
         throw new Error('Invalid transaction ID');
       }
 
-      // Update dev's total tips after successful transaction
-      await base44.entities.KaspaBuilder.update(selectedDev.id, {
-        total_tips: (selectedDev.total_tips || 0) + parseFloat(tipAmount)
-      });
+      // Update dev's total tips after successful transaction (only if we have the ID)
+      if (selectedDev.id) {
+        try {
+          await base44.entities.KaspaBuilder.update(selectedDev.id, {
+            total_tips: (selectedDev.total_tips || 0) + parseFloat(tipAmount)
+          });
+        } catch (updateErr) {
+          console.error('Failed to update tips:', updateErr);
+        }
+      }
       
       alert(`✅ Tipped ${tipAmount} KAS to ${selectedDev.author}! 🚀\n\nTX: ${txid.substring(0, 8)}...`);
       setShowTipModal(false);
