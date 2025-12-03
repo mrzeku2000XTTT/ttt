@@ -870,7 +870,8 @@ export default function DevProfilePage() {
 
                 <Button
                   onClick={startZkVerification}
-                  className="w-full bg-cyan-500 hover:bg-cyan-600 text-white h-12 font-semibold"
+                  disabled={!tipAmount || parseFloat(tipAmount) <= 0}
+                  className="w-full bg-cyan-500 hover:bg-cyan-600 text-white h-12 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Start Verification
                 </Button>
@@ -891,16 +892,36 @@ export default function DevProfilePage() {
                 <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4" />
                 <p className="text-cyan-400 font-semibold mb-2">Waiting for Transaction...</p>
                 <p className="text-white/60 text-sm mb-4">
-                  Checking for your {tipAmount} KAS self-transaction
+                  Send {tipAmount} KAS to yourself in Kaspium
                 </p>
+
+                {/* Current Balance */}
+                {zkWalletBalance !== null && (
+                  <div className="bg-white/5 rounded-lg p-3 border border-white/10 mb-4">
+                    <p className="text-white/40 text-xs mb-1">Current Balance</p>
+                    <p className="text-white text-lg font-bold">{zkWalletBalance.toFixed(2)} KAS</p>
+                  </div>
+                )}
 
                 <div className="bg-white/5 rounded-lg p-3 mb-4">
                   <p className="text-white/40 text-xs mb-1">Your Address</p>
-                  <p className="text-white text-xs font-mono break-all">
-                    {currentUser?.created_wallet_address}
-                  </p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-white text-xs font-mono break-all">
+                      {currentUser?.created_wallet_address}
+                    </p>
+                    <Button
+                      onClick={() => {
+                        navigator.clipboard.writeText(currentUser?.created_wallet_address || '');
+                        toast.success('Address copied');
+                      }}
+                      size="sm"
+                      className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 text-xs h-7"
+                    >
+                      Copy
+                    </Button>
+                  </div>
                 </div>
-                <p className="text-white/40 text-xs mb-4">
+                <p className="text-white/40 text-xs">
                   Verification will happen automatically when the transaction is detected
                 </p>
                 <Button
@@ -910,7 +931,7 @@ export default function DevProfilePage() {
                     setTipAmount('');
                   }}
                   variant="outline"
-                  className="w-full border-white/10 text-white/60"
+                  className="w-full border-white/10 text-white/60 mt-4"
                 >
                   Cancel
                 </Button>
