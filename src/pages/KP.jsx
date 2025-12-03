@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { X, Heart, MessageCircle, Eye, ExternalLink } from "lucide-react";
+import { X } from "lucide-react";
 
 export default function KPPage() {
   const [activeTab, setActiveTab] = useState("Feed");
@@ -19,134 +19,86 @@ export default function KPPage() {
   const feedPosts = [
     {
       author: "Kaspa",
-      handle: "@KaspaCoin",
+      handle: "@kaspaunchained",
       avatar: "/api/placeholder/40/40",
-      content: "150M tx on a PoW blockDAG and the bottleneck is people, not the network. Keep poking.",
-      likes: 538,
-      comments: 21,
-      views: 20800,
-      time: "22h ago",
+      votes: 0,
       verified: true,
     },
     {
       author: "Kaspa Hub",
       handle: "@KaspaHub",
       avatar: "/api/placeholder/40/40",
-      content: '"$10 Kaspa is possible." — Davinci Jeremie x.com/i/broadcasts/1...',
-      likes: 158,
-      comments: 23,
-      views: 15300,
-      time: "15h ago",
+      votes: 0,
       verified: false,
     },
     {
       author: "Kaspa",
-      handle: "@KaspaCoin",
+      handle: "@kaspaunchained",
       avatar: "/api/placeholder/40/40",
-      content: "Kaspa's 10 BPS isn't just speed, it tilts variance math toward solo miners. Decentralization experiment still early.",
-      likes: 234,
-      comments: 51,
-      views: 12400,
-      time: "18h ago",
+      votes: 0,
       verified: true,
     },
     {
       author: "Kaspa Eco Foundation (KEF)",
       handle: "@kaspa_KEF",
       avatar: "/api/placeholder/40/40",
-      content: "New #kaspa flywheel != anything else @hashdag",
-      likes: 233,
-      comments: 67,
-      views: 10400,
-      time: "13h ago",
+      votes: 0,
       verified: false,
     },
     {
       author: "Kaspa Hub",
       handle: "@KaspaHub",
       avatar: "/api/placeholder/40/40",
-      content: "🔴 LIVE NOW: @hashdag speaking from London at @Tokenize_LDN! x.com/i/broadcasts/1...",
-      likes: 88,
-      comments: 23,
-      views: 7800,
-      time: "13h ago",
+      votes: 0,
       verified: false,
     },
     {
       author: "Kaspa Calls",
       handle: "@KaspaCalls",
       avatar: "/api/placeholder/40/40",
-      content: "Since apparently nobody has posted it yet: 'Breaking News' The upcoming listing of Kaspa on HTX has been confirmed.",
-      likes: 305,
-      comments: 35,
-      views: 6700,
-      time: "18h ago",
+      votes: 0,
       verified: false,
     },
     {
       author: "Kaspa Eco Foundation (KEF)",
       handle: "@kaspa_KEF",
       avatar: "/api/placeholder/40/40",
-      content: "In less than 2hrs!",
-      likes: 108,
-      comments: 34,
-      views: 6600,
-      time: "14h ago",
+      votes: 0,
       verified: false,
     },
     {
       author: "Mr. Kaspa",
       handle: "@MrKaspa",
       avatar: "/api/placeholder/40/40",
-      content: "On yesterday's Blockchain Banter episode, KEF announced that @HTX_Global will list Kaspa KEF paid a 'reasonable' fee for this listing that mentioned Kaspa's UTXO model can...",
-      likes: 138,
-      comments: 26,
-      views: 5600,
-      time: "11h ago",
+      votes: 0,
       verified: false,
     },
     {
       author: "CryptoGrodd",
       handle: "@GroddBitCrypto",
       avatar: "/api/placeholder/40/40",
-      content: "@KaspaFinance might be one of the most underrated projects in the entire Kaspa ecosystem. The consistency, the grind, the dedication — unmatched. $KAS",
-      likes: 115,
-      comments: 4,
-      views: 4500,
-      time: "19h ago",
+      votes: 0,
       verified: false,
     },
     {
       author: "FailFace.kas ɿ",
       handle: "@FailFace_69",
       avatar: "/api/placeholder/40/40",
-      content: "The myth, the man, the legend! Very pleased to meet @hashdag irl! $kas",
-      likes: 390,
-      comments: 8,
-      views: 4400,
-      time: "20h ago",
+      votes: 0,
       verified: false,
     },
     {
       author: "KaspaBots_prime",
       handle: "@KaspaBots_prime",
       avatar: "/api/placeholder/40/40",
-      content: "Confirmed. HTX listing is a solid step for Kaspa's visibility and liquidity. But let's stay focused: the real value is in the protocol's robustness and the community's innovation. Listings: MIX",
-      likes: 82,
-      comments: 18,
-      views: 4100,
-      time: "17h ago",
+      votes: 0,
       verified: false,
     },
     {
       author: "Titan881",
       handle: "@Titan881",
       avatar: "/api/placeholder/40/40",
-      content: '🔵 Summary of the Talk — English Version "Kaspa\'s True Strength: Real-Time Decentralization (RTD)" The crypto evidence we have: IMAGES 📸 REPORT 📋 PEOPLE 👥',
-      likes: 97,
-      comments: 28,
-      views: 3800,
-      time: "16h ago",
+      votes: 0,
       verified: false,
     },
   ];
@@ -220,25 +172,11 @@ export default function KPPage() {
               </button>
             </div>
 
-            {/* Stats */}
+            {/* Votes */}
             <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1 text-pink-400">
-                  <Heart className="w-4 h-4 fill-pink-400" />
-                  <span className="font-semibold">{post.likes}</span>
-                </div>
-                <div className="flex items-center gap-1 text-white/40">
-                  <MessageCircle className="w-4 h-4" />
-                  <span>{post.comments}</span>
-                </div>
-                <div className="flex items-center gap-1 text-white/40">
-                  <Eye className="w-4 h-4" />
-                  <span>{post.views >= 1000 ? `${(post.views / 1000).toFixed(1)}K` : post.views}</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-white/40">{post.time}</span>
-                <ExternalLink className="w-3 h-3 text-white/40 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="flex items-center gap-2 text-cyan-400">
+                <span className="text-sm font-bold">{post.votes}</span>
+                <span className="text-white/60">votes</span>
               </div>
             </div>
           </motion.div>
