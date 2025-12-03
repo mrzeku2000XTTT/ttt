@@ -861,45 +861,48 @@ export default function DevProfilePage() {
                               console.log('📦 Sender TXs:', data?.length, data);
 
                               if (data && Array.isArray(data)) {
-                                // Find ANY transaction sent to dev in the last 5 minutes
-                                const matchingTx = data.find(tx => {
+                                console.log('🔍 Checking', data.length, 'transactions for dev:', dev.kaspa_address);
+                                
+                                // Find ANY transaction sent to dev in the last 10 minutes
+                                for (const tx of data) {
                                   const txTime = parseInt(tx.block_time);
-                                  const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
-                                  const isRecent = txTime >= fiveMinutesAgo;
+                                  const tenMinutesAgo = Date.now() - (10 * 60 * 1000);
+                                  const isRecent = txTime >= tenMinutesAgo;
                                   
-                                  // Check outputs to dev
+                                  // Check if ANY output goes to dev's address
                                   const hasSentToDev = (tx.outputs || []).some(out => 
                                     out.script_public_key_address === dev.kaspa_address
                                   );
 
-                                  console.log('🔍', tx.transaction_id?.substring(0,8), {
+                                  console.log('🔍 TX:', tx.transaction_id?.substring(0,8), {
                                     time: new Date(txTime),
                                     isRecent,
                                     hasSentToDev,
-                                    outputs: tx.outputs?.map(o => o.script_public_key_address)
+                                    devAddress: dev.kaspa_address?.substring(0, 20) + '...',
+                                    outputAddresses: tx.outputs?.map(o => o.script_public_key_address?.substring(0, 20) + '...')
                                   });
 
-                                  return isRecent && hasSentToDev;
-                                });
+                                  if (isRecent && hasSentToDev) {
+                                    console.log('✅✅✅ MATCH FOUND! Verifying payment...', tx.transaction_id);
+                                    
+                                    clearInterval(intervalId);
+                                    setKaspiumCheckInterval(null);
+                                    setTipTxHash(tx.transaction_id);
 
-                                if (matchingTx) {
-                                  clearInterval(intervalId);
-                                  setKaspiumCheckInterval(null);
+                                    await base44.entities.KaspaBuilder.update(dev.id, {
+                                      total_tips: (dev.total_tips || 0) + expectedAmount
+                                    });
 
-                                  console.log('✅ VERIFIED!', matchingTx.transaction_id);
-                                  setTipTxHash(matchingTx.transaction_id);
-
-                                  await base44.entities.KaspaBuilder.update(dev.id, {
-                                    total_tips: (dev.total_tips || 0) + expectedAmount
-                                  });
-
-                                  toast.success(`✅ Payment verified!\nTX: ${matchingTx.transaction_id.substring(0, 8)}...`);
-                                  setShowKaspiumPay(false);
-                                  setVerifyingKaspiumPayment(false);
-                                  setTipAmount("");
-                                  setTipTxHash(null);
-                                  loadDev();
+                                    toast.success(`✅ Payment verified!\nTX: ${tx.transaction_id.substring(0, 8)}...`);
+                                    setShowKaspiumPay(false);
+                                    setVerifyingKaspiumPayment(false);
+                                    setTipAmount("");
+                                    setTipTxHash(null);
+                                    loadDev();
+                                    return;
+                                  }
                                 }
+                                console.log('❌ No matching transaction found yet...');
                               }
                             }
                           }
