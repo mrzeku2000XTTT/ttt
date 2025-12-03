@@ -1,12 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Copy, CheckCircle, Clock, AlertCircle, Wallet } from "lucide-react";
+import { X, Copy, CheckCircle, Clock, AlertCircle, Wallet, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { base44 } from "@/api/base44Client";
 
-const TIP_API_BASE = "https://kaspa-node-proxy-nebulouslabs.replit.app";
+// Generate QR code URL using free QR Server API
+const generateQRCode = (address, amountKAS) => {
+  // Create kaspa: URI with amount in sompi if specified
+  const kaspaUri = amountKAS 
+    ? `kaspa:${address}?amount=${Math.floor(parseFloat(amountKAS) * 100000000)}`
+    : address;
+  return `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(kaspaUri)}`;
+};
 
 export default function TipModal({ isOpen, onClose }) {
   const [step, setStep] = useState("form"); // form, payment, success, expired
@@ -15,37 +23,68 @@ export default function TipModal({ isOpen, onClose }) {
   const [senderName, setSenderName] = useState("");
   const [message, setMessage] = useState("");
   const [tipData, setTipData] = useState(null);
-  const [timeRemaining, setTimeRemaining] = useState(1800); // 30 minutes in seconds
+  const [timeRemaining, setTimeRemaining] = useState(600); // 10 minutes in seconds
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
+  // Countdown timer
   useEffect(() => {
-    if (step === "payment" && tipData) {
+    if (step === "payment" && timeRemaining > 0) {
       const interval = setInterval(() => {
-        checkTipStatus(tipData.tipId);
-      }, 5000);
-
-      return () => clearInterval(interval);
-    }
-  }, [step, tipData]);
-
-  useEffect(() => {
-    if (step === "payment" && tipData?.expiresAt) {
-      const interval = setInterval(() => {
-        const now = Date.now();
-        const expires = new Date(tipData.expiresAt).getTime();
-        const remaining = Math.max(0, Math.floor((expires - now) / 1000));
-        setTimeRemaining(remaining);
-
-        if (remaining === 0) {
-          setStep("expired");
-          clearInterval(interval);
-        }
+        setTimeRemaining(prev => {
+          if (prev <= 1) {
+            setStep("expired");
+            return 0;
+          }
+          return prev - 1;
+        });
       }, 1000);
 
       return () => clearInterval(interval);
     }
-  }, [step, tipData]);
+  }, [step, timeRemaining]);
+
+  // Poll Zelcore API for payment verification
+  useEffect(() => {
+    if (step === "payment" && tipData && verifying) {
+      let attempts = 0;
+      const maxAttempts = 200; // 10 minutes at 3s intervals
+
+      const checkPayment = async () => {
+        attempts++;
+        console.log(`🔍 Payment check ${attempts}/${maxAttempts}`);
+
+        try {
+          const response = await base44.functions.invoke('zelcoreKaspaAPI', {
+            action: 'verifyPayment',
+            address: tipData.recipientAddress,
+            amount: tipData.amount || "0"
+          });
+
+          if (response.data?.verified) {
+            console.log('✅ Payment verified!');
+            setTipData(prev => ({ ...prev, amountReceived: tipData.amount || response.data.amount }));
+            setStep("success");
+            setVerifying(false);
+            triggerConfetti();
+            return;
+          }
+
+          if (attempts < maxAttempts && timeRemaining > 0) {
+            setTimeout(checkPayment, 3000);
+          }
+        } catch (err) {
+          console.error('Payment check error:', err);
+          if (attempts < maxAttempts && timeRemaining > 0) {
+            setTimeout(checkPayment, 3000);
+          }
+        }
+      };
+
+      checkPayment();
+    }
+  }, [step, tipData, verifying]);
 
   const createTipRequest = async () => {
     if (!recipientAddress) {
@@ -53,52 +92,39 @@ export default function TipModal({ isOpen, onClose }) {
       return;
     }
 
-    setLoading(true);
-    try {
-      const response = await fetch(`${TIP_API_BASE}/api/tip/create`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          recipientAddress,
-          amount: amount ? parseFloat(amount) : null,
-          senderName: senderName || "Anonymous",
-          message: message || ""
-        })
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setTipData(data);
-        setStep("payment");
-        toast.success("Tip request created!");
-      } else {
-        toast.error(data.error || "Failed to create tip request");
-      }
-    } catch (err) {
-      console.error("Create tip error:", err);
-      toast.error("Failed to create tip request");
+    // Validate Kaspa address format
+    if (!recipientAddress.startsWith('kaspa:')) {
+      toast.error("Invalid Kaspa address - must start with 'kaspa:'");
+      return;
     }
+
+    setLoading(true);
+    
+    // Generate QR code locally - no backend needed
+    const qrCode = generateQRCode(recipientAddress, amount);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
+    
+    setTipData({
+      recipientAddress,
+      amount: amount || null,
+      senderName: senderName || "Anonymous",
+      message: message || "",
+      qrCode,
+      expiresAt
+    });
+    
+    setTimeRemaining(600); // Reset to 10 minutes
+    setStep("payment");
+    setVerifying(true);
     setLoading(false);
+    toast.success("Tip request created! Waiting for payment...");
   };
 
-  const checkTipStatus = async (tipId) => {
-    try {
-      const response = await fetch(`${TIP_API_BASE}/api/tip/status/${tipId}`);
-      const status = await response.json();
-
-      if (status.status === "confirmed") {
-        setTipData(prev => ({ ...prev, amountReceived: status.amountReceived }));
-        setStep("success");
-        triggerConfetti();
-      } else if (status.status === "partial") {
-        toast.warning(`Partial payment received: ${status.amountReceived} KAS`);
-      } else if (status.status === "expired") {
-        setStep("expired");
-      }
-    } catch (err) {
-      console.error("Status check error:", err);
-    }
+  // Cancel verification when modal closes
+  const handleClose = () => {
+    setVerifying(false);
+    resetModal();
+    onClose();
   };
 
   const triggerConfetti = () => {
@@ -179,7 +205,7 @@ export default function TipModal({ isOpen, onClose }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={onClose}
+            onClick={handleClose}
           >
             <motion.div
               initial={{ scale: 0.9, y: 20 }}
