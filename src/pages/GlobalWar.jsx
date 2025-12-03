@@ -20,18 +20,24 @@ export default function GlobalWarPage() {
   const [selectedRegion, setSelectedRegion] = useState("all");
 
   useEffect(() => {
-    try {
-      loadWarNews();
-      checkKasware();
-    } catch (err) {
+    loadWarNews().catch(err => {
       console.error('Init error:', err);
-      setError('Failed to initialize. Please refresh.');
+      setError('Failed to load');
       setIsLoading(false);
-    }
+      setNews([{
+        title: "System Error",
+        summary: "Unable to load war news. Please refresh the page.",
+        category: "system",
+        location: "Global",
+        source: "TTT Monitor",
+        timestamp: new Date().toISOString()
+      }]);
+    });
     
-    // Refresh every 5 minutes
+    checkKasware().catch(() => {});
+    
     const interval = setInterval(() => {
-      loadWarNews(true);
+      loadWarNews(true).catch(() => {});
     }, 300000);
     
     return () => clearInterval(interval);
