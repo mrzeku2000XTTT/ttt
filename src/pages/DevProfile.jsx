@@ -58,8 +58,8 @@ export default function DevProfilePage() {
         setEditedHowFundsUsed(devProfile.how_funds_used || "");
         setEditedAvatar(devProfile.avatar || "");
         
-        // Check if current user owns this profile
-        if (user && user.username === devProfile.username) {
+        // Check if current user owns this profile (by email/created_by OR username)
+        if (user && (user.email === devProfile.created_by || user.username === devProfile.username)) {
           setIsOwner(true);
         }
       } else {
