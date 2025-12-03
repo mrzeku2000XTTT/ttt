@@ -120,6 +120,13 @@ export default function TipModal({ isOpen, onClose }) {
     toast.success("Tip request created! Waiting for payment...");
   };
 
+  // Cancel verification when modal closes
+  const handleClose = () => {
+    setVerifying(false);
+    resetModal();
+    onClose();
+  };
+
   const triggerConfetti = () => {
     // Simple confetti effect
     const duration = 3 * 1000;
