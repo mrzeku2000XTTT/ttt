@@ -4,6 +4,10 @@ import { X } from "lucide-react";
 
 export default function KPPage() {
   const [activeTab, setActiveTab] = useState("VOTE");
+  const [userVotes, setUserVotes] = useState(() => {
+    const saved = localStorage.getItem('kp_votes');
+    return saved ? JSON.parse(saved) : {};
+  });
 
   const tabs = [
     { name: "VOTE", icon: "X" },
@@ -186,6 +190,21 @@ export default function KPPage() {
     },
   ];
 
+  const handleVote = (handle) => {
+    const newVotes = { ...userVotes };
+    if (newVotes[handle]) {
+      delete newVotes[handle];
+    } else {
+      newVotes[handle] = true;
+    }
+    setUserVotes(newVotes);
+    localStorage.setItem('kp_votes', JSON.stringify(newVotes));
+  };
+
+  const getVoteCount = (handle) => {
+    return userVotes[handle] ? 1 : 0;
+  };
+
   const getCurrentPosts = () => {
     if (activeTab === "VOTE") return votePosts;
     if (activeTab === "DEVS") return devsPosts;
@@ -264,10 +283,20 @@ export default function KPPage() {
 
             {/* Votes */}
             <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2 text-cyan-400">
-                <span className="text-sm font-bold">{post.votes}</span>
-                <span className="text-white/60">votes</span>
-              </div>
+              <button
+                onClick={() => handleVote(post.handle)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                  userVotes[post.handle]
+                    ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/40"
+                    : "text-white/60 hover:text-cyan-400 hover:bg-white/5"
+                }`}
+              >
+                <span className="text-base">
+                  {userVotes[post.handle] ? "✓" : "○"}
+                </span>
+                <span className="text-sm font-bold">{getVoteCount(post.handle)}</span>
+                <span className="text-xs">votes</span>
+              </button>
             </div>
           </motion.div>
         ))}
