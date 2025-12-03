@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
-import { ArrowLeft, ExternalLink, Copy, Wallet, Target, DollarSign, CheckCircle, X, Edit2, Save, Upload, CreditCard } from "lucide-react";
+import { ArrowLeft, ExternalLink, Copy, Wallet, Target, DollarSign, CheckCircle, X, Edit2, Save, Upload, CreditCard, Clock, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -42,6 +42,11 @@ export default function DevProfilePage() {
   const [showKnsModal, setShowKnsModal] = useState(false);
   const [editedKnsPhoto, setEditedKnsPhoto] = useState("");
   const [uploadingKnsPhoto, setUploadingKnsPhoto] = useState(false);
+  
+  // Zelcore states
+  const [showZelcoreModal, setShowZelcoreModal] = useState(false);
+  const [zelcoreVerifying, setZelcoreVerifying] = useState(false);
+  const [zelcoreTimeRemaining, setZelcoreTimeRemaining] = useState(600);
 
   useEffect(() => {
     loadDev();
@@ -343,6 +348,91 @@ export default function DevProfilePage() {
       setZkVerifying(false);
       alert('Verification failed to start. Please try again.');
     }
+  };
+
+  // Zelcore tip handler - polls Zelcore API for incoming payment
+  const handleZelcoreTip = async () => {
+    if (!tipAmount || parseFloat(tipAmount) <= 0) {
+      alert('Please enter a valid tip amount');
+      return;
+    }
+
+    setShowTipModal(false);
+    setShowZelcoreModal(true);
+    setZelcoreVerifying(true);
+    setZelcoreTimeRemaining(600);
+
+    const targetAmount = parseFloat(tipAmount);
+    let attempts = 0;
+    const maxAttempts = 200; // 10 minutes
+
+    // Start countdown timer
+    const timerInterval = setInterval(() => {
+      setZelcoreTimeRemaining(prev => {
+        if (prev <= 1) {
+          clearInterval(timerInterval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    const checkPayment = async () => {
+      attempts++;
+      console.log(`🔍 Zelcore check ${attempts}/${maxAttempts} - Looking for ${targetAmount} KAS to ${dev.kaspa_address}`);
+
+      try {
+        const response = await base44.functions.invoke('zelcoreKaspaAPI', {
+          action: 'verifyPayment',
+          address: dev.kaspa_address,
+          amount: targetAmount.toString()
+        });
+
+        console.log('Zelcore response:', response.data);
+
+        if (response.data?.verified) {
+          console.log('✅ Payment verified via Zelcore!');
+          clearInterval(timerInterval);
+          setZelcoreVerifying(false);
+
+          // Update dev's total tips
+          await base44.entities.KaspaBuilder.update(dev.id, {
+            total_tips: (dev.total_tips || 0) + targetAmount
+          });
+
+          toast.success(`Tipped ${tipAmount} KAS to ${dev.username} via Kaspium! 🚀`);
+          
+          setTimeout(() => {
+            setShowZelcoreModal(false);
+            setTipAmount("");
+            loadDev();
+          }, 2000);
+
+          return true;
+        }
+
+        // Continue polling
+        if (attempts < maxAttempts && zelcoreTimeRemaining > 0) {
+          setTimeout(checkPayment, 3000);
+        } else {
+          clearInterval(timerInterval);
+          setZelcoreVerifying(false);
+          alert('Payment verification timeout. If you sent the payment, it may still be processing.');
+        }
+      } catch (err) {
+        console.error('Zelcore verification error:', err);
+        if (attempts < maxAttempts) {
+          setTimeout(checkPayment, 3000);
+        } else {
+          clearInterval(timerInterval);
+          setZelcoreVerifying(false);
+          alert('Verification failed. Please try again.');
+        }
+      }
+    };
+
+    // Start checking
+    checkPayment();
   };
 
   const handleCopyAddress = () => {
@@ -795,13 +885,21 @@ export default function DevProfilePage() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <Button
                   onClick={handleZkTip}
                   disabled={!tipAmount || parseFloat(tipAmount) <= 0 || !currentUser?.created_wallet_address}
                   className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white h-12 rounded-xl font-bold shadow-lg shadow-cyan-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ZK
+                </Button>
+
+                <Button
+                  onClick={handleZelcoreTip}
+                  disabled={!tipAmount || parseFloat(tipAmount) <= 0}
+                  className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white h-12 rounded-xl font-bold shadow-lg shadow-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Kaspium
                 </Button>
 
                 <Button
@@ -1055,6 +1153,116 @@ export default function DevProfilePage() {
                   </Button>
                 </a>
               </>
+            )}
+          </motion.div>
+        </motion.div>
+      )}
+
+      {/* Zelcore/Kaspium Payment Modal */}
+      {showZelcoreModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        >
+          <motion.div
+            initial={{ scale: 0.9, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
+            className="bg-gradient-to-br from-[#1a1d2e] to-[#0a0a0a] border border-green-500/30 rounded-2xl p-6 max-w-md w-full"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
+                  <Wallet className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Pay with Kaspium</h2>
+                  <p className="text-xs text-green-400/60">Send {tipAmount} KAS to {dev.username}</p>
+                </div>
+              </div>
+              {!zelcoreVerifying && (
+                <Button
+                  onClick={() => {
+                    setShowZelcoreModal(false);
+                    setTipAmount('');
+                  }}
+                  variant="ghost"
+                  size="icon"
+                  className="text-white/60 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              )}
+            </div>
+
+            {zelcoreVerifying ? (
+              <div className="text-center py-6">
+                <div className="w-16 h-16 border-4 border-green-500/30 border-t-green-500 rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-green-400 font-semibold mb-2">Waiting for Payment...</p>
+                
+                <div className="bg-white/5 rounded-lg p-4 mb-4 border border-white/10">
+                  <p className="text-white/40 text-xs mb-2">Send exactly</p>
+                  <p className="text-3xl font-black text-green-400 mb-2">{tipAmount} KAS</p>
+                  <p className="text-white/40 text-xs mb-2">to this address:</p>
+                  <div className="flex items-center justify-between gap-2 bg-black/40 rounded-lg p-2">
+                    <p className="text-white text-xs font-mono break-all">
+                      {dev.kaspa_address}
+                    </p>
+                    <Button
+                      onClick={() => {
+                        navigator.clipboard.writeText(dev.kaspa_address);
+                        toast.success('Address copied');
+                      }}
+                      size="sm"
+                      className="bg-green-500/20 hover:bg-green-500/30 text-green-400 text-xs h-7 flex-shrink-0"
+                    >
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 mb-4">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <Clock className="w-4 h-4 text-green-400" />
+                    <span className="text-lg text-white font-bold">
+                      {Math.floor(zelcoreTimeRemaining / 60)}:{(zelcoreTimeRemaining % 60).toString().padStart(2, '0')}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-3 h-3 text-green-400 animate-spin" />
+                    <span className="text-xs text-white/80">Monitoring blockchain via Zelcore...</span>
+                  </div>
+                </div>
+
+                <a
+                  href={`kaspa:${dev.kaspa_address}?amount=${parseFloat(tipAmount) * 100000000}`}
+                  className="block mb-4"
+                >
+                  <Button className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white h-12 rounded-xl font-bold">
+                    Open in Kaspium
+                  </Button>
+                </a>
+
+                <Button
+                  onClick={() => {
+                    setZelcoreVerifying(false);
+                    setShowZelcoreModal(false);
+                    setTipAmount('');
+                  }}
+                  variant="outline"
+                  className="w-full border-white/10 text-white/60"
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="w-10 h-10 text-green-400" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-2">Payment Confirmed! 🎉</h3>
+                <p className="text-green-400 font-semibold">{tipAmount} KAS sent to {dev.username}</p>
+              </div>
             )}
           </motion.div>
         </motion.div>
