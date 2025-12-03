@@ -80,7 +80,6 @@ export default function SearchBar() {
       { name: 'DAGKnight', path: 'DAGKnightWallet', description: 'DAG Wallet', iconComponent: Network, premium: true },
       { name: 'Arcade', path: 'Arcade', description: 'Games', iconComponent: Gamepad2 },
       { name: 'Analytics', path: 'Analytics', description: 'Stats & Charts', iconComponent: TrendingUp },
-      { name: 'War', path: 'GlobalWar', description: 'War Monitor', iconComponent: AlertTriangle },
       { name: 'History', path: 'History', description: 'Transaction History', iconComponent: History },
       { name: 'Settings', path: 'Settings', description: 'App Settings', iconComponent: Settings },
       { name: 'Profile', path: 'Profile', description: 'Your Profile', iconComponent: User },
