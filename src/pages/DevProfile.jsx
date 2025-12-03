@@ -787,13 +787,92 @@ export default function DevProfilePage() {
               </div>
 
               <Button
-                onClick={handleTip}
+                onClick={handleZkTip}
+                disabled={!tipAmount || parseFloat(tipAmount) <= 0}
+                className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white h-12 rounded-xl font-bold shadow-lg shadow-cyan-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                ZK (Send in Kaspium)
+              </Button>
+
+              <Button
+                onClick={handleKaswareTip}
                 disabled={!tipAmount || parseFloat(tipAmount) <= 0}
                 className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-white h-12 rounded-xl font-bold shadow-lg shadow-yellow-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Send Tip
+                Send KAS (Kasware)
               </Button>
             </div>
+          </motion.div>
+        </motion.div>
+      )}
+
+      {/* ZK Verification Modal */}
+      {showZkVerification && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        >
+          <motion.div
+            initial={{ scale: 0.9, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
+            className="bg-black/90 border border-cyan-500/30 rounded-2xl p-6 max-w-md w-full"
+          >
+            <h3 className="text-2xl font-bold text-white mb-2">ZK Verification</h3>
+            <p className="text-white/60 text-sm mb-6">
+              Send {tipAmount} KAS to yourself in Kaspium to verify this tip
+            </p>
+
+            {zkVerifying && (
+              <div className="text-center py-6">
+                <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-cyan-400 font-semibold mb-2">Waiting for Transaction...</p>
+                <p className="text-white/60 text-sm mb-4">
+                  Send {tipAmount} KAS to yourself in Kaspium
+                </p>
+
+                {/* Current Balance */}
+                {zkWalletBalance !== null && (
+                  <div className="bg-white/5 rounded-lg p-3 border border-white/10 mb-4">
+                    <p className="text-white/40 text-xs mb-1">Current Balance</p>
+                    <p className="text-white text-lg font-bold">{zkWalletBalance.toFixed(2)} KAS</p>
+                  </div>
+                )}
+
+                <div className="bg-white/5 rounded-lg p-3 mb-4">
+                  <p className="text-white/40 text-xs mb-1">Your Address</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-white text-xs font-mono break-all">
+                      {currentUser?.created_wallet_address}
+                    </p>
+                    <Button
+                      onClick={() => {
+                        navigator.clipboard.writeText(currentUser?.created_wallet_address || '');
+                        toast.success('Address copied');
+                      }}
+                      size="sm"
+                      className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 text-xs h-7"
+                    >
+                      Copy
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-white/40 text-xs">
+                  Verification will happen automatically when the transaction is detected
+                </p>
+                <Button
+                  onClick={() => {
+                    setZkVerifying(false);
+                    setShowZkVerification(false);
+                    setTipAmount('');
+                  }}
+                  variant="outline"
+                  className="w-full border-white/10 text-white/60 mt-4"
+                >
+                  Cancel
+                </Button>
+              </div>
+            )}
           </motion.div>
         </motion.div>
       )}
