@@ -10,6 +10,28 @@ export default function TestZelcorePage() {
   const [result, setResult] = useState(null);
   const [testAddress, setTestAddress] = useState("kaspa:qz7ulu4c25dh6qg0xnqt7gkp93m5t4msgz9e94f8kshez7q80q34ysu8qkz0u");
   const [testAmount, setTestAmount] = useState("1");
+  const [customEndpoint, setCustomEndpoint] = useState("/info");
+
+  const testDirectAPI = async (endpoint) => {
+    setLoading(true);
+    setResult(null);
+    
+    try {
+      const url = `https://api.kas.zelcore.io${endpoint}`;
+      console.log('Testing direct API:', url);
+      
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      console.log('Direct API Response:', data);
+      setResult({ endpoint: url, data });
+    } catch (error) {
+      console.error('Direct API Error:', error);
+      setResult({ error: error.message });
+    }
+    
+    setLoading(false);
+  };
 
   const testAPI = async (action) => {
     setLoading(true);
@@ -60,7 +82,40 @@ export default function TestZelcorePage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="border-t border-white/10 pt-4 mt-4">
+                <h3 className="text-white font-bold mb-3">🔬 Direct API Testing</h3>
+                <div className="flex gap-2 mb-3">
+                  <Input
+                    value={customEndpoint}
+                    onChange={(e) => setCustomEndpoint(e.target.value)}
+                    className="bg-white/5 border-yellow-500/30 text-white"
+                    placeholder="/info or /address/..."
+                  />
+                  <Button
+                    onClick={() => testDirectAPI(customEndpoint)}
+                    disabled={loading}
+                    className="bg-yellow-500 hover:bg-yellow-600"
+                  >
+                    Test
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <Button size="sm" variant="outline" onClick={() => testDirectAPI('/info')}>
+                    /info
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => testDirectAPI('/status')}>
+                    /status
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => testDirectAPI(`/address/${testAddress}/balance`)}>
+                    /address/.../balance
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => testDirectAPI(`/address/${testAddress}/full-transactions`)}>
+                    /address/.../txs
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 border-t border-white/10 pt-4 mt-4">
                 <Button
                   onClick={() => testAPI('getBalance')}
                   disabled={loading}
