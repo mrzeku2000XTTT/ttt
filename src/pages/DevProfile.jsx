@@ -23,9 +23,9 @@ export default function DevProfilePage() {
   const [zkWalletBalance, setZkWalletBalance] = useState(null);
   const [tipTxHash, setTipTxHash] = useState(null);
   const [showKaspiumPay, setShowKaspiumPay] = useState(false);
-  const [devInitialBalance, setDevInitialBalance] = useState(null);
-  const [verifyingKaspiumPayment, setVerifyingKaspiumPayment] = useState(false);
-  const [kaspiumCheckInterval, setKaspiumCheckInterval] = useState(null);
+  const [kaspiumTipData, setKaspiumTipData] = useState(null);
+  const [kaspiumTimeRemaining, setKaspiumTimeRemaining] = useState(1800);
+  const [kaspiumStatus, setKaspiumStatus] = useState('pending');
   const [copied, setCopied] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
@@ -812,13 +812,69 @@ export default function DevProfilePage() {
                 </Button>
 
                 <Button
-                  onClick={() => {
+                  onClick={async () => {
                     if (!tipAmount || parseFloat(tipAmount) <= 0) {
                       toast.error('Please enter a valid tip amount');
                       return;
                     }
-                    setShowTipModal(false);
-                    setShowKaspiumPay(true);
+
+                    try {
+                      const response = await fetch('https://kaspa-node-proxy-nebulouslabs.replit.app/api/tip/create', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          recipientAddress: dev.kaspa_address,
+                          amount: parseFloat(tipAmount),
+                          senderName: currentUser?.username || 'Anonymous',
+                          message: `Tip from ${currentUser?.username || 'Anonymous'} via TTT`
+                        })
+                      });
+
+                      const data = await response.json();
+
+                      if (data.success) {
+                        setKaspiumTipData(data);
+                        setShowTipModal(false);
+                        setShowKaspiumPay(true);
+                        setKaspiumStatus('pending');
+
+                        // Start polling for payment
+                        const interval = setInterval(async () => {
+                          const statusRes = await fetch(`https://kaspa-node-proxy-nebulouslabs.replit.app/api/tip/status/${data.tipId}`);
+                          const status = await statusRes.json();
+
+                          if (status.status === 'confirmed') {
+                            clearInterval(interval);
+                            setKaspiumStatus('confirmed');
+                            await base44.entities.KaspaBuilder.update(dev.id, {
+                              total_tips: (dev.total_tips || 0) + parseFloat(tipAmount)
+                            });
+                            toast.success(`✅ Payment verified! ${status.amountReceived} KAS`);
+                            setTimeout(() => {
+                              setShowKaspiumPay(false);
+                              setTipAmount("");
+                              loadDev();
+                            }, 3000);
+                          } else if (status.status === 'expired') {
+                            clearInterval(interval);
+                            setKaspiumStatus('expired');
+                          }
+                        }, 5000);
+
+                        // Timer countdown
+                        const timerInterval = setInterval(() => {
+                          const expires = new Date(data.expiresAt).getTime();
+                          const remaining = Math.max(0, Math.floor((expires - Date.now()) / 1000));
+                          setKaspiumTimeRemaining(remaining);
+                          if (remaining === 0) clearInterval(timerInterval);
+                        }, 1000);
+                      } else {
+                        toast.error('Failed to create payment request');
+                      }
+                    } catch (err) {
+                      console.error('Kaspium error:', err);
+                      toast.error('Failed to create payment request');
+                    }
                   }}
                   disabled={!tipAmount || parseFloat(tipAmount) <= 0 || !currentUser?.created_wallet_address}
                   className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white h-12 rounded-xl font-bold shadow-lg shadow-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -963,12 +1019,17 @@ export default function DevProfilePage() {
       )}
 
       {/* Kaspium Payment Modal */}
-      {showKaspiumPay && (
+      {showKaspiumPay && kaspiumTipData && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={() => setShowKaspiumPay(false)}
+          onClick={() => {
+            if (kaspiumStatus === 'confirmed') {
+              setShowKaspiumPay(false);
+              setTipAmount("");
+            }
+          }}
         >
           <motion.div
             initial={{ scale: 0.9, y: 20 }}
@@ -986,113 +1047,85 @@ export default function DevProfilePage() {
                   <p className="text-[10px] text-purple-400/60">Scan QR to send {tipAmount} KAS</p>
                 </div>
               </div>
-              <Button
-                onClick={() => setShowKaspiumPay(false)}
-                variant="ghost"
-                size="icon"
-                className="text-white/60 hover:text-white w-8 h-8"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <div className="bg-white/5 rounded-xl p-3 mb-3 border border-purple-500/20 text-center">
-              <div className="w-10 h-10 rounded-full bg-purple-500/20 border border-purple-500/40 mx-auto mb-2 flex items-center justify-center">
-                <img 
-                  src={dev.avatar || "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/53badb4f2_image.png"} 
-                  alt={dev.username}
-                  className="w-full h-full rounded-full object-cover"
-                />
-              </div>
-              <div className="text-sm font-bold text-white mb-0.5">{dev.username}</div>
-              <div className="text-xs text-purple-400 mb-3">@{dev.twitter_handle}</div>
-
-              {/* QR Code */}
-              <div className="bg-white p-2 rounded-lg mb-3 inline-block">
-                <img 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${dev.kaspa_address}`}
-                  alt="QR Code"
-                  className="w-32 h-32"
-                />
-              </div>
-
-              <div className="text-xs font-bold text-yellow-400">
-                Send {tipAmount} KAS
-              </div>
-            </div>
-
-            <div className="bg-white/5 rounded-lg p-2 mb-2 border border-white/10">
-              <p className="text-white/40 text-[10px] mb-1">Recipient Address</p>
-              <div className="flex items-center justify-between gap-1">
-                <p className="text-white text-[10px] font-mono break-all">
-                  {dev.kaspa_address}
-                </p>
+              {kaspiumStatus !== 'pending' && (
                 <Button
                   onClick={() => {
-                    navigator.clipboard.writeText(dev.kaspa_address);
-                    toast.success('Address copied');
+                    setShowKaspiumPay(false);
+                    setTipAmount("");
                   }}
-                  size="sm"
-                  className="bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 text-xs h-6 w-6 p-0 flex-shrink-0"
+                  variant="ghost"
+                  size="icon"
+                  className="text-white/60 hover:text-white w-8 h-8"
                 >
-                  <Copy className="w-3 h-3" />
+                  <X className="w-4 h-4" />
                 </Button>
-              </div>
+              )}
             </div>
 
-            {currentUser?.created_wallet_address && (
-              <div className="bg-cyan-500/10 rounded-lg p-2 mb-2 border border-cyan-500/30">
-                <p className="text-cyan-400 text-[10px] mb-1 font-semibold">⚠️ Your TTT Wallet</p>
-                <div className="flex items-center justify-between gap-1">
-                  <p className="text-white text-[10px] font-mono break-all">
-                    {currentUser.created_wallet_address}
-                  </p>
-                  <Button
-                    onClick={() => {
-                      navigator.clipboard.writeText(currentUser.created_wallet_address);
-                      toast.success('Your address copied');
-                    }}
-                    size="sm"
-                    className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 text-xs h-6 w-6 p-0 flex-shrink-0"
-                  >
-                    <Copy className="w-3 h-3" />
-                  </Button>
+            {kaspiumStatus === 'confirmed' ? (
+              <div className="text-center py-8">
+                <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="w-10 h-10 text-green-400" />
                 </div>
+                <h3 className="text-2xl font-bold text-white mb-2">Payment Confirmed! 🎉</h3>
+                <p className="text-green-400 font-semibold">{tipAmount} KAS sent to {dev.username}</p>
               </div>
-            )}
+            ) : (
+              <>
+                <div className="bg-white p-3 rounded-lg mb-3">
+                  <img 
+                    src={kaspiumTipData.qrCode}
+                    alt="QR Code"
+                    className="w-full h-auto"
+                  />
+                </div>
 
-            <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-2 mb-3">
-              <p className="text-purple-400 text-[10px] font-semibold mb-1.5">📱 Instructions:</p>
-              <ol className="text-white/60 text-[10px] space-y-0.5 list-decimal list-inside">
-                <li>Scan QR or tap "Open in Kaspium"</li>
-                <li>Confirm payment in Kaspium</li>
-                <li>Send exactly {tipAmount} KAS</li>
-                <li>Done! 🎉</li>
-              </ol>
-            </div>
+                <div className="bg-white/5 rounded-lg p-2 mb-2 border border-white/10">
+                  <p className="text-white/40 text-[10px] mb-1">Recipient</p>
+                  <p className="text-white text-sm font-bold mb-2">{dev.username}</p>
+                  <p className="text-white/40 text-[10px] mb-1">Address</p>
+                  <div className="flex items-center justify-between gap-1">
+                    <p className="text-white text-[10px] font-mono break-all">
+                      {kaspiumTipData.recipientAddress}
+                    </p>
+                    <Button
+                      onClick={() => {
+                        navigator.clipboard.writeText(kaspiumTipData.recipientAddress);
+                        toast.success('Address copied');
+                      }}
+                      size="sm"
+                      className="bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 text-xs h-6 w-6 p-0 flex-shrink-0"
+                    >
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
 
-            <div className="flex gap-2">
-              <Button
-                onClick={() => {
-                  setShowKaspiumPay(false);
-                  setTipAmount("");
-                }}
-                variant="outline"
-                className="flex-1 border-white/20 text-white hover:bg-white/10 h-10 rounded-lg text-sm"
-              >
-                Cancel
-              </Button>
-              <a
-                href={`kaspa:${dev.kaspa_address}?amount=${parseFloat(tipAmount) * 100000000}`}
-                className="flex-1"
-              >
-                <Button
-                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white h-10 rounded-lg font-bold text-sm"
+                <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3 mb-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="w-4 h-4 text-purple-400" />
+                    <span className="text-sm text-white font-semibold">
+                      Time: {Math.floor(kaspiumTimeRemaining / 60)}:{(kaspiumTimeRemaining % 60).toString().padStart(2, '0')}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin" />
+                    <span className="text-xs text-white/80">Waiting for payment...</span>
+                  </div>
+                </div>
+
+                <a
+                  href={`kaspa:${kaspiumTipData.recipientAddress}?amount=${parseFloat(tipAmount) * 100000000}`}
+                  className="block"
                 >
-                  Open in Kaspium
-                </Button>
-              </a>
-            </div>
+                  <Button
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white h-10 rounded-lg font-bold text-sm"
+                  >
+                    Open in Kaspium
+                  </Button>
+                </a>
+              </>
+            )}
           </motion.div>
         </motion.div>
       )}
