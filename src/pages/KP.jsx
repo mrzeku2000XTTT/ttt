@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
 import { X, Plus, Upload, ExternalLink, Wallet } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function KaspromoPage() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("VOTE");
   const [userVotes, setUserVotes] = useState(() => {
     const saved = localStorage.getItem('kp_votes');
@@ -15,8 +19,14 @@ export default function KaspromoPage() {
   const [devs, setDevs] = useState([]);
   const [showAddDevModal, setShowAddDevModal] = useState(false);
   const [newAvatar, setNewAvatar] = useState("");
+  const [coverPhoto, setCoverPhoto] = useState("");
+  const [knsId, setKnsId] = useState("");
+  const [description, setDescription] = useState("");
+  const [fundingGoal, setFundingGoal] = useState("");
+  const [howFundsUsed, setHowFundsUsed] = useState("");
   const [appUrl, setAppUrl] = useState("");
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [showTipModal, setShowTipModal] = useState(false);
   const [selectedDev, setSelectedDev] = useState(null);
   const [tipAmount, setTipAmount] = useState("");
@@ -62,13 +72,23 @@ export default function KaspromoPage() {
         kaspa_address: user.created_wallet_address,
         twitter_handle: user.username,
         avatar: newAvatar || "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/53badb4f2_image.png",
+        cover_photo: coverPhoto || "",
+        kns_id: knsId || "",
         app_url: appUrl || "",
+        description: description || "",
+        funding_goal: fundingGoal ? parseFloat(fundingGoal) : 0,
+        how_funds_used: howFundsUsed || "",
         verified: false,
         votes: 0,
         total_tips: 0
       });
       setShowAddDevModal(false);
       setNewAvatar("");
+      setCoverPhoto("");
+      setKnsId("");
+      setDescription("");
+      setFundingGoal("");
+      setHowFundsUsed("");
       setAppUrl("");
       loadDevs();
     } catch (err) {
@@ -112,6 +132,20 @@ export default function KaspromoPage() {
       console.error("Failed to upload avatar:", err);
     }
     setUploadingAvatar(false);
+  };
+
+  const handleCoverUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingCover(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setCoverPhoto(file_url);
+    } catch (err) {
+      console.error("Failed to upload cover:", err);
+    }
+    setUploadingCover(false);
   };
 
   const tabs = [
@@ -244,7 +278,12 @@ export default function KaspromoPage() {
     verified: dev.verified,
     kaspa_address: dev.kaspa_address,
     app_url: dev.app_url,
-    total_tips: dev.total_tips || 0
+    total_tips: dev.total_tips || 0,
+    cover_photo: dev.cover_photo,
+    kns_id: dev.kns_id,
+    description: dev.description,
+    funding_goal: dev.funding_goal,
+    how_funds_used: dev.how_funds_used
   }));
 
   const ecosystemPosts = [
@@ -507,6 +546,17 @@ export default function KaspromoPage() {
               </div>
 
               <div>
+                <label className="text-sm text-cyan-400 font-medium mb-2 block">KNS ID (Optional)</label>
+                <Input
+                  value={knsId}
+                  onChange={(e) => setKnsId(e.target.value)}
+                  placeholder="your.kas"
+                  className="bg-white/5 border-cyan-500/30 text-white h-12 rounded-xl"
+                />
+                <p className="text-xs text-white/40 mt-1">Your Kaspa Name Service ID</p>
+              </div>
+
+              <div>
                 <label className="text-sm text-cyan-400 font-medium mb-2 block">App URL (Optional)</label>
                 <Input
                   value={appUrl}
@@ -518,7 +568,40 @@ export default function KaspromoPage() {
               </div>
 
               <div>
-                <label className="text-sm text-cyan-400 font-medium mb-2 block">Avatar (Optional)</label>
+                <label className="text-sm text-cyan-400 font-medium mb-2 block">Description</label>
+                <Textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="What are you building? Why do you need funding?"
+                  className="bg-white/5 border-cyan-500/30 text-white rounded-xl resize-none"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-cyan-400 font-medium mb-2 block">Funding Goal (KAS)</label>
+                <Input
+                  type="number"
+                  value={fundingGoal}
+                  onChange={(e) => setFundingGoal(e.target.value)}
+                  placeholder="1000"
+                  className="bg-white/5 border-cyan-500/30 text-white h-12 rounded-xl"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-cyan-400 font-medium mb-2 block">How Funds Will Be Used</label>
+                <Textarea
+                  value={howFundsUsed}
+                  onChange={(e) => setHowFundsUsed(e.target.value)}
+                  placeholder="Server costs, development, marketing..."
+                  className="bg-white/5 border-cyan-500/30 text-white rounded-xl resize-none"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-cyan-400 font-medium mb-2 block">Profile Photo (Optional)</label>
                 {newAvatar ? (
                   <div className="flex items-center gap-4">
                     <img src={newAvatar} alt="Avatar" className="w-20 h-20 rounded-full border-2 border-cyan-500/40" />
@@ -549,13 +632,52 @@ export default function KaspromoPage() {
                 <p className="text-xs text-white/40 mt-2 text-center">
                   Leave empty to use default Kaspa logo
                 </p>
-              </div>
+                </div>
 
-              <div className="flex gap-3 mt-8 pt-6 border-t border-white/10">
+                <div>
+                <label className="text-sm text-cyan-400 font-medium mb-2 block">Cover Photo / KNS Badge (Optional)</label>
+                {coverPhoto ? (
+                  <div className="flex items-center gap-4">
+                    <img src={coverPhoto} alt="Cover" className="w-32 h-20 rounded-lg border-2 border-cyan-500/40 object-cover" />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCoverPhoto("")}
+                      className="border-red-500/40 text-red-400 hover:bg-red-500/10"
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ) : (
+                  <label className="flex items-center justify-center gap-3 px-6 py-4 bg-white/5 border-2 border-dashed border-cyan-500/30 rounded-xl cursor-pointer hover:bg-cyan-500/10 hover:border-cyan-500/50 transition-all group">
+                    <Upload className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform" />
+                    <span className="text-sm text-cyan-400 font-medium">
+                      {uploadingCover ? "Uploading..." : "Upload Cover Photo"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleCoverUpload}
+                      className="hidden"
+                      disabled={uploadingCover}
+                    />
+                  </label>
+                )}
+                <p className="text-xs text-white/40 mt-2 text-center">
+                  Your KNS badge or custom banner
+                </p>
+                </div>
+
+                <div className="flex gap-3 mt-8 pt-6 border-t border-white/10">
                 <Button
                   onClick={() => {
                     setShowAddDevModal(false);
                     setNewAvatar("");
+                    setCoverPhoto("");
+                    setKnsId("");
+                    setDescription("");
+                    setFundingGoal("");
+                    setHowFundsUsed("");
                     setAppUrl("");
                   }}
                   variant="outline"
