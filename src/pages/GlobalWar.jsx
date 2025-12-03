@@ -17,11 +17,17 @@ export default function GlobalWarPage() {
   const [kaswareWallet, setKaswareWallet] = useState({ connected: false, address: null });
   const [stampingNewsId, setStampingNewsId] = useState(null);
   const [selectedNewsForAnalysis, setSelectedNewsForAnalysis] = useState(null);
-  const [selectedRegion, setSelectedRegion] = useState("all"); // Added region filter
+  const [selectedRegion, setSelectedRegion] = useState("all");
 
   useEffect(() => {
-    loadWarNews();
-    checkKasware();
+    try {
+      loadWarNews();
+      checkKasware();
+    } catch (err) {
+      console.error('Init error:', err);
+      setError('Failed to initialize. Please refresh.');
+      setIsLoading(false);
+    }
     
     // Refresh every 5 minutes
     const interval = setInterval(() => {
@@ -179,6 +185,17 @@ Provide 20 unique news items with: title, summary (max 200 chars), category (con
     } catch (error) {
       console.error('❌ Failed to load war news:', error);
       setError('Failed to load news. Click refresh to try again.');
+      // Load fallback news to prevent white screen
+      if (!cached || JSON.parse(cached).length === 0) {
+        setNews([{
+          title: "News Loading Issue",
+          summary: "Unable to fetch latest news. Please try refreshing.",
+          category: "system",
+          location: "Global",
+          source: "TTT Monitor",
+          timestamp: new Date().toISOString()
+        }]);
+      }
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
