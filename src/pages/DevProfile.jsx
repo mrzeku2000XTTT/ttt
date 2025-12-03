@@ -827,27 +827,21 @@ export default function DevProfilePage() {
               Send {tipAmount} KAS to yourself in Kaspium to verify this tip
             </p>
 
-            {zkVerifying && (
-              <div className="text-center py-6">
-                <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4" />
-                <p className="text-cyan-400 font-semibold mb-2">Waiting for Transaction...</p>
-                <p className="text-white/60 text-sm mb-4">
-                  Send {tipAmount} KAS to yourself in Kaspium
-                </p>
-
+            {!zkVerifying ? (
+              <div className="space-y-4">
                 {/* Current Balance */}
                 {zkWalletBalance !== null && (
-                  <div className="bg-white/5 rounded-lg p-3 border border-white/10 mb-4">
+                  <div className="bg-white/5 rounded-lg p-3 border border-white/10">
                     <p className="text-white/40 text-xs mb-1">Current Balance</p>
                     <p className="text-white text-lg font-bold">{zkWalletBalance.toFixed(2)} KAS</p>
                   </div>
                 )}
 
-                <div className="bg-white/5 rounded-lg p-3 mb-4">
-                  <p className="text-white/40 text-xs mb-1">Your Address</p>
+                <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                  <p className="text-white/40 text-xs mb-1">Your TTT Wallet Address</p>
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-white text-xs font-mono break-all">
-                      {currentUser?.created_wallet_address}
+                      {currentUser?.created_wallet_address?.substring(0, 12)}...{currentUser?.created_wallet_address?.slice(-8)}
                     </p>
                     <Button
                       onClick={() => {
@@ -861,7 +855,53 @@ export default function DevProfilePage() {
                     </Button>
                   </div>
                 </div>
-                <p className="text-white/40 text-xs">
+
+                {/* Instructions */}
+                <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-4">
+                  <p className="text-cyan-400 text-sm font-semibold mb-3">📱 Instructions:</p>
+                  <ol className="text-white/70 text-sm space-y-2 list-decimal list-inside">
+                    <li>Open Kaspium app on your phone</li>
+                    <li>Copy your address above</li>
+                    <li>Send <span className="text-cyan-400 font-bold">{tipAmount} KAS</span> to your own address</li>
+                    <li>After sending, click "Start Verification" below</li>
+                    <li>Wait for automatic verification (takes 10-30 seconds)</li>
+                  </ol>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => {
+                      setShowZkVerification(false);
+                      setTipAmount('');
+                    }}
+                    variant="outline"
+                    className="flex-1 border-white/10 text-white/60"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={startZkVerification}
+                    className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white font-semibold"
+                  >
+                    Start Verification
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-cyan-400 font-semibold mb-2">Waiting for Transaction...</p>
+                <p className="text-white/60 text-sm mb-4">
+                  Checking for your {tipAmount} KAS self-transaction
+                </p>
+
+                <div className="bg-white/5 rounded-lg p-3 mb-4">
+                  <p className="text-white/40 text-xs mb-1">Your Address</p>
+                  <p className="text-white text-xs font-mono break-all">
+                    {currentUser?.created_wallet_address}
+                  </p>
+                </div>
+                <p className="text-white/40 text-xs mb-4">
                   Verification will happen automatically when the transaction is detected
                 </p>
                 <Button
@@ -871,7 +911,7 @@ export default function DevProfilePage() {
                     setTipAmount('');
                   }}
                   variant="outline"
-                  className="w-full border-white/10 text-white/60 mt-4"
+                  className="w-full border-white/10 text-white/60"
                 >
                   Cancel
                 </Button>
