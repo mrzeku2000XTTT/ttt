@@ -118,7 +118,7 @@ export default function KaspromoPage() {
       }
 
       // Update dev's total tips after successful transaction
-      await base44.entities.KaspaDev.update(selectedDev.id, {
+      await base44.entities.KaspaBuilder.update(selectedDev.id, {
         total_tips: (selectedDev.total_tips || 0) + parseFloat(tipAmount)
       });
       
@@ -321,7 +321,7 @@ export default function KaspromoPage() {
 
   const getCurrentPosts = () => {
     if (activeTab === "VOTE") return votePosts;
-    if (activeTab === "DEVS") return [];
+    if (activeTab === "DEVS") return devsPosts;
     if (activeTab === "ECOSYSTEM") return ecosystemPosts;
     return votePosts;
   };
@@ -496,7 +496,7 @@ export default function KaspromoPage() {
                     e.stopPropagation();
                     if (confirm('Are you sure you want to delete your developer profile?')) {
                       try {
-                        await base44.entities.KaspaDev.delete(post.id);
+                        await base44.entities.KaspaBuilder.delete(post.id);
                         alert('✅ Profile deleted successfully!');
                         loadDevs();
                       } catch (err) {
