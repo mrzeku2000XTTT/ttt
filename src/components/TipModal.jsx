@@ -377,10 +377,7 @@ export default function TipModal({ isOpen, onClose }) {
                   )}
 
                   <Button
-                    onClick={() => {
-                      resetModal();
-                      onClose();
-                    }}
+                    onClick={handleClose}
                     className="w-full bg-[#4fd1c5] hover:bg-[#45c0b5] text-black h-12 rounded-lg font-bold"
                   >
                     Done
