@@ -437,7 +437,12 @@ export default function KaspromoPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="relative bg-gradient-to-br from-[#15171c] to-[#0a0a0a] border border-white/10 rounded-2xl p-5 hover:border-cyan-500/50 hover:shadow-lg hover:shadow-cyan-500/10 transition-all group"
+            onClick={(e) => {
+              if (activeTab === "DEVS" && post.id && !e.target.closest('button')) {
+                navigate(createPageUrl('DevProfile') + '?id=' + post.id);
+              }
+            }}
+            className={`relative bg-gradient-to-br from-[#15171c] to-[#0a0a0a] border border-white/10 rounded-2xl p-5 hover:border-cyan-500/50 hover:shadow-lg hover:shadow-cyan-500/10 transition-all group ${activeTab === "DEVS" && post.id ? 'cursor-pointer' : ''}`}
           >
             {/* Verified badge glow */}
             {post.verified && (
