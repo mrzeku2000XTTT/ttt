@@ -66,8 +66,17 @@ export default function DevProfilePage() {
         setEditedAvatar(devProfile.avatar || "");
         
         // Check if current user owns this profile (by email/created_by OR username)
+        console.log('Ownership check:', {
+          userEmail: user?.email,
+          createdBy: devProfile.created_by,
+          username: user?.username,
+          devUsername: devProfile.username
+        });
         if (user && (user.email === devProfile.created_by || user.username === devProfile.username)) {
           setIsOwner(true);
+          console.log('User IS owner');
+        } else {
+          console.log('User is NOT owner');
         }
       } else {
         navigate(createPageUrl('KP'));
