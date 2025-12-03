@@ -74,7 +74,7 @@ export default function DevProfilePage() {
       }
     } catch (err) {
       console.error('Failed to load dev:', err);
-      navigate(createPageUrl('KP'));
+      alert('Failed to load developer profile: ' + err.message);
     } finally {
       setLoading(false);
     }
