@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { senderAddress, recipientAddress, expectedAmount } = await req.json();
+        const { senderAddress, recipientAddress, expectedAmount, initialSenderBalance, initialRecipientBalance } = await req.json();
 
         if (!senderAddress || !recipientAddress || !expectedAmount) {
             return Response.json({ 
@@ -17,55 +17,61 @@ Deno.serve(async (req) => {
             }, { status: 400 });
         }
 
-        console.log('🔍 Verifying payment:', {
+        console.log('🔍 Verifying payment via balance check:', {
             from: senderAddress,
             to: recipientAddress,
-            amount: expectedAmount
+            amount: expectedAmount,
+            initialSenderBalance,
+            initialRecipientBalance
         });
 
-        // Check sender's transactions for payment to recipient
-        const apiUrl = `https://api.kaspa.org/addresses/${senderAddress}/full-transactions?limit=20&resolve_previous_outpoints=light`;
-        const response = await fetch(apiUrl);
+        // Get current balances
+        const senderBalanceResponse = await base44.asServiceRole.functions.invoke('getKaspaBalance', { 
+            address: senderAddress 
+        });
         
-        if (!response.ok) {
-            return Response.json({ 
-                verified: false, 
-                error: 'Failed to fetch transactions' 
+        const recipientBalanceResponse = await base44.asServiceRole.functions.invoke('getKaspaBalance', { 
+            address: recipientAddress 
+        });
+
+        const currentSenderBalance = senderBalanceResponse.data?.balance || 0;
+        const currentRecipientBalance = recipientBalanceResponse.data?.balance || 0;
+
+        console.log('💰 Balances:', {
+            sender: { initial: initialSenderBalance, current: currentSenderBalance },
+            recipient: { initial: initialRecipientBalance, current: currentRecipientBalance }
+        });
+
+        // Check if sender balance decreased by expected amount (with fee tolerance)
+        const senderDecrease = initialSenderBalance - currentSenderBalance;
+        const senderPaid = senderDecrease >= expectedAmount && senderDecrease <= (expectedAmount + 0.1);
+
+        // Check if recipient balance increased by expected amount
+        const recipientIncrease = currentRecipientBalance - initialRecipientBalance;
+        const recipientReceived = recipientIncrease >= (expectedAmount - 0.01);
+
+        console.log('✅ Verification:', {
+            senderDecrease,
+            senderPaid,
+            recipientIncrease,
+            recipientReceived
+        });
+
+        if (senderPaid && recipientReceived) {
+            console.log('✅ Payment verified via balance check!');
+            
+            return Response.json({
+                verified: true,
+                senderBalance: currentSenderBalance,
+                recipientBalance: currentRecipientBalance
             });
         }
 
-        const transactions = await response.json();
-        
-        if (!Array.isArray(transactions)) {
-            return Response.json({ verified: false });
-        }
-
-        // Check last 10 minutes of transactions
-        const tenMinutesAgo = Date.now() - (10 * 60 * 1000);
-
-        for (const tx of transactions) {
-            const txTime = parseInt(tx.block_time);
-            const isRecent = txTime >= tenMinutesAgo;
-            
-            // Check if this transaction sends to recipient
-            const sentToRecipient = (tx.outputs || []).some(out => 
-                out.script_public_key_address === recipientAddress
-            );
-
-            if (isRecent && sentToRecipient) {
-                // Found payment!
-                console.log('✅ Payment found:', tx.transaction_id);
-                
-                return Response.json({
-                    verified: true,
-                    txId: tx.transaction_id,
-                    amount: expectedAmount
-                });
-            }
-        }
-
-        console.log('❌ No payment found yet');
-        return Response.json({ verified: false });
+        return Response.json({ 
+            verified: false,
+            senderBalance: currentSenderBalance,
+            recipientBalance: currentRecipientBalance 
+        });
 
     } catch (error) {
         console.error('Verification error:', error);

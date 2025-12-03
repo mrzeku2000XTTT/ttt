@@ -825,50 +825,60 @@ export default function DevProfilePage() {
                       return;
                     }
 
-                    // Show modal immediately
-                    setShowTipModal(false);
-                    setShowKaspiumPay(true);
-                    setVerifyingKaspiumPayment(true);
-
+                    // Get initial balances
                     try {
+                      const senderBalanceRes = await base44.functions.invoke('getKaspaBalance', { 
+                        address: currentUser.created_wallet_address 
+                      });
+                      const recipientBalanceRes = await base44.functions.invoke('getKaspaBalance', { 
+                        address: dev.kaspa_address 
+                      });
+
+                      const initialSenderBalance = senderBalanceRes.data?.balance || 0;
+                      const initialRecipientBalance = recipientBalanceRes.data?.balance || 0;
+
+                      console.log('💰 Initial balances:', {
+                        sender: initialSenderBalance,
+                        recipient: initialRecipientBalance
+                      });
+
+                      // Show modal
+                      setShowTipModal(false);
+                      setShowKaspiumPay(true);
+                      setVerifyingKaspiumPayment(true);
+
                       const expectedAmount = parseFloat(tipAmount);
                       const startTime = Date.now();
 
-                      console.log('🚀 Starting payment verification:', {
-                        from: currentUser.created_wallet_address,
-                        to: dev.kaspa_address,
-                        amount: expectedAmount
-                      });
-
-                      // Backend payment verification
+                      // Balance-based verification
                       const intervalId = setInterval(async () => {
                         try {
-                          console.log('🔍 Checking payment via backend...');
-                          
+                          console.log('🔍 Checking balances...');
+
                           const response = await base44.functions.invoke('verifyKaspiumPayment', {
                             senderAddress: currentUser.created_wallet_address,
                             recipientAddress: dev.kaspa_address,
-                            expectedAmount: expectedAmount
+                            expectedAmount: expectedAmount,
+                            initialSenderBalance: initialSenderBalance,
+                            initialRecipientBalance: initialRecipientBalance
                           });
 
-                          console.log('📦 Backend response:', response.data);
+                          console.log('📦 Verification:', response.data);
 
                           if (response.data?.verified) {
-                            console.log('✅✅✅ Payment verified!', response.data.txId);
-                            
+                            console.log('✅✅✅ Payment verified via balance!');
+
                             clearInterval(intervalId);
                             setKaspiumCheckInterval(null);
-                            setTipTxHash(response.data.txId);
 
                             await base44.entities.KaspaBuilder.update(dev.id, {
                               total_tips: (dev.total_tips || 0) + expectedAmount
                             });
 
-                            toast.success(`✅ Payment verified!\nTX: ${response.data.txId.substring(0, 8)}...`);
+                            toast.success(`✅ Payment verified!`);
                             setShowKaspiumPay(false);
                             setVerifyingKaspiumPayment(false);
                             setTipAmount("");
-                            setTipTxHash(null);
                             loadDev();
                             return;
                           }
@@ -876,18 +886,18 @@ export default function DevProfilePage() {
                           if (Date.now() - startTime > 300000) {
                             clearInterval(intervalId);
                             setKaspiumCheckInterval(null);
-                            toast.error('Timeout - payment not detected');
+                            toast.error('Timeout');
                             setVerifyingKaspiumPayment(false);
                           }
                         } catch (err) {
-                          console.error('Backend verification error:', err);
+                          console.error('Verification error:', err);
                         }
                       }, 3000);
 
                       setKaspiumCheckInterval(intervalId);
                     } catch (err) {
-                      console.error('Failed to initialize payment:', err);
-                      toast.error('Failed to initialize payment verification');
+                      console.error('Failed to get balances:', err);
+                      toast.error('Failed to initialize payment');
                     }
                   }}
                   disabled={!tipAmount || parseFloat(tipAmount) <= 0 || !currentUser?.created_wallet_address}
