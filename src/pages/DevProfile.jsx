@@ -1094,35 +1094,35 @@ export default function DevProfilePage() {
               </Button>
             </div>
 
-            <div className="bg-white/5 rounded-2xl p-6 mb-4 border border-purple-500/20 text-center">
-              <div className="w-12 h-12 rounded-full bg-purple-500/20 border border-purple-500/40 mx-auto mb-3 flex items-center justify-center">
+            <div className="bg-white/5 rounded-xl p-3 mb-3 border border-purple-500/20 text-center">
+              <div className="w-10 h-10 rounded-full bg-purple-500/20 border border-purple-500/40 mx-auto mb-2 flex items-center justify-center">
                 <img 
                   src={dev.avatar || "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/53badb4f2_image.png"} 
                   alt={dev.username}
                   className="w-full h-full rounded-full object-cover"
                 />
               </div>
-              <div className="text-lg font-bold text-white mb-1">{dev.username}</div>
-              <div className="text-sm text-purple-400 mb-4">@{dev.twitter_handle}</div>
+              <div className="text-sm font-bold text-white mb-0.5">{dev.username}</div>
+              <div className="text-xs text-purple-400 mb-3">@{dev.twitter_handle}</div>
 
               {/* QR Code */}
-              <div className="bg-white p-4 rounded-xl mb-4 inline-block">
+              <div className="bg-white p-2 rounded-lg mb-3 inline-block">
                 <img 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${dev.kaspa_address}`}
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${dev.kaspa_address}`}
                   alt="QR Code"
-                  className="w-48 h-48"
+                  className="w-32 h-32"
                 />
               </div>
 
-              <div className="text-sm font-bold text-yellow-400 mb-2">
+              <div className="text-xs font-bold text-yellow-400">
                 Send {tipAmount} KAS
               </div>
             </div>
 
-            <div className="bg-white/5 rounded-xl p-4 mb-4 border border-white/10">
-              <p className="text-white/40 text-xs mb-2">Recipient Address</p>
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-white text-xs font-mono break-all">
+            <div className="bg-white/5 rounded-lg p-2 mb-2 border border-white/10">
+              <p className="text-white/40 text-[10px] mb-1">Recipient Address</p>
+              <div className="flex items-center justify-between gap-1">
+                <p className="text-white text-[10px] font-mono break-all">
                   {dev.kaspa_address}
                 </p>
                 <Button
@@ -1131,7 +1131,7 @@ export default function DevProfilePage() {
                     toast.success('Address copied');
                   }}
                   size="sm"
-                  className="bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 text-xs h-7 flex-shrink-0"
+                  className="bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 text-xs h-6 w-6 p-0 flex-shrink-0"
                 >
                   <Copy className="w-3 h-3" />
                 </Button>
@@ -1139,10 +1139,10 @@ export default function DevProfilePage() {
             </div>
 
             {currentUser?.created_wallet_address && (
-              <div className="bg-cyan-500/10 rounded-xl p-4 mb-4 border border-cyan-500/30">
-                <p className="text-cyan-400 text-xs mb-2 font-semibold">⚠️ Your TTT Wallet (Must send from this address)</p>
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-white text-xs font-mono break-all">
+              <div className="bg-cyan-500/10 rounded-lg p-2 mb-2 border border-cyan-500/30">
+                <p className="text-cyan-400 text-[10px] mb-1 font-semibold">⚠️ Your TTT Wallet</p>
+                <div className="flex items-center justify-between gap-1">
+                  <p className="text-white text-[10px] font-mono break-all">
                     {currentUser.created_wallet_address}
                   </p>
                   <Button
@@ -1151,7 +1151,7 @@ export default function DevProfilePage() {
                       toast.success('Your address copied');
                     }}
                     size="sm"
-                    className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 text-xs h-7 flex-shrink-0"
+                    className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 text-xs h-6 w-6 p-0 flex-shrink-0"
                   >
                     <Copy className="w-3 h-3" />
                   </Button>
@@ -1159,25 +1159,25 @@ export default function DevProfilePage() {
               </div>
             )}
 
-            <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3 mb-4">
-              <p className="text-purple-400 text-xs font-semibold mb-2">📱 Instructions:</p>
-              <ol className="text-white/60 text-xs space-y-1 list-decimal list-inside">
-                <li>Import your TTT wallet seed phrase into Kaspium</li>
-                <li>Make sure you're sending from: {currentUser?.created_wallet_address?.substring(0, 12)}...</li>
-                <li>Scan the QR code or copy the recipient address above</li>
+            <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-2 mb-3">
+              <p className="text-purple-400 text-[10px] font-semibold mb-1.5">📱 Instructions:</p>
+              <ol className="text-white/60 text-[10px] space-y-0.5 list-decimal list-inside">
+                <li>Import TTT seed into Kaspium</li>
+                <li>Send from: {currentUser?.created_wallet_address?.substring(0, 12)}...</li>
+                <li>Scan QR or copy address</li>
                 <li>Send exactly {tipAmount} KAS</li>
-                <li>Wait for automatic verification</li>
+                <li>Wait for verification</li>
               </ol>
               {verifyingKaspiumPayment && (
-                <div className="mt-3 pt-3 border-t border-purple-500/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-4 h-4 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin" />
-                    <span className="text-purple-400 text-xs font-semibold">
-                      Waiting for payment from your TTT wallet...
+                <div className="mt-2 pt-2 border-t border-purple-500/20">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <div className="w-3 h-3 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin" />
+                    <span className="text-purple-400 text-[10px] font-semibold">
+                      Waiting for payment...
                     </span>
                   </div>
                   {tipTxHash && (
-                    <div className="text-green-400 text-xs font-mono">
+                    <div className="text-green-400 text-[10px] font-mono">
                       TX: {tipTxHash.substring(0, 16)}...
                     </div>
                   )}
@@ -1185,7 +1185,7 @@ export default function DevProfilePage() {
               )}
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               <Button
                 onClick={() => {
                   if (kaspiumCheckInterval) {
@@ -1199,7 +1199,7 @@ export default function DevProfilePage() {
                   setTipTxHash(null);
                 }}
                 variant="outline"
-                className="flex-1 border-white/20 text-white hover:bg-white/10 h-12 rounded-xl"
+                className="flex-1 border-white/20 text-white hover:bg-white/10 h-10 rounded-lg text-sm"
               >
                 Cancel
               </Button>
@@ -1214,9 +1214,9 @@ export default function DevProfilePage() {
                   setShowTipModal(true);
                   setDevInitialBalance(null);
                 }}
-                className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white h-12 rounded-xl font-bold"
+                className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white h-10 rounded-lg font-bold text-sm"
               >
-                Back to Options
+                Back
               </Button>
             </div>
           </motion.div>
