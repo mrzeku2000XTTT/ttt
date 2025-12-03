@@ -123,7 +123,7 @@ export default function DevProfilePage() {
     if (!isOwner) return;
 
     try {
-      await base44.entities.KaspaDev.update(dev.id, {
+      await base44.entities.KaspaBuilder.update(dev.id, {
         avatar: editedAvatar,
         cover_photo: editedCover,
         description: editedBio,
