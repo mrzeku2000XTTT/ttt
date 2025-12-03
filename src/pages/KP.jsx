@@ -220,9 +220,6 @@ export default function KPPage() {
               </button>
             </div>
 
-            {/* Content */}
-            <p className="text-sm text-white/80 mb-4 line-clamp-4">{post.content}</p>
-
             {/* Stats */}
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-4">
