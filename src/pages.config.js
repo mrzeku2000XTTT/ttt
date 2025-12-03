@@ -147,6 +147,8 @@ import KP from './pages/KP';
 import DevProfile from './pages/DevProfile';
 import SendTip from './pages/SendTip';
 import TestZelcore from './pages/TestZelcore';
+import DuelLobby from './pages/DuelLobby';
+import Duel from './pages/Duel';
 import __Layout from './Layout.jsx';
 
 
@@ -300,6 +302,8 @@ export const PAGES = {
     "DevProfile": DevProfile,
     "SendTip": SendTip,
     "TestZelcore": TestZelcore,
+    "DuelLobby": DuelLobby,
+    "Duel": Duel,
 }
 
 export const pagesConfig = {
