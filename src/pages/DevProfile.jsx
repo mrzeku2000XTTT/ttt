@@ -840,9 +840,49 @@ export default function DevProfilePage() {
                         amount: expectedAmount
                       });
 
-                      // Manual verification - user confirms payment
-                      toast.success(`Please send ${expectedAmount} KAS to the address above`);
-                      setVerifyingKaspiumPayment(false);
+                      // Backend payment verification
+                      const intervalId = setInterval(async () => {
+                        try {
+                          console.log('🔍 Checking payment via backend...');
+                          
+                          const response = await base44.functions.invoke('verifyKaspiumPayment', {
+                            senderAddress: currentUser.created_wallet_address,
+                            recipientAddress: dev.kaspa_address,
+                            expectedAmount: expectedAmount
+                          });
+
+                          console.log('📦 Backend response:', response.data);
+
+                          if (response.data?.verified) {
+                            console.log('✅✅✅ Payment verified!', response.data.txId);
+                            
+                            clearInterval(intervalId);
+                            setKaspiumCheckInterval(null);
+                            setTipTxHash(response.data.txId);
+
+                            await base44.entities.KaspaBuilder.update(dev.id, {
+                              total_tips: (dev.total_tips || 0) + expectedAmount
+                            });
+
+                            toast.success(`✅ Payment verified!\nTX: ${response.data.txId.substring(0, 8)}...`);
+                            setShowKaspiumPay(false);
+                            setVerifyingKaspiumPayment(false);
+                            setTipAmount("");
+                            setTipTxHash(null);
+                            loadDev();
+                            return;
+                          }
+
+                          if (Date.now() - startTime > 300000) {
+                            clearInterval(intervalId);
+                            setKaspiumCheckInterval(null);
+                            toast.error('Timeout - payment not detected');
+                            setVerifyingKaspiumPayment(false);
+                          }
+                        } catch (err) {
+                          console.error('Backend verification error:', err);
+                        }
+                      }, 3000);
 
                       setKaspiumCheckInterval(intervalId);
                     } catch (err) {
