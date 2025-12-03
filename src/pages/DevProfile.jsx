@@ -25,6 +25,7 @@ export default function DevProfilePage() {
   const [showKaspiumPay, setShowKaspiumPay] = useState(false);
   const [devInitialBalance, setDevInitialBalance] = useState(null);
   const [verifyingKaspiumPayment, setVerifyingKaspiumPayment] = useState(false);
+  const [kaspiumCheckInterval, setKaspiumCheckInterval] = useState(null);
   const [copied, setCopied] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
@@ -819,13 +820,57 @@ export default function DevProfilePage() {
                       });
                       if (balanceResponse.data?.balance) {
                         setDevInitialBalance(balanceResponse.data.balance);
+                        setShowTipModal(false);
+                        setShowKaspiumPay(true);
+                        setVerifyingKaspiumPayment(true);
+
+                        // Start checking for payment every 3 seconds
+                        const intervalId = setInterval(async () => {
+                          try {
+                            const checkResponse = await base44.functions.invoke('getKaspaBalance', { 
+                              address: dev.kaspa_address 
+                            });
+
+                            if (checkResponse.data?.balance) {
+                              const newBalance = checkResponse.data.balance;
+                              const balanceIncrease = newBalance - balanceResponse.data.balance;
+                              const expectedAmount = parseFloat(tipAmount);
+
+                              console.log('Balance check:', {
+                                initial: balanceResponse.data.balance,
+                                current: newBalance,
+                                increase: balanceIncrease,
+                                expected: expectedAmount
+                              });
+
+                              // Check if balance increased by approximately the tip amount (allow 0.01 KAS tolerance)
+                              if (balanceIncrease >= expectedAmount - 0.01) {
+                                clearInterval(intervalId);
+                                setKaspiumCheckInterval(null);
+
+                                // Payment verified! Update total tips
+                                await base44.entities.KaspaBuilder.update(dev.id, {
+                                  total_tips: (dev.total_tips || 0) + expectedAmount
+                                });
+
+                                toast.success(`✅ Payment verified! ${tipAmount} KAS received by ${dev.username}`);
+                                setShowKaspiumPay(false);
+                                setVerifyingKaspiumPayment(false);
+                                setTipAmount("");
+                                setDevInitialBalance(null);
+                                loadDev();
+                              }
+                            }
+                          } catch (err) {
+                            console.error('Balance check error:', err);
+                          }
+                        }, 3000);
+
+                        setKaspiumCheckInterval(intervalId);
                       }
-                      setShowTipModal(false);
-                      setShowKaspiumPay(true);
                     } catch (err) {
                       console.error('Failed to get initial balance:', err);
-                      setShowTipModal(false);
-                      setShowKaspiumPay(true);
+                      toast.error('Failed to initialize payment verification');
                     }
                   }}
                   disabled={!tipAmount || parseFloat(tipAmount) <= 0}
@@ -1055,50 +1100,30 @@ export default function DevProfilePage() {
                 <li>Scan the QR code or copy the address</li>
                 <li>Send exactly {tipAmount} KAS</li>
               </ol>
+              {verifyingKaspiumPayment && (
+                <div className="mt-3 pt-3 border-t border-purple-500/20 flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin" />
+                  <span className="text-purple-400 text-xs font-semibold">
+                    Waiting for payment...
+                  </span>
+                </div>
+              )}
             </div>
 
             <Button
-              onClick={async () => {
-                setVerifyingKaspiumPayment(true);
-                try {
-                  // Check dev's balance after payment
-                  const balanceResponse = await base44.functions.invoke('getKaspaBalance', { 
-                    address: dev.kaspa_address 
-                  });
-                  
-                  if (balanceResponse.data?.balance && devInitialBalance !== null) {
-                    const newBalance = balanceResponse.data.balance;
-                    const balanceIncrease = newBalance - devInitialBalance;
-                    const expectedAmount = parseFloat(tipAmount);
-                    
-                    // Check if balance increased by approximately the tip amount (allow 0.01 KAS tolerance)
-                    if (Math.abs(balanceIncrease - expectedAmount) < 0.01) {
-                      // Payment verified! Update total tips
-                      await base44.entities.KaspaBuilder.update(dev.id, {
-                        total_tips: (dev.total_tips || 0) + expectedAmount
-                      });
-                      
-                      toast.success(`✅ Payment verified! ${tipAmount} KAS received by ${dev.username}`);
-                      setShowKaspiumPay(false);
-                      setTipAmount("");
-                      setDevInitialBalance(null);
-                      loadDev();
-                    } else {
-                      toast.error('Payment not detected yet. Please try again after transaction confirms.');
-                    }
-                  } else {
-                    toast.error('Could not verify payment. Please check manually.');
-                  }
-                } catch (err) {
-                  console.error('Payment verification error:', err);
-                  toast.error('Failed to verify payment');
+              onClick={() => {
+                if (kaspiumCheckInterval) {
+                  clearInterval(kaspiumCheckInterval);
+                  setKaspiumCheckInterval(null);
                 }
+                setShowKaspiumPay(false);
                 setVerifyingKaspiumPayment(false);
+                setTipAmount("");
+                setDevInitialBalance(null);
               }}
-              disabled={verifyingKaspiumPayment}
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white h-12 rounded-xl font-bold disabled:opacity-50"
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white h-12 rounded-xl font-bold"
             >
-              {verifyingKaspiumPayment ? 'Verifying Payment...' : 'Done'}
+              {verifyingKaspiumPayment ? 'Cancel' : 'Done'}
             </Button>
           </motion.div>
         </motion.div>
