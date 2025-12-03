@@ -73,58 +73,43 @@ export default function GlobalWarPage() {
     }
     
     setError(null);
+    let cachedData = [];
     
     try {
       console.log('🌍 Fetching war news...');
       
       // Load from localStorage first
-      const cached = localStorage.getItem('global_war_news');
-      let cachedData = [];
-      
-      if (cached) {
-        try {
+      try {
+        const cached = localStorage.getItem('global_war_news');
+        if (cached) {
           cachedData = JSON.parse(cached);
           if (!isAutoRefresh && cachedData.length > 0) {
             setNews(cachedData);
             console.log(`📦 Loaded ${cachedData.length} cached news items`);
           }
-        } catch (parseErr) {
-          console.log('⚠️ Failed to parse cached data:', parseErr);
-          localStorage.removeItem('global_war_news');
-          cachedData = [];
         }
+      } catch (parseErr) {
+        console.log('⚠️ Cache error:', parseErr);
+        cachedData = [];
       }
 
       let allNewItems = [];
 
       // Try aggregateWarNews first
       try {
-        console.log('📰 Trying aggregateWarNews...');
         const response = await base44.functions.invoke('aggregateWarNews', {});
-        
-        if (response?.data?.news && Array.isArray(response.data.news) && response.data.news.length > 0) {
-          console.log(`✅ Got ${response.data.news.length} items from aggregateWarNews`);
+        if (response?.data?.news?.length > 0) {
           allNewItems = response.data.news;
         }
       } catch (e) {
-        console.log('⚠️ aggregateWarNews failed:', e?.message || e);
+        console.log('⚠️ aggregateWarNews failed');
       }
 
       // Fallback to InvokeLLM
       if (allNewItems.length < 5) {
         try {
-          console.log('🔍 Using InvokeLLM fallback...');
           const llmResponse = await base44.integrations.Core.InvokeLLM({
-            prompt: `Search for the LATEST global war, conflict, and crisis news from the past 24 hours. Include:
-- Ukraine war updates
-- Middle East conflicts (Gaza, Israel, Syria, Yemen, Lebanon)
-- Africa conflicts (Sudan, Ethiopia, DRC, Somalia, Sahel region, Nigeria, Kenya, South Africa, Mali, Burkina Faso)
-- African local news and regional conflicts
-- Military operations worldwide
-- Humanitarian crises
-- Major conflicts and tensions
-
-Provide 20 unique news items with: title, summary (max 200 chars), category (conflict/humanitarian/military), location (include continent: Europe/Middle East/Africa/Asia/Americas), source, timestamp.`,
+            prompt: `Search for the LATEST global war, conflict, and crisis news from the past 24 hours. Provide 20 unique news items with: title, summary (max 200 chars), category (conflict/humanitarian/military), location, source, timestamp.`,
             add_context_from_internet: true,
             response_json_schema: {
               type: "object",
@@ -147,21 +132,20 @@ Provide 20 unique news items with: title, summary (max 200 chars), category (con
             }
           });
 
-          if (llmResponse && llmResponse.news && llmResponse.news.length > 0) {
-            console.log(`✅ Got ${llmResponse.news.length} items from InvokeLLM`);
+          if (llmResponse?.news?.length > 0) {
             allNewItems = [...allNewItems, ...llmResponse.news];
           }
         } catch (e) {
-          console.log('⚠️ InvokeLLM fallback failed:', e.message);
+          console.log('⚠️ LLM failed');
         }
       }
 
+      // ALWAYS have fallback data
       if (allNewItems.length === 0) {
-        console.log('⚠️ All news sources failed, using placeholder data');
         allNewItems = [
           {
             title: "Global Conflict Monitoring Active",
-            summary: "Real-time war and conflict monitoring is currently being updated. Please check back in a few minutes for the latest updates.",
+            summary: "Real-time war monitoring system is loading. Click refresh to update.",
             category: "system",
             location: "Global",
             source: "TTT Monitor",
@@ -170,51 +154,37 @@ Provide 20 unique news items with: title, summary (max 200 chars), category (con
         ];
       }
 
-      // Merge new items with existing, avoid duplicates
-      const existing = cachedData;
-      const existingTitles = new Set(existing.map(item => item?.title?.toLowerCase()).filter(Boolean));
-      
+      // Merge with cache
+      const existingTitles = new Set(cachedData.map(item => item?.title?.toLowerCase()).filter(Boolean));
       const uniqueNewItems = allNewItems.filter(item => 
         item?.title && !existingTitles.has(item.title.toLowerCase())
       );
 
-      let updatedNews;
-      if (isAutoRefresh) {
-        // Add new items to the top, keep existing
-        updatedNews = [...uniqueNewItems, ...existing].slice(0, 100);
-      } else {
-        // First load or manual refresh - merge and dedupe
-        updatedNews = [...uniqueNewItems, ...existing].slice(0, 100);
-      }
+      const updatedNews = [...uniqueNewItems, ...cachedData].slice(0, 100);
 
       setNews(updatedNews);
       
       try {
         localStorage.setItem('global_war_news', JSON.stringify(updatedNews));
-      } catch (storageErr) {
-        console.log('⚠️ Failed to save to localStorage:', storageErr);
-      }
+      } catch (e) {}
       
       setLastUpdate(Date.now());
-      console.log(`✅ Total news items: ${updatedNews.length}`);
 
     } catch (error) {
-      console.error('❌ Failed to load war news:', error);
-      setError('Failed to load news. Click refresh to try again.');
+      console.error('❌ Load failed:', error);
+      setError('Failed to load. Click refresh.');
       
-      // Load fallback news to prevent white screen
-      if (cachedData.length === 0) {
-        setNews([{
-          title: "News Loading Issue",
-          summary: "Unable to fetch latest news. Please try refreshing.",
-          category: "system",
-          location: "Global",
-          source: "TTT Monitor",
-          timestamp: new Date().toISOString()
-        }]);
-      } else {
-        setNews(cachedData);
-      }
+      // FORCE fallback to prevent white screen
+      const fallbackNews = cachedData.length > 0 ? cachedData : [{
+        title: "System Loading",
+        summary: "War monitoring system is initializing. Please refresh the page.",
+        category: "system",
+        location: "Global",
+        source: "TTT Monitor",
+        timestamp: new Date().toISOString()
+      }];
+      
+      setNews(fallbackNews);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
