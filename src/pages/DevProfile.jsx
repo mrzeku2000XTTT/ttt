@@ -813,6 +813,16 @@ export default function DevProfilePage() {
 
                 <Button
                   onClick={async () => {
+                    if (!currentUser?.created_wallet_address) {
+                      toast.error('Please connect your TTT wallet first');
+                      return;
+                    }
+
+                    if (!tipAmount || parseFloat(tipAmount) <= 0) {
+                      toast.error('Please enter a valid tip amount');
+                      return;
+                    }
+
                     try {
                       // Get dev's current balance before showing QR
                       const balanceResponse = await base44.functions.invoke('getKaspaBalance', { 
@@ -898,16 +908,19 @@ export default function DevProfilePage() {
 
                         setKaspiumCheckInterval(intervalId);
                       }
-                    } catch (err) {
+                      } catch (err) {
                       console.error('Failed to get initial balance:', err);
                       toast.error('Failed to initialize payment verification');
-                    }
-                  }}
-                  disabled={!tipAmount || parseFloat(tipAmount) <= 0}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white h-12 rounded-xl font-bold shadow-lg shadow-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Kaspium
-                </Button>
+                      setShowTipModal(true);
+                      setShowKaspiumPay(false);
+                      setVerifyingKaspiumPayment(false);
+                      }
+                      }}
+                      disabled={!tipAmount || parseFloat(tipAmount) <= 0 || !currentUser?.created_wallet_address}
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white h-12 rounded-xl font-bold shadow-lg shadow-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                      Kaspium
+                      </Button>
               </div>
             </div>
           </motion.div>
@@ -1170,21 +1183,40 @@ export default function DevProfilePage() {
               )}
             </div>
 
-            <Button
-              onClick={() => {
-                if (kaspiumCheckInterval) {
-                  clearInterval(kaspiumCheckInterval);
-                  setKaspiumCheckInterval(null);
-                }
-                setShowKaspiumPay(false);
-                setVerifyingKaspiumPayment(false);
-                setTipAmount("");
-                setDevInitialBalance(null);
-              }}
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white h-12 rounded-xl font-bold"
-            >
-              {verifyingKaspiumPayment ? 'Cancel' : 'Done'}
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => {
+                  if (kaspiumCheckInterval) {
+                    clearInterval(kaspiumCheckInterval);
+                    setKaspiumCheckInterval(null);
+                  }
+                  setShowKaspiumPay(false);
+                  setVerifyingKaspiumPayment(false);
+                  setTipAmount("");
+                  setDevInitialBalance(null);
+                  setTipTxHash(null);
+                }}
+                variant="outline"
+                className="flex-1 border-white/20 text-white hover:bg-white/10 h-12 rounded-xl"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (kaspiumCheckInterval) {
+                    clearInterval(kaspiumCheckInterval);
+                    setKaspiumCheckInterval(null);
+                  }
+                  setShowKaspiumPay(false);
+                  setVerifyingKaspiumPayment(false);
+                  setShowTipModal(true);
+                  setDevInitialBalance(null);
+                }}
+                className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white h-12 rounded-xl font-bold"
+              >
+                Back to Options
+              </Button>
+            </div>
           </motion.div>
         </motion.div>
       )}
