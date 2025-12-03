@@ -814,10 +814,15 @@ export default function DevProfilePage() {
 
                 <Button
                   onClick={async () => {
+                    console.log('🔵 Kaspium button clicked!');
+                    
                     if (!tipAmount || parseFloat(tipAmount) <= 0) {
                       toast.error('Please enter a valid tip amount');
                       return;
                     }
+
+                    setCreatingKaspiumTip(true);
+                    console.log('📡 Creating tip request...');
 
                     try {
                       const response = await fetch('https://kaspa-node-proxy-nebulouslabs.replit.app/api/tip/create', {
@@ -832,6 +837,7 @@ export default function DevProfilePage() {
                       });
 
                       const data = await response.json();
+                      console.log('✅ API response:', data);
 
                       if (data.success) {
                         setKaspiumTipData(data);
@@ -873,14 +879,16 @@ export default function DevProfilePage() {
                         toast.error('Failed to create payment request');
                       }
                     } catch (err) {
-                      console.error('Kaspium error:', err);
+                      console.error('❌ Kaspium error:', err);
                       toast.error('Failed to create payment request');
+                    } finally {
+                      setCreatingKaspiumTip(false);
                     }
                   }}
-                  disabled={!tipAmount || parseFloat(tipAmount) <= 0 || !currentUser?.created_wallet_address}
+                  disabled={!tipAmount || parseFloat(tipAmount) <= 0 || creatingKaspiumTip}
                   className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white h-12 rounded-xl font-bold shadow-lg shadow-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Kaspium
+                  {creatingKaspiumTip ? 'Loading...' : 'Kaspium'}
                 </Button>
               </div>
             </div>
