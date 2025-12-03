@@ -490,16 +490,18 @@ export default function KaspromoPage() {
                 </motion.button>
                 )}
 
-                {user?.username === post.author && (
+{activeTab === "DEVS" && user?.username === post.author && post.id && (
                 <motion.button
-                  onClick={async () => {
+                  onClick={async (e) => {
+                    e.stopPropagation();
                     if (confirm('Are you sure you want to delete your developer profile?')) {
                       try {
                         await base44.entities.KaspaDev.delete(post.id);
+                        alert('✅ Profile deleted successfully!');
                         loadDevs();
                       } catch (err) {
                         console.error('Failed to delete:', err);
-                        alert('Failed to delete profile');
+                        alert('Failed to delete profile: ' + err.message);
                       }
                     }
                   }}
