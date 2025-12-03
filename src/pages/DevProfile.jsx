@@ -840,45 +840,53 @@ export default function DevProfilePage() {
                         setDevInitialBalance(balanceResponse.data.balance);
                       }
 
-                      // Start checking for payment every 3 seconds using UTXO verification
+                      // Start checking for payment every 3 seconds using Kaspa API
                       const startTime = Date.now();
                       const intervalId = setInterval(async () => {
                         try {
-                          // Scan dev's wallet for recent transactions
-                          const txResponse = await base44.functions.invoke('scanWalletTransactions', { 
-                            address: dev.kaspa_address 
-                          });
+                          // Fetch recent transactions directly from Kaspa API
+                          const apiUrl = `https://api.kaspa.org/addresses/${dev.kaspa_address}/full-transactions?limit=10`;
+                          console.log('🔍 Fetching transactions from:', apiUrl);
+                          
+                          const response = await fetch(apiUrl);
+                          if (!response.ok) {
+                            console.error('Kaspa API error:', response.status);
+                            return;
+                          }
 
-                          if (txResponse.data?.transactions) {
+                          const data = await response.json();
+                          console.log('📦 Received data:', data);
+
+                          if (data && Array.isArray(data)) {
                             const expectedAmount = parseFloat(tipAmount);
                             const senderAddress = currentUser?.created_wallet_address;
 
                             // Look for transaction from current user's TTT wallet
-                            const matchingTx = txResponse.data.transactions.find(tx => {
-                              const txTime = new Date(tx.block_time).getTime();
+                            const matchingTx = data.find(tx => {
+                              const txTime = new Date(parseInt(tx.block_time)).getTime();
                               const isRecent = txTime >= startTime - 30000; // 30s tolerance
                               
-                              // Check amount to dev
+                              // Check amount to dev (in sompi, convert to KAS)
                               const amountToDev = (tx.outputs || [])
                                 .filter(out => out.script_public_key_address === dev.kaspa_address)
-                                .reduce((sum, out) => sum + (out.amount / 100000000), 0);
+                                .reduce((sum, out) => sum + (out.amount || 0), 0) / 100000000;
                               const amountMatch = Math.abs(amountToDev - expectedAmount) < 0.01;
 
                               // Check if ANY input is from sender's address
                               const fromSender = (tx.inputs || [])
                                 .some(input => {
-                                  const inputAddr = input.previous_outpoint_address || input.address;
+                                  const inputAddr = input.previous_outpoint_address;
                                   return inputAddr === senderAddress;
                                 });
 
                               console.log('🔍 Checking TX:', {
                                 txId: tx.transaction_id,
-                                time: tx.block_time,
+                                time: new Date(parseInt(tx.block_time)),
                                 isRecent,
                                 amountToDev: amountToDev.toFixed(4),
                                 expectedAmount,
                                 amountMatch,
-                                inputs: tx.inputs?.map(i => i.previous_outpoint_address || i.address),
+                                inputs: tx.inputs?.map(i => i.previous_outpoint_address),
                                 senderAddress,
                                 fromSender
                               });
@@ -890,7 +898,7 @@ export default function DevProfilePage() {
                               clearInterval(intervalId);
                               setKaspiumCheckInterval(null);
 
-                              console.log('✅ Payment verified via UTXO:', {
+                              console.log('✅ Payment verified!', {
                                 txId: matchingTx.transaction_id,
                                 from: senderAddress,
                                 to: dev.kaspa_address,
@@ -914,7 +922,7 @@ export default function DevProfilePage() {
                             }
                           }
                         } catch (err) {
-                          console.error('UTXO check error:', err);
+                          console.error('Payment check error:', err);
                         }
                       }, 3000);
 
