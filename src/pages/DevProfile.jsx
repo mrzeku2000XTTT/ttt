@@ -840,88 +840,77 @@ export default function DevProfilePage() {
                         amount: expectedAmount
                       });
 
-                      // Check sender's transaction history every 3 seconds
+                      // Check for transaction using getKaspaUTXOs
                       const intervalId = setInterval(async () => {
                         try {
-                          // Fetch sender's recent transactions
-                          const apiUrl = `https://api.kaspa.org/addresses/${currentUser.created_wallet_address}/full-transactions?limit=20`;
-                          const response = await fetch(apiUrl);
-                          
-                          if (!response.ok) {
-                            console.error('API error:', response.status);
-                            return;
-                          }
+                          // Use our UTXO checker to get sender's recent transactions
+                          const utxoResponse = await base44.functions.invoke('getKaspaUTXOs', { 
+                            address: currentUser.created_wallet_address 
+                          });
 
-                          const data = await response.json();
-                          console.log('📦 Checking sender transactions:', data?.length || 0);
+                          console.log('📦 UTXO Response:', utxoResponse.data);
 
-                          if (data && Array.isArray(data)) {
-                            // Look for transaction from sender to recipient with matching amount
-                            const matchingTx = data.find(tx => {
-                              const txTime = new Date(parseInt(tx.block_time)).getTime();
-                              const isRecent = txTime >= startTime - 60000; // 1 min tolerance
-                              
-                              // Check if transaction has output to dev's address
-                              const sentToDev = (tx.outputs || []).some(out => 
-                                out.script_public_key_address === dev.kaspa_address
-                              );
-                              
-                              // Check amount sent to dev
-                              const amountToDev = (tx.outputs || [])
-                                .filter(out => out.script_public_key_address === dev.kaspa_address)
-                                .reduce((sum, out) => sum + (out.amount || 0), 0) / 100000000;
-                              
-                              const amountMatch = Math.abs(amountToDev - expectedAmount) < 0.01;
-                              
-                              // Check if transaction is from sender
-                              const fromSender = (tx.inputs || []).some(input => 
-                                input.previous_outpoint_address === currentUser.created_wallet_address
-                              );
+                          if (utxoResponse.data?.utxos) {
+                            // Check if any UTXO was recently spent (check for recent outgoing transactions)
+                            // Also fetch recent transactions from Kaspa API
+                            const apiUrl = `https://api.kaspa.org/addresses/${currentUser.created_wallet_address}/full-transactions?limit=10&resolve_previous_outpoints=light`;
+                            const response = await fetch(apiUrl);
+                            
+                            if (response.ok) {
+                              const data = await response.json();
+                              console.log('📦 Sender TXs:', data?.length, data);
 
-                              console.log('🔍 TX Check:', {
-                                id: tx.transaction_id?.substring(0, 8),
-                                time: new Date(parseInt(tx.block_time)),
-                                isRecent,
-                                sentToDev,
-                                amountToDev: amountToDev.toFixed(4),
-                                expected: expectedAmount,
-                                amountMatch,
-                                fromSender
-                              });
+                              if (data && Array.isArray(data)) {
+                                // Find ANY transaction sent to dev after start time
+                                const matchingTx = data.find(tx => {
+                                  const txTime = parseInt(tx.block_time);
+                                  const isRecent = txTime >= (startTime - 60000);
+                                  
+                                  // Check outputs to dev
+                                  const hasSentToDev = (tx.outputs || []).some(out => 
+                                    out.script_public_key_address === dev.kaspa_address
+                                  );
 
-                              return isRecent && sentToDev && amountMatch && fromSender;
-                            });
+                                  console.log('🔍', tx.transaction_id?.substring(0,8), {
+                                    time: new Date(txTime),
+                                    isRecent,
+                                    hasSentToDev,
+                                    outputs: tx.outputs?.map(o => o.script_public_key_address)
+                                  });
 
-                            if (matchingTx) {
-                              clearInterval(intervalId);
-                              setKaspiumCheckInterval(null);
+                                  return isRecent && hasSentToDev;
+                                });
 
-                              console.log('✅ Payment verified!', matchingTx.transaction_id);
-                              setTipTxHash(matchingTx.transaction_id);
+                                if (matchingTx) {
+                                  clearInterval(intervalId);
+                                  setKaspiumCheckInterval(null);
 
-                              // Update total tips
-                              await base44.entities.KaspaBuilder.update(dev.id, {
-                                total_tips: (dev.total_tips || 0) + expectedAmount
-                              });
+                                  console.log('✅ VERIFIED!', matchingTx.transaction_id);
+                                  setTipTxHash(matchingTx.transaction_id);
 
-                              toast.success(`✅ Payment verified!\nTX: ${matchingTx.transaction_id.substring(0, 8)}...`);
-                              setShowKaspiumPay(false);
-                              setVerifyingKaspiumPayment(false);
-                              setTipAmount("");
-                              setTipTxHash(null);
-                              loadDev();
+                                  await base44.entities.KaspaBuilder.update(dev.id, {
+                                    total_tips: (dev.total_tips || 0) + expectedAmount
+                                  });
+
+                                  toast.success(`✅ Payment verified!\nTX: ${matchingTx.transaction_id.substring(0, 8)}...`);
+                                  setShowKaspiumPay(false);
+                                  setVerifyingKaspiumPayment(false);
+                                  setTipAmount("");
+                                  setTipTxHash(null);
+                                  loadDev();
+                                }
+                              }
                             }
                           }
 
-                          // Timeout after 5 minutes
                           if (Date.now() - startTime > 300000) {
                             clearInterval(intervalId);
                             setKaspiumCheckInterval(null);
-                            toast.error('Verification timeout');
+                            toast.error('Timeout');
                             setVerifyingKaspiumPayment(false);
                           }
                         } catch (err) {
-                          console.error('Check error:', err);
+                          console.error('Error:', err);
                         }
                       }, 3000);
 
