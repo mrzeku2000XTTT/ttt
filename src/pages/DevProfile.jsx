@@ -856,25 +856,31 @@ export default function DevProfilePage() {
                             // Look for transaction from current user's TTT wallet
                             const matchingTx = txResponse.data.transactions.find(tx => {
                               const txTime = new Date(tx.block_time).getTime();
-                              const isRecent = txTime >= startTime - 5000;
-                              const amountMatch = Math.abs((tx.outputs || [])
+                              const isRecent = txTime >= startTime - 30000; // 30s tolerance
+                              
+                              // Check amount to dev
+                              const amountToDev = (tx.outputs || [])
                                 .filter(out => out.script_public_key_address === dev.kaspa_address)
-                                .reduce((sum, out) => sum + (out.amount / 100000000), 0) - expectedAmount) < 0.01;
+                                .reduce((sum, out) => sum + (out.amount / 100000000), 0);
+                              const amountMatch = Math.abs(amountToDev - expectedAmount) < 0.01;
 
+                              // Check if ANY input is from sender's address
                               const fromSender = (tx.inputs || [])
-                                .some(input => input.previous_outpoint_address === senderAddress);
+                                .some(input => {
+                                  const inputAddr = input.previous_outpoint_address || input.address;
+                                  return inputAddr === senderAddress;
+                                });
 
                               console.log('🔍 Checking TX:', {
                                 txId: tx.transaction_id,
                                 time: tx.block_time,
                                 isRecent,
-                                amount: (tx.outputs || [])
-                                  .filter(out => out.script_public_key_address === dev.kaspa_address)
-                                  .reduce((sum, out) => sum + (out.amount / 100000000), 0),
+                                amountToDev: amountToDev.toFixed(4),
                                 expectedAmount,
                                 amountMatch,
-                                fromSender,
-                                senderAddress
+                                inputs: tx.inputs?.map(i => i.previous_outpoint_address || i.address),
+                                senderAddress,
+                                fromSender
                               });
 
                               return isRecent && amountMatch && fromSender;
