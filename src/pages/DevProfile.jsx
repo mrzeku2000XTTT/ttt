@@ -386,10 +386,22 @@ export default function DevProfilePage() {
 
 
         {/* Description */}
-        {(dev.description || editMode) && (
+        {(dev.description || editMode || isOwner) && (
           <Card className="bg-black/60 backdrop-blur-xl border-cyan-500/30 mb-6">
             <CardContent className="p-6">
-              <h2 className="text-xl font-bold text-white mb-3">About This Project</h2>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-xl font-bold text-white">About This Project</h2>
+                {isOwner && !editMode && (
+                  <Button
+                    onClick={() => setEditMode(true)}
+                    size="sm"
+                    className="bg-purple-500 hover:bg-purple-600 text-white"
+                  >
+                    <Edit2 className="w-3 h-3 mr-1" />
+                    Edit
+                  </Button>
+                )}
+              </div>
               {editMode ? (
                 <Textarea
                   value={editedBio}
@@ -398,7 +410,9 @@ export default function DevProfilePage() {
                   className="bg-white/5 border-cyan-500/30 text-white rounded-xl resize-none min-h-[120px]"
                 />
               ) : (
-                <p className="text-white/80 leading-relaxed whitespace-pre-wrap">{dev.description}</p>
+                <p className="text-white/80 leading-relaxed whitespace-pre-wrap">
+                  {dev.description || "No description yet. Click Edit to add one."}
+                </p>
               )}
             </CardContent>
           </Card>
