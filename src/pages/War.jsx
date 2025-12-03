@@ -10,7 +10,7 @@ import NewsAnalysisModal from "@/components/NewsAnalysisModal";
 
 export default function WarPage() {
   const [news, setNews] = useState([]);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(Date.now());
   const [error, setError] = useState(null);
   const [selectedNewsForAnalysis, setSelectedNewsForAnalysis] = useState(null);
@@ -18,24 +18,17 @@ export default function WarPage() {
 
   useEffect(() => {
     loadWarNews();
-    const interval = setInterval(() => loadWarNews(true), 300000);
+    const interval = setInterval(() => loadWarNews(true), 180000);
     return () => clearInterval(interval);
   }, []);
 
   const loadWarNews = async (isAutoRefresh = false) => {
-    if (isAutoRefresh) setIsRefreshing(true);
+    if (!isAutoRefresh) setIsRefreshing(true);
     setError(null);
 
     try {
-      const cached = localStorage.getItem('war_news_cache');
-      const cachedData = cached ? JSON.parse(cached) : [];
-      
-      if (cachedData.length > 0 && !isAutoRefresh) {
-        setNews(cachedData);
-      }
-
       const llmResponse = await base44.integrations.Core.InvokeLLM({
-        prompt: `Search for LATEST global war and conflict news from past 24 hours. Include all regions. Provide 20 items with: title, summary (max 200 chars), category (conflict/humanitarian/military), location, source, timestamp.`,
+        prompt: `Search for BREAKING global war, military conflicts, and crisis news from LAST 12 HOURS ONLY. Include: Ukraine, Gaza, Israel, Syria, Yemen, Sudan, Myanmar, and any major conflicts. Return 25 urgent reports with: title (max 100 chars), summary (max 180 chars), category (conflict/military/humanitarian/crisis/diplomatic), location (city/country), source, timestamp (ISO format), severity (1-10).`,
         add_context_from_internet: true,
         response_json_schema: {
           type: "object",
@@ -50,7 +43,8 @@ export default function WarPage() {
                   category: { type: "string" },
                   location: { type: "string" },
                   source: { type: "string" },
-                  timestamp: { type: "string" }
+                  timestamp: { type: "string" },
+                  severity: { type: "number" }
                 }
               }
             }
@@ -59,32 +53,26 @@ export default function WarPage() {
       });
 
       if (llmResponse?.news?.length > 0) {
-        const existingTitles = new Set(cachedData.map(item => item?.title?.toLowerCase()).filter(Boolean));
-        const uniqueNewItems = llmResponse.news.filter(item => 
-          item?.title && !existingTitles.has(item.title.toLowerCase())
-        );
-        const updatedNews = [...uniqueNewItems, ...cachedData].slice(0, 100);
-        setNews(updatedNews);
-        localStorage.setItem('war_news_cache', JSON.stringify(updatedNews));
+        const sortedNews = llmResponse.news
+          .filter(item => item?.title && item?.summary)
+          .sort((a, b) => (b.severity || 5) - (a.severity || 5));
+        
+        setNews(sortedNews);
+        localStorage.setItem('war_news_cache', JSON.stringify(sortedNews));
+        localStorage.setItem('war_news_timestamp', Date.now().toString());
+      } else {
+        const cached = localStorage.getItem('war_news_cache');
+        if (cached) setNews(JSON.parse(cached));
       }
 
       setLastUpdate(Date.now());
     } catch (error) {
       console.error('Failed to load war news:', error);
-      setError('Failed to load. Click refresh.');
+      setError('Failed to load live news. Click refresh.');
       
       const cached = localStorage.getItem('war_news_cache');
       if (cached) {
         setNews(JSON.parse(cached));
-      } else {
-        setNews([{
-          title: "War Monitor Active",
-          summary: "Real-time conflict monitoring. Click refresh to load updates.",
-          category: "system",
-          location: "Global",
-          source: "WAR",
-          timestamp: new Date().toISOString()
-        }]);
       }
     } finally {
       setIsRefreshing(false);
@@ -124,13 +112,23 @@ export default function WarPage() {
     switch (category?.toLowerCase()) {
       case "conflict":
       case "military":
-        return "bg-red-500/30 text-red-200 border-red-500/50";
+        return "bg-gradient-to-r from-red-600/40 to-red-700/40 text-red-100 border-red-500/60 shadow-lg shadow-red-500/20";
       case "humanitarian":
       case "crisis":
-        return "bg-orange-500/30 text-orange-200 border-orange-500/50";
+        return "bg-gradient-to-r from-orange-600/40 to-red-600/40 text-orange-100 border-orange-500/60 shadow-lg shadow-orange-500/20";
+      case "diplomatic":
+        return "bg-gradient-to-r from-red-500/30 to-pink-600/30 text-red-200 border-red-400/50 shadow-lg shadow-red-400/20";
       default:
-        return "bg-red-500/20 text-red-300 border-red-500/40";
+        return "bg-red-500/30 text-red-200 border-red-500/50 shadow-lg shadow-red-500/20";
     }
+  };
+
+  const getSeverityBadge = (severity) => {
+    if (!severity) return null;
+    if (severity >= 8) return { label: "CRITICAL", color: "bg-red-600 text-white border-red-700 animate-pulse" };
+    if (severity >= 6) return { label: "HIGH", color: "bg-red-500/80 text-white border-red-600" };
+    if (severity >= 4) return { label: "MEDIUM", color: "bg-orange-500/80 text-white border-orange-600" };
+    return { label: "LOW", color: "bg-yellow-500/80 text-white border-yellow-600" };
   };
 
   return (
@@ -199,48 +197,56 @@ export default function WarPage() {
                 if (selectedRegion === "all") return true;
                 const location = item.location?.toLowerCase() || "";
                 return location.includes(selectedRegion.toLowerCase());
-              }).map((item, index) => (
-                <motion.div key={`${item.title}-${index}`} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-                  <Card className="backdrop-blur-xl bg-black/80 border-red-500/30 hover:bg-red-500/5 transition-all h-full">
-                    <CardContent className="p-4 md:p-6">
-                      <div className="flex items-start justify-between mb-3">
-                        <Badge variant="outline" className={getCategoryColor(item.category)}>
-                          {item.category || 'news'}
-                        </Badge>
-                        {item.location && (
-                          <div className="flex items-center gap-1 text-xs text-red-400/60">
-                            <MapPin className="w-3 h-3" />
-                            {item.location}
+              }).map((item, index) => {
+                const severityBadge = getSeverityBadge(item.severity);
+                return (
+                  <motion.div key={`${item.title}-${index}`} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: index * 0.03, type: "spring" }}>
+                    <Card className="backdrop-blur-2xl bg-gradient-to-br from-red-950/40 via-black/60 to-black/80 border-red-500/40 hover:border-red-400/60 hover:shadow-2xl hover:shadow-red-500/20 transition-all duration-300 h-full group">
+                      <CardContent className="p-5 md:p-6">
+                        <div className="flex items-start justify-between mb-3 gap-2">
+                          <div className="flex flex-wrap gap-2">
+                            <Badge variant="outline" className={getCategoryColor(item.category)}>
+                              {item.category || 'news'}
+                            </Badge>
+                            {severityBadge && (
+                              <Badge variant="outline" className={severityBadge.color}>
+                                {severityBadge.label}
+                              </Badge>
+                            )}
                           </div>
-                        )}
-                      </div>
+                          {item.location && (
+                            <div className="flex items-center gap-1 text-xs text-red-300/70 bg-red-950/50 px-2 py-1 rounded-md border border-red-500/30">
+                              <MapPin className="w-3 h-3" />
+                              <span className="font-medium">{item.location}</span>
+                            </div>
+                          )}
+                        </div>
 
-                      <h3 className="text-base md:text-lg font-bold text-red-400 mb-2 line-clamp-2">{item.title}</h3>
-                      <p className="text-xs md:text-sm text-red-300/60 mb-4 line-clamp-3">{item.summary}</p>
+                        <h3 className="text-base md:text-lg font-bold text-red-300 group-hover:text-red-200 mb-3 line-clamp-2 transition-colors">{item.title}</h3>
+                        <p className="text-xs md:text-sm text-red-400/70 mb-4 line-clamp-3 leading-relaxed">{item.summary}</p>
 
-                      <div className="flex items-center justify-between text-xs text-red-500/40 mb-3">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {item.timestamp ? formatDistanceToNow(new Date(item.timestamp), { addSuffix: true }) : 'Recently'}
-                        </span>
-                        {item.source && (
-                          <span className="flex items-center gap-1">
-                            <Globe className="w-3 h-3" />
-                            {item.source}
+                        <div className="flex items-center justify-between text-xs text-red-500/50 mb-4 bg-black/40 rounded-lg p-2 border border-red-500/20">
+                          <span className="flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5" />
+                            {item.timestamp ? formatDistanceToNow(new Date(item.timestamp), { addSuffix: true }) : 'Recently'}
                           </span>
-                        )}
-                      </div>
+                          {item.source && (
+                            <span className="flex items-center gap-1.5 font-medium">
+                              <Globe className="w-3.5 h-3.5" />
+                              {item.source}
+                            </span>
+                          )}
+                        </div>
 
-                      <div className="pt-3 border-t border-red-500/20">
-                        <Button onClick={() => handleAIAnalysis(item)} size="sm" className="w-full bg-red-500/20 border border-red-500/40 hover:bg-red-500/30 text-red-300 text-xs">
-                          <Brain className="w-3 h-3 mr-1" />
+                        <Button onClick={() => handleAIAnalysis(item)} size="sm" className="w-full bg-gradient-to-r from-red-600/30 to-red-700/30 border border-red-500/50 hover:from-red-600/50 hover:to-red-700/50 hover:border-red-400/70 text-red-200 hover:text-red-100 shadow-lg shadow-red-900/30 transition-all duration-300">
+                          <Brain className="w-4 h-4 mr-2" />
                           AI Analysis
                         </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
             </AnimatePresence>
           </div>
 
