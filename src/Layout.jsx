@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowUpDown, TrendingUp, Activity, LogOut, AlertCircle, Crown, User as UserIcon, Menu, X, Clock, Bot, Search, Users, Gamepad2, BarChart3, AlertTriangle, Settings, Bell, Briefcase, ShoppingBag, Brain, Shield, Wallet, Network, Key, MoreHorizontal, FileText, History, Download, ShoppingCart, Trophy, MessageSquare, LayoutGrid, ArrowLeft } from "lucide-react";
+import { ArrowUpDown, TrendingUp, Activity, LogOut, AlertCircle, Crown, User as UserIcon, Menu, X, Clock, Bot, Search, Users, Gamepad2, BarChart3, AlertTriangle, Settings, Bell, Briefcase, ShoppingBag, Brain, Shield, Wallet, Network, Key, MoreHorizontal, FileText, History, Download, ShoppingCart, Trophy, MessageSquare, LayoutGrid, ArrowLeft, Skull } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -259,7 +259,7 @@ export default function Layout({ children, currentPageName }) {
   const subNavItems = [
     { name: "TTT", label: "Encrypted Feed", icon: Users, path: "Feed" },
     { name: "NFT", label: "Mint NFTs", icon: Trophy, path: "NFTMint" },
-    { name: "Global War", label: "War Monitor", icon: AlertTriangle, path: "GlobalWar" },
+    { name: "War", label: "War Monitor", icon: Skull, path: "War" },
     { name: "Arcade", icon: Gamepad2, path: "Arcade" },
     { name: "Analytics", icon: TrendingUp, path: "Analytics" },
     { name: "Wallet", icon: Wallet, path: "Wallet" },
