@@ -171,11 +171,11 @@ Provide 20 unique news items with: title, summary (max 200 chars), category (con
       }
 
       // Merge new items with existing, avoid duplicates
-      const existing = cached ? JSON.parse(cached) : [];
-      const existingTitles = new Set(existing.map(item => item.title.toLowerCase()));
+      const existing = cachedData;
+      const existingTitles = new Set(existing.map(item => item?.title?.toLowerCase()).filter(Boolean));
       
       const uniqueNewItems = allNewItems.filter(item => 
-        !existingTitles.has(item.title.toLowerCase())
+        item?.title && !existingTitles.has(item.title.toLowerCase())
       );
 
       let updatedNews;
@@ -188,7 +188,13 @@ Provide 20 unique news items with: title, summary (max 200 chars), category (con
       }
 
       setNews(updatedNews);
-      localStorage.setItem('global_war_news', JSON.stringify(updatedNews));
+      
+      try {
+        localStorage.setItem('global_war_news', JSON.stringify(updatedNews));
+      } catch (storageErr) {
+        console.log('⚠️ Failed to save to localStorage:', storageErr);
+      }
+      
       setLastUpdate(Date.now());
       console.log(`✅ Total news items: ${updatedNews.length}`);
 
