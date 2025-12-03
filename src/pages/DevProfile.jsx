@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 export default function DevProfilePage() {
   const navigate = useNavigate();
@@ -136,7 +137,7 @@ export default function DevProfilePage() {
         await base44.entities.KaspaBuilder.update(dev.id, {
           kns_photo: file_url
         });
-        alert('✅ KNS ID photo uploaded!');
+        toast.success('KNS ID photo uploaded');
         loadDev();
       }
     } catch (err) {
@@ -160,7 +161,7 @@ export default function DevProfilePage() {
         how_funds_used: editedHowFundsUsed
       });
       
-      alert('✅ Profile updated successfully!');
+      toast.success('Profile updated successfully');
       setEditMode(false);
       loadDev();
     } catch (err) {
@@ -209,7 +210,7 @@ export default function DevProfilePage() {
         total_tips: (dev.total_tips || 0) + parseFloat(tipAmount)
       });
       
-      alert(`✅ Tipped ${tipAmount} KAS to ${dev.username}! 🚀\n\nTX: ${txid.substring(0, 8)}...`);
+      toast.success(`Tipped ${tipAmount} KAS to ${dev.username}`);
       setShowTipModal(false);
       setTipAmount("");
       loadDev();
@@ -228,7 +229,7 @@ export default function DevProfilePage() {
   const handleCopyLink = () => {
     const link = window.location.href;
     navigator.clipboard.writeText(link);
-    alert('Profile link copied! 🔗');
+    toast.success('Profile link copied');
   };
 
   if (loading) {
