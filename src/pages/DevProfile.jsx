@@ -298,7 +298,7 @@ export default function DevProfilePage() {
             )}
           </>
         )}
-        
+
         {/* Back Button */}
         <Button
           onClick={() => navigate(createPageUrl('KP'))}
@@ -319,48 +319,45 @@ export default function DevProfilePage() {
                   setEditMode(true);
                 }
               }}
+              size="icon"
               className={`${
                 editMode 
-                  ? 'bg-green-500 hover:bg-green-600' 
-                  : 'bg-purple-500 hover:bg-purple-600'
-              } text-white border-0 shadow-lg`}
+                  ? 'bg-green-500/80 hover:bg-green-600' 
+                  : 'bg-purple-500/80 hover:bg-purple-600'
+              } backdrop-blur-lg text-white border-0 shadow-lg w-10 h-10 rounded-full`}
+              title={editMode ? "Save Profile" : "Edit Profile"}
             >
               {editMode ? (
-                <>
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Profile
-                </>
+                <Save className="w-4 h-4" />
               ) : (
-                <>
-                  <Edit2 className="w-4 h-4 mr-2" />
-                  Edit Profile
-                </>
+                <Edit2 className="w-4 h-4" />
               )}
             </Button>
           )}
           <Button
             onClick={handleCopyLink}
-            className="bg-black/60 backdrop-blur-sm border border-white/20 hover:bg-black/80"
+            size="icon"
+            className="bg-black/60 backdrop-blur-sm border border-white/20 hover:bg-black/80 w-10 h-10 rounded-full"
+            title="Share"
           >
-            <Copy className="w-4 h-4 mr-2" />
-            Share
+            <Copy className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 -mt-16 relative z-10 pb-8">
-        {/* Profile Header */}
-        <div className="flex items-end gap-6 mb-8">
+      <div className="max-w-4xl mx-auto px-4 relative z-10 pb-8">
+        {/* Profile Header - Centered Avatar */}
+        <div className="flex flex-col items-center -mt-20 mb-8">
           <div className="relative group">
             {editMode ? (
               <div className="relative">
                 <img 
                   src={editedAvatar || dev.avatar || "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/53badb4f2_image.png"} 
                   alt={dev.username}
-                  className="w-32 h-32 rounded-full border-4 border-black bg-black object-cover"
+                  className="w-24 h-24 rounded-full border-4 border-black bg-black object-cover shadow-xl"
                 />
                 <label className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center cursor-pointer hover:bg-black/80 transition-all">
-                  <Upload className="w-8 h-8 text-white" />
+                  <Upload className="w-6 h-6 text-white" />
                   <input
                     type="file"
                     accept="image/*"
@@ -375,35 +372,29 @@ export default function DevProfilePage() {
                 <img 
                   src={dev.avatar || "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/53badb4f2_image.png"} 
                   alt={dev.username}
-                  className="w-32 h-32 rounded-full border-4 border-black bg-black object-cover"
+                  className="w-24 h-24 rounded-full border-4 border-black bg-black object-cover shadow-xl"
                 />
                 {dev.verified && (
-                  <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center border-4 border-black">
-                    <CheckCircle className="w-5 h-5 text-white" />
+                  <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center border-4 border-black">
+                    <CheckCircle className="w-4 h-4 text-white" />
                   </div>
-                )}
-                {isOwner && (
-                  <button
-                    onClick={() => setEditMode(true)}
-                    className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Edit2 className="w-8 h-8 text-white" />
-                  </button>
                 )}
               </>
             )}
           </div>
 
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-3xl font-black text-white">{dev.username}</h1>
+          <div className="backdrop-blur-xl bg-white/5 border border-white/20 rounded-2xl px-6 py-4 mt-4 text-center shadow-2xl">
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <h1 className="text-2xl font-black text-white bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                {dev.username}
+              </h1>
               <Button
                 onClick={() => setShowKnsModal(true)}
                 size="sm"
-                className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/40 text-purple-400 hover:bg-purple-500/30"
+                className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-sm border border-purple-500/40 text-purple-400 hover:bg-purple-500/30"
               >
-                <CreditCard className="w-4 h-4 mr-1" />
-                ID Card
+                <CreditCard className="w-3 h-3 mr-1" />
+                ID
               </Button>
             </div>
             <p className="text-cyan-400 text-sm mb-2">@{dev.twitter_handle}</p>
@@ -412,11 +403,11 @@ export default function DevProfilePage() {
                 value={editedKnsId}
                 onChange={(e) => setEditedKnsId(e.target.value)}
                 placeholder="your.kas"
-                className="bg-white/5 border-purple-500/30 text-purple-400 h-9 rounded-lg max-w-xs text-sm font-bold"
+                className="bg-white/5 backdrop-blur-sm border-purple-500/30 text-purple-400 h-9 rounded-lg max-w-xs text-sm font-bold mx-auto"
               />
             ) : (
               dev.kns_id && (
-                <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-lg px-3 py-1 inline-block">
+                <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-sm border border-purple-500/30 rounded-lg px-3 py-1 inline-block">
                   <span className="text-purple-400 font-bold text-sm">{dev.kns_id}</span>
                 </div>
               )
@@ -425,7 +416,7 @@ export default function DevProfilePage() {
 
           <Button
             onClick={() => setShowTipModal(true)}
-            className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold"
+            className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold mt-4 shadow-xl shadow-yellow-500/30"
           >
             <Wallet className="w-4 h-4 mr-2" />
             Tip Dev
@@ -436,15 +427,15 @@ export default function DevProfilePage() {
 
         {/* Description */}
         {(dev.description || editMode || isOwner) && (
-          <Card className="bg-black/60 backdrop-blur-xl border-cyan-500/30 mb-6">
+          <Card className="bg-white/5 backdrop-blur-2xl border border-white/20 mb-6 shadow-xl">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xl font-bold text-white">About This Project</h2>
+                <h2 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">About This Project</h2>
                 {isOwner && !editMode && (
                   <Button
                     onClick={() => setEditMode(true)}
                     size="sm"
-                    className="bg-purple-500 hover:bg-purple-600 text-white"
+                    className="bg-purple-500/80 backdrop-blur-sm hover:bg-purple-600 text-white border-0"
                   >
                     <Edit2 className="w-3 h-3 mr-1" />
                     Edit
@@ -456,10 +447,10 @@ export default function DevProfilePage() {
                   value={editedBio}
                   onChange={(e) => setEditedBio(e.target.value)}
                   placeholder="What are you building? Why do you need funding?"
-                  className="bg-white/5 border-cyan-500/30 text-white rounded-xl resize-none min-h-[120px]"
+                  className="bg-white/5 backdrop-blur-sm border-cyan-500/30 text-white rounded-xl resize-none min-h-[120px]"
                 />
               ) : (
-                <p className="text-white/80 leading-relaxed whitespace-pre-wrap">
+                <p className="text-white/90 leading-relaxed whitespace-pre-wrap">
                   {dev.description || "No description yet. Click Edit to add one."}
                 </p>
               )}
@@ -469,11 +460,11 @@ export default function DevProfilePage() {
 
         {/* Funding Goal */}
         {(dev.funding_goal > 0 || editMode) && (
-          <Card className="bg-black/60 backdrop-blur-xl border-cyan-500/30 mb-6">
+          <Card className="bg-white/5 backdrop-blur-2xl border border-white/20 mb-6 shadow-xl">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-3">
                 <Target className="w-5 h-5 text-cyan-400" />
-                <h2 className="text-xl font-bold text-white">Funding Goal</h2>
+                <h2 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">Funding Goal</h2>
               </div>
               {editMode ? (
                 <Input
@@ -512,11 +503,11 @@ export default function DevProfilePage() {
 
         {/* How Funds Will Be Used */}
         {(dev.how_funds_used || editMode) && (
-          <Card className="bg-black/60 backdrop-blur-xl border-green-500/30 mb-6">
+          <Card className="bg-white/5 backdrop-blur-2xl border border-white/20 mb-6 shadow-xl">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-3">
                 <DollarSign className="w-5 h-5 text-green-400" />
-                <h2 className="text-xl font-bold text-white">How Funds Will Be Used</h2>
+                <h2 className="text-xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">How Funds Will Be Used</h2>
               </div>
               {editMode ? (
                 <Textarea
@@ -534,9 +525,9 @@ export default function DevProfilePage() {
 
         {/* Project/App */}
         {dev.app_url && (
-          <Card className="bg-black/60 backdrop-blur-xl border-purple-500/30 mb-6">
+          <Card className="bg-white/5 backdrop-blur-2xl border border-white/20 mb-6 shadow-xl">
             <CardContent className="p-6">
-              <h2 className="text-xl font-bold text-white mb-4">Project</h2>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">Project</h2>
               
               <div className="flex items-center gap-3 mb-4">
                 <a
@@ -578,9 +569,9 @@ export default function DevProfilePage() {
         )}
 
         {/* Wallet Address */}
-        <Card className="bg-black/60 backdrop-blur-xl border-cyan-500/30">
+        <Card className="bg-white/5 backdrop-blur-2xl border border-white/20 shadow-xl">
           <CardContent className="p-6">
-            <h2 className="text-xl font-bold text-white mb-4">Wallet Address</h2>
+            <h2 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent mb-4">Wallet Address</h2>
             <div className="flex items-center gap-3 bg-white/5 rounded-lg p-4 border border-white/10">
               <span className="flex-1 text-white/60 text-sm font-mono break-all">
                 {dev.kaspa_address}
