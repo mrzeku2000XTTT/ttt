@@ -1,13 +1,88 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { X } from "lucide-react";
+import { X, Plus, Upload } from "lucide-react";
+import { base44 } from "@/api/base44Client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
-export default function KPPage() {
+export default function KaspromoPage() {
   const [activeTab, setActiveTab] = useState("VOTE");
   const [userVotes, setUserVotes] = useState(() => {
     const saved = localStorage.getItem('kp_votes');
     return saved ? JSON.parse(saved) : {};
   });
+  const [user, setUser] = useState(null);
+  const [devs, setDevs] = useState([]);
+  const [showAddDevModal, setShowAddDevModal] = useState(false);
+  const [newAvatar, setNewAvatar] = useState("");
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  useEffect(() => {
+    loadUser();
+    loadDevs();
+  }, []);
+
+  const loadUser = async () => {
+    try {
+      const currentUser = await base44.auth.me();
+      setUser(currentUser);
+    } catch (err) {
+      console.log("Not logged in");
+    }
+  };
+
+  const loadDevs = async () => {
+    try {
+      const devsData = await base44.entities.KaspaDev.list();
+      setDevs(devsData);
+    } catch (err) {
+      console.error("Failed to load devs:", err);
+    }
+  };
+
+  const handleAddDev = async () => {
+    if (!user?.username || !user?.created_wallet_address) {
+      alert("You need a TTT username and Kaspa address to register as a dev!");
+      return;
+    }
+
+    const existingDev = devs.find(d => d.username === user.username);
+    if (existingDev) {
+      alert("You're already registered as a dev!");
+      return;
+    }
+
+    try {
+      await base44.entities.KaspaDev.create({
+        username: user.username,
+        kaspa_address: user.created_wallet_address,
+        twitter_handle: user.username,
+        avatar: newAvatar || "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/53badb4f2_image.png",
+        verified: false,
+        votes: 0
+      });
+      setShowAddDevModal(false);
+      setNewAvatar("");
+      loadDevs();
+    } catch (err) {
+      console.error("Failed to add dev:", err);
+      alert("Failed to register as dev");
+    }
+  };
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingAvatar(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setNewAvatar(file_url);
+    } catch (err) {
+      console.error("Failed to upload avatar:", err);
+    }
+    setUploadingAvatar(false);
+  };
 
   const tabs = [
     { name: "VOTE", icon: "X" },
@@ -130,36 +205,14 @@ export default function KPPage() {
     },
   ];
 
-  const devsPosts = [
-    {
-      author: "Kaspa Dev Team",
-      handle: "@kaspadev",
-      avatar: "/api/placeholder/40/40",
-      votes: 0,
-      verified: true,
-    },
-    {
-      author: "BlockDAG Research",
-      handle: "@blockdagresearch",
-      avatar: "/api/placeholder/40/40",
-      votes: 0,
-      verified: false,
-    },
-    {
-      author: "Core Contributors",
-      handle: "@kaspacore",
-      avatar: "/api/placeholder/40/40",
-      votes: 0,
-      verified: true,
-    },
-    {
-      author: "GitHub Updates",
-      handle: "@kaspagithub",
-      avatar: "/api/placeholder/40/40",
-      votes: 0,
-      verified: false,
-    },
-  ];
+  const devsPosts = devs.map(dev => ({
+    author: dev.username,
+    handle: `@${dev.twitter_handle}`,
+    avatar: dev.avatar,
+    votes: dev.votes,
+    verified: dev.verified,
+    kaspa_address: dev.kaspa_address
+  }));
 
   const ecosystemPosts = [
     {
@@ -220,11 +273,11 @@ export default function KPPage() {
       <div className="sticky top-0 z-50 bg-black/95 backdrop-blur-xl border-b border-white/10">
         <div className="flex items-center gap-3 px-4 py-3">
           <div className="w-10 h-10 bg-cyan-500/20 border border-cyan-500/40 rounded-lg flex items-center justify-center">
-            <span className="text-lg">📰</span>
+            <span className="text-lg">🚀</span>
           </div>
           <div>
-            <h1 className="text-lg font-bold text-white">Kaspa News</h1>
-            <p className="text-xs text-white/60">Latest updates from kaspa.news</p>
+            <h1 className="text-lg font-bold text-white">KASPROMO</h1>
+            <p className="text-xs text-white/60">Vote for Kaspa community leaders</p>
           </div>
           <button className="ml-auto text-white/60 hover:text-white">
             <X className="w-5 h-5" />
@@ -249,6 +302,19 @@ export default function KPPage() {
           ))}
         </div>
       </div>
+
+      {/* Add Dev Button - Only on DEVS tab */}
+      {activeTab === "DEVS" && user?.username && (
+        <div className="p-4">
+          <Button
+            onClick={() => setShowAddDevModal(true)}
+            className="w-full bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/30"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Yourself as a Kaspa Dev
+          </Button>
+        </div>
+      )}
 
       {/* Posts Grid */}
       <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
