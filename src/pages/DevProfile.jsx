@@ -253,12 +253,16 @@ export default function DevProfilePage() {
       return;
     }
 
+    // Just show the modal - don't start verification yet
+    setShowTipModal(false);
+    setShowZkVerification(true);
+  };
+
+  const startZkVerification = async () => {
     // Record timestamp NOW - transactions must be sent AFTER this moment
     const timestamp = Date.now();
     setZkTimestamp(timestamp);
     setZkVerifying(true);
-    setShowTipModal(false);
-    setShowZkVerification(true);
 
     console.log('🚀 Starting ZK tip verification:', {
       from: currentUser.created_wallet_address,
