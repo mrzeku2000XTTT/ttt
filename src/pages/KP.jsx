@@ -362,7 +362,31 @@ export default function KaspromoPage() {
         </div>
       </div>
 
-
+      {/* Add Dev Button - Only on DEVS tab */}
+      {activeTab === "DEVS" && (
+        <div className="p-4">
+          {user?.username ? (
+            <motion.button
+              onClick={() => setShowAddDevModal(true)}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/40 text-white hover:border-cyan-400 transition-all rounded-xl py-4 px-6 flex items-center justify-center gap-3 group shadow-lg shadow-cyan-500/10"
+            >
+              <div className="w-10 h-10 bg-cyan-500 rounded-full flex items-center justify-center group-hover:bg-cyan-400 transition-colors">
+                <Plus className="w-5 h-5 text-black" />
+              </div>
+              <div className="text-left">
+                <div className="text-sm font-bold">Add Yourself as a KASPA DEV!</div>
+                <div className="text-xs text-cyan-400">Showcase your Kaspa contributions</div>
+              </div>
+            </motion.button>
+          ) : (
+            <div className="text-center py-6 bg-white/5 rounded-xl border border-white/10">
+              <p className="text-white/60 text-sm">Login with TTT to add yourself as a dev</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Posts Grid */}
       <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
