@@ -346,17 +346,7 @@ Format the response as markdown with proper headings, paragraphs, and structure.
     }
   };
 
-  if (isLoading && news.length === 0) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-6">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-red-400 animate-spin mx-auto mb-4" />
-          <p className="text-white font-semibold text-xl mb-2">Loading Global War Monitor...</p>
-          <p className="text-gray-500 text-sm">Fetching latest conflict updates</p>
-        </div>
-      </div>
-    );
-  }
+  // Remove loading screen - always show content
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
