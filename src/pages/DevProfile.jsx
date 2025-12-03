@@ -702,15 +702,15 @@ export default function DevProfilePage() {
             initial={{ scale: 0.9, y: 20 }}
             animate={{ scale: 1, y: 0 }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-gradient-to-br from-[#1a1d2e] to-[#0a0a0a] border border-purple-500/30 rounded-3xl p-8 max-w-md w-full"
+            className="bg-gradient-to-br from-[#1a1d2e] to-[#0a0a0a] border border-purple-500/30 rounded-3xl p-4 sm:p-8 max-w-md w-full max-h-[90vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                  <CreditCard className="w-6 h-6 text-white" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                  <CreditCard className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-white">KNS ID Card</h2>
+                  <h2 className="text-lg sm:text-xl font-bold text-white">KNS ID Card</h2>
                   <p className="text-xs text-purple-400/60">Kaspa Name Service</p>
                 </div>
               </div>
@@ -725,38 +725,84 @@ export default function DevProfilePage() {
             </div>
 
             {dev.kns_id ? (
-              <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-2 border-purple-500/40 rounded-2xl p-6">
-                <div className="text-center mb-4">
-                  <img 
-                    src={dev.avatar || "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/53badb4f2_image.png"} 
-                    alt={dev.username}
-                    className="w-24 h-24 rounded-full border-4 border-purple-500/40 mx-auto mb-3 object-cover"
-                  />
-                  <div className="text-3xl font-black text-white mb-1">{dev.kns_id}</div>
-                  <div className="text-sm text-white/60">{dev.username}</div>
-                </div>
-
-                <div className="bg-black/40 rounded-xl p-4 space-y-3">
-                  <div>
-                    <div className="text-xs text-white/40 mb-1">Wallet Address</div>
-                    <div className="text-sm text-white/80 font-mono break-all">
-                      {dev.kaspa_address}
-                    </div>
+              <div className="space-y-4">
+                {/* KNS ID Photo */}
+                {dev.kns_photo ? (
+                  <div className="relative group">
+                    <img 
+                      src={dev.kns_photo} 
+                      alt="KNS ID"
+                      className="w-full h-auto rounded-2xl border-2 border-purple-500/40 object-contain max-h-96"
+                    />
+                    {isOwner && (
+                      <label className="absolute inset-0 bg-black/60 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                        <div className="text-center">
+                          <Upload className="w-8 h-8 text-white mx-auto mb-2" />
+                          <span className="text-white text-sm font-semibold">
+                            {uploadingKnsPhoto ? "Uploading..." : "Change Photo"}
+                          </span>
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleKnsPhotoUpload}
+                          className="hidden"
+                          disabled={uploadingKnsPhoto}
+                        />
+                      </label>
+                    )}
                   </div>
-                  {dev.verified && (
-                    <div className="flex items-center gap-2 pt-3 border-t border-white/10">
-                      <CheckCircle className="w-4 h-4 text-green-400" />
-                      <span className="text-sm text-green-400 font-semibold">Verified Developer</span>
+                ) : isOwner ? (
+                  <label className="block w-full border-2 border-dashed border-purple-500/40 rounded-2xl p-8 text-center hover:border-purple-500/60 transition-colors cursor-pointer bg-purple-500/5">
+                    <Upload className="w-12 h-12 text-purple-400 mx-auto mb-3" />
+                    <p className="text-white font-semibold mb-1">Upload KNS ID Photo</p>
+                    <p className="text-xs text-purple-400/60">
+                      {uploadingKnsPhoto ? "Uploading..." : "Tap to upload your KNS badge/card"}
+                    </p>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleKnsPhotoUpload}
+                      className="hidden"
+                      disabled={uploadingKnsPhoto}
+                    />
+                  </label>
+                ) : null}
+
+                {/* ID Card Info */}
+                <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-2 border-purple-500/40 rounded-2xl p-4 sm:p-6">
+                  <div className="text-center mb-4">
+                    <img 
+                      src={dev.avatar || "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/53badb4f2_image.png"} 
+                      alt={dev.username}
+                      className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-purple-500/40 mx-auto mb-3 object-cover"
+                    />
+                    <div className="text-2xl sm:text-3xl font-black text-white mb-1">{dev.kns_id}</div>
+                    <div className="text-sm text-white/60">{dev.username}</div>
+                  </div>
+
+                  <div className="bg-black/40 rounded-xl p-3 sm:p-4 space-y-3">
+                    <div>
+                      <div className="text-xs text-white/40 mb-1">Wallet Address</div>
+                      <div className="text-xs sm:text-sm text-white/80 font-mono break-all">
+                        {dev.kaspa_address}
+                      </div>
                     </div>
-                  )}
+                    {dev.verified && (
+                      <div className="flex items-center gap-2 pt-3 border-t border-white/10">
+                        <CheckCircle className="w-4 h-4 text-green-400" />
+                        <span className="text-sm text-green-400 font-semibold">Verified Developer</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ) : (
-              <div className="text-center py-12">
-                <div className="w-20 h-20 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CreditCard className="w-10 h-10 text-purple-400" />
+              <div className="text-center py-8 sm:py-12">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CreditCard className="w-8 h-8 sm:w-10 sm:h-10 text-purple-400" />
                 </div>
-                <p className="text-white/60 mb-6">
+                <p className="text-white/60 mb-6 text-sm sm:text-base px-4">
                   {isOwner 
                     ? "You haven't set up your KNS ID yet. Click Edit to add it!"
                     : "This developer hasn't set up their KNS ID yet."
