@@ -3,12 +3,12 @@ import { motion } from "framer-motion";
 import { X } from "lucide-react";
 
 export default function KPPage() {
-  const [activeTab, setActiveTab] = useState("Feed");
+  const [activeTab, setActiveTab] = useState("VOTE");
 
   const tabs = [
-    { name: "Feed", icon: "X" },
-    { name: "Devs", icon: "X" },
-    { name: "Ecosystem", icon: "X" },
+    { name: "VOTE", icon: "X" },
+    { name: "DEVS", icon: "X" },
+    { name: "ECOSYSTEM", icon: "X" },
     { name: "Focused", icon: "X" },
     { name: "Latest", icon: "▶" },
     { name: "GitHub", icon: "📁" },
@@ -16,7 +16,7 @@ export default function KPPage() {
     { name: "Reddit", icon: "🎮" },
   ];
 
-  const feedPosts = [
+  const votePosts = [
     {
       author: "Kaspa",
       handle: "@kaspaunchained",
@@ -103,6 +103,75 @@ export default function KPPage() {
     },
   ];
 
+  const devsPosts = [
+    {
+      author: "Kaspa Dev Team",
+      handle: "@kaspadev",
+      avatar: "/api/placeholder/40/40",
+      votes: 0,
+      verified: true,
+    },
+    {
+      author: "BlockDAG Research",
+      handle: "@blockdagresearch",
+      avatar: "/api/placeholder/40/40",
+      votes: 0,
+      verified: false,
+    },
+    {
+      author: "Core Contributors",
+      handle: "@kaspacore",
+      avatar: "/api/placeholder/40/40",
+      votes: 0,
+      verified: true,
+    },
+    {
+      author: "GitHub Updates",
+      handle: "@kaspagithub",
+      avatar: "/api/placeholder/40/40",
+      votes: 0,
+      verified: false,
+    },
+  ];
+
+  const ecosystemPosts = [
+    {
+      author: "Kaspa DeFi",
+      handle: "@kaspadefi",
+      avatar: "/api/placeholder/40/40",
+      votes: 0,
+      verified: false,
+    },
+    {
+      author: "NFT Platform",
+      handle: "@kaspanft",
+      avatar: "/api/placeholder/40/40",
+      votes: 0,
+      verified: false,
+    },
+    {
+      author: "Kaspa Wallets",
+      handle: "@kaspawallets",
+      avatar: "/api/placeholder/40/40",
+      votes: 0,
+      verified: true,
+    },
+    {
+      author: "Mining Pools",
+      handle: "@kaspamining",
+      avatar: "/api/placeholder/40/40",
+      votes: 0,
+      verified: false,
+    },
+  ];
+
+  const getCurrentPosts = () => {
+    if (activeTab === "VOTE") return votePosts;
+    if (activeTab === "DEVS") return devsPosts;
+    if (activeTab === "ECOSYSTEM") return ecosystemPosts;
+    return votePosts;
+  };
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
       {/* Header */}
@@ -139,9 +208,9 @@ export default function KPPage() {
         </div>
       </div>
 
-      {/* Feed Grid */}
+      {/* Posts Grid */}
       <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {feedPosts.map((post, i) => (
+        {getCurrentPosts().map((post, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, y: 20 }}
