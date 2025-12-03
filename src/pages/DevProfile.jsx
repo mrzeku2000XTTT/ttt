@@ -1072,25 +1072,25 @@ export default function DevProfilePage() {
             initial={{ scale: 0.9, y: 20 }}
             animate={{ scale: 1, y: 0 }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-gradient-to-br from-[#1a1d2e] to-[#0a0a0a] border border-purple-500/30 rounded-3xl p-8 max-w-md w-full"
+            className="bg-gradient-to-br from-[#1a1d2e] to-[#0a0a0a] border border-purple-500/30 rounded-2xl p-4 max-w-sm w-full max-h-[90vh] overflow-y-auto"
           >
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                  <Wallet className="w-6 h-6 text-white" />
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                  <Wallet className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-white">Pay with Kaspium</h2>
-                  <p className="text-xs text-purple-400/60">Scan QR to send {tipAmount} KAS</p>
+                  <h2 className="text-base font-bold text-white">Pay with Kaspium</h2>
+                  <p className="text-[10px] text-purple-400/60">Scan QR to send {tipAmount} KAS</p>
                 </div>
               </div>
               <Button
                 onClick={() => setShowKaspiumPay(false)}
                 variant="ghost"
                 size="icon"
-                className="text-white/60 hover:text-white"
+                className="text-white/60 hover:text-white w-8 h-8"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </Button>
             </div>
 
