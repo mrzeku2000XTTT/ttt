@@ -824,54 +824,75 @@ export default function DevProfilePage() {
                         setShowKaspiumPay(true);
                         setVerifyingKaspiumPayment(true);
 
-                        // Start checking for payment every 3 seconds
+                        // Start checking for payment every 3 seconds using UTXO verification
+                        const startTime = Date.now();
                         const intervalId = setInterval(async () => {
                           try {
-                            const checkResponse = await base44.functions.invoke('getKaspaBalance', { 
+                            // Scan dev's wallet for recent transactions
+                            const txResponse = await base44.functions.invoke('scanWalletTransactions', { 
                               address: dev.kaspa_address 
                             });
 
-                            if (checkResponse.data?.balance) {
-                              const newBalance = checkResponse.data.balance;
-                              const initialBalance = balanceResponse.data.balance;
-                              const balanceIncrease = newBalance - initialBalance;
+                            if (txResponse.data?.transactions) {
                               const expectedAmount = parseFloat(tipAmount);
+                              const senderAddress = currentUser?.created_wallet_address;
 
-                              console.log('🔍 Kaspium Payment Check:', {
-                                devAddress: dev.kaspa_address,
-                                initialBalance: initialBalance.toFixed(2),
-                                currentBalance: newBalance.toFixed(2),
-                                increase: balanceIncrease.toFixed(2),
-                                expectedAmount: expectedAmount.toFixed(2),
-                                difference: (balanceIncrease - expectedAmount).toFixed(2)
+                              // Look for transaction from current user's TTT wallet
+                              const matchingTx = txResponse.data.transactions.find(tx => {
+                                const txTime = new Date(tx.block_time).getTime();
+                                const isRecent = txTime >= startTime - 5000; // Started checking within 5s tolerance
+                                const amountMatch = Math.abs((tx.outputs || [])
+                                  .filter(out => out.script_public_key_address === dev.kaspa_address)
+                                  .reduce((sum, out) => sum + (out.amount / 100000000), 0) - expectedAmount) < 0.01;
+
+                                const fromSender = (tx.inputs || [])
+                                  .some(input => input.previous_outpoint_address === senderAddress);
+
+                                console.log('🔍 Checking TX:', {
+                                  txId: tx.transaction_id,
+                                  time: tx.block_time,
+                                  isRecent,
+                                  amount: (tx.outputs || [])
+                                    .filter(out => out.script_public_key_address === dev.kaspa_address)
+                                    .reduce((sum, out) => sum + (out.amount / 100000000), 0),
+                                  expectedAmount,
+                                  amountMatch,
+                                  fromSender,
+                                  senderAddress
+                                });
+
+                                return isRecent && amountMatch && fromSender;
                               });
 
-                              // Verify exact amount received (allow 0.001 KAS tolerance for rounding)
-                              if (balanceIncrease >= expectedAmount && balanceIncrease < expectedAmount + 0.1) {
+                              if (matchingTx) {
                                 clearInterval(intervalId);
                                 setKaspiumCheckInterval(null);
 
-                                console.log('✅ Payment verified:', {
-                                  dev: dev.username,
-                                  amount: expectedAmount,
-                                  actualIncrease: balanceIncrease.toFixed(2)
+                                console.log('✅ Payment verified via UTXO:', {
+                                  txId: matchingTx.transaction_id,
+                                  from: senderAddress,
+                                  to: dev.kaspa_address,
+                                  amount: expectedAmount
                                 });
+
+                                setTipTxHash(matchingTx.transaction_id);
 
                                 // Payment verified! Update total tips
                                 await base44.entities.KaspaBuilder.update(dev.id, {
                                   total_tips: (dev.total_tips || 0) + expectedAmount
                                 });
 
-                                toast.success(`✅ Payment verified! ${tipAmount} KAS received by ${dev.username}`);
+                                toast.success(`✅ Payment verified! ${tipAmount} KAS sent to ${dev.username}\n\nTX: ${matchingTx.transaction_id.substring(0, 8)}...`);
                                 setShowKaspiumPay(false);
                                 setVerifyingKaspiumPayment(false);
                                 setTipAmount("");
                                 setDevInitialBalance(null);
+                                setTipTxHash(null);
                                 loadDev();
                               }
                             }
                           } catch (err) {
-                            console.error('Balance check error:', err);
+                            console.error('UTXO check error:', err);
                           }
                         }, 3000);
 
@@ -1102,19 +1123,49 @@ export default function DevProfilePage() {
               </div>
             </div>
 
+            {currentUser?.created_wallet_address && (
+              <div className="bg-cyan-500/10 rounded-xl p-4 mb-4 border border-cyan-500/30">
+                <p className="text-cyan-400 text-xs mb-2 font-semibold">⚠️ Your TTT Wallet (Must send from this address)</p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-white text-xs font-mono break-all">
+                    {currentUser.created_wallet_address}
+                  </p>
+                  <Button
+                    onClick={() => {
+                      navigator.clipboard.writeText(currentUser.created_wallet_address);
+                      toast.success('Your address copied');
+                    }}
+                    size="sm"
+                    className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 text-xs h-7 flex-shrink-0"
+                  >
+                    <Copy className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3 mb-4">
               <p className="text-purple-400 text-xs font-semibold mb-2">📱 Instructions:</p>
               <ol className="text-white/60 text-xs space-y-1 list-decimal list-inside">
-                <li>Open Kaspium app on your phone</li>
-                <li>Scan the QR code or copy the address</li>
+                <li>Import your TTT wallet seed phrase into Kaspium</li>
+                <li>Make sure you're sending from: {currentUser?.created_wallet_address?.substring(0, 12)}...</li>
+                <li>Scan the QR code or copy the recipient address above</li>
                 <li>Send exactly {tipAmount} KAS</li>
+                <li>Wait for automatic verification</li>
               </ol>
               {verifyingKaspiumPayment && (
-                <div className="mt-3 pt-3 border-t border-purple-500/20 flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin" />
-                  <span className="text-purple-400 text-xs font-semibold">
-                    Waiting for payment...
-                  </span>
+                <div className="mt-3 pt-3 border-t border-purple-500/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-4 h-4 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin" />
+                    <span className="text-purple-400 text-xs font-semibold">
+                      Waiting for payment from your TTT wallet...
+                    </span>
+                  </div>
+                  {tipTxHash && (
+                    <div className="text-green-400 text-xs font-mono">
+                      TX: {tipTxHash.substring(0, 16)}...
+                    </div>
+                  )}
                 </div>
               )}
             </div>
