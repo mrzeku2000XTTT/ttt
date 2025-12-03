@@ -18,7 +18,6 @@ import Feed from './pages/Feed';
 import Arcade from './pages/Arcade';
 import Analytics from './pages/Analytics';
 import MobileTest from './pages/MobileTest';
-import GlobalWar from './pages/GlobalWar';
 import Settings from './pages/Settings';
 import Career from './pages/Career';
 import ContributorHistory from './pages/ContributorHistory';
@@ -170,7 +169,6 @@ export const PAGES = {
     "Arcade": Arcade,
     "Analytics": Analytics,
     "MobileTest": MobileTest,
-    "GlobalWar": GlobalWar,
     "Settings": Settings,
     "Career": Career,
     "ContributorHistory": ContributorHistory,

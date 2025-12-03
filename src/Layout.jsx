@@ -236,7 +236,6 @@ export default function Layout({ children, currentPageName }) {
     { name: "History", icon: History, path: "History" },
     { name: "TTT Feed", icon: Users, path: "Feed" },
     { name: "Global History", icon: Clock, path: "GlobalHistory" },
-    { name: "Global War", icon: AlertTriangle, path: "GlobalWar" },
     { name: "Arcade", icon: Gamepad2, path: "Arcade" },
     { name: "Analytics", icon: TrendingUp, path: "Analytics" },
     { name: "Subscription", icon: Crown, path: "Subscription" },
@@ -259,7 +258,6 @@ export default function Layout({ children, currentPageName }) {
   const subNavItems = [
     { name: "TTT", label: "Encrypted Feed", icon: Users, path: "Feed" },
     { name: "NFT", label: "Mint NFTs", icon: Trophy, path: "NFTMint" },
-    { name: "Global War", label: "War Monitor", icon: AlertTriangle, path: "GlobalWar" },
     { name: "Arcade", icon: Gamepad2, path: "Arcade" },
     { name: "Analytics", icon: TrendingUp, path: "Analytics" },
     { name: "Wallet", icon: Wallet, path: "Wallet" },
