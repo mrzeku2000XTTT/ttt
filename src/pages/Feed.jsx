@@ -4124,25 +4124,43 @@ export default function FeedPage() {
                                 </div>
                               )}
                               {file.type === 'file' && (
-                                <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-3 flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <FileText className="w-5 h-5 text-white/60" />
-                                    <div>
-                                      <div className="text-white text-sm">{file.name}</div>
-                                      <div className="text-white/40 text-xs">
-                                        {(file.size / 1024).toFixed(2)} KB
+                                /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(file.name || '') ? (
+                                  <div className="relative bg-black/20 backdrop-blur-sm rounded-lg overflow-hidden">
+                                    <video
+                                      src={file.url}
+                                      controls
+                                      className="w-full max-h-96 rounded-lg"
+                                    />
+                                    <Button
+                                      onClick={() => removeFile(index)}
+                                      size="sm"
+                                      variant="ghost"
+                                      className="absolute top-2 right-2 bg-black/80 hover:bg-black border border-white/20"
+                                    >
+                                      <X className="w-4 h-4 text-white" />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-3 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <FileText className="w-5 h-5 text-white/60" />
+                                      <div>
+                                        <div className="text-white text-sm">{file.name}</div>
+                                        <div className="text-white/40 text-xs">
+                                          {(file.size / 1024).toFixed(2)} KB
+                                        </div>
                                       </div>
                                     </div>
+                                    <Button
+                                      onClick={() => removeFile(index)}
+                                      size="sm"
+                                      variant="ghost"
+                                      className="text-white/60 hover:text-white"
+                                    >
+                                      <X className="w-4 h-4" />
+                                    </Button>
                                   </div>
-                                  <Button
-                                    onClick={() => removeFile(index)}
-                                    size="sm"
-                                    variant="ghost"
-                                    className="text-white/60 hover:text-white"
-                                  >
-                                    <X className="w-4 h-4" />
-                                  </Button>
-                                </div>
+                                )
                               )}
                             </div>
                           ))}
@@ -4422,25 +4440,43 @@ export default function FeedPage() {
                                               </div>
                                             )}
                                             {file.type === 'file' && (
-                                              <div className="bg-white/5 border border-white/10 rounded-lg p-3 flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                  <FileText className="w-5 h-5 text-white/60" />
-                                                  <div>
-                                                    <div className="text-white text-sm">{file.name}</div>
-                                                    <div className="text-white/40 text-xs">
-                                                      {(file.size / 1024).toFixed(2)} KB
+                                              /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(file.name || '') ? (
+                                                <div className="relative">
+                                                  <video
+                                                    src={file.url}
+                                                    controls
+                                                    className="w-full max-h-96 rounded-lg border border-white/10 bg-black"
+                                                  />
+                                                  <Button
+                                                    onClick={() => removeReplyFile(idx)}
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="absolute top-2 right-2 bg-black/70 hover:bg-black/90 border border-white/20"
+                                                  >
+                                                    <X className="w-3 h-3 text-white" />
+                                                  </Button>
+                                                </div>
+                                              ) : (
+                                                <div className="bg-white/5 border border-white/10 rounded-lg p-3 flex items-center justify-between">
+                                                  <div className="flex items-center gap-2">
+                                                    <FileText className="w-5 h-5 text-white/60" />
+                                                    <div>
+                                                      <div className="text-white text-sm">{file.name}</div>
+                                                      <div className="text-white/40 text-xs">
+                                                        {(file.size / 1024).toFixed(2)} KB
+                                                      </div>
                                                     </div>
                                                   </div>
+                                                  <Button
+                                                    onClick={() => removeReplyFile(idx)}
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="text-white/60 hover:text-white"
+                                                  >
+                                                    <X className="w-4 h-4" />
+                                                  </Button>
                                                 </div>
-                                                <Button
-                                                  onClick={() => removeReplyFile(idx)}
-                                                  size="sm"
-                                                  variant="ghost"
-                                                  className="text-white/60 hover:text-white"
-                                                >
-                                                  <X className="w-4 h-4" />
-                                                </Button>
-                                              </div>
+                                              )
                                             )}
                                           </div>
                                         ))}
