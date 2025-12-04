@@ -306,13 +306,13 @@ export default function FeedPage() {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    const MAX_VIDEO_SIZE = 500 * 1024 * 1024; // 500MB for videos
+    const MAX_VIDEO_SIZE = 200 * 1024 * 1024; // 200MB for videos (supports 5+ min videos)
     const MAX_IMAGE_SIZE = 20 * 1024 * 1024; // 20MB for images
     const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
     for (const file of files) {
-      const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(file.name);
-      const isImage = file.type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|svg|heic)$/i.test(file.name);
+      const isVideo = file.type.startsWith('video/');
+      const isImage = file.type.startsWith('image/');
       const limit = isVideo ? MAX_VIDEO_SIZE : isImage ? MAX_IMAGE_SIZE : MAX_FILE_SIZE;
 
       if (file.size > limit) {
@@ -330,12 +330,9 @@ export default function FeedPage() {
       const uploadPromises = files.map(async (file) => {
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-        let fileType = 'file';
-        if (file.type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|svg|heic)$/i.test(file.name)) {
-          fileType = 'image';
-        } else if (file.type.startsWith('video/') || /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(file.name)) {
-          fileType = 'video';
-        }
+        const fileType = file.type.startsWith('image/') ? 'image' :
+                        file.type.startsWith('video/') ? 'video' :
+                        'file';
 
         return {
           url: file_url,
@@ -367,13 +364,13 @@ export default function FeedPage() {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    const MAX_VIDEO_SIZE = 500 * 1024 * 1024; // 500MB for videos
+    const MAX_VIDEO_SIZE = 200 * 1024 * 1024; // 200MB for videos (supports 5+ min videos)
     const MAX_IMAGE_SIZE = 20 * 1024 * 1024; // 20MB for images
     const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
     for (const file of files) {
-      const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(file.name);
-      const isImage = file.type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|svg|heic)$/i.test(file.name);
+      const isVideo = file.type.startsWith('video/');
+      const isImage = file.type.startsWith('image/');
       const limit = isVideo ? MAX_VIDEO_SIZE : isImage ? MAX_IMAGE_SIZE : MAX_FILE_SIZE;
 
       if (file.size > limit) {
@@ -391,12 +388,9 @@ export default function FeedPage() {
       const uploadPromises = files.map(async (file) => {
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-        let fileType = 'file';
-        if (file.type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|svg|heic)$/i.test(file.name)) {
-          fileType = 'image';
-        } else if (file.type.startsWith('video/') || /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(file.name)) {
-          fileType = 'video';
-        }
+        const fileType = file.type.startsWith('image/') ? 'image' :
+                        file.type.startsWith('video/') ? 'video' :
+                        'file';
 
         return {
           url: file_url,
@@ -2104,35 +2098,22 @@ export default function FeedPage() {
                   </div>
                 )}
                 {media.type === 'file' && (
-                  /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(media.name || '') ? (
-                    <div className="relative bg-black/20 rounded-lg overflow-hidden backdrop-blur-sm">
-                      <video
-                        src={media.url}
-                        controls
-                        playsInline
-                        preload="metadata"
-                        className="w-full rounded-lg"
-                        style={{ maxHeight: '600px' }}
-                      />
-                    </div>
-                  ) : (
-                    <a
-                      href={media.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-3 hover:bg-black/30 transition-colors"
-                    >
-                      <div className="flex items-center gap-2">
-                        <FileText className="w-5 h-5 text-white/60" />
-                        <div>
-                          <div className="text-white text-sm">{media.name}</div>
-                          <div className="text-white/40 text-xs">
-                            {(media.size / 1024).toFixed(2)} KB
-                          </div>
+                  <a
+                    href={media.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-3 hover:bg-black/30 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-white/60" />
+                      <div>
+                        <div className="text-white text-sm">{media.name}</div>
+                        <div className="text-white/40 text-xs">
+                          {(media.size / 1024).toFixed(2)} KB
                         </div>
                       </div>
-                    </a>
-                  )
+                    </div>
+                  </a>
                 )}
               </div>
             ))}
@@ -4124,43 +4105,25 @@ export default function FeedPage() {
                                 </div>
                               )}
                               {file.type === 'file' && (
-                                /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(file.name || '') ? (
-                                  <div className="relative bg-black/20 backdrop-blur-sm rounded-lg overflow-hidden">
-                                    <video
-                                      src={file.url}
-                                      controls
-                                      className="w-full max-h-96 rounded-lg"
-                                    />
-                                    <Button
-                                      onClick={() => removeFile(index)}
-                                      size="sm"
-                                      variant="ghost"
-                                      className="absolute top-2 right-2 bg-black/80 hover:bg-black border border-white/20"
-                                    >
-                                      <X className="w-4 h-4 text-white" />
-                                    </Button>
-                                  </div>
-                                ) : (
-                                  <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-3 flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <FileText className="w-5 h-5 text-white/60" />
-                                      <div>
-                                        <div className="text-white text-sm">{file.name}</div>
-                                        <div className="text-white/40 text-xs">
-                                          {(file.size / 1024).toFixed(2)} KB
-                                        </div>
+                                <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-3 flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <FileText className="w-5 h-5 text-white/60" />
+                                    <div>
+                                      <div className="text-white text-sm">{file.name}</div>
+                                      <div className="text-white/40 text-xs">
+                                        {(file.size / 1024).toFixed(2)} KB
                                       </div>
                                     </div>
-                                    <Button
-                                      onClick={() => removeFile(index)}
-                                      size="sm"
-                                      variant="ghost"
-                                      className="text-white/60 hover:text-white"
-                                    >
-                                      <X className="w-4 h-4" />
-                                    </Button>
                                   </div>
-                                )
+                                  <Button
+                                    onClick={() => removeFile(index)}
+                                    size="sm"
+                                    variant="ghost"
+                                    className="text-white/60 hover:text-white"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </div>
                               )}
                             </div>
                           ))}
@@ -4440,43 +4403,25 @@ export default function FeedPage() {
                                               </div>
                                             )}
                                             {file.type === 'file' && (
-                                              /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(file.name || '') ? (
-                                                <div className="relative">
-                                                  <video
-                                                    src={file.url}
-                                                    controls
-                                                    className="w-full max-h-96 rounded-lg border border-white/10 bg-black"
-                                                  />
-                                                  <Button
-                                                    onClick={() => removeReplyFile(idx)}
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    className="absolute top-2 right-2 bg-black/70 hover:bg-black/90 border border-white/20"
-                                                  >
-                                                    <X className="w-3 h-3 text-white" />
-                                                  </Button>
-                                                </div>
-                                              ) : (
-                                                <div className="bg-white/5 border border-white/10 rounded-lg p-3 flex items-center justify-between">
-                                                  <div className="flex items-center gap-2">
-                                                    <FileText className="w-5 h-5 text-white/60" />
-                                                    <div>
-                                                      <div className="text-white text-sm">{file.name}</div>
-                                                      <div className="text-white/40 text-xs">
-                                                        {(file.size / 1024).toFixed(2)} KB
-                                                      </div>
+                                              <div className="bg-white/5 border border-white/10 rounded-lg p-3 flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                  <FileText className="w-5 h-5 text-white/60" />
+                                                  <div>
+                                                    <div className="text-white text-sm">{file.name}</div>
+                                                    <div className="text-white/40 text-xs">
+                                                      {(file.size / 1024).toFixed(2)} KB
                                                     </div>
                                                   </div>
-                                                  <Button
-                                                    onClick={() => removeReplyFile(idx)}
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    className="text-white/60 hover:text-white"
-                                                  >
-                                                    <X className="w-4 h-4" />
-                                                  </Button>
                                                 </div>
-                                              )
+                                                <Button
+                                                  onClick={() => removeReplyFile(idx)}
+                                                  size="sm"
+                                                  variant="ghost"
+                                                  className="text-white/60 hover:text-white"
+                                                >
+                                                  <X className="w-4 h-4" />
+                                                </Button>
+                                              </div>
                                             )}
                                           </div>
                                         ))}
