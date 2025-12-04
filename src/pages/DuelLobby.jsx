@@ -19,6 +19,7 @@ export default function DuelLobbyPage() {
   const [username, setUsername] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
   const [betAmount, setBetAmount] = useState(1);
+  const [selectedGameType, setSelectedGameType] = useState('quick_draw');
 
   useEffect(() => {
     loadData();
@@ -111,7 +112,7 @@ export default function DuelLobbyPage() {
         guest_username: null,
         guest_wallet: null,
         status: 'waiting',
-        game_type: 'quick_draw',
+        game_type: selectedGameType,
         bet_amount: betAmount
       });
       
@@ -231,6 +232,18 @@ export default function DuelLobbyPage() {
                 {!myLobby ? (
                   <div className="space-y-4">
                     <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-4">
+                      <label className="text-sm text-gray-400 mb-2 block">Game Type</label>
+                      <select
+                        value={selectedGameType}
+                        onChange={(e) => setSelectedGameType(e.target.value)}
+                        className="w-full bg-black/50 border border-white/10 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-cyan-500"
+                      >
+                        <option value="quick_draw">⚡ Quick Draw</option>
+                        <option value="reaction_time">⏱️ Reaction Time</option>
+                        <option value="math_battle">🧮 Math Battle</option>
+                      </select>
+                    </div>
+                    <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-4">
                       <label className="text-sm text-gray-400 mb-2 block">Bet Amount (KAS)</label>
                       <Input
                         type="number"
@@ -251,6 +264,15 @@ export default function DuelLobbyPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
+                    <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-4">
+                      <p className="text-sm text-gray-400 mb-2">Game Type</p>
+                      <p className="text-white font-bold">
+                        {myLobby.game_type === 'quick_draw' && '⚡ Quick Draw'}
+                        {myLobby.game_type === 'reaction_time' && '⏱️ Reaction Time'}
+                        {myLobby.game_type === 'math_battle' && '🧮 Math Battle'}
+                      </p>
+                    </div>
+
                     <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-4">
                       <p className="text-sm text-gray-400 mb-2">Lobby Code</p>
                       <div className="flex items-center gap-2">
@@ -332,6 +354,11 @@ export default function DuelLobbyPage() {
                         <div className="flex items-center justify-between mb-2">
                           <div>
                             <p className="text-white font-bold">{lobby.host_username}</p>
+                            <p className="text-xs text-gray-400">
+                              {lobby.game_type === 'quick_draw' && '⚡ Quick Draw'}
+                              {lobby.game_type === 'reaction_time' && '⏱️ Reaction Time'}
+                              {lobby.game_type === 'math_battle' && '🧮 Math Battle'}
+                            </p>
                             <p className="text-xs text-gray-400">Code: {lobby.lobby_code}</p>
                             <p className="text-xs text-yellow-400 mt-1">💰 {lobby.bet_amount || 1} KAS</p>
                           </div>

@@ -280,7 +280,11 @@ export default function DuelPage() {
 
             <div className="flex items-center gap-2">
               <Swords className="w-5 h-5 text-red-400" />
-              <span className="text-white font-bold">Quick Draw</span>
+              <span className="text-white font-bold">
+                {lobby?.game_type === 'quick_draw' && '⚡ Quick Draw'}
+                {lobby?.game_type === 'reaction_time' && '⏱️ Reaction Time'}
+                {lobby?.game_type === 'math_battle' && '🧮 Math Battle'}
+              </span>
             </div>
           </div>
         </div>
