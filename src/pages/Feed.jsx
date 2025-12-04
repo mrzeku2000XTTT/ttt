@@ -2092,29 +2092,23 @@ export default function FeedPage() {
                   </div>
                 )}
                 {media.type === 'video' && (
-                  <div className="relative bg-black/20 rounded-lg overflow-hidden backdrop-blur-sm">
+                  <video
+                    src={media.url}
+                    controls
+                    playsInline
+                    className="w-full rounded-lg bg-black"
+                    style={{ maxHeight: '600px' }}
+                  />
+                )}
+                {media.type === 'file' && (
+                  /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(media.name || '') ? (
                     <video
                       src={media.url}
                       controls
                       playsInline
-                      preload="metadata"
-                      className="w-full rounded-lg"
+                      className="w-full rounded-lg bg-black"
                       style={{ maxHeight: '600px' }}
                     />
-                  </div>
-                )}
-                {media.type === 'file' && (
-                  /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(media.name || '') ? (
-                    <div className="relative bg-black/20 rounded-lg overflow-hidden backdrop-blur-sm">
-                      <video
-                        src={media.url}
-                        controls
-                        playsInline
-                        preload="metadata"
-                        className="w-full rounded-lg"
-                        style={{ maxHeight: '600px' }}
-                      />
-                    </div>
                   ) : (
                     <a
                       href={media.url}
@@ -4107,11 +4101,12 @@ export default function FeedPage() {
                                 </div>
                               )}
                               {file.type === 'video' && (
-                                <div className="relative bg-black/20 backdrop-blur-sm rounded-lg overflow-hidden">
+                                <div className="relative">
                                   <video
                                     src={file.url}
                                     controls
-                                    className="w-full max-h-96 rounded-lg"
+                                    playsInline
+                                    className="w-full max-h-96 rounded-lg bg-black"
                                   />
                                   <Button
                                     onClick={() => removeFile(index)}
@@ -4125,11 +4120,12 @@ export default function FeedPage() {
                               )}
                               {file.type === 'file' && (
                                 /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(file.name || '') ? (
-                                  <div className="relative bg-black/20 backdrop-blur-sm rounded-lg overflow-hidden">
+                                  <div className="relative">
                                     <video
                                       src={file.url}
                                       controls
-                                      className="w-full max-h-96 rounded-lg"
+                                      playsInline
+                                      className="w-full max-h-96 rounded-lg bg-black"
                                     />
                                     <Button
                                       onClick={() => removeFile(index)}
@@ -4427,7 +4423,8 @@ export default function FeedPage() {
                                                 <video
                                                   src={file.url}
                                                   controls
-                                                  className="w-full max-h-96 rounded-lg border border-white/10 bg-black"
+                                                  playsInline
+                                                  className="w-full max-h-96 rounded-lg bg-black"
                                                 />
                                                 <Button
                                                   onClick={() => removeReplyFile(idx)}
@@ -4445,7 +4442,8 @@ export default function FeedPage() {
                                                   <video
                                                     src={file.url}
                                                     controls
-                                                    className="w-full max-h-96 rounded-lg border border-white/10 bg-black"
+                                                    playsInline
+                                                    className="w-full max-h-96 rounded-lg bg-black"
                                                   />
                                                   <Button
                                                     onClick={() => removeReplyFile(idx)}
