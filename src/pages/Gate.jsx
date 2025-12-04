@@ -30,6 +30,7 @@ function GateContent() {
     { name: "Focus", path: "Focus", category: "Zen", color: "#3B82F6" },
     { name: "KASPROMO", path: "KP", category: "Vote", color: "#06B6D4" },
     { name: "Konekt", path: "Konekt", category: "Social", color: "#F97316" },
+    { name: "MACHINE", path: "Machine", category: "AI", color: "#3B82F6" },
   ];
 
   const filteredApps = searchQuery

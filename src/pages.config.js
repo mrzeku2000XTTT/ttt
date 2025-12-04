@@ -150,6 +150,7 @@ import TestZelcore from './pages/TestZelcore';
 import DuelLobby from './pages/DuelLobby';
 import Duel from './pages/Duel';
 import Konekt from './pages/Konekt';
+import Machine from './pages/Machine';
 import __Layout from './Layout.jsx';
 
 
@@ -306,6 +307,7 @@ export const PAGES = {
     "DuelLobby": DuelLobby,
     "Duel": Duel,
     "Konekt": Konekt,
+    "Machine": Machine,
 }
 
 export const pagesConfig = {
