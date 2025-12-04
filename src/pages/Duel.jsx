@@ -25,20 +25,28 @@ export default function DuelPage() {
 
   useEffect(() => {
     loadData();
-    const interval = setInterval(checkLobbyStatus, 2000);
-    return () => clearInterval(interval);
   }, []);
 
-  const checkLobbyStatus = async () => {
+  useEffect(() => {
     if (!lobby) return;
+    const interval = setInterval(checkLobbyStatus, 1000);
+    return () => clearInterval(interval);
+  }, [lobby, gameState]);
+
+  const checkLobbyStatus = async () => {
+    if (!lobby || gameState !== 'waiting') return;
     
     try {
       const updated = await base44.entities.DuelLobby.filter({ id: lobby.id }, '', 1);
-      if (updated.length > 0 && updated[0].status === 'ready' && gameState === 'waiting' && updated[0].guest_email) {
-        setLobby(updated[0]);
-        // Both players present, auto-start
-        setGameState('ready');
-        setCountdown(3);
+      if (updated.length > 0) {
+        const updatedLobby = updated[0];
+        // Both players present and status is ready - start countdown
+        if (updatedLobby.status === 'ready' && updatedLobby.guest_email) {
+          console.log('Both players ready, starting countdown...');
+          setLobby(updatedLobby);
+          setGameState('ready');
+          setCountdown(3);
+        }
       }
     } catch (err) {
       console.error('Failed to check lobby status:', err);

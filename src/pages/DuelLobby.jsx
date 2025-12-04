@@ -22,22 +22,32 @@ export default function DuelLobbyPage() {
 
   useEffect(() => {
     loadData();
+  }, []);
+
+  useEffect(() => {
     const interval = setInterval(loadLobbies, 3000);
-    const checkInterval = setInterval(checkMyLobbyStatus, 2000);
+    const checkInterval = setInterval(checkMyLobbyStatus, 1000);
     return () => {
       clearInterval(interval);
       clearInterval(checkInterval);
     };
-  }, [myLobby]);
+  }, [myLobby, user]);
 
   const checkMyLobbyStatus = async () => {
     if (!myLobby || !user) return;
     
     try {
       const updated = await base44.entities.DuelLobby.filter({ id: myLobby.id }, '', 1);
-      if (updated.length > 0 && updated[0].status === 'ready' && myLobby.status === 'waiting') {
-        // Guest joined, auto-start for host
-        navigate(createPageUrl('Duel') + `?lobby=${myLobby.id}`);
+      if (updated.length > 0) {
+        const updatedLobby = updated[0];
+        // Host: Navigate when guest joins and status changes to ready
+        if (user.email === updatedLobby.host_email && 
+            updatedLobby.status === 'ready' && 
+            updatedLobby.guest_email &&
+            myLobby.status === 'waiting') {
+          console.log('Host: Guest joined, navigating to game...');
+          navigate(createPageUrl('Duel') + `?lobby=${myLobby.id}`);
+        }
       }
     } catch (err) {
       console.error('Failed to check lobby status:', err);
