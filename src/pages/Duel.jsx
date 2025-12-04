@@ -34,11 +34,11 @@ export default function DuelPage() {
     
     try {
       const updated = await base44.entities.DuelLobby.filter({ id: lobby.id }, '', 1);
-      if (updated.length > 0 && updated[0].status === 'ready' && gameState === 'waiting') {
+      if (updated.length > 0 && updated[0].status === 'ready' && gameState === 'waiting' && updated[0].guest_email) {
         setLobby(updated[0]);
-        if (updated[0].guest_email) {
-          setGameState('ready');
-        }
+        // Both players present, auto-start
+        setGameState('ready');
+        setCountdown(3);
       }
     } catch (err) {
       console.error('Failed to check lobby status:', err);
@@ -86,8 +86,10 @@ export default function DuelPage() {
         const lobbyData = await base44.entities.DuelLobby.filter({ id: lobbyId }, '', 1);
         if (lobbyData.length > 0) {
           setLobby(lobbyData[0]);
-          if (lobbyData[0].status === 'ready') {
+          if (lobbyData[0].status === 'ready' && lobbyData[0].guest_email) {
+            // Both players joined, auto-start countdown
             setGameState('ready');
+            setCountdown(3);
           }
         }
       }
@@ -286,20 +288,10 @@ export default function DuelPage() {
               )}
             </div>
 
-            {gameState === 'waiting' && isPlayer1 && !player1Ready && (
-              <Button
-                onClick={() => handlePlayerReady(1)}
-                className="bg-red-500 hover:bg-red-600 h-16 px-8 text-lg"
-              >
-                <Shield className="w-6 h-6 mr-2" />
-                Ready Up
-              </Button>
-            )}
-
-            {gameState === 'waiting' && player1Ready && (
-              <div className="text-green-400 flex items-center gap-2">
-                <Shield className="w-6 h-6" />
-                <span>Ready!</span>
+            {gameState === 'waiting' && (
+              <div className="text-yellow-400 flex items-center gap-2">
+                <Loader2 className="w-6 h-6 animate-spin" />
+                <span>Waiting for opponent...</span>
               </div>
             )}
 
@@ -341,20 +333,10 @@ export default function DuelPage() {
               )}
             </div>
 
-            {gameState === 'waiting' && isPlayer2 && !player2Ready && (
-              <Button
-                onClick={() => handlePlayerReady(2)}
-                className="bg-cyan-500 hover:bg-cyan-600 h-16 px-8 text-lg"
-              >
-                <Shield className="w-6 h-6 mr-2" />
-                Ready Up
-              </Button>
-            )}
-
-            {gameState === 'waiting' && player2Ready && (
-              <div className="text-green-400 flex items-center gap-2">
-                <Shield className="w-6 h-6" />
-                <span>Ready!</span>
+            {gameState === 'waiting' && (
+              <div className="text-yellow-400 flex items-center gap-2">
+                <Loader2 className="w-6 h-6 animate-spin" />
+                <span>Waiting for opponent...</span>
               </div>
             )}
 
