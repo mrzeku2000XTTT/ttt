@@ -20,10 +20,30 @@ export default function DuelPage() {
   const [player1Ready, setPlayer1Ready] = useState(false);
   const [player2Ready, setPlayer2Ready] = useState(false);
   const [winner, setWinner] = useState(null);
+  const [currentTarget, setCurrentTarget] = useState(null);
+  const [reactionStart, setReactionStart] = useState(null);
 
   useEffect(() => {
     loadData();
+    const interval = setInterval(checkLobbyStatus, 2000);
+    return () => clearInterval(interval);
   }, []);
+
+  const checkLobbyStatus = async () => {
+    if (!lobby) return;
+    
+    try {
+      const updated = await base44.entities.DuelLobby.filter({ id: lobby.id }, '', 1);
+      if (updated.length > 0 && updated[0].status === 'ready' && gameState === 'waiting') {
+        setLobby(updated[0]);
+        if (updated[0].guest_email) {
+          setGameState('ready');
+        }
+      }
+    } catch (err) {
+      console.error('Failed to check lobby status:', err);
+    }
+  };
 
   useEffect(() => {
     if (gameState === 'ready' && countdown > 0) {
@@ -32,8 +52,18 @@ export default function DuelPage() {
     } else if (gameState === 'ready' && countdown === 0) {
       setGameState('playing');
       setTimeLeft(30);
+      spawnTarget();
     }
   }, [gameState, countdown]);
+
+  const spawnTarget = () => {
+    if (gameState !== 'playing') return;
+    
+    const positions = ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'center'];
+    const randomPos = positions[Math.floor(Math.random() * positions.length)];
+    setCurrentTarget(randomPos);
+    setReactionStart(Date.now());
+  };
 
   useEffect(() => {
     if (gameState === 'playing' && timeLeft > 0) {
@@ -80,25 +110,47 @@ export default function DuelPage() {
     }
   };
 
-  const handleClick = (playerNum) => {
-    if (gameState !== 'playing') return;
-
-    if (playerNum === 1) {
-      setPlayer1Score(player1Score + 1);
-    } else {
-      setPlayer2Score(player2Score + 1);
+  const handleClick = (playerNum, position) => {
+    if (gameState !== 'playing' || !currentTarget) return;
+    
+    if (position === currentTarget) {
+      const reactionTime = Date.now() - reactionStart;
+      const points = Math.max(100 - Math.floor(reactionTime / 10), 10);
+      
+      if (playerNum === 1) {
+        setPlayer1Score(player1Score + points);
+      } else {
+        setPlayer2Score(player2Score + points);
+      }
+      
+      setCurrentTarget(null);
+      setTimeout(spawnTarget, 500);
     }
   };
 
-  const endGame = () => {
+  const endGame = async () => {
     setGameState('finished');
     
+    let winnerEmail = null;
     if (player1Score > player2Score) {
       setWinner('player1');
+      winnerEmail = lobby.host_email;
     } else if (player2Score > player1Score) {
       setWinner('player2');
+      winnerEmail = lobby.guest_email;
     } else {
       setWinner('tie');
+    }
+    
+    try {
+      await base44.entities.DuelLobby.update(lobby.id, {
+        status: 'finished',
+        winner_email: winnerEmail,
+        host_score: player1Score,
+        guest_score: player2Score
+      });
+    } catch (err) {
+      console.error('Failed to save game results:', err);
     }
   };
 
@@ -194,6 +246,11 @@ export default function DuelPage() {
                    winner === 'player1' ? `${lobby.host_username} Wins!` :
                    `${lobby.guest_username} Wins!`}
                 </h2>
+                {winner !== 'tie' && lobby.bet_amount > 0 && (
+                  <p className="text-yellow-400 text-lg mb-4">
+                    💰 {lobby.bet_amount * 2} KAS to winner!
+                  </p>
+                )}
                 <div className="flex justify-center gap-8 mb-6">
                   <div>
                     <p className="text-gray-400 text-sm">{lobby.host_username}</p>
@@ -247,13 +304,24 @@ export default function DuelPage() {
             )}
 
             {gameState === 'playing' && (
-              <button
-                onClick={() => handleClick(1)}
-                disabled={!isPlayer1}
-                className={`w-64 h-64 rounded-full bg-gradient-to-br from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 flex items-center justify-center transition-transform active:scale-95 shadow-2xl ${!isPlayer1 ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                <Target className="w-32 h-32 text-white" />
-              </button>
+              <div className="relative w-full h-96">
+                <div className="grid grid-cols-3 grid-rows-3 gap-4 w-full h-full">
+                  {['top-left', 'top-center', 'top-right', 'mid-left', 'center', 'mid-right', 'bottom-left', 'bottom-center', 'bottom-right'].map((pos) => (
+                    <button
+                      key={pos}
+                      onClick={() => handleClick(1, pos)}
+                      disabled={!isPlayer1}
+                      className={`rounded-lg transition-all ${
+                        currentTarget === pos
+                          ? 'bg-gradient-to-br from-red-500 to-orange-500 scale-110 shadow-2xl'
+                          : 'bg-white/5 hover:bg-white/10'
+                      } ${!isPlayer1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      {currentTarget === pos && <Target className="w-16 h-16 text-white mx-auto" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
 
             <div className="mt-8 text-center">
@@ -291,13 +359,24 @@ export default function DuelPage() {
             )}
 
             {gameState === 'playing' && (
-              <button
-                onClick={() => handleClick(2)}
-                disabled={!isPlayer2}
-                className={`w-64 h-64 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 flex items-center justify-center transition-transform active:scale-95 shadow-2xl ${!isPlayer2 ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                <Target className="w-32 h-32 text-white" />
-              </button>
+              <div className="relative w-full h-96">
+                <div className="grid grid-cols-3 grid-rows-3 gap-4 w-full h-full">
+                  {['top-left', 'top-center', 'top-right', 'mid-left', 'center', 'mid-right', 'bottom-left', 'bottom-center', 'bottom-right'].map((pos) => (
+                    <button
+                      key={pos}
+                      onClick={() => handleClick(2, pos)}
+                      disabled={!isPlayer2}
+                      className={`rounded-lg transition-all ${
+                        currentTarget === pos
+                          ? 'bg-gradient-to-br from-cyan-500 to-blue-500 scale-110 shadow-2xl'
+                          : 'bg-white/5 hover:bg-white/10'
+                      } ${!isPlayer2 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      {currentTarget === pos && <Target className="w-16 h-16 text-white mx-auto" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
 
             <div className="mt-8 text-center">

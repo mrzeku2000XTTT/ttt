@@ -18,6 +18,7 @@ export default function DuelLobbyPage() {
   const [copied, setCopied] = useState(false);
   const [username, setUsername] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
+  const [betAmount, setBetAmount] = useState(1);
 
   useEffect(() => {
     loadData();
@@ -82,7 +83,8 @@ export default function DuelLobbyPage() {
         guest_username: null,
         guest_wallet: null,
         status: 'waiting',
-        game_type: 'quick_draw'
+        game_type: 'quick_draw',
+        bet_amount: betAmount
       });
       
       setMyLobby(lobby);
@@ -199,13 +201,26 @@ export default function DuelLobbyPage() {
                 </div>
 
                 {!myLobby ? (
-                  <Button
-                    onClick={createLobby}
-                    className="w-full h-16 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white text-lg font-bold"
-                  >
-                    <Zap className="w-6 h-6 mr-2" />
-                    Create Lobby
-                  </Button>
+                  <div className="space-y-4">
+                    <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-4">
+                      <label className="text-sm text-gray-400 mb-2 block">Bet Amount (KAS)</label>
+                      <Input
+                        type="number"
+                        min="0.1"
+                        step="0.1"
+                        value={betAmount}
+                        onChange={(e) => setBetAmount(parseFloat(e.target.value) || 1)}
+                        className="bg-black/50 border-white/10 text-white"
+                      />
+                    </div>
+                    <Button
+                      onClick={createLobby}
+                      className="w-full h-16 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white text-lg font-bold"
+                    >
+                      <Zap className="w-6 h-6 mr-2" />
+                      Create Lobby ({betAmount} KAS)
+                    </Button>
+                  </div>
                 ) : (
                   <div className="space-y-4">
                     <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-4">
@@ -290,6 +305,7 @@ export default function DuelLobbyPage() {
                           <div>
                             <p className="text-white font-bold">{lobby.host_username}</p>
                             <p className="text-xs text-gray-400">Code: {lobby.lobby_code}</p>
+                            <p className="text-xs text-yellow-400 mt-1">💰 {lobby.bet_amount || 1} KAS</p>
                           </div>
                           {lobby.host_email !== user?.email && (
                             <Button
