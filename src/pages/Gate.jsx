@@ -29,6 +29,7 @@ function GateContent() {
     { name: "Creator", path: "Creator", category: "Business", color: "#10B981" },
     { name: "Focus", path: "Focus", category: "Zen", color: "#3B82F6" },
     { name: "KASPROMO", path: "KP", category: "Vote", color: "#06B6D4" },
+    { name: "Konekt", path: "Konekt", category: "Social", color: "#F97316" },
   ];
 
   const filteredApps = searchQuery
