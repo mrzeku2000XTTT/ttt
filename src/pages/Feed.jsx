@@ -2092,42 +2092,28 @@ export default function FeedPage() {
                   </div>
                 )}
                 {media.type === 'video' && (
-                  <div className="relative bg-black rounded-lg overflow-hidden">
+                  <div className="relative bg-black/20 rounded-lg overflow-hidden backdrop-blur-sm">
                     <video
                       src={media.url}
                       controls
                       playsInline
-                      preload="auto"
-                      webkit-playsinline="true"
-                      x-webkit-airplay="allow"
-                      muted={false}
+                      preload="metadata"
                       className="w-full rounded-lg"
-                      style={{ maxHeight: '600px', backgroundColor: '#000' }}
-                    >
-                      <source src={media.url} type="video/mp4" />
-                      <source src={media.url} type="video/webm" />
-                      Your browser does not support the video tag.
-                    </video>
+                      style={{ maxHeight: '600px' }}
+                    />
                   </div>
                 )}
                 {media.type === 'file' && (
                   /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(media.name || '') ? (
-                    <div className="relative bg-black rounded-lg overflow-hidden">
+                    <div className="relative bg-black/20 rounded-lg overflow-hidden backdrop-blur-sm">
                       <video
                         src={media.url}
                         controls
                         playsInline
-                        preload="auto"
-                        webkit-playsinline="true"
-                        x-webkit-airplay="allow"
-                        muted={false}
+                        preload="metadata"
                         className="w-full rounded-lg"
-                        style={{ maxHeight: '600px', backgroundColor: '#000' }}
-                      >
-                        <source src={media.url} type="video/mp4" />
-                        <source src={media.url} type="video/webm" />
-                        Your browser does not support the video tag.
-                      </video>
+                        style={{ maxHeight: '600px' }}
+                      />
                     </div>
                   ) : (
                     <a
@@ -4121,20 +4107,12 @@ export default function FeedPage() {
                                 </div>
                               )}
                               {file.type === 'video' && (
-                                <div className="relative bg-black rounded-lg overflow-hidden">
+                                <div className="relative bg-black/20 backdrop-blur-sm rounded-lg overflow-hidden">
                                   <video
                                     src={file.url}
                                     controls
-                                    playsInline
-                                    preload="auto"
-                                    webkit-playsinline="true"
-                                    muted={false}
                                     className="w-full max-h-96 rounded-lg"
-                                    style={{ backgroundColor: '#000' }}
-                                  >
-                                    <source src={file.url} type="video/mp4" />
-                                    <source src={file.url} type="video/webm" />
-                                  </video>
+                                  />
                                   <Button
                                     onClick={() => removeFile(index)}
                                     size="sm"
@@ -4147,20 +4125,12 @@ export default function FeedPage() {
                               )}
                               {file.type === 'file' && (
                                 /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(file.name || '') ? (
-                                  <div className="relative bg-black rounded-lg overflow-hidden">
+                                  <div className="relative bg-black/20 backdrop-blur-sm rounded-lg overflow-hidden">
                                     <video
                                       src={file.url}
                                       controls
-                                      playsInline
-                                      preload="auto"
-                                      webkit-playsinline="true"
-                                      muted={false}
                                       className="w-full max-h-96 rounded-lg"
-                                      style={{ backgroundColor: '#000' }}
-                                    >
-                                      <source src={file.url} type="video/mp4" />
-                                      <source src={file.url} type="video/webm" />
-                                    </video>
+                                    />
                                     <Button
                                       onClick={() => removeFile(index)}
                                       size="sm"
@@ -4453,20 +4423,12 @@ export default function FeedPage() {
                                               </div>
                                             )}
                                             {file.type === 'video' && (
-                                              <div className="relative bg-black rounded-lg overflow-hidden">
+                                              <div className="relative">
                                                 <video
                                                   src={file.url}
                                                   controls
-                                                  playsInline
-                                                  preload="auto"
-                                                  webkit-playsinline="true"
-                                                  muted={false}
-                                                  className="w-full max-h-96 rounded-lg"
-                                                  style={{ backgroundColor: '#000' }}
-                                                >
-                                                  <source src={file.url} type="video/mp4" />
-                                                  <source src={file.url} type="video/webm" />
-                                                </video>
+                                                  className="w-full max-h-96 rounded-lg border border-white/10 bg-black"
+                                                />
                                                 <Button
                                                   onClick={() => removeReplyFile(idx)}
                                                   size="sm"
@@ -4479,20 +4441,12 @@ export default function FeedPage() {
                                             )}
                                             {file.type === 'file' && (
                                               /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(file.name || '') ? (
-                                                <div className="relative bg-black rounded-lg overflow-hidden">
+                                                <div className="relative">
                                                   <video
                                                     src={file.url}
                                                     controls
-                                                    playsInline
-                                                    preload="auto"
-                                                    webkit-playsinline="true"
-                                                    muted={false}
-                                                    className="w-full max-h-96 rounded-lg"
-                                                    style={{ backgroundColor: '#000' }}
-                                                  >
-                                                    <source src={file.url} type="video/mp4" />
-                                                    <source src={file.url} type="video/webm" />
-                                                  </video>
+                                                    className="w-full max-h-96 rounded-lg border border-white/10 bg-black"
+                                                  />
                                                   <Button
                                                     onClick={() => removeReplyFile(idx)}
                                                     size="sm"
