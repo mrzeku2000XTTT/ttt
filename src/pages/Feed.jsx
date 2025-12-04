@@ -310,15 +310,21 @@ export default function FeedPage() {
     const MAX_IMAGE_SIZE = 20 * 1024 * 1024; // 20MB for images
     const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
+    console.log('📤 Starting file upload...', files.length, 'files');
+
     for (const file of files) {
       const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(file.name);
       const isImage = file.type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|svg|heic)$/i.test(file.name);
       const limit = isVideo ? MAX_VIDEO_SIZE : isImage ? MAX_IMAGE_SIZE : MAX_FILE_SIZE;
 
+      console.log('📁 File:', file.name, '| Type:', file.type, '| Size:', (file.size / (1024 * 1024)).toFixed(2), 'MB | isVideo:', isVideo);
+
       if (file.size > limit) {
         const limitMB = limit / (1024 * 1024);
         const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
-        setError(`File "${file.name}" is too large (${fileSizeMB}MB). ${isVideo ? 'Videos' : isImage ? 'Images' : 'Files'} must be under ${limitMB}MB.`);
+        const errorMsg = `File "${file.name}" is too large (${fileSizeMB}MB). ${isVideo ? 'Videos' : isImage ? 'Images' : 'Files'} must be under ${limitMB}MB.`;
+        console.error('❌ Size error:', errorMsg);
+        setError(errorMsg);
         return;
       }
     }
@@ -328,7 +334,9 @@ export default function FeedPage() {
     
     try {
       const uploadPromises = files.map(async (file) => {
+        console.log('⬆️ Uploading:', file.name);
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        console.log('✅ Upload complete:', file_url);
 
         let fileType = 'file';
         if (file.type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|svg|heic)$/i.test(file.name)) {
@@ -336,6 +344,8 @@ export default function FeedPage() {
         } else if (file.type.startsWith('video/') || /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(file.name)) {
           fileType = 'video';
         }
+
+        console.log('🏷️ File classified as:', fileType);
 
         return {
           url: file_url,
@@ -346,13 +356,15 @@ export default function FeedPage() {
       });
 
       const uploadedUrls = await Promise.all(uploadPromises);
+      console.log('✅ All uploads complete:', uploadedUrls);
       setUploadedFiles([...uploadedFiles, ...uploadedUrls]);
       setError(null);
     } catch (err) {
-      console.error('Failed to upload files:', err);
+      console.error('❌ Upload error:', err);
+      console.error('Error details:', err.message, err.stack);
 
       if (err.message?.includes('Payload too large') || err.message?.includes('413')) {
-        setError('File too large. Videos must be under 200MB, images under 20MB.');
+        setError('File too large. Videos must be under 500MB, images under 20MB.');
       } else if (err.message?.includes('timeout') || err.message?.includes('Network Error')) {
         setError('Upload timed out. Try a smaller video or check your connection.');
       } else {
