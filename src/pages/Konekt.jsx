@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Send, Loader2, User as UserIcon, Shield } from "lucide-react";
+import { ArrowLeft, Send, Loader2, User as UserIcon, Shield, Copy, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -74,7 +74,7 @@ export default function KonektPage() {
   };
 
   return (
-    <div className="h-screen bg-black flex flex-col overflow-hidden relative">
+    <div className="fixed inset-0 bg-black flex flex-col overflow-hidden z-50">
       {/* Background Effects */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-gradient-to-br from-orange-900/20 via-black to-red-900/20" />
@@ -160,12 +160,30 @@ export default function KonektPage() {
 
                   {/* Message Bubble */}
                   <div className={`flex flex-col ${isMe ? "items-end" : "items-start"} max-w-[85%] sm:max-w-[70%]`}>
-                    <div className="flex items-center gap-2 mb-1 px-1">
+                    <div className="flex items-center gap-2 mb-1 px-1 flex-wrap">
                       <span className={`text-xs font-bold ${isMe ? "text-orange-400" : "text-white/70"}`}>
                         {msg.sender_username}
                       </span>
-                      <span className="text-[10px] text-white/30 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {moment(msg.created_date).format('LT')}
+                      {msg.sender_wallet && (
+                        <div className="flex items-center gap-1 bg-white/5 rounded px-1.5 py-0.5 border border-white/5">
+                          <span className="text-[10px] font-mono text-white/40">
+                            {msg.sender_wallet.substring(0, 4)}...{msg.sender_wallet.substring(msg.sender_wallet.length - 4)}
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigator.clipboard.writeText(msg.sender_wallet);
+                              // Optional: Add a toast notification here
+                            }}
+                            className="text-white/20 hover:text-orange-400 transition-colors"
+                            title="Copy Address"
+                          >
+                            <Copy className="w-2.5 h-2.5" />
+                          </button>
+                        </div>
+                      )}
+                      <span className="text-[10px] text-white/30">
+                        {moment(msg.created_date).utc().format('HH:mm')} UTC
                       </span>
                     </div>
                     
