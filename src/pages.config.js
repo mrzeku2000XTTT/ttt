@@ -149,7 +149,6 @@ import SendTip from './pages/SendTip';
 import TestZelcore from './pages/TestZelcore';
 import DuelLobby from './pages/DuelLobby';
 import Duel from './pages/Duel';
-import Konekt from './pages/Konekt';
 import __Layout from './Layout.jsx';
 
 
@@ -305,11 +304,10 @@ export const PAGES = {
     "TestZelcore": TestZelcore,
     "DuelLobby": DuelLobby,
     "Duel": Duel,
-    "Konekt": Konekt,
 }
 
 export const pagesConfig = {
-    mainPage: "AgentZK",
+    mainPage: "Feed",
     Pages: PAGES,
     Layout: __Layout,
 };
