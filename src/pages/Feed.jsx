@@ -306,13 +306,13 @@ export default function FeedPage() {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    const MAX_VIDEO_SIZE = 200 * 1024 * 1024; // 200MB for videos (supports 5+ min videos)
+    const MAX_VIDEO_SIZE = 500 * 1024 * 1024; // 500MB for videos
     const MAX_IMAGE_SIZE = 20 * 1024 * 1024; // 20MB for images
     const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
     for (const file of files) {
-      const isVideo = file.type.startsWith('video/');
-      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(file.name);
+      const isImage = file.type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|svg|heic)$/i.test(file.name);
       const limit = isVideo ? MAX_VIDEO_SIZE : isImage ? MAX_IMAGE_SIZE : MAX_FILE_SIZE;
 
       if (file.size > limit) {
@@ -330,9 +330,12 @@ export default function FeedPage() {
       const uploadPromises = files.map(async (file) => {
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-        const fileType = file.type.startsWith('image/') ? 'image' :
-                        file.type.startsWith('video/') ? 'video' :
-                        'file';
+        let fileType = 'file';
+        if (file.type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|svg|heic)$/i.test(file.name)) {
+          fileType = 'image';
+        } else if (file.type.startsWith('video/') || /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(file.name)) {
+          fileType = 'video';
+        }
 
         return {
           url: file_url,
@@ -364,13 +367,13 @@ export default function FeedPage() {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    const MAX_VIDEO_SIZE = 200 * 1024 * 1024; // 200MB for videos (supports 5+ min videos)
+    const MAX_VIDEO_SIZE = 500 * 1024 * 1024; // 500MB for videos
     const MAX_IMAGE_SIZE = 20 * 1024 * 1024; // 20MB for images
     const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
     for (const file of files) {
-      const isVideo = file.type.startsWith('video/');
-      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(file.name);
+      const isImage = file.type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|svg|heic)$/i.test(file.name);
       const limit = isVideo ? MAX_VIDEO_SIZE : isImage ? MAX_IMAGE_SIZE : MAX_FILE_SIZE;
 
       if (file.size > limit) {
@@ -388,9 +391,12 @@ export default function FeedPage() {
       const uploadPromises = files.map(async (file) => {
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-        const fileType = file.type.startsWith('image/') ? 'image' :
-                        file.type.startsWith('video/') ? 'video' :
-                        'file';
+        let fileType = 'file';
+        if (file.type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|svg|heic)$/i.test(file.name)) {
+          fileType = 'image';
+        } else if (file.type.startsWith('video/') || /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(file.name)) {
+          fileType = 'video';
+        }
 
         return {
           url: file_url,
@@ -2098,22 +2104,35 @@ export default function FeedPage() {
                   </div>
                 )}
                 {media.type === 'file' && (
-                  <a
-                    href={media.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-3 hover:bg-black/30 transition-colors"
-                  >
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-5 h-5 text-white/60" />
-                      <div>
-                        <div className="text-white text-sm">{media.name}</div>
-                        <div className="text-white/40 text-xs">
-                          {(media.size / 1024).toFixed(2)} KB
+                  /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(media.name || '') ? (
+                    <div className="relative bg-black/20 rounded-lg overflow-hidden backdrop-blur-sm">
+                      <video
+                        src={media.url}
+                        controls
+                        playsInline
+                        preload="metadata"
+                        className="w-full rounded-lg"
+                        style={{ maxHeight: '600px' }}
+                      />
+                    </div>
+                  ) : (
+                    <a
+                      href={media.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-3 hover:bg-black/30 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-5 h-5 text-white/60" />
+                        <div>
+                          <div className="text-white text-sm">{media.name}</div>
+                          <div className="text-white/40 text-xs">
+                            {(media.size / 1024).toFixed(2)} KB
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </a>
+                    </a>
+                  )
                 )}
               </div>
             ))}
