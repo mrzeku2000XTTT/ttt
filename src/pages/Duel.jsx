@@ -33,6 +33,38 @@ export default function DuelPage() {
     return () => clearInterval(interval);
   }, [lobby, gameState]);
 
+  useEffect(() => {
+    if (gameState !== 'playing' || !lobby) return;
+    const syncInterval = setInterval(syncGameState, 200);
+    return () => clearInterval(syncInterval);
+  }, [gameState, lobby]);
+
+  const syncGameState = async () => {
+    if (!lobby || gameState !== 'playing') return;
+    
+    try {
+      const updated = await base44.entities.DuelLobby.filter({ id: lobby.id }, '', 1);
+      if (updated.length > 0) {
+        const updatedLobby = updated[0];
+        
+        if (updatedLobby.current_target !== currentTarget) {
+          setCurrentTarget(updatedLobby.current_target);
+          setReactionStart(updatedLobby.target_spawn_time || Date.now());
+        }
+        
+        if (updatedLobby.host_score !== player1Score) {
+          setPlayer1Score(updatedLobby.host_score);
+        }
+        
+        if (updatedLobby.guest_score !== player2Score) {
+          setPlayer2Score(updatedLobby.guest_score);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to sync game state:', err);
+    }
+  };
+
   const checkLobbyStatus = async () => {
     if (!lobby || gameState !== 'waiting') return;
     
@@ -64,13 +96,20 @@ export default function DuelPage() {
     }
   }, [gameState, countdown]);
 
-  const spawnTarget = () => {
-    if (gameState !== 'playing') return;
+  const spawnTarget = async () => {
+    if (gameState !== 'playing' || !lobby || !isPlayer1) return;
     
-    const positions = ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'center'];
+    const positions = ['top-left', 'top-center', 'top-right', 'mid-left', 'center', 'mid-right', 'bottom-left', 'bottom-center', 'bottom-right'];
     const randomPos = positions[Math.floor(Math.random() * positions.length)];
-    setCurrentTarget(randomPos);
-    setReactionStart(Date.now());
+    
+    try {
+      await base44.entities.DuelLobby.update(lobby.id, {
+        current_target: randomPos,
+        target_spawn_time: Date.now()
+      });
+    } catch (err) {
+      console.error('Failed to spawn target:', err);
+    }
   };
 
   useEffect(() => {
@@ -120,25 +159,43 @@ export default function DuelPage() {
     }
   };
 
-  const handleClick = (playerNum, position) => {
-    if (gameState !== 'playing' || !currentTarget) return;
+  const handleClick = async (playerNum, position) => {
+    if (gameState !== 'playing' || !currentTarget || !lobby) return;
     
     if (position === currentTarget) {
       const reactionTime = Date.now() - reactionStart;
       const points = Math.max(100 - Math.floor(reactionTime / 10), 10);
       
-      if (playerNum === 1) {
-        setPlayer1Score(player1Score + points);
-      } else {
-        setPlayer2Score(player2Score + points);
-      }
+      const newScore = (playerNum === 1 ? player1Score : player2Score) + points;
       
-      setCurrentTarget(null);
-      setTimeout(spawnTarget, 500);
+      try {
+        if (playerNum === 1) {
+          setPlayer1Score(newScore);
+          await base44.entities.DuelLobby.update(lobby.id, {
+            host_score: newScore,
+            current_target: null
+          });
+        } else {
+          setPlayer2Score(newScore);
+          await base44.entities.DuelLobby.update(lobby.id, {
+            guest_score: newScore,
+            current_target: null
+          });
+        }
+        
+        setCurrentTarget(null);
+        
+        if (isPlayer1) {
+          setTimeout(spawnTarget, 500);
+        }
+      } catch (err) {
+        console.error('Failed to update score:', err);
+      }
     }
   };
 
   const endGame = async () => {
+    if (gameState === 'finished') return;
     setGameState('finished');
     
     let winnerEmail = null;
@@ -152,15 +209,18 @@ export default function DuelPage() {
       setWinner('tie');
     }
     
-    try {
-      await base44.entities.DuelLobby.update(lobby.id, {
-        status: 'finished',
-        winner_email: winnerEmail,
-        host_score: player1Score,
-        guest_score: player2Score
-      });
-    } catch (err) {
-      console.error('Failed to save game results:', err);
+    if (isPlayer1) {
+      try {
+        await base44.entities.DuelLobby.update(lobby.id, {
+          status: 'finished',
+          winner_email: winnerEmail,
+          host_score: player1Score,
+          guest_score: player2Score,
+          current_target: null
+        });
+      } catch (err) {
+        console.error('Failed to save game results:', err);
+      }
     }
   };
 
