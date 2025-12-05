@@ -151,6 +151,7 @@ import DuelLobby from './pages/DuelLobby';
 import Duel from './pages/Duel';
 import Konekt from './pages/Konekt';
 import Machine from './pages/Machine';
+import Area51 from './pages/Area51';
 import __Layout from './Layout.jsx';
 
 
@@ -308,6 +309,7 @@ export const PAGES = {
     "Duel": Duel,
     "Konekt": Konekt,
     "Machine": Machine,
+    "Area51": Area51,
 }
 
 export const pagesConfig = {
