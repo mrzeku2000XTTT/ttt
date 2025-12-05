@@ -218,6 +218,7 @@ export default function Layout({ children, currentPageName }) {
 
   const morePages = [
     { name: "App Store", icon: LayoutGrid, path: "AppStore" },
+    { name: "Area 51", icon: AlertTriangle, path: "Area51" },
     { name: "Docs", icon: FileText, path: "Docs" },
     { name: "Agent FYE", icon: TrendingUp, path: "AgentFYE" },
     { name: "Hercules", icon: Brain, path: "Hercules", premium: true },
