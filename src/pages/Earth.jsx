@@ -601,10 +601,18 @@ export default function EarthPage() {
             ].map((country, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3, delay: index * 0.01 }}
-                whileHover={{ scale: 1.05 }}
+                initial={{ opacity: 0, scale: 0.5, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ 
+                  duration: 0.5,
+                  delay: index * 0.015,
+                  ease: [0.25, 0.46, 0.45, 0.94]
+                }}
+                whileHover={{ 
+                  scale: 1.1,
+                  rotate: [0, -2, 2, 0],
+                  transition: { duration: 0.3 }
+                }}
                 className="bg-white/70 backdrop-blur-md p-3 rounded-lg border border-slate-300/70 hover:border-slate-400 hover:bg-white/90 hover:shadow-lg transition-all cursor-pointer text-center"
               >
                 <span className="text-sm text-slate-900 font-medium">{country}</span>
