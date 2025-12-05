@@ -547,60 +547,68 @@ export default function EarthPage() {
           </p>
         </motion.div>
 
-        {/* Feature Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-32">
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="bg-white/60 backdrop-blur-sm p-12 rounded-2xl border border-slate-200/50 hover:border-slate-300 transition-all"
-          >
-            <Globe className="w-12 h-12 text-slate-700 mb-6" />
-            <h3 className="text-2xl font-light text-slate-900 mb-4">Global Reach</h3>
-            <p className="text-slate-600 leading-relaxed">
-              Connect with millions of users worldwide through our seamless platform built for the modern age.
-            </p>
-          </motion.div>
+        {/* Countries Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="mb-32"
+        >
+          <h2 className="text-4xl font-light text-slate-900 mb-12 text-center">
+            Available in 195+ Countries
+          </h2>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {[
+              "🇺🇸 United States", "🇬🇧 United Kingdom", "🇨🇦 Canada", "🇦🇺 Australia", "🇩🇪 Germany", "🇫🇷 France",
+              "🇯🇵 Japan", "🇰🇷 South Korea", "🇨🇳 China", "🇮🇳 India", "🇧🇷 Brazil", "🇲🇽 Mexico",
+              "🇪🇸 Spain", "🇮🇹 Italy", "🇳🇱 Netherlands", "🇸🇪 Sweden", "🇳🇴 Norway", "🇩🇰 Denmark",
+              "🇫🇮 Finland", "🇵🇱 Poland", "🇨🇭 Switzerland", "🇦🇹 Austria", "🇧🇪 Belgium", "🇵🇹 Portugal",
+              "🇮🇪 Ireland", "🇬🇷 Greece", "🇨🇿 Czech Republic", "🇷🇴 Romania", "🇭🇺 Hungary", "🇧🇬 Bulgaria",
+              "🇷🇺 Russia", "🇺🇦 Ukraine", "🇹🇷 Turkey", "🇸🇦 Saudi Arabia", "🇦🇪 UAE", "🇮🇱 Israel",
+              "🇪🇬 Egypt", "🇿🇦 South Africa", "🇳🇬 Nigeria", "🇰🇪 Kenya", "🇲🇦 Morocco", "🇹🇳 Tunisia",
+              "🇦🇷 Argentina", "🇨🇱 Chile", "🇨🇴 Colombia", "🇵🇪 Peru", "🇻🇪 Venezuela", "🇺🇾 Uruguay",
+              "🇹🇭 Thailand", "🇻🇳 Vietnam", "🇸🇬 Singapore", "🇲🇾 Malaysia", "🇮🇩 Indonesia", "🇵🇭 Philippines",
+              "🇵🇰 Pakistan", "🇧🇩 Bangladesh", "🇱🇰 Sri Lanka", "🇳🇵 Nepal", "🇲🇲 Myanmar", "🇰🇭 Cambodia",
+              "🇳🇿 New Zealand", "🇫🇯 Fiji", "🇵🇬 Papua New Guinea", "🇼🇸 Samoa", "🇹🇴 Tonga", "🇻🇺 Vanuatu",
+              "🇨🇷 Costa Rica", "🇵🇦 Panama", "🇬🇹 Guatemala", "🇭🇳 Honduras", "🇸🇻 El Salvador", "🇳🇮 Nicaragua",
+              "🇯🇲 Jamaica", "🇨🇺 Cuba", "🇩🇴 Dominican Republic", "🇭🇹 Haiti", "🇧🇸 Bahamas", "🇹🇹 Trinidad",
+              "🇮🇸 Iceland", "🇱🇺 Luxembourg", "🇲🇹 Malta", "🇨🇾 Cyprus", "🇪🇪 Estonia", "🇱🇻 Latvia",
+              "🇱🇹 Lithuania", "🇸🇮 Slovenia", "🇭🇷 Croatia", "🇷🇸 Serbia", "🇧🇦 Bosnia", "🇲🇰 North Macedonia",
+              "🇦🇱 Albania", "🇲🇪 Montenegro", "🇽🇰 Kosovo", "🇲🇩 Moldova", "🇬🇪 Georgia", "🇦🇲 Armenia",
+              "🇦🇿 Azerbaijan", "🇰🇿 Kazakhstan", "🇺🇿 Uzbekistan", "🇹🇲 Turkmenistan", "🇰🇬 Kyrgyzstan", "🇹🇯 Tajikistan",
+              "🇲🇳 Mongolia", "🇰🇵 North Korea", "🇹🇼 Taiwan", "🇭🇰 Hong Kong", "🇲🇴 Macau", "🇧🇳 Brunei",
+              "🇱🇦 Laos", "🇧🇹 Bhutan", "🇲🇻 Maldives", "🇦🇫 Afghanistan", "🇮🇷 Iran", "🇮🇶 Iraq",
+              "🇸🇾 Syria", "🇯🇴 Jordan", "🇱🇧 Lebanon", "🇰🇼 Kuwait", "🇴🇲 Oman", "🇶🇦 Qatar",
+              "🇧🇭 Bahrain", "🇾🇪 Yemen", "🇱🇾 Libya", "🇸🇩 Sudan", "🇸🇸 South Sudan", "🇪🇹 Ethiopia",
+              "🇸🇴 Somalia", "🇩🇯 Djibouti", "🇪🇷 Eritrea", "🇺🇬 Uganda", "🇹🇿 Tanzania", "🇷🇼 Rwanda",
+              "🇧🇮 Burundi", "🇨🇩 DR Congo", "🇨🇬 Congo", "🇨🇲 Cameroon", "🇨🇫 CAR", "🇹🇩 Chad",
+              "🇳🇪 Niger", "🇲🇱 Mali", "🇧🇫 Burkina Faso", "🇸🇳 Senegal", "🇬🇳 Guinea", "🇸🇱 Sierra Leone",
+              "🇱🇷 Liberia", "🇨🇮 Ivory Coast", "🇬🇭 Ghana", "🇹🇬 Togo", "🇧🇯 Benin", "🇬🇦 Gabon",
+              "🇬🇶 Equatorial Guinea", "🇦🇴 Angola", "🇿🇲 Zambia", "🇿🇼 Zimbabwe", "🇲🇼 Malawi", "🇲🇿 Mozambique",
+              "🇧🇼 Botswana", "🇳🇦 Namibia", "🇱🇸 Lesotho", "🇸🇿 Eswatini", "🇲🇬 Madagascar", "🇲🇺 Mauritius",
+              "🇸🇨 Seychelles", "🇰🇲 Comoros", "🇨🇻 Cape Verde", "🇸🇹 Sao Tome", "🇬🇼 Guinea-Bissau", "🇬🇲 Gambia",
+              "🇲🇷 Mauritania", "🇩🇿 Algeria", "🇧🇴 Bolivia", "🇪🇨 Ecuador", "🇵🇾 Paraguay", "🇬🇾 Guyana",
+              "🇸🇷 Suriname", "🇬🇫 French Guiana", "🇧🇿 Belize", "🇱🇨 Saint Lucia", "🇻🇨 St Vincent", "🇬🇩 Grenada",
+              "🇧🇧 Barbados", "🇦🇬 Antigua", "🇩🇲 Dominica", "🇰🇳 St Kitts", "🇦🇼 Aruba", "🇨🇼 Curaçao"
+            ].map((country, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: index * 0.01 }}
+                whileHover={{ scale: 1.05 }}
+                className="bg-white/40 backdrop-blur-sm p-3 rounded-lg border border-slate-200/50 hover:border-slate-300 hover:bg-white/60 transition-all cursor-pointer text-center"
+              >
+                <span className="text-sm text-slate-700 font-light">{country}</span>
+              </motion.div>
+            ))}
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="bg-white/60 backdrop-blur-sm p-12 rounded-2xl border border-slate-200/50 hover:border-slate-300 transition-all"
-          >
-            <Zap className="w-12 h-12 text-slate-700 mb-6" />
-            <h3 className="text-2xl font-light text-slate-900 mb-4">Lightning Fast</h3>
-            <p className="text-slate-600 leading-relaxed">
-              Experience unparalleled speed and performance with our cutting-edge technology infrastructure.
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="bg-white/60 backdrop-blur-sm p-12 rounded-2xl border border-slate-200/50 hover:border-slate-300 transition-all"
-          >
-            <Shield className="w-12 h-12 text-slate-700 mb-6" />
-            <h3 className="text-2xl font-light text-slate-900 mb-4">Secure by Default</h3>
-            <p className="text-slate-600 leading-relaxed">
-              Your privacy and security are our top priorities with enterprise-grade encryption.
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-            className="bg-white/60 backdrop-blur-sm p-12 rounded-2xl border border-slate-200/50 hover:border-slate-300 transition-all"
-          >
-            <Users className="w-12 h-12 text-slate-700 mb-6" />
-            <h3 className="text-2xl font-light text-slate-900 mb-4">Community Driven</h3>
-            <p className="text-slate-600 leading-relaxed">
-              Join a thriving community of innovators, creators, and visionaries shaping the future.
-            </p>
-          </motion.div>
-        </div>
+          <p className="text-center text-slate-500 text-sm mt-8 font-light">
+            And many more regions worldwide...
+          </p>
+        </motion.div>
 
         {/* CTA Section */}
         <motion.div
