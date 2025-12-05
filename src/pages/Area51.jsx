@@ -15,6 +15,8 @@ export default function Area51Page() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [aiThinking, setAiThinking] = useState(false);
+  const [checkingIn, setCheckingIn] = useState(false);
+  const [hasCheckedIn, setHasCheckedIn] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -27,9 +29,26 @@ export default function Area51Page() {
   useEffect(() => {
     loadUser();
     loadMessages();
+    checkIfCheckedIn();
     const interval = setInterval(loadMessages, 3000);
     return () => clearInterval(interval);
   }, []);
+
+  const checkIfCheckedIn = async () => {
+    try {
+      const currentUser = await base44.auth.me();
+      if (currentUser?.email) {
+        const today = new Date().toISOString().split('T')[0];
+        const checkIns = await base44.entities.Area51CheckIn.filter({
+          user_email: currentUser.email
+        });
+        const todayCheckIn = checkIns.find(c => c.created_date?.startsWith(today));
+        setHasCheckedIn(!!todayCheckIn);
+      }
+    } catch (err) {
+      console.log("Not checking in status");
+    }
+  };
 
   useEffect(() => {
     scrollToBottom();
