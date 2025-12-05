@@ -313,7 +313,7 @@ export const PAGES = {
 }
 
 export const pagesConfig = {
-    mainPage: "ProofOfBullish",
+    mainPage: "AgentZK",
     Pages: PAGES,
     Layout: __Layout,
 };
