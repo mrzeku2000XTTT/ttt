@@ -539,10 +539,10 @@ export default function EarthPage() {
           transition={{ duration: 0.8 }}
           className="text-center mb-32"
         >
-          <h1 className="text-8xl font-light text-slate-900 mb-6 tracking-tight">
+          <h1 className="text-8xl font-light text-slate-900 mb-6 tracking-tight drop-shadow-lg">
             EARTH
           </h1>
-          <p className="text-xl text-slate-600 max-w-2xl mx-auto font-light">
+          <p className="text-xl text-slate-800 max-w-2xl mx-auto font-medium drop-shadow-md">
             Where innovation meets simplicity. Experience the future of digital connection.
           </p>
         </motion.div>
@@ -554,7 +554,7 @@ export default function EarthPage() {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="mb-32"
         >
-          <h2 className="text-4xl font-light text-slate-900 mb-12 text-center">
+          <h2 className="text-4xl font-medium text-slate-900 mb-12 text-center drop-shadow-md">
             Available in 240+ Countries & Territories
           </h2>
           
@@ -605,14 +605,14 @@ export default function EarthPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.3, delay: index * 0.01 }}
                 whileHover={{ scale: 1.05 }}
-                className="bg-white/40 backdrop-blur-sm p-3 rounded-lg border border-slate-200/50 hover:border-slate-300 hover:bg-white/60 transition-all cursor-pointer text-center"
+                className="bg-white/70 backdrop-blur-md p-3 rounded-lg border border-slate-300/70 hover:border-slate-400 hover:bg-white/90 hover:shadow-lg transition-all cursor-pointer text-center"
               >
-                <span className="text-sm text-slate-700 font-light">{country}</span>
+                <span className="text-sm text-slate-900 font-medium">{country}</span>
               </motion.div>
             ))}
           </div>
 
-          <p className="text-center text-slate-500 text-sm mt-8 font-light">
+          <p className="text-center text-slate-700 text-sm mt-8 font-medium drop-shadow-sm">
             And many more regions worldwide...
           </p>
         </motion.div>
@@ -626,7 +626,7 @@ export default function EarthPage() {
         >
           <Button
             size="lg"
-            className="bg-slate-900 text-white hover:bg-slate-800 px-12 py-6 text-lg rounded-full font-light"
+            className="bg-slate-900 text-white hover:bg-slate-800 px-12 py-6 text-lg rounded-full font-medium shadow-2xl hover:shadow-slate-900/50 transition-all"
           >
             Get Started
           </Button>
