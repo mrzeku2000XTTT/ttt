@@ -111,7 +111,7 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
   };
 
   return (
-    <div className="fixed inset-0 bg-black flex flex-col overflow-hidden">
+    <div className="fixed inset-0 bg-black flex flex-col overflow-hidden" style={{ top: 'calc(var(--sat, 0px) + 7.5rem)' }}>
       {/* Background Effects */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-gradient-to-br from-green-900/20 via-black to-cyan-900/20" />
