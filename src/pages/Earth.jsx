@@ -555,7 +555,7 @@ export default function EarthPage() {
           className="mb-32"
         >
           <h2 className="text-4xl font-light text-slate-900 mb-12 text-center">
-            Available in 195+ Countries
+            Available in 240+ Countries & Territories
           </h2>
           
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -590,7 +590,14 @@ export default function EarthPage() {
               "🇸🇨 Seychelles", "🇰🇲 Comoros", "🇨🇻 Cape Verde", "🇸🇹 Sao Tome", "🇬🇼 Guinea-Bissau", "🇬🇲 Gambia",
               "🇲🇷 Mauritania", "🇩🇿 Algeria", "🇧🇴 Bolivia", "🇪🇨 Ecuador", "🇵🇾 Paraguay", "🇬🇾 Guyana",
               "🇸🇷 Suriname", "🇬🇫 French Guiana", "🇧🇿 Belize", "🇱🇨 Saint Lucia", "🇻🇨 St Vincent", "🇬🇩 Grenada",
-              "🇧🇧 Barbados", "🇦🇬 Antigua", "🇩🇲 Dominica", "🇰🇳 St Kitts", "🇦🇼 Aruba", "🇨🇼 Curaçao"
+              "🇧🇧 Barbados", "🇦🇬 Antigua", "🇩🇲 Dominica", "🇰🇳 St Kitts", "🇦🇼 Aruba", "🇨🇼 Curaçao",
+              "🇲🇨 Monaco", "🇱🇮 Liechtenstein", "🇦🇩 Andorra", "🇸🇲 San Marino", "🇻🇦 Vatican City", "🇹🇱 Timor-Leste",
+              "🇵🇸 Palestine", "🇪🇭 Western Sahara", "🇵🇷 Puerto Rico", "🇻🇮 US Virgin Islands", "🇬🇺 Guam", "🇦🇸 American Samoa",
+              "🇲🇵 Northern Mariana Islands", "🇧🇲 Bermuda", "🇰🇾 Cayman Islands", "🇹🇨 Turks and Caicos", "🇻🇬 British Virgin Islands", "🇦🇮 Anguilla",
+              "🇲🇸 Montserrat", "🇫🇰 Falkland Islands", "🇬🇮 Gibraltar", "🇬🇱 Greenland", "🇫🇴 Faroe Islands", "🇵🇫 French Polynesia",
+              "🇳🇨 New Caledonia", "🇼🇫 Wallis and Futuna", "🇨🇰 Cook Islands", "🇳🇺 Niue", "🇹🇰 Tokelau", "🇵🇳 Pitcairn Islands",
+              "🇳🇫 Norfolk Island", "🇷🇪 Réunion", "🇾🇹 Mayotte", "🇮🇴 British Indian Ocean Territory", "🇨🇨 Cocos Islands", "🇨🇽 Christmas Island",
+              "🇸🇯 Svalbard & Jan Mayen", "🇧🇻 Bouvet Island", "🇬🇸 South Georgia & South Sandwich Islands", "🇭🇲 Heard & McDonald Islands", "🇦🇶 Antarctica"
             ].map((country, index) => (
               <motion.div
                 key={index}
