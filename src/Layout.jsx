@@ -196,8 +196,9 @@ export default function Layout({ children, currentPageName }) {
 
   const isHomePage = currentPageName === "Home";
   const isLobbyPage = currentPageName === "Lobby";
+  const isEarthPage = currentPageName === "Earth";
 
-  if (isHomePage || isLobbyPage) {
+  if (isHomePage || isLobbyPage || isEarthPage) {
     return (
       <React.Suspense fallback={<div className="min-h-screen bg-black" />}>
         <VideoPlayerProvider>
