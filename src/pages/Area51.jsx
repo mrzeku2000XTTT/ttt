@@ -18,6 +18,13 @@ export default function Area51Page() {
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, []);
+
+  useEffect(() => {
     loadUser();
     loadMessages();
     const interval = setInterval(loadMessages, 3000);
@@ -111,7 +118,7 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
   };
 
   return (
-    <div className="fixed inset-0 bg-black flex flex-col overflow-hidden" style={{ top: 'calc(var(--sat, 0px) + 7.5rem)' }}>
+    <div className="fixed left-0 right-0 bottom-0 bg-black flex flex-col overflow-hidden" style={{ top: 'calc(var(--sat, 0px) + 7.5rem)' }}>
       {/* Background Effects */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-gradient-to-br from-green-900/20 via-black to-cyan-900/20" />
