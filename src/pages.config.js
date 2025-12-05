@@ -152,6 +152,7 @@ import Duel from './pages/Duel';
 import Konekt from './pages/Konekt';
 import Machine from './pages/Machine';
 import Area51 from './pages/Area51';
+import Earth from './pages/Earth';
 import __Layout from './Layout.jsx';
 
 
@@ -310,6 +311,7 @@ export const PAGES = {
     "Konekt": Konekt,
     "Machine": Machine,
     "Area51": Area51,
+    "Earth": Earth,
 }
 
 export const pagesConfig = {
