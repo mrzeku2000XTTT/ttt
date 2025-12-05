@@ -111,9 +111,9 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
   };
 
   return (
-    <div className="min-h-screen bg-black flex flex-col">
+    <div className="fixed inset-0 bg-black flex flex-col overflow-hidden">
       {/* Background Effects */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
+      <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-gradient-to-br from-green-900/20 via-black to-cyan-900/20" />
         <div 
           className="absolute inset-0 opacity-20"
@@ -140,8 +140,8 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
         />
       </div>
 
-      {/* Header */}
-      <div className="sticky top-0 flex-none bg-black/60 backdrop-blur-xl border-b border-green-500/20 p-4 flex items-center gap-4 z-20">
+      {/* Header - Fixed */}
+      <div className="flex-none bg-black/60 backdrop-blur-xl border-b border-green-500/20 p-4 flex items-center gap-4 z-20">
         <Link to={createPageUrl("Gate")}>
           <Button variant="ghost" size="icon" className="text-white/60 hover:text-green-400 hover:bg-white/10">
             <ArrowLeft className="w-5 h-5" />
@@ -165,7 +165,7 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
       </div>
 
       {/* Chat Area - Scrollable */}
-      <div className="flex-1 p-4 space-y-6 z-10 relative min-h-[60vh]">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-hide z-10 relative">
         {loading ? (
           <div className="flex flex-col justify-center items-center h-full gap-4">
             <Loader2 className="w-8 h-8 text-green-500 animate-spin" />
@@ -261,8 +261,8 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
         )}
       </div>
 
-      {/* Input Area */}
-      <div className="sticky bottom-0 flex-none p-4 bg-black/80 backdrop-blur-xl border-t border-green-500/20 z-20">
+      {/* Input Area - Fixed */}
+      <div className="flex-none p-4 bg-black/80 backdrop-blur-xl border-t border-green-500/20 z-20">
         <div className="max-w-4xl mx-auto w-full">
           {user ? (
             <form onSubmit={handleSendMessage} className="flex gap-3 items-end">
