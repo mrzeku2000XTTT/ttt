@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Send, Loader2, User as UserIcon, AlertTriangle, Copy, Sparkles } from "lucide-react";
+import { ArrowLeft, Send, Loader2, User as UserIcon, AlertTriangle, Copy, Sparkles, Shield, CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
 import { motion } from "framer-motion";
 import moment from "moment";
+import { toast } from "sonner";
 
 export default function Area51Page() {
   const [messages, setMessages] = useState([]);
@@ -76,6 +77,71 @@ export default function Area51Page() {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleCheckIn = async () => {
+    if (!user) {
+      toast.error("Please login to check in");
+      return;
+    }
+
+    setCheckingIn(true);
+    try {
+      const message = `Area 51 Check-In: ${new Date().toISOString()}`;
+      let signature = "";
+      let deviceType = "kasware";
+
+      // Try Kasware first
+      if (window.kasware) {
+        try {
+          const accounts = await window.kasware.requestAccounts();
+          signature = await window.kasware.signMessage(message);
+        } catch (kasErr) {
+          console.log("Kasware not available, trying biometric");
+        }
+      }
+
+      // Fallback to biometric for iOS/mobile
+      if (!signature && window.PublicKeyCredential) {
+        try {
+          const available = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+          if (available) {
+            deviceType = "ios_faceid";
+            signature = `biometric_${Date.now()}`;
+          }
+        } catch (bioErr) {
+          console.log("Biometric not available");
+        }
+      }
+
+      // Create check-in record
+      await base44.entities.Area51CheckIn.create({
+        user_email: user.email,
+        username: user.username || user.email?.split('@')[0],
+        wallet_address: user.created_wallet_address || "",
+        signature: signature || `manual_${Date.now()}`,
+        check_in_message: message,
+        device_type: signature ? deviceType : "android"
+      });
+
+      // Send system message
+      await base44.entities.Area51Message.create({
+        message: `🛸 ${user.username || user.email?.split('@')[0]} has checked into Area 51`,
+        sender_username: "SYSTEM",
+        sender_email: "system@area51",
+        message_type: "system",
+        is_ai: false
+      });
+
+      setHasCheckedIn(true);
+      toast.success("Checked in successfully!");
+      loadMessages();
+    } catch (error) {
+      console.error("Check-in failed:", error);
+      toast.error("Check-in failed");
+    } finally {
+      setCheckingIn(false);
+    }
   };
 
   const triggerAI = async (userMessage) => {
@@ -167,27 +233,57 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
       </div>
 
       {/* Header - Fixed */}
-      <div className="flex-none bg-black/60 backdrop-blur-xl border-b border-green-500/20 p-4 flex items-center gap-4 z-20">
-        <Link to={createPageUrl("Gate")}>
-          <Button variant="ghost" size="icon" className="text-white/60 hover:text-green-400 hover:bg-white/10">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-        </Link>
-        <div className="flex flex-col">
-          <h1 className="text-xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-cyan-400">
-            AREA 51
-          </h1>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <p className="text-[10px] font-medium text-white/60 uppercase tracking-widest">Classified Chat Network</p>
+      <div className="flex-none bg-black/60 backdrop-blur-xl border-b border-green-500/20 p-4 flex items-center justify-between gap-4 z-20">
+        <div className="flex items-center gap-4">
+          <Link to={createPageUrl("Gate")}>
+            <Button variant="ghost" size="icon" className="text-white/60 hover:text-green-400 hover:bg-white/10">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          </Link>
+          <div className="flex flex-col">
+            <h1 className="text-xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-cyan-400">
+              AREA 51
+            </h1>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              <p className="text-[10px] font-medium text-white/60 uppercase tracking-widest">Classified Chat Network</p>
+            </div>
           </div>
         </div>
-        {aiThinking && (
-          <div className="ml-auto flex items-center gap-2 text-green-400 text-xs animate-pulse">
-            <Sparkles className="w-3 h-3" />
-            <span>AGENT X typing...</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {aiThinking && (
+            <div className="flex items-center gap-2 text-green-400 text-xs animate-pulse">
+              <Sparkles className="w-3 h-3" />
+              <span className="hidden sm:inline">AGENT X typing...</span>
+            </div>
+          )}
+          {user && (
+            <Button
+              onClick={handleCheckIn}
+              disabled={checkingIn || hasCheckedIn}
+              size="sm"
+              className={`${
+                hasCheckedIn 
+                  ? "bg-green-500/20 text-green-400 border border-green-500/30" 
+                  : "bg-gradient-to-r from-green-500 to-cyan-500 hover:from-green-600 hover:to-cyan-600 text-black"
+              } shadow-lg transition-all`}
+            >
+              {checkingIn ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : hasCheckedIn ? (
+                <>
+                  <CheckCircle className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Checked In</span>
+                </>
+              ) : (
+                <>
+                  <Shield className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Check In</span>
+                </>
+              )}
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Chat Area - Scrollable */}
