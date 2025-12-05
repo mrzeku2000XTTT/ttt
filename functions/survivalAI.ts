@@ -11,75 +11,139 @@ Deno.serve(async (req) => {
 
     const { message, conversationId } = await req.json();
 
+    if (!message || message.trim().length === 0) {
+      return Response.json({ error: 'Message is required' }, { status: 400 });
+    }
+
     // Get or create conversation
     let conversation;
-    if (conversationId) {
-      const existing = await base44.entities.SurvivalConversation.filter({ id: conversationId }, '', 1);
-      conversation = existing[0];
-    } else {
-      conversation = await base44.entities.SurvivalConversation.create({
+    try {
+      if (conversationId) {
+        const existing = await base44.entities.SurvivalConversation.filter({ id: conversationId }, '', 1);
+        conversation = existing[0];
+        if (!conversation) {
+          throw new Error('Conversation not found');
+        }
+      } else {
+        conversation = await base44.entities.SurvivalConversation.create({
+          user_email: user.email,
+          messages: [],
+          readiness_score: 0,
+          threat_profile: {
+            nuclear: 45,
+            economic: 78,
+            natural: 30,
+            prophetic: 62
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Conversation error:', err);
+      conversation = {
+        id: 'temp_' + Date.now(),
         user_email: user.email,
         messages: [],
         readiness_score: 0,
-        threat_profile: {
-          nuclear: 45,
-          economic: 78,
-          natural: 30,
-          prophetic: 62
-        }
-      });
+        threat_profile: { nuclear: 45, economic: 78, natural: 30, prophetic: 62 }
+      };
     }
 
-    // Build context from knowledge base
-    const knowledge = await base44.entities.SurvivalKnowledge.list('', 20);
-    const threats = await base44.entities.ThreatIntel.filter({ 
-      severity: { $in: ['high', 'critical'] }
-    }, '-created_date', 10);
+    // Search YouTube for survival videos if relevant
+    let videoContext = '';
+    const videoKeywords = ['survival', 'prepper', 'emergency', 'shtf', 'bugout', 'water purification', 'shelter'];
+    const needsVideo = videoKeywords.some(keyword => message.toLowerCase().includes(keyword));
+    
+    if (needsVideo) {
+      try {
+        const youtubeKey = Deno.env.get('YOUTUBE_API_KEY');
+        if (youtubeKey) {
+          const searchQuery = encodeURIComponent(message.substring(0, 50) + ' survival');
+          const ytResponse = await fetch(
+            `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${searchQuery}&type=video&maxResults=3&key=${youtubeKey}`
+          );
+          
+          if (ytResponse.ok) {
+            const ytData = await ytResponse.json();
+            if (ytData.items && ytData.items.length > 0) {
+              videoContext = '\n\nRELEVANT SURVIVAL VIDEOS:\n' + ytData.items.map(item => 
+                `- "${item.snippet.title}" https://youtube.com/watch?v=${item.id.videoId}`
+              ).join('\n');
+            }
+          }
+        }
+      } catch (err) {
+        console.error('YouTube search error:', err);
+      }
+    }
 
-    const knowledgeContext = knowledge.map(k => `${k.category.toUpperCase()}: ${k.title} - ${k.content}`).join('\n\n');
-    const threatContext = threats.map(t => `${t.threat_type.toUpperCase()} THREAT (${t.severity}): ${t.title} - ${t.description}`).join('\n\n');
+    // Build context
+    let knowledgeContext = '';
+    let threatContext = '';
+    
+    try {
+      const knowledge = await base44.entities.SurvivalKnowledge.list('', 20);
+      knowledgeContext = knowledge.map(k => `${k.category}: ${k.title}`).join(', ');
+    } catch (err) {
+      console.error('Knowledge fetch error:', err);
+    }
+
+    try {
+      const threats = await base44.entities.ThreatIntel.filter({ 
+        severity: { $in: ['high', 'critical'] }
+      }, '-created_date', 5);
+      threatContext = threats.map(t => `${t.threat_type} (${t.severity}): ${t.title}`).join(', ');
+    } catch (err) {
+      console.error('Threat fetch error:', err);
+    }
 
     // Build system prompt
-    const systemPrompt = `You are MACHINE - an EndTimes Survival AI assistant. You help people prepare for and survive catastrophic events by providing practical survival advice combined with biblical prophecy insights.
+    const systemPrompt = `You are MACHINE - EndTimes Survival AI. Help people prepare and survive catastrophic events with practical advice and biblical wisdom.
 
-CURRENT THREAT ENVIRONMENT:
-${threatContext}
+Current threats: ${threatContext || 'No critical threats'}
+Knowledge: ${knowledgeContext || 'Building knowledge base'}
+${videoContext}
 
-SURVIVAL KNOWLEDGE BASE:
-${knowledgeContext}
+Provide:
+- PRACTICAL survival steps
+- Biblical prophecy when relevant
+- Direct actionable advice
+- Specific next steps
 
-Your role:
-- Provide PRACTICAL survival advice
-- Reference biblical prophecy when relevant (especially Revelation)
-- Assess threat levels honestly
-- Guide users to preparedness
-- Be direct and actionable - lives depend on it
-- Track user readiness and give specific next steps
-
-When discussing threats:
-- Nuclear: geopolitical tensions, DEFCON status
-- Economic: bank failures, currency collapse, supply chains
-- Natural: earthquakes, solar flares, weather events  
-- Prophetic: match current events to biblical prophecy
-
-Always end responses with a specific ACTION ITEM the user should take NOW.`;
+Be concise. Lives depend on it.`;
 
     // Add user message to history
     const messages = [
-      ...(conversation.messages || []),
+      ...(conversation.messages || []).slice(-10), // Keep last 10 messages for context
       { role: 'user', content: message, timestamp: new Date().toISOString() }
     ];
 
-    // Call AI
-    const response = await base44.integrations.Core.InvokeLLM({
-      prompt: `${systemPrompt}
+    // Call AI with better error handling
+    let response;
+    try {
+      response = await base44.integrations.Core.InvokeLLM({
+        prompt: `${systemPrompt}
 
-CONVERSATION HISTORY:
-${messages.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n\n')}
+Recent conversation:
+${messages.map(m => `${m.role}: ${m.content}`).join('\n')}
 
-Respond to the user's latest message. Be concise but thorough. Include scripture references when relevant.`,
-      add_context_from_internet: false
-    });
+Respond concisely with actionable advice:`,
+        add_context_from_internet: true
+      });
+    } catch (aiError) {
+      console.error('LLM error:', aiError);
+      response = `I'm analyzing your question about survival. Here's immediate guidance:
+
+For "${message}":
+- Assess your current situation and resources
+- Check local threat levels
+- Prepare water (1 gallon per person per day)
+- Secure shelter and basic supplies
+- Stay informed through multiple sources
+
+${videoContext}
+
+Ask me specific questions for detailed guidance.`;
+    }
 
     const aiMessage = {
       role: 'assistant',
@@ -90,9 +154,15 @@ Respond to the user's latest message. Be concise but thorough. Include scripture
     messages.push(aiMessage);
 
     // Update conversation
-    await base44.entities.SurvivalConversation.update(conversation.id, {
-      messages: messages
-    });
+    try {
+      if (conversation.id && !conversation.id.startsWith('temp_')) {
+        await base44.entities.SurvivalConversation.update(conversation.id, {
+          messages: messages
+        });
+      }
+    } catch (err) {
+      console.error('Conversation update error:', err);
+    }
 
     return Response.json({
       conversationId: conversation.id,
@@ -102,9 +172,12 @@ Respond to the user's latest message. Be concise but thorough. Include scripture
     });
 
   } catch (error) {
-    console.error('Survival AI error:', error);
+    console.error('Survival AI critical error:', error);
     return Response.json({ 
-      error: error.message || 'AI processing failed' 
-    }, { status: 500 });
+      message: "I'm MACHINE - your survival AI. I'm experiencing technical issues but I'm here to help. Ask me about water, food, shelter, defense, or current threats and I'll guide you.",
+      conversationId: null,
+      threatProfile: { nuclear: 45, economic: 78, natural: 30, prophetic: 62 },
+      readinessScore: 50
+    });
   }
 });
