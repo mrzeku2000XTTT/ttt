@@ -1,41 +1,72 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { motion } from "framer-motion";
-import { ArrowLeft, AlertTriangle, Shield, Radio, Zap, Droplets, Package, Users, TrendingUp, Activity } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, AlertTriangle, Shield, Radio, Send, Loader2, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { base44 } from "@/api/base44Client";
 
 export default function MachinePage() {
   const [time, setTime] = useState(new Date());
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [conversationId, setConversationId] = useState(null);
+  const [threatProfile, setThreatProfile] = useState({
+    nuclear: 45,
+    economic: 78,
+    natural: 30,
+    prophetic: 62
+  });
+  const [readinessScore, setReadinessScore] = useState(62);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
+  const sendMessage = async () => {
+    if (!input.trim() || loading) return;
+
+    const userMessage = { role: "user", content: input };
+    setMessages([...messages, userMessage]);
+    setInput("");
+    setLoading(true);
+
+    try {
+      const response = await base44.functions.invoke('survivalAI', {
+        message: input,
+        conversationId: conversationId
+      });
+
+      setConversationId(response.data.conversationId);
+      setMessages(prev => [...prev, { 
+        role: "assistant", 
+        content: response.data.message 
+      }]);
+      setThreatProfile(response.data.threatProfile);
+      setReadinessScore(response.data.readinessScore);
+    } catch (error) {
+      console.error("AI error:", error);
+      setMessages(prev => [...prev, { 
+        role: "assistant", 
+        content: "System error. Try again." 
+      }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const threats = [
-    { label: "Nuclear", level: "MEDIUM", value: 45, color: "bg-yellow-500" },
-    { label: "Economic", level: "HIGH", value: 78, color: "bg-red-500" },
-    { label: "Prophetic", level: "ELEVATED", value: 62, color: "bg-orange-500" },
-    { label: "Local", level: "SAFE", value: 15, color: "bg-green-500" },
-  ];
-
-  const readiness = [
-    { icon: Droplets, label: "Water", days: 14, status: "good" },
-    { icon: Package, label: "Food", days: 21, status: "good" },
-    { icon: Shield, label: "Defense", days: "Minimal", status: "warning" },
-    { icon: Users, label: "Community", days: "3 contacts", status: "warning" },
-  ];
-
-  const alerts = [
-    { type: "WATCH", message: "Bank holiday rumors circulating. Monitor closely.", time: "2h ago" },
-    { type: "INFO", message: "Solar activity elevated. Communications may be affected.", time: "5h ago" },
-    { type: "ALERT", message: "Prophetic pattern detected: Digital ID mandates increasing.", time: "8h ago" },
+    { label: "Nuclear", level: "MEDIUM", value: threatProfile.nuclear, color: "bg-yellow-500" },
+    { label: "Economic", level: "HIGH", value: threatProfile.economic, color: "bg-red-500" },
+    { label: "Natural", level: "LOW", value: threatProfile.natural, color: "bg-green-500" },
+    { label: "Prophetic", level: "ELEVATED", value: threatProfile.prophetic, color: "bg-orange-500" },
   ];
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
-      {/* Silver metallic overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-400/5 via-gray-500/10 to-gray-600/5" />
       
       <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
@@ -47,7 +78,7 @@ export default function MachinePage() {
         </Link>
 
         {/* Header */}
-        <div className="mb-12 text-center">
+        <div className="mb-8 text-center">
           <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-gray-400 to-gray-600 rounded-2xl flex items-center justify-center shadow-lg shadow-gray-500/20">
             <Activity className="w-10 h-10 text-black" />
           </div>
@@ -58,8 +89,8 @@ export default function MachinePage() {
           <p className="text-gray-600 text-sm mt-2">{time.toLocaleString()}</p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6 mb-6">
-          {/* Threat Level Panel */}
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Threat Panel */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -67,14 +98,14 @@ export default function MachinePage() {
           >
             <div className="flex items-center gap-3 mb-6">
               <AlertTriangle className="w-6 h-6 text-gray-400" />
-              <h2 className="text-2xl font-bold text-gray-300">THREAT LEVEL</h2>
+              <h2 className="text-xl font-bold text-gray-300">THREAT LEVEL</h2>
             </div>
             <div className="space-y-4">
               {threats.map((threat, i) => (
                 <div key={i}>
                   <div className="flex justify-between mb-2">
-                    <span className="text-gray-400 font-semibold">{threat.label}</span>
-                    <span className={`text-sm font-bold ${threat.color.replace('bg-', 'text-')}`}>
+                    <span className="text-gray-400 text-sm font-semibold">{threat.label}</span>
+                    <span className={`text-xs font-bold ${threat.color.replace('bg-', 'text-')}`}>
                       {threat.level}
                     </span>
                   </div>
@@ -89,97 +120,86 @@ export default function MachinePage() {
                 </div>
               ))}
             </div>
-          </motion.div>
-
-          {/* Readiness Panel */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="bg-gradient-to-br from-gray-900 to-black border border-gray-700 rounded-2xl p-6"
-          >
-            <div className="flex items-center gap-3 mb-6">
-              <Shield className="w-6 h-6 text-gray-400" />
-              <h2 className="text-2xl font-bold text-gray-300">YOUR READINESS</h2>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              {readiness.map((item, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="bg-gray-800/50 border border-gray-700 rounded-xl p-4"
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                      item.status === 'good' ? 'bg-green-500/20' : 'bg-yellow-500/20'
-                    }`}>
-                      <item.icon className={`w-5 h-5 ${
-                        item.status === 'good' ? 'text-green-400' : 'text-yellow-400'
-                      }`} />
-                    </div>
-                    <div>
-                      <p className="text-gray-400 text-sm">{item.label}</p>
-                      <p className="text-gray-200 font-bold">{item.days}{typeof item.days === 'number' ? ' days' : ''}</p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
             <div className="mt-6 p-4 bg-gray-800/50 border border-gray-700 rounded-xl">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-400">Overall Readiness</span>
-                <span className="text-2xl font-bold text-gray-300">62%</span>
+                <span className="text-gray-400 text-sm">Readiness</span>
+                <span className="text-2xl font-bold text-gray-300">{readinessScore}%</span>
               </div>
               <div className="h-3 bg-gray-800 rounded-full overflow-hidden">
                 <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: "62%" }}
-                  transition={{ duration: 1 }}
+                  animate={{ width: `${readinessScore}%` }}
                   className="h-full bg-gradient-to-r from-yellow-500 to-orange-500"
                 />
               </div>
             </div>
           </motion.div>
-        </div>
 
-        {/* Alerts Feed */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-gradient-to-br from-gray-900 to-black border border-gray-700 rounded-2xl p-6"
-        >
-          <div className="flex items-center gap-3 mb-6">
-            <Radio className="w-6 h-6 text-gray-400" />
-            <h2 className="text-2xl font-bold text-gray-300">ACTIVE ALERTS</h2>
-          </div>
-          <div className="space-y-3">
-            {alerts.map((alert, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 + i * 0.1 }}
-                className="bg-gray-800/50 border border-gray-700 rounded-xl p-4 hover:bg-gray-800/70 transition-colors"
-              >
-                <div className="flex items-start gap-3">
-                  <span className={`px-2 py-1 rounded text-xs font-bold ${
-                    alert.type === 'ALERT' ? 'bg-red-500/20 text-red-400' :
-                    alert.type === 'WATCH' ? 'bg-yellow-500/20 text-yellow-400' :
-                    'bg-blue-500/20 text-blue-400'
-                  }`}>
-                    {alert.type}
-                  </span>
-                  <div className="flex-1">
-                    <p className="text-gray-300">{alert.message}</p>
-                    <p className="text-gray-600 text-xs mt-1">{alert.time}</p>
-                  </div>
+          {/* Chat Interface */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="lg:col-span-2 bg-gradient-to-br from-gray-900 to-black border border-gray-700 rounded-2xl flex flex-col h-[600px]"
+          >
+            <div className="flex items-center gap-3 p-6 border-b border-gray-700">
+              <Radio className="w-6 h-6 text-gray-400" />
+              <h2 className="text-xl font-bold text-gray-300">AI WATCHMAN</h2>
+            </div>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {messages.length === 0 ? (
+                <div className="text-center text-gray-500 mt-12">
+                  <p className="text-lg mb-2">Ask me anything about survival, threats, or prophecy</p>
+                  <p className="text-sm">Try: "What should I do to prepare?" or "What does Revelation say?"</p>
                 </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
+              ) : (
+                messages.map((msg, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div className={`max-w-[80%] rounded-xl p-4 ${
+                      msg.role === 'user' 
+                        ? 'bg-gray-700 text-gray-200' 
+                        : 'bg-gray-800/50 border border-gray-700 text-gray-300'
+                    }`}>
+                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    </div>
+                  </motion.div>
+                ))
+              )}
+              {loading && (
+                <div className="flex items-center gap-2 text-gray-500">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-sm">Analyzing...</span>
+                </div>
+              )}
+            </div>
+
+            {/* Input */}
+            <div className="p-6 border-t border-gray-700">
+              <div className="flex gap-3">
+                <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                  placeholder="Ask the AI watchman..."
+                  className="bg-gray-800/50 border-gray-700 text-gray-200 placeholder:text-gray-600"
+                  disabled={loading}
+                />
+                <Button 
+                  onClick={sendMessage}
+                  disabled={loading || !input.trim()}
+                  className="bg-gray-700 hover:bg-gray-600"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
       </div>
     </div>
   );
