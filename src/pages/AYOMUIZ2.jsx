@@ -7,7 +7,8 @@ export default function AYOMUIZ2Page() {
         src="https://kaspa-ng-62ab4fc0.base44.app"
         className="w-full h-full border-0"
         title="Ayomuiz2"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-popups-to-escape-sandbox"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         allowFullScreen
       />
     </div>
