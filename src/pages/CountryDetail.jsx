@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { ArrowLeft, DollarSign, Clock, MapPin, Globe, TrendingUp, Info } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 
 export default function CountryDetailPage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const countryName = searchParams.get("country");
   const countryFlag = searchParams.get("flag");
   const [currencyData, setCurrencyData] = useState(null);
@@ -55,15 +55,19 @@ export default function CountryDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 p-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Back Button */}
-        <Link to={createPageUrl("Earth")}>
-          <Button variant="ghost" size="icon" className="mb-8">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-        </Link>
+    <div className="fixed inset-0 bg-white overflow-y-auto">
+      {/* Standalone Header */}
+      <div className="sticky top-0 z-50 bg-white border-b border-slate-200 px-8 py-4">
+        <button
+          onClick={() => navigate(createPageUrl("Earth"))}
+          className="text-slate-700 hover:text-slate-900 transition-colors"
+        >
+          <ArrowLeft className="w-6 h-6" />
+        </button>
+      </div>
 
+      {/* Country Content */}
+      <div className="max-w-4xl mx-auto px-8 py-12">
         {/* Country Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -71,7 +75,7 @@ export default function CountryDetailPage() {
           className="text-center mb-12"
         >
           <div className="text-8xl mb-6">{countryFlag}</div>
-          <h1 className="text-6xl font-bold text-slate-900 mb-4 drop-shadow-lg">
+          <h1 className="text-6xl font-bold text-slate-900 mb-4">
             {countryName}
           </h1>
           <p className="text-xl text-slate-600">Country Information Hub</p>
