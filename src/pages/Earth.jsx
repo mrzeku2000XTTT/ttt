@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { ArrowLeft, Globe, Users, Zap, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
 export default function EarthPage() {
+  const navigate = useNavigate();
   const canvasRef = useRef(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const particlesRef = useRef([]);
@@ -15,6 +16,12 @@ export default function EarthPage() {
   const geometryRef = useRef([]);
   const animationFrameRef = useRef(null);
   const clickRipples = useRef([]);
+
+  const handleCountryClick = (countryText) => {
+    const flag = countryText.split(' ')[0];
+    const name = countryText.substring(countryText.indexOf(' ') + 1);
+    navigate(createPageUrl("CountryDetail") + `?country=${encodeURIComponent(name)}&flag=${encodeURIComponent(flag)}`);
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -613,6 +620,7 @@ export default function EarthPage() {
                   rotate: [0, -2, 2, 0],
                   transition: { duration: 0.3 }
                 }}
+                onClick={() => handleCountryClick(country)}
                 className="bg-white/70 backdrop-blur-md p-3 rounded-lg border border-slate-300/70 hover:border-slate-400 hover:bg-white/90 hover:shadow-lg transition-all cursor-pointer text-center"
               >
                 <span className="text-sm text-slate-900 font-medium">{country}</span>

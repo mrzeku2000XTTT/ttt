@@ -153,6 +153,7 @@ import Konekt from './pages/Konekt';
 import Machine from './pages/Machine';
 import Area51 from './pages/Area51';
 import Earth from './pages/Earth';
+import CountryDetail from './pages/CountryDetail';
 import __Layout from './Layout.jsx';
 
 
@@ -312,6 +313,7 @@ export const PAGES = {
     "Machine": Machine,
     "Area51": Area51,
     "Earth": Earth,
+    "CountryDetail": CountryDetail,
 }
 
 export const pagesConfig = {
