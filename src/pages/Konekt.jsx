@@ -79,13 +79,31 @@ export default function KonektPage() {
   const pickRandomVerse = async () => {
     setLoadingVerse(true);
     try {
-      const verses = await base44.entities.BibleVerse.list(null, 1000);
+      const verses = await base44.entities.BibleVerse.list(null, 5000);
       if (verses.length > 0) {
         const randomIndex = Math.floor(Math.random() * verses.length);
         setRandomVerse(verses[randomIndex]);
+      } else {
+        // Fallback: Create some default verses if none exist
+        const defaultVerses = [
+          { book: "John", chapter: 3, verse: "16", text: "For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life." },
+          { book: "Philippians", chapter: 4, verse: "13", text: "I can do all things through Christ who strengthens me." },
+          { book: "Jeremiah", chapter: 29, verse: "11", text: "For I know the plans I have for you, declares the Lord, plans to prosper you and not to harm you, plans to give you hope and a future." },
+          { book: "Romans", chapter: 8, verse: "28", text: "And we know that in all things God works for the good of those who love him, who have been called according to his purpose." },
+          { book: "Proverbs", chapter: 3, verse: "5-6", text: "Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight." }
+        ];
+        const randomIndex = Math.floor(Math.random() * defaultVerses.length);
+        setRandomVerse(defaultVerses[randomIndex]);
       }
     } catch (error) {
       console.error("Failed to load verse:", error);
+      // Emergency fallback
+      setRandomVerse({ 
+        book: "John", 
+        chapter: 3, 
+        verse: "16", 
+        text: "For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life." 
+      });
     } finally {
       setLoadingVerse(false);
     }
@@ -117,32 +135,15 @@ export default function KonektPage() {
   };
 
   return (
-    <div className="fixed inset-0 bg-black flex flex-col overflow-hidden z-50" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+    <div className="fixed inset-0 bg-black flex flex-col overflow-hidden z-50 touch-pan-y" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       {/* Background Effects */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-gradient-to-br from-orange-900/20 via-black to-red-900/20" />
         <div 
           className="absolute inset-0 opacity-30"
           style={{
             backgroundImage: `radial-gradient(circle at 50% 50%, rgba(249, 115, 22, 0.1) 0%, transparent 50%)`
           }}
-        />
-        {/* Animated Orbs */}
-        <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{ duration: 10, repeat: Infinity }}
-          className="absolute top-0 right-0 w-[500px] h-[500px] bg-orange-500/20 rounded-full blur-[120px]"
-        />
-        <motion.div
-          animate={{
-            scale: [1.2, 1, 1.2],
-            opacity: [0.2, 0.4, 0.2],
-          }}
-          transition={{ duration: 15, repeat: Infinity, delay: 2 }}
-          className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-red-600/10 rounded-full blur-[150px]"
         />
       </div>
 
@@ -165,7 +166,7 @@ export default function KonektPage() {
       </div>
 
       {/* Chat Area - Scrollable */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-hide z-10 relative">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-hide z-10 relative overscroll-contain">
         {loading ? (
           <div className="flex flex-col justify-center items-center h-full gap-4">
             <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
