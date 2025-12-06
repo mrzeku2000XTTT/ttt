@@ -156,6 +156,7 @@ import Earth from './pages/Earth';
 import CountryDetail from './pages/CountryDetail';
 import Guide from './pages/Guide';
 import MMN from './pages/MMN';
+import Articles from './pages/Articles';
 import __Layout from './Layout.jsx';
 
 
@@ -318,6 +319,7 @@ export const PAGES = {
     "CountryDetail": CountryDetail,
     "Guide": Guide,
     "MMN": MMN,
+    "Articles": Articles,
 }
 
 export const pagesConfig = {
