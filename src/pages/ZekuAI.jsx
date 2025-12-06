@@ -12,45 +12,79 @@ import BackgroundLogo from "../components/BackgroundLogo";
 import ProofOfLifeButton from "../components/bridge/ProofOfLifeButton";
 import ProofOfLifeFeed from "../components/bridge/ProofOfLifeFeed";
 
-// Keyboard sound generator
+// Advanced mechanical keyboard sound generator with matrix theme
 const playKeySound = () => {
   try {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     
-    // Create multiple oscillators for richer sound
+    // Create multiple oscillators for rich mechanical sound
     const osc1 = audioContext.createOscillator();
     const osc2 = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
+    const osc3 = audioContext.createOscillator();
+    const noiseGain = audioContext.createGain();
+    const clickGain = audioContext.createGain();
+    const masterGain = audioContext.createGain();
     const filter = audioContext.createBiquadFilter();
+    const compressor = audioContext.createDynamicsCompressor();
     
-    // Configure filter for sharper attack
+    // Configure filter for mechanical resonance
     filter.type = 'bandpass';
-    filter.frequency.value = 800 + Math.random() * 400;
-    filter.Q.value = 2;
+    filter.frequency.value = 1800 + Math.random() * 600;
+    filter.Q.value = 3;
     
-    // Connect nodes
+    // Connect audio graph
     osc1.connect(filter);
-    osc2.connect(filter);
-    filter.connect(gainNode);
-    gainNode.connect(audioContext.destination);
+    osc2.connect(clickGain);
+    osc3.connect(noiseGain);
+    filter.connect(masterGain);
+    clickGain.connect(masterGain);
+    noiseGain.connect(masterGain);
+    masterGain.connect(compressor);
+    compressor.connect(audioContext.destination);
     
-    // Main frequency
-    osc1.frequency.value = 1200 + Math.random() * 300;
-    osc1.type = 'triangle';
+    // Main resonance (spring sound)
+    osc1.frequency.value = 2400 + Math.random() * 800;
+    osc1.type = 'sine';
     
-    // Add harmonic for mechanical click
-    osc2.frequency.value = 200 + Math.random() * 100;
+    // Click component (switch contact)
+    osc2.frequency.value = 4000 + Math.random() * 2000;
     osc2.type = 'square';
     
-    // Sharp attack, quick decay
-    gainNode.gain.setValueAtTime(0.08, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.04);
+    // Noise component (friction/mechanical)
+    osc3.frequency.value = 8000 + Math.random() * 4000;
+    osc3.type = 'sawtooth';
     
     const now = audioContext.currentTime;
+    const attackTime = 0.001;
+    const decayTime = 0.03;
+    const clickDecay = 0.008;
+    const noiseDecay = 0.015;
+    
+    // Master volume with sharp attack
+    masterGain.gain.setValueAtTime(0, now);
+    masterGain.gain.linearRampToValueAtTime(0.12, now + attackTime);
+    masterGain.gain.exponentialRampToValueAtTime(0.001, now + decayTime);
+    
+    // Click envelope (sharp and short)
+    clickGain.gain.setValueAtTime(0.15, now);
+    clickGain.gain.exponentialRampToValueAtTime(0.001, now + clickDecay);
+    
+    // Noise envelope (quick burst)
+    noiseGain.gain.setValueAtTime(0.05, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + noiseDecay);
+    
+    // Frequency sweep for mechanical spring effect
+    osc1.frequency.exponentialRampToValueAtTime(
+      osc1.frequency.value * 0.7, 
+      now + decayTime
+    );
+    
     osc1.start(now);
     osc2.start(now);
-    osc1.stop(now + 0.04);
-    osc2.stop(now + 0.04);
+    osc3.start(now);
+    osc1.stop(now + decayTime);
+    osc2.stop(now + clickDecay);
+    osc3.stop(now + noiseDecay);
   } catch (e) {
     // Silently fail if audio context is not available
   }
