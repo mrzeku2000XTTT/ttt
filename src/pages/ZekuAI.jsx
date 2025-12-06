@@ -14,38 +14,42 @@ import ProofOfLifeFeed from "../components/bridge/ProofOfLifeFeed";
 
 // Keyboard sound generator
 const playKeySound = () => {
-  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  const oscillator = audioContext.createOscillator();
-  const gainNode = audioContext.createGain();
-  
-  oscillator.connect(gainNode);
-  gainNode.connect(audioContext.destination);
-  
-  oscillator.frequency.value = 800 + Math.random() * 200;
-  oscillator.type = 'sine';
-  
-  gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
-  
-  oscillator.start(audioContext.currentTime);
-  oscillator.stop(audioContext.currentTime + 0.05);
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = 400 + Math.random() * 100;
+    oscillator.type = 'square';
+    
+    gainNode.gain.setValueAtTime(0.05, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.03);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.03);
+  } catch (e) {
+    // Silently fail if audio context is not available
+  }
 };
 
-const TypewriterText = ({ text, speed = 20, onUpdate }) => {
+const TypewriterText = ({ text, speed = 20, onUpdate, playSound = false }) => {
   const [displayedText, setDisplayedText] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
     if (currentIndex < text.length) {
       const timeout = setTimeout(() => {
-        playKeySound();
+        if (playSound) playKeySound();
         setDisplayedText(prev => prev + text[currentIndex]);
         setCurrentIndex(prev => prev + 1);
         onUpdate?.();
       }, speed);
       return () => clearTimeout(timeout);
     }
-  }, [currentIndex, text, speed]);
+  }, [currentIndex, text, speed, playSound]);
 
   return <p className="text-xs whitespace-pre-wrap">{displayedText}</p>;
 };
@@ -437,8 +441,8 @@ export default function ZekuAIPage() {
             <div className="space-y-3">
               {messages.map((msg, idx) => {
                 const messageId = `${idx}-${msg.content?.substring(0, 20)}`;
-                const isLastMessage = idx === messages.length - 1;
-                const shouldTypewrite = matrixMode && msg.role === 'assistant' && isLastMessage && !typedMessageIds.has(messageId);
+                const isLastAssistantMessage = msg.role === 'assistant' && idx === messages.length - 1;
+                const shouldTypewrite = matrixMode && isLastAssistantMessage && !typedMessageIds.has(messageId);
 
                 if (shouldTypewrite && !typedMessageIds.has(messageId)) {
                   setTimeout(() => setTypedMessageIds(prev => new Set([...prev, messageId])), 100);
@@ -463,7 +467,7 @@ export default function ZekuAIPage() {
                     >
                       {msg.role === 'assistant' ? (
                         shouldTypewrite ? (
-                          <TypewriterText text={msg.content} speed={20} onUpdate={scrollToBottom} />
+                          <TypewriterText text={msg.content} speed={20} onUpdate={scrollToBottom} playSound={true} />
                         ) : matrixMode ? (
                           <p className="text-xs whitespace-pre-wrap">{msg.content}</p>
                         ) : (
