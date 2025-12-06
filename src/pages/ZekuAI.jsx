@@ -24,7 +24,7 @@ const keyboardSounds = [
 const audioCache = new Map();
 keyboardSounds.forEach(url => {
   const audio = new Audio(url);
-  audio.volume = 0.8;
+  audio.volume = 0.3;
   audio.preload = 'auto';
   audioCache.set(url, audio);
 });
@@ -38,11 +38,35 @@ const playKeySound = () => {
     if (audio) {
       // Clone the audio to allow rapid successive plays
       const clonedAudio = audio.cloneNode();
-      clonedAudio.volume = 0.8;
+      clonedAudio.volume = 0.3;
       clonedAudio.play().catch(() => {});
     }
   } catch (e) {
     // Silently fail if audio playback is not available
+  }
+};
+
+// Alien voice text-to-speech for AI responses
+const speakAlienVoice = (text) => {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel(); // Stop any ongoing speech
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.7; // Slower for alien effect
+    utterance.pitch = 0.3; // Lower pitch for alien effect
+    utterance.volume = 0.6;
+    
+    // Try to find a unique voice
+    const voices = window.speechSynthesis.getVoices();
+    const alienVoice = voices.find(v => 
+      v.name.includes('Google') || 
+      v.name.includes('UK') || 
+      v.lang.includes('en-GB')
+    ) || voices[0];
+    
+    if (alienVoice) utterance.voice = alienVoice;
+    
+    window.speechSynthesis.speak(utterance);
   }
 };
 
@@ -85,6 +109,7 @@ export default function ZekuAIPage() {
   const [metamaskWallet, setMetamaskWallet] = useState({ connected: false, address: null, balance: 0 });
   const [typedMessageIds, setTypedMessageIds] = useState(new Set());
   const messagesContainerRef = useRef(null);
+  const [alienVoiceEnabled, setAlienVoiceEnabled] = useState(false);
 
   useEffect(() => {
     initialize();
@@ -96,6 +121,14 @@ export default function ZekuAIPage() {
         if (data?.messages) {
           setMessages(data.messages);
           setIsSending(false);
+
+          // Speak the latest AI message with alien voice if enabled
+          if (alienVoiceEnabled && data.messages.length > 0) {
+            const lastMsg = data.messages[data.messages.length - 1];
+            if (lastMsg.role === 'assistant' && lastMsg.content) {
+              speakAlienVoice(lastMsg.content);
+            }
+          }
         }
       });
       return () => unsubscribe?.();
@@ -371,6 +404,24 @@ export default function ZekuAIPage() {
               >
                 <Activity className="w-4 h-4 mr-1" />
                 <span className="text-xs">Proof of Life</span>
+              </Button>
+
+              <Button
+                onClick={() => {
+                  setAlienVoiceEnabled(!alienVoiceEnabled);
+                  if (!alienVoiceEnabled) {
+                    // Test the voice
+                    speakAlienVoice("Alien voice activated");
+                  } else {
+                    window.speechSynthesis.cancel();
+                  }
+                }}
+                variant="outline"
+                size="sm"
+                className={`h-8 px-3 ${alienVoiceEnabled ? 'bg-purple-500/20 border-purple-500/50 text-purple-400' : 'bg-black/50 border-white/10 text-white'}`}
+              >
+                <Bot className="w-4 h-4 mr-1" />
+                <span className="text-xs">👽</span>
               </Button>
 
               <Button
