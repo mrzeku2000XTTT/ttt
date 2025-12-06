@@ -491,6 +491,11 @@ export default function FeedPage() {
   };
 
   const handleOpenTipModal = (post) => {
+    if (isIOS()) {
+      setError('Tipping is not available on iOS devices');
+      return;
+    }
+
     if (!kaswareWallet.connected) {
       setError('Please connect Kasware wallet to send tips');
       connectKasware();
@@ -656,6 +661,10 @@ export default function FeedPage() {
 
   const isDesktop = () => {
     return window.innerWidth >= 1024 && !/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  };
+
+  const isIOS = () => {
+    return /iPhone|iPad|iPod/i.test(navigator.userAgent);
   };
 
   const handlePost = async () => {
@@ -2226,7 +2235,7 @@ export default function FeedPage() {
             </Button>
           )}
 
-          {post.author_wallet_address && post.created_by !== user?.email && (
+          {post.author_wallet_address && post.created_by !== user?.email && !isIOS() && (
             <Button
               onClick={() => handleOpenTipModal(post)}
               variant="ghost"

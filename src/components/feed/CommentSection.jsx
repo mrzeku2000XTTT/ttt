@@ -110,6 +110,10 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
     return window.innerWidth >= 1024 && !/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   };
 
+  const isIOS = () => {
+    return /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  };
+
   const handleComment = async () => {
     if (!newComment.trim()) return;
 
@@ -344,6 +348,10 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
   };
 
   const handleTipCommenter = (comment) => {
+    if (isIOS()) {
+      alert('Tipping is not available on iOS devices');
+      return;
+    }
     if (!comment.author_wallet_address) {
       alert('This user has not connected a wallet yet');
       return;
@@ -554,13 +562,15 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                                 <code className="text-xs text-cyan-400">
                                   {comment.author_wallet_address.slice(0, 6)}...{comment.author_wallet_address.slice(-4)}
                                 </code>
-                                <button
-                                  onClick={() => handleTipCommenter(comment)}
-                                  className="p-1 bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 rounded transition-colors hover:scale-110 active:scale-95"
-                                  title="Tip this commenter with KAS"
-                                >
-                                  <DollarSign className="w-3 h-3 text-green-400" />
-                                </button>
+                                {!isIOS() && (
+                                  <button
+                                    onClick={() => handleTipCommenter(comment)}
+                                    className="p-1 bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 rounded transition-colors hover:scale-110 active:scale-95"
+                                    title="Tip this commenter with KAS"
+                                  >
+                                    <DollarSign className="w-3 h-3 text-green-400" />
+                                  </button>
+                                )}
                                 {commenterTips[comment.author_wallet_address] > 0 && (
                                   <span className="text-xs text-green-400 font-semibold">
                                     {commenterTips[comment.author_wallet_address].toFixed(2)} KAS
