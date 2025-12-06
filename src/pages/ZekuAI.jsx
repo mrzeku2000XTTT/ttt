@@ -613,7 +613,11 @@ export default function ZekuAIPage() {
                 }
               }}
               placeholder="Ask Zeku AI anything..."
-              className="h-11 flex-1 bg-black/30 border-white/10 text-white placeholder:text-gray-500 text-base focus:ring-2 focus:ring-white/20"
+              className={`h-11 flex-1 text-base focus:ring-2 ${
+                matrixMode 
+                  ? 'bg-green-500/10 border-green-500/30 text-green-400 placeholder:text-green-600/50 focus:ring-green-500/30 font-mono' 
+                  : 'bg-black/30 border-white/10 text-white placeholder:text-gray-500 focus:ring-white/20'
+              }`}
               disabled={isSending}
             />
 
