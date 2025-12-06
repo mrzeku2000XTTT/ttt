@@ -225,7 +225,12 @@ export default function ZekuAIPage() {
   }
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden flex flex-col">
+    <div className="fixed bg-black overflow-hidden flex flex-col" style={{ 
+      top: 'calc(var(--sat, 0px) + 7.5rem)',
+      left: 0,
+      right: 0,
+      bottom: 0
+    }}>
       {/* Matrix Rain Background */}
       <canvas
         ref={(canvas) => {
@@ -263,24 +268,24 @@ export default function ZekuAIPage() {
         className="fixed inset-0 z-0 opacity-30"
       />
 
-      <div className="relative z-10 flex flex-col h-full max-w-7xl mx-auto w-full p-3">
+      <div className="relative z-10 flex flex-col h-full max-w-7xl mx-auto w-full p-2">
         {/* Compact Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="backdrop-blur-xl bg-black/80 border border-white/5 rounded-xl p-3 mb-3"
+          className="backdrop-blur-xl bg-black/80 border border-white/5 rounded-xl p-2 mb-2 flex-shrink-0"
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {/* Black on Black Logo Box */}
-              <div className="w-10 h-10 bg-black/90 border border-white/10 rounded-lg flex items-center justify-center shadow-lg">
-                <Bot className="w-5 h-5 text-purple-400" />
+              <div className="w-8 h-8 bg-black/90 border border-white/10 rounded-lg flex items-center justify-center shadow-lg">
+                <Bot className="w-4 h-4 text-purple-400" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-white" style={{ fontFamily: 'monospace' }}>
+                <h1 className="text-sm font-bold text-white" style={{ fontFamily: 'monospace' }}>
                   Zeku AI
                 </h1>
-                <p className="text-gray-500 text-xs">Your Elite Crypto Companion</p>
+                <p className="text-gray-500 text-[10px]">Your Elite Crypto Companion</p>
               </div>
             </div>
 
@@ -289,7 +294,7 @@ export default function ZekuAIPage() {
                 onClick={() => setShowProofOfLife(!showProofOfLife)}
                 variant="outline"
                 size="sm"
-                className={`h-8 ${showProofOfLife ? 'bg-green-500/20 border-green-500/50' : 'bg-black/50 border-white/10'}`}
+                className={`h-7 w-7 p-0 ${showProofOfLife ? 'bg-green-500/20 border-green-500/50' : 'bg-black/50 border-white/10'}`}
               >
                 <Activity className="w-3 h-3" />
               </Button>
@@ -298,13 +303,13 @@ export default function ZekuAIPage() {
                 onClick={() => setMatrixMode(!matrixMode)}
                 variant="outline"
                 size="sm"
-                className={`h-8 ${matrixMode ? 'bg-green-500/20 border-green-500/50' : 'bg-black/50 border-white/10'}`}
+                className={`h-7 w-7 p-0 ${matrixMode ? 'bg-green-500/20 border-green-500/50' : 'bg-black/50 border-white/10'}`}
                 style={{ fontFamily: 'monospace' }}
               >
-                {matrixMode ? '◉' : '○'}
+                <span className="text-xs">{matrixMode ? '◉' : '○'}</span>
               </Button>
 
-              <Button onClick={handleNewChat} variant="outline" size="sm" className="h-8 bg-black/50 border-white/10">
+              <Button onClick={handleNewChat} variant="outline" size="sm" className="h-7 w-7 p-0 bg-black/50 border-white/10">
                 <Trash2 className="w-3 h-3" />
               </Button>
             </div>
@@ -316,7 +321,7 @@ export default function ZekuAIPage() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="backdrop-blur-xl bg-red-500/20 border border-red-500/30 rounded-xl p-2 flex items-center justify-between mb-3"
+            className="backdrop-blur-xl bg-red-500/20 border border-red-500/30 rounded-xl p-2 flex items-center justify-between mb-2 flex-shrink-0"
           >
             <div className="flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-red-400" />
@@ -329,7 +334,7 @@ export default function ZekuAIPage() {
         )}
 
         {/* Messages - Fixed Height */}
-        <div className="flex-1 backdrop-blur-xl bg-black/50 border border-white/10 rounded-xl p-4 overflow-y-auto mb-3">
+        <div className="flex-1 backdrop-blur-xl bg-black/50 border border-white/10 rounded-xl p-3 overflow-y-auto mb-2 min-h-0">
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center">
               <div className="w-16 h-16 bg-black/80 border border-purple-500/30 rounded-2xl flex items-center justify-center mb-4">
@@ -405,7 +410,7 @@ export default function ZekuAIPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="backdrop-blur-xl bg-black/80 border border-white/10 rounded-xl p-2"
+          className="backdrop-blur-xl bg-black/80 border border-white/10 rounded-xl p-2 flex-shrink-0"
         >
           {uploadedFiles.length > 0 && (
             <div className="mb-2 flex flex-wrap gap-1">
