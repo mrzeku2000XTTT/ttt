@@ -154,6 +154,7 @@ import Machine from './pages/Machine';
 import Area51 from './pages/Area51';
 import Earth from './pages/Earth';
 import CountryDetail from './pages/CountryDetail';
+import Guide from './pages/Guide';
 import __Layout from './Layout.jsx';
 
 
@@ -314,10 +315,11 @@ export const PAGES = {
     "Area51": Area51,
     "Earth": Earth,
     "CountryDetail": CountryDetail,
+    "Guide": Guide,
 }
 
 export const pagesConfig = {
-    mainPage: "Feed",
+    mainPage: "AgentZK",
     Pages: PAGES,
     Layout: __Layout,
 };
