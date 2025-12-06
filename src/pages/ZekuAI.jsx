@@ -9,7 +9,6 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ReactMarkdown from "react-markdown";
 import BackgroundLogo from "../components/BackgroundLogo";
-import ProofOfLifeButton from "../components/bridge/ProofOfLifeButton";
 
 // Background music
 const backgroundMusic = new Audio('https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/hypemind_background.mp3');
@@ -443,12 +442,6 @@ export default function ZekuAIPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <ProofOfLifeButton 
-                kaswareWallet={kaswareWallet}
-                metamaskWallet={metamaskWallet}
-                user={user}
-              />
-
               <Button
                 onClick={() => {
                   setAlienVoiceEnabled(!alienVoiceEnabled);
