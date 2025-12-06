@@ -20,6 +20,8 @@ export default function CountryDetailPage() {
   const [fromAmount, setFromAmount] = useState(1);
   const [toAmount, setToAmount] = useState(0);
   const [selectedCurrency, setSelectedCurrency] = useState(null);
+  const [fromCurrency, setFromCurrency] = useState(null);
+  const [allCurrencies, setAllCurrencies] = useState([]);
 
   useEffect(() => {
     if (countryName) {
@@ -79,10 +81,39 @@ export default function CountryDetailPage() {
       });
 
       setExchangeRates(response.data);
+      
+      // Extract all currencies into a flat array
+      const allCurr = [];
+      Object.values(response.data.regions).forEach(region => {
+        allCurr.push(...region);
+      });
+      setAllCurrencies(allCurr);
+      
+      // Set initial from currency
+      setFromCurrency({
+        flag: countryFlag,
+        code: response.data.baseCurrency,
+        country: countryName,
+        rate: "1.0000"
+      });
     } catch (err) {
       console.error("Failed to fetch exchange rates:", err);
     } finally {
       setLoadingRates(false);
+    }
+  };
+
+  const handleSwapCurrencies = () => {
+    if (selectedCurrency && fromCurrency) {
+      // Swap currencies
+      const tempCurrency = fromCurrency;
+      setFromCurrency(selectedCurrency);
+      setSelectedCurrency(tempCurrency);
+      
+      // Swap amounts
+      const tempAmount = fromAmount;
+      setFromAmount(toAmount);
+      setToAmount(tempAmount);
     }
   };
 
@@ -391,35 +422,49 @@ export default function CountryDetailPage() {
                         type="number"
                         value={fromAmount}
                         onChange={(e) => {
-                          setFromAmount(e.target.value);
-                          if (selectedCurrency) {
-                            setToAmount((e.target.value * parseFloat(selectedCurrency.rate)).toFixed(2));
+                          const value = e.target.value;
+                          setFromAmount(value);
+                          if (selectedCurrency && fromCurrency) {
+                            // Calculate conversion based on selected currencies
+                            const rate = parseFloat(selectedCurrency.rate) / parseFloat(fromCurrency.rate);
+                            setToAmount((value * rate).toFixed(2));
                           }
                         }}
                         className="w-full bg-transparent text-3xl font-bold text-slate-900 outline-none mb-3"
                         placeholder="1"
                       />
-                      <select 
-                        className="w-full bg-white/80 backdrop-blur-sm rounded-xl p-2 text-sm font-semibold text-slate-900 border border-slate-200 cursor-pointer"
-                        value={exchangeRates.baseCurrency}
-                      >
-                        <option>{countryFlag} {exchangeRates.baseCurrency} - {countryName}</option>
-                      </select>
+                      {fromCurrency && (
+                        <select 
+                          className="w-full bg-white/80 backdrop-blur-sm rounded-xl p-2 text-sm font-semibold text-slate-900 border border-slate-200 cursor-pointer hover:bg-white transition-colors"
+                          value={fromCurrency.code}
+                          onChange={(e) => {
+                            const selected = allCurrencies.find(c => c.code === e.target.value);
+                            if (selected) {
+                              setFromCurrency(selected);
+                              // Recalculate conversion
+                              if (selectedCurrency) {
+                                const rate = parseFloat(selectedCurrency.rate) / parseFloat(selected.rate);
+                                setToAmount((fromAmount * rate).toFixed(2));
+                              }
+                            }
+                          }}
+                        >
+                          {allCurrencies.map((curr) => (
+                            <option key={curr.code} value={curr.code}>
+                              {curr.flag} {curr.code} - {curr.country}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </div>
                   </div>
 
                   {/* Swap Button */}
                   <div className="col-span-1 flex items-center justify-center">
                     <button 
-                      onClick={() => {
-                        if (selectedCurrency) {
-                          // Swap logic here
-                          const temp = fromAmount;
-                          setFromAmount(toAmount);
-                          setToAmount(temp);
-                        }
-                      }}
-                      className="p-3 bg-gradient-to-br from-orange-400 to-pink-500 text-white rounded-xl hover:scale-110 transition-transform shadow-lg"
+                      onClick={handleSwapCurrencies}
+                      disabled={!selectedCurrency}
+                      className="p-3 bg-gradient-to-br from-orange-400 to-pink-500 text-white rounded-xl hover:scale-110 transition-transform shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                     >
                       <ArrowRightLeft className="w-5 h-5" />
                     </button>
@@ -429,12 +474,42 @@ export default function CountryDetailPage() {
                   <div className="col-span-3">
                     <label className="text-xs font-semibold text-slate-600 mb-2 block">YOU RECEIVE</label>
                     <div className="relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 border border-white/60 shadow-lg">
-                      <div className="text-3xl font-bold text-slate-900 mb-3">
-                        {selectedCurrency ? toAmount : "0.00"}
-                      </div>
+                      <input
+                        type="number"
+                        value={selectedCurrency ? toAmount : ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setToAmount(value);
+                          if (selectedCurrency && fromCurrency) {
+                            // Calculate reverse conversion
+                            const rate = parseFloat(fromCurrency.rate) / parseFloat(selectedCurrency.rate);
+                            setFromAmount((value * rate).toFixed(2));
+                          }
+                        }}
+                        className="w-full bg-transparent text-3xl font-bold text-slate-900 outline-none mb-3"
+                        placeholder="0.00"
+                      />
                       {selectedCurrency ? (
-                        <select className="w-full bg-white/80 backdrop-blur-sm rounded-xl p-2 text-sm font-semibold text-slate-900 border border-slate-200 cursor-pointer">
-                          <option>{selectedCurrency.flag} {selectedCurrency.code} - {selectedCurrency.country}</option>
+                        <select 
+                          className="w-full bg-white/80 backdrop-blur-sm rounded-xl p-2 text-sm font-semibold text-slate-900 border border-slate-200 cursor-pointer hover:bg-white transition-colors"
+                          value={selectedCurrency.code}
+                          onChange={(e) => {
+                            const selected = allCurrencies.find(c => c.code === e.target.value);
+                            if (selected) {
+                              setSelectedCurrency(selected);
+                              // Recalculate conversion
+                              if (fromCurrency) {
+                                const rate = parseFloat(selected.rate) / parseFloat(fromCurrency.rate);
+                                setToAmount((fromAmount * rate).toFixed(2));
+                              }
+                            }
+                          }}
+                        >
+                          {allCurrencies.map((curr) => (
+                            <option key={curr.code} value={curr.code}>
+                              {curr.flag} {curr.code} - {curr.country}
+                            </option>
+                          ))}
                         </select>
                       ) : (
                         <div className="text-xs text-slate-500 text-center py-2">Select currency below</div>
@@ -444,7 +519,7 @@ export default function CountryDetailPage() {
                 </div>
 
                 {/* Exchange Rate Info - Glassmorphic */}
-                {selectedCurrency && (
+                {selectedCurrency && fromCurrency && (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -454,7 +529,7 @@ export default function CountryDetailPage() {
                       <div>
                         <p className="text-xs text-slate-600 mb-1">Exchange Rate</p>
                         <p className="text-lg font-bold text-slate-900">
-                          1 {exchangeRates.baseCurrency} = {selectedCurrency.rate} {selectedCurrency.code}
+                          1 {fromCurrency.code} = {(parseFloat(selectedCurrency.rate) / parseFloat(fromCurrency.rate)).toFixed(4)} {selectedCurrency.code}
                         </p>
                       </div>
                       <div className="text-right">
@@ -492,7 +567,10 @@ export default function CountryDetailPage() {
                             whileTap={{ scale: 0.97 }}
                             onClick={() => {
                               setSelectedCurrency(currency);
-                              setToAmount((fromAmount * parseFloat(currency.rate)).toFixed(2));
+                              if (fromCurrency) {
+                                const rate = parseFloat(currency.rate) / parseFloat(fromCurrency.rate);
+                                setToAmount((fromAmount * rate).toFixed(2));
+                              }
                             }}
                             className={`relative bg-white/70 backdrop-blur-xl rounded-xl p-3 border transition-all text-left shadow-md hover:shadow-xl ${
                               selectedCurrency?.code === currency.code
