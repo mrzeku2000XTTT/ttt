@@ -41,12 +41,22 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
       let walletType = '';
       let walletAddress = '';
       let network = '';
+      let signature = null;
 
       if (selectedWallet === 'kasware' && kaswareWallet.connected) {
         walletAddress = kaswareWallet.address;
         walletType = 'kasware_l1';
         network = 'L1';
 
+        // Step 1: Request signature to verify identity
+        const signMessage = `I am alive and active on TTT!\nTimestamp: ${new Date().toISOString()}`;
+        try {
+          signature = await window.kasware.signMessage(signMessage);
+        } catch (signErr) {
+          throw new Error('Signature required to go live');
+        }
+
+        // Step 2: Send payment to self
         const amountInSompi = Math.floor(parseFloat(amount) * 1e8);
         const tx = await window.kasware.sendKaspa(kaswareWallet.address, amountInSompi);
         txHash = tx;
@@ -56,6 +66,18 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
         walletType = 'metamask_l2';
         network = 'L2';
 
+        // Step 1: Request signature to verify identity
+        const signMessage = `I am alive and active on TTT!\nTimestamp: ${new Date().toISOString()}`;
+        try {
+          signature = await window.ethereum.request({
+            method: 'personal_sign',
+            params: [signMessage, metamaskWallet.address]
+          });
+        } catch (signErr) {
+          throw new Error('Signature required to go live');
+        }
+
+        // Step 2: Send payment to self
         const amountInWei = Math.floor(parseFloat(amount) * 1e18).toString(16);
         const tx = await window.ethereum.request({
           method: 'eth_sendTransaction',
