@@ -155,6 +155,7 @@ import Area51 from './pages/Area51';
 import Earth from './pages/Earth';
 import CountryDetail from './pages/CountryDetail';
 import Guide from './pages/Guide';
+import MMN from './pages/MMN';
 import __Layout from './Layout.jsx';
 
 
@@ -316,6 +317,7 @@ export const PAGES = {
     "Earth": Earth,
     "CountryDetail": CountryDetail,
     "Guide": Guide,
+    "MMN": MMN,
 }
 
 export const pagesConfig = {

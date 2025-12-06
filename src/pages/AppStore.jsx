@@ -55,7 +55,7 @@ export default function AppStorePage() {
     { name: "KFANS", icon: "Link2", path: "KasFans", category: "Community", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/85ce776d9_image.png" },
     { name: "Duel", icon: "Link2", path: "DuelLobby", category: "Games", defaultIcon: "https://ui-avatars.com/api/?name=Duel&size=128&background=ef4444&color=fff&bold=true" },
     { name: "Area 51", icon: "Link2", path: "Area51", category: "Community", defaultIcon: "https://ui-avatars.com/api/?name=A51&size=128&background=22c55e&color=000&bold=true" },
-    { name: "MMN", icon: "Link2", path: "MMN", category: "Tools", isExternal: true, externalUrl: "https://www.modmedianow.com" },
+    { name: "MMN", icon: "Link2", path: "MMN", category: "Tools" },
   ];
 
   const getIconComponent = (iconName) => {
@@ -117,13 +117,8 @@ export default function AppStorePage() {
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
           {filteredApps.map((app, i) => {
             const Icon = getIconComponent(app.icon);
-            const AppWrapper = app.isExternal ? 'a' : Link;
-            const linkProps = app.isExternal 
-              ? { href: app.externalUrl, target: "_blank", rel: "noopener noreferrer" }
-              : { to: createPageUrl(app.path) };
-            
             return (
-              <AppWrapper key={i} {...linkProps}>
+              <Link key={i} to={createPageUrl(app.path)}>
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -147,7 +142,7 @@ export default function AppStorePage() {
                     <div className="text-white/40 text-[10px]">{app.category}</div>
                   </div>
                 </motion.div>
-              </AppWrapper>
+              </Link>
             );
           })}
         </div>
