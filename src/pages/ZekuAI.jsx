@@ -31,7 +31,7 @@ const playKeySound = () => {
   oscillator.stop(audioContext.currentTime + 0.05);
 };
 
-const TypewriterText = ({ text, speed = 20 }) => {
+const TypewriterText = ({ text, speed = 20, onUpdate }) => {
   const [displayedText, setDisplayedText] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -41,6 +41,7 @@ const TypewriterText = ({ text, speed = 20 }) => {
         playKeySound();
         setDisplayedText(prev => prev + text[currentIndex]);
         setCurrentIndex(prev => prev + 1);
+        onUpdate?.();
       }, speed);
       return () => clearTimeout(timeout);
     }
@@ -67,6 +68,8 @@ export default function ZekuAIPage() {
   const fileInputRef = useRef(null);
   const [kaswareWallet, setKaswareWallet] = useState({ connected: false, address: null, balance: 0 });
   const [metamaskWallet, setMetamaskWallet] = useState({ connected: false, address: null, balance: 0 });
+  const [typedMessageIds, setTypedMessageIds] = useState(new Set());
+  const messagesContainerRef = useRef(null);
 
   useEffect(() => {
     initialize();
@@ -390,7 +393,7 @@ export default function ZekuAIPage() {
         )}
 
         {/* Messages - Fully Transparent */}
-        <div className="flex-1 bg-transparent border-none rounded-2xl p-4 overflow-y-auto mb-2 min-h-0 scroll-smooth">
+        <div ref={messagesContainerRef} className="flex-1 bg-transparent border-none rounded-2xl p-4 overflow-y-auto mb-2 min-h-0 scroll-smooth">
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center">
               <motion.div
@@ -432,37 +435,49 @@ export default function ZekuAIPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {messages.map((msg, idx) => (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[85%] rounded-xl px-3 py-2 text-sm shadow-lg ${
-                      msg.role === 'user'
-                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                        : matrixMode
-                        ? 'bg-green-500/20 backdrop-blur-sm border border-green-500/50 text-green-400'
-                        : 'bg-black/70 backdrop-blur-sm border border-white/20 text-gray-100'
-                    }`}
-                    style={msg.role === 'assistant' ? { fontFamily: 'monospace' } : undefined}
+              {messages.map((msg, idx) => {
+                const messageId = `${idx}-${msg.content?.substring(0, 20)}`;
+                const isLastMessage = idx === messages.length - 1;
+                const shouldTypewrite = matrixMode && msg.role === 'assistant' && isLastMessage && !typedMessageIds.has(messageId);
+
+                if (shouldTypewrite && !typedMessageIds.has(messageId)) {
+                  setTimeout(() => setTypedMessageIds(prev => new Set([...prev, messageId])), 100);
+                }
+
+                return (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    {msg.role === 'assistant' ? (
-                      matrixMode ? (
-                        <TypewriterText text={msg.content} speed={20} />
+                    <div
+                      className={`max-w-[85%] rounded-xl px-3 py-2 text-sm shadow-lg ${
+                        msg.role === 'user'
+                          ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                          : matrixMode
+                          ? 'bg-green-500/20 backdrop-blur-sm border border-green-500/50 text-green-400'
+                          : 'bg-black/70 backdrop-blur-sm border border-white/20 text-gray-100'
+                      }`}
+                      style={msg.role === 'assistant' ? { fontFamily: 'monospace' } : undefined}
+                    >
+                      {msg.role === 'assistant' ? (
+                        shouldTypewrite ? (
+                          <TypewriterText text={msg.content} speed={20} onUpdate={scrollToBottom} />
+                        ) : matrixMode ? (
+                          <p className="text-xs whitespace-pre-wrap">{msg.content}</p>
+                        ) : (
+                          <ReactMarkdown className="prose prose-invert max-w-none text-xs [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                            {msg.content}
+                          </ReactMarkdown>
+                        )
                       ) : (
-                        <ReactMarkdown className="prose prose-invert max-w-none text-xs [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
-                          {msg.content}
-                        </ReactMarkdown>
-                      )
-                    ) : (
-                      <p className="text-xs">{msg.content}</p>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
+                        <p className="text-xs">{msg.content}</p>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
               
               {isSending && (
                 <div className="flex justify-start">
@@ -529,8 +544,10 @@ export default function ZekuAIPage() {
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => {
-                playKeySound();
+              onKeyDown={(e) => {
+                if (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Delete') {
+                  playKeySound();
+                }
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   handleSend();
