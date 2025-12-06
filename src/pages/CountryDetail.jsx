@@ -549,8 +549,7 @@ export default function CountryDetailPage() {
                 <div className="mb-4">
                   <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Quick Select by Region</h3>
                   <div className="space-y-4">
-                  {Object.entries(exchangeRates.regions).map(([region, currencies], idx) => {
-                    return (
+                  {Object.entries(exchangeRates.regions).map(([region, currencies], idx) => (
                     <motion.div
                       key={region}
                       initial={{ opacity: 0, y: 10 }}
@@ -562,7 +561,7 @@ export default function CountryDetailPage() {
                         {region}
                       </h3>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {filteredCurrencies.map((currency, currIdx) => (
+                        {currencies.map((currency, currIdx) => (
                           <motion.button
                             key={currIdx}
                             whileHover={{ scale: 1.03 }}
@@ -605,18 +604,18 @@ export default function CountryDetailPage() {
                               </div>
                             </div>
                           </motion.button>
-                          ))}
-                          </div>
-                          </motion.div>
-                          );
-                          })}
+                        ))}
+                      </div>
+                    </motion.div>
+                  ))}
                   </div>
-                  </>
-                  )}
-                  </div>
-                  </motion.div>
-                  </motion.div>
-                  )}
+                </div>
+                </>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
 
 
       </div>
