@@ -160,28 +160,36 @@ export default function ZekuAIPage() {
     if (conversation?.id) {
       const unsubscribe = base44.agents.subscribeToConversation(conversation.id, (data) => {
         if (data?.messages) {
-          const previousLength = messages.length;
           setMessages(data.messages);
-          setIsSending(false);
-
-          // Speak the latest AI message with alien voice if enabled (only when message is complete)
-          if (alienVoiceEnabled && data.messages.length > previousLength) {
-            const lastMsg = data.messages[data.messages.length - 1];
-            const messageId = `${lastMsg.role}-${lastMsg.content?.substring(0, 50)}-${lastMsg.content?.length}`;
+          
+          // Check if we just stopped sending (message is complete)
+          if (isSending && data.messages.length > 0) {
+            setIsSending(false);
             
-            if (lastMsg.role === 'assistant' && lastMsg.content && lastSpokenMessageRef.current !== messageId) {
-              lastSpokenMessageRef.current = messageId;
-              // Wait a bit to ensure message is complete before speaking
-              setTimeout(() => {
-                speakAlienVoice(lastMsg.content);
-              }, 500);
+            // Speak the latest AI message with alien voice if enabled
+            if (alienVoiceEnabled) {
+              const lastMsg = data.messages[data.messages.length - 1];
+              const messageId = `${lastMsg.role}-${lastMsg.content?.length}-${Date.now()}`;
+              
+              if (lastMsg.role === 'assistant' && lastMsg.content && lastMsg.content.length > 0) {
+                // Only speak if this is a new complete message
+                if (lastSpokenMessageRef.current !== messageId) {
+                  lastSpokenMessageRef.current = messageId;
+                  // Wait to ensure streaming is complete
+                  setTimeout(() => {
+                    speakAlienVoice(lastMsg.content);
+                  }, 1000);
+                }
+              }
             }
+          } else if (!isSending && data.messages.length > 0) {
+            setIsSending(false);
           }
         }
       });
       return () => unsubscribe?.();
     }
-  }, [conversation?.id, alienVoiceEnabled, messages.length]);
+  }, [conversation?.id, alienVoiceEnabled, isSending]);
 
   useEffect(() => {
     scrollToBottom();
