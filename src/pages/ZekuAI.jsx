@@ -59,37 +59,8 @@ export default function ZekuAIPage() {
     setIsLoading(true);
     try {
       const currentUser = await base44.auth.me();
-      
-      if (!currentUser || currentUser.role !== 'admin') {
-        setIsLoading(false);
-        return;
-      }
-      
       setUser(currentUser);
-
-      const isAdmin = currentUser.role === 'admin';
       
-      if (!isAdmin) {
-        const saved = localStorage.getItem('subscription');
-        if (saved) {
-          const data = JSON.parse(saved);
-          if (data.isActive && data.expiresAt < Date.now()) {
-            data.isActive = false;
-          }
-          setSubscription(data);
-          
-          if (!data.isActive) {
-            setTimeout(() => navigate(createPageUrl("Subscription")), 2000);
-            return;
-          }
-        } else {
-          navigate(createPageUrl("Subscription"));
-          return;
-        }
-      } else {
-        setSubscription({ isActive: true, isAdmin: true });
-      }
-
       await loadConversation(currentUser);
       checkWallets();
     } catch (err) {
@@ -228,45 +199,7 @@ export default function ZekuAIPage() {
     );
   }
 
-  // Admin-only access
-  if (!user || user.role !== 'admin') {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
-        <div className="backdrop-blur-xl bg-white/5 border border-red-500/30 rounded-2xl p-8 max-w-md text-center">
-          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-8 h-8 text-red-400" />
-          </div>
-          <h2 className="text-xl font-bold text-white mb-2">Admin Access Only</h2>
-          <p className="text-gray-400 text-sm">
-            Zeku AI is restricted to administrators only.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
-  if (!subscription?.isActive && user?.role !== 'admin') {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-6">
-        <Card className="backdrop-blur-xl bg-yellow-500/20 border-yellow-500/30 max-w-md">
-          <CardContent className="p-8 text-center">
-            <Lock className="w-16 h-16 text-yellow-400 mx-auto mb-6" />
-            <h2 className="text-2xl font-bold text-white mb-4">Premium Feature</h2>
-            <p className="text-yellow-200 mb-6">
-              Zeku AI requires premium subscription
-            </p>
-            <Button
-              onClick={() => navigate(createPageUrl("Subscription"))}
-              className="bg-gradient-to-r from-yellow-500 to-orange-500"
-            >
-              <Crown className="w-5 h-5 mr-2" />
-              Get Premium
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   if (error && !conversation) {
     return (
@@ -293,12 +226,42 @@ export default function ZekuAIPage() {
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
-      <BackgroundLogo text="TTT" opacity={0.03} animated={true} />
-
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-cyan-500/5 rounded-full blur-[150px] animate-pulse" />
-      </div>
+      {/* Matrix Rain Background */}
+      <canvas
+        ref={(canvas) => {
+          if (!canvas) return;
+          const ctx = canvas.getContext('2d');
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+          
+          const chars = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜｦﾝ01';
+          const fontSize = 14;
+          const columns = canvas.width / fontSize;
+          const drops = Array(Math.floor(columns)).fill(1);
+          
+          function draw() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = '#0f0';
+            ctx.font = fontSize + 'px monospace';
+            
+            for (let i = 0; i < drops.length; i++) {
+              const text = chars[Math.floor(Math.random() * chars.length)];
+              ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+              
+              if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                drops[i] = 0;
+              }
+              drops[i]++;
+            }
+          }
+          
+          const interval = setInterval(draw, 33);
+          return () => clearInterval(interval);
+        }}
+        className="fixed inset-0 z-0 opacity-30"
+      />
 
       <div className="relative z-10 max-w-6xl mx-auto p-4 md:p-6">
         {/* Header */}
