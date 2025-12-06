@@ -317,7 +317,7 @@ export const PAGES = {
 }
 
 export const pagesConfig = {
-    mainPage: "CountryDetail",
+    mainPage: "Profile",
     Pages: PAGES,
     Layout: __Layout,
 };
