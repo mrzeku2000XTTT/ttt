@@ -106,11 +106,38 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
     }
   };
 
+  const isDesktop = () => {
+    return window.innerWidth >= 1024 && !/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  };
+
   const handleComment = async () => {
     if (!newComment.trim()) return;
 
-    // Check if calling ZK bot
-    const zkMatch = newComment.trim().match(/^@zk\s+(.+)/i);
+    // Desktop-only: Require 1 KAS self-payment
+    if (isDesktop() && currentUser?.created_wallet_address) {
+      if (typeof window.kasware === 'undefined') {
+        alert('Desktop users: Install Kasware to comment (1 KAS self-payment required)');
+        return;
+      }
+
+      try {
+        const accounts = await window.kasware.getAccounts();
+        if (accounts.length === 0) {
+          await window.kasware.requestAccounts();
+        }
+        
+        // Send 1 KAS to self
+        const amountSompi = 100000000; // 1 KAS
+        await window.kasware.sendKaspa(currentUser.created_wallet_address, amountSompi);
+      } catch (err) {
+        if (err.message?.includes('User reject')) {
+          // User cancelled payment - just return, don't show error
+          return;
+        }
+        alert('Payment failed: ' + err.message);
+        return;
+      }
+    }
 
     setIsCommenting(true);
     try {
