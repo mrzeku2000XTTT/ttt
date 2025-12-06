@@ -10,7 +10,6 @@ import { createPageUrl } from "@/utils";
 import ReactMarkdown from "react-markdown";
 import BackgroundLogo from "../components/BackgroundLogo";
 import ProofOfLifeButton from "../components/bridge/ProofOfLifeButton";
-import ProofOfLifeFeed from "../components/bridge/ProofOfLifeFeed";
 
 // Background music
 const backgroundMusic = new Audio('https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/hypemind_background.mp3');
@@ -116,7 +115,7 @@ export default function ZekuAIPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState(null);
   const [matrixMode, setMatrixMode] = useState(false);
-  const [showProofOfLife, setShowProofOfLife] = useState(false);
+
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const [kaswareWallet, setKaswareWallet] = useState({ connected: false, address: null, balance: 0 });
@@ -444,15 +443,13 @@ export default function ZekuAIPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <Button
-                onClick={() => setShowProofOfLife(!showProofOfLife)}
-                variant="outline"
-                size="sm"
-                className={`h-8 px-3 ${showProofOfLife ? 'bg-green-500/20 border-green-500/50 text-green-400' : 'bg-black/50 border-white/10 text-white'}`}
-              >
-                <Activity className="w-4 h-4 mr-1" />
-                <span className="text-xs">Proof of Life</span>
-              </Button>
+              <div className="w-full">
+                <ProofOfLifeButton 
+                  kaswareWallet={kaswareWallet}
+                  metamaskWallet={metamaskWallet}
+                  user={user}
+                />
+              </div>
 
               <Button
                 onClick={() => {
