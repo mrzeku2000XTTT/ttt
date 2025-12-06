@@ -46,7 +46,7 @@ const playKeySound = () => {
   }
 };
 
-// Alien voice text-to-speech for AI responses
+// Alien voice text-to-speech for AI responses - handles long texts by chunking
 const speakAlienVoice = (text) => {
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel(); // Stop any ongoing speech
@@ -66,12 +66,7 @@ const speakAlienVoice = (text) => {
     
     if (!cleanText) return;
     
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.rate = 0.7; // Slower for alien effect
-    utterance.pitch = 0.3; // Lower pitch for alien effect
-    utterance.volume = 0.6;
-    
-    // Try to find a unique voice
+    // Get voices once
     const voices = window.speechSynthesis.getVoices();
     const alienVoice = voices.find(v => 
       v.name.includes('Google') || 
@@ -79,9 +74,46 @@ const speakAlienVoice = (text) => {
       v.lang.includes('en-GB')
     ) || voices[0];
     
-    if (alienVoice) utterance.voice = alienVoice;
+    // Split long text into chunks for better handling (max ~200 chars per chunk)
+    const chunkSize = 200;
+    const chunks = [];
     
-    window.speechSynthesis.speak(utterance);
+    if (cleanText.length <= chunkSize) {
+      chunks.push(cleanText);
+    } else {
+      // Split by sentences first
+      const sentences = cleanText.match(/[^.!?]+[.!?]+/g) || [cleanText];
+      let currentChunk = '';
+      
+      sentences.forEach(sentence => {
+        if ((currentChunk + sentence).length <= chunkSize) {
+          currentChunk += sentence;
+        } else {
+          if (currentChunk) chunks.push(currentChunk.trim());
+          currentChunk = sentence;
+        }
+      });
+      
+      if (currentChunk) chunks.push(currentChunk.trim());
+    }
+    
+    // Speak each chunk in sequence
+    chunks.forEach((chunk, index) => {
+      const utterance = new SpeechSynthesisUtterance(chunk);
+      utterance.rate = 0.7;
+      utterance.pitch = 0.3;
+      utterance.volume = 0.6;
+      if (alienVoice) utterance.voice = alienVoice;
+      
+      // Add small pause between chunks
+      if (index > 0) {
+        utterance.onstart = () => {
+          // Small delay already handled by queue
+        };
+      }
+      
+      window.speechSynthesis.speak(utterance);
+    });
   }
 };
 
