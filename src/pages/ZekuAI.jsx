@@ -12,39 +12,10 @@ import BackgroundLogo from "../components/BackgroundLogo";
 import ProofOfLifeButton from "../components/bridge/ProofOfLifeButton";
 import ProofOfLifeFeed from "../components/bridge/ProofOfLifeFeed";
 
-// Pool of real keyboard sound effects from Mixkit
-const keyboardSounds = [
-  'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',
-  'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',
-  'https://assets.mixkit.co/active_storage/sfx/2575/2575-preview.mp3',
-  'https://assets.mixkit.co/active_storage/sfx/2589/2589-preview.mp3',
-];
-
-// Preload audio files for instant playback
-const audioCache = new Map();
-keyboardSounds.forEach(url => {
-  const audio = new Audio(url);
-  audio.volume = 0.3;
-  audio.preload = 'auto';
-  audioCache.set(url, audio);
-});
-
-// Play real mechanical keyboard sound
-const playKeySound = () => {
-  try {
-    const randomSound = keyboardSounds[Math.floor(Math.random() * keyboardSounds.length)];
-    const audio = audioCache.get(randomSound);
-    
-    if (audio) {
-      // Clone the audio to allow rapid successive plays
-      const clonedAudio = audio.cloneNode();
-      clonedAudio.volume = 0.3;
-      clonedAudio.play().catch(() => {});
-    }
-  } catch (e) {
-    // Silently fail if audio playback is not available
-  }
-};
+// Background music
+const backgroundMusic = new Audio('https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/hypemind_background.mp3');
+backgroundMusic.loop = true;
+backgroundMusic.volume = 0.15;
 
 // Alien voice text-to-speech for AI responses
 const speakAlienVoice = (text) => {
@@ -70,21 +41,20 @@ const speakAlienVoice = (text) => {
   }
 };
 
-const TypewriterText = ({ text, speed = 20, onUpdate, playSound = false }) => {
+const TypewriterText = ({ text, speed = 20, onUpdate }) => {
   const [displayedText, setDisplayedText] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
     if (currentIndex < text.length) {
       const timeout = setTimeout(() => {
-        if (playSound) playKeySound();
         setDisplayedText(prev => prev + text[currentIndex]);
         setCurrentIndex(prev => prev + 1);
         onUpdate?.();
       }, speed);
       return () => clearTimeout(timeout);
     }
-  }, [currentIndex, text, speed, playSound]);
+  }, [currentIndex, text, speed]);
 
   return <p className="text-xs whitespace-pre-wrap">{displayedText}</p>;
 };
@@ -111,9 +81,35 @@ export default function ZekuAIPage() {
   const messagesContainerRef = useRef(null);
   const [alienVoiceEnabled, setAlienVoiceEnabled] = useState(false);
   const [speakingMessageIndex, setSpeakingMessageIndex] = useState(null);
+  const [musicPlaying, setMusicPlaying] = useState(false);
+  const lastSpokenMessageRef = useRef(null);
 
   useEffect(() => {
     initialize();
+    
+    // Start background music
+    const playMusic = () => {
+      backgroundMusic.play().then(() => {
+        setMusicPlaying(true);
+      }).catch(() => {
+        // Auto-play blocked, will play on first user interaction
+      });
+    };
+    
+    // Try to play on load, or on first click
+    playMusic();
+    const handleFirstClick = () => {
+      if (!musicPlaying) {
+        playMusic();
+        document.removeEventListener('click', handleFirstClick);
+      }
+    };
+    document.addEventListener('click', handleFirstClick);
+    
+    return () => {
+      backgroundMusic.pause();
+      document.removeEventListener('click', handleFirstClick);
+    };
   }, []);
 
   useEffect(() => {
@@ -123,10 +119,13 @@ export default function ZekuAIPage() {
           setMessages(data.messages);
           setIsSending(false);
 
-          // Speak the latest AI message with alien voice if enabled
+          // Speak the latest AI message with alien voice if enabled (only once per message)
           if (alienVoiceEnabled && data.messages.length > 0) {
             const lastMsg = data.messages[data.messages.length - 1];
-            if (lastMsg.role === 'assistant' && lastMsg.content) {
+            const messageId = `${lastMsg.role}-${lastMsg.content?.substring(0, 50)}`;
+            
+            if (lastMsg.role === 'assistant' && lastMsg.content && lastSpokenMessageRef.current !== messageId) {
+              lastSpokenMessageRef.current = messageId;
               speakAlienVoice(lastMsg.content);
             }
           }
@@ -134,7 +133,7 @@ export default function ZekuAIPage() {
       });
       return () => unsubscribe?.();
     }
-  }, [conversation?.id]);
+  }, [conversation?.id, alienVoiceEnabled]);
 
   useEffect(() => {
     scrollToBottom();
@@ -547,7 +546,7 @@ export default function ZekuAIPage() {
                       >
                         {msg.role === 'assistant' ? (
                           shouldTypewrite ? (
-                            <TypewriterText text={msg.content} speed={20} onUpdate={scrollToBottom} playSound={true} />
+                            <TypewriterText text={msg.content} speed={20} onUpdate={scrollToBottom} />
                           ) : matrixMode ? (
                             <p className="text-xs whitespace-pre-wrap">{msg.content}</p>
                           ) : (
@@ -630,9 +629,6 @@ export default function ZekuAIPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Delete') {
-                  playKeySound();
-                }
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   handleSend();
