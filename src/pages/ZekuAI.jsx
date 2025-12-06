@@ -51,7 +51,22 @@ const speakAlienVoice = (text) => {
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel(); // Stop any ongoing speech
     
-    const utterance = new SpeechSynthesisUtterance(text);
+    // Clean text: remove emojis, hashtags, and special characters
+    const cleanText = text
+      .replace(/[\u{1F600}-\u{1F64F}]/gu, '') // Emoticons
+      .replace(/[\u{1F300}-\u{1F5FF}]/gu, '') // Misc symbols
+      .replace(/[\u{1F680}-\u{1F6FF}]/gu, '') // Transport
+      .replace(/[\u{1F1E0}-\u{1F1FF}]/gu, '') // Flags
+      .replace(/[\u{2600}-\u{26FF}]/gu, '')   // Misc symbols
+      .replace(/[\u{2700}-\u{27BF}]/gu, '')   // Dingbats
+      .replace(/#\w+/g, '')                   // Hashtags
+      .replace(/[*_~`]/g, '')                 // Markdown
+      .replace(/\s+/g, ' ')                   // Multiple spaces
+      .trim();
+    
+    if (!cleanText) return;
+    
+    const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.rate = 0.7; // Slower for alien effect
     utterance.pitch = 0.3; // Lower pitch for alien effect
     utterance.volume = 0.6;
@@ -122,14 +137,6 @@ export default function ZekuAIPage() {
         if (data?.messages) {
           setMessages(data.messages);
           setIsSending(false);
-
-          // Speak the latest AI message with alien voice if enabled
-          if (alienVoiceEnabled && data.messages.length > 0) {
-            const lastMsg = data.messages[data.messages.length - 1];
-            if (lastMsg.role === 'assistant' && lastMsg.content) {
-              speakAlienVoice(lastMsg.content);
-            }
-          }
         }
       });
       return () => unsubscribe?.();
