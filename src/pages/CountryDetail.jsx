@@ -160,14 +160,16 @@ export default function CountryDetailPage() {
   const handleSwapCurrencies = () => {
     if (selectedCurrency && fromCurrency) {
       // Swap currencies
-      const tempCurrency = fromCurrency;
-      setFromCurrency(selectedCurrency);
-      setSelectedCurrency(tempCurrency);
+      const tempFrom = fromCurrency;
+      const tempTo = selectedCurrency;
       
-      // Swap amounts
-      const tempAmount = fromAmount;
-      setFromAmount(toAmount);
-      setToAmount(tempAmount);
+      setFromCurrency(tempTo);
+      setSelectedCurrency(tempFrom);
+      
+      // Recalculate with swapped rates
+      const newRate = parseFloat(tempFrom.rate) / parseFloat(tempTo.rate);
+      const newToAmount = (fromAmount * newRate).toFixed(2);
+      setToAmount(newToAmount);
     }
   };
 
