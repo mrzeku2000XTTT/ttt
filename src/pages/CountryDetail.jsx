@@ -22,6 +22,8 @@ export default function CountryDetailPage() {
   const [selectedCurrency, setSelectedCurrency] = useState(null);
   const [fromCurrency, setFromCurrency] = useState(null);
   const [allCurrencies, setAllCurrencies] = useState([]);
+  const [fromSearchQuery, setFromSearchQuery] = useState("");
+  const [toSearchQuery, setToSearchQuery] = useState("");
 
   useEffect(() => {
     if (countryName) {
@@ -329,9 +331,9 @@ export default function CountryDetailPage() {
                   <>
 
                 {/* Compact Converter Interface */}
-                <div className="grid grid-cols-7 gap-3 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-7 gap-3 mb-6">
                   {/* You Send */}
-                  <div className="col-span-3">
+                  <div className="col-span-1 md:col-span-3">
                     <label className="text-xs font-semibold text-slate-600 mb-2 block">YOU SEND</label>
                     <div className="relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 border border-white/60 shadow-lg">
                       <input
@@ -376,7 +378,7 @@ export default function CountryDetailPage() {
                   </div>
 
                   {/* Swap Button */}
-                  <div className="col-span-1 flex items-center justify-center">
+                  <div className="col-span-1 flex items-center justify-center my-2 md:my-0">
                     <button 
                       onClick={handleSwapCurrencies}
                       disabled={!selectedCurrency}
@@ -387,7 +389,7 @@ export default function CountryDetailPage() {
                   </div>
 
                   {/* You Receive */}
-                  <div className="col-span-3">
+                  <div className="col-span-1 md:col-span-3">
                     <label className="text-xs font-semibold text-slate-600 mb-2 block">YOU RECEIVE</label>
                     <div className="relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 border border-white/60 shadow-lg">
                       <input
@@ -462,9 +464,46 @@ export default function CountryDetailPage() {
                   </motion.div>
                 )}
 
+                {/* Search Filters */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600 mb-2 block">SEARCH SEND CURRENCY</label>
+                    <input
+                      type="text"
+                      value={fromSearchQuery}
+                      onChange={(e) => setFromSearchQuery(e.target.value)}
+                      placeholder="Type country or currency..."
+                      className="w-full bg-white/80 backdrop-blur-sm rounded-xl p-3 text-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600 mb-2 block">SEARCH RECEIVE CURRENCY</label>
+                    <input
+                      type="text"
+                      value={toSearchQuery}
+                      onChange={(e) => setToSearchQuery(e.target.value)}
+                      placeholder="Type country or currency..."
+                      className="w-full bg-white/80 backdrop-blur-sm rounded-xl p-3 text-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                    />
+                  </div>
+                </div>
+
                 {/* Currency Selection - Compact Glossy Cards */}
                 <div className="space-y-4">
-                  {Object.entries(exchangeRates.regions).map(([region, currencies], idx) => (
+                  {Object.entries(exchangeRates.regions).map(([region, currencies], idx) => {
+                    // Filter currencies based on search queries
+                    const filteredCurrencies = currencies.filter(currency => {
+                      const searchLower = (fromSearchQuery || toSearchQuery).toLowerCase();
+                      if (!searchLower) return true;
+                      return (
+                        currency.country.toLowerCase().includes(searchLower) ||
+                        currency.code.toLowerCase().includes(searchLower)
+                      );
+                    });
+
+                    if (filteredCurrencies.length === 0) return null;
+
+                    return (
                     <motion.div
                       key={region}
                       initial={{ opacity: 0, y: 10 }}
@@ -475,8 +514,8 @@ export default function CountryDetailPage() {
                         <Globe className="w-3 h-3" />
                         {region}
                       </h3>
-                      <div className="grid grid-cols-3 gap-2">
-                        {currencies.map((currency, currIdx) => (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {filteredCurrencies.map((currency, currIdx) => (
                           <motion.button
                             key={currIdx}
                             whileHover={{ scale: 1.03 }}
@@ -519,10 +558,11 @@ export default function CountryDetailPage() {
                               </div>
                             </div>
                           </motion.button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  ))}
+                          ))}
+                          </div>
+                          </motion.div>
+                          );
+                          })}
                   </div>
                   </>
                   )}
