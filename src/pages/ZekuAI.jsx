@@ -22,22 +22,61 @@ const speakAlienVoice = (text) => {
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel(); // Stop any ongoing speech
     
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.7; // Slower for alien effect
-    utterance.pitch = 0.3; // Lower pitch for alien effect
-    utterance.volume = 0.6;
+    // Split long text into chunks if needed (speech synthesis has limits)
+    const maxLength = 200;
+    const chunks = [];
     
-    // Try to find a unique voice
-    const voices = window.speechSynthesis.getVoices();
-    const alienVoice = voices.find(v => 
-      v.name.includes('Google') || 
-      v.name.includes('UK') || 
-      v.lang.includes('en-GB')
-    ) || voices[0];
+    if (text.length > maxLength) {
+      let start = 0;
+      while (start < text.length) {
+        let end = start + maxLength;
+        // Try to break at sentence or word boundary
+        if (end < text.length) {
+          const lastPeriod = text.lastIndexOf('.', end);
+          const lastSpace = text.lastIndexOf(' ', end);
+          if (lastPeriod > start + maxLength / 2) {
+            end = lastPeriod + 1;
+          } else if (lastSpace > start + maxLength / 2) {
+            end = lastSpace + 1;
+          }
+        }
+        chunks.push(text.slice(start, end).trim());
+        start = end;
+      }
+    } else {
+      chunks.push(text);
+    }
     
-    if (alienVoice) utterance.voice = alienVoice;
+    // Speak each chunk in sequence
+    let currentChunk = 0;
+    const speakNext = () => {
+      if (currentChunk >= chunks.length) return;
+      
+      const utterance = new SpeechSynthesisUtterance(chunks[currentChunk]);
+      utterance.rate = 0.7; // Slower for alien effect
+      utterance.pitch = 0.3; // Lower pitch for alien effect
+      utterance.volume = 0.6;
+      
+      // Try to find a unique voice
+      const voices = window.speechSynthesis.getVoices();
+      const alienVoice = voices.find(v => 
+        v.name.includes('Google') || 
+        v.name.includes('UK') || 
+        v.lang.includes('en-GB')
+      ) || voices[0];
+      
+      if (alienVoice) utterance.voice = alienVoice;
+      
+      // Speak next chunk when current one finishes
+      utterance.onend = () => {
+        currentChunk++;
+        speakNext();
+      };
+      
+      window.speechSynthesis.speak(utterance);
+    };
     
-    window.speechSynthesis.speak(utterance);
+    speakNext();
   }
 };
 
@@ -116,24 +155,28 @@ export default function ZekuAIPage() {
     if (conversation?.id) {
       const unsubscribe = base44.agents.subscribeToConversation(conversation.id, (data) => {
         if (data?.messages) {
+          const previousLength = messages.length;
           setMessages(data.messages);
           setIsSending(false);
 
-          // Speak the latest AI message with alien voice if enabled (only once per message)
-          if (alienVoiceEnabled && data.messages.length > 0) {
+          // Speak the latest AI message with alien voice if enabled (only when message is complete)
+          if (alienVoiceEnabled && data.messages.length > previousLength) {
             const lastMsg = data.messages[data.messages.length - 1];
-            const messageId = `${lastMsg.role}-${lastMsg.content?.substring(0, 50)}`;
+            const messageId = `${lastMsg.role}-${lastMsg.content?.substring(0, 50)}-${lastMsg.content?.length}`;
             
             if (lastMsg.role === 'assistant' && lastMsg.content && lastSpokenMessageRef.current !== messageId) {
               lastSpokenMessageRef.current = messageId;
-              speakAlienVoice(lastMsg.content);
+              // Wait a bit to ensure message is complete before speaking
+              setTimeout(() => {
+                speakAlienVoice(lastMsg.content);
+              }, 500);
             }
           }
         }
       });
       return () => unsubscribe?.();
     }
-  }, [conversation?.id, alienVoiceEnabled]);
+  }, [conversation?.id, alienVoiceEnabled, messages.length]);
 
   useEffect(() => {
     scrollToBottom();
