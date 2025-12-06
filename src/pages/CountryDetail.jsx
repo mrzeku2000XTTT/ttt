@@ -419,35 +419,40 @@ export default function CountryDetailPage() {
                             className="w-full bg-white/80 backdrop-blur-sm rounded-xl p-3 text-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-400 font-semibold"
                           />
                           {fromSearchQuery && (
-                            <div className="absolute top-full left-0 right-0 mt-1 bg-white/95 backdrop-blur-xl rounded-xl border border-slate-200 shadow-2xl max-h-64 overflow-y-auto z-50">
-                              {allCurrencies
-                                .filter(curr => {
-                                  const searchLower = fromSearchQuery.toLowerCase();
-                                  return (
-                                    curr.country.toLowerCase().includes(searchLower) ||
-                                    curr.code.toLowerCase().includes(searchLower)
-                                  );
-                                })
-                                .map((curr) => (
-                                  <button
-                                    key={curr.code}
-                                    onClick={() => {
-                                      setFromCurrency(curr);
-                                      setFromSearchQuery('');
-                                      if (selectedCurrency) {
-                                        const rate = parseFloat(selectedCurrency.rate) / parseFloat(curr.rate);
-                                        setToAmount((fromAmount * rate).toFixed(2));
-                                      }
-                                    }}
-                                    className="w-full px-4 py-3 text-left hover:bg-orange-50 transition-colors border-b border-slate-100 last:border-b-0 flex items-center gap-2"
-                                  >
-                                    <span className="text-xl">{curr.flag}</span>
-                                    <div className="flex-1">
-                                      <div className="font-bold text-sm text-slate-900">{curr.code}</div>
-                                      <div className="text-xs text-slate-600">{curr.country}</div>
-                                    </div>
-                                  </button>
-                                ))}
+                            <div className="fixed inset-0 bg-black/20 z-[100]" onClick={() => setFromSearchQuery('')}>
+                              <div 
+                                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md bg-white/98 backdrop-blur-xl rounded-xl border border-slate-300 shadow-2xl max-h-[70vh] overflow-y-auto"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {allCurrencies
+                                  .filter(curr => {
+                                    const searchLower = fromSearchQuery.toLowerCase();
+                                    return (
+                                      curr.country.toLowerCase().includes(searchLower) ||
+                                      curr.code.toLowerCase().includes(searchLower)
+                                    );
+                                  })
+                                  .map((curr) => (
+                                    <button
+                                      key={curr.code}
+                                      onClick={() => {
+                                        setFromCurrency(curr);
+                                        setFromSearchQuery('');
+                                        if (selectedCurrency) {
+                                          const rate = parseFloat(selectedCurrency.rate) / parseFloat(curr.rate);
+                                          setToAmount((fromAmount * rate).toFixed(2));
+                                        }
+                                      }}
+                                      className="w-full px-3 py-2 text-left hover:bg-orange-50 transition-colors border-b border-slate-100 last:border-b-0 flex items-center gap-2"
+                                    >
+                                      <span className="text-lg">{curr.flag}</span>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-bold text-xs text-slate-900">{curr.code}</div>
+                                        <div className="text-[10px] text-slate-600 truncate">{curr.country}</div>
+                                      </div>
+                                    </button>
+                                  ))}
+                              </div>
                             </div>
                           )}
                           {!fromSearchQuery && (
@@ -505,35 +510,40 @@ export default function CountryDetailPage() {
                           className="w-full bg-white/80 backdrop-blur-sm rounded-xl p-3 text-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-400 font-semibold"
                         />
                         {toSearchQuery && (
-                          <div className="absolute top-full left-0 right-0 mt-1 bg-white/95 backdrop-blur-xl rounded-xl border border-slate-200 shadow-2xl max-h-64 overflow-y-auto z-50">
-                            {allCurrencies
-                              .filter(curr => {
-                                const searchLower = toSearchQuery.toLowerCase();
-                                return (
-                                  curr.country.toLowerCase().includes(searchLower) ||
-                                  curr.code.toLowerCase().includes(searchLower)
-                                );
-                              })
-                              .map((curr) => (
-                                <button
-                                  key={curr.code}
-                                  onClick={() => {
-                                    setSelectedCurrency(curr);
-                                    setToSearchQuery('');
-                                    if (fromCurrency) {
-                                      const rate = parseFloat(curr.rate) / parseFloat(fromCurrency.rate);
-                                      setToAmount((fromAmount * rate).toFixed(2));
-                                    }
-                                  }}
-                                  className="w-full px-4 py-3 text-left hover:bg-orange-50 transition-colors border-b border-slate-100 last:border-b-0 flex items-center gap-2"
-                                >
-                                  <span className="text-xl">{curr.flag}</span>
-                                  <div className="flex-1">
-                                    <div className="font-bold text-sm text-slate-900">{curr.code}</div>
-                                    <div className="text-xs text-slate-600">{curr.country}</div>
-                                  </div>
-                                </button>
-                              ))}
+                          <div className="fixed inset-0 bg-black/20 z-[100]" onClick={() => setToSearchQuery('')}>
+                            <div 
+                              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md bg-white/98 backdrop-blur-xl rounded-xl border border-slate-300 shadow-2xl max-h-[70vh] overflow-y-auto"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {allCurrencies
+                                .filter(curr => {
+                                  const searchLower = toSearchQuery.toLowerCase();
+                                  return (
+                                    curr.country.toLowerCase().includes(searchLower) ||
+                                    curr.code.toLowerCase().includes(searchLower)
+                                  );
+                                })
+                                .map((curr) => (
+                                  <button
+                                    key={curr.code}
+                                    onClick={() => {
+                                      setSelectedCurrency(curr);
+                                      setToSearchQuery('');
+                                      if (fromCurrency) {
+                                        const rate = parseFloat(curr.rate) / parseFloat(fromCurrency.rate);
+                                        setToAmount((fromAmount * rate).toFixed(2));
+                                      }
+                                    }}
+                                    className="w-full px-3 py-2 text-left hover:bg-orange-50 transition-colors border-b border-slate-100 last:border-b-0 flex items-center gap-2"
+                                  >
+                                    <span className="text-lg">{curr.flag}</span>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-bold text-xs text-slate-900">{curr.code}</div>
+                                      <div className="text-[10px] text-slate-600 truncate">{curr.country}</div>
+                                    </div>
+                                  </button>
+                                ))}
+                            </div>
                           </div>
                         )}
                         {selectedCurrency && !toSearchQuery && (
