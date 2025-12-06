@@ -117,31 +117,31 @@ export default function CountryDetailPage() {
       </div>
 
       {/* Country Content */}
-      <div className="max-w-7xl mx-auto px-8 py-12">
-        {/* Featured Country Card with Flag */}
+      <div className="relative max-w-7xl mx-auto px-6 py-8">
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center py-12">
+            <div className="animate-spin w-12 h-12 border-4 border-white/30 border-t-blue-600 rounded-full mx-auto mb-4" />
+            <p className="text-slate-700">Loading country data...</p>
+          </div>
+        )}
+
+        {/* Featured Country Card with Flag - Glassmorphic */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8 bg-gradient-to-r from-indigo-600 to-blue-600 rounded-2xl p-10 text-white shadow-xl relative overflow-hidden"
+          className="mb-6 bg-gradient-to-br from-indigo-500/80 to-purple-600/80 backdrop-blur-xl rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden border border-white/20"
         >
-          <div className="absolute inset-0 flex items-center justify-end pr-12 opacity-10">
-            <div className="text-[280px] font-black leading-none">
+          <div className="absolute inset-0 flex items-center justify-end pr-8 opacity-10">
+            <div className="text-[200px] font-black leading-none">
               {countryFlag.split(' ')[0]}
             </div>
           </div>
           <div className="relative">
-            <div className="text-sm font-semibold text-white/80 mb-2 uppercase tracking-wider">Country</div>
-            <h1 className="text-6xl font-bold tracking-tight">{countryName}</h1>
+            <div className="text-xs font-semibold text-white/70 mb-2 uppercase tracking-wider">COUNTRY</div>
+            <h1 className="text-5xl font-bold tracking-tight">{countryName}</h1>
           </div>
         </motion.div>
-
-        {/* Loading State */}
-        {loading && (
-          <div className="text-center py-12">
-            <div className="animate-spin w-12 h-12 border-4 border-slate-200 border-t-slate-900 rounded-full mx-auto mb-4" />
-            <p className="text-slate-600">Loading country data...</p>
-          </div>
-        )}
 
         {/* Modern Info Grid - Glassmorphic with Uneven Sizes */}
         {currencyData && !loading && (
