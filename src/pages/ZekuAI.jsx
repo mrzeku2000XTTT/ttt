@@ -12,20 +12,30 @@ import BackgroundLogo from "../components/BackgroundLogo";
 import ProofOfLifeButton from "../components/bridge/ProofOfLifeButton";
 import ProofOfLifeFeed from "../components/bridge/ProofOfLifeFeed";
 
+// Shared audio context to avoid browser limits
+let audioContext = null;
+
+const getAudioContext = () => {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return audioContext;
+};
+
 // Advanced mechanical keyboard sound generator with matrix theme
 const playKeySound = () => {
   try {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = getAudioContext();
     
     // Create multiple oscillators for rich mechanical sound
-    const osc1 = audioContext.createOscillator();
-    const osc2 = audioContext.createOscillator();
-    const osc3 = audioContext.createOscillator();
-    const noiseGain = audioContext.createGain();
-    const clickGain = audioContext.createGain();
-    const masterGain = audioContext.createGain();
-    const filter = audioContext.createBiquadFilter();
-    const compressor = audioContext.createDynamicsCompressor();
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    const osc3 = ctx.createOscillator();
+    const noiseGain = ctx.createGain();
+    const clickGain = ctx.createGain();
+    const masterGain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    const compressor = ctx.createDynamicsCompressor();
     
     // Configure filter for mechanical resonance
     filter.type = 'bandpass';
@@ -40,7 +50,7 @@ const playKeySound = () => {
     clickGain.connect(masterGain);
     noiseGain.connect(masterGain);
     masterGain.connect(compressor);
-    compressor.connect(audioContext.destination);
+    compressor.connect(ctx.destination);
     
     // Main resonance (spring sound)
     osc1.frequency.value = 2400 + Math.random() * 800;
@@ -54,7 +64,7 @@ const playKeySound = () => {
     osc3.frequency.value = 8000 + Math.random() * 4000;
     osc3.type = 'sawtooth';
     
-    const now = audioContext.currentTime;
+    const now = ctx.currentTime;
     const attackTime = 0.001;
     const decayTime = 0.03;
     const clickDecay = 0.008;
