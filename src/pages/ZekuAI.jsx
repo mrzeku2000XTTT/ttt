@@ -52,35 +52,35 @@ const playKeySound = () => {
     masterGain.connect(compressor);
     compressor.connect(ctx.destination);
     
-    // Main resonance (spring sound)
-    osc1.frequency.value = 2400 + Math.random() * 800;
+    // Main resonance (spring sound) - Cherry MX Blue style
+    osc1.frequency.value = 3200 + Math.random() * 1200;
     osc1.type = 'sine';
     
-    // Click component (switch contact)
-    osc2.frequency.value = 4000 + Math.random() * 2000;
+    // Click component (switch contact) - Sharp tactile click
+    osc2.frequency.value = 6000 + Math.random() * 3000;
     osc2.type = 'square';
     
-    // Noise component (friction/mechanical)
-    osc3.frequency.value = 8000 + Math.random() * 4000;
+    // Noise component (friction/mechanical) - High frequency burst
+    osc3.frequency.value = 12000 + Math.random() * 6000;
     osc3.type = 'sawtooth';
     
     const now = ctx.currentTime;
-    const attackTime = 0.001;
-    const decayTime = 0.03;
-    const clickDecay = 0.008;
-    const noiseDecay = 0.015;
+    const attackTime = 0.0005;
+    const decayTime = 0.04;
+    const clickDecay = 0.006;
+    const noiseDecay = 0.012;
     
-    // Master volume with sharp attack
+    // Master volume with VERY sharp attack - much louder
     masterGain.gain.setValueAtTime(0, now);
-    masterGain.gain.linearRampToValueAtTime(0.12, now + attackTime);
+    masterGain.gain.linearRampToValueAtTime(0.35, now + attackTime);
     masterGain.gain.exponentialRampToValueAtTime(0.001, now + decayTime);
     
-    // Click envelope (sharp and short)
-    clickGain.gain.setValueAtTime(0.15, now);
+    // Click envelope (VERY sharp and loud)
+    clickGain.gain.setValueAtTime(0.45, now);
     clickGain.gain.exponentialRampToValueAtTime(0.001, now + clickDecay);
     
-    // Noise envelope (quick burst)
-    noiseGain.gain.setValueAtTime(0.05, now);
+    // Noise envelope (loud mechanical burst)
+    noiseGain.gain.setValueAtTime(0.25, now);
     noiseGain.gain.exponentialRampToValueAtTime(0.001, now + noiseDecay);
     
     // Frequency sweep for mechanical spring effect
