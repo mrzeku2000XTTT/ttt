@@ -135,7 +135,7 @@ export default function KonektPage() {
   };
 
   return (
-    <div className="fixed inset-0 bg-black flex flex-col overflow-hidden z-50 touch-pan-y" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+    <div className="fixed inset-0 bg-black flex flex-col overflow-hidden z-50 touch-pan-y" style={{ height: '100vh', height: '100dvh' }}>
       {/* Background Effects */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-gradient-to-br from-orange-900/20 via-black to-red-900/20" />
@@ -166,7 +166,7 @@ export default function KonektPage() {
       </div>
 
       {/* Chat Area - Scrollable */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-hide z-10 relative overscroll-contain">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-hide z-10 relative overscroll-contain" style={{ paddingBottom: '1rem' }}>
         {loading ? (
           <div className="flex flex-col justify-center items-center h-full gap-4">
             <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
@@ -248,7 +248,7 @@ export default function KonektPage() {
       </div>
 
       {/* Input Area - Fixed */}
-      <div className="flex-none p-4 bg-black/80 backdrop-blur-xl border-t border-white/10 z-20 sticky bottom-0">
+      <div className="flex-none p-4 bg-black/80 backdrop-blur-xl border-t border-white/10 z-20 sticky bottom-0" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' }}>
         <div className="max-w-4xl mx-auto w-full">
           {user ? (
             <form onSubmit={handleSendMessage} className="flex gap-3 items-end">
