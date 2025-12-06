@@ -147,7 +147,7 @@ export default function AppStorePage() {
                     <div className="text-white/40 text-[10px]">{app.category}</div>
                   </div>
                 </motion.div>
-              </Link>
+              </AppWrapper>
             );
           })}
         </div>
