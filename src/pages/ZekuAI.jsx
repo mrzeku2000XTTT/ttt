@@ -20,24 +20,37 @@ const speakAlienVoice = (text) => {
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
     
-    // Remove emojis and special characters
-    const cleanText = text.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim();
+    // Remove markdown, emojis, asterisks, and special characters
+    let cleanText = text
+      .replace(/\*\*/g, '') // Remove bold markdown
+      .replace(/\*/g, '') // Remove asterisks
+      .replace(/#{1,6}\s/g, '') // Remove headers
+      .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1') // Remove links but keep text
+      .replace(/`{1,3}[^`]*`{1,3}/g, '') // Remove code blocks
+      .replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '') // Remove emojis
+      .replace(/[_~]/g, '') // Remove other markdown
+      .trim();
     
     if (!cleanText) return;
     
-    // Split into sentences for more reliable playback
-    const sentences = cleanText.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [cleanText];
+    // Split into sentences - more comprehensive pattern
+    const sentences = cleanText.match(/[^.!?\n]+[.!?\n]+/g) || [cleanText];
     let currentIndex = 0;
     
     const speakNext = () => {
-      if (currentIndex >= sentences.length) return;
+      if (currentIndex >= sentences.length) {
+        console.log('✅ Finished speaking all sentences');
+        return;
+      }
       
       const sentence = sentences[currentIndex].trim();
-      if (!sentence) {
+      if (!sentence || sentence.length < 2) {
         currentIndex++;
         speakNext();
         return;
       }
+      
+      console.log(`🗣️ Speaking sentence ${currentIndex + 1}/${sentences.length}: "${sentence.substring(0, 50)}..."`);
       
       const utterance = new SpeechSynthesisUtterance(sentence);
       utterance.rate = 0.7;
@@ -55,19 +68,19 @@ const speakAlienVoice = (text) => {
       
       utterance.onend = () => {
         currentIndex++;
-        // Small delay between sentences for better reliability
-        setTimeout(() => speakNext(), 100);
+        setTimeout(() => speakNext(), 150);
       };
       
       utterance.onerror = (e) => {
         console.error('Speech error:', e);
         currentIndex++;
-        speakNext();
+        setTimeout(() => speakNext(), 150);
       };
       
       window.speechSynthesis.speak(utterance);
     };
     
+    console.log(`🎙️ Starting to speak ${sentences.length} sentences`);
     speakNext();
   }
 };
@@ -145,30 +158,43 @@ export default function ZekuAIPage() {
 
   useEffect(() => {
     if (conversation?.id) {
+      let speakTimeout = null;
       const unsubscribe = base44.agents.subscribeToConversation(conversation.id, (data) => {
         if (data?.messages) {
-          const previousLength = messages.length;
           setMessages(data.messages);
           setIsSending(false);
 
-          // Speak the latest AI message with alien voice if enabled (only when message is complete)
-          if (alienVoiceEnabled && data.messages.length > previousLength) {
+          // Speak the latest AI message when streaming completes
+          if (alienVoiceEnabled && data.messages.length > 0) {
             const lastMsg = data.messages[data.messages.length - 1];
-            const messageId = `${lastMsg.role}-${lastMsg.content?.substring(0, 50)}-${lastMsg.content?.length}`;
             
-            if (lastMsg.role === 'assistant' && lastMsg.content && lastSpokenMessageRef.current !== messageId) {
-              lastSpokenMessageRef.current = messageId;
-              // Wait a bit to ensure message is complete before speaking
-              setTimeout(() => {
-                speakAlienVoice(lastMsg.content);
-              }, 500);
+            if (lastMsg.role === 'assistant' && lastMsg.content) {
+              // Clear any pending speak timeout
+              if (speakTimeout) clearTimeout(speakTimeout);
+              
+              // Set a new timeout - if content stops changing for 1 second, speak it
+              speakTimeout = setTimeout(() => {
+                const finalMsg = data.messages[data.messages.length - 1];
+                if (finalMsg.role === 'assistant' && finalMsg.content) {
+                  const messageId = `${finalMsg.content}`;
+                  
+                  // Only speak if we haven't spoken this exact content yet
+                  if (lastSpokenMessageRef.current !== messageId) {
+                    lastSpokenMessageRef.current = messageId;
+                    speakAlienVoice(finalMsg.content);
+                  }
+                }
+              }, 1000);
             }
           }
         }
       });
-      return () => unsubscribe?.();
+      return () => {
+        unsubscribe?.();
+        if (speakTimeout) clearTimeout(speakTimeout);
+      };
     }
-  }, [conversation?.id, alienVoiceEnabled, messages.length]);
+  }, [conversation?.id, alienVoiceEnabled]);
 
   useEffect(() => {
     scrollToBottom();
