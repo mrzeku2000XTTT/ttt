@@ -16,20 +16,41 @@ import ProofOfLifeFeed from "../components/bridge/ProofOfLifeFeed";
 const playKeySound = () => {
   try {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
     
-    oscillator.connect(gainNode);
+    // Create multiple oscillators for richer sound
+    const osc1 = audioContext.createOscillator();
+    const osc2 = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    const filter = audioContext.createBiquadFilter();
+    
+    // Configure filter for sharper attack
+    filter.type = 'bandpass';
+    filter.frequency.value = 800 + Math.random() * 400;
+    filter.Q.value = 2;
+    
+    // Connect nodes
+    osc1.connect(filter);
+    osc2.connect(filter);
+    filter.connect(gainNode);
     gainNode.connect(audioContext.destination);
     
-    oscillator.frequency.value = 400 + Math.random() * 100;
-    oscillator.type = 'square';
+    // Main frequency
+    osc1.frequency.value = 1200 + Math.random() * 300;
+    osc1.type = 'triangle';
     
-    gainNode.gain.setValueAtTime(0.05, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.03);
+    // Add harmonic for mechanical click
+    osc2.frequency.value = 200 + Math.random() * 100;
+    osc2.type = 'square';
     
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.03);
+    // Sharp attack, quick decay
+    gainNode.gain.setValueAtTime(0.08, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.04);
+    
+    const now = audioContext.currentTime;
+    osc1.start(now);
+    osc2.start(now);
+    osc1.stop(now + 0.04);
+    osc2.stop(now + 0.04);
   } catch (e) {
     // Silently fail if audio context is not available
   }
