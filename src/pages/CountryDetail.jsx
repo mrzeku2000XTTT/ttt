@@ -24,12 +24,20 @@ export default function CountryDetailPage() {
   const [allCurrencies, setAllCurrencies] = useState([]);
   const [fromSearchQuery, setFromSearchQuery] = useState("");
   const [toSearchQuery, setToSearchQuery] = useState("");
+  const [capitalImage, setCapitalImage] = useState(null);
+  const [loadingImage, setLoadingImage] = useState(false);
 
   useEffect(() => {
     if (countryName) {
       fetchCurrencyData();
     }
   }, [countryName]);
+
+  useEffect(() => {
+    if (currencyData?.capital) {
+      loadCapitalImage();
+    }
+  }, [currencyData?.capital]);
 
   useEffect(() => {
     if (currencyData?.currencyCode) {
@@ -106,6 +114,36 @@ export default function CountryDetailPage() {
       setExchangeRates(null);
     } finally {
       setLoadingRates(false);
+    }
+  };
+
+  const loadCapitalImage = async () => {
+    if (!currencyData?.capital || !countryName) return;
+    
+    setLoadingImage(true);
+    try {
+      // First check if image exists in database
+      const existing = await base44.entities.CountryCapitalImage.filter({
+        country_name: countryName,
+        capital_name: currencyData.capital
+      });
+
+      if (existing.length > 0) {
+        setCapitalImage(existing[0].image_url);
+      } else {
+        // Generate new image
+        const response = await base44.functions.invoke('generateCapitalImage', {
+          country_name: countryName,
+          capital_name: currencyData.capital
+        });
+        setCapitalImage(response.data.image_url);
+      }
+    } catch (err) {
+      console.error('Failed to load capital image:', err);
+      // Fallback to Unsplash if AI generation fails
+      setCapitalImage(`https://source.unsplash.com/400x300/?${encodeURIComponent(currencyData.capital)},city,landmark`);
+    } finally {
+      setLoadingImage(false);
     }
   };
 
@@ -206,7 +244,7 @@ export default function CountryDetailPage() {
               </div>
             </motion.div>
 
-            {/* Capital Card with Photo - Clickable */}
+            {/* Capital Card with AI Photo - Clickable */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -214,15 +252,24 @@ export default function CountryDetailPage() {
               className="col-span-6 md:col-span-4 lg:col-span-3 bg-white/50 backdrop-blur-xl rounded-xl shadow-md overflow-hidden relative border border-white/40 cursor-pointer hover:shadow-xl transition-all"
             >
               <div className="absolute inset-0">
-                <img 
-                  src={`https://source.unsplash.com/400x300/?${encodeURIComponent(currencyData.capital)},city,landmark`}
-                  alt={currencyData.capital}
-                  className="w-full h-full object-cover"
-                />
+                {loadingImage ? (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
+                    <div className="text-center">
+                      <div className="animate-spin w-8 h-8 border-4 border-slate-300 border-t-slate-600 rounded-full mx-auto mb-2" />
+                      <p className="text-xs text-slate-600">Generating AI image...</p>
+                    </div>
+                  </div>
+                ) : (
+                  <img 
+                    src={capitalImage || `https://source.unsplash.com/400x300/?${encodeURIComponent(currencyData.capital)},city,landmark`}
+                    alt={currencyData.capital}
+                    className="w-full h-full object-cover"
+                  />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
               </div>
               <div className="relative z-10 p-3 h-full flex flex-col justify-end">
-                <h3 className="text-xs font-bold text-white/90 mb-1">Capital</h3>
+                <h3 className="text-xs font-bold text-white/90 mb-1">Capital {!loadingImage && capitalImage && <span className="text-[8px] bg-purple-500/80 px-1 py-0.5 rounded ml-1">AI</span>}</h3>
                 <p className="text-sm font-bold text-white">{currencyData.capital}</p>
               </div>
             </motion.div>
