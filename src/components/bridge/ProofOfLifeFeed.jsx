@@ -29,7 +29,7 @@ const getTimeAgo = (timestamp) => {
   }
 };
 
-export default function ProofOfLifeFeed() {
+export default function ProofOfLifeFeed({ onUpdate }) {
   const [proofs, setProofs] = useState([]);
   const [profiles, setProfiles] = useState({});
   const [isLoading, setIsLoading] = useState(true);
@@ -392,6 +392,7 @@ export default function ProofOfLifeFeed() {
       setShowCreateModal(false);
 
       await loadData();
+      if (onUpdate) onUpdate();
 
     } catch (err) {
       console.error('Creation failed:', err);
