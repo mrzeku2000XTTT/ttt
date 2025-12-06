@@ -63,43 +63,17 @@ export default function CountryDetailPage() {
   const fetchExchangeRates = async () => {
     setLoadingRates(true);
     try {
-      const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `Provide current exchange rates from ${countryName}'s currency to major world currencies grouped by region. Include 3-4 currencies per region. Format as JSON:
-        {
-          "baseCurrency": "currency code",
-          "regions": {
-            "North America": [{"country": "Canada", "flag": "🇨🇦", "code": "CAD", "rate": "1.36", "change": "+0.2"}],
-            "Europe": [{"country": "Eurozone", "flag": "🇪🇺", "code": "EUR", "rate": "0.92", "change": "+0.3"}],
-            "Asia": [{"country": "Japan", "flag": "🇯🇵", "code": "JPY", "rate": "149.50", "change": "+0.5"}],
-            "South America": [{"country": "Brazil", "flag": "🇧🇷", "code": "BRL", "rate": "4.97", "change": "-0.3"}],
-            "Oceania": [{"country": "Australia", "flag": "🇦🇺", "code": "AUD", "rate": "1.52", "change": "-0.4"}],
-            "Africa": [{"country": "South Africa", "flag": "🇿🇦", "code": "ZAR", "rate": "18.75", "change": "+0.1"}]
-          }
-        }`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            baseCurrency: { type: "string" },
-            regions: {
-              type: "object",
-              additionalProperties: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    country: { type: "string" },
-                    flag: { type: "string" },
-                    code: { type: "string" },
-                    rate: { type: "string" },
-                    change: { type: "string" }
-                  }
-                }
-              }
-            }
-          }
-        }
+      // Wait for currency data to load first
+      if (!currencyData?.currencyCode) {
+        setTimeout(fetchExchangeRates, 500);
+        return;
+      }
+
+      const response = await base44.functions.invoke('getCurrencyRates', {
+        currencyCode: currencyData.currencyCode
       });
-      setExchangeRates(response);
+
+      setExchangeRates(response.data);
     } catch (err) {
       console.error("Failed to fetch exchange rates:", err);
     } finally {
