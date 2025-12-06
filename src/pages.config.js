@@ -323,7 +323,7 @@ export const PAGES = {
 }
 
 export const pagesConfig = {
-    mainPage: "Feed",
+    mainPage: "AgentZK",
     Pages: PAGES,
     Layout: __Layout,
 };

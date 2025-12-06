@@ -654,15 +654,15 @@ export default function FeedPage() {
     }
   };
 
+  const isDesktop = () => {
+    return window.innerWidth >= 1024 && !/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  };
+
   const handlePost = async () => {
     if (!newPost.trim() && uploadedFiles.length === 0) {
       setError('Please enter some content or upload files');
       return;
     }
-
-    // Check if user is calling ZK bot
-    const zkMatch = newPost.trim().match(/^@zk\s+(.+)/i);
-    const isZKCall = zkMatch !== null;
 
     // Get wallet from Kasware or TTT wallet
     let walletAddress = '';
@@ -681,8 +681,34 @@ export default function FeedPage() {
       }
     }
 
-    setIsPosting(true);
-    setError(null);
+    // Desktop-only: Require 1 KAS self-payment
+    if (isDesktop()) {
+      if (!kaswareWallet.connected) {
+        setError('Desktop users: Connect Kasware to post (1 KAS self-payment required)');
+        await connectKasware();
+        return;
+      }
+
+      setIsPosting(true);
+      setError(null);
+
+      try {
+        // Send 1 KAS to self
+        const amountSompi = 100000000; // 1 KAS
+        await window.kasware.sendKaspa(walletAddress, amountSompi);
+      } catch (err) {
+        setIsPosting(false);
+        if (err.message?.includes('User reject')) {
+          setError('Payment cancelled - post not created');
+        } else {
+          setError('Payment failed: ' + err.message);
+        }
+        return;
+      }
+    } else {
+      setIsPosting(true);
+      setError(null);
+    }
 
     try {
       const authorName = user?.username ||
