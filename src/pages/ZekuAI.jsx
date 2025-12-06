@@ -519,7 +519,7 @@ export default function ZekuAIPage() {
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div className="flex items-end gap-2 max-w-[90%]">
-                      {msg.role === 'assistant' && (
+                      {msg.role === 'assistant' && alienVoiceEnabled && (
                         <button
                           onClick={() => {
                             setSpeakingMessageIndex(idx);
