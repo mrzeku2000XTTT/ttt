@@ -12,91 +12,37 @@ import BackgroundLogo from "../components/BackgroundLogo";
 import ProofOfLifeButton from "../components/bridge/ProofOfLifeButton";
 import ProofOfLifeFeed from "../components/bridge/ProofOfLifeFeed";
 
-// Shared audio context to avoid browser limits
-let audioContext = null;
+// Pool of real keyboard sound effects from Mixkit
+const keyboardSounds = [
+  'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',
+  'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',
+  'https://assets.mixkit.co/active_storage/sfx/2575/2575-preview.mp3',
+  'https://assets.mixkit.co/active_storage/sfx/2589/2589-preview.mp3',
+];
 
-const getAudioContext = () => {
-  if (!audioContext) {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  return audioContext;
-};
+// Preload audio files for instant playback
+const audioCache = new Map();
+keyboardSounds.forEach(url => {
+  const audio = new Audio(url);
+  audio.volume = 0.8;
+  audio.preload = 'auto';
+  audioCache.set(url, audio);
+});
 
-// Advanced mechanical keyboard sound generator with matrix theme
+// Play real mechanical keyboard sound
 const playKeySound = () => {
   try {
-    const ctx = getAudioContext();
+    const randomSound = keyboardSounds[Math.floor(Math.random() * keyboardSounds.length)];
+    const audio = audioCache.get(randomSound);
     
-    // Create multiple oscillators for rich mechanical sound
-    const osc1 = ctx.createOscillator();
-    const osc2 = ctx.createOscillator();
-    const osc3 = ctx.createOscillator();
-    const noiseGain = ctx.createGain();
-    const clickGain = ctx.createGain();
-    const masterGain = ctx.createGain();
-    const filter = ctx.createBiquadFilter();
-    const compressor = ctx.createDynamicsCompressor();
-    
-    // Configure filter for mechanical resonance
-    filter.type = 'bandpass';
-    filter.frequency.value = 1800 + Math.random() * 600;
-    filter.Q.value = 3;
-    
-    // Connect audio graph
-    osc1.connect(filter);
-    osc2.connect(clickGain);
-    osc3.connect(noiseGain);
-    filter.connect(masterGain);
-    clickGain.connect(masterGain);
-    noiseGain.connect(masterGain);
-    masterGain.connect(compressor);
-    compressor.connect(ctx.destination);
-    
-    // Main resonance (spring sound) - Cherry MX Blue style
-    osc1.frequency.value = 3200 + Math.random() * 1200;
-    osc1.type = 'sine';
-    
-    // Click component (switch contact) - Sharp tactile click
-    osc2.frequency.value = 6000 + Math.random() * 3000;
-    osc2.type = 'square';
-    
-    // Noise component (friction/mechanical) - High frequency burst
-    osc3.frequency.value = 12000 + Math.random() * 6000;
-    osc3.type = 'sawtooth';
-    
-    const now = ctx.currentTime;
-    const attackTime = 0.0005;
-    const decayTime = 0.04;
-    const clickDecay = 0.006;
-    const noiseDecay = 0.012;
-    
-    // Master volume with VERY sharp attack - much louder
-    masterGain.gain.setValueAtTime(0, now);
-    masterGain.gain.linearRampToValueAtTime(0.35, now + attackTime);
-    masterGain.gain.exponentialRampToValueAtTime(0.001, now + decayTime);
-    
-    // Click envelope (VERY sharp and loud)
-    clickGain.gain.setValueAtTime(0.45, now);
-    clickGain.gain.exponentialRampToValueAtTime(0.001, now + clickDecay);
-    
-    // Noise envelope (loud mechanical burst)
-    noiseGain.gain.setValueAtTime(0.25, now);
-    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + noiseDecay);
-    
-    // Frequency sweep for mechanical spring effect
-    osc1.frequency.exponentialRampToValueAtTime(
-      osc1.frequency.value * 0.7, 
-      now + decayTime
-    );
-    
-    osc1.start(now);
-    osc2.start(now);
-    osc3.start(now);
-    osc1.stop(now + decayTime);
-    osc2.stop(now + clickDecay);
-    osc3.stop(now + noiseDecay);
+    if (audio) {
+      // Clone the audio to allow rapid successive plays
+      const clonedAudio = audio.cloneNode();
+      clonedAudio.volume = 0.8;
+      clonedAudio.play().catch(() => {});
+    }
   } catch (e) {
-    // Silently fail if audio context is not available
+    // Silently fail if audio playback is not available
   }
 };
 
