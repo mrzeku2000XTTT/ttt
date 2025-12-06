@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Send, Bot, Loader2, Lock, Crown, Trash2, Upload, X, Image as ImageIcon, AlertCircle, RefreshCw, Activity } from "lucide-react";
+import { Send, Bot, Loader2, Lock, Crown, Trash2, Upload, X, Image as ImageIcon, AlertCircle, RefreshCw, Activity, Volume2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ReactMarkdown from "react-markdown";
@@ -110,6 +110,7 @@ export default function ZekuAIPage() {
   const [typedMessageIds, setTypedMessageIds] = useState(new Set());
   const messagesContainerRef = useRef(null);
   const [alienVoiceEnabled, setAlienVoiceEnabled] = useState(false);
+  const [speakingMessageIndex, setSpeakingMessageIndex] = useState(null);
 
   useEffect(() => {
     initialize();
@@ -517,29 +518,47 @@ export default function ZekuAIPage() {
                     animate={{ opacity: 1, y: 0 }}
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div
-                      className={`max-w-[85%] rounded-xl px-3 py-2 text-sm shadow-lg ${
-                        msg.role === 'user'
-                          ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                          : matrixMode
-                          ? 'bg-green-500/20 backdrop-blur-sm border border-green-500/50 text-green-400'
-                          : 'bg-black/70 backdrop-blur-sm border border-white/20 text-gray-100'
-                      }`}
-                      style={msg.role === 'assistant' ? { fontFamily: 'monospace' } : undefined}
-                    >
-                      {msg.role === 'assistant' ? (
-                        shouldTypewrite ? (
-                          <TypewriterText text={msg.content} speed={20} onUpdate={scrollToBottom} playSound={true} />
-                        ) : matrixMode ? (
-                          <p className="text-xs whitespace-pre-wrap">{msg.content}</p>
-                        ) : (
-                          <ReactMarkdown className="prose prose-invert max-w-none text-xs [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
-                            {msg.content}
-                          </ReactMarkdown>
-                        )
-                      ) : (
-                        <p className="text-xs">{msg.content}</p>
+                    <div className="flex items-end gap-2 max-w-[90%]">
+                      {msg.role === 'assistant' && (
+                        <button
+                          onClick={() => {
+                            setSpeakingMessageIndex(idx);
+                            speakAlienVoice(msg.content);
+                            setTimeout(() => setSpeakingMessageIndex(null), 2000);
+                          }}
+                          className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+                            speakingMessageIndex === idx
+                              ? 'bg-purple-500/30 text-purple-300'
+                              : 'bg-black/50 text-white/60 hover:bg-purple-500/20 hover:text-purple-400'
+                          }`}
+                        >
+                          <Volume2 className="w-4 h-4" />
+                        </button>
                       )}
+                      <div
+                        className={`rounded-xl px-3 py-2 text-sm shadow-lg ${
+                          msg.role === 'user'
+                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                            : matrixMode
+                            ? 'bg-green-500/20 backdrop-blur-sm border border-green-500/50 text-green-400'
+                            : 'bg-black/70 backdrop-blur-sm border border-white/20 text-gray-100'
+                        }`}
+                        style={msg.role === 'assistant' ? { fontFamily: 'monospace' } : undefined}
+                      >
+                        {msg.role === 'assistant' ? (
+                          shouldTypewrite ? (
+                            <TypewriterText text={msg.content} speed={20} onUpdate={scrollToBottom} playSound={true} />
+                          ) : matrixMode ? (
+                            <p className="text-xs whitespace-pre-wrap">{msg.content}</p>
+                          ) : (
+                            <ReactMarkdown className="prose prose-invert max-w-none text-xs [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                              {msg.content}
+                            </ReactMarkdown>
+                          )
+                        ) : (
+                          <p className="text-xs">{msg.content}</p>
+                        )}
+                      </div>
                     </div>
                   </motion.div>
                 );
