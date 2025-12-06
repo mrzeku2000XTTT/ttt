@@ -225,7 +225,7 @@ export default function ZekuAIPage() {
   }
 
   return (
-    <div className="h-screen bg-black relative overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black overflow-hidden flex flex-col">
       {/* Matrix Rain Background */}
       <canvas
         ref={(canvas) => {
