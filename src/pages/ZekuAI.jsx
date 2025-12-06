@@ -22,29 +22,34 @@ const speakAlienVoice = (text) => {
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel(); // Stop any ongoing speech
     
+    // Remove emojis and special characters
+    const cleanText = text.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim();
+    
+    if (!cleanText) return;
+    
     // Split long text into chunks if needed (speech synthesis has limits)
     const maxLength = 200;
     const chunks = [];
     
-    if (text.length > maxLength) {
+    if (cleanText.length > maxLength) {
       let start = 0;
-      while (start < text.length) {
+      while (start < cleanText.length) {
         let end = start + maxLength;
         // Try to break at sentence or word boundary
-        if (end < text.length) {
-          const lastPeriod = text.lastIndexOf('.', end);
-          const lastSpace = text.lastIndexOf(' ', end);
+        if (end < cleanText.length) {
+          const lastPeriod = cleanText.lastIndexOf('.', end);
+          const lastSpace = cleanText.lastIndexOf(' ', end);
           if (lastPeriod > start + maxLength / 2) {
             end = lastPeriod + 1;
           } else if (lastSpace > start + maxLength / 2) {
             end = lastSpace + 1;
           }
         }
-        chunks.push(text.slice(start, end).trim());
+        chunks.push(cleanText.slice(start, end).trim());
         start = end;
       }
     } else {
-      chunks.push(text);
+      chunks.push(cleanText);
     }
     
     // Speak each chunk in sequence
