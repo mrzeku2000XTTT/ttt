@@ -111,7 +111,6 @@ export default function ZekuAIPage() {
   const messagesContainerRef = useRef(null);
   const [alienVoiceEnabled, setAlienVoiceEnabled] = useState(false);
   const [speakingMessageIndex, setSpeakingMessageIndex] = useState(null);
-  const [isThinking, setIsThinking] = useState(false);
 
   useEffect(() => {
     initialize();
@@ -122,23 +121,14 @@ export default function ZekuAIPage() {
       const unsubscribe = base44.agents.subscribeToConversation(conversation.id, (data) => {
         if (data?.messages) {
           setMessages(data.messages);
-
-          // Check if AI is processing (has tool calls)
-          const lastMsg = data.messages[data.messages.length - 1];
-          if (lastMsg?.tool_calls && lastMsg.tool_calls.length > 0) {
-            const hasRunningTools = lastMsg.tool_calls.some(tc => 
-              tc.status === 'running' || tc.status === 'in_progress' || tc.status === 'pending'
-            );
-            setIsThinking(hasRunningTools);
-          } else {
-            setIsThinking(false);
-          }
-
           setIsSending(false);
 
           // Speak the latest AI message with alien voice if enabled
-          if (alienVoiceEnabled && data.messages.length > 0 && lastMsg.role === 'assistant' && lastMsg.content) {
-            speakAlienVoice(lastMsg.content);
+          if (alienVoiceEnabled && data.messages.length > 0) {
+            const lastMsg = data.messages[data.messages.length - 1];
+            if (lastMsg.role === 'assistant' && lastMsg.content) {
+              speakAlienVoice(lastMsg.content);
+            }
           }
         }
       });
@@ -528,66 +518,60 @@ export default function ZekuAIPage() {
                     animate={{ opacity: 1, y: 0 }}
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div
-                      className={`rounded-xl px-3 py-2 text-sm shadow-lg max-w-[90%] ${
-                        msg.role === 'user'
-                          ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                          : matrixMode
-                          ? 'bg-green-500/20 backdrop-blur-sm border border-green-500/50 text-green-400'
-                          : 'bg-black/70 backdrop-blur-sm border border-white/20 text-gray-100'
-                      }`}
-                      style={msg.role === 'assistant' ? { fontFamily: 'monospace' } : undefined}
-                    >
-                      {msg.role === 'assistant' ? (
-                        shouldTypewrite ? (
-                          <TypewriterText text={msg.content} speed={20} onUpdate={scrollToBottom} playSound={true} />
-                        ) : matrixMode ? (
-                          <p className="text-xs whitespace-pre-wrap">{msg.content}</p>
-                        ) : (
-                          <ReactMarkdown className="prose prose-invert max-w-none text-xs [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
-                            {msg.content}
-                          </ReactMarkdown>
-                        )
-                      ) : (
-                        <p className="text-xs">{msg.content}</p>
+                    <div className="flex items-end gap-2 max-w-[90%]">
+                      {msg.role === 'assistant' && (
+                        <button
+                          onClick={() => {
+                            setSpeakingMessageIndex(idx);
+                            speakAlienVoice(msg.content);
+                            setTimeout(() => setSpeakingMessageIndex(null), 2000);
+                          }}
+                          className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+                            speakingMessageIndex === idx
+                              ? 'bg-purple-500/30 text-purple-300'
+                              : 'bg-black/50 text-white/60 hover:bg-purple-500/20 hover:text-purple-400'
+                          }`}
+                        >
+                          <Volume2 className="w-4 h-4" />
+                        </button>
                       )}
+                      <div
+                        className={`rounded-xl px-3 py-2 text-sm shadow-lg ${
+                          msg.role === 'user'
+                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                            : matrixMode
+                            ? 'bg-green-500/20 backdrop-blur-sm border border-green-500/50 text-green-400'
+                            : 'bg-black/70 backdrop-blur-sm border border-white/20 text-gray-100'
+                        }`}
+                        style={msg.role === 'assistant' ? { fontFamily: 'monospace' } : undefined}
+                      >
+                        {msg.role === 'assistant' ? (
+                          shouldTypewrite ? (
+                            <TypewriterText text={msg.content} speed={20} onUpdate={scrollToBottom} playSound={true} />
+                          ) : matrixMode ? (
+                            <p className="text-xs whitespace-pre-wrap">{msg.content}</p>
+                          ) : (
+                            <ReactMarkdown className="prose prose-invert max-w-none text-xs [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                              {msg.content}
+                            </ReactMarkdown>
+                          )
+                        ) : (
+                          <p className="text-xs">{msg.content}</p>
+                        )}
+                      </div>
                     </div>
                   </motion.div>
                 );
               })}
               
-              {(isSending || isThinking) && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex justify-start"
-                >
-                  <div className={`rounded-xl px-4 py-3 backdrop-blur-sm shadow-lg flex items-center gap-3 ${
+              {isSending && (
+                <div className="flex justify-start">
+                  <div className={`rounded-xl px-4 py-3 backdrop-blur-sm shadow-lg ${
                     matrixMode ? 'bg-green-500/20 border border-green-500/50' : 'bg-black/70 border border-white/20'
                   }`}>
                     <Loader2 className={`w-4 h-4 ${matrixMode ? 'text-green-400' : 'text-purple-400'} animate-spin`} />
-                    {isThinking && (
-                      <motion.div 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="flex items-center gap-1"
-                      >
-                        <span className={`text-xs ${matrixMode ? 'text-green-400' : 'text-purple-300'}`}>
-                          {isSending ? 'Thinking' : 'Accessing documentation'}
-                        </span>
-                        <motion.div
-                          animate={{ opacity: [1, 0.5, 1] }}
-                          transition={{ duration: 1.5, repeat: Infinity }}
-                          className="flex gap-1"
-                        >
-                          <span className="text-xs">.</span>
-                          <span className="text-xs">.</span>
-                          <span className="text-xs">.</span>
-                        </motion.div>
-                      </motion.div>
-                    )}
                   </div>
-                </motion.div>
+                </div>
               )}
               
               <div ref={messagesEndRef} />
