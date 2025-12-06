@@ -12,19 +12,19 @@ import BackgroundLogo from "../components/BackgroundLogo";
 import ProofOfLifeButton from "../components/bridge/ProofOfLifeButton";
 import ProofOfLifeFeed from "../components/bridge/ProofOfLifeFeed";
 
-// Pool of real keyboard sound effects from Mixkit
+// Real mechanical typewriter keyboard sounds
 const keyboardSounds = [
-  'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',
-  'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',
-  'https://assets.mixkit.co/active_storage/sfx/2575/2575-preview.mp3',
-  'https://assets.mixkit.co/active_storage/sfx/2589/2589-preview.mp3',
+  'https://cdn.freesound.org/previews/648/648142_6709-lq.mp3',
+  'https://cdn.freesound.org/previews/648/648141_6709-lq.mp3',
+  'https://cdn.freesound.org/previews/648/648140_6709-lq.mp3',
+  'https://cdn.freesound.org/previews/648/648139_6709-lq.mp3',
 ];
 
 // Preload audio files for instant playback
 const audioCache = new Map();
 keyboardSounds.forEach(url => {
   const audio = new Audio(url);
-  audio.volume = 0.3;
+  audio.volume = 0.2;
   audio.preload = 'auto';
   audioCache.set(url, audio);
 });
@@ -38,7 +38,7 @@ const playKeySound = () => {
     if (audio) {
       // Clone the audio to allow rapid successive plays
       const clonedAudio = audio.cloneNode();
-      clonedAudio.volume = 0.3;
+      clonedAudio.volume = 0.2;
       clonedAudio.play().catch(() => {});
     }
   } catch (e) {
