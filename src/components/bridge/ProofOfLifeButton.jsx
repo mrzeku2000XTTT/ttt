@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { base44 } from "@/api/base44Client";
 import { Zap, Loader2, X, CheckCircle2, Activity } from "lucide-react";
 
-export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user, onSuccess }) {
+export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user, onSuccess, onReset, userHasProof }) {
   const [showModal, setShowModal] = useState(false);
   const [amount, setAmount] = useState('1.0');
   const [message, setMessage] = useState('');
@@ -130,13 +130,26 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
 
   return (
     <>
+      {userHasProof && onReset && (
+        <Button
+          onClick={() => {
+            if (confirm('Reset your alive status? You can go alive again immediately.')) {
+              onReset();
+            }
+          }}
+          variant="outline"
+          className="absolute top-2 right-2 h-7 px-2 text-xs border-white/20 hover:border-white/40 text-gray-400 hover:text-white"
+        >
+          Reset
+        </Button>
+      )}
       <Button
         onClick={handleOpen}
-        disabled={!hasConnectedWallet}
-        className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/50 w-full h-9 text-sm"
+        disabled={!hasConnectedWallet || userHasProof}
+        className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/50 w-full h-9 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <Activity className="w-4 h-4 mr-2" />
-        Go Alive!
+        {userHasProof ? "You're Alive!" : "Go Alive!"}
       </Button>
 
       <AnimatePresence>

@@ -612,7 +612,7 @@ export default function ZekuAIPage() {
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-black/70 backdrop-blur-xl border border-white/20 rounded-xl p-4 text-center"
+                  className="bg-black/70 backdrop-blur-xl border border-white/20 rounded-xl p-4 text-center relative"
                 >
                   <Activity className="w-8 h-8 text-green-400 mx-auto mb-2" />
                   <h3 className="text-base font-bold text-white mb-1">Prove You're Alive First!</h3>
@@ -632,6 +632,12 @@ export default function ZekuAIPage() {
                       setUserHasProof(true);
                       await loadLiveUserCount();
                     }}
+                    onReset={async () => {
+                      setUserHasProof(false);
+                      setUserExpiresAt(null);
+                      await loadLiveUserCount();
+                    }}
+                    userHasProof={userHasProof}
                   />
                 </motion.div>
               ) : (
