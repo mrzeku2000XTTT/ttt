@@ -74,7 +74,7 @@ export default function KonektPage() {
   };
 
   return (
-    <div className="fixed inset-0 bg-black flex flex-col overflow-hidden z-50">
+    <div className="fixed inset-0 bg-black flex flex-col overflow-hidden z-50" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       {/* Background Effects */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-gradient-to-br from-orange-900/20 via-black to-red-900/20" />
@@ -104,7 +104,7 @@ export default function KonektPage() {
       </div>
 
       {/* Header - Fixed */}
-      <div className="flex-none bg-black/60 backdrop-blur-xl border-b border-white/10 p-4 flex items-center gap-4 z-20">
+      <div className="flex-none bg-black/60 backdrop-blur-xl border-b border-white/10 p-4 flex items-center gap-4 z-20 sticky top-0">
         <Link to={createPageUrl("Gate")}>
           <Button variant="ghost" size="icon" className="text-white/60 hover:text-white hover:bg-white/10">
             <ArrowLeft className="w-5 h-5" />
@@ -204,7 +204,7 @@ export default function KonektPage() {
       </div>
 
       {/* Input Area - Fixed */}
-      <div className="flex-none p-4 bg-black/80 backdrop-blur-xl border-t border-white/10 z-20">
+      <div className="flex-none p-4 bg-black/80 backdrop-blur-xl border-t border-white/10 z-20 sticky bottom-0">
         <div className="max-w-4xl mx-auto w-full">
           {user ? (
             <form onSubmit={handleSendMessage} className="flex gap-3 items-end">
