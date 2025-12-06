@@ -86,10 +86,18 @@ export default function ZekuAIPage() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, isSending]);
+
+  useEffect(() => {
+    if (conversation?.id) {
+      scrollToBottom();
+    }
+  }, [conversation?.id]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }, 100);
   };
 
   const initialize = async () => {
@@ -209,13 +217,14 @@ export default function ZekuAIPage() {
     try {
       const messageData = { role: "user", content: messageContent };
       if (files.length) messageData.file_urls = files;
-      
+
       await base44.agents.addMessage(conversation, messageData);
+      scrollToBottom();
     } catch (err) {
       setError('Failed to send message: ' + err.message);
       setIsSending(false);
     }
-  };
+    };
 
   const handleNewChat = async () => {
     if (!confirm('Start new conversation?')) return;
@@ -381,7 +390,7 @@ export default function ZekuAIPage() {
         )}
 
         {/* Messages - Fully Transparent */}
-        <div className="flex-1 bg-transparent border-none rounded-2xl p-4 overflow-y-auto mb-2 min-h-0">
+        <div className="flex-1 bg-transparent border-none rounded-2xl p-4 overflow-y-auto mb-2 min-h-0 scroll-smooth">
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center">
               <motion.div
