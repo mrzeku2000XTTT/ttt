@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Send, Loader2, User as UserIcon, Shield, Copy, Check } from "lucide-react";
+import { ArrowLeft, Send, Loader2, User as UserIcon, Shield, Copy, Check, Book, RefreshCw, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,9 @@ export default function KonektPage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [showVersePicker, setShowVersePicker] = useState(false);
+  const [randomVerse, setRandomVerse] = useState(null);
+  const [loadingVerse, setLoadingVerse] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -68,6 +71,46 @@ export default function KonektPage() {
       loadMessages();
     } catch (error) {
       console.error("Failed to send message:", error);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const pickRandomVerse = async () => {
+    setLoadingVerse(true);
+    try {
+      const verses = await base44.entities.BibleVerse.list(null, 1000);
+      if (verses.length > 0) {
+        const randomIndex = Math.floor(Math.random() * verses.length);
+        setRandomVerse(verses[randomIndex]);
+      }
+    } catch (error) {
+      console.error("Failed to load verse:", error);
+    } finally {
+      setLoadingVerse(false);
+    }
+  };
+
+  const shareVerseToChat = async () => {
+    if (!randomVerse || !user) return;
+
+    setSending(true);
+    try {
+      const verseMessage = `📖 Verse of the Day:\n\n"${randomVerse.text}"\n\n— ${randomVerse.book} ${randomVerse.chapter}:${randomVerse.verse}`;
+      
+      await base44.entities.KasUnityMessage.create({
+        message: verseMessage,
+        sender_username: user.username || user.email?.split('@')[0] || "Anonymous",
+        sender_email: user.email,
+        sender_wallet: user.created_wallet_address,
+        message_type: "text"
+      });
+      
+      setShowVersePicker(false);
+      setRandomVerse(null);
+      loadMessages();
+    } catch (error) {
+      console.error("Failed to share verse:", error);
     } finally {
       setSending(false);
     }
@@ -208,6 +251,17 @@ export default function KonektPage() {
         <div className="max-w-4xl mx-auto w-full">
           {user ? (
             <form onSubmit={handleSendMessage} className="flex gap-3 items-end">
+              <Button 
+                type="button" 
+                onClick={() => {
+                  setShowVersePicker(true);
+                  pickRandomVerse();
+                }}
+                variant="ghost"
+                className="h-11 w-11 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white transition-all"
+              >
+                <Book className="w-5 h-5" />
+              </Button>
               <div className="relative flex-1">
                 <Input
                   value={newMessage}
@@ -254,6 +308,87 @@ export default function KonektPage() {
           )}
         </div>
       </div>
+
+      {/* Verse Picker Modal */}
+      <AnimatePresence>
+        {showVersePicker && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowVersePicker(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-gradient-to-br from-orange-900/40 to-red-900/40 backdrop-blur-xl border border-orange-500/30 rounded-2xl p-6 max-w-lg w-full shadow-2xl"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Book className="w-5 h-5 text-orange-400" />
+                  <h3 className="text-lg font-bold text-white">Verse of the Day</h3>
+                </div>
+                <button
+                  onClick={() => setShowVersePicker(false)}
+                  className="text-white/60 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {loadingVerse ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-4">
+                  <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
+                  <p className="text-white/60 text-sm">Selecting a verse...</p>
+                </div>
+              ) : randomVerse ? (
+                <div className="space-y-4">
+                  <div className="bg-black/40 rounded-xl p-5 border border-white/10">
+                    <p className="text-white text-base leading-relaxed mb-4 italic">
+                      "{randomVerse.text}"
+                    </p>
+                    <p className="text-orange-400 font-bold text-sm">
+                      — {randomVerse.book} {randomVerse.chapter}:{randomVerse.verse}
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={pickRandomVerse}
+                      variant="outline"
+                      className="flex-1 bg-white/5 border-white/20 text-white hover:bg-white/10"
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      New Verse
+                    </Button>
+                    <Button
+                      onClick={shareVerseToChat}
+                      disabled={sending}
+                      className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg"
+                    >
+                      {sending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4 mr-2" />
+                          Share
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-white/60">
+                  <p className="text-sm">No verses available</p>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
