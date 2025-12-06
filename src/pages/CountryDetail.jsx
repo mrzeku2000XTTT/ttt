@@ -569,11 +569,11 @@ export default function CountryDetailPage() {
                       <div className="text-right">
                         <p className="text-xs text-slate-500 mb-1">24h Change</p>
                         <div className={`text-base font-bold ${
-                          selectedCurrency.change.startsWith('+') ? 'text-green-600' :
-                          selectedCurrency.change.startsWith('-') ? 'text-red-600' :
+                          selectedCurrency.change?.startsWith('+') ? 'text-green-600' :
+                          selectedCurrency.change?.startsWith('-') ? 'text-red-600' :
                           'text-slate-600'
                         }`}>
-                          {selectedCurrency.change}%
+                          {selectedCurrency.change || '0.00'}%
                         </div>
                       </div>
                     </div>
@@ -631,11 +631,11 @@ export default function CountryDetailPage() {
                             <div className="flex items-center justify-between">
                               <div className="text-xs font-bold text-slate-700">{currency.rate}</div>
                               <div className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
-                                currency.change.startsWith('+') ? 'bg-green-100 text-green-700' :
-                                currency.change.startsWith('-') ? 'bg-red-100 text-red-700' :
+                                currency.change?.startsWith('+') ? 'bg-green-100 text-green-700' :
+                                currency.change?.startsWith('-') ? 'bg-red-100 text-red-700' :
                                 'bg-slate-100 text-slate-600'
                               }`}>
-                                {currency.change}%
+                                {currency.change || '0.00'}%
                               </div>
                             </div>
                           </motion.button>
