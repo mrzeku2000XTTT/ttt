@@ -12,10 +12,14 @@ export default function CountryDetailPage() {
   const countryFlag = searchParams.get("flag");
   const [currencyData, setCurrencyData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [exchangeRates, setExchangeRates] = useState(null);
+  const [convertAmount, setConvertAmount] = useState(100);
+  const [loadingRates, setLoadingRates] = useState(false);
 
   useEffect(() => {
     if (countryName) {
       fetchCurrencyData();
+      fetchExchangeRates();
     }
   }, [countryName]);
 
@@ -26,6 +30,7 @@ export default function CountryDetailPage() {
         prompt: `For ${countryName}, provide the following information in JSON format:
         {
           "currency": "currency name and code",
+          "currencyCode": "3-letter currency code only",
           "timezone": "main timezone",
           "capital": "capital city",
           "population": "approximate population",
@@ -37,6 +42,7 @@ export default function CountryDetailPage() {
           type: "object",
           properties: {
             currency: { type: "string" },
+            currencyCode: { type: "string" },
             timezone: { type: "string" },
             capital: { type: "string" },
             population: { type: "string" },
@@ -51,6 +57,53 @@ export default function CountryDetailPage() {
       console.error("Failed to fetch data:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchExchangeRates = async () => {
+    setLoadingRates(true);
+    try {
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: `Provide current exchange rates from ${countryName}'s currency to major world currencies grouped by region. Include 3-4 currencies per region. Format as JSON:
+        {
+          "baseCurrency": "currency code",
+          "regions": {
+            "North America": [{"country": "Canada", "flag": "🇨🇦", "code": "CAD", "rate": "1.36", "change": "+0.2"}],
+            "Europe": [{"country": "Eurozone", "flag": "🇪🇺", "code": "EUR", "rate": "0.92", "change": "+0.3"}],
+            "Asia": [{"country": "Japan", "flag": "🇯🇵", "code": "JPY", "rate": "149.50", "change": "+0.5"}],
+            "South America": [{"country": "Brazil", "flag": "🇧🇷", "code": "BRL", "rate": "4.97", "change": "-0.3"}],
+            "Oceania": [{"country": "Australia", "flag": "🇦🇺", "code": "AUD", "rate": "1.52", "change": "-0.4"}],
+            "Africa": [{"country": "South Africa", "flag": "🇿🇦", "code": "ZAR", "rate": "18.75", "change": "+0.1"}]
+          }
+        }`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            baseCurrency: { type: "string" },
+            regions: {
+              type: "object",
+              additionalProperties: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    country: { type: "string" },
+                    flag: { type: "string" },
+                    code: { type: "string" },
+                    rate: { type: "string" },
+                    change: { type: "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+      setExchangeRates(response);
+    } catch (err) {
+      console.error("Failed to fetch exchange rates:", err);
+    } finally {
+      setLoadingRates(false);
     }
   };
 
@@ -170,6 +223,99 @@ export default function CountryDetailPage() {
               </div>
               <p className="text-slate-700">{currencyData.funFact}</p>
             </motion.div>
+          </div>
+        )}
+
+        {/* Currency Exchange Rates Section */}
+        {exchangeRates && !loadingRates && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+            className="mt-16"
+          >
+            <h2 className="text-3xl font-bold text-slate-900 mb-8 flex items-center gap-3">
+              <DollarSign className="w-8 h-8 text-green-600" />
+              Exchange Rates from {exchangeRates.baseCurrency}
+            </h2>
+
+            {/* Interactive Converter */}
+            <div className="bg-gradient-to-br from-green-50 to-blue-50 p-6 rounded-xl border border-slate-300 mb-8">
+              <div className="flex items-center gap-4 mb-4">
+                <input
+                  type="number"
+                  value={convertAmount}
+                  onChange={(e) => setConvertAmount(e.target.value)}
+                  className="w-32 px-4 py-2 text-lg font-bold border-2 border-slate-300 rounded-lg focus:border-green-500 focus:outline-none"
+                />
+                <span className="text-lg font-bold text-slate-700">{exchangeRates.baseCurrency} converts to:</span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {Object.values(exchangeRates.regions).flat().slice(0, 8).map((currency, idx) => (
+                  <div key={idx} className="bg-white p-3 rounded-lg border border-slate-200">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xl">{currency.flag}</span>
+                      <span className="text-xs font-bold text-slate-600">{currency.code}</span>
+                    </div>
+                    <div className="text-lg font-bold text-slate-900">
+                      {(convertAmount * parseFloat(currency.rate)).toFixed(2)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Regional Groups */}
+            <div className="space-y-8">
+              {Object.entries(exchangeRates.regions).map(([region, currencies], idx) => (
+                <motion.div
+                  key={region}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.8 + idx * 0.1 }}
+                >
+                  <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <Globe className="w-5 h-5 text-slate-600" />
+                    {region}
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {currencies.map((currency, currIdx) => (
+                      <div
+                        key={currIdx}
+                        className="bg-white/80 backdrop-blur-md p-4 rounded-lg border border-slate-300 hover:border-slate-400 hover:shadow-md transition-all"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl">{currency.flag}</span>
+                            <div>
+                              <div className="font-bold text-slate-900">{currency.code}</div>
+                              <div className="text-xs text-slate-600">{currency.country}</div>
+                            </div>
+                          </div>
+                          <div className={`text-sm font-bold ${
+                            currency.change.startsWith('+') ? 'text-green-600' :
+                            currency.change.startsWith('-') ? 'text-red-600' :
+                            'text-slate-600'
+                          }`}>
+                            {currency.change}%
+                          </div>
+                        </div>
+                        <div className="text-lg font-bold text-slate-900">
+                          1 {exchangeRates.baseCurrency} = {currency.rate} {currency.code}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {loadingRates && (
+          <div className="mt-16 text-center py-12">
+            <div className="animate-spin w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full mx-auto mb-4" />
+            <p className="text-slate-600">Loading exchange rates...</p>
           </div>
         )}
       </div>
