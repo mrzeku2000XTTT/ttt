@@ -24,7 +24,7 @@ export default function CalculatorPage() {
     const interval = setInterval(() => {
       loadKasPrice();
       loadExchangeRates();
-    }, 60000);
+    }, 10000); // Update every 10 seconds for real-time price
     return () => clearInterval(interval);
   }, []);
 
@@ -406,27 +406,33 @@ export default function CalculatorPage() {
                       {display}
                     </div>
                     <div className="flex items-center justify-end gap-3 mt-3 text-xs flex-wrap">
+                      {loadingPrice && !kasPrice && (
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-full">
+                          <Loader2 className="w-3 h-3 text-white/40 animate-spin" />
+                          <span className="text-white/40 font-semibold">Loading...</span>
+                        </div>
+                      )}
                       {kasPrice && exchangeRates && (
                         <>
-                          <div className="flex items-center gap-2 px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/30 rounded-full">
+                          <div className="flex items-center gap-2 px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/30 rounded-full transition-all">
                             <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
                             <span className="text-cyan-400 font-semibold">
-                              KAS: ${kasPrice.toFixed(4)}
+                              1 KAS = ${kasPrice.toFixed(6)}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-full">
+                          <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-full transition-all">
                             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                             <span className="text-green-400 font-semibold">
-                              KAS: ₦{(kasPrice * exchangeRates.NGN).toFixed(2)}
+                              1 KAS = ₦{(kasPrice * exchangeRates.NGN).toFixed(2)}
                             </span>
                           </div>
                         </>
                       )}
                       {kasPrice && !exchangeRates && (
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/30 rounded-full">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/30 rounded-full transition-all">
                           <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
                           <span className="text-cyan-400 font-semibold">
-                            KAS: ${kasPrice.toFixed(4)}
+                            1 KAS = ${kasPrice.toFixed(6)}
                           </span>
                         </div>
                       )}
