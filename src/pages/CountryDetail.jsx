@@ -398,44 +398,58 @@ export default function CountryDetailPage() {
                         placeholder="1"
                       />
                       {fromCurrency && (
-                        <div className="space-y-2">
+                        <div className="relative">
                           <input
                             type="text"
                             value={fromSearchQuery}
                             onChange={(e) => setFromSearchQuery(e.target.value)}
+                            onFocus={() => setFromSearchQuery('')}
                             placeholder="Search currency..."
-                            className="w-full bg-white/80 backdrop-blur-sm rounded-xl p-2 text-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                            className="w-full bg-white/80 backdrop-blur-sm rounded-xl p-3 text-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-400 font-semibold"
                           />
-                          <select 
-                            className="w-full bg-white/80 backdrop-blur-sm rounded-xl p-2 text-sm font-semibold text-slate-900 border border-slate-200 cursor-pointer hover:bg-white transition-colors max-h-32 overflow-y-auto"
-                            value={fromCurrency.code}
-                            onChange={(e) => {
-                              const selected = allCurrencies.find(c => c.code === e.target.value);
-                              if (selected) {
-                                setFromCurrency(selected);
-                                if (selectedCurrency) {
-                                  const rate = parseFloat(selectedCurrency.rate) / parseFloat(selected.rate);
-                                  setToAmount((fromAmount * rate).toFixed(2));
-                                }
-                              }
-                            }}
-                            size="5"
-                          >
-                            {allCurrencies
-                              .filter(curr => {
-                                const searchLower = fromSearchQuery.toLowerCase();
-                                if (!searchLower) return true;
-                                return (
-                                  curr.country.toLowerCase().includes(searchLower) ||
-                                  curr.code.toLowerCase().includes(searchLower)
-                                );
-                              })
-                              .map((curr) => (
-                                <option key={curr.code} value={curr.code}>
-                                  {curr.flag} {curr.code} - {curr.country}
-                                </option>
-                              ))}
-                          </select>
+                          {fromSearchQuery && (
+                            <div className="absolute top-full left-0 right-0 mt-1 bg-white/95 backdrop-blur-xl rounded-xl border border-slate-200 shadow-2xl max-h-64 overflow-y-auto z-50">
+                              {allCurrencies
+                                .filter(curr => {
+                                  const searchLower = fromSearchQuery.toLowerCase();
+                                  return (
+                                    curr.country.toLowerCase().includes(searchLower) ||
+                                    curr.code.toLowerCase().includes(searchLower)
+                                  );
+                                })
+                                .map((curr) => (
+                                  <button
+                                    key={curr.code}
+                                    onClick={() => {
+                                      setFromCurrency(curr);
+                                      setFromSearchQuery('');
+                                      if (selectedCurrency) {
+                                        const rate = parseFloat(selectedCurrency.rate) / parseFloat(curr.rate);
+                                        setToAmount((fromAmount * rate).toFixed(2));
+                                      }
+                                    }}
+                                    className="w-full px-4 py-3 text-left hover:bg-orange-50 transition-colors border-b border-slate-100 last:border-b-0 flex items-center gap-2"
+                                  >
+                                    <span className="text-xl">{curr.flag}</span>
+                                    <div className="flex-1">
+                                      <div className="font-bold text-sm text-slate-900">{curr.code}</div>
+                                      <div className="text-xs text-slate-600">{curr.country}</div>
+                                    </div>
+                                  </button>
+                                ))}
+                            </div>
+                          )}
+                          {!fromSearchQuery && (
+                            <div className="mt-2 bg-white/80 backdrop-blur-sm rounded-xl p-3 border border-slate-200">
+                              <div className="flex items-center gap-2">
+                                <span className="text-2xl">{fromCurrency.flag}</span>
+                                <div className="flex-1">
+                                  <div className="font-bold text-sm text-slate-900">{fromCurrency.code}</div>
+                                  <div className="text-xs text-slate-600">{fromCurrency.country}</div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -470,49 +484,59 @@ export default function CountryDetailPage() {
                         className="w-full bg-transparent text-3xl font-bold text-slate-900 outline-none mb-3"
                         placeholder="0.00"
                       />
-                      {selectedCurrency ? (
-                        <div className="space-y-2">
-                          <input
-                            type="text"
-                            value={toSearchQuery}
-                            onChange={(e) => setToSearchQuery(e.target.value)}
-                            placeholder="Search currency..."
-                            className="w-full bg-white/80 backdrop-blur-sm rounded-xl p-2 text-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-400"
-                          />
-                          <select 
-                            className="w-full bg-white/80 backdrop-blur-sm rounded-xl p-2 text-sm font-semibold text-slate-900 border border-slate-200 cursor-pointer hover:bg-white transition-colors max-h-32 overflow-y-auto"
-                            value={selectedCurrency.code}
-                            onChange={(e) => {
-                              const selected = allCurrencies.find(c => c.code === e.target.value);
-                              if (selected) {
-                                setSelectedCurrency(selected);
-                                if (fromCurrency) {
-                                  const rate = parseFloat(selected.rate) / parseFloat(fromCurrency.rate);
-                                  setToAmount((fromAmount * rate).toFixed(2));
-                                }
-                              }
-                            }}
-                            size="5"
-                          >
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={toSearchQuery}
+                          onChange={(e) => setToSearchQuery(e.target.value)}
+                          onFocus={() => setToSearchQuery('')}
+                          placeholder="Search currency..."
+                          className="w-full bg-white/80 backdrop-blur-sm rounded-xl p-3 text-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-400 font-semibold"
+                        />
+                        {toSearchQuery && (
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-white/95 backdrop-blur-xl rounded-xl border border-slate-200 shadow-2xl max-h-64 overflow-y-auto z-50">
                             {allCurrencies
                               .filter(curr => {
                                 const searchLower = toSearchQuery.toLowerCase();
-                                if (!searchLower) return true;
                                 return (
                                   curr.country.toLowerCase().includes(searchLower) ||
                                   curr.code.toLowerCase().includes(searchLower)
                                 );
                               })
                               .map((curr) => (
-                                <option key={curr.code} value={curr.code}>
-                                  {curr.flag} {curr.code} - {curr.country}
-                                </option>
+                                <button
+                                  key={curr.code}
+                                  onClick={() => {
+                                    setSelectedCurrency(curr);
+                                    setToSearchQuery('');
+                                    if (fromCurrency) {
+                                      const rate = parseFloat(curr.rate) / parseFloat(fromCurrency.rate);
+                                      setToAmount((fromAmount * rate).toFixed(2));
+                                    }
+                                  }}
+                                  className="w-full px-4 py-3 text-left hover:bg-orange-50 transition-colors border-b border-slate-100 last:border-b-0 flex items-center gap-2"
+                                >
+                                  <span className="text-xl">{curr.flag}</span>
+                                  <div className="flex-1">
+                                    <div className="font-bold text-sm text-slate-900">{curr.code}</div>
+                                    <div className="text-xs text-slate-600">{curr.country}</div>
+                                  </div>
+                                </button>
                               ))}
-                          </select>
-                        </div>
-                      ) : (
-                        <div className="text-xs text-slate-500 text-center py-2">Select currency below</div>
-                      )}
+                          </div>
+                        )}
+                        {selectedCurrency && !toSearchQuery && (
+                          <div className="mt-2 bg-white/80 backdrop-blur-sm rounded-xl p-3 border border-slate-200">
+                            <div className="flex items-center gap-2">
+                              <span className="text-2xl">{selectedCurrency.flag}</span>
+                              <div className="flex-1">
+                                <div className="font-bold text-sm text-slate-900">{selectedCurrency.code}</div>
+                                <div className="text-xs text-slate-600">{selectedCurrency.country}</div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
