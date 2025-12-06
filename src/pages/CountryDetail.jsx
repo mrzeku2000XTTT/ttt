@@ -124,7 +124,7 @@ export default function CountryDetailPage() {
 
   const fetchExchangeRates = async () => {
     if (!currencyData?.currencyCode) return;
-    
+
     setLoadingRates(true);
     try {
       const response = await base44.functions.invoke('getCurrencyRates', {
@@ -132,11 +132,17 @@ export default function CountryDetailPage() {
       });
 
       setExchangeRates(response.data);
-      
-      // Extract all currencies into a flat array
+
+      // Extract all currencies into a flat array and remove duplicates by currency code
       const allCurr = [];
+      const seen = new Set();
       Object.values(response.data.regions).forEach(region => {
-        allCurr.push(...region);
+        region.forEach(curr => {
+          if (!seen.has(curr.code)) {
+            seen.add(curr.code);
+            allCurr.push(curr);
+          }
+        });
       });
       setAllCurrencies(allCurr);
       
@@ -426,12 +432,14 @@ export default function CountryDetailPage() {
                               >
                                 {allCurrencies
                                   .filter(curr => {
-                                    const searchLower = fromSearchQuery.toLowerCase();
+                                    if (!fromSearchQuery) return false;
+                                    const searchLower = fromSearchQuery.toLowerCase().trim();
                                     return (
                                       curr.country.toLowerCase().includes(searchLower) ||
                                       curr.code.toLowerCase().includes(searchLower)
                                     );
                                   })
+                                  .slice(0, 50)
                                   .map((curr) => (
                                     <button
                                       key={curr.code}
@@ -517,12 +525,14 @@ export default function CountryDetailPage() {
                             >
                               {allCurrencies
                                 .filter(curr => {
-                                  const searchLower = toSearchQuery.toLowerCase();
+                                  if (!toSearchQuery) return false;
+                                  const searchLower = toSearchQuery.toLowerCase().trim();
                                   return (
                                     curr.country.toLowerCase().includes(searchLower) ||
                                     curr.code.toLowerCase().includes(searchLower)
                                   );
                                 })
+                                .slice(0, 50)
                                 .map((curr) => (
                                   <button
                                     key={curr.code}
