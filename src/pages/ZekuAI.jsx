@@ -12,19 +12,19 @@ import BackgroundLogo from "../components/BackgroundLogo";
 import ProofOfLifeButton from "../components/bridge/ProofOfLifeButton";
 import ProofOfLifeFeed from "../components/bridge/ProofOfLifeFeed";
 
-// Real mechanical typewriter keyboard sounds
+// Pool of real keyboard sound effects from Mixkit
 const keyboardSounds = [
-  'https://cdn.freesound.org/previews/648/648142_6709-lq.mp3',
-  'https://cdn.freesound.org/previews/648/648141_6709-lq.mp3',
-  'https://cdn.freesound.org/previews/648/648140_6709-lq.mp3',
-  'https://cdn.freesound.org/previews/648/648139_6709-lq.mp3',
+  'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',
+  'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',
+  'https://assets.mixkit.co/active_storage/sfx/2575/2575-preview.mp3',
+  'https://assets.mixkit.co/active_storage/sfx/2589/2589-preview.mp3',
 ];
 
 // Preload audio files for instant playback
 const audioCache = new Map();
 keyboardSounds.forEach(url => {
   const audio = new Audio(url);
-  audio.volume = 0.2;
+  audio.volume = 0.3;
   audio.preload = 'auto';
   audioCache.set(url, audio);
 });
@@ -38,7 +38,7 @@ const playKeySound = () => {
     if (audio) {
       // Clone the audio to allow rapid successive plays
       const clonedAudio = audio.cloneNode();
-      clonedAudio.volume = 0.2;
+      clonedAudio.volume = 0.3;
       clonedAudio.play().catch(() => {});
     }
   } catch (e) {
@@ -46,27 +46,17 @@ const playKeySound = () => {
   }
 };
 
-// Alien voice text-to-speech for AI responses - handles long texts by chunking
+// Alien voice text-to-speech for AI responses
 const speakAlienVoice = (text) => {
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel(); // Stop any ongoing speech
     
-    // Clean text: remove emojis, hashtags, and special characters
-    const cleanText = text
-      .replace(/[\u{1F600}-\u{1F64F}]/gu, '') // Emoticons
-      .replace(/[\u{1F300}-\u{1F5FF}]/gu, '') // Misc symbols
-      .replace(/[\u{1F680}-\u{1F6FF}]/gu, '') // Transport
-      .replace(/[\u{1F1E0}-\u{1F1FF}]/gu, '') // Flags
-      .replace(/[\u{2600}-\u{26FF}]/gu, '')   // Misc symbols
-      .replace(/[\u{2700}-\u{27BF}]/gu, '')   // Dingbats
-      .replace(/#\w+/g, '')                   // Hashtags
-      .replace(/[*_~`]/g, '')                 // Markdown
-      .replace(/\s+/g, ' ')                   // Multiple spaces
-      .trim();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.7; // Slower for alien effect
+    utterance.pitch = 0.3; // Lower pitch for alien effect
+    utterance.volume = 0.6;
     
-    if (!cleanText) return;
-    
-    // Get voices once
+    // Try to find a unique voice
     const voices = window.speechSynthesis.getVoices();
     const alienVoice = voices.find(v => 
       v.name.includes('Google') || 
@@ -74,46 +64,9 @@ const speakAlienVoice = (text) => {
       v.lang.includes('en-GB')
     ) || voices[0];
     
-    // Split long text into chunks for better handling (max ~200 chars per chunk)
-    const chunkSize = 200;
-    const chunks = [];
+    if (alienVoice) utterance.voice = alienVoice;
     
-    if (cleanText.length <= chunkSize) {
-      chunks.push(cleanText);
-    } else {
-      // Split by sentences first
-      const sentences = cleanText.match(/[^.!?]+[.!?]+/g) || [cleanText];
-      let currentChunk = '';
-      
-      sentences.forEach(sentence => {
-        if ((currentChunk + sentence).length <= chunkSize) {
-          currentChunk += sentence;
-        } else {
-          if (currentChunk) chunks.push(currentChunk.trim());
-          currentChunk = sentence;
-        }
-      });
-      
-      if (currentChunk) chunks.push(currentChunk.trim());
-    }
-    
-    // Speak each chunk in sequence
-    chunks.forEach((chunk, index) => {
-      const utterance = new SpeechSynthesisUtterance(chunk);
-      utterance.rate = 0.7;
-      utterance.pitch = 0.3;
-      utterance.volume = 0.6;
-      if (alienVoice) utterance.voice = alienVoice;
-      
-      // Add small pause between chunks
-      if (index > 0) {
-        utterance.onstart = () => {
-          // Small delay already handled by queue
-        };
-      }
-      
-      window.speechSynthesis.speak(utterance);
-    });
+    window.speechSynthesis.speak(utterance);
   }
 };
 
@@ -158,7 +111,6 @@ export default function ZekuAIPage() {
   const messagesContainerRef = useRef(null);
   const [alienVoiceEnabled, setAlienVoiceEnabled] = useState(false);
   const [speakingMessageIndex, setSpeakingMessageIndex] = useState(null);
-  const [spokenMessageIds, setSpokenMessageIds] = useState(new Set());
 
   useEffect(() => {
     initialize();
@@ -171,13 +123,10 @@ export default function ZekuAIPage() {
           setMessages(data.messages);
           setIsSending(false);
 
-          // Auto-speak new AI messages if alien voice is enabled
+          // Speak the latest AI message with alien voice if enabled
           if (alienVoiceEnabled && data.messages.length > 0) {
             const lastMsg = data.messages[data.messages.length - 1];
-            const msgId = `${data.messages.length - 1}-${lastMsg.content?.substring(0, 50)}`;
-            
-            if (lastMsg.role === 'assistant' && lastMsg.content && !spokenMessageIds.has(msgId)) {
-              setSpokenMessageIds(prev => new Set([...prev, msgId]));
+            if (lastMsg.role === 'assistant' && lastMsg.content) {
               speakAlienVoice(lastMsg.content);
             }
           }
@@ -185,7 +134,7 @@ export default function ZekuAIPage() {
       });
       return () => unsubscribe?.();
     }
-  }, [conversation?.id, alienVoiceEnabled, spokenMessageIds]);
+  }, [conversation?.id]);
 
   useEffect(() => {
     scrollToBottom();
