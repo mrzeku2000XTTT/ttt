@@ -126,6 +126,7 @@ export default function ZekuAIPage() {
   const messagesContainerRef = useRef(null);
   const [alienVoiceEnabled, setAlienVoiceEnabled] = useState(false);
   const [speakingMessageIndex, setSpeakingMessageIndex] = useState(null);
+  const [spokenMessageIds, setSpokenMessageIds] = useState(new Set());
 
   useEffect(() => {
     initialize();
@@ -137,11 +138,22 @@ export default function ZekuAIPage() {
         if (data?.messages) {
           setMessages(data.messages);
           setIsSending(false);
+
+          // Auto-speak new AI messages if alien voice is enabled
+          if (alienVoiceEnabled && data.messages.length > 0) {
+            const lastMsg = data.messages[data.messages.length - 1];
+            const msgId = `${data.messages.length - 1}-${lastMsg.content?.substring(0, 50)}`;
+            
+            if (lastMsg.role === 'assistant' && lastMsg.content && !spokenMessageIds.has(msgId)) {
+              setSpokenMessageIds(prev => new Set([...prev, msgId]));
+              speakAlienVoice(lastMsg.content);
+            }
+          }
         }
       });
       return () => unsubscribe?.();
     }
-  }, [conversation?.id]);
+  }, [conversation?.id, alienVoiceEnabled, spokenMessageIds]);
 
   useEffect(() => {
     scrollToBottom();
