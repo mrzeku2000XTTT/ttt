@@ -12,6 +12,23 @@ import BackgroundLogo from "../components/BackgroundLogo";
 import ProofOfLifeButton from "../components/bridge/ProofOfLifeButton";
 import ProofOfLifeFeed from "../components/bridge/ProofOfLifeFeed";
 
+const TypewriterText = ({ text, speed = 20 }) => {
+  const [displayedText, setDisplayedText] = useState("");
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    if (currentIndex < text.length) {
+      const timeout = setTimeout(() => {
+        setDisplayedText(prev => prev + text[currentIndex]);
+        setCurrentIndex(prev => prev + 1);
+      }, speed);
+      return () => clearTimeout(timeout);
+    }
+  }, [currentIndex, text, speed]);
+
+  return <p className="text-xs whitespace-pre-wrap">{displayedText}</p>;
+};
+
 export default function ZekuAIPage() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -236,7 +253,7 @@ export default function ZekuAIPage() {
         <img 
           src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/079265af5_image.png"
           alt="Zeku AI"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover object-[center_30%]"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
       </div>
@@ -404,9 +421,13 @@ export default function ZekuAIPage() {
                     style={msg.role === 'assistant' ? { fontFamily: 'monospace' } : undefined}
                   >
                     {msg.role === 'assistant' ? (
-                      <ReactMarkdown className="prose prose-invert max-w-none text-xs [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
-                        {msg.content}
-                      </ReactMarkdown>
+                      matrixMode ? (
+                        <TypewriterText text={msg.content} speed={20} />
+                      ) : (
+                        <ReactMarkdown className="prose prose-invert max-w-none text-xs [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                          {msg.content}
+                        </ReactMarkdown>
+                      )
                     ) : (
                       <p className="text-xs">{msg.content}</p>
                     )}
