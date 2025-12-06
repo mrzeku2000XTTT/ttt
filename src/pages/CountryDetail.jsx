@@ -31,15 +31,9 @@ export default function CountryDetailPage() {
 
   useEffect(() => {
     if (countryName) {
-      fetchCurrencyData();
+      loadCountryDataAndImage();
     }
   }, [countryName]);
-
-  useEffect(() => {
-    if (currencyData?.capital) {
-      loadCapitalImage();
-    }
-  }, [currencyData?.capital]);
 
   useEffect(() => {
     if (currencyData?.currencyCode) {
@@ -68,10 +62,12 @@ export default function CountryDetailPage() {
 
 
 
-  const fetchCurrencyData = async () => {
+  const loadCountryDataAndImage = async () => {
     setLoading(true);
+    setLoadingImage(true);
     try {
-      const response = await base44.integrations.Core.InvokeLLM({
+      // Fetch country data
+      const dataPromise = base44.integrations.Core.InvokeLLM({
         prompt: `For ${countryName}, provide the following information in JSON format:
         {
           "currency": "currency name and code",
@@ -97,11 +93,32 @@ export default function CountryDetailPage() {
           }
         }
       });
-      setCurrencyData(response);
+
+      const data = await dataPromise;
+      setCurrencyData(data);
+
+      // Load capital image in parallel
+      if (data?.capital) {
+        const existing = await base44.entities.CountryCapitalImage.filter({
+          country_name: countryName,
+          capital_name: data.capital
+        });
+
+        if (existing.length > 0) {
+          setCapitalImage(existing[0].image_url);
+        } else {
+          const response = await base44.functions.invoke('generateCapitalImage', {
+            country_name: countryName,
+            capital_name: data.capital
+          });
+          setCapitalImage(response.data.image_url);
+        }
+      }
     } catch (err) {
       console.error("Failed to fetch data:", err);
     } finally {
       setLoading(false);
+      setLoadingImage(false);
     }
   };
 
@@ -138,36 +155,7 @@ export default function CountryDetailPage() {
     }
   };
 
-  const loadCapitalImage = async () => {
-    if (!currencyData?.capital || !countryName) return;
-    
-    setLoadingImage(true);
-    try {
-      // Check global cache first (all users see same images)
-      const existing = await base44.entities.CountryCapitalImage.filter({
-        country_name: countryName,
-        capital_name: currencyData.capital
-      });
 
-      if (existing.length > 0) {
-        console.log('✅ Using cached capital image');
-        setCapitalImage(existing[0].image_url);
-      } else {
-        // Generate once, share with all users
-        console.log('🎨 Generating capital image (will be cached for all users)');
-        const response = await base44.functions.invoke('generateCapitalImage', {
-          country_name: countryName,
-          capital_name: currencyData.capital
-        });
-        setCapitalImage(response.data.image_url);
-      }
-    } catch (err) {
-      console.error('Failed to load capital image:', err);
-      setCapitalImage(`https://source.unsplash.com/400x300/?${encodeURIComponent(currencyData.capital)},city,landmark`);
-    } finally {
-      setLoadingImage(false);
-    }
-  };
 
   const handleSwapCurrencies = () => {
     if (selectedCurrency && fromCurrency) {
@@ -274,14 +262,11 @@ export default function CountryDetailPage() {
               className="col-span-6 md:col-span-4 lg:col-span-3 bg-white/50 backdrop-blur-xl rounded-xl shadow-md overflow-hidden relative border border-white/40 cursor-pointer hover:shadow-xl transition-all"
             >
               <div className="absolute inset-0">
-                {loadingImage ? (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
-                    <div className="text-center">
-                      <div className="animate-spin w-8 h-8 border-4 border-slate-300 border-t-slate-600 rounded-full mx-auto mb-2" />
-                      <p className="text-xs text-slate-600">Generating AI image...</p>
-                    </div>
-                  </div>
-                ) : (
+                {!capitalImage ? (
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
+                            <div className="animate-spin w-8 h-8 border-4 border-slate-300 border-t-slate-600 rounded-full" />
+                          </div>
+                        ) : (
                   <img 
                     src={capitalImage || `https://source.unsplash.com/400x300/?${encodeURIComponent(currencyData.capital)},city,landmark`}
                     alt={currencyData.capital}
