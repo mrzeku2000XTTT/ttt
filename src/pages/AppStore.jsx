@@ -117,8 +117,13 @@ export default function AppStorePage() {
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
           {filteredApps.map((app, i) => {
             const Icon = getIconComponent(app.icon);
+            const AppWrapper = app.isExternal ? 'a' : Link;
+            const linkProps = app.isExternal 
+              ? { href: app.externalUrl, target: "_blank", rel: "noopener noreferrer" }
+              : { to: createPageUrl(app.path) };
+            
             return (
-              <Link key={i} to={createPageUrl(app.path)}>
+              <AppWrapper key={i} {...linkProps}>
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
