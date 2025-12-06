@@ -283,18 +283,18 @@ export default function ZekuAIPage() {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="backdrop-blur-xl bg-black/60 border border-purple-500/20 rounded-2xl p-3 mb-2 flex-shrink-0 shadow-2xl"
+          className="bg-transparent border-none rounded-2xl p-3 mb-2 flex-shrink-0"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/50">
+              <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center shadow-lg">
                 <Bot className="w-5 h-5 text-white" />
               </div>
               <div>
                 <h1 className="text-lg font-bold text-white" style={{ fontFamily: 'monospace' }}>
                   Zeku AI
                 </h1>
-                <p className="text-purple-300 text-xs">Your Elite Crypto Companion</p>
+                <p className="text-gray-300 text-xs">Your Elite Crypto Companion</p>
               </div>
             </div>
 
@@ -331,7 +331,7 @@ export default function ZekuAIPage() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="backdrop-blur-xl bg-red-500/20 border border-red-500/30 rounded-xl p-2 flex items-center justify-between mb-2 flex-shrink-0"
+            className="bg-red-500/10 border border-red-500/30 rounded-xl p-2 flex items-center justify-between mb-2 flex-shrink-0"
           >
             <div className="flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-red-400" />
@@ -353,13 +353,13 @@ export default function ZekuAIPage() {
                 transition={{ duration: 0.5 }}
                 className="mb-8"
               >
-                <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-pink-500 rounded-3xl flex items-center justify-center mb-6 shadow-2xl shadow-purple-500/50 mx-auto">
+                <div className="w-24 h-24 bg-black rounded-3xl flex items-center justify-center mb-6 shadow-2xl mx-auto">
                   <Bot className="w-12 h-12 text-white" />
                 </div>
                 <h2 className="text-3xl font-bold text-white mb-3" style={{ fontFamily: 'monospace' }}>
                   Welcome to Zeku AI
                 </h2>
-                <p className="text-purple-300 text-lg mb-8">Your premium AI assistant is ready</p>
+                <p className="text-gray-300 text-lg mb-8">Your premium AI assistant is ready</p>
               </motion.div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl">
                 {[
@@ -373,13 +373,13 @@ export default function ZekuAIPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.1 }}
-                    className="backdrop-blur-xl bg-black/60 border border-purple-500/30 rounded-2xl p-5 text-left hover:border-purple-500/60 hover:scale-105 transition-all cursor-pointer shadow-xl"
+                    className="bg-black border border-white/10 rounded-2xl p-5 text-left hover:border-white/30 hover:scale-105 transition-all cursor-pointer shadow-xl"
                   >
-                    <div className="w-14 h-14 bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-xl flex items-center justify-center mb-3 text-3xl">
+                    <div className="w-14 h-14 bg-black border border-white/10 rounded-xl flex items-center justify-center mb-3 text-3xl">
                       {feature.emoji}
                     </div>
                     <div className="font-bold text-white text-base mb-2">{feature.title}</div>
-                    <div className="text-sm text-purple-300">{feature.desc}</div>
+                    <div className="text-sm text-gray-300">{feature.desc}</div>
                   </motion.div>
                 ))}
               </div>
@@ -433,13 +433,13 @@ export default function ZekuAIPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="backdrop-blur-xl bg-black/70 border border-purple-500/30 rounded-2xl p-3 flex-shrink-0 shadow-2xl shadow-purple-500/20"
+          className="bg-transparent border-none rounded-2xl p-3 flex-shrink-0"
         >
           {uploadedFiles.length > 0 && (
             <div className="mb-3 flex flex-wrap gap-2">
               {uploadedFiles.map((file, idx) => (
-                <div key={idx} className="relative backdrop-blur-xl bg-purple-500/20 border border-purple-500/40 rounded-xl p-2 pr-8 flex items-center gap-2">
-                  <ImageIcon className="w-4 h-4 text-purple-400" />
+                <div key={idx} className="relative bg-black border border-white/20 rounded-xl p-2 pr-8 flex items-center gap-2">
+                  <ImageIcon className="w-4 h-4 text-white" />
                   <span className="text-xs text-white truncate max-w-[120px]">{file.name}</span>
                   <button
                     onClick={() => setUploadedFiles(uploadedFiles.filter((_, i) => i !== idx))}
@@ -467,7 +467,7 @@ export default function ZekuAIPage() {
               disabled={isUploading || isSending}
               variant="outline"
               size="sm"
-              className="h-11 px-3 backdrop-blur-xl bg-purple-500/20 border-purple-500/40 hover:bg-purple-500/30 text-purple-300 flex-shrink-0"
+              className="h-11 px-3 bg-black border-white/20 hover:bg-black/80 text-white flex-shrink-0"
             >
               {isUploading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -481,14 +481,14 @@ export default function ZekuAIPage() {
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
               placeholder="Ask Zeku AI anything..."
-              className="h-11 flex-1 backdrop-blur-xl bg-black/50 border-purple-500/30 text-white placeholder:text-purple-400/60 text-base focus:ring-2 focus:ring-purple-500/50"
+              className="h-11 flex-1 bg-black/30 border-white/10 text-white placeholder:text-gray-500 text-base focus:ring-2 focus:ring-white/20"
               disabled={isSending}
             />
 
             <Button
               onClick={handleSend}
               disabled={(!input.trim() && !uploadedFiles.length) || isSending}
-              className="h-11 px-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 flex-shrink-0 shadow-lg shadow-purple-500/50"
+              className="h-11 px-6 bg-black hover:bg-black/80 flex-shrink-0 shadow-lg"
             >
               {isSending ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
