@@ -273,6 +273,33 @@ export default function CalculatorPage() {
       }
     }
 
+    // Pattern 3: Currency to currency conversion (no KAS) - "X [currency1] to [currency2]"
+    const currencyToCurrencyPattern = new RegExp(`(\\d+\\.?\\d*)\\s*\\$?\\s*(${currencyCodes}|naira|dollar)?\\s+(to|in)\\s+(${currencyCodes}|naira|ngn)`, 'i');
+    const currencyToCurrencyMatch = aiInput.match(currencyToCurrencyPattern);
+    
+    if (currencyToCurrencyMatch) {
+      const amount = parseFloat(currencyToCurrencyMatch[1]);
+      let fromCurrency = currencyToCurrencyMatch[2];
+      const toCurrency = currencyToCurrencyMatch[4];
+      
+      // Handle common names
+      if (!fromCurrency || fromCurrency.toLowerCase() === 'dollar') fromCurrency = 'USD';
+      else if (fromCurrency.toLowerCase() === 'naira') fromCurrency = 'NGN';
+      else fromCurrency = fromCurrency.toUpperCase();
+      
+      let targetCurrency = toCurrency.toLowerCase() === 'naira' ? 'NGN' : toCurrency.toUpperCase();
+      
+      if (exchangeRates[fromCurrency] && exchangeRates[targetCurrency]) {
+        // Convert from source to USD, then to target
+        const amountInUSD = amount / exchangeRates[fromCurrency];
+        const result = amountInUSD * exchangeRates[targetCurrency];
+        setDisplay(result.toFixed(2));
+        setHistory([`${amount} ${fromCurrency} → ${result.toFixed(2)} ${targetCurrency}`, ...history.slice(0, 9)]);
+        setAiInput("");
+        return true;
+      }
+    }
+
     // Pattern 3: Just "kas price"
     if (input === 'kas price' || input === 'price') {
       setDisplay(kasPrice.toFixed(6));
@@ -421,7 +448,7 @@ export default function CalculatorPage() {
                         value={aiInput}
                         onChange={(e) => setAiInput(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleAICalculate()}
-                        placeholder="20$ in kas, 5000 NGN to KAS, 50 KAS to USD, kas price..."
+                        placeholder="1000$ to NGN, 5000 NGN to KAS, 50 KAS to USD, kas price..."
                         className="flex-1 bg-black/40 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-purple-500/50"
                       />
                       <Button
@@ -557,10 +584,10 @@ export default function CalculatorPage() {
             </h3>
             <div className="grid md:grid-cols-3 gap-4 text-sm">
               <div className="text-white/60">
-                <span className="text-green-400 font-semibold">Quick:</span> "20$ in kas"
+                <span className="text-green-400 font-semibold">Currency:</span> "1000$ to NGN"
               </div>
               <div className="text-white/60">
-                <span className="text-cyan-400 font-semibold">Full:</span> "5000 NGN to KAS"
+                <span className="text-cyan-400 font-semibold">Crypto:</span> "5000 NGN to KAS"
               </div>
               <div className="text-white/60">
                 <span className="text-purple-400 font-semibold">Price:</span> "kas price"
