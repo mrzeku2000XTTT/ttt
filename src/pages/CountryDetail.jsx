@@ -26,6 +26,8 @@ export default function CountryDetailPage() {
   const [toSearchQuery, setToSearchQuery] = useState("");
   const [capitalImage, setCapitalImage] = useState(null);
   const [loadingImage, setLoadingImage] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [lastRateUpdate, setLastRateUpdate] = useState(Date.now());
 
   useEffect(() => {
     if (countryName) {
@@ -43,6 +45,25 @@ export default function CountryDetailPage() {
     if (currencyData?.currencyCode) {
       fetchExchangeRates();
     }
+  }, [currencyData]);
+
+  // Live UTC clock
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Auto-refresh rates every hour
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (currencyData?.currencyCode) {
+        fetchExchangeRates();
+        setLastRateUpdate(Date.now());
+      }
+    }, 3600000); // 1 hour
+    return () => clearInterval(interval);
   }, [currencyData]);
 
 
@@ -347,7 +368,9 @@ export default function CountryDetailPage() {
                     </div>
                     <div>
                       <h2 className="text-2xl font-bold">Currency Exchange</h2>
-                      <p className="text-white/80 text-xs mt-0.5">Real-time rates • UTC {new Date().toISOString().split('T')[1].split('.')[0]}</p>
+                      <p className="text-white/80 text-xs mt-0.5">
+                        Real-time rates • UTC {currentTime.toISOString().split('T')[1].split('.')[0]}
+                      </p>
                     </div>
                   </div>
                   <button
