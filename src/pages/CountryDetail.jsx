@@ -88,30 +88,25 @@ export default function CountryDetailPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 overflow-y-auto">
-      {/* Modern Hero Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjEiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-20" />
-        
-        <div className="relative max-w-6xl mx-auto px-8 py-8">
+      {/* Simple Header */}
+      <div className="bg-white border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-8 py-6">
           <button
             onClick={() => navigate(createPageUrl("Earth"))}
-            className="mb-6 text-white/80 hover:text-white transition-colors flex items-center gap-2 group"
+            className="text-slate-600 hover:text-slate-900 transition-colors flex items-center gap-2 group mb-4"
           >
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
             <span>Back to Earth</span>
           </button>
-
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-6">
-              <div className="text-8xl">{countryFlag}</div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="text-5xl">{countryFlag}</div>
               <div>
-                <div className="text-sm font-medium text-white/70 mb-1">Full Name</div>
-                <h1 className="text-5xl font-bold mb-2">{countryName}</h1>
-                <p className="text-xl text-white/80">Country Information Hub</p>
+                <div className="text-sm text-slate-500 mb-1">Full Name</div>
+                <h1 className="text-3xl font-bold text-slate-900">{countryName}</h1>
               </div>
             </div>
-            
-            <Button className="bg-white text-blue-600 hover:bg-white/90 gap-2">
+            <Button className="bg-blue-600 text-white hover:bg-blue-700 gap-2">
               <Search className="w-4 h-4" />
               Search
             </Button>
@@ -120,19 +115,21 @@ export default function CountryDetailPage() {
       </div>
 
       {/* Country Content */}
-      <div className="max-w-6xl mx-auto px-8 py-12">
+      <div className="max-w-7xl mx-auto px-8 py-12">
         {/* Featured Country Card with Flag */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden"
+          className="mb-8 bg-gradient-to-r from-indigo-600 to-blue-600 rounded-2xl p-10 text-white shadow-xl relative overflow-hidden"
         >
-          <div className="absolute inset-0 opacity-20">
-            <div className="text-[200px] absolute right-0 top-1/2 -translate-y-1/2">{countryFlag}</div>
+          <div className="absolute inset-0 flex items-center justify-end pr-12 opacity-10">
+            <div className="text-[280px] font-black leading-none">
+              {countryFlag.split(' ')[0]}
+            </div>
           </div>
           <div className="relative">
-            <h2 className="text-2xl font-bold mb-2">Country</h2>
-            <p className="text-4xl font-black">{countryName}</p>
+            <div className="text-sm font-semibold text-white/80 mb-2 uppercase tracking-wider">Country</div>
+            <h1 className="text-6xl font-bold tracking-tight">{countryName}</h1>
           </div>
         </motion.div>
 
@@ -153,22 +150,22 @@ export default function CountryDetailPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
               onClick={() => setShowCurrencyConverter(true)}
-              className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all cursor-pointer group col-span-1 md:col-span-2 lg:col-span-1"
+              className="bg-white rounded-2xl p-8 shadow-md hover:shadow-xl transition-all cursor-pointer group"
             >
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex items-start justify-between mb-6">
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900">Currency</h3>
-                  <p className="text-blue-600 text-sm flex items-center gap-1 mt-1 group-hover:gap-2 transition-all">
+                  <h3 className="text-base font-bold text-slate-900 mb-2">Currency</h3>
+                  <button className="text-blue-600 text-sm flex items-center gap-1 hover:gap-2 transition-all">
                     <ArrowRightLeft className="w-3 h-3" />
                     Click to convert
-                  </p>
+                  </button>
                 </div>
-                <DollarSign className="w-8 h-8 text-green-500" />
+                <DollarSign className="w-10 h-10 text-green-500" />
               </div>
               <div className="space-y-2">
-                <p className="text-2xl font-bold text-slate-800">{currencyData.currency}</p>
-                <p className="text-sm text-slate-500">H1: 48px</p>
-                <p className="text-sm text-slate-500">H1: 32px</p>
+                <p className="text-2xl font-bold text-slate-900">{currencyData.currency}</p>
+                <p className="text-sm text-slate-600">H1: 48px</p>
+                <p className="text-sm text-slate-600">H1: 32px</p>
               </div>
             </motion.div>
 
@@ -177,13 +174,15 @@ export default function CountryDetailPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
-              className="bg-white rounded-2xl p-6 shadow-lg"
+              className="bg-white rounded-2xl p-8 shadow-md"
             >
-              <h3 className="text-lg font-bold text-slate-900 mb-4">SF Pro</h3>
-              <p className="text-blue-600 text-sm mb-4">Click to convert</p>
-              <div className="space-y-1 text-sm text-slate-600">
-                <p>H1: 32px</p>
-                <p>body 16px</p>
+              <h3 className="text-base font-bold text-slate-900 mb-3">SF Pro</h3>
+              <button className="text-blue-600 text-sm mb-6 hover:underline">
+                Click to convert
+              </button>
+              <div className="space-y-2">
+                <p className="text-sm text-slate-700">H1: 32px</p>
+                <p className="text-sm text-slate-700">body 16px</p>
               </div>
             </motion.div>
 
@@ -192,19 +191,19 @@ export default function CountryDetailPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 shadow-lg"
+              className="bg-white rounded-2xl p-8 shadow-md"
             >
-              <h3 className="text-lg font-bold text-slate-900 mb-4">Compare with another country</h3>
-              <div className="space-y-3">
+              <h3 className="text-base font-bold text-slate-900 mb-6">Compare with another country</h3>
+              <div className="space-y-4">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-600">Quick Stats</span>
-                  <span className="text-slate-600">Deep</span>
+                  <span className="text-slate-700">Quick Stats</span>
+                  <span className="text-slate-700">Deep</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-600">GDP Rank</span>
-                  <span className="text-slate-600">HDI</span>
+                  <span className="text-slate-700">GDP Rank</span>
+                  <span className="text-slate-700">HDI</span>
                 </div>
-                <div className="text-sm text-slate-600">#1F2937</div>
+                <div className="text-xs text-slate-500 font-mono">#1F2937</div>
               </div>
             </motion.div>
 
@@ -213,22 +212,22 @@ export default function CountryDetailPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25 }}
-              className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-6 shadow-lg text-white relative overflow-hidden"
+              className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl p-8 shadow-md text-white relative overflow-hidden"
             >
-              <div className="flex items-start justify-between mb-4 relative z-10">
-                <h3 className="text-lg font-bold">Capital</h3>
-                <button className="text-white/80 hover:text-white">
+              <div className="flex items-start justify-between mb-6 relative z-10">
+                <h3 className="text-base font-bold">Capital</h3>
+                <button className="text-white/70 hover:text-white">
                   <MoreHorizontal className="w-5 h-5" />
                 </button>
               </div>
-              <p className="text-2xl font-bold mb-4 relative z-10">{currencyData.capital}</p>
-              <div className="h-20 relative">
-                <svg className="w-full h-full" viewBox="0 0 200 60">
-                  <path d="M 0 50 Q 50 30, 100 40 T 200 20" stroke="rgba(255,255,255,0.5)" strokeWidth="2" fill="none" />
-                  <circle cx="100" cy="40" r="4" fill="white" />
+              <p className="text-3xl font-bold mb-8 relative z-10">{currencyData.capital}</p>
+              <div className="h-24 relative">
+                <svg className="w-full h-full" viewBox="0 0 200 80">
+                  <path d="M 0 60 Q 50 40, 100 50 T 200 30" stroke="rgba(255,255,255,0.4)" strokeWidth="2" fill="none" />
+                  <circle cx="100" cy="50" r="5" fill="white" opacity="0.8" />
                 </svg>
               </div>
-              <div className="absolute bottom-0 right-0 text-6xl opacity-10">{countryFlag}</div>
+              <div className="absolute top-0 right-0 text-xs text-white/50 p-4">#BB2F6</div>
             </motion.div>
 
             {/* Timezone Card */}
@@ -236,23 +235,28 @@ export default function CountryDetailPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="bg-white rounded-2xl shadow-lg overflow-hidden relative"
+              className="bg-slate-200 rounded-2xl shadow-md overflow-hidden relative"
             >
               <div className="absolute inset-0">
                 <img 
                   src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop" 
                   alt="Timezone"
-                  className="w-full h-full object-cover opacity-60"
+                  className="w-full h-full object-cover opacity-70"
                 />
               </div>
-              <div className="relative z-10 p-6">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-lg font-bold text-slate-900">Timezone</h3>
+              <div className="relative z-10 p-8">
+                <div className="flex items-start justify-between mb-3">
+                  <h3 className="text-base font-bold text-slate-900">Timezone</h3>
                   <Clock className="w-6 h-6 text-blue-600" />
                 </div>
-                <p className="text-sm text-slate-700 mb-4">more info ›</p>
-                <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 mt-8">
-                  <BarChart3 className="w-full h-16 text-blue-500" />
+                <p className="text-sm text-slate-700 mb-6">more info ›</p>
+                <div className="bg-white/95 backdrop-blur-sm rounded-xl p-4 mt-8">
+                  <div className="flex items-end justify-between gap-2 h-20">
+                    <div className="bg-blue-500 rounded-t w-full" style={{height: '30%'}}></div>
+                    <div className="bg-blue-500 rounded-t w-full" style={{height: '50%'}}></div>
+                    <div className="bg-blue-500 rounded-t w-full" style={{height: '70%'}}></div>
+                    <div className="bg-blue-500 rounded-t w-full" style={{height: '40%'}}></div>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -262,28 +266,28 @@ export default function CountryDetailPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35 }}
-              className="bg-white rounded-2xl p-6 shadow-lg"
+              className="bg-white rounded-2xl p-8 shadow-md"
             >
-              <div className="flex items-start justify-between mb-4">
-                <h3 className="text-lg font-bold text-slate-900">Population</h3>
-                <span className="text-sm text-slate-500">more info ›</span>
+              <div className="flex items-start justify-between mb-6">
+                <h3 className="text-base font-bold text-slate-900">Population</h3>
+                <span className="text-sm text-slate-500 hover:text-slate-700 cursor-pointer">more info ›</span>
               </div>
-              <p className="text-2xl font-bold text-slate-800 mb-4">{currencyData.population}</p>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-2 bg-blue-200 rounded-full overflow-hidden">
+              <p className="text-2xl font-bold text-slate-900 mb-6">{currencyData.population}</p>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-3 bg-slate-200 rounded-full overflow-hidden">
                     <div className="h-full bg-blue-600 rounded-full" style={{width: '75%'}} />
                   </div>
-                  <span className="text-xs text-slate-500">-15%</span>
+                  <span className="text-sm text-slate-600 font-medium">-15%</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-2 bg-purple-200 rounded-full overflow-hidden">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-3 bg-slate-200 rounded-full overflow-hidden">
                     <div className="h-full bg-purple-600 rounded-full" style={{width: '60%'}} />
                   </div>
-                  <span className="text-xs text-slate-500">-5%</span>
+                  <span className="text-sm text-slate-600 font-medium">-5%</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-2 bg-red-200 rounded-full overflow-hidden">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-3 bg-slate-200 rounded-full overflow-hidden">
                     <div className="h-full bg-red-600 rounded-full" style={{width: '85%'}} />
                   </div>
                 </div>
@@ -295,28 +299,28 @@ export default function CountryDetailPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="bg-gradient-to-br from-slate-700 to-slate-900 rounded-2xl shadow-lg overflow-hidden relative"
+              className="bg-slate-600 rounded-2xl shadow-md overflow-hidden relative"
             >
               <div className="absolute inset-0">
                 <img 
                   src="https://images.unsplash.com/photo-1495364141860-b0d03eccd065?w=400&h=300&fit=crop" 
                   alt="Language"
-                  className="w-full h-full object-cover opacity-40"
+                  className="w-full h-full object-cover opacity-50"
                 />
               </div>
-              <div className="relative z-10 p-6">
-                <div className="flex items-start justify-between mb-8">
-                  <h3 className="text-lg font-bold text-white">Language</h3>
-                  <button className="text-white/80 hover:text-white">
+              <div className="relative z-10 p-8">
+                <div className="flex items-start justify-between mb-12">
+                  <h3 className="text-base font-bold text-white">Language</h3>
+                  <button className="text-white/70 hover:text-white">
                     <MoreHorizontal className="w-5 h-5" />
                   </button>
                 </div>
-                <div className="flex items-center justify-center mb-4">
-                  <div className="w-32 h-32 rounded-full border-4 border-white/30 flex items-center justify-center bg-white/10 backdrop-blur-sm">
+                <div className="flex items-center justify-center mb-6">
+                  <div className="w-32 h-32 rounded-full border-4 border-white/40 flex items-center justify-center bg-white/20 backdrop-blur-sm">
                     <Clock className="w-16 h-16 text-white" />
                   </div>
                 </div>
-                <p className="text-xl font-bold text-white text-center">{currencyData.language}</p>
+                <p className="text-2xl font-bold text-white text-center">{currencyData.language}</p>
               </div>
             </motion.div>
 
@@ -325,19 +329,18 @@ export default function CountryDetailPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.45 }}
-              className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-6 shadow-lg text-white relative overflow-hidden col-span-1 md:col-span-2 lg:col-span-1"
+              className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl p-8 shadow-md text-white relative overflow-hidden"
             >
-              <div className="flex items-start justify-between mb-4 relative z-10">
-                <h3 className="text-lg font-bold">Fun Fact</h3>
-                <button className="text-white/80 hover:text-white">
+              <div className="flex items-start justify-between mb-6 relative z-10">
+                <h3 className="text-base font-bold">Fun Fact</h3>
+                <button className="text-white/70 hover:text-white">
                   <MoreHorizontal className="w-5 h-5" />
                 </button>
               </div>
-              <div className="flex items-center justify-center my-6 relative z-10">
-                <div className="text-6xl">{countryFlag}</div>
+              <div className="flex items-center justify-center my-8 relative z-10">
+                <div className="text-7xl">{countryFlag}</div>
               </div>
-              <p className="text-sm text-white/90 relative z-10">{currencyData.funFact}</p>
-              <div className="absolute bottom-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mb-16" />
+              <p className="text-sm text-white/95 relative z-10 leading-relaxed">{currencyData.funFact}</p>
             </motion.div>
           </div>
         )}
