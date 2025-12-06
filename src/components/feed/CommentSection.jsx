@@ -233,58 +233,97 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
         };
 
         const handleReplyToComment = async (parentComment) => {
-        if (!replyText.trim()) return;
+          if (!replyText.trim()) return;
 
-        setIsCommenting(true);
-        try {
-        let authorName = currentUser.username || '';
-        let authorWalletAddress = currentUser.created_wallet_address || '';
-
-        if (!authorName && currentUser.created_wallet_address) {
-        try {
-          const profiles = await base44.entities.AgentZKProfile.filter({
-            wallet_address: currentUser.created_wallet_address
-          });
-          if (profiles.length > 0 && profiles[0].username) {
-            authorName = profiles[0].username;
+          // Get Kasware wallet if needed for payment
+          let kaswareAddress = null;
+          if (!isIOS() && typeof window.kasware !== 'undefined') {
+            try {
+              const accounts = await window.kasware.getAccounts();
+              if (accounts.length > 0) {
+                kaswareAddress = accounts[0];
+              }
+            } catch (err) {
+              console.log('Kasware not connected');
+            }
           }
-        } catch (err) {
-          console.log('No AgentZK profile found');
-        }
-        }
 
-        if (!authorName) {
-        authorName = currentUser.created_wallet_address 
-          ? `${currentUser.created_wallet_address.slice(0, 6)}...${currentUser.created_wallet_address.slice(-4)}`
-          : currentUser.email.split('@')[0];
-        }
+          // Desktop: Require 1 KAS self-payment (iOS exempt)
+          if (!isIOS() && isDesktop()) {
+            if (!kaswareAddress) {
+              alert('Desktop users: Connect Kasware to reply (1 KAS self-payment required)');
+              return;
+            }
 
-        await base44.entities.PostComment.create({
-        post_id: postId,
-        parent_comment_id: parentComment.id,
-        author_name: authorName,
-        author_wallet_address: authorWalletAddress,
-        comment_text: replyText.trim()
-        });
+            try {
+              const amountSompi = 100000000; // 1 KAS
+              console.log('💰 Desktop reply: Sending 1 KAS to self...', kaswareAddress);
+              const txHash = await window.kasware.sendKaspa(kaswareAddress, amountSompi);
+              console.log('✅ Desktop reply: Payment successful, txHash:', txHash);
+            } catch (err) {
+              console.error('❌ Desktop reply: Payment failed:', err);
+              if (err.message?.includes('User reject')) {
+                return;
+              }
+              alert('Payment failed: ' + err.message);
+              return;
+            }
+          }
 
-        // Update parent comment replies count
-        await base44.entities.PostComment.update(parentComment.id, {
-        replies_count: (parentComment.replies_count || 0) + 1
-        });
+          setIsCommenting(true);
+          try {
+            let authorName = currentUser.username || '';
+            let authorWalletAddress = currentUser.created_wallet_address || '';
 
-        setReplyText("");
-        setReplyingTo(null);
+            if (!authorName && currentUser.created_wallet_address) {
+              try {
+                const profiles = await base44.entities.AgentZKProfile.filter({
+                  wallet_address: currentUser.created_wallet_address
+                });
+                if (profiles.length > 0 && profiles[0].username) {
+                  authorName = profiles[0].username;
+                }
+              } catch (err) {
+                console.log('No AgentZK profile found');
+              }
+            }
 
-        if (onCommentAdded) {
-        onCommentAdded();
-        }
+            if (!authorName) {
+              authorName = currentUser.created_wallet_address 
+                ? `${currentUser.created_wallet_address.slice(0, 6)}...${currentUser.created_wallet_address.slice(-4)}`
+                : currentUser.email.split('@')[0];
+            }
 
-        await loadComments();
-        } catch (err) {
-        console.error('Failed to reply to comment:', err);
-        } finally {
-        setIsCommenting(false);
-        }
+            console.log('💬 Creating comment reply...', { postId, parentCommentId: parentComment.id, authorName });
+            const createdReply = await base44.entities.PostComment.create({
+              post_id: postId,
+              parent_comment_id: parentComment.id,
+              author_name: authorName,
+              author_wallet_address: authorWalletAddress,
+              comment_text: replyText.trim()
+            });
+            console.log('✅ Comment reply created:', createdReply);
+
+            // Update parent comment replies count
+            await base44.entities.PostComment.update(parentComment.id, {
+              replies_count: (parentComment.replies_count || 0) + 1
+            });
+
+            setReplyText("");
+            setReplyingTo(null);
+
+            if (onCommentAdded) {
+              onCommentAdded();
+            }
+
+            console.log('🔄 Reloading comments...');
+            await loadComments();
+            console.log('✨ Comment reply flow completed');
+          } catch (err) {
+            console.error('Failed to reply to comment:', err);
+          } finally {
+            setIsCommenting(false);
+          }
         };
 
   const handleLikeComment = async (comment) => {
