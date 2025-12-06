@@ -133,9 +133,9 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
       <Button
         onClick={handleOpen}
         disabled={!hasConnectedWallet}
-        className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/50 w-full"
+        className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/50 w-full h-9 text-sm"
       >
-        <Activity className="w-5 h-5 mr-2" />
+        <Activity className="w-4 h-4 mr-2" />
         Go Alive!
       </Button>
 

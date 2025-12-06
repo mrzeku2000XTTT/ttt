@@ -29,16 +29,16 @@ export default function LiveTimer({ expiresAt }) {
 
   if (timeLeft.expired) {
     return (
-      <div className="flex items-center gap-2 text-red-400 text-sm">
-        <Clock className="w-4 h-4" />
+      <div className="flex items-center gap-1 text-red-400 text-xs">
+        <Clock className="w-3 h-3" />
         <span className="font-mono">Expired</span>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-2 text-white text-sm">
-      <Clock className="w-4 h-4 text-green-400" />
+    <div className="flex items-center gap-1 text-white text-xs">
+      <Clock className="w-3 h-3 text-green-400" />
       <span className="font-mono font-semibold">
         {timeLeft.hours}h {timeLeft.minutes}m
       </span>

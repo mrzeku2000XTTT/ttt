@@ -550,24 +550,35 @@ export default function ZekuAIPage() {
           </div>
         </motion.div>
 
-        {/* Live Status Timer */}
+        {/* Live Status Timer - Compact */}
         {userExpiresAt && new Date(userExpiresAt) > new Date() && (
           <motion.div
             key={userExpiresAt}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/40 rounded-xl p-3 mb-2 shadow-lg flex-shrink-0"
+            className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/40 rounded-xl p-2 mb-2 shadow-lg flex-shrink-0"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                <span className="text-green-400 font-bold text-sm">You're Alive!</span>
+                <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+                <span className="text-green-400 font-bold text-xs">You're Alive!</span>
+                <LiveTimer expiresAt={userExpiresAt} />
               </div>
-              <LiveTimer expiresAt={userExpiresAt} />
+              <Button
+                onClick={async () => {
+                  if (confirm('Reset your alive status? This will allow you to go alive again immediately.')) {
+                    setUserHasProof(false);
+                    setUserExpiresAt(null);
+                    await loadLiveUserCount();
+                  }
+                }}
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs text-gray-400 hover:text-white"
+              >
+                Reset
+              </Button>
             </div>
-            <p className="text-xs text-gray-400 mt-1">
-              Your alive status is active and visible to all {liveUserCount} users
-            </p>
           </motion.div>
         )}
 
@@ -588,7 +599,7 @@ export default function ZekuAIPage() {
           </motion.div>
         )}
         
-        {/* Proof of Life Section */}
+        {/* Proof of Life Section - Compact */}
         <AnimatePresence>
           {showProofOfLife && (
             <motion.div
@@ -601,14 +612,14 @@ export default function ZekuAIPage() {
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-black/70 backdrop-blur-xl border border-white/20 rounded-2xl p-6 text-center"
+                  className="bg-black/70 backdrop-blur-xl border border-white/20 rounded-xl p-4 text-center"
                 >
-                  <Activity className="w-12 h-12 text-green-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-bold text-white mb-2">Prove You're Alive First!</h3>
-                  <p className="text-gray-300 text-sm mb-4">
+                  <Activity className="w-8 h-8 text-green-400 mx-auto mb-2" />
+                  <h3 className="text-base font-bold text-white mb-1">Prove You're Alive First!</h3>
+                  <p className="text-gray-300 text-xs mb-3">
                     Pay 1 KAS to yourself to go alive for 24 hours. 
                     {liveUserCount > 0 && (
-                      <span className="block mt-2">
+                      <span className="block mt-1">
                         Currently <span className="text-green-400 font-bold">{liveUserCount} {liveUserCount === 1 ? 'user is' : 'users are'}</span> alive!
                       </span>
                     )}
