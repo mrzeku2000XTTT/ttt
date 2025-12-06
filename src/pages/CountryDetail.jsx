@@ -87,26 +87,28 @@ export default function CountryDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 overflow-y-auto">
+    <div className="min-h-screen relative overflow-y-auto">
+      {/* Aesthetic Sunset Background - Light */}
+      <div className="fixed inset-0 bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50" />
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-yellow-100/40 via-transparent to-transparent" />
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-pink-100/30 via-transparent to-transparent" />
+      
       {/* Simple Header */}
-      <div className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-8 py-6">
+      <div className="relative bg-white/40 backdrop-blur-md border-b border-white/30">
+        <div className="max-w-7xl mx-auto px-6 py-4">
           <button
             onClick={() => navigate(createPageUrl("Earth"))}
-            className="text-slate-600 hover:text-slate-900 transition-colors flex items-center gap-2 group mb-4"
+            className="text-slate-700 hover:text-slate-900 transition-colors flex items-center gap-2 group mb-3"
           >
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-            <span>Back to Earth</span>
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            <span className="text-sm">Back to Earth</span>
           </button>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="text-5xl">{countryFlag}</div>
-              <div>
-                <div className="text-sm text-slate-500 mb-1">Full Name</div>
-                <h1 className="text-3xl font-bold text-slate-900">{countryName}</h1>
-              </div>
+            <div className="flex items-center gap-3">
+              <div className="text-4xl">{countryFlag}</div>
+              <h1 className="text-2xl font-bold text-slate-900">{countryName}</h1>
             </div>
-            <Button className="bg-blue-600 text-white hover:bg-blue-700 gap-2">
+            <Button className="bg-blue-600/90 backdrop-blur text-white hover:bg-blue-700 gap-2 shadow-lg">
               <Search className="w-4 h-4" />
               Search
             </Button>
@@ -141,65 +143,65 @@ export default function CountryDetailPage() {
           </div>
         )}
 
-        {/* Modern Info Grid */}
+        {/* Modern Info Grid - Glassmorphic with Uneven Sizes */}
         {currencyData && !loading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Currency Card - Clickable */}
+          <div className="grid grid-cols-12 gap-4">
+            {/* Currency Card - Clickable - Compact */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
               onClick={() => setShowCurrencyConverter(true)}
-              className="bg-white rounded-2xl p-8 shadow-md hover:shadow-xl transition-all cursor-pointer group"
+              className="col-span-12 md:col-span-6 lg:col-span-4 bg-white/60 backdrop-blur-xl rounded-2xl p-5 shadow-lg hover:shadow-2xl transition-all cursor-pointer group border border-white/40"
             >
-              <div className="flex items-start justify-between mb-6">
+              <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 mb-2">Currency</h3>
-                  <button className="text-blue-600 text-sm flex items-center gap-1 hover:gap-2 transition-all">
+                  <h3 className="text-sm font-bold text-slate-900 mb-1">Currency</h3>
+                  <button className="text-blue-600 text-xs flex items-center gap-1 hover:gap-2 transition-all">
                     <ArrowRightLeft className="w-3 h-3" />
                     Click to convert
                   </button>
                 </div>
-                <DollarSign className="w-10 h-10 text-green-500" />
+                <DollarSign className="w-8 h-8 text-green-500 opacity-70" />
               </div>
-              <div className="space-y-2">
-                <p className="text-2xl font-bold text-slate-900">{currencyData.currency}</p>
-                <p className="text-sm text-slate-600">H1: 48px</p>
-                <p className="text-sm text-slate-600">H1: 32px</p>
+              <div className="space-y-1">
+                <p className="text-xl font-bold text-slate-900">{currencyData.currency}</p>
+                <p className="text-xs text-slate-600">H1: 48px</p>
+                <p className="text-xs text-slate-600">H1: 32px</p>
               </div>
             </motion.div>
 
-            {/* SF Pro Typography Info */}
+            {/* SF Pro Typography Info - Smaller */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
-              className="bg-white rounded-2xl p-8 shadow-md"
+              className="col-span-12 md:col-span-6 lg:col-span-3 bg-white/60 backdrop-blur-xl rounded-2xl p-5 shadow-lg border border-white/40"
             >
-              <h3 className="text-base font-bold text-slate-900 mb-3">SF Pro</h3>
-              <button className="text-blue-600 text-sm mb-6 hover:underline">
+              <h3 className="text-sm font-bold text-slate-900 mb-2">SF Pro</h3>
+              <button className="text-blue-600 text-xs mb-4 hover:underline">
                 Click to convert
               </button>
-              <div className="space-y-2">
-                <p className="text-sm text-slate-700">H1: 32px</p>
-                <p className="text-sm text-slate-700">body 16px</p>
+              <div className="space-y-1">
+                <p className="text-xs text-slate-700">H1: 32px</p>
+                <p className="text-xs text-slate-700">body 16px</p>
               </div>
             </motion.div>
 
-            {/* Compare Section */}
+            {/* Compare Section - Larger */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-white rounded-2xl p-8 shadow-md"
+              className="col-span-12 md:col-span-12 lg:col-span-5 bg-white/60 backdrop-blur-xl rounded-2xl p-5 shadow-lg border border-white/40"
             >
-              <h3 className="text-base font-bold text-slate-900 mb-6">Compare with another country</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between text-sm">
+              <h3 className="text-sm font-bold text-slate-900 mb-4">Compare with another country</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs">
                   <span className="text-slate-700">Quick Stats</span>
                   <span className="text-slate-700">Deep</span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-xs">
                   <span className="text-slate-700">GDP Rank</span>
                   <span className="text-slate-700">HDI</span>
                 </div>
@@ -207,51 +209,51 @@ export default function CountryDetailPage() {
               </div>
             </motion.div>
 
-            {/* Capital Card with Gradient */}
+            {/* Capital Card with Gradient - Medium */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25 }}
-              className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl p-8 shadow-md text-white relative overflow-hidden"
+              className="col-span-12 md:col-span-6 lg:col-span-5 bg-gradient-to-br from-purple-500/80 to-indigo-600/80 backdrop-blur-xl rounded-2xl p-6 shadow-lg text-white relative overflow-hidden border border-white/20"
             >
-              <div className="flex items-start justify-between mb-6 relative z-10">
-                <h3 className="text-base font-bold">Capital</h3>
-                <button className="text-white/70 hover:text-white">
-                  <MoreHorizontal className="w-5 h-5" />
+              <div className="flex items-start justify-between mb-5 relative z-10">
+                <h3 className="text-sm font-bold">Capital</h3>
+                <button className="text-white/60 hover:text-white">
+                  <MoreHorizontal className="w-4 h-4" />
                 </button>
               </div>
-              <p className="text-3xl font-bold mb-8 relative z-10">{currencyData.capital}</p>
-              <div className="h-24 relative">
-                <svg className="w-full h-full" viewBox="0 0 200 80">
-                  <path d="M 0 60 Q 50 40, 100 50 T 200 30" stroke="rgba(255,255,255,0.4)" strokeWidth="2" fill="none" />
-                  <circle cx="100" cy="50" r="5" fill="white" opacity="0.8" />
+              <p className="text-2xl font-bold mb-6 relative z-10">{currencyData.capital}</p>
+              <div className="h-16 relative">
+                <svg className="w-full h-full" viewBox="0 0 200 60">
+                  <path d="M 0 50 Q 50 30, 100 40 T 200 20" stroke="rgba(255,255,255,0.4)" strokeWidth="2" fill="none" />
+                  <circle cx="100" cy="40" r="4" fill="white" opacity="0.8" />
                 </svg>
               </div>
-              <div className="absolute top-0 right-0 text-xs text-white/50 p-4">#BB2F6</div>
+              <div className="absolute top-0 right-0 text-xs text-white/40 p-3">#BB2F6</div>
             </motion.div>
 
-            {/* Timezone Card */}
+            {/* Timezone Card - Tall */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="bg-slate-200 rounded-2xl shadow-md overflow-hidden relative"
+              className="col-span-12 md:col-span-6 lg:col-span-4 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg overflow-hidden relative border border-white/40"
             >
               <div className="absolute inset-0">
                 <img 
                   src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop" 
                   alt="Timezone"
-                  className="w-full h-full object-cover opacity-70"
+                  className="w-full h-full object-cover opacity-40"
                 />
               </div>
-              <div className="relative z-10 p-8">
-                <div className="flex items-start justify-between mb-3">
-                  <h3 className="text-base font-bold text-slate-900">Timezone</h3>
-                  <Clock className="w-6 h-6 text-blue-600" />
+              <div className="relative z-10 p-5">
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className="text-sm font-bold text-slate-900">Timezone</h3>
+                  <Clock className="w-5 h-5 text-blue-600" />
                 </div>
-                <p className="text-sm text-slate-700 mb-6">more info ›</p>
-                <div className="bg-white/95 backdrop-blur-sm rounded-xl p-4 mt-8">
-                  <div className="flex items-end justify-between gap-2 h-20">
+                <p className="text-xs text-slate-700 mb-4">more info ›</p>
+                <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 mt-6">
+                  <div className="flex items-end justify-between gap-1.5 h-16">
                     <div className="bg-blue-500 rounded-t w-full" style={{height: '30%'}}></div>
                     <div className="bg-blue-500 rounded-t w-full" style={{height: '50%'}}></div>
                     <div className="bg-blue-500 rounded-t w-full" style={{height: '70%'}}></div>
@@ -261,66 +263,66 @@ export default function CountryDetailPage() {
               </div>
             </motion.div>
 
-            {/* Population Card */}
+            {/* Population Card - Compact */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35 }}
-              className="bg-white rounded-2xl p-8 shadow-md"
+              className="col-span-12 md:col-span-6 lg:col-span-3 bg-white/60 backdrop-blur-xl rounded-2xl p-5 shadow-lg border border-white/40"
             >
-              <div className="flex items-start justify-between mb-6">
-                <h3 className="text-base font-bold text-slate-900">Population</h3>
-                <span className="text-sm text-slate-500 hover:text-slate-700 cursor-pointer">more info ›</span>
+              <div className="flex items-start justify-between mb-4">
+                <h3 className="text-sm font-bold text-slate-900">Population</h3>
+                <span className="text-xs text-slate-500 hover:text-slate-700 cursor-pointer">more info ›</span>
               </div>
-              <p className="text-2xl font-bold text-slate-900 mb-6">{currencyData.population}</p>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 h-3 bg-slate-200 rounded-full overflow-hidden">
+              <p className="text-xl font-bold text-slate-900 mb-4">{currencyData.population}</p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
                     <div className="h-full bg-blue-600 rounded-full" style={{width: '75%'}} />
                   </div>
-                  <span className="text-sm text-slate-600 font-medium">-15%</span>
+                  <span className="text-xs text-slate-600 font-medium">-15%</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 h-3 bg-slate-200 rounded-full overflow-hidden">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
                     <div className="h-full bg-purple-600 rounded-full" style={{width: '60%'}} />
                   </div>
-                  <span className="text-sm text-slate-600 font-medium">-5%</span>
+                  <span className="text-xs text-slate-600 font-medium">-5%</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 h-3 bg-slate-200 rounded-full overflow-hidden">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
                     <div className="h-full bg-red-600 rounded-full" style={{width: '85%'}} />
                   </div>
                 </div>
               </div>
             </motion.div>
 
-            {/* Language Card */}
+            {/* Language Card - Wide */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="bg-slate-600 rounded-2xl shadow-md overflow-hidden relative"
+              className="col-span-12 md:col-span-12 lg:col-span-5 bg-slate-600/70 backdrop-blur-xl rounded-2xl shadow-lg overflow-hidden relative border border-white/20"
             >
               <div className="absolute inset-0">
                 <img 
                   src="https://images.unsplash.com/photo-1495364141860-b0d03eccd065?w=400&h=300&fit=crop" 
                   alt="Language"
-                  className="w-full h-full object-cover opacity-50"
+                  className="w-full h-full object-cover opacity-40"
                 />
               </div>
-              <div className="relative z-10 p-8">
-                <div className="flex items-start justify-between mb-12">
-                  <h3 className="text-base font-bold text-white">Language</h3>
-                  <button className="text-white/70 hover:text-white">
-                    <MoreHorizontal className="w-5 h-5" />
+              <div className="relative z-10 p-6">
+                <div className="flex items-start justify-between mb-8">
+                  <h3 className="text-sm font-bold text-white">Language</h3>
+                  <button className="text-white/60 hover:text-white">
+                    <MoreHorizontal className="w-4 h-4" />
                   </button>
                 </div>
-                <div className="flex items-center justify-center mb-6">
-                  <div className="w-32 h-32 rounded-full border-4 border-white/40 flex items-center justify-center bg-white/20 backdrop-blur-sm">
-                    <Clock className="w-16 h-16 text-white" />
+                <div className="flex items-center justify-center mb-4">
+                  <div className="w-24 h-24 rounded-full border-4 border-white/30 flex items-center justify-center bg-white/20 backdrop-blur-sm">
+                    <Clock className="w-12 h-12 text-white" />
                   </div>
                 </div>
-                <p className="text-2xl font-bold text-white text-center">{currencyData.language}</p>
+                <p className="text-xl font-bold text-white text-center">{currencyData.language}</p>
               </div>
             </motion.div>
 
@@ -329,18 +331,18 @@ export default function CountryDetailPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.45 }}
-              className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl p-8 shadow-md text-white relative overflow-hidden"
+              className="col-span-12 md:col-span-6 lg:col-span-4 bg-gradient-to-br from-purple-500/80 to-indigo-600/80 backdrop-blur-xl rounded-2xl p-6 shadow-lg text-white relative overflow-hidden border border-white/20"
             >
-              <div className="flex items-start justify-between mb-6 relative z-10">
-                <h3 className="text-base font-bold">Fun Fact</h3>
-                <button className="text-white/70 hover:text-white">
-                  <MoreHorizontal className="w-5 h-5" />
+              <div className="flex items-start justify-between mb-4 relative z-10">
+                <h3 className="text-sm font-bold">Fun Fact</h3>
+                <button className="text-white/60 hover:text-white">
+                  <MoreHorizontal className="w-4 h-4" />
                 </button>
               </div>
-              <div className="flex items-center justify-center my-8 relative z-10">
-                <div className="text-7xl">{countryFlag}</div>
+              <div className="flex items-center justify-center my-6 relative z-10">
+                <div className="text-6xl">{countryFlag}</div>
               </div>
-              <p className="text-sm text-white/95 relative z-10 leading-relaxed">{currencyData.funFact}</p>
+              <p className="text-xs text-white/95 relative z-10 leading-relaxed">{currencyData.funFact}</p>
             </motion.div>
           </div>
         )}
