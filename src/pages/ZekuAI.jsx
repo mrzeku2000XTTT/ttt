@@ -18,49 +18,32 @@ backgroundMusic.volume = 0.15;
 // Alien voice text-to-speech for AI responses
 const speakAlienVoice = (text) => {
   if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel(); // Stop any ongoing speech
+    window.speechSynthesis.cancel();
     
     // Remove emojis and special characters
     const cleanText = text.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim();
     
     if (!cleanText) return;
     
-    // Split long text into chunks if needed (speech synthesis has limits)
-    const maxLength = 200;
-    const chunks = [];
+    // Split into sentences for more reliable playback
+    const sentences = cleanText.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [cleanText];
+    let currentIndex = 0;
     
-    if (cleanText.length > maxLength) {
-      let start = 0;
-      while (start < cleanText.length) {
-        let end = start + maxLength;
-        // Try to break at sentence or word boundary
-        if (end < cleanText.length) {
-          const lastPeriod = cleanText.lastIndexOf('.', end);
-          const lastSpace = cleanText.lastIndexOf(' ', end);
-          if (lastPeriod > start + maxLength / 2) {
-            end = lastPeriod + 1;
-          } else if (lastSpace > start + maxLength / 2) {
-            end = lastSpace + 1;
-          }
-        }
-        chunks.push(cleanText.slice(start, end).trim());
-        start = end;
-      }
-    } else {
-      chunks.push(cleanText);
-    }
-    
-    // Speak each chunk in sequence
-    let currentChunk = 0;
     const speakNext = () => {
-      if (currentChunk >= chunks.length) return;
+      if (currentIndex >= sentences.length) return;
       
-      const utterance = new SpeechSynthesisUtterance(chunks[currentChunk]);
-      utterance.rate = 0.7; // Slower for alien effect
-      utterance.pitch = 0.3; // Lower pitch for alien effect
+      const sentence = sentences[currentIndex].trim();
+      if (!sentence) {
+        currentIndex++;
+        speakNext();
+        return;
+      }
+      
+      const utterance = new SpeechSynthesisUtterance(sentence);
+      utterance.rate = 0.7;
+      utterance.pitch = 0.3;
       utterance.volume = 0.6;
       
-      // Try to find a unique voice
       const voices = window.speechSynthesis.getVoices();
       const alienVoice = voices.find(v => 
         v.name.includes('Google') || 
@@ -70,9 +53,15 @@ const speakAlienVoice = (text) => {
       
       if (alienVoice) utterance.voice = alienVoice;
       
-      // Speak next chunk when current one finishes
       utterance.onend = () => {
-        currentChunk++;
+        currentIndex++;
+        // Small delay between sentences for better reliability
+        setTimeout(() => speakNext(), 100);
+      };
+      
+      utterance.onerror = (e) => {
+        console.error('Speech error:', e);
+        currentIndex++;
         speakNext();
       };
       
