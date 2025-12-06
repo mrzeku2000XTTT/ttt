@@ -117,25 +117,35 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
   const handleComment = async () => {
     if (!newComment.trim()) return;
 
-    // Desktop-only: Require 1 KAS self-payment
-    if (isDesktop() && currentUser?.created_wallet_address) {
-      if (typeof window.kasware === 'undefined') {
-        alert('Desktop users: Install Kasware to comment (1 KAS self-payment required)');
+    // Get Kasware wallet if needed for payment
+    let kaswareAddress = null;
+    if ((isDesktop() || !isIOS()) && typeof window.kasware !== 'undefined') {
+      try {
+        const accounts = await window.kasware.getAccounts();
+        if (accounts.length > 0) {
+          kaswareAddress = accounts[0];
+        }
+      } catch (err) {
+        console.log('Kasware not connected');
+      }
+    }
+
+    // Desktop/Android: Require 1 KAS self-payment (iOS exempt)
+    if (!isIOS() && isDesktop()) {
+      if (!kaswareAddress) {
+        alert('Desktop users: Connect Kasware to comment (1 KAS self-payment required)');
         return;
       }
 
       try {
-        const accounts = await window.kasware.getAccounts();
-        if (accounts.length === 0) {
-          await window.kasware.requestAccounts();
-        }
-        
-        // Send 1 KAS to self
+        // Send 1 KAS to self (Kasware address sends to itself)
         const amountSompi = 100000000; // 1 KAS
-        await window.kasware.sendKaspa(currentUser.created_wallet_address, amountSompi);
+        console.log('💰 Desktop comment: Sending 1 KAS to self...', kaswareAddress);
+        const txHash = await window.kasware.sendKaspa(kaswareAddress, amountSompi);
+        console.log('✅ Desktop comment: Payment successful, txHash:', txHash);
       } catch (err) {
+        console.error('❌ Desktop comment: Payment failed:', err);
         if (err.message?.includes('User reject')) {
-          // User cancelled payment - just return, don't show error
           return;
         }
         alert('Payment failed: ' + err.message);
