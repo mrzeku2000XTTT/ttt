@@ -30,11 +30,7 @@ export default function CountryDetailPage() {
     }
   }, [countryName]);
 
-  useEffect(() => {
-    if (exchangeRates && currencyData) {
-      setShowCurrencyConverter(true);
-    }
-  }, [exchangeRates, currencyData]);
+
 
   const fetchCurrencyData = async () => {
     setLoading(true);
@@ -188,18 +184,22 @@ export default function CountryDetailPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              onClick={() => setShowCurrencyConverter(true)}
-              className="col-span-6 md:col-span-4 lg:col-span-3 bg-white/60 backdrop-blur-xl rounded-xl p-3 shadow-md hover:shadow-xl transition-all cursor-pointer group border border-white/40"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowCurrencyConverter(true);
+              }}
+              className="col-span-6 md:col-span-4 lg:col-span-3 bg-white/60 backdrop-blur-xl rounded-xl p-3 shadow-md hover:shadow-xl hover:scale-105 transition-all cursor-pointer group border border-white/40"
             >
               <div className="flex items-start justify-between mb-2">
                 <h3 className="text-xs font-bold text-slate-900">Currency</h3>
                 <DollarSign className="w-5 h-5 text-green-500 opacity-70" />
               </div>
               <p className="text-sm font-bold text-slate-900 mb-1">{currencyData.currency}</p>
-              <button className="text-blue-600 text-[10px] flex items-center gap-1 hover:gap-2 transition-all">
+              <div className="text-blue-600 text-[10px] flex items-center gap-1 group-hover:gap-2 transition-all">
                 <ArrowRightLeft className="w-2 h-2" />
                 Click to convert
-              </button>
+              </div>
             </motion.div>
 
             {/* Capital Card with Photo - Clickable */}
