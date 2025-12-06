@@ -443,13 +443,11 @@ export default function ZekuAIPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="w-full">
-                <ProofOfLifeButton 
-                  kaswareWallet={kaswareWallet}
-                  metamaskWallet={metamaskWallet}
-                  user={user}
-                />
-              </div>
+              <ProofOfLifeButton 
+                kaswareWallet={kaswareWallet}
+                metamaskWallet={metamaskWallet}
+                user={user}
+              />
 
               <Button
                 onClick={() => {
