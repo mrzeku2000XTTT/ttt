@@ -38,7 +38,8 @@ import {
   Flame,
   Moon,
   Eye,
-  LayoutGrid
+  LayoutGrid,
+  FileText
 } from "lucide-react";
 import EncryptedNotepad from "@/components/feed/EncryptedNotepad";
 import AppIconGenerator from "@/components/categories/AppIconGenerator";
@@ -135,6 +136,7 @@ export default function CategoriesPage() {
       { id: "ios", name: "iOS", icon: "Settings", path: "IOS" },
       { id: "hypemind", name: "HYPEMIND", icon: "Brain", path: "HYPEMIND" },
       { id: "bible", name: "Bible", icon: "BookOpen", path: "Bible" },
+      { id: "articles", name: "Articles", icon: "FileText", path: "Articles" },
       ];
 
     if (isAdmin) {
@@ -198,7 +200,7 @@ export default function CategoriesPage() {
       Video, Camera, ImageIcon, Users, MessageSquare, Bot, Brain, 
       ArrowUpDown, Wallet, ShoppingCart, ShoppingBag, Shield, Network,
       Gamepad2, TrendingUp, AlertTriangle, History, Settings, User, Crown,
-      Activity, Terminal, Briefcase, Gift, BookOpen, Flame, Moon, Wrench, Eye, LayoutGrid
+      Activity, Terminal, Briefcase, Gift, BookOpen, Flame, Moon, Wrench, Eye, LayoutGrid, FileText
     };
     return icons[iconName] || Users;
   };
