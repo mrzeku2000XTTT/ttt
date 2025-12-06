@@ -15,31 +15,40 @@ const backgroundMusic = new Audio('https://qtrypzzcjebvfcihiynt.supabase.co/stor
 backgroundMusic.loop = true;
 backgroundMusic.volume = 0.15;
 
+// Track if we're currently speaking to prevent duplicates
+let isSpeaking = false;
+let speakingTimeoutId = null;
+
 // Alien voice text-to-speech for AI responses
 const speakAlienVoice = (text) => {
   if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
+    // Cancel any existing speech immediately
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      if (speakingTimeoutId) clearTimeout(speakingTimeoutId);
+      isSpeaking = false;
+    }
     
     // Remove markdown, emojis, asterisks, and special characters
     let cleanText = text
-      .replace(/\*\*/g, '') // Remove bold markdown
-      .replace(/\*/g, '') // Remove asterisks
-      .replace(/#{1,6}\s/g, '') // Remove headers
-      .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1') // Remove links but keep text
-      .replace(/`{1,3}[^`]*`{1,3}/g, '') // Remove code blocks
-      .replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '') // Remove emojis
-      .replace(/[_~]/g, '') // Remove other markdown
+      .replace(/\*\*/g, '')
+      .replace(/\*/g, '')
+      .replace(/#{1,6}\s/g, '')
+      .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
+      .replace(/`{1,3}[^`]*`{1,3}/g, '')
+      .replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '')
+      .replace(/[_~]/g, '')
       .trim();
     
     if (!cleanText) return;
     
-    // Split into sentences - more comprehensive pattern
+    isSpeaking = true;
     const sentences = cleanText.match(/[^.!?\n]+[.!?\n]+/g) || [cleanText];
     let currentIndex = 0;
     
     const speakNext = () => {
-      if (currentIndex >= sentences.length) {
-        console.log('✅ Finished speaking all sentences');
+      if (!isSpeaking || currentIndex >= sentences.length) {
+        isSpeaking = false;
         return;
       }
       
@@ -49,8 +58,6 @@ const speakAlienVoice = (text) => {
         speakNext();
         return;
       }
-      
-      console.log(`🗣️ Speaking sentence ${currentIndex + 1}/${sentences.length}: "${sentence.substring(0, 50)}..."`);
       
       const utterance = new SpeechSynthesisUtterance(sentence);
       utterance.rate = 0.7;
@@ -68,19 +75,17 @@ const speakAlienVoice = (text) => {
       
       utterance.onend = () => {
         currentIndex++;
-        setTimeout(() => speakNext(), 150);
+        speakingTimeoutId = setTimeout(() => speakNext(), 150);
       };
       
-      utterance.onerror = (e) => {
-        console.error('Speech error:', e);
+      utterance.onerror = () => {
         currentIndex++;
-        setTimeout(() => speakNext(), 150);
+        speakingTimeoutId = setTimeout(() => speakNext(), 150);
       };
       
       window.speechSynthesis.speak(utterance);
     };
     
-    console.log(`🎙️ Starting to speak ${sentences.length} sentences`);
     speakNext();
   }
 };
