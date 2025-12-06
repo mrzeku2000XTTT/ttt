@@ -26,9 +26,14 @@ export default function CountryDetailPage() {
   useEffect(() => {
     if (countryName) {
       fetchCurrencyData();
-      fetchExchangeRates();
     }
   }, [countryName]);
+
+  useEffect(() => {
+    if (currencyData?.currencyCode) {
+      fetchExchangeRates();
+    }
+  }, [currencyData]);
 
 
 
@@ -70,14 +75,10 @@ export default function CountryDetailPage() {
   };
 
   const fetchExchangeRates = async () => {
+    if (!currencyData?.currencyCode) return;
+    
     setLoadingRates(true);
     try {
-      // Wait for currency data to load first
-      if (!currencyData?.currencyCode) {
-        setTimeout(fetchExchangeRates, 500);
-        return;
-      }
-
       const response = await base44.functions.invoke('getCurrencyRates', {
         currencyCode: currencyData.currencyCode
       });
@@ -100,6 +101,7 @@ export default function CountryDetailPage() {
       });
     } catch (err) {
       console.error("Failed to fetch exchange rates:", err);
+      setExchangeRates(null);
     } finally {
       setLoadingRates(false);
     }
@@ -275,7 +277,7 @@ export default function CountryDetailPage() {
             )}
 
         {/* Currency Converter Modal - Sunset Theme */}
-        {showCurrencyConverter && exchangeRates && (
+        {showCurrencyConverter && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -308,6 +310,24 @@ export default function CountryDetailPage() {
               </div>
 
               <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+                {loadingRates ? (
+                  <div className="text-center py-12">
+                    <div className="animate-spin w-12 h-12 border-4 border-orange-200 border-t-orange-500 rounded-full mx-auto mb-4" />
+                    <p className="text-slate-700">Loading exchange rates...</p>
+                  </div>
+                ) : !exchangeRates ? (
+                  <div className="text-center py-12">
+                    <p className="text-red-600 mb-4">Failed to load exchange rates</p>
+                    <button
+                      onClick={fetchExchangeRates}
+                      className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                ) : (
+                  <>
+
                 {/* Compact Converter Interface */}
                 <div className="grid grid-cols-7 gap-3 mb-6">
                   {/* You Send */}
@@ -503,11 +523,13 @@ export default function CountryDetailPage() {
                       </div>
                     </motion.div>
                   ))}
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
+                  </div>
+                  </>
+                  )}
+                  </div>
+                  </motion.div>
+                  </motion.div>
+                  )}
 
 
       </div>
