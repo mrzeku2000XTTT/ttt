@@ -30,6 +30,12 @@ export default function CountryDetailPage() {
     }
   }, [countryName]);
 
+  useEffect(() => {
+    if (exchangeRates && currencyData) {
+      setShowCurrencyConverter(true);
+    }
+  }, [exchangeRates, currencyData]);
+
   const fetchCurrencyData = async () => {
     setLoading(true);
     try {
