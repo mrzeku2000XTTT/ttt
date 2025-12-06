@@ -15,6 +15,7 @@ export default function CalculatorPage() {
   const [kasPrice, setKasPrice] = useState(null);
   const [loadingPrice, setLoadingPrice] = useState(false);
   const [exchangeRates, setExchangeRates] = useState(null);
+  const [allCurrencies, setAllCurrencies] = useState([]);
   const [selectedCurrency, setSelectedCurrency] = useState('USD');
 
   useEffect(() => {
@@ -43,11 +44,46 @@ export default function CalculatorPage() {
 
   const loadExchangeRates = async () => {
     try {
-      const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-      const data = await response.json();
-      setExchangeRates(data.rates);
+      // Use backend API to get all currency rates
+      const response = await base44.functions.invoke('getCurrencyRates', {
+        currencyCode: 'USD'
+      });
+      
+      if (response.data?.regions) {
+        // Flatten all currencies from all regions
+        const allCurrenciesMap = {};
+        const currenciesList = [];
+        
+        Object.values(response.data.regions).forEach(region => {
+          region.forEach(currency => {
+            if (currency.rate && currency.rate !== 'N/A') {
+              const rate = parseFloat(currency.rate);
+              if (!isNaN(rate) && !allCurrenciesMap[currency.code]) {
+                allCurrenciesMap[currency.code] = rate;
+                currenciesList.push({
+                  code: currency.code,
+                  country: currency.country,
+                  flag: currency.flag,
+                  rate: rate
+                });
+              }
+            }
+          });
+        });
+        
+        setExchangeRates(allCurrenciesMap);
+        setAllCurrencies(currenciesList.sort((a, b) => a.country.localeCompare(b.country)));
+      }
     } catch (err) {
       console.error("Failed to load exchange rates:", err);
+      // Fallback to basic API
+      try {
+        const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+        const data = await response.json();
+        setExchangeRates(data.rates);
+      } catch (fallbackErr) {
+        console.error("Fallback failed:", fallbackErr);
+      }
     }
   };
 
@@ -198,8 +234,9 @@ export default function CalculatorPage() {
 
     const input = aiInput.trim().toLowerCase();
 
-    // Pattern 1: "X [currency] to kas" or "X [currency] in kas"
-    const toCurrencyPattern = /(\d+\.?\d*)\s*[$₦€£¥]?\s*(naira|ngn|usd|eur|gbp|jpy|cad|aud|chf|cny|inr|mxn|brl|krw|sgd|hkd|nzd|sek|nok|dkk|pln|thb|idr|myr|php|zar|try|rub|aed|sar|egp|kwd|qar|omr|bhd|jod)?\s+(to|in)\s+kas/i;
+    // Pattern 1: "X [currency] to kas" - supports ALL currencies
+    const currencyCodes = allCurrencies.map(c => c.code.toLowerCase()).join('|');
+    const toCurrencyPattern = new RegExp(`(\\d+\\.?\\d*)\\s*[$₦€£¥]?\\s*(${currencyCodes}|naira)?\\s+(to|in)\\s+kas`, 'i');
     const toCurrencyMatch = aiInput.match(toCurrencyPattern);
     
     if (toCurrencyMatch) {
@@ -208,28 +245,32 @@ export default function CalculatorPage() {
         ? (toCurrencyMatch[2].toLowerCase() === 'naira' ? 'NGN' : toCurrencyMatch[2].toUpperCase())
         : 'USD';
       
-      const amountInUSD = convertToUSD(amount, currency);
-      const kasAmount = amountInUSD / kasPrice;
-      setDisplay(kasAmount.toFixed(4));
-      setHistory([`${amount} ${currency} → ${kasAmount.toFixed(4)} KAS`, ...history.slice(0, 9)]);
-      setAiInput("");
-      return true;
+      if (exchangeRates[currency]) {
+        const amountInUSD = convertToUSD(amount, currency);
+        const kasAmount = amountInUSD / kasPrice;
+        setDisplay(kasAmount.toFixed(4));
+        setHistory([`${amount} ${currency} → ${kasAmount.toFixed(4)} KAS`, ...history.slice(0, 9)]);
+        setAiInput("");
+        return true;
+      }
     }
 
-    // Pattern 2: "X kas to [currency]" or "X kas in [currency]"
-    const fromCurrencyPattern = /(\d+\.?\d*)\s*kas\s+(to|in)\s+(naira|ngn|usd|eur|gbp|jpy|cad|aud|chf|cny|inr|mxn|brl|krw|sgd|hkd|nzd|sek|nok|dkk|pln|thb|idr|myr|php|zar|try|rub|aed|sar|egp|kwd|qar|omr|bhd|jod)/i;
+    // Pattern 2: "X kas to [currency]" - supports ALL currencies
+    const fromCurrencyPattern = new RegExp(`(\\d+\\.?\\d*)\\s*kas\\s+(to|in)\\s+(${currencyCodes}|naira)`, 'i');
     const fromCurrencyMatch = aiInput.match(fromCurrencyPattern);
     
     if (fromCurrencyMatch) {
       const amount = parseFloat(fromCurrencyMatch[1]);
       const currency = fromCurrencyMatch[3].toLowerCase() === 'naira' ? 'NGN' : fromCurrencyMatch[3].toUpperCase();
       
-      const kasInUSD = amount * kasPrice;
-      const result = currency === 'USD' ? kasInUSD : kasInUSD * exchangeRates[currency];
-      setDisplay(result.toFixed(2));
-      setHistory([`${amount} KAS → ${result.toFixed(2)} ${currency}`, ...history.slice(0, 9)]);
-      setAiInput("");
-      return true;
+      if (exchangeRates[currency]) {
+        const kasInUSD = amount * kasPrice;
+        const result = currency === 'USD' ? kasInUSD : kasInUSD * exchangeRates[currency];
+        setDisplay(result.toFixed(2));
+        setHistory([`${amount} KAS → ${result.toFixed(2)} ${currency}`, ...history.slice(0, 9)]);
+        setAiInput("");
+        return true;
+      }
     }
 
     // Pattern 3: Just "kas price"
@@ -526,7 +567,11 @@ export default function CalculatorPage() {
               </div>
             </div>
             <div className="mt-3 text-xs text-white/40">
-              Main: NGN (Naira), USD • Supported: EUR, GBP, JPY, CAD, AUD, CHF, CNY, INR, MXN, BRL, KRW, SGD, HKD, NZD, SEK, NOK, DKK, PLN, THB, IDR, MYR, PHP, ZAR, TRY, RUB, AED, SAR, EGP, KWD, QAR, OMR, BHD, JOD
+              {allCurrencies.length > 0 ? (
+                <>Supports {allCurrencies.length} currencies worldwide: {allCurrencies.slice(0, 10).map(c => c.code).join(', ')}, and more...</>
+              ) : (
+                <>Main: NGN (Naira), USD • Supported: EUR, GBP, JPY, CAD, AUD, CHF, CNY, INR, MXN, BRL, KRW, and 100+ more</>
+              )}
             </div>
           </div>
         </motion.div>
