@@ -225,7 +225,7 @@ export default function ZekuAIPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
+    <div className="h-screen bg-black relative overflow-hidden flex flex-col">
       {/* Matrix Rain Background */}
       <canvas
         ref={(canvas) => {
@@ -263,49 +263,49 @@ export default function ZekuAIPage() {
         className="fixed inset-0 z-0 opacity-30"
       />
 
-      <div className="relative z-10 max-w-6xl mx-auto p-4 md:p-6">
-        {/* Header */}
+      <div className="relative z-10 flex flex-col h-full max-w-7xl mx-auto w-full p-3">
+        {/* Compact Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-6 backdrop-blur-xl bg-black/50 border border-white/10 rounded-2xl p-4 md:p-6"
+          className="backdrop-blur-xl bg-black/80 border border-white/5 rounded-xl p-3 mb-3"
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                <Bot className="w-6 h-6 text-white" />
+            <div className="flex items-center gap-3">
+              {/* Black on Black Logo Box */}
+              <div className="w-10 h-10 bg-black/90 border border-white/10 rounded-lg flex items-center justify-center shadow-lg">
+                <Bot className="w-5 h-5 text-purple-400" />
               </div>
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-white" style={{ fontFamily: 'monospace' }}>
+                <h1 className="text-lg font-bold text-white" style={{ fontFamily: 'monospace' }}>
                   Zeku AI
                 </h1>
-                <p className="text-gray-400 text-sm">Your Elite Crypto Companion</p>
+                <p className="text-gray-500 text-xs">Your Elite Crypto Companion</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <Button
                 onClick={() => setShowProofOfLife(!showProofOfLife)}
                 variant="outline"
                 size="sm"
-                className={showProofOfLife ? 'bg-green-500/20 border-green-500' : 'bg-white/5'}
+                className={`h-8 ${showProofOfLife ? 'bg-green-500/20 border-green-500/50' : 'bg-black/50 border-white/10'}`}
               >
-                <Activity className="w-4 h-4 mr-2" />
-                <span className="hidden md:inline">Activity</span>
+                <Activity className="w-3 h-3" />
               </Button>
 
               <Button
                 onClick={() => setMatrixMode(!matrixMode)}
                 variant="outline"
                 size="sm"
-                className={matrixMode ? 'bg-green-500/20 border-green-500' : 'bg-white/5'}
+                className={`h-8 ${matrixMode ? 'bg-green-500/20 border-green-500/50' : 'bg-black/50 border-white/10'}`}
                 style={{ fontFamily: 'monospace' }}
               >
-                {matrixMode ? '◉ ON' : '○ OFF'}
+                {matrixMode ? '◉' : '○'}
               </Button>
 
-              <Button onClick={handleNewChat} variant="outline" size="sm" className="bg-white/5">
-                <Trash2 className="w-4 h-4" />
+              <Button onClick={handleNewChat} variant="outline" size="sm" className="h-8 bg-black/50 border-white/10">
+                <Trash2 className="w-3 h-3" />
               </Button>
             </div>
           </div>
@@ -316,58 +316,48 @@ export default function ZekuAIPage() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 backdrop-blur-xl bg-red-500/20 border border-red-500/30 rounded-xl p-4 flex items-center justify-between"
+            className="backdrop-blur-xl bg-red-500/20 border border-red-500/30 rounded-xl p-2 flex items-center justify-between mb-3"
           >
-            <div className="flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-red-400" />
-              <p className="text-sm text-red-300">{error}</p>
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-red-400" />
+              <p className="text-xs text-red-300">{error}</p>
             </div>
-            <Button onClick={() => setError(null)} variant="ghost" size="sm">
-              <X className="w-4 h-4" />
+            <Button onClick={() => setError(null)} variant="ghost" size="sm" className="h-6">
+              <X className="w-3 h-3" />
             </Button>
           </motion.div>
         )}
 
-        {/* Proof of Life Feed */}
-        <AnimatePresence>
-          {showProofOfLife && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mb-6"
-            >
-              <ProofOfLifeFeed />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Messages */}
-        <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 md:p-6 mb-6 min-h-[500px] max-h-[600px] overflow-y-auto">
+        {/* Messages - Fixed Height */}
+        <div className="flex-1 backdrop-blur-xl bg-black/50 border border-white/10 rounded-xl p-4 overflow-y-auto mb-3">
           {messages.length === 0 ? (
-            <div className="text-center py-20">
-              <Bot className="w-16 h-16 text-purple-400 mx-auto mb-6" />
-              <h2 className="text-2xl font-bold text-white mb-4" style={{ fontFamily: 'monospace' }}>
+            <div className="h-full flex flex-col items-center justify-center">
+              <div className="w-16 h-16 bg-black/80 border border-purple-500/30 rounded-2xl flex items-center justify-center mb-4">
+                <Bot className="w-8 h-8 text-purple-400" />
+              </div>
+              <h2 className="text-xl font-bold text-white mb-2" style={{ fontFamily: 'monospace' }}>
                 Welcome to Zeku AI
               </h2>
-              <p className="text-gray-400 mb-6">Your premium AI assistant is ready</p>
-              <div className="grid md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+              <p className="text-gray-500 text-sm mb-6">Your premium AI assistant is ready</p>
+              <div className="grid grid-cols-2 gap-3 w-full max-w-2xl">
                 {[
-                  { icon: '📊', title: 'Market Analysis', desc: 'Charts, trends, predictions' },
-                  { icon: '🖼️', title: 'Image Recognition', desc: 'Analyze trading charts' },
-                  { icon: '🌐', title: 'Real-Time Intel', desc: 'News, events, whale tracking' },
-                  { icon: '⚡', title: 'Proof of Life', desc: 'Prove you\'re alive & building' }
+                  { emoji: '📊', title: 'Market Analysis', desc: 'Charts, trends, predictions' },
+                  { emoji: '🖼️', title: 'Image Recognition', desc: 'Analyze trading charts' },
+                  { emoji: '🌐', title: 'Real-Time Intel', desc: 'News, events, whale tracking' },
+                  { emoji: '⚡', title: 'Proof of Life', desc: 'Prove you\'re alive & building' }
                 ].map((feature, i) => (
-                  <div key={i} className="bg-white/5 border border-white/10 rounded-lg p-4 text-left">
-                    <div className="text-2xl mb-2">{feature.icon}</div>
-                    <div className="font-semibold text-white mb-1">{feature.title}</div>
-                    <div className="text-xs text-gray-500">{feature.desc}</div>
+                  <div key={i} className="bg-black/60 border border-white/10 rounded-xl p-3 text-left hover:border-purple-500/30 transition-all">
+                    <div className="w-10 h-10 bg-black/80 border border-white/10 rounded-lg flex items-center justify-center mb-2 text-xl">
+                      {feature.emoji}
+                    </div>
+                    <div className="font-semibold text-white text-sm mb-1">{feature.title}</div>
+                    <div className="text-xs text-gray-600">{feature.desc}</div>
                   </div>
                 ))}
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {messages.map((msg, idx) => (
                 <motion.div
                   key={idx}
@@ -376,21 +366,21 @@ export default function ZekuAIPage() {
                   className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                    className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
                       msg.role === 'user'
-                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
                         : matrixMode
                         ? 'bg-green-500/10 border border-green-500/30 text-green-400'
-                        : 'bg-white/5 border border-white/10 text-gray-200'
+                        : 'bg-black/60 border border-white/10 text-gray-200'
                     }`}
                     style={msg.role === 'assistant' ? { fontFamily: 'monospace' } : undefined}
                   >
                     {msg.role === 'assistant' ? (
-                      <ReactMarkdown className="prose prose-invert max-w-none text-sm [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                      <ReactMarkdown className="prose prose-invert max-w-none text-xs [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
                         {msg.content}
                       </ReactMarkdown>
                     ) : (
-                      <p className="text-sm">{msg.content}</p>
+                      <p className="text-xs">{msg.content}</p>
                     )}
                   </div>
                 </motion.div>
@@ -398,10 +388,10 @@ export default function ZekuAIPage() {
               
               {isSending && (
                 <div className="flex justify-start">
-                  <div className={`rounded-2xl px-6 py-4 ${
-                    matrixMode ? 'bg-green-500/10 border border-green-500/30' : 'bg-white/5 border border-white/10'
+                  <div className={`rounded-xl px-4 py-3 ${
+                    matrixMode ? 'bg-green-500/10 border border-green-500/30' : 'bg-black/60 border border-white/10'
                   }`}>
-                    <Loader2 className={`w-5 h-5 ${matrixMode ? 'text-green-400' : 'text-purple-400'} animate-spin`} />
+                    <Loader2 className={`w-4 h-4 ${matrixMode ? 'text-green-400' : 'text-purple-400'} animate-spin`} />
                   </div>
                 </div>
               )}
@@ -411,34 +401,23 @@ export default function ZekuAIPage() {
           )}
         </div>
 
-        {/* Proof of Life Button */}
-        {(kaswareWallet.connected || metamaskWallet.connected) && (
-          <div className="mb-6">
-            <ProofOfLifeButton 
-              kaswareWallet={kaswareWallet}
-              metamaskWallet={metamaskWallet}
-              user={user}
-            />
-          </div>
-        )}
-
-        {/* Input */}
+        {/* Compact Input */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4"
+          className="backdrop-blur-xl bg-black/80 border border-white/10 rounded-xl p-2"
         >
           {uploadedFiles.length > 0 && (
-            <div className="mb-3 flex flex-wrap gap-2">
+            <div className="mb-2 flex flex-wrap gap-1">
               {uploadedFiles.map((file, idx) => (
-                <div key={idx} className="relative bg-white/5 border border-white/10 rounded-lg p-2 pr-8 flex items-center gap-2">
-                  <ImageIcon className="w-4 h-4 text-cyan-400" />
-                  <span className="text-xs text-white truncate max-w-[150px]">{file.name}</span>
+                <div key={idx} className="relative bg-black/60 border border-white/10 rounded-lg p-1 pr-6 flex items-center gap-1">
+                  <ImageIcon className="w-3 h-3 text-cyan-400" />
+                  <span className="text-[10px] text-white truncate max-w-[100px]">{file.name}</span>
                   <button
                     onClick={() => setUploadedFiles(uploadedFiles.filter((_, i) => i !== idx))}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-red-400"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 text-red-400"
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-2 h-2" />
                   </button>
                 </div>
               ))}
@@ -460,12 +439,12 @@ export default function ZekuAIPage() {
               disabled={isUploading || isSending}
               variant="outline"
               size="sm"
-              className="bg-white/5 flex-shrink-0"
+              className="h-9 bg-black/50 border-white/10 flex-shrink-0"
             >
               {isUploading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <Upload className="w-5 h-5" />
+                <Upload className="w-4 h-4" />
               )}
             </Button>
 
@@ -474,19 +453,19 @@ export default function ZekuAIPage() {
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
               placeholder="Ask Zeku AI anything..."
-              className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+              className="h-9 flex-1 bg-black/50 border-white/10 text-white placeholder:text-gray-600 text-sm"
               disabled={isSending}
             />
             
             <Button
               onClick={handleSend}
               disabled={(!input.trim() && !uploadedFiles.length) || isSending}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 flex-shrink-0"
+              className="h-9 bg-gradient-to-r from-purple-600 to-pink-600 flex-shrink-0"
             >
               {isSending ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <Send className="w-5 h-5" />
+                <Send className="w-4 h-4" />
               )}
             </Button>
           </div>
