@@ -695,8 +695,11 @@ export default function FeedPage() {
       try {
         // Send 1 KAS to self
         const amountSompi = 100000000; // 1 KAS
-        await window.kasware.sendKaspa(walletAddress, amountSompi);
+        console.log('💰 Desktop: Sending 1 KAS to self...', walletAddress);
+        const txHash = await window.kasware.sendKaspa(walletAddress, amountSompi);
+        console.log('✅ Desktop: Payment successful, txHash:', txHash);
       } catch (err) {
+        console.error('❌ Desktop: Payment failed:', err);
         setIsPosting(false);
         if (err.message?.includes('User reject')) {
           setError('Payment cancelled - post not created');
@@ -737,16 +740,20 @@ export default function FeedPage() {
         setPosts(posts.map(p => p.id === editingPost.id ? { ...editingPost, ...postData, updated_date: new Date().toISOString() } : p));
         setEditingPost(null);
       } else {
+        console.log('📝 Creating new post...', postData);
         createdPost = await base44.entities.Post.create(postData);
+        console.log('✅ Post created:', createdPost);
 
         // Reload all posts to get fresh data from server
         const freshPosts = await base44.entities.Post.list('-created_date', 200);
+        console.log('📋 Reloaded posts:', freshPosts.length);
         setPosts(freshPosts);
       }
 
       setNewPost("");
       setUploadedFiles([]);
       setError(null);
+      console.log('✨ Post flow completed successfully');
 
       // Check if @zk is mentioned anywhere in the post (not just at start)
       const postContent = newPost.toLowerCase();
