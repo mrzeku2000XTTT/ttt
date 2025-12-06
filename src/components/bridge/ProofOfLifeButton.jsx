@@ -130,27 +130,29 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
 
   return (
     <>
-      {userHasProof && onReset && (
+      <div className="flex gap-2 w-full">
         <Button
-          onClick={() => {
-            if (confirm('Reset your alive status? You can go alive again immediately.')) {
-              onReset();
-            }
-          }}
-          variant="outline"
-          className="absolute top-2 right-2 h-7 px-2 text-xs border-white/20 hover:border-white/40 text-gray-400 hover:text-white"
+          onClick={handleOpen}
+          disabled={!hasConnectedWallet || userHasProof}
+          className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/50 flex-1 h-9 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Reset
+          <Activity className="w-4 h-4 mr-2" />
+          {userHasProof ? "You're Alive!" : "Go Alive!"}
         </Button>
-      )}
-      <Button
-        onClick={handleOpen}
-        disabled={!hasConnectedWallet || userHasProof}
-        className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/50 w-full h-9 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <Activity className="w-4 h-4 mr-2" />
-        {userHasProof ? "You're Alive!" : "Go Alive!"}
-      </Button>
+        {userHasProof && onReset && (
+          <Button
+            onClick={() => {
+              if (confirm('Reset your alive status? You can go alive again immediately.')) {
+                onReset();
+              }
+            }}
+            variant="outline"
+            className="h-9 px-3 text-sm border-white/20 hover:border-white/40 text-gray-400 hover:text-white"
+          >
+            Reset
+          </Button>
+        )}
+      </div>
 
       <AnimatePresence>
         {showModal && (
