@@ -512,7 +512,7 @@ export default function ZekuAIPage() {
                 className={`h-8 px-3 ${showProofOfLife ? 'bg-green-500/20 border-green-500/50 text-green-400' : 'bg-black/50 border-white/10 text-white'}`}
               >
                 <Activity className="w-4 h-4 mr-1" />
-                <span className="text-xs">Live: {liveUserCount}</span>
+                <span className="text-xs">Alive: {liveUserCount}</span>
               </Button>
 
               <Button
@@ -561,12 +561,12 @@ export default function ZekuAIPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                <span className="text-green-400 font-bold text-sm">You're Live!</span>
+                <span className="text-green-400 font-bold text-sm">You're Alive!</span>
               </div>
               <LiveTimer expiresAt={userExpiresAt} />
             </div>
             <p className="text-xs text-gray-400 mt-1">
-              Your live status is active and visible to all {liveUserCount} users
+              Your alive status is active and visible to all {liveUserCount} users
             </p>
           </motion.div>
         )}
@@ -604,12 +604,12 @@ export default function ZekuAIPage() {
                   className="bg-black/70 backdrop-blur-xl border border-white/20 rounded-2xl p-6 text-center"
                 >
                   <Activity className="w-12 h-12 text-green-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-bold text-white mb-2">Prove You're Live First!</h3>
+                  <h3 className="text-lg font-bold text-white mb-2">Prove You're Alive First!</h3>
                   <p className="text-gray-300 text-sm mb-4">
-                    Pay 1 KAS to yourself to go live for 24 hours. 
+                    Pay 1 KAS to yourself to go alive for 24 hours. 
                     {liveUserCount > 0 && (
                       <span className="block mt-2">
-                        Currently <span className="text-green-400 font-bold">{liveUserCount} {liveUserCount === 1 ? 'user is' : 'users are'}</span> live!
+                        Currently <span className="text-green-400 font-bold">{liveUserCount} {liveUserCount === 1 ? 'user is' : 'users are'}</span> alive!
                       </span>
                     )}
                   </p>
@@ -653,7 +653,7 @@ export default function ZekuAIPage() {
                   { emoji: '📊', title: 'Market Analysis', desc: 'Charts, trends, predictions' },
                   { emoji: '🖼️', title: 'Image Recognition', desc: 'Analyze trading charts' },
                   { emoji: '🌐', title: 'Real-Time Intel', desc: 'News, events, whale tracking' },
-                  { emoji: '⚡', title: 'Proof of Life', desc: 'Prove you\'re alive & building' }
+                  { emoji: '⚡', title: 'Proof of Life', desc: 'Prove you\'re alive for 24h' }
                 ].map((feature, i) => (
                   <motion.div 
                     key={i}

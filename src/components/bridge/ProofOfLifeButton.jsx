@@ -31,7 +31,7 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
     }
 
     if (parseFloat(amount) < 1.0) {
-      alert('Minimum 1 KAS required to go live');
+      alert('Minimum 1 KAS required to go alive');
       return;
     }
 
@@ -53,7 +53,7 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
         try {
           signature = await window.kasware.signMessage(signMessage);
         } catch (signErr) {
-          throw new Error('Signature required to go live');
+          throw new Error('Signature required to go alive');
         }
 
         // Step 2: Send payment to self
@@ -74,7 +74,7 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
             params: [signMessage, metamaskWallet.address]
           });
         } catch (signErr) {
-          throw new Error('Signature required to go live');
+          throw new Error('Signature required to go alive');
         }
 
         // Step 2: Send payment to self
@@ -101,7 +101,7 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
         wallet_type: walletType,
         tx_hash: txHash,
         amount: parseFloat(amount),
-        message: message.trim() || '✓ Live for 24 hours',
+        message: message.trim() || '✓ Alive for 24 hours',
         network: network,
         proof_timestamp: now.toISOString(),
         is_verified: true
@@ -136,7 +136,7 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
         className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/50 w-full"
       >
         <Activity className="w-5 h-5 mr-2" />
-        Prove I'm Alive!
+        Go Alive!
       </Button>
 
       <AnimatePresence>
@@ -164,15 +164,15 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
                       className="text-center py-8"
                     >
                       <CheckCircle2 className="w-16 h-16 text-green-400 mx-auto mb-4" />
-                      <h3 className="text-2xl font-bold text-white mb-2">Proof Submitted!</h3>
-                      <p className="text-gray-400">Everyone can now see you're alive and active 🎉</p>
+                      <h3 className="text-2xl font-bold text-white mb-2">You're Alive!</h3>
+                      <p className="text-gray-400">Alive for 24 hours - visible to all users 🎉</p>
                     </motion.div>
                   ) : (
                     <>
                       <div className="flex items-center justify-between mb-6">
                         <div>
-                          <h3 className="text-xl font-bold text-white mb-1">Submit Proof of Life</h3>
-                          <p className="text-xs text-gray-500">Send a small amount to yourself</p>
+                          <h3 className="text-xl font-bold text-white mb-1">Go Alive for 24 Hours</h3>
+                          <p className="text-xs text-gray-500">Sign + send 1 KAS to yourself</p>
                         </div>
                         <Button
                           onClick={() => setShowModal(false)}
@@ -248,8 +248,8 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
                       {/* Info Box */}
                       <div className="mb-4 bg-green-500/10 border border-green-500/30 rounded-lg p-3">
                         <p className="text-xs text-green-300">
-                          ✓ Pay 1 KAS to yourself to go live for 24 hours<br/>
-                          ✓ Your live status will be visible to all users<br/>
+                          ✓ Sign message + pay 1 KAS to yourself<br/>
+                          ✓ Go alive for 24 hours - visible to all users<br/>
                           ✓ Auto-expires after 24 hours - renew anytime
                         </p>
                       </div>
@@ -283,7 +283,7 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
                         ) : (
                           <>
                             <Zap className="w-5 h-5 mr-2" />
-                            Submit Proof of Life
+                            Go Alive Now
                           </>
                         )}
                       </Button>
