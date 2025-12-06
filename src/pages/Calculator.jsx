@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, History, Delete, RotateCcw, Brain } from "lucide-react";
+import { Sparkles, History, Delete, RotateCcw, Brain, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function CalculatorPage() {
