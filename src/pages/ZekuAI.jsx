@@ -608,41 +608,7 @@ export default function ZekuAIPage() {
               exit={{ opacity: 0, height: 0 }}
               className="mb-2 flex-shrink-0"
             >
-              {!userHasProof ? (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-black/70 backdrop-blur-xl border border-white/20 rounded-xl p-4 text-center relative"
-                >
-                  <Activity className="w-8 h-8 text-green-400 mx-auto mb-2" />
-                  <h3 className="text-base font-bold text-white mb-1">Prove You're Alive First!</h3>
-                  <p className="text-gray-300 text-xs mb-3">
-                    Pay 1 KAS to yourself to go alive for 24 hours. 
-                    {liveUserCount > 0 && (
-                      <span className="block mt-1">
-                        Currently <span className="text-green-400 font-bold">{liveUserCount} {liveUserCount === 1 ? 'user is' : 'users are'}</span> alive!
-                      </span>
-                    )}
-                  </p>
-                  <ProofOfLifeButton 
-                    kaswareWallet={kaswareWallet} 
-                    metamaskWallet={metamaskWallet} 
-                    user={user}
-                    onSuccess={async () => {
-                      setUserHasProof(true);
-                      await loadLiveUserCount();
-                    }}
-                    onReset={async () => {
-                      setUserHasProof(false);
-                      setUserExpiresAt(null);
-                      await loadLiveUserCount();
-                    }}
-                    userHasProof={userHasProof}
-                  />
-                </motion.div>
-              ) : (
-                <ProofOfLifeFeed onUpdate={loadLiveUserCount} userExpiresAt={userExpiresAt} />
-              )}
+              <ProofOfLifeFeed onUpdate={loadLiveUserCount} userExpiresAt={userExpiresAt} />
             </motion.div>
           )}
         </AnimatePresence>
