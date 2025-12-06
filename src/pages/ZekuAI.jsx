@@ -550,6 +550,27 @@ export default function ZekuAIPage() {
           </div>
         </motion.div>
 
+        {/* Live Status Timer */}
+        {userExpiresAt && new Date(userExpiresAt) > new Date() && (
+          <motion.div
+            key={userExpiresAt}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/40 rounded-xl p-3 mb-2 shadow-lg flex-shrink-0"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                <span className="text-green-400 font-bold text-sm">You're Live!</span>
+              </div>
+              <LiveTimer expiresAt={userExpiresAt} />
+            </div>
+            <p className="text-xs text-gray-400 mt-1">
+              Your live status is active and visible to all {liveUserCount} users
+            </p>
+          </motion.div>
+        )}
+
         {/* Error Banner */}
         {error && conversation && (
           <motion.div
@@ -566,6 +587,48 @@ export default function ZekuAIPage() {
             </Button>
           </motion.div>
         )}
+        
+        {/* Proof of Life Section */}
+        <AnimatePresence>
+          {showProofOfLife && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-2 flex-shrink-0"
+            >
+              {!userHasProof ? (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-black/70 backdrop-blur-xl border border-white/20 rounded-2xl p-6 text-center"
+                >
+                  <Activity className="w-12 h-12 text-green-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-bold text-white mb-2">Prove You're Live First!</h3>
+                  <p className="text-gray-300 text-sm mb-4">
+                    Pay 1 KAS to yourself to go live for 24 hours. 
+                    {liveUserCount > 0 && (
+                      <span className="block mt-2">
+                        Currently <span className="text-green-400 font-bold">{liveUserCount} {liveUserCount === 1 ? 'user is' : 'users are'}</span> live!
+                      </span>
+                    )}
+                  </p>
+                  <ProofOfLifeButton 
+                    kaswareWallet={kaswareWallet} 
+                    metamaskWallet={metamaskWallet} 
+                    user={user}
+                    onSuccess={async () => {
+                      setUserHasProof(true);
+                      await loadLiveUserCount();
+                    }}
+                  />
+                </motion.div>
+              ) : (
+                <ProofOfLifeFeed onUpdate={loadLiveUserCount} userExpiresAt={userExpiresAt} />
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Messages - Fully Transparent */}
         <div ref={messagesContainerRef} className="flex-1 bg-transparent border-none rounded-2xl p-4 overflow-y-auto mb-2 min-h-0 scroll-smooth">
