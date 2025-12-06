@@ -122,16 +122,18 @@ export default function CountryDetailPage() {
     
     setLoadingImage(true);
     try {
-      // First check if image exists in database
+      // Check global cache first (all users see same images)
       const existing = await base44.entities.CountryCapitalImage.filter({
         country_name: countryName,
         capital_name: currencyData.capital
       });
 
       if (existing.length > 0) {
+        console.log('✅ Using cached capital image');
         setCapitalImage(existing[0].image_url);
       } else {
-        // Generate new image
+        // Generate once, share with all users
+        console.log('🎨 Generating capital image (will be cached for all users)');
         const response = await base44.functions.invoke('generateCapitalImage', {
           country_name: countryName,
           capital_name: currencyData.capital
@@ -140,7 +142,6 @@ export default function CountryDetailPage() {
       }
     } catch (err) {
       console.error('Failed to load capital image:', err);
-      // Fallback to Unsplash if AI generation fails
       setCapitalImage(`https://source.unsplash.com/400x300/?${encodeURIComponent(currencyData.capital)},city,landmark`);
     } finally {
       setLoadingImage(false);
