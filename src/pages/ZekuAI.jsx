@@ -127,10 +127,12 @@ export default function ZekuAIPage() {
   const [speakingMessageIndex, setSpeakingMessageIndex] = useState(null);
   const [musicPlaying, setMusicPlaying] = useState(false);
   const lastSpokenMessageRef = useRef(null);
+  const [liveUserCount, setLiveUserCount] = useState(0);
+  const [userHasProof, setUserHasProof] = useState(false);
 
   useEffect(() => {
     initialize();
-    
+
     // Start background music
     const playMusic = () => {
       backgroundMusic.play().then(() => {
@@ -139,7 +141,7 @@ export default function ZekuAIPage() {
         // Auto-play blocked, will play on first user interaction
       });
     };
-    
+
     // Try to play on load, or on first click
     playMusic();
     const handleFirstClick = () => {
@@ -149,10 +151,15 @@ export default function ZekuAIPage() {
       }
     };
     document.addEventListener('click', handleFirstClick);
-    
+
+    // Load live user count every 30 seconds
+    loadLiveUserCount();
+    const liveInterval = setInterval(loadLiveUserCount, 30000);
+
     return () => {
       backgroundMusic.pause();
       document.removeEventListener('click', handleFirstClick);
+      clearInterval(liveInterval);
     };
   }, []);
 
@@ -290,6 +297,32 @@ export default function ZekuAIPage() {
     }
   };
 
+  const loadLiveUserCount = async () => {
+    try {
+      // Get proofs from last 10 minutes (users who are "live")
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      const recentProofs = await base44.entities.ProofOfLife.filter({});
+
+      // Filter to only recent proofs (last 10 minutes)
+      const liveProofs = recentProofs.filter(proof => {
+        const proofTime = new Date(proof.proof_timestamp || proof.created_date);
+        return proofTime >= new Date(tenMinutesAgo);
+      });
+
+      // Count unique users
+      const uniqueUsers = new Set(liveProofs.map(p => p.user_email));
+      setLiveUserCount(uniqueUsers.size);
+
+      // Check if current user has recent proof
+      if (user?.email) {
+        const userHasRecentProof = liveProofs.some(p => p.user_email === user.email);
+        setUserHasProof(userHasRecentProof);
+      }
+    } catch (err) {
+      console.error('Failed to load live user count:', err);
+    }
+  };
+
   const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
@@ -315,7 +348,7 @@ export default function ZekuAIPage() {
 
     const messageContent = input.trim() || "Please analyze the attached image(s).";
     const files = uploadedFiles.map(f => f.url);
-    
+
     setInput("");
     setUploadedFiles([]);
     setIsSending(true);
@@ -327,6 +360,9 @@ export default function ZekuAIPage() {
 
       await base44.agents.addMessage(conversation, messageData);
       scrollToBottom();
+
+      // Reload live count after sending message
+      await loadLiveUserCount();
     } catch (err) {
       setError('Failed to send message: ' + err.message);
       setIsSending(false);
@@ -453,13 +489,16 @@ export default function ZekuAIPage() {
 
             <div className="flex items-center gap-2">
               <Button
-                onClick={() => setShowProofOfLife(!showProofOfLife)}
+                onClick={() => {
+                  setShowProofOfLife(!showProofOfLife);
+                  if (!showProofOfLife) loadLiveUserCount();
+                }}
                 variant="outline"
                 size="sm"
                 className={`h-8 px-3 ${showProofOfLife ? 'bg-green-500/20 border-green-500/50 text-green-400' : 'bg-black/50 border-white/10 text-white'}`}
               >
                 <Activity className="w-4 h-4 mr-1" />
-                <span className="text-xs">Proof of Life</span>
+                <span className="text-xs">Live: {liveUserCount}</span>
               </Button>
 
               <Button

@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { base44 } from "@/api/base44Client";
 import { Zap, Loader2, X, CheckCircle2, Activity } from "lucide-react";
 
-export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user }) {
+export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user, onSuccess }) {
   const [showModal, setShowModal] = useState(false);
   const [amount, setAmount] = useState('0.00000001');
   const [message, setMessage] = useState('');
@@ -93,6 +93,7 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user 
         setSuccess(false);
         setAmount('0.00000001');
         setMessage('');
+        if (onSuccess) onSuccess();
       }, 2000);
 
     } catch (error) {
