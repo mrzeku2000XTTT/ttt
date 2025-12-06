@@ -7,9 +7,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { base44 } from "@/api/base44Client";
 import { Zap, Loader2, X, CheckCircle2, Activity } from "lucide-react";
 
-export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user, onSuccess, onReset, userHasProof }) {
+export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user }) {
   const [showModal, setShowModal] = useState(false);
-  const [amount, setAmount] = useState('1.0');
+  const [amount, setAmount] = useState('0.00000001');
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState(null);
@@ -25,13 +25,8 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
   };
 
   const handleSubmitProof = async () => {
-    if (!selectedWallet) {
-      alert('Please select a wallet');
-      return;
-    }
-
-    if (parseFloat(amount) < 1.0) {
-      alert('Minimum 1 KAS required to go alive');
+    if (!selectedWallet || !amount || parseFloat(amount) <= 0) {
+      alert('Please enter a valid amount');
       return;
     }
 
@@ -41,44 +36,26 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
       let walletType = '';
       let walletAddress = '';
       let network = '';
-      let signature = null;
 
       if (selectedWallet === 'kasware' && kaswareWallet.connected) {
+        // Send to self on L1 using Kasware
         walletAddress = kaswareWallet.address;
         walletType = 'kasware_l1';
         network = 'L1';
 
-        // Step 1: Request signature to verify identity
-        const signMessage = `I am alive and active on TTT!\nTimestamp: ${new Date().toISOString()}`;
-        try {
-          signature = await window.kasware.signMessage(signMessage);
-        } catch (signErr) {
-          throw new Error('Signature required to go alive');
-        }
-
-        // Step 2: Send payment to self
         const amountInSompi = Math.floor(parseFloat(amount) * 1e8);
+        
         const tx = await window.kasware.sendKaspa(kaswareWallet.address, amountInSompi);
         txHash = tx;
 
       } else if (selectedWallet === 'metamask' && metamaskWallet.connected) {
+        // Send to self on L2 using MetaMask
         walletAddress = metamaskWallet.address;
         walletType = 'metamask_l2';
         network = 'L2';
 
-        // Step 1: Request signature to verify identity
-        const signMessage = `I am alive and active on TTT!\nTimestamp: ${new Date().toISOString()}`;
-        try {
-          signature = await window.ethereum.request({
-            method: 'personal_sign',
-            params: [signMessage, metamaskWallet.address]
-          });
-        } catch (signErr) {
-          throw new Error('Signature required to go alive');
-        }
-
-        // Step 2: Send payment to self
         const amountInWei = Math.floor(parseFloat(amount) * 1e18).toString(16);
+
         const tx = await window.ethereum.request({
           method: 'eth_sendTransaction',
           params: [{
@@ -87,6 +64,7 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
             value: `0x${amountInWei}`,
           }],
         });
+
         txHash = tx;
       }
 
@@ -94,17 +72,17 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
         throw new Error('Transaction failed');
       }
 
-      const now = new Date();
+      // Save to database
       await base44.entities.ProofOfLife.create({
         user_email: user?.email || 'anonymous',
         wallet_address: walletAddress,
         wallet_type: walletType,
         tx_hash: txHash,
         amount: parseFloat(amount),
-        message: message.trim() || '✓ Alive for 24 hours',
+        message: message.trim() || 'Still alive and kicking! 💪',
         network: network,
-        proof_timestamp: now.toISOString(),
-        is_verified: true
+        proof_timestamp: new Date().toISOString(),
+        is_verified: false // Will be verified by checking blockchain later
       });
 
       console.log('✅ Proof of Life submitted:', txHash);
@@ -113,9 +91,8 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
       setTimeout(() => {
         setShowModal(false);
         setSuccess(false);
-        setAmount('1.0');
+        setAmount('0.00000001');
         setMessage('');
-        if (onSuccess) onSuccess();
       }, 2000);
 
     } catch (error) {
@@ -130,29 +107,14 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
 
   return (
     <>
-      <div className="flex gap-2 w-full">
-        <Button
-          onClick={handleOpen}
-          disabled={!hasConnectedWallet || userHasProof}
-          className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/50 flex-1 h-9 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Activity className="w-4 h-4 mr-2" />
-          {userHasProof ? "You're Alive!" : "Go Alive!"}
-        </Button>
-        {userHasProof && onReset && (
-          <Button
-            onClick={() => {
-              if (confirm('Reset your alive status? You can go alive again immediately.')) {
-                onReset();
-              }
-            }}
-            variant="outline"
-            className="h-9 px-3 text-sm border-white/20 hover:border-white/40 text-gray-400 hover:text-white"
-          >
-            Reset
-          </Button>
-        )}
-      </div>
+      <Button
+        onClick={handleOpen}
+        disabled={!hasConnectedWallet}
+        className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/50 w-full"
+      >
+        <Activity className="w-5 h-5 mr-2" />
+        Prove I'm Alive!
+      </Button>
 
       <AnimatePresence>
         {showModal && (
@@ -160,7 +122,7 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
             onClick={() => !isSending && setShowModal(false)}
           >
             <motion.div
@@ -179,15 +141,15 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
                       className="text-center py-8"
                     >
                       <CheckCircle2 className="w-16 h-16 text-green-400 mx-auto mb-4" />
-                      <h3 className="text-2xl font-bold text-white mb-2">You're Alive!</h3>
-                      <p className="text-gray-400">Alive for 24 hours - visible to all users 🎉</p>
+                      <h3 className="text-2xl font-bold text-white mb-2">Proof Submitted!</h3>
+                      <p className="text-gray-400">Everyone can now see you're alive and active 🎉</p>
                     </motion.div>
                   ) : (
                     <>
                       <div className="flex items-center justify-between mb-6">
                         <div>
-                          <h3 className="text-xl font-bold text-white mb-1">Go Alive for 24 Hours</h3>
-                          <p className="text-xs text-gray-500">Sign + send 1 KAS to yourself</p>
+                          <h3 className="text-xl font-bold text-white mb-1">Submit Proof of Life</h3>
+                          <p className="text-xs text-gray-500">Send a small amount to yourself</p>
                         </div>
                         <Button
                           onClick={() => setShowModal(false)}
@@ -248,24 +210,15 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
                         <label className="text-xs text-gray-400 mb-2 block">Amount (KAS)</label>
                         <Input
                           type="number"
-                          step="0.1"
-                          min="1.0"
+                          step="0.00000001"
+                          min="0.00000001"
                           value={amount}
                           onChange={(e) => setAmount(e.target.value)}
-                          placeholder="1.0"
+                          placeholder="0.00000001"
                           className="bg-zinc-900 border-zinc-700 text-white"
                         />
                         <p className="text-xs text-gray-500 mt-1">
-                          Minimum: 1 KAS - Valid for 24 hours
-                        </p>
-                      </div>
-
-                      {/* Info Box */}
-                      <div className="mb-4 bg-green-500/10 border border-green-500/30 rounded-lg p-3">
-                        <p className="text-xs text-green-300">
-                          ✓ Sign message + pay 1 KAS to yourself<br/>
-                          ✓ Go alive for 24 hours - visible to all users<br/>
-                          ✓ Auto-expires after 24 hours - renew anytime
+                          Minimum: 0.00000001 KAS (just a tiny proof!)
                         </p>
                       </div>
 
@@ -275,7 +228,7 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
                         <Textarea
                           value={message}
                           onChange={(e) => setMessage(e.target.value)}
-                          placeholder="I'm alive and active! 💪"
+                          placeholder="Still here! 💪"
                           maxLength={140}
                           className="bg-zinc-900 border-zinc-700 text-white h-20"
                         />
@@ -298,7 +251,7 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
                         ) : (
                           <>
                             <Zap className="w-5 h-5 mr-2" />
-                            Go Alive Now
+                            Submit Proof of Life
                           </>
                         )}
                       </Button>

@@ -11,7 +11,6 @@ import ReactMarkdown from "react-markdown";
 import BackgroundLogo from "../components/BackgroundLogo";
 import ProofOfLifeButton from "../components/bridge/ProofOfLifeButton";
 import ProofOfLifeFeed from "../components/bridge/ProofOfLifeFeed";
-import LiveTimer from "../components/LiveTimer";
 
 // Background music
 const backgroundMusic = new Audio('https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/hypemind_background.mp3');
@@ -128,13 +127,10 @@ export default function ZekuAIPage() {
   const [speakingMessageIndex, setSpeakingMessageIndex] = useState(null);
   const [musicPlaying, setMusicPlaying] = useState(false);
   const lastSpokenMessageRef = useRef(null);
-  const [liveUserCount, setLiveUserCount] = useState(0);
-  const [userHasProof, setUserHasProof] = useState(false);
-  const [userExpiresAt, setUserExpiresAt] = useState(null);
 
   useEffect(() => {
     initialize();
-
+    
     // Start background music
     const playMusic = () => {
       backgroundMusic.play().then(() => {
@@ -143,7 +139,7 @@ export default function ZekuAIPage() {
         // Auto-play blocked, will play on first user interaction
       });
     };
-
+    
     // Try to play on load, or on first click
     playMusic();
     const handleFirstClick = () => {
@@ -153,15 +149,10 @@ export default function ZekuAIPage() {
       }
     };
     document.addEventListener('click', handleFirstClick);
-
-    // Load live user count every 10 seconds for real-time updates
-    loadLiveUserCount();
-    const liveInterval = setInterval(loadLiveUserCount, 10000);
-
+    
     return () => {
       backgroundMusic.pause();
       document.removeEventListener('click', handleFirstClick);
-      clearInterval(liveInterval);
     };
   }, []);
 
@@ -169,36 +160,28 @@ export default function ZekuAIPage() {
     if (conversation?.id) {
       const unsubscribe = base44.agents.subscribeToConversation(conversation.id, (data) => {
         if (data?.messages) {
+          const previousLength = messages.length;
           setMessages(data.messages);
-          
-          // Check if we just stopped sending (message is complete)
-          if (isSending && data.messages.length > 0) {
-            setIsSending(false);
+          setIsSending(false);
+
+          // Speak the latest AI message with alien voice if enabled (only when message is complete)
+          if (alienVoiceEnabled && data.messages.length > previousLength) {
+            const lastMsg = data.messages[data.messages.length - 1];
+            const messageId = `${lastMsg.role}-${lastMsg.content?.substring(0, 50)}-${lastMsg.content?.length}`;
             
-            // Speak the latest AI message with alien voice if enabled
-            if (alienVoiceEnabled) {
-              const lastMsg = data.messages[data.messages.length - 1];
-              const messageId = `${lastMsg.role}-${lastMsg.content?.length}-${Date.now()}`;
-              
-              if (lastMsg.role === 'assistant' && lastMsg.content && lastMsg.content.length > 0) {
-                // Only speak if this is a new complete message
-                if (lastSpokenMessageRef.current !== messageId) {
-                  lastSpokenMessageRef.current = messageId;
-                  // Wait to ensure streaming is complete
-                  setTimeout(() => {
-                    speakAlienVoice(lastMsg.content);
-                  }, 1000);
-                }
-              }
+            if (lastMsg.role === 'assistant' && lastMsg.content && lastSpokenMessageRef.current !== messageId) {
+              lastSpokenMessageRef.current = messageId;
+              // Wait a bit to ensure message is complete before speaking
+              setTimeout(() => {
+                speakAlienVoice(lastMsg.content);
+              }, 500);
             }
-          } else if (!isSending && data.messages.length > 0) {
-            setIsSending(false);
           }
         }
       });
       return () => unsubscribe?.();
     }
-  }, [conversation?.id, alienVoiceEnabled, isSending]);
+  }, [conversation?.id, alienVoiceEnabled, messages.length]);
 
   useEffect(() => {
     scrollToBottom();
@@ -299,44 +282,6 @@ export default function ZekuAIPage() {
     }
   };
 
-  const loadLiveUserCount = async () => {
-    try {
-      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const allProofs = await base44.entities.ProofOfLife.filter({});
-
-      // Get latest proof per user within 24 hours
-      const userLatestProofs = {};
-      allProofs.forEach(proof => {
-        const proofTime = new Date(proof.proof_timestamp || proof.created_date);
-        if (proofTime >= twentyFourHoursAgo) {
-          const existing = userLatestProofs[proof.user_email];
-          if (!existing || proofTime > new Date(existing.proof_timestamp || existing.created_date)) {
-            userLatestProofs[proof.user_email] = proof;
-          }
-        }
-      });
-
-      const liveUsers = Object.keys(userLatestProofs);
-      setLiveUserCount(liveUsers.length);
-
-      // Check current user's status
-      if (user?.email) {
-        const userProof = userLatestProofs[user.email];
-        if (userProof) {
-          setUserHasProof(true);
-          const proofTime = new Date(userProof.proof_timestamp || userProof.created_date);
-          const expiresAt = new Date(proofTime.getTime() + 24 * 60 * 60 * 1000);
-          setUserExpiresAt(expiresAt);
-        } else {
-          setUserHasProof(false);
-          setUserExpiresAt(null);
-        }
-      }
-    } catch (err) {
-      console.error('Failed to load live user count:', err);
-    }
-  };
-
   const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
@@ -362,7 +307,7 @@ export default function ZekuAIPage() {
 
     const messageContent = input.trim() || "Please analyze the attached image(s).";
     const files = uploadedFiles.map(f => f.url);
-
+    
     setInput("");
     setUploadedFiles([]);
     setIsSending(true);
@@ -374,9 +319,6 @@ export default function ZekuAIPage() {
 
       await base44.agents.addMessage(conversation, messageData);
       scrollToBottom();
-
-      // Reload live count after sending message
-      await loadLiveUserCount();
     } catch (err) {
       setError('Failed to send message: ' + err.message);
       setIsSending(false);
@@ -503,16 +445,13 @@ export default function ZekuAIPage() {
 
             <div className="flex items-center gap-2">
               <Button
-                onClick={() => {
-                  setShowProofOfLife(!showProofOfLife);
-                  if (!showProofOfLife) loadLiveUserCount();
-                }}
+                onClick={() => setShowProofOfLife(!showProofOfLife)}
                 variant="outline"
                 size="sm"
                 className={`h-8 px-3 ${showProofOfLife ? 'bg-green-500/20 border-green-500/50 text-green-400' : 'bg-black/50 border-white/10 text-white'}`}
               >
                 <Activity className="w-4 h-4 mr-1" />
-                <span className="text-xs">Alive: {liveUserCount}</span>
+                <span className="text-xs">Proof of Life</span>
               </Button>
 
               <Button
@@ -550,38 +489,6 @@ export default function ZekuAIPage() {
           </div>
         </motion.div>
 
-        {/* Live Status Timer - Compact */}
-        {userExpiresAt && new Date(userExpiresAt) > new Date() && (
-          <motion.div
-            key={userExpiresAt}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/40 rounded-xl p-2 mb-2 shadow-lg flex-shrink-0"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
-                <span className="text-green-400 font-bold text-xs">You're Alive!</span>
-                <LiveTimer expiresAt={userExpiresAt} />
-              </div>
-              <Button
-                onClick={async () => {
-                  if (confirm('Reset your alive status? This will allow you to go alive again immediately.')) {
-                    setUserHasProof(false);
-                    setUserExpiresAt(null);
-                    await loadLiveUserCount();
-                  }
-                }}
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-xs text-gray-400 hover:text-white"
-              >
-                Reset
-              </Button>
-            </div>
-          </motion.div>
-        )}
-
         {/* Error Banner */}
         {error && conversation && (
           <motion.div
@@ -598,20 +505,6 @@ export default function ZekuAIPage() {
             </Button>
           </motion.div>
         )}
-        
-        {/* Proof of Life Section - Compact */}
-        <AnimatePresence>
-          {showProofOfLife && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mb-2 flex-shrink-0"
-            >
-              <ProofOfLifeFeed onUpdate={loadLiveUserCount} userExpiresAt={userExpiresAt} />
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* Messages - Fully Transparent */}
         <div ref={messagesContainerRef} className="flex-1 bg-transparent border-none rounded-2xl p-4 overflow-y-auto mb-2 min-h-0 scroll-smooth">
@@ -636,7 +529,7 @@ export default function ZekuAIPage() {
                   { emoji: '📊', title: 'Market Analysis', desc: 'Charts, trends, predictions' },
                   { emoji: '🖼️', title: 'Image Recognition', desc: 'Analyze trading charts' },
                   { emoji: '🌐', title: 'Real-Time Intel', desc: 'News, events, whale tracking' },
-                  { emoji: '⚡', title: 'Proof of Life', desc: 'Prove you\'re alive for 24h' }
+                  { emoji: '⚡', title: 'Proof of Life', desc: 'Prove you\'re alive & building' }
                 ].map((feature, i) => (
                   <motion.div 
                     key={i}
