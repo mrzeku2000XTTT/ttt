@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft, DollarSign, Clock, MapPin, Globe, TrendingUp, Info } from "lucide-react";
+import { ArrowLeft, DollarSign, Clock, MapPin, Globe, TrendingUp, Info, ArrowRightLeft, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 
@@ -15,6 +15,10 @@ export default function CountryDetailPage() {
   const [exchangeRates, setExchangeRates] = useState(null);
   const [convertAmount, setConvertAmount] = useState(100);
   const [loadingRates, setLoadingRates] = useState(false);
+  const [showCurrencyConverter, setShowCurrencyConverter] = useState(false);
+  const [fromAmount, setFromAmount] = useState(1);
+  const [toAmount, setToAmount] = useState(0);
+  const [selectedCurrency, setSelectedCurrency] = useState(null);
 
   useEffect(() => {
     if (countryName) {
@@ -123,7 +127,8 @@ export default function CountryDetailPage() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1 }}
-              className="bg-white/80 backdrop-blur-md p-6 rounded-xl border border-slate-300 shadow-lg"
+              onClick={() => setShowCurrencyConverter(true)}
+              className="bg-white/80 backdrop-blur-md p-6 rounded-xl border border-slate-300 shadow-lg cursor-pointer hover:shadow-xl hover:scale-105 transition-all"
             >
               <div className="flex items-center gap-3 mb-4">
                 <DollarSign className="w-6 h-6 text-green-600" />
@@ -131,6 +136,10 @@ export default function CountryDetailPage() {
               </div>
               <p className="text-slate-700 text-lg">{currencyData.currency}</p>
               <p className="text-sm text-slate-500 mt-2">Exchange Rate: {currencyData.exchangeRate}</p>
+              <div className="mt-3 text-sm text-blue-600 flex items-center gap-1">
+                <ArrowRightLeft className="w-4 h-4" />
+                Click to convert
+              </div>
             </motion.div>
 
             <motion.div
@@ -200,98 +209,139 @@ export default function CountryDetailPage() {
           </div>
         )}
 
-        {/* Currency Exchange Rates Section */}
-        {exchangeRates && !loadingRates && (
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-            className="mt-16"
-          >
-            <h2 className="text-3xl font-bold text-slate-900 mb-8 flex items-center gap-3">
-              <DollarSign className="w-8 h-8 text-green-600" />
-              Exchange Rates from {exchangeRates.baseCurrency}
-            </h2>
-
-            {/* Interactive Converter */}
-            <div className="bg-gradient-to-br from-green-50 to-blue-50 p-6 rounded-xl border border-slate-300 mb-8">
-              <div className="flex items-center gap-4 mb-4">
-                <input
-                  type="number"
-                  value={convertAmount}
-                  onChange={(e) => setConvertAmount(e.target.value)}
-                  className="w-32 px-4 py-2 text-lg font-bold border-2 border-slate-300 rounded-lg focus:border-green-500 focus:outline-none"
-                />
-                <span className="text-lg font-bold text-slate-700">{exchangeRates.baseCurrency} converts to:</span>
+        {/* Currency Converter Modal */}
+        {showCurrencyConverter && exchangeRates && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-gradient-to-br from-blue-50 via-white to-purple-50 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+            >
+              {/* Header */}
+              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-2xl font-bold">Currency Converter</h2>
+                  <button
+                    onClick={() => setShowCurrencyConverter(false)}
+                    className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+                <p className="text-blue-100">Convert {exchangeRates.baseCurrency} to any currency</p>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {Object.values(exchangeRates.regions).flat().slice(0, 8).map((currency, idx) => (
-                  <div key={idx} className="bg-white p-3 rounded-lg border border-slate-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xl">{currency.flag}</span>
-                      <span className="text-xs font-bold text-slate-600">{currency.code}</span>
-                    </div>
-                    <div className="text-lg font-bold text-slate-900">
-                      {(convertAmount * parseFloat(currency.rate)).toFixed(2)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Regional Groups */}
-            <div className="space-y-8">
-              {Object.entries(exchangeRates.regions).map(([region, currencies], idx) => (
-                <motion.div
-                  key={region}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.8 + idx * 0.1 }}
-                >
-                  <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-                    <Globe className="w-5 h-5 text-slate-600" />
-                    {region}
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {currencies.map((currency, currIdx) => (
-                      <div
-                        key={currIdx}
-                        className="bg-white/80 backdrop-blur-md p-4 rounded-lg border border-slate-300 hover:border-slate-400 hover:shadow-md transition-all"
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-2xl">{currency.flag}</span>
-                            <div>
-                              <div className="font-bold text-slate-900">{currency.code}</div>
-                              <div className="text-xs text-slate-600">{currency.country}</div>
-                            </div>
-                          </div>
-                          <div className={`text-sm font-bold ${
-                            currency.change.startsWith('+') ? 'text-green-600' :
-                            currency.change.startsWith('-') ? 'text-red-600' :
-                            'text-slate-600'
-                          }`}>
-                            {currency.change}%
-                          </div>
-                        </div>
-                        <div className="text-lg font-bold text-slate-900">
-                          1 {exchangeRates.baseCurrency} = {currency.rate} {currency.code}
+              <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+                {/* Main Converter */}
+                <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* From Currency */}
+                    <div>
+                      <label className="text-sm font-semibold text-slate-600 mb-2 block">From</label>
+                      <div className="bg-slate-50 rounded-lg p-4 border-2 border-blue-200">
+                        <input
+                          type="number"
+                          value={fromAmount}
+                          onChange={(e) => {
+                            setFromAmount(e.target.value);
+                            if (selectedCurrency) {
+                              setToAmount((e.target.value * parseFloat(selectedCurrency.rate)).toFixed(2));
+                            }
+                          }}
+                          className="w-full bg-transparent text-3xl font-bold text-slate-900 outline-none"
+                        />
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-2xl">{countryFlag}</span>
+                          <span className="text-lg font-semibold text-slate-700">{exchangeRates.baseCurrency}</span>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        )}
+                    </div>
 
-        {loadingRates && (
-          <div className="mt-16 text-center py-12">
-            <div className="animate-spin w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full mx-auto mb-4" />
-            <p className="text-slate-600">Loading exchange rates...</p>
+                    {/* Arrow */}
+                    <div className="hidden md:flex items-center justify-center">
+                      <ArrowRightLeft className="w-8 h-8 text-blue-600" />
+                    </div>
+
+                    {/* To Currency */}
+                    <div>
+                      <label className="text-sm font-semibold text-slate-600 mb-2 block">To</label>
+                      <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-4 border-2 border-purple-200">
+                        <div className="text-3xl font-bold text-slate-900">
+                          {selectedCurrency ? toAmount : "Select currency"}
+                        </div>
+                        {selectedCurrency && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="text-2xl">{selectedCurrency.flag}</span>
+                            <span className="text-lg font-semibold text-slate-700">{selectedCurrency.code}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedCurrency && (
+                    <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-sm text-slate-600">
+                        1 {exchangeRates.baseCurrency} = {selectedCurrency.rate} {selectedCurrency.code}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">Mid-market exchange rate</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Currency Grid by Region */}
+                <div className="space-y-6">
+                  {Object.entries(exchangeRates.regions).map(([region, currencies]) => (
+                    <div key={region}>
+                      <h3 className="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
+                        <Globe className="w-5 h-5 text-blue-600" />
+                        {region}
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {currencies.map((currency, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => {
+                              setSelectedCurrency(currency);
+                              setToAmount((fromAmount * parseFloat(currency.rate)).toFixed(2));
+                            }}
+                            className={`bg-white rounded-lg p-4 border-2 transition-all text-left hover:shadow-md ${
+                              selectedCurrency?.code === currency.code
+                                ? "border-blue-500 shadow-lg"
+                                : "border-slate-200 hover:border-blue-300"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <span className="text-3xl">{currency.flag}</span>
+                                <div>
+                                  <div className="font-bold text-slate-900">{currency.code}</div>
+                                  <div className="text-sm text-slate-600">{currency.country}</div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-bold text-slate-900">{currency.rate}</div>
+                                <div className={`text-xs font-semibold ${
+                                  currency.change.startsWith('+') ? 'text-green-600' :
+                                  currency.change.startsWith('-') ? 'text-red-600' :
+                                  'text-slate-500'
+                                }`}>
+                                  {currency.change}%
+                                </div>
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
           </div>
         )}
+
+
       </div>
     </div>
   );

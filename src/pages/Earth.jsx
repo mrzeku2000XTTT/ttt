@@ -544,7 +544,7 @@ export default function EarthPage() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="text-center mb-32"
+          className="text-center mb-16"
         >
           <h1 className="text-8xl font-light text-slate-900 mb-6 tracking-tight drop-shadow-lg">
             EARTH
