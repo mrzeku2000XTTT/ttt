@@ -111,6 +111,7 @@ export default function ZekuAIPage() {
   const messagesContainerRef = useRef(null);
   const [alienVoiceEnabled, setAlienVoiceEnabled] = useState(false);
   const [speakingMessageIndex, setSpeakingMessageIndex] = useState(null);
+  const [isThinking, setIsThinking] = useState(false);
 
   useEffect(() => {
     initialize();
@@ -121,14 +122,23 @@ export default function ZekuAIPage() {
       const unsubscribe = base44.agents.subscribeToConversation(conversation.id, (data) => {
         if (data?.messages) {
           setMessages(data.messages);
+
+          // Check if AI is processing (has tool calls)
+          const lastMsg = data.messages[data.messages.length - 1];
+          if (lastMsg?.tool_calls && lastMsg.tool_calls.length > 0) {
+            const hasRunningTools = lastMsg.tool_calls.some(tc => 
+              tc.status === 'running' || tc.status === 'in_progress' || tc.status === 'pending'
+            );
+            setIsThinking(hasRunningTools);
+          } else {
+            setIsThinking(false);
+          }
+
           setIsSending(false);
 
           // Speak the latest AI message with alien voice if enabled
-          if (alienVoiceEnabled && data.messages.length > 0) {
-            const lastMsg = data.messages[data.messages.length - 1];
-            if (lastMsg.role === 'assistant' && lastMsg.content) {
-              speakAlienVoice(lastMsg.content);
-            }
+          if (alienVoiceEnabled && data.messages.length > 0 && lastMsg.role === 'assistant' && lastMsg.content) {
+            speakAlienVoice(lastMsg.content);
           }
         }
       });
@@ -564,14 +574,38 @@ export default function ZekuAIPage() {
                 );
               })}
               
-              {isSending && (
-                <div className="flex justify-start">
-                  <div className={`rounded-xl px-4 py-3 backdrop-blur-sm shadow-lg ${
+              {(isSending || isThinking) && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex justify-start"
+                >
+                  <div className={`rounded-xl px-4 py-3 backdrop-blur-sm shadow-lg flex items-center gap-3 ${
                     matrixMode ? 'bg-green-500/20 border border-green-500/50' : 'bg-black/70 border border-white/20'
                   }`}>
                     <Loader2 className={`w-4 h-4 ${matrixMode ? 'text-green-400' : 'text-purple-400'} animate-spin`} />
+                    {isThinking && (
+                      <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="flex items-center gap-1"
+                      >
+                        <span className={`text-xs ${matrixMode ? 'text-green-400' : 'text-purple-300'}`}>
+                          {isSending ? 'Thinking' : 'Accessing documentation'}
+                        </span>
+                        <motion.div
+                          animate={{ opacity: [1, 0.5, 1] }}
+                          transition={{ duration: 1.5, repeat: Infinity }}
+                          className="flex gap-1"
+                        >
+                          <span className="text-xs">.</span>
+                          <span className="text-xs">.</span>
+                          <span className="text-xs">.</span>
+                        </motion.div>
+                      </motion.div>
+                    )}
                   </div>
-                </div>
+                </motion.div>
               )}
               
               <div ref={messagesEndRef} />
