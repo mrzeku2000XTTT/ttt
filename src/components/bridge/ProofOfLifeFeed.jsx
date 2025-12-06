@@ -29,7 +29,7 @@ const getTimeAgo = (timestamp) => {
   }
 };
 
-export default function ProofOfLifeFeed({ onUpdate }) {
+export default function ProofOfLifeFeed({ onUpdate, userExpiresAt }) {
   const [proofs, setProofs] = useState([]);
   const [profiles, setProfiles] = useState({});
   const [isLoading, setIsLoading] = useState(true);

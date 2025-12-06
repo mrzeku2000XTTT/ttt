@@ -9,7 +9,7 @@ import { Zap, Loader2, X, CheckCircle2, Activity } from "lucide-react";
 
 export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user, onSuccess }) {
   const [showModal, setShowModal] = useState(false);
-  const [amount, setAmount] = useState('0.00000001');
+  const [amount, setAmount] = useState('1.0');
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState(null);
@@ -25,8 +25,13 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
   };
 
   const handleSubmitProof = async () => {
-    if (!selectedWallet || !amount || parseFloat(amount) <= 0) {
-      alert('Please enter a valid amount');
+    if (!selectedWallet) {
+      alert('Please select a wallet');
+      return;
+    }
+
+    if (parseFloat(amount) < 1.0) {
+      alert('Minimum 1 KAS required to go live');
       return;
     }
 
@@ -38,24 +43,20 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
       let network = '';
 
       if (selectedWallet === 'kasware' && kaswareWallet.connected) {
-        // Send to self on L1 using Kasware
         walletAddress = kaswareWallet.address;
         walletType = 'kasware_l1';
         network = 'L1';
 
         const amountInSompi = Math.floor(parseFloat(amount) * 1e8);
-        
         const tx = await window.kasware.sendKaspa(kaswareWallet.address, amountInSompi);
         txHash = tx;
 
       } else if (selectedWallet === 'metamask' && metamaskWallet.connected) {
-        // Send to self on L2 using MetaMask
         walletAddress = metamaskWallet.address;
         walletType = 'metamask_l2';
         network = 'L2';
 
         const amountInWei = Math.floor(parseFloat(amount) * 1e18).toString(16);
-
         const tx = await window.ethereum.request({
           method: 'eth_sendTransaction',
           params: [{
@@ -64,7 +65,6 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
             value: `0x${amountInWei}`,
           }],
         });
-
         txHash = tx;
       }
 
@@ -72,17 +72,17 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
         throw new Error('Transaction failed');
       }
 
-      // Save to database
+      const now = new Date();
       await base44.entities.ProofOfLife.create({
         user_email: user?.email || 'anonymous',
         wallet_address: walletAddress,
         wallet_type: walletType,
         tx_hash: txHash,
         amount: parseFloat(amount),
-        message: message.trim() || 'Still alive and kicking! 💪',
+        message: message.trim() || '✓ Live for 24 hours',
         network: network,
-        proof_timestamp: new Date().toISOString(),
-        is_verified: false // Will be verified by checking blockchain later
+        proof_timestamp: now.toISOString(),
+        is_verified: true
       });
 
       console.log('✅ Proof of Life submitted:', txHash);
@@ -91,7 +91,7 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
       setTimeout(() => {
         setShowModal(false);
         setSuccess(false);
-        setAmount('0.00000001');
+        setAmount('1.0');
         setMessage('');
         if (onSuccess) onSuccess();
       }, 2000);
@@ -211,15 +211,24 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
                         <label className="text-xs text-gray-400 mb-2 block">Amount (KAS)</label>
                         <Input
                           type="number"
-                          step="0.00000001"
-                          min="0.00000001"
+                          step="0.1"
+                          min="1.0"
                           value={amount}
                           onChange={(e) => setAmount(e.target.value)}
-                          placeholder="0.00000001"
+                          placeholder="1.0"
                           className="bg-zinc-900 border-zinc-700 text-white"
                         />
                         <p className="text-xs text-gray-500 mt-1">
-                          Minimum: 0.00000001 KAS (just a tiny proof!)
+                          Minimum: 1 KAS - Valid for 24 hours
+                        </p>
+                      </div>
+
+                      {/* Info Box */}
+                      <div className="mb-4 bg-green-500/10 border border-green-500/30 rounded-lg p-3">
+                        <p className="text-xs text-green-300">
+                          ✓ Pay 1 KAS to yourself to go live for 24 hours<br/>
+                          ✓ Your live status will be visible to all users<br/>
+                          ✓ Auto-expires after 24 hours - renew anytime
                         </p>
                       </div>
 
@@ -229,7 +238,7 @@ export default function ProofOfLifeButton({ kaswareWallet, metamaskWallet, user,
                         <Textarea
                           value={message}
                           onChange={(e) => setMessage(e.target.value)}
-                          placeholder="Still here! 💪"
+                          placeholder="I'm alive and active! 💪"
                           maxLength={140}
                           className="bg-zinc-900 border-zinc-700 text-white h-20"
                         />

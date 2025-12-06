@@ -129,6 +129,7 @@ export default function ZekuAIPage() {
   const lastSpokenMessageRef = useRef(null);
   const [liveUserCount, setLiveUserCount] = useState(0);
   const [userHasProof, setUserHasProof] = useState(false);
+  const [userExpiresAt, setUserExpiresAt] = useState(null);
 
   useEffect(() => {
     initialize();
@@ -152,9 +153,9 @@ export default function ZekuAIPage() {
     };
     document.addEventListener('click', handleFirstClick);
 
-    // Load live user count every 30 seconds
+    // Load live user count every 10 seconds for real-time updates
     loadLiveUserCount();
-    const liveInterval = setInterval(loadLiveUserCount, 30000);
+    const liveInterval = setInterval(loadLiveUserCount, 10000);
 
     return () => {
       backgroundMusic.pause();
@@ -299,24 +300,36 @@ export default function ZekuAIPage() {
 
   const loadLiveUserCount = async () => {
     try {
-      // Get proofs from last 10 minutes (users who are "live")
-      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-      const recentProofs = await base44.entities.ProofOfLife.filter({});
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const allProofs = await base44.entities.ProofOfLife.filter({});
 
-      // Filter to only recent proofs (last 10 minutes)
-      const liveProofs = recentProofs.filter(proof => {
+      // Get latest proof per user within 24 hours
+      const userLatestProofs = {};
+      allProofs.forEach(proof => {
         const proofTime = new Date(proof.proof_timestamp || proof.created_date);
-        return proofTime >= new Date(tenMinutesAgo);
+        if (proofTime >= twentyFourHoursAgo) {
+          const existing = userLatestProofs[proof.user_email];
+          if (!existing || proofTime > new Date(existing.proof_timestamp || existing.created_date)) {
+            userLatestProofs[proof.user_email] = proof;
+          }
+        }
       });
 
-      // Count unique users
-      const uniqueUsers = new Set(liveProofs.map(p => p.user_email));
-      setLiveUserCount(uniqueUsers.size);
+      const liveUsers = Object.keys(userLatestProofs);
+      setLiveUserCount(liveUsers.length);
 
-      // Check if current user has recent proof
+      // Check current user's status
       if (user?.email) {
-        const userHasRecentProof = liveProofs.some(p => p.user_email === user.email);
-        setUserHasProof(userHasRecentProof);
+        const userProof = userLatestProofs[user.email];
+        if (userProof) {
+          setUserHasProof(true);
+          const proofTime = new Date(userProof.proof_timestamp || userProof.created_date);
+          const expiresAt = new Date(proofTime.getTime() + 24 * 60 * 60 * 1000);
+          setUserExpiresAt(expiresAt);
+        } else {
+          setUserHasProof(false);
+          setUserExpiresAt(null);
+        }
       }
     } catch (err) {
       console.error('Failed to load live user count:', err);
