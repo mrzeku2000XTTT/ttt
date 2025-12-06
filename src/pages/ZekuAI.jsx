@@ -343,8 +343,8 @@ export default function ZekuAIPage() {
           </motion.div>
         )}
 
-        {/* Messages - Transparent Overlay */}
-        <div className="flex-1 backdrop-blur-md bg-black/30 border border-purple-500/20 rounded-2xl p-4 overflow-y-auto mb-2 min-h-0 shadow-2xl">
+        {/* Messages - Fully Transparent */}
+        <div className="flex-1 bg-transparent border-none rounded-2xl p-4 overflow-y-auto mb-2 min-h-0">
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center">
               <motion.div
@@ -394,12 +394,12 @@ export default function ZekuAIPage() {
                   className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
+                    className={`max-w-[85%] rounded-xl px-3 py-2 text-sm shadow-lg ${
                       msg.role === 'user'
                         ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
                         : matrixMode
-                        ? 'bg-green-500/10 border border-green-500/30 text-green-400'
-                        : 'bg-black/60 border border-white/10 text-gray-200'
+                        ? 'bg-green-500/20 backdrop-blur-sm border border-green-500/50 text-green-400'
+                        : 'bg-black/70 backdrop-blur-sm border border-white/20 text-gray-100'
                     }`}
                     style={msg.role === 'assistant' ? { fontFamily: 'monospace' } : undefined}
                   >
@@ -416,8 +416,8 @@ export default function ZekuAIPage() {
               
               {isSending && (
                 <div className="flex justify-start">
-                  <div className={`rounded-xl px-4 py-3 ${
-                    matrixMode ? 'bg-green-500/10 border border-green-500/30' : 'bg-black/60 border border-white/10'
+                  <div className={`rounded-xl px-4 py-3 backdrop-blur-sm shadow-lg ${
+                    matrixMode ? 'bg-green-500/20 border border-green-500/50' : 'bg-black/70 border border-white/20'
                   }`}>
                     <Loader2 className={`w-4 h-4 ${matrixMode ? 'text-green-400' : 'text-purple-400'} animate-spin`} />
                   </div>
