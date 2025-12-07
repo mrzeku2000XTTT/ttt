@@ -30,7 +30,8 @@ export default function Area51Page() {
   const [zkWalletBalance, setZkWalletBalance] = useState(null);
   const [selectedZkWallet, setSelectedZkWallet] = useState('ttt');
   const messagesEndRef = useRef(null);
-  const [respondedMessageIds, setRespondedMessageIds] = useState(new Set());
+  const lastProcessedMessageRef = useRef(null);
+  const isProcessingRef = useRef(false);
 
   useEffect(() => {
     if (showPaymentModal) {
@@ -136,17 +137,18 @@ export default function Area51Page() {
       if (publicMessages.length > 0) {
         const latestPublic = publicMessages[0];
         
-        // Check if we've already responded to this message
-        if (!respondedMessageIds.has(latestPublic.id) && !aiThinking) {
-          // Check if Agent X already responded to this message in the database
-          const aiResponses = allMsgs.filter(msg => 
+        // Only process if this is a new message we haven't seen before
+        if (latestPublic.id !== lastProcessedMessageRef.current && !isProcessingRef.current && !aiThinking) {
+          // Check if an AI response already exists after this message
+          const hasAIResponse = allMsgs.some(msg => 
             msg.message_type === 'ai' && 
             new Date(msg.created_date).getTime() > new Date(latestPublic.created_date).getTime()
           );
           
           // Only trigger AI if no response exists yet
-          if (aiResponses.length === 0) {
-            setRespondedMessageIds(prev => new Set([...prev, latestPublic.id]));
+          if (!hasAIResponse) {
+            lastProcessedMessageRef.current = latestPublic.id;
+            isProcessingRef.current = true;
             setTimeout(() => triggerAI(latestPublic.message), 1000);
           }
         }
@@ -246,8 +248,8 @@ export default function Area51Page() {
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: `You are AGENT X - a conspiracy theory expert at AREA51. Someone just said: "${userMessage}". 
         
-Respond with a conspiracy theory perspective (serious or humorous). Keep it under 150 words. 
-Topics can include: aliens, government secrets, shadow organizations, hidden technology, etc.`,
+Respond with ONE SHORT conspiracy theory paragraph (max 80 words). Be creative and fun.
+Topics: aliens, government secrets, shadow organizations, hidden technology.`,
         add_context_from_internet: false
       });
 
@@ -264,6 +266,7 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
       console.error("AI failed:", error);
     } finally {
       setAiThinking(false);
+      isProcessingRef.current = false;
     }
   };
 
