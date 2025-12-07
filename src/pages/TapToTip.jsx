@@ -192,9 +192,10 @@ export default function TapToTipPage() {
           return addr.endsWith('cd7');
         }
 
-        // ALWAYS include destroyer - hard requirement
+        // For destroyer users, only keep the one ending in jdf6
         if (u.username?.toLowerCase() === 'destroyer') {
-          return true;
+          const addr = (u.created_wallet_address || u.agent_zk_id || '').toLowerCase();
+          return addr.endsWith('jdf6');
         }
 
         // Include all other users
