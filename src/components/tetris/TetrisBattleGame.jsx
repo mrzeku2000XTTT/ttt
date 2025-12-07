@@ -420,9 +420,32 @@ export default function TetrisBattleGame({ match, user, ranking, onGameEnd, onEx
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
-              {match.mode.toUpperCase()}
+              TETRIS
             </h2>
-            <Badge className="bg-cyan-500/20 text-cyan-400">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 bg-cyan-500/30 rounded-full flex items-center justify-center border border-cyan-500/50">
+                <span className="text-cyan-400 font-bold text-xs">
+                  {(user.username || user.email?.split('@')[0] || 'P')[0].toUpperCase()}
+                </span>
+              </div>
+              <div>
+                <p className="text-white font-bold text-xs">{user.username || user.email?.split('@')[0] || 'Player'}</p>
+                {user.created_wallet_address && (
+                  <div className="flex items-center gap-1">
+                    <p className="text-cyan-400 text-[10px] font-mono">
+                      {user.created_wallet_address.substring(0, 8)}...{user.created_wallet_address.slice(-4)}
+                    </p>
+                    <button
+                      onClick={copyAddress}
+                      className="text-cyan-400 hover:text-cyan-300 transition-colors"
+                    >
+                      <Copy className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+            <Badge className="bg-cyan-500/20 text-cyan-400 text-[10px]">
               Rank {ranking?.rank || 1}
             </Badge>
           </div>
@@ -437,35 +460,6 @@ export default function TetrisBattleGame({ match, user, ranking, onGameEnd, onEx
             <Button onClick={handleExit} variant="ghost" size="icon" className="text-white/60 hover:text-red-400">
               <X className="w-5 h-5" />
             </Button>
-          </div>
-        </div>
-
-        {/* User Info */}
-        <div className="mb-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-cyan-500/30 rounded-full flex items-center justify-center border border-cyan-500/50">
-              <span className="text-cyan-400 font-bold">
-                {(user.username || user.email?.split('@')[0] || 'P')[0].toUpperCase()}
-              </span>
-            </div>
-            <div className="flex-1">
-              <p className="text-white font-bold">{user.username || user.email?.split('@')[0] || 'Player'}</p>
-              {user.created_wallet_address ? (
-                <div className="flex items-center gap-2">
-                  <p className="text-cyan-400 text-xs font-mono">
-                    {user.created_wallet_address.substring(0, 10)}...{user.created_wallet_address.slice(-6)}
-                  </p>
-                  <button
-                    onClick={copyAddress}
-                    className="text-cyan-400 hover:text-cyan-300 transition-colors"
-                  >
-                    <Copy className="w-3 h-3" />
-                  </button>
-                </div>
-              ) : (
-                <p className="text-white/40 text-xs">No wallet connected</p>
-              )}
-            </div>
           </div>
         </div>
 
