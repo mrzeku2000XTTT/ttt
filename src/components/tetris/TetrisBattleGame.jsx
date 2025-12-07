@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   RotateCw, ChevronLeft, ChevronRight, ChevronDown,
-  Pause, Play, X, Zap, Target, Clock, Star
+  Pause, Play, X, Zap, Target, Clock, Star, Settings, Copy, Volume2, VolumeX
 } from "lucide-react";
+import { toast } from "sonner";
 
 const BOARD_WIDTH = 10;
 const BOARD_HEIGHT = 20;
@@ -35,6 +36,10 @@ export default function TetrisBattleGame({ match, user, ranking, onGameEnd, onEx
   const [combo, setCombo] = useState(0);
   const [garbageQueue, setGarbageQueue] = useState([]);
   const [timer, setTimer] = useState(0);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [ghostPieceEnabled, setGhostPieceEnabled] = useState(true);
   const gameLoopRef = useRef(null);
   const timerRef = useRef(null);
 
@@ -394,6 +399,20 @@ export default function TetrisBattleGame({ match, user, ranking, onGameEnd, onEx
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handleExit = () => {
+    setShowExitConfirm(true);
+  };
+
+  const confirmExit = () => {
+    setShowExitConfirm(false);
+    onExit();
+  };
+
+  const copyAddress = () => {
+    navigator.clipboard.writeText(user.created_wallet_address || '');
+    toast.success('Address copied!');
+  };
+
   return (
     <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
       <div className="bg-black border border-cyan-500/30 rounded-xl p-4 max-w-4xl w-full">
@@ -412,9 +431,41 @@ export default function TetrisBattleGame({ match, user, ranking, onGameEnd, onEx
               <Clock className="w-4 h-4" />
               <span>{formatTime(timer)}</span>
             </div>
-            <Button onClick={onExit} variant="ghost" size="icon" className="text-white/60 hover:text-white">
+            <Button onClick={() => setShowSettings(true)} variant="ghost" size="icon" className="text-white/60 hover:text-cyan-400">
+              <Settings className="w-5 h-5" />
+            </Button>
+            <Button onClick={handleExit} variant="ghost" size="icon" className="text-white/60 hover:text-red-400">
               <X className="w-5 h-5" />
             </Button>
+          </div>
+        </div>
+
+        {/* User Info */}
+        <div className="mb-3 bg-black/40 border border-white/10 rounded-lg p-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-cyan-500/20 rounded-full flex items-center justify-center">
+                <span className="text-cyan-400 font-bold text-sm">
+                  {(user.username || user.email?.split('@')[0] || 'P')[0].toUpperCase()}
+                </span>
+              </div>
+              <div>
+                <p className="text-white font-semibold text-sm">{user.username || user.email?.split('@')[0]}</p>
+                {user.created_wallet_address && (
+                  <div className="flex items-center gap-1">
+                    <p className="text-white/40 text-xs font-mono">
+                      {user.created_wallet_address.substring(0, 6)}...{user.created_wallet_address.slice(-4)}
+                    </p>
+                    <button
+                      onClick={copyAddress}
+                      className="text-white/40 hover:text-cyan-400 transition-colors"
+                    >
+                      <Copy className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -564,6 +615,103 @@ export default function TetrisBattleGame({ match, user, ranking, onGameEnd, onEx
             Hold
           </Button>
         </div>
+
+        {/* Exit Confirmation Modal */}
+        {showExitConfirm && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
+            <div className="bg-black border border-red-500/30 rounded-xl p-6 max-w-sm w-full">
+              <h3 className="text-white font-bold text-lg mb-2">Exit Game?</h3>
+              <p className="text-white/60 text-sm mb-6">
+                Your progress will be lost. Are you sure you want to exit?
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setShowExitConfirm(false)}
+                  variant="outline"
+                  className="flex-1 border-white/20 text-white"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={confirmExit}
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+                >
+                  Exit
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Settings Modal */}
+        {showSettings && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
+            <div className="bg-black border border-cyan-500/30 rounded-xl p-6 max-w-sm w-full">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-white font-bold text-lg">Settings</h3>
+                <Button
+                  onClick={() => setShowSettings(false)}
+                  variant="ghost"
+                  size="icon"
+                  className="text-white/60 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Sound */}
+                <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    {soundEnabled ? (
+                      <Volume2 className="w-5 h-5 text-cyan-400" />
+                    ) : (
+                      <VolumeX className="w-5 h-5 text-white/40" />
+                    )}
+                    <span className="text-white font-medium">Sound Effects</span>
+                  </div>
+                  <Button
+                    onClick={() => setSoundEnabled(!soundEnabled)}
+                    variant="outline"
+                    size="sm"
+                    className={soundEnabled ? 'bg-cyan-500/20 border-cyan-500/30 text-cyan-400' : 'bg-white/5 border-white/20 text-white/40'}
+                  >
+                    {soundEnabled ? 'ON' : 'OFF'}
+                  </Button>
+                </div>
+
+                {/* Ghost Piece */}
+                <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Target className="w-5 h-5 text-cyan-400" />
+                    <span className="text-white font-medium">Ghost Piece</span>
+                  </div>
+                  <Button
+                    onClick={() => setGhostPieceEnabled(!ghostPieceEnabled)}
+                    variant="outline"
+                    size="sm"
+                    className={ghostPieceEnabled ? 'bg-cyan-500/20 border-cyan-500/30 text-cyan-400' : 'bg-white/5 border-white/20 text-white/40'}
+                  >
+                    {ghostPieceEnabled ? 'ON' : 'OFF'}
+                  </Button>
+                </div>
+
+                {/* Game Speed Info */}
+                <div className="p-3 bg-cyan-500/10 border border-cyan-500/20 rounded-lg">
+                  <p className="text-cyan-400 text-xs font-semibold mb-1">Current Speed</p>
+                  <p className="text-white text-sm">Level {level} - {Math.max(100, 800 - (level - 1) * 50)}ms</p>
+                </div>
+              </div>
+
+              <Button
+                onClick={() => setShowSettings(false)}
+                className="w-full mt-4 bg-cyan-500 hover:bg-cyan-600"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
