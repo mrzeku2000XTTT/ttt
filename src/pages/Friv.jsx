@@ -20,12 +20,11 @@ export default function FrivPage() {
       {/* Iframe */}
       <div className="flex-1 relative bg-black">
         <iframe
-          src="https://www.friv.com"
+          src="https://www.frivclassic.com"
           className="absolute inset-0 w-full h-full border-0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
           allowFullScreen
           sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-pointer-lock"
-          referrerPolicy="no-referrer"
         />
       </div>
     </div>
