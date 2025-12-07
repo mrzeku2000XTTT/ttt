@@ -122,15 +122,12 @@ export default function TapToTipPage() {
       // Fetch all posts to get unique users (posts are publicly readable)
       const allPosts = await base44.entities.Post.list('-created_date', 500);
       
-      // Extract unique users from posts - use most recent post for username
+      // Extract unique users from posts
       const uniqueUsersMap = new Map();
       allPosts.forEach(post => {
         if ((post.author_wallet_address || post.author_agent_zk_id) && post.author_name) {
           const key = post.author_wallet_address || post.author_agent_zk_id;
-          const existing = uniqueUsersMap.get(key);
-          
-          // Always update to use the most recent post's data
-          if (!existing || new Date(post.created_date) > new Date(existing.created_date)) {
+          if (!uniqueUsersMap.has(key)) {
             uniqueUsersMap.set(key, {
               id: post.id,
               username: post.author_name,
@@ -514,11 +511,6 @@ export default function TapToTipPage() {
                                 YOU
                               </span>
                             )}
-                            {user.role === 'admin' && (
-                              <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded text-[10px] font-bold">
-                                ADMIN
-                              </span>
-                            )}
                             {user.username?.toLowerCase() === 'ttt' && (
                               <span className="px-2 py-0.5 bg-gradient-to-r from-cyan-500 to-purple-500 rounded text-[10px] font-bold text-white">
                                 ZEKU
@@ -569,14 +561,6 @@ export default function TapToTipPage() {
                                 🎮 MODZ
                               </span>
                             )}
-                            {badgesMap[user.username]?.map((badge, idx) => (
-                              <span 
-                                key={idx}
-                                className="px-2 py-0.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded text-[10px] font-bold text-white"
-                              >
-                                {badge.badge_name}
-                              </span>
-                            ))}
                             <span className="px-2 py-0.5 bg-gradient-to-r from-green-500 to-emerald-600 rounded text-[10px] font-bold text-white">
                               $KAS
                             </span>
