@@ -872,18 +872,19 @@ function AKContent() {
                     e.stopPropagation();
                     setShowPaymentModal(true);
                   }}
-                  className="flex items-center justify-center w-8 h-8 rounded-lg hover:scale-110 transition-transform"
+                  className="flex items-center gap-1 px-3 py-1 rounded-lg hover:scale-105 transition-transform"
                   style={{ 
                     background: 'rgba(6, 182, 212, 0.3)',
                     border: '2px solid rgba(6, 182, 212, 0.5)',
                     color: '#06b6d4',
                     cursor: 'pointer',
-                    fontWeight: 900,
-                    fontSize: '1.25rem'
+                    fontWeight: 700,
+                    fontSize: '0.75rem'
                   }}
                   title="Add 20 more minutes"
                 >
-                  +
+                  <Shield className="w-3.5 h-3.5" />
+                  ZK
                 </button>
               </motion.div>
             )}
