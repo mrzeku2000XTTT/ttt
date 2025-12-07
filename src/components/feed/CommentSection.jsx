@@ -183,12 +183,17 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
 
     setIsCommenting(true);
     try {
-      // Prioritize TTT username, fallback to AgentZK profile
-      let authorName = currentUser.username || '';
-      let authorWalletAddress = currentUser.created_wallet_address || '';
+      // Get author info - works with or without login
+      let authorName = '';
+      let authorWalletAddress = kaswareAddress || '';
 
-      // Only use AgentZK username if no TTT username exists
-      if (!authorName && currentUser.created_wallet_address) {
+      // Try to get username from currentUser
+      if (currentUser?.username) {
+        authorName = currentUser.username;
+        authorWalletAddress = currentUser.created_wallet_address || kaswareAddress || '';
+      } else if (currentUser?.created_wallet_address) {
+        authorWalletAddress = currentUser.created_wallet_address;
+        // Try AgentZK profile
         try {
           const profiles = await base44.entities.AgentZKProfile.filter({
             wallet_address: currentUser.created_wallet_address
@@ -201,19 +206,25 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
         }
       }
 
-      // Fallback names
+      // Final fallbacks
       if (!authorName) {
-        authorName = currentUser.created_wallet_address 
-          ? `${currentUser.created_wallet_address.slice(0, 6)}...${currentUser.created_wallet_address.slice(-4)}`
-          : currentUser.email.split('@')[0];
+        if (authorWalletAddress) {
+          authorName = `${authorWalletAddress.slice(0, 6)}...${authorWalletAddress.slice(-4)}`;
+        } else if (currentUser?.email) {
+          authorName = currentUser.email.split('@')[0];
+        } else {
+          authorName = 'Anonymous';
+        }
       }
 
+      console.log('💬 Creating comment...', { authorName, authorWalletAddress, postId });
       const createdComment = await base44.entities.PostComment.create({
         post_id: postId,
         author_name: authorName,
         author_wallet_address: authorWalletAddress,
         comment_text: newComment.trim()
       });
+      console.log('✅ Comment created:', createdComment);
 
       setNewComment("");
       
