@@ -123,7 +123,6 @@ export default function CategoriesPage() {
       { id: "tttid", name: "TTT ID", icon: "Shield", path: "RegisterTTTID" },
       { id: "dagknight", name: "DAGKnight", icon: "Network", path: "DAGKnightWallet", premium: true },
       { id: "analytics", name: "Analytics", icon: "TrendingUp", path: "Analytics" },
-      { id: "war", name: "War", icon: "AlertTriangle", path: "GlobalWar" },
       { id: "history", name: "History", icon: "History", path: "History" },
       { id: "god", name: "GOD", icon: "Activity", path: "God" },
       { id: "singularity", name: "SINGULARITY", icon: "Brain", path: "Singularity", blackOnBlack: true },
