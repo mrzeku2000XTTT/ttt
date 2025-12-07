@@ -168,7 +168,7 @@ export default function TapToTipPage() {
           id: 'sss_hardcoded',
           username: 'SSS',
           email: 'sss@ttt.com',
-          created_wallet_address: 'nose pudding cube faculty angle awful tenant avoid assault media wasp stone',
+          created_wallet_address: 'kaspa:qruat45zkdtuznry8gahmgp7yw78fnelx29wvn0p5cl9slep7x3l553cugx9h',
           agent_zk_id: null,
           role: 'user',
           created_date: new Date().toISOString()
