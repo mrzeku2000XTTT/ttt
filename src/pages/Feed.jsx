@@ -726,9 +726,8 @@ export default function FeedPage() {
       } else {
         createdPost = await base44.entities.Post.create(postData);
 
-        // Reload all posts to get fresh data from server
-        const freshPosts = await base44.entities.Post.list('-created_date', 200);
-        setPosts(freshPosts);
+        // Reload all posts with proper filtering
+        await loadData();
       }
 
       setNewPost("");
@@ -848,9 +847,8 @@ export default function FeedPage() {
         setExpandedReplies(prev => ({ ...prev, [parentPost.id]: true }));
       }
 
-      // Reload all posts to get fresh data
-      const freshPosts = await base44.entities.Post.list('-created_date', 200);
-      setPosts(freshPosts);
+      // Reload all posts with proper filtering
+      await loadData();
 
       // Check if @zk is mentioned anywhere in the reply
       if (replyText.toLowerCase().includes('@zk') && createdReply) {
