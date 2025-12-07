@@ -54,7 +54,7 @@ export default function AppStorePage() {
     { name: "MODZ", icon: "Link2", path: "MODZHub", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/e4ca8d329_image.png" },
     { name: "KFANS", icon: "Link2", path: "KasFans", category: "Community", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/85ce776d9_image.png" },
     { name: "Duel", icon: "Link2", path: "DuelLobby", category: "Games", defaultIcon: "https://ui-avatars.com/api/?name=Duel&size=128&background=ef4444&color=fff&bold=true" },
-    { name: "Area 51", icon: "Link2", path: "Area51", category: "Community", defaultIcon: "https://ui-avatars.com/api/?name=A51&size=128&background=22c55e&color=000&bold=true" },
+    { name: "Area 51", icon: "Link2", path: "Area51", category: "Community", defaultIcon: "https://ui-avatars.com/api/?name=A51&size=128&background=22c55e&color=000&bold=true&font-size=0.35" },
     { name: "MMN", icon: "Link2", path: "MMN", category: "Tools" },
   ];
 
