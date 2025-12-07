@@ -15,11 +15,46 @@ export default function TimerPage() {
   const [kaswareWallet, setKaswareWallet] = useState({ connected: false, address: null });
   const [user, setUser] = useState(null);
   const [verificationTimestamp, setVerificationTimestamp] = useState(null);
+  const [timerSeconds, setTimerSeconds] = useState(0);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (isTimerRunning && !isPaused && timerSeconds > 0) {
+      const interval = setInterval(() => {
+        setTimerSeconds(prev => {
+          if (prev <= 1) {
+            setIsTimerRunning(false);
+            // Timer finished notification
+            const notification = document.createElement('div');
+            notification.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-green-500/30 text-white rounded-xl p-4 shadow-2xl z-[10000] max-w-xs';
+            notification.style.top = 'calc(var(--sat, 0px) + 8rem)';
+            notification.innerHTML = `
+              <div class="flex items-center gap-2 mb-3">
+                <div class="w-6 h-6 bg-green-500/30 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span class="text-sm">⏰</span>
+                </div>
+                <h3 class="font-bold text-sm">Timer Finished!</h3>
+              </div>
+              <button onclick="this.parentElement.remove()" class="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-lg py-1.5 text-xs font-medium transition-colors border border-white/10">
+                OK
+              </button>
+            `;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 5000);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [isTimerRunning, isPaused, timerSeconds]);
 
   useEffect(() => {
     loadUser();
@@ -146,6 +181,31 @@ export default function TimerPage() {
     }
   };
 
+  const parseTimerCommand = (text) => {
+    const lowerText = text.toLowerCase();
+    let totalSeconds = 0;
+    
+    // Parse hours
+    const hoursMatch = lowerText.match(/(\d+)\s*(hour|hours|hr|hrs|h)/);
+    if (hoursMatch) {
+      totalSeconds += parseInt(hoursMatch[1]) * 3600;
+    }
+    
+    // Parse minutes
+    const minutesMatch = lowerText.match(/(\d+)\s*(minute|minutes|min|mins|m)/);
+    if (minutesMatch) {
+      totalSeconds += parseInt(minutesMatch[1]) * 60;
+    }
+    
+    // Parse seconds
+    const secondsMatch = lowerText.match(/(\d+)\s*(second|seconds|sec|secs|s)(?!\s*e)/);
+    if (secondsMatch) {
+      totalSeconds += parseInt(secondsMatch[1]);
+    }
+    
+    return totalSeconds;
+  };
+
   const processAIRequest = async () => {
     setIsLoading(true);
     
@@ -167,32 +227,71 @@ export default function TimerPage() {
     document.body.appendChild(notification);
     
     try {
-      const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a helpful AI assistant for a timer/clock app. The user asked: "${prompt}". Provide a helpful, concise response about time, clocks, timers, scheduling, or time management. If they ask about the current time, mention it's ${currentTime.toLocaleString()}.`
-      });
-
-      setAiResponse(response);
-      setPrompt("");
+      // Check if user wants to set/add a timer
+      const timerSeconds = parseTimerCommand(prompt);
       
-      // Remove loading notification and show success
-      notification.remove();
-      
-      const successNotif = document.createElement('div');
-      successNotif.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[10000] max-w-xs';
-      successNotif.style.top = 'calc(var(--sat, 0px) + 8rem)';
-      successNotif.innerHTML = `
-        <div class="flex items-center gap-2 mb-3">
-          <div class="w-6 h-6 bg-green-500/30 rounded-full flex items-center justify-center flex-shrink-0">
-            <span class="text-sm">✓</span>
+      if (timerSeconds > 0) {
+        // Timer command detected
+        if (isTimerRunning) {
+          // Add to existing timer
+          setTimerSeconds(prev => prev + timerSeconds);
+          const response = `Added ${Math.floor(timerSeconds / 3600)}h ${Math.floor((timerSeconds % 3600) / 60)}m ${timerSeconds % 60}s to your timer! New total: ${Math.floor((timerSeconds + timerSeconds) / 3600)}h ${Math.floor(((timerSeconds + timerSeconds) % 3600) / 60)}m`;
+          setAiResponse(response);
+        } else {
+          // Start new timer
+          setTimerSeconds(timerSeconds);
+          setIsTimerRunning(true);
+          setIsPaused(false);
+          const response = `Timer set for ${Math.floor(timerSeconds / 3600)}h ${Math.floor((timerSeconds % 3600) / 60)}m ${timerSeconds % 60}s. Timer started!`;
+          setAiResponse(response);
+        }
+        setPrompt("");
+        notification.remove();
+        
+        const successNotif = document.createElement('div');
+        successNotif.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[10000] max-w-xs';
+        successNotif.style.top = 'calc(var(--sat, 0px) + 8rem)';
+        successNotif.innerHTML = `
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-6 h-6 bg-green-500/30 rounded-full flex items-center justify-center flex-shrink-0">
+              <span class="text-sm">⏰</span>
+            </div>
+            <h3 class="font-bold text-sm">Timer ${isTimerRunning ? 'Updated' : 'Started'}!</h3>
           </div>
-          <h3 class="font-bold text-sm">AI Response Ready!</h3>
-        </div>
-        <button onclick="this.parentElement.remove()" class="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-lg py-1.5 text-xs font-medium transition-colors border border-white/10">
-          OK
-        </button>
-      `;
-      document.body.appendChild(successNotif);
-      setTimeout(() => successNotif.remove(), 5000);
+          <button onclick="this.parentElement.remove()" class="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-lg py-1.5 text-xs font-medium transition-colors border border-white/10">
+            OK
+          </button>
+        `;
+        document.body.appendChild(successNotif);
+        setTimeout(() => successNotif.remove(), 5000);
+      } else {
+        // Regular AI response
+        const response = await base44.integrations.Core.InvokeLLM({
+          prompt: `You are a helpful AI assistant for a timer/clock app. The user asked: "${prompt}". Provide a helpful, concise response about time, clocks, timers, scheduling, or time management. If they ask about the current time, mention it's ${currentTime.toLocaleString()}.`
+        });
+
+        setAiResponse(response);
+        setPrompt("");
+        
+        notification.remove();
+        
+        const successNotif = document.createElement('div');
+        successNotif.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[10000] max-w-xs';
+        successNotif.style.top = 'calc(var(--sat, 0px) + 8rem)';
+        successNotif.innerHTML = `
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-6 h-6 bg-green-500/30 rounded-full flex items-center justify-center flex-shrink-0">
+              <span class="text-sm">✓</span>
+            </div>
+            <h3 class="font-bold text-sm">AI Response Ready!</h3>
+          </div>
+          <button onclick="this.parentElement.remove()" class="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-lg py-1.5 text-xs font-medium transition-colors border border-white/10">
+            OK
+          </button>
+        `;
+        document.body.appendChild(successNotif);
+        setTimeout(() => successNotif.remove(), 5000);
+      }
       
     } catch (err) {
       notification.remove();
@@ -202,15 +301,33 @@ export default function TimerPage() {
     }
   };
 
-  const hours = currentTime.getHours().toString().padStart(2, '0');
-  const minutes = currentTime.getMinutes().toString().padStart(2, '0');
-  const seconds = currentTime.getSeconds().toString().padStart(2, '0');
+  const formatTime = (totalSeconds) => {
+    const h = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
+    const m = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
+    const s = (totalSeconds % 60).toString().padStart(2, '0');
+    return { hours: h, minutes: m, seconds: s };
+  };
+
+  const displayTime = isTimerRunning 
+    ? formatTime(timerSeconds)
+    : {
+        hours: currentTime.getHours().toString().padStart(2, '0'),
+        minutes: currentTime.getMinutes().toString().padStart(2, '0'),
+        seconds: currentTime.getSeconds().toString().padStart(2, '0')
+      };
+
+  const hours = displayTime.hours;
+  const minutes = displayTime.minutes;
+  const seconds = displayTime.seconds;
+  
   const date = currentTime.toLocaleDateString('en-US', { 
     weekday: 'long', 
     year: 'numeric', 
     month: 'long', 
     day: 'numeric' 
   });
+  
+  const utcTime = currentTime.toUTCString().split(' ')[4];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 relative overflow-hidden">
@@ -260,9 +377,16 @@ export default function TimerPage() {
         >
           <div className="bg-black/40 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-6 sm:p-8 md:p-12">
             <div className="text-center">
+              {isTimerRunning && (
+                <div className="mb-4 flex items-center justify-center gap-2">
+                  <span className="px-3 py-1 bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded-full text-xs font-bold">
+                    {isPaused ? '⏸️ PAUSED' : '⏱️ TIMER RUNNING'}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center justify-center gap-2 sm:gap-4 mb-4 font-mono">
                 <motion.span
-                  animate={{ opacity: [1, 0.7, 1] }}
+                  animate={{ opacity: isTimerRunning && !isPaused ? [1, 0.7, 1] : 1 }}
                   transition={{ duration: 1, repeat: Infinity }}
                   className="text-5xl sm:text-7xl md:text-9xl font-bold text-cyan-400"
                   style={{ animation: 'glow 2s ease-in-out infinite' }}
@@ -271,7 +395,7 @@ export default function TimerPage() {
                 </motion.span>
                 <span className="text-4xl sm:text-6xl md:text-8xl text-cyan-400/60">:</span>
                 <motion.span
-                  animate={{ opacity: [1, 0.7, 1] }}
+                  animate={{ opacity: isTimerRunning && !isPaused ? [1, 0.7, 1] : 1 }}
                   transition={{ duration: 1, repeat: Infinity, delay: 0.3 }}
                   className="text-5xl sm:text-7xl md:text-9xl font-bold text-cyan-400"
                   style={{ animation: 'glow 2s ease-in-out infinite' }}
@@ -280,7 +404,7 @@ export default function TimerPage() {
                 </motion.span>
                 <span className="text-4xl sm:text-6xl md:text-8xl text-cyan-400/60">:</span>
                 <motion.span
-                  animate={{ opacity: [1, 0.7, 1] }}
+                  animate={{ opacity: isTimerRunning && !isPaused ? [1, 0.7, 1] : 1 }}
                   transition={{ duration: 1, repeat: Infinity, delay: 0.6 }}
                   className="text-5xl sm:text-7xl md:text-9xl font-bold text-cyan-400"
                   style={{ animation: 'glow 2s ease-in-out infinite' }}
@@ -288,7 +412,36 @@ export default function TimerPage() {
                   {seconds}
                 </motion.span>
               </div>
-              <p className="text-white/60 text-base sm:text-lg font-medium">{date}</p>
+              <div className="flex items-center justify-center gap-3 text-white/60 text-base sm:text-lg font-medium mb-4">
+                <span>{date}</span>
+                <span className="text-white/40">•</span>
+                <span className="text-cyan-400/60">UTC {utcTime}</span>
+              </div>
+              
+              {/* Timer Controls */}
+              {isTimerRunning && (
+                <div className="flex items-center justify-center gap-3 mt-4">
+                  <Button
+                    onClick={() => setIsPaused(!isPaused)}
+                    size="sm"
+                    className="bg-white/10 hover:bg-white/20 text-white border border-white/20"
+                  >
+                    {isPaused ? '▶️ Resume' : '⏸️ Pause'}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setIsTimerRunning(false);
+                      setTimerSeconds(0);
+                      setIsPaused(false);
+                    }}
+                    size="sm"
+                    variant="outline"
+                    className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30"
+                  >
+                    ⏹️ Stop
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </motion.div>
@@ -308,7 +461,7 @@ export default function TimerPage() {
             <Textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Ask me anything... set a timer, time zones, scheduling tips, productivity hacks..."
+              placeholder="Try: 'set timer 2 hours', 'add 10 minutes', 'what time is it in Tokyo?'..."
               className="bg-white/5 border-white/10 text-white placeholder:text-white/40 min-h-[100px] mb-4 text-sm sm:text-base"
               disabled={isLoading}
             />
