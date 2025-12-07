@@ -379,6 +379,12 @@ export default function DAGFeedPage() {
   };
 
   const handleLike = async (post) => {
+    if (!user) {
+      setError('Please login to like posts');
+      return;
+    }
+
+    // Optimistic update
     const newLikes = (post.likes || 0) + 1;
     setPosts(posts.map(p => p.id === post.id ? { ...p, likes: newLikes } : p));
 
@@ -387,8 +393,8 @@ export default function DAGFeedPage() {
       setError(null);
     } catch (err) {
       console.error('Failed to like:', err);
-      setError(null); // Don't show error for likes
-      await loadData();
+      // Revert on error
+      setPosts(posts.map(p => p.id === post.id ? { ...p, likes: post.likes } : p));
     }
   };
 
@@ -536,9 +542,9 @@ export default function DAGFeedPage() {
               onClick={() => handleLike(post)}
               variant="ghost"
               size="sm"
-              className="text-white/40 hover:text-red-400 h-auto p-0"
+              className="text-white/40 hover:text-red-400 transition-colors h-auto p-0"
             >
-              <Heart className="w-5 h-5 mr-2" />
+              <Heart className="w-5 h-5 mr-2 transition-all" fill={post.likes > 0 ? "currentColor" : "none"} />
               <span className="text-sm">{post.likes || 0}</span>
             </Button>
 
