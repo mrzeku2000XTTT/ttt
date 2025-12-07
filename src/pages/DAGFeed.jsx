@@ -493,15 +493,21 @@ export default function DAGFeedPage() {
       return;
     }
 
-    // Prevent double-liking
-    if (likedPosts.has(post.id)) {
-      return;
-    }
+    const isLiked = likedPosts.has(post.id);
+    const newLikes = isLiked ? Math.max(0, (post.likes || 0) - 1) : (post.likes || 0) + 1;
 
     // Optimistic update
-    const newLikes = (post.likes || 0) + 1;
     setPosts(posts.map(p => p.id === post.id ? { ...p, likes: newLikes } : p));
-    setLikedPosts(prev => new Set([...prev, post.id]));
+    
+    if (isLiked) {
+      setLikedPosts(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(post.id);
+        return newSet;
+      });
+    } else {
+      setLikedPosts(prev => new Set([...prev, post.id]));
+    }
 
     try {
       await base44.entities.DAGPost.update(post.id, { likes: newLikes });
@@ -510,11 +516,15 @@ export default function DAGFeedPage() {
       console.error('Failed to like:', err);
       // Revert on error
       setPosts(posts.map(p => p.id === post.id ? { ...p, likes: post.likes } : p));
-      setLikedPosts(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(post.id);
-        return newSet;
-      });
+      if (isLiked) {
+        setLikedPosts(prev => new Set([...prev, post.id]));
+      } else {
+        setLikedPosts(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(post.id);
+          return newSet;
+        });
+      }
     }
   };
 
