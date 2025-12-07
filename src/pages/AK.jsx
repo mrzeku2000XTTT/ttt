@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Send, Loader2, Bot, Sparkles, Share2, Download, Film, Image as ImageIcon } from "lucide-react";
+import { Send, Loader2, Bot, Sparkles, Share2, Download, Film, Image as ImageIcon, Lock, Shield, AlertCircle, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { StarGateProvider, useStarGate } from "@/components/stargate/StarGateContext";
 import DataShareModal from "@/components/stargate/DataShareModal";
 import MultiStreamModal from "@/components/MultiStreamModal";
+import { toast } from "sonner";
 
 function AKContent() {
   const [messages, setMessages] = useState([
@@ -30,6 +31,13 @@ function AKContent() {
   const [splitScreenContent, setSplitScreenContent] = useState(null);
   const [multiStreamModal, setMultiStreamModal] = useState(false);
   const [multiStreams, setMultiStreams] = useState([]);
+  const [showPaymentModal, setShowPaymentModal] = useState(true);
+  const [akUnlocked, setAkUnlocked] = useState(false);
+  const [kaswareWallet, setKaswareWallet] = useState({ connected: false, address: null });
+  const [showZkVerification, setShowZkVerification] = useState(false);
+  const [zkAmount, setZkAmount] = useState('1');
+  const [zkVerifying, setZkVerifying] = useState(false);
+  const [zkWalletBalance, setZkWalletBalance] = useState(null);
   const { getSharedData, getAllSharedData } = useStarGate();
   const messagesEndRef = React.useRef(null);
 
@@ -39,7 +47,110 @@ function AKContent() {
     loadUser();
     loadSharedData();
     generateBackgroundIfNeeded();
+    checkKasware();
+    loadZkWalletBalance();
   }, []);
+
+  const checkKasware = async () => {
+    if (typeof window.kasware !== 'undefined') {
+      try {
+        const accounts = await window.kasware.getAccounts();
+        if (accounts.length > 0) {
+          setKaswareWallet({ connected: true, address: accounts[0] });
+        }
+      } catch (err) {
+        console.log('Kasware not connected');
+      }
+    }
+  };
+
+  const loadZkWalletBalance = async () => {
+    try {
+      if (user?.created_wallet_address) {
+        const response = await base44.functions.invoke('getKaspaBalance', { address: user.created_wallet_address });
+        if (response.data?.balance) {
+          setZkWalletBalance(response.data.balance);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load balance:', err);
+    }
+  };
+
+  const handleSelfPayment = async () => {
+    if (!kaswareWallet.connected) {
+      toast.error('Please connect Kasware wallet');
+      return;
+    }
+
+    try {
+      const amountSompi = 100000000; // 1 KAS
+      const txId = await window.kasware.sendKaspa(kaswareWallet.address, amountSompi);
+      
+      setShowPaymentModal(false);
+      setAkUnlocked(true);
+      toast.success('✅ Payment verified! AK unlocked!');
+    } catch (err) {
+      console.error('Payment failed:', err);
+      toast.error('Payment failed: ' + err.message);
+    }
+  };
+
+  const handleZkVerification = async () => {
+    if (!user?.created_wallet_address) {
+      toast.error('Please login first');
+      return;
+    }
+
+    const timestamp = Date.now();
+    setZkVerifying(true);
+
+    try {
+      const targetAmount = parseFloat(zkAmount);
+      let attempts = 0;
+      const maxAttempts = 200;
+
+      const checkTransaction = async () => {
+        attempts++;
+
+        try {
+          const response = await base44.functions.invoke('verifyKaspaSelfTransaction', {
+            address: user.created_wallet_address,
+            expectedAmount: targetAmount,
+            timestamp: timestamp
+          });
+
+          if (response.data?.verified && response.data?.transaction) {
+            setZkVerifying(false);
+            setShowZkVerification(false);
+            setShowPaymentModal(false);
+            setAkUnlocked(true);
+            toast.success('✅ Payment verified! AK unlocked!');
+            return true;
+          }
+
+          if (attempts < maxAttempts) {
+            setTimeout(checkTransaction, 3000);
+          } else {
+            setZkVerifying(false);
+            toast.error('Verification timeout');
+          }
+        } catch (err) {
+          if (attempts < maxAttempts) {
+            setTimeout(checkTransaction, 3000);
+          } else {
+            setZkVerifying(false);
+            toast.error('Failed to verify transaction');
+          }
+        }
+      };
+
+      checkTransaction();
+    } catch (err) {
+      setZkVerifying(false);
+      toast.error('Verification failed');
+    }
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -139,6 +250,10 @@ function AKContent() {
   };
 
   const handleSend = async () => {
+    if (!akUnlocked) {
+      toast.error('Please unlock AK first by paying 1 KAS');
+      return;
+    }
     if ((!input.trim() && pastedImages.length === 0) || loading) return;
 
     const userMessage = { 
@@ -342,6 +457,231 @@ function AKContent() {
   };
 
   return (
+    <>
+      {/* Payment Modal */}
+      <AnimatePresence>
+        {showPaymentModal && !akUnlocked && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-black border border-yellow-500/30 rounded-xl w-full max-w-md p-6"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-lg flex items-center justify-center">
+                    <Lock className="w-5 h-5 text-yellow-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold text-lg">Unlock AK</h3>
+                    <p className="text-white/60 text-sm">Pay 1 KAS to use AK</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {kaswareWallet.connected && (
+                  <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+                    <div className="text-xs text-white/60 mb-1">Your Kasware Wallet</div>
+                    <div className="text-white font-mono text-sm break-all">
+                      {kaswareWallet.address}
+                    </div>
+                  </div>
+                )}
+
+                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+                    <div className="text-xs text-white/80">
+                      <p className="mb-2">Pay <span className="font-bold text-yellow-400">1 KAS</span> to yourself to unlock AK.</p>
+                      <p className="text-white/60">This enables you to use all AK features.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handleSelfPayment}
+                  disabled={!kaswareWallet.connected}
+                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 h-12 text-black font-bold"
+                >
+                  {kaswareWallet.connected ? (
+                    <>
+                      <Lock className="w-5 h-5 mr-2" />
+                      Pay 1 KAS & Unlock
+                    </>
+                  ) : (
+                    'Connect Kasware First'
+                  )}
+                </Button>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-white/10"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="bg-black px-2 text-white/40">or</span>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => {
+                    setShowPaymentModal(false);
+                    setShowZkVerification(true);
+                  }}
+                  className="w-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/30 text-cyan-400 h-12 font-semibold"
+                >
+                  <Shield className="w-5 h-5 mr-2" />
+                  ZK Verification (iOS/Kaspium)
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ZK Verification Modal */}
+      <AnimatePresence>
+        {showZkVerification && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => {
+              if (!zkVerifying) {
+                setShowZkVerification(false);
+                setShowPaymentModal(true);
+                setZkAmount('1');
+              }
+            }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-black border border-cyan-500/30 rounded-xl w-full max-w-md p-6"
+            >
+              <h3 className="text-2xl font-bold text-white mb-2">ZK Verification</h3>
+              <p className="text-white/60 text-sm mb-6">
+                Send KAS to yourself in Kaspium to unlock AK
+              </p>
+
+              {!zkVerifying ? (
+                <div className="space-y-4">
+                  {zkWalletBalance !== null && (
+                    <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                      <p className="text-white/40 text-xs mb-1">Current Balance</p>
+                      <p className="text-white text-lg font-bold">{zkWalletBalance.toFixed(2)} KAS</p>
+                    </div>
+                  )}
+
+                  <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                    <p className="text-white/40 text-xs mb-1">Your TTT Wallet Address</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-white text-sm font-mono break-all">
+                        {user?.created_wallet_address?.substring(0, 12)}...{user?.created_wallet_address?.slice(-8)}
+                      </p>
+                      <Button
+                        onClick={() => {
+                          navigator.clipboard.writeText(user?.created_wallet_address || '');
+                          toast.success('✓ Address copied');
+                        }}
+                        size="sm"
+                        className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 text-xs h-7"
+                      >
+                        Copy
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-white/60 text-sm mb-2 block">
+                      Amount to send yourself (KAS)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      value={zkAmount}
+                      onChange={(e) => setZkAmount(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white text-lg"
+                    />
+                  </div>
+
+                  <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-3">
+                    <p className="text-cyan-400 text-xs font-semibold mb-2">Instructions:</p>
+                    <ol className="text-white/60 text-xs space-y-1 list-decimal list-inside">
+                      <li>Copy your wallet address above</li>
+                      <li>Enter the amount (default: 1 KAS)</li>
+                      <li>Click "Start Verification"</li>
+                      <li>Open Kaspium and send that amount to your own address</li>
+                      <li>Wait for automatic verification</li>
+                    </ol>
+                  </div>
+
+                  <Button
+                    onClick={handleZkVerification}
+                    disabled={!zkAmount || parseFloat(zkAmount) <= 0}
+                    className="w-full bg-cyan-500 hover:bg-cyan-600 text-white h-12 font-semibold disabled:opacity-50"
+                  >
+                    Start Verification
+                  </Button>
+
+                  <Button
+                    onClick={() => {
+                      setShowZkVerification(false);
+                      setShowPaymentModal(true);
+                      setZkAmount('1');
+                    }}
+                    variant="outline"
+                    className="w-full border-white/10 text-white/60"
+                  >
+                    Back
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4" />
+                  <p className="text-cyan-400 font-semibold mb-2">🔍 Waiting for Transaction...</p>
+                  <p className="text-white/60 text-sm mb-4">
+                    Send {zkAmount} KAS to yourself in Kaspium
+                  </p>
+                  <div className="bg-white/5 rounded-lg p-3 mb-4">
+                    <p className="text-white/40 text-xs mb-1">Your Address</p>
+                    <p className="text-white text-xs font-mono break-all">
+                      {user?.created_wallet_address}
+                    </p>
+                  </div>
+                  <p className="text-white/40 text-xs">
+                    Verification will happen automatically when the transaction is detected
+                  </p>
+                  <Button
+                    onClick={() => {
+                      setZkVerifying(false);
+                      setShowZkVerification(false);
+                      setShowPaymentModal(true);
+                      setZkAmount('1');
+                    }}
+                    variant="outline"
+                    className="w-full border-white/10 text-white/60 mt-4"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     <div style={{ 
       position: 'fixed',
       top: 'calc(var(--sat, 0px) + 7.5rem)',
@@ -640,6 +980,7 @@ function AKContent() {
       </div>
       </div>
     </div>
+    </>
   );
 }
 
