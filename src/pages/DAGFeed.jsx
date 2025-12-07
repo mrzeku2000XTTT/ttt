@@ -376,8 +376,10 @@ export default function DAGFeedPage() {
 
     try {
       await base44.entities.DAGPost.update(post.id, { likes: newLikes });
+      setError(null);
     } catch (err) {
       console.error('Failed to like:', err);
+      setError(null); // Don't show error for likes
       await loadData();
     }
   };
@@ -408,9 +410,10 @@ export default function DAGFeedPage() {
   };
 
   const renderPost = (post) => {
-    const isMyPost = post.created_by === user?.email || 
-                     post.author_wallet_address === kaswareWallet.address ||
-                     post.author_wallet_address === user?.created_wallet_address;
+    // Check ownership by email, wallet address
+    const isMyPost = (user && post.created_by === user.email) || 
+                     (kaswareWallet.connected && post.author_wallet_address === kaswareWallet.address) ||
+                     (user?.created_wallet_address && post.author_wallet_address === user.created_wallet_address);
 
     return (
       <Card className="backdrop-blur-xl bg-black border-white/10 hover:border-white/20 transition-all">
