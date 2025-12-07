@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Send, Loader2, User as UserIcon, AlertTriangle, Copy, Sparkles, Shield, CheckCircle } from "lucide-react";
+import { ArrowLeft, Send, Loader2, User as UserIcon, AlertTriangle, Copy, Sparkles, Shield, CheckCircle, Lock, LockOpen, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import moment from "moment";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
 export default function Area51Page() {
   const [messages, setMessages] = useState([]);
@@ -19,9 +20,15 @@ export default function Area51Page() {
   const [checkingIn, setCheckingIn] = useState(false);
   const [hasCheckedIn, setHasCheckedIn] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [verificationTimestamp, setVerificationTimestamp] = useState(null);
-  const [isDagVerified, setIsDagVerified] = useState(false);
+  const [messageToPublish, setMessageToPublish] = useState(null);
+  const [publishingMessageId, setPublishingMessageId] = useState(null);
+  const [kaswareWallet, setKaswareWallet] = useState({ connected: false, address: null });
+  const [showZkVerification, setShowZkVerification] = useState(false);
+  const [zkAmount, setZkAmount] = useState('1');
+  const [zkTimestamp, setZkTimestamp] = useState(null);
+  const [zkVerifying, setZkVerifying] = useState(false);
+  const [zkWalletBalance, setZkWalletBalance] = useState(null);
+  const [selectedZkWallet, setSelectedZkWallet] = useState('ttt');
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -36,9 +43,38 @@ export default function Area51Page() {
     loadUser();
     loadMessages();
     checkIfCheckedIn();
+    checkKasware();
+    loadZkWalletBalance();
     const interval = setInterval(loadMessages, 3000);
     return () => clearInterval(interval);
   }, []);
+
+  const checkKasware = async () => {
+    if (typeof window.kasware !== 'undefined') {
+      try {
+        const accounts = await window.kasware.getAccounts();
+        if (accounts.length > 0) {
+          setKaswareWallet({ connected: true, address: accounts[0] });
+        }
+      } catch (err) {
+        console.log('Kasware not connected');
+      }
+    }
+  };
+
+  const loadZkWalletBalance = async () => {
+    try {
+      const currentUser = await base44.auth.me();
+      if (currentUser?.created_wallet_address) {
+        const response = await base44.functions.invoke('getKaspaBalance', { address: currentUser.created_wallet_address });
+        if (response.data?.balance) {
+          setZkWalletBalance(response.data.balance);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load balance:', err);
+    }
+  };
 
   const checkIfCheckedIn = async () => {
     try {
@@ -73,8 +109,24 @@ export default function Area51Page() {
 
   const loadMessages = async () => {
     try {
-      const msgs = await base44.entities.Area51Message.list("-created_date", 50);
-      setMessages(msgs.reverse());
+      let currentUser = null;
+      try {
+        currentUser = await base44.auth.me();
+      } catch (err) {
+        console.log('User not logged in');
+      }
+
+      const allMsgs = await base44.entities.Area51Message.list("-created_date", 50);
+      
+      // Filter: show public messages OR user's own messages OR system messages
+      const visibleMessages = allMsgs.filter(msg => {
+        if (msg.is_public === true) return true;
+        if (msg.message_type === 'system' || msg.message_type === 'ai') return true;
+        if (currentUser && msg.sender_email === currentUser.email) return true;
+        return false;
+      });
+      
+      setMessages(visibleMessages.reverse());
       setLoading(false);
     } catch (error) {
       console.error("Failed to load messages:", error);
@@ -194,15 +246,6 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
     e.preventDefault();
     if (!newMessage.trim() || !user) return;
 
-    // Check if user is Ayomuiz and needs DAG verification
-    const isAyomuiz = user.created_wallet_address?.toLowerCase() === 'kaspa:qpv8vpyap7fgp4k3vgs5rh66f6wa2upy70fu023s4gyjzhq8ux9nzd37c7ygt'.toLowerCase();
-    
-    if (isAyomuiz && !isDagVerified) {
-      // Show payment modal for DAG CIRCULATE PROTOCOL
-      setShowPaymentModal(true);
-      return;
-    }
-
     const messageContent = newMessage.trim();
     setSending(true);
     try {
@@ -212,23 +255,11 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
         sender_email: user.email,
         sender_wallet: user.created_wallet_address,
         message_type: "text",
-        is_ai: false
+        is_ai: false,
+        is_public: false
       });
       setNewMessage("");
       loadMessages();
-
-      // Trigger AI for admins or verified Ayomuiz
-      const isAdmin = user.role === 'admin';
-      if (isAdmin || (isAyomuiz && isDagVerified)) {
-        setTimeout(() => triggerAI(messageContent), 2000);
-      } else {
-        // Trigger AI 30% of the time or if message contains keywords
-        const keywords = ['alien', 'ufo', 'government', 'conspiracy', 'area51', 'secret', 'truth', 'cover'];
-        const hasKeyword = keywords.some(kw => messageContent.toLowerCase().includes(kw));
-        if (hasKeyword || Math.random() < 0.3) {
-          setTimeout(() => triggerAI(messageContent), 2000);
-        }
-      }
     } catch (error) {
       console.error("Failed to send message:", error);
     } finally {
@@ -236,58 +267,111 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
     }
   };
 
-  const handleDagPayment = async () => {
-    if (!user?.created_wallet_address) {
-      toast.error('Wallet not connected');
+  const handleUnlockMessage = (message) => {
+    setMessageToPublish(message);
+    setShowPaymentModal(true);
+  };
+
+  const handleSelfPayment = async () => {
+    if (!kaswareWallet.connected) {
+      toast.error('Please connect Kasware wallet');
+      return;
+    }
+
+    setPublishingMessageId(messageToPublish.id);
+
+    try {
+      const amountSompi = 100000000; // 1 KAS
+      const txId = await window.kasware.sendKaspa(kaswareWallet.address, amountSompi);
+
+      await base44.entities.Area51Message.update(messageToPublish.id, {
+        is_public: true,
+        made_public_at: new Date().toISOString(),
+        self_pay_tx_hash: txId
+      });
+
+      setShowPaymentModal(false);
+      setMessageToPublish(null);
+      await loadMessages();
+
+      toast.success('Message published!');
+    } catch (err) {
+      console.error('Failed to publish message:', err);
+      toast.error('Failed to publish: ' + err.message);
+    } finally {
+      setPublishingMessageId(null);
+    }
+  };
+
+  const handleZkVerification = async () => {
+    const verifyAddress = selectedZkWallet === 'ttt' ? user?.created_wallet_address : kaswareWallet.address;
+    
+    if (!verifyAddress) {
+      toast.error(selectedZkWallet === 'ttt' ? 'Please login first' : 'Please connect Kasware');
       return;
     }
 
     const timestamp = Date.now();
-    setVerificationTimestamp(timestamp);
-    setIsVerifying(true);
+    setZkTimestamp(timestamp);
+    setZkVerifying(true);
 
     try {
+      const targetAmount = parseFloat(zkAmount);
       let attempts = 0;
       const maxAttempts = 200;
 
       const checkTransaction = async () => {
         attempts++;
+        console.log(`Attempt ${attempts}/${maxAttempts} - Checking for transaction...`);
 
         try {
           const response = await base44.functions.invoke('verifyKaspaSelfTransaction', {
-            address: user.created_wallet_address,
-            expectedAmount: 1,
+            address: verifyAddress,
+            expectedAmount: targetAmount,
             timestamp: timestamp
           });
 
-          if (response.data?.verified) {
-            setIsVerifying(false);
+          if (response.data?.verified && response.data?.transaction) {
+            console.log('✅ Transaction verified!', response.data.transaction);
+            setZkVerifying(false);
+            setShowZkVerification(false);
+            
+            await base44.entities.Area51Message.update(messageToPublish.id, {
+              is_public: true,
+              made_public_at: new Date().toISOString(),
+              self_pay_tx_hash: response.data.transaction.id
+            });
+
             setShowPaymentModal(false);
-            setIsDagVerified(true);
-            toast.success('✅ DAG CIRCULATE PROTOCOL verified!');
-            return;
+            setMessageToPublish(null);
+            await loadMessages();
+
+            toast.success('Message published!');
+            return true;
           }
 
           if (attempts < maxAttempts) {
             setTimeout(checkTransaction, 3000);
           } else {
-            setIsVerifying(false);
-            toast.error('Verification timeout. Please try again.');
+            setZkVerifying(false);
+            toast.error('Verification timeout. Transaction not detected within 10 minutes.');
           }
         } catch (err) {
+          console.error('❌ Verification error:', err);
           if (attempts < maxAttempts) {
             setTimeout(checkTransaction, 3000);
           } else {
-            setIsVerifying(false);
-            toast.error('Verification failed. Please try again.');
+            setZkVerifying(false);
+            toast.error('Failed to verify transaction. Please try again or use Kasware option.');
           }
         }
       };
 
       checkTransaction();
     } catch (err) {
-      setIsVerifying(false);
-      toast.error('Verification failed to start.');
+      console.error('ZK verification setup error:', err);
+      setZkVerifying(false);
+      toast.error('Verification failed to start. Please try again.');
     }
   };
 
@@ -383,6 +467,7 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
             {messages.map((msg) => {
               const isMe = user && msg.sender_email === user.email;
               const isAI = msg.is_ai === true;
+              const isSystem = msg.message_type === 'system';
               return (
                 <motion.div
                   key={msg.id}
@@ -418,6 +503,18 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
                           AI AGENT
                         </span>
                       )}
+                      {!msg.is_public && isMe && !isAI && !isSystem && (
+                        <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-[10px] px-1.5 py-0">
+                          <Lock className="w-2.5 h-2.5 mr-1" />
+                          PRIVATE
+                        </Badge>
+                      )}
+                      {msg.is_public && !isAI && !isSystem && (
+                        <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[10px] px-1.5 py-0">
+                          <LockOpen className="w-2.5 h-2.5 mr-1" />
+                          PUBLIC
+                        </Badge>
+                      )}
                       {msg.sender_wallet && !isAI && (
                         <div className="flex items-center gap-1 bg-white/5 rounded px-1.5 py-0.5 border border-white/5">
                           <span className="text-[10px] font-mono text-white/40">
@@ -440,14 +537,34 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
                       </span>
                     </div>
                     
-                    <div className={`px-4 py-2.5 rounded-2xl backdrop-blur-sm ${
-                      isAI
-                        ? "bg-gradient-to-br from-green-600/30 to-cyan-600/30 border border-green-500/30 text-white shadow-lg shadow-green-900/20 rounded-tl-none"
-                        : isMe 
-                        ? "bg-gradient-to-br from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-900/20 rounded-tr-none" 
-                        : "bg-white/10 border border-white/10 text-white/90 rounded-tl-none hover:bg-white/15 transition-colors"
-                    }`}>
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.message}</p>
+                    <div className="flex items-start gap-2">
+                      <div className={`px-4 py-2.5 rounded-2xl backdrop-blur-sm ${
+                        isAI
+                          ? "bg-gradient-to-br from-green-600/30 to-cyan-600/30 border border-green-500/30 text-white shadow-lg shadow-green-900/20 rounded-tl-none"
+                          : isMe 
+                          ? "bg-gradient-to-br from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-900/20 rounded-tr-none" 
+                          : "bg-white/10 border border-white/10 text-white/90 rounded-tl-none hover:bg-white/15 transition-colors"
+                      }`}>
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.message}</p>
+                      </div>
+                      {!msg.is_public && isMe && !isAI && !isSystem && (
+                        <Button
+                          onClick={() => handleUnlockMessage(msg)}
+                          disabled={publishingMessageId === msg.id}
+                          variant="ghost"
+                          size="sm"
+                          className="text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10 h-7 px-2 text-xs mt-1"
+                        >
+                          {publishingMessageId === msg.id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <>
+                              <Lock className="w-3 h-3 mr-1" />
+                              Unlock
+                            </>
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </motion.div>
@@ -510,80 +627,277 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
         </div>
       </div>
 
-      {/* DAG CIRCULATE PROTOCOL Payment Modal */}
-      {showPaymentModal && (
-        <>
+      {/* Payment Modal */}
+      <AnimatePresence>
+        {showPaymentModal && messageToPublish && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            onClick={() => !isVerifying && setShowPaymentModal(false)}
+            exit={{ opacity: 0 }}
+            onClick={() => {
+              setShowPaymentModal(false);
+              setMessageToPublish(null);
+            }}
             className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
-          />
-          
-          <motion.div
-            initial={{ scale: 0.9, y: 20 }}
-            animate={{ scale: 1, y: 0 }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black border border-green-500/30 rounded-2xl w-full max-w-md p-6 z-[1000]"
           >
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-                <Shield className="w-5 h-5 text-green-400" />
-              </div>
-              <div>
-                <h3 className="text-white font-bold text-xl">DAG CIRCULATE PROTOCOL</h3>
-                <p className="text-white/60 text-sm">Unlock Agent X Access</p>
-              </div>
-            </div>
-
-            <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 mb-6">
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
-                <div className="text-xs text-white/80">
-                  <p className="mb-2">Send 1 KAS to yourself in Kaspium to unlock Agent X responses.</p>
-                  <p className="text-white/60">This verifies your access to classified communications.</p>
-                </div>
-              </div>
-            </div>
-
-            {user?.created_wallet_address && (
-              <div className="bg-white/5 border border-white/10 rounded-lg p-3 mb-4">
-                <p className="text-white/40 text-xs mb-1">Your Wallet</p>
-                <p className="text-white text-xs font-mono break-all">
-                  {user.created_wallet_address}
-                </p>
-              </div>
-            )}
-
-            <Button
-              onClick={handleDagPayment}
-              disabled={isVerifying}
-              className="w-full bg-gradient-to-r from-green-500 to-cyan-500 hover:from-green-600 hover:to-cyan-600 h-12 text-black font-bold"
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-black border border-white/20 rounded-xl w-full max-w-md p-6"
             >
-              {isVerifying ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Waiting for Transaction...
-                </>
-              ) : (
-                <>
-                  <Shield className="w-5 h-5 mr-2" />
-                  Pay 1 KAS & Unlock
-                </>
-              )}
-            </Button>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-lg flex items-center justify-center">
+                    <Lock className="w-5 h-5 text-yellow-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold text-lg">Publish Message</h3>
+                    <p className="text-white/60 text-sm">Pay 1 KAS to unlock</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => {
+                    setShowPaymentModal(false);
+                    setMessageToPublish(null);
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="text-white/60 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
 
-            {!isVerifying && (
-              <Button
-                onClick={() => setShowPaymentModal(false)}
-                variant="ghost"
-                className="w-full mt-3 text-white/60"
-              >
-                Cancel
-              </Button>
-            )}
+              <div className="space-y-4">
+                <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+                  <div className="text-xs text-white/60 mb-1">Your Wallet</div>
+                  <div className="text-white font-mono text-sm break-all">
+                    {kaswareWallet.address}
+                  </div>
+                </div>
+
+                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+                    <div className="text-xs text-white/80">
+                      <p className="mb-2">You will pay <span className="font-bold text-yellow-400">1 KAS</span> to yourself.</p>
+                      <p className="text-white/60">This unlocks your message for all users to see.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handleSelfPayment}
+                  disabled={publishingMessageId === messageToPublish.id}
+                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 h-12 text-black font-bold"
+                >
+                  {publishingMessageId === messageToPublish.id ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Publishing...
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-5 h-5 mr-2" />
+                      Pay 1 KAS & Publish
+                    </>
+                  )}
+                </Button>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-white/10"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="bg-black px-2 text-white/40">or</span>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => {
+                    setShowPaymentModal(false);
+                    setShowZkVerification(true);
+                  }}
+                  className="w-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/30 text-cyan-400 h-12 font-semibold"
+                >
+                  <Shield className="w-5 h-5 mr-2" />
+                  ZK (iOS)
+                </Button>
+              </div>
+            </motion.div>
           </motion.div>
-        </>
-      )}
+        )}
+      </AnimatePresence>
+
+      {/* ZK Verification Modal */}
+      <AnimatePresence>
+        {showZkVerification && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => {
+              if (!zkVerifying) {
+                setShowZkVerification(false);
+                setZkAmount('1');
+              }
+            }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-black border border-cyan-500/30 rounded-xl w-full max-w-md p-6"
+            >
+              <h3 className="text-2xl font-bold text-white mb-2">ZK Verification</h3>
+              <p className="text-white/60 text-sm mb-6">
+                Send KAS to yourself to verify this message
+              </p>
+
+              {!zkVerifying ? (
+                <div className="space-y-4">
+                  {zkWalletBalance !== null && selectedZkWallet === 'ttt' && (
+                    <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                      <p className="text-white/40 text-xs mb-1">Current Balance</p>
+                      <p className="text-white text-lg font-bold">{zkWalletBalance.toFixed(2)} KAS</p>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <p className="text-white/60 text-sm">Select wallet to send from:</p>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => setSelectedZkWallet('ttt')}
+                        className={`flex-1 h-auto py-3 ${selectedZkWallet === 'ttt' ? 'bg-cyan-500 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+                      >
+                        <div className="text-left">
+                          <p className="text-xs font-semibold mb-1">TTT Wallet</p>
+                          <p className="text-[10px] font-mono opacity-70">
+                            {user?.created_wallet_address?.substring(0, 10)}...
+                          </p>
+                        </div>
+                      </Button>
+                      <Button
+                        onClick={() => setSelectedZkWallet('kasware')}
+                        className={`flex-1 h-auto py-3 ${selectedZkWallet === 'kasware' ? 'bg-cyan-500 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+                      >
+                        <div className="text-left">
+                          <p className="text-xs font-semibold mb-1">Kasware L1</p>
+                          <p className="text-[10px] font-mono opacity-70">
+                            {kaswareWallet.address?.substring(0, 10)}...
+                          </p>
+                        </div>
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                    <p className="text-white/40 text-xs mb-1">Selected Address</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-white text-sm font-mono break-all">
+                        {selectedZkWallet === 'ttt' 
+                          ? `${user?.created_wallet_address?.substring(0, 12)}...${user?.created_wallet_address?.slice(-8)}`
+                          : `${kaswareWallet.address?.substring(0, 12)}...${kaswareWallet.address?.slice(-8)}`
+                        }
+                      </p>
+                      <Button
+                        onClick={() => {
+                          const address = selectedZkWallet === 'ttt' ? user?.created_wallet_address : kaswareWallet.address;
+                          navigator.clipboard.writeText(address || '');
+                          toast.success('✓ Address copied');
+                        }}
+                        size="sm"
+                        className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 text-xs h-7"
+                      >
+                        Copy
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-white/60 text-sm mb-2 block">
+                      Amount to send yourself (KAS)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      value={zkAmount}
+                      onChange={(e) => setZkAmount(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white"
+                    />
+                  </div>
+
+                  <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-3">
+                    <p className="text-cyan-400 text-xs font-semibold mb-2">Instructions:</p>
+                    <ol className="text-white/60 text-xs space-y-1 list-decimal list-inside">
+                      <li>Select which wallet to send from</li>
+                      <li>Copy your selected wallet address above</li>
+                      <li>Enter the amount (default: 1 KAS)</li>
+                      <li>Click "Start Verification"</li>
+                      <li>Open {selectedZkWallet === 'ttt' ? 'Kaspium' : 'Kasware'} and send that amount to your own address</li>
+                      <li>Wait for automatic verification</li>
+                    </ol>
+                  </div>
+
+                  <Button
+                    onClick={handleZkVerification}
+                    disabled={!zkAmount || parseFloat(zkAmount) <= 0}
+                    className="w-full bg-cyan-500 hover:bg-cyan-600 text-white h-12 font-semibold disabled:opacity-50"
+                  >
+                    Start Verification
+                  </Button>
+
+                  <Button
+                    onClick={() => {
+                      setShowZkVerification(false);
+                      setShowPaymentModal(true);
+                      setZkAmount('1');
+                    }}
+                    variant="outline"
+                    className="w-full border-white/10 text-white/60"
+                  >
+                    Back
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4" />
+                  <p className="text-cyan-400 font-semibold mb-2">Waiting for Transaction...</p>
+                  <p className="text-white/60 text-sm mb-4">
+                    Send {zkAmount} KAS to yourself in {selectedZkWallet === 'ttt' ? 'Kaspium' : 'Kasware'}
+                  </p>
+                  <div className="bg-white/5 rounded-lg p-3 mb-4">
+                    <p className="text-white/40 text-xs mb-1">Your Address</p>
+                    <p className="text-white text-xs font-mono break-all">
+                      {selectedZkWallet === 'ttt' ? user?.created_wallet_address : kaswareWallet.address}
+                    </p>
+                  </div>
+                  <p className="text-white/40 text-xs">
+                    Verification will happen automatically when the transaction is detected
+                  </p>
+                  <Button
+                    onClick={() => {
+                      setZkVerifying(false);
+                      setShowZkVerification(false);
+                      setShowPaymentModal(true);
+                      setZkAmount('1');
+                    }}
+                    variant="outline"
+                    className="w-full border-white/10 text-white/60 mt-4"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
