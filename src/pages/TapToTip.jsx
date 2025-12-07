@@ -195,12 +195,34 @@ export default function TapToTipPage() {
         });
       }
       
+      // Hard-code kehindeayo2 user
+      const kehindeayo2Exists = allUsers.some(u => 
+        u.username?.toLowerCase() === 'kehindeayo2' && 
+        u.created_wallet_address?.toLowerCase().endsWith('3nuh')
+      );
+      if (!kehindeayo2Exists) {
+        allUsers.push({
+          id: 'kehindeayo2_hardcoded',
+          username: 'kehindeayo2',
+          email: 'kehindeayo2@ttt.com',
+          created_wallet_address: 'kaspa:qpjf44x584fw7getwqjfnp0pvy7lwkr8l0pxatxc6jh7elwpvdmhu5h9p3nuh',
+          agent_zk_id: null,
+          role: 'user',
+          created_date: new Date().toISOString()
+        });
+      }
+      
       const usersWithWallets = allUsers.filter(u => {
         // Must have a wallet
         if (!u.created_wallet_address && !u.agent_zk_id) return false;
 
         // Exclude specific olatomiwa wallet
         if (u.username?.toLowerCase() === 'olatomiwa' && u.created_wallet_address?.toLowerCase().endsWith('x82')) {
+          return false;
+        }
+
+        // Exclude kehindeayo with 6ppj (now using olatomiwa2)
+        if (u.username?.toLowerCase() === 'kehindeayo' && u.created_wallet_address?.toLowerCase().endsWith('6ppj')) {
           return false;
         }
 
