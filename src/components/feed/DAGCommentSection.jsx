@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Send, Heart, Reply, Trash2, DollarSign, Upload, X, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function DAGCommentSection({ postId, onClose }) {
   const [comments, setComments] = useState([]);
@@ -16,6 +17,9 @@ export default function DAGCommentSection({ postId, onClose }) {
   const [kaswareWallet, setKaswareWallet] = useState({ connected: false, address: null });
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [showTipModal, setShowTipModal] = useState(null);
+  const [tipAmount, setTipAmount] = useState("");
+  const [isSendingTip, setIsSendingTip] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -114,6 +118,10 @@ export default function DAGCommentSection({ postId, onClose }) {
 
       if (replyTo) {
         commentData.parent_comment_id = replyTo.id;
+        
+        // Update parent comment reply count
+        const updatedReplies = (replyTo.replies_count || 0) + 1;
+        await base44.entities.DAGComment.update(replyTo.id, { replies_count: updatedReplies });
       }
 
       if (uploadedFiles.length > 0) {
@@ -123,12 +131,9 @@ export default function DAGCommentSection({ postId, onClose }) {
       await base44.entities.DAGComment.create(commentData);
 
       // Update comment count on post
-      const post = await base44.entities.DAGPost.filter({ id: postId });
-      if (post.length > 0) {
-        await base44.entities.DAGPost.update(postId, {
-          comments_count: (post[0].comments_count || 0) + 1
-        });
-      }
+      await base44.entities.DAGPost.update(postId, {
+        comments_count: comments.length + 1
+      });
 
       setNewComment("");
       setReplyTo(null);
@@ -138,6 +143,46 @@ export default function DAGCommentSection({ postId, onClose }) {
       console.error('Failed to comment:', err);
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const handleTipComment = async () => {
+    if (!kaswareWallet.connected) {
+      alert('Please connect Kasware wallet');
+      return;
+    }
+
+    if (!tipAmount || Number(tipAmount) <= 0) {
+      alert('Enter valid tip amount');
+      return;
+    }
+
+    setIsSendingTip(true);
+    try {
+      const amountSompi = Math.floor(Number(tipAmount) * 100000000);
+      const txId = await window.kasware.sendKaspa(showTipModal.author_wallet_address, amountSompi);
+
+      await base44.entities.DAGTip.create({
+        from_address: kaswareWallet.address,
+        to_address: showTipModal.author_wallet_address,
+        amount: Number(tipAmount),
+        tx_hash: txId,
+        comment_id: showTipModal.id,
+        from_username: user?.username || 'Anonymous',
+        to_username: showTipModal.author_name
+      });
+
+      await base44.entities.DAGComment.update(showTipModal.id, {
+        tips_received: (showTipModal.tips_received || 0) + Number(tipAmount)
+      });
+
+      setShowTipModal(null);
+      setTipAmount("");
+      await loadData();
+    } catch (err) {
+      alert('Tip failed: ' + err.message);
+    } finally {
+      setIsSendingTip(false);
     }
   };
 
@@ -233,15 +278,18 @@ export default function DAGCommentSection({ postId, onClose }) {
               className="text-white/40 hover:text-white h-auto p-0"
             >
               <Reply className="w-4 h-4 mr-1" />
-              <span className="text-xs">Reply</span>
+              <span className="text-xs">{comment.replies_count || 0}</span>
             </Button>
 
-            {comment.tips_received > 0 && (
-              <div className="text-xs text-yellow-400 flex items-center gap-1">
-                <DollarSign className="w-3 h-3" />
-                {comment.tips_received.toFixed(2)} KAS
-              </div>
-            )}
+            <Button
+              onClick={() => setShowTipModal(comment)}
+              variant="ghost"
+              size="sm"
+              className="text-white/40 hover:text-yellow-400 h-auto p-0"
+            >
+              <DollarSign className="w-4 h-4 mr-1" />
+              <span className="text-xs">{comment.tips_received ? comment.tips_received.toFixed(2) : '0.00'} KAS</span>
+            </Button>
           </div>
         </div>
 
@@ -253,8 +301,86 @@ export default function DAGCommentSection({ postId, onClose }) {
   const mainComments = getMainComments();
 
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-black border border-white/20 rounded-xl w-full max-w-2xl max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+    <>
+      {/* Tip Comment Modal */}
+      <AnimatePresence>
+        {showTipModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowTipModal(null)}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-black border border-white/20 rounded-xl w-full max-w-md p-6"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-white font-bold text-lg">Tip {showTipModal.author_name}</h3>
+                  <p className="text-white/60 text-sm">Send KAS tip</p>
+                </div>
+                <Button onClick={() => setShowTipModal(null)} variant="ghost" size="sm">
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs text-white/60 mb-2 block">Amount (KAS)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={tipAmount}
+                    onChange={(e) => setTipAmount(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white text-lg"
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  {[0.1, 0.5, 1, 5].map(amount => (
+                    <Button
+                      key={amount}
+                      onClick={() => setTipAmount(amount.toString())}
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 bg-white/5 border-white/10 text-white hover:bg-white/10"
+                    >
+                      {amount}
+                    </Button>
+                  ))}
+                </div>
+
+                <Button
+                  onClick={handleTipComment}
+                  disabled={isSendingTip || !tipAmount || Number(tipAmount) <= 0}
+                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 h-12 text-black font-bold"
+                >
+                  {isSendingTip ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <DollarSign className="w-5 h-5 mr-2" />
+                      Send Tip
+                    </>
+                  )}
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4" onClick={onClose}>
+        <div className="bg-black border border-white/20 rounded-xl w-full max-w-2xl max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div className="p-4 border-b border-white/20 flex items-center justify-between">
           <h3 className="text-white font-bold">Comments ({comments.length})</h3>
           <Button onClick={onClose} variant="ghost" size="sm" className="text-white/60 hover:text-white">
@@ -338,5 +464,6 @@ export default function DAGCommentSection({ postId, onClose }) {
         </div>
       </div>
     </div>
+    </>
   );
 }
