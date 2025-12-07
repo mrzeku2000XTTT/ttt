@@ -415,7 +415,7 @@ export default function TetrisBattleGame({ match, user, ranking, onGameEnd, onEx
 
   return (
     <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-      <div className="bg-black border border-cyan-500/30 rounded-xl p-4 max-w-4xl w-full">
+      <div onClick={(e) => e.stopPropagation()} className="bg-black border border-cyan-500/30 rounded-xl p-4 max-w-4xl w-full">
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
