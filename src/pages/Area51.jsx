@@ -290,11 +290,18 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
         self_pay_tx_hash: txId
       });
 
+      // Update local state immediately
+      setMessages(messages.map(m => 
+        m.id === messageToPublish.id ? { ...m, is_public: true } : m
+      ));
+
       setShowPaymentModal(false);
       setMessageToPublish(null);
-      await loadMessages();
+      
+      // Reload to get fresh data
+      setTimeout(() => loadMessages(), 500);
 
-      toast.success('Message published!');
+      toast.success('✅ Message published to all users!');
     } catch (err) {
       console.error('Failed to publish message:', err);
       toast.error('Failed to publish: ' + err.message);
@@ -336,17 +343,25 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
             setZkVerifying(false);
             setShowZkVerification(false);
             
+            // Update the message to be public
             await base44.entities.Area51Message.update(messageToPublish.id, {
               is_public: true,
               made_public_at: new Date().toISOString(),
               self_pay_tx_hash: response.data.transaction.id
             });
 
+            // Update local state immediately
+            setMessages(messages.map(m => 
+              m.id === messageToPublish.id ? { ...m, is_public: true } : m
+            ));
+
             setShowPaymentModal(false);
             setMessageToPublish(null);
-            await loadMessages();
+            
+            // Reload to get fresh data
+            setTimeout(() => loadMessages(), 500);
 
-            toast.success('Message published!');
+            toast.success('✅ Message published to all users!');
             return true;
           }
 
@@ -866,32 +881,50 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
                 </div>
               ) : (
                 <div className="text-center py-6">
-                  <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4" />
-                  <p className="text-cyan-400 font-semibold mb-2">Waiting for Transaction...</p>
-                  <p className="text-white/60 text-sm mb-4">
-                    Send {zkAmount} KAS to yourself in {selectedZkWallet === 'ttt' ? 'Kaspium' : 'Kasware'}
-                  </p>
-                  <div className="bg-white/5 rounded-lg p-3 mb-4">
-                    <p className="text-white/40 text-xs mb-1">Your Address</p>
-                    <p className="text-white text-xs font-mono break-all">
+                <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-cyan-400 font-semibold mb-2">🔍 Waiting for Transaction...</p>
+                <p className="text-white/60 text-sm mb-4">
+                  Send {zkAmount} KAS to yourself in {selectedZkWallet === 'ttt' ? 'Kaspium' : 'Kasware'}
+                </p>
+                <div className="bg-white/5 rounded-lg p-3 mb-4">
+                  <p className="text-white/40 text-xs mb-1">Send to this address:</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-white text-xs font-mono break-all flex-1">
                       {selectedZkWallet === 'ttt' ? user?.created_wallet_address : kaswareWallet.address}
                     </p>
+                    <Button
+                      onClick={() => {
+                        const address = selectedZkWallet === 'ttt' ? user?.created_wallet_address : kaswareWallet.address;
+                        navigator.clipboard.writeText(address || '');
+                        toast.success('Address copied!');
+                      }}
+                      size="sm"
+                      className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 text-xs h-7 px-2"
+                    >
+                      Copy
+                    </Button>
                   </div>
-                  <p className="text-white/40 text-xs">
-                    Verification will happen automatically when the transaction is detected
+                </div>
+                <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-3 mb-4">
+                  <p className="text-cyan-400 text-xs">
+                    💡 Checking blockchain every 3 seconds...
                   </p>
-                  <Button
-                    onClick={() => {
-                      setZkVerifying(false);
-                      setShowZkVerification(false);
-                      setShowPaymentModal(true);
-                      setZkAmount('1');
-                    }}
-                    variant="outline"
-                    className="w-full border-white/10 text-white/60 mt-4"
-                  >
-                    Cancel
-                  </Button>
+                  <p className="text-white/40 text-[10px] mt-1">
+                    Make sure you send exactly {zkAmount} KAS
+                  </p>
+                </div>
+                <Button
+                  onClick={() => {
+                    setZkVerifying(false);
+                    setShowZkVerification(false);
+                    setShowPaymentModal(true);
+                    setZkAmount('1');
+                  }}
+                  variant="outline"
+                  className="w-full border-white/10 text-white/60"
+                >
+                  Cancel Verification
+                </Button>
                 </div>
               )}
             </motion.div>
