@@ -157,13 +157,32 @@ export default function TetrisGame({ onClose }) {
     const handleKeyPress = (e) => {
       if (gameOver) return;
       
-      switch(e.key) {
-        case 'ArrowLeft': moveLeft(); break;
-        case 'ArrowRight': moveRight(); break;
-        case 'ArrowDown': moveDown(); break;
-        case 'ArrowUp': rotate(); break;
-        case ' ': e.preventDefault(); hardDrop(); break;
-        case 'p': setIsPaused(prev => !prev); break;
+      const key = e.key.toLowerCase();
+      
+      switch(key) {
+        case 'arrowleft':
+        case 'a':
+          moveLeft();
+          break;
+        case 'arrowright':
+        case 'd':
+          moveRight();
+          break;
+        case 'arrowdown':
+        case 's':
+          moveDown();
+          break;
+        case 'arrowup':
+        case 'w':
+          rotate();
+          break;
+        case ' ':
+          e.preventDefault();
+          hardDrop();
+          break;
+        case 'p':
+          setIsPaused(prev => !prev);
+          break;
       }
     };
 
@@ -309,9 +328,9 @@ export default function TetrisGame({ onClose }) {
             </Button>
 
             <div className="bg-black/40 border border-white/10 rounded-lg p-3 text-xs text-white/60 space-y-1">
-              <p>← → : Move</p>
-              <p>↑ : Rotate</p>
-              <p>↓ : Soft Drop</p>
+              <p>← → / A D : Move</p>
+              <p>↑ / W : Rotate</p>
+              <p>↓ / S : Soft Drop</p>
               <p>Space: Hard Drop</p>
               <p>P: Pause</p>
             </div>
