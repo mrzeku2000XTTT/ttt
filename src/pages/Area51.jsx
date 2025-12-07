@@ -25,11 +25,12 @@ export default function Area51Page() {
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => {
+    if (showPaymentModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
       document.body.style.overflow = 'auto';
-    };
-  }, []);
+    }
+  }, [showPaymentModal]);
 
   useEffect(() => {
     loadUser();
@@ -56,8 +57,10 @@ export default function Area51Page() {
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (aiThinking || sending) {
+      scrollToBottom();
+    }
+  }, [messages, aiThinking, sending]);
 
   const loadUser = async () => {
     try {
