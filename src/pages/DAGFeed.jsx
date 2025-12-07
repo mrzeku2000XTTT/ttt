@@ -82,18 +82,26 @@ export default function DAGFeedPage() {
         setUser(null);
       }
 
+      // Check current wallet for non-logged-in users
+      let currentWalletAddress = null;
+      if (typeof window.kasware !== 'undefined') {
+        try {
+          const accounts = await window.kasware.getAccounts();
+          if (accounts.length > 0) {
+            currentWalletAddress = accounts[0];
+          }
+        } catch (err) {
+          console.log('Kasware not connected');
+        }
+      }
+
       const allPosts = await base44.entities.DAGPost.list('-created_date', 200);
 
-      // Client-side filter: show public posts OR user's own posts (by email or wallet)
+      // Client-side filter: show public posts OR user's own posts
       const visiblePosts = allPosts.filter(post => {
         if (post.is_public === true) return true;
-
-        // Check if user owns this post (by email)
         if (currentUser && post.created_by === currentUser.email) return true;
-
-        // Check if user owns this post (by wallet address when not logged in)
-        if (kaswareWallet.connected && post.author_wallet_address === kaswareWallet.address) return true;
-
+        if (currentWalletAddress && post.author_wallet_address === currentWalletAddress) return true;
         return false;
       });
 
