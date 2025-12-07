@@ -364,11 +364,6 @@ export default function DAGFeedPage() {
   };
 
   const handleLike = async (post) => {
-    if (!user) {
-      setError('Please login to like posts');
-      return;
-    }
-
     const newLikes = (post.likes || 0) + 1;
     setPosts(posts.map(p => p.id === post.id ? { ...p, likes: newLikes } : p));
 
