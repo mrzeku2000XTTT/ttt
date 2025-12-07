@@ -1705,7 +1705,15 @@ export default function FeedPage() {
   };
 
   const getMainPosts = () => {
-    let filtered = posts.filter(p => !p.parent_post_id);
+    let filtered = posts.filter(p => {
+      if (p.parent_post_id) return false;
+      
+      // Show public posts OR user's own posts
+      const isPublic = p.is_public === true || p.is_public === undefined || p.is_public === null;
+      const isOwnPost = p.created_by === user?.email;
+      
+      return isPublic || isOwnPost;
+    });
     
     if (selectedTicker) {
       // Use cached ticker posts for instant results
