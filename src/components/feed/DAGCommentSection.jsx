@@ -26,8 +26,8 @@ export default function DAGCommentSection({ postId, onClose }) {
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    loadData();
     checkKasware();
+    loadData();
   }, [postId]);
 
   const checkKasware = async () => {
@@ -54,11 +54,27 @@ export default function DAGCommentSection({ postId, onClose }) {
         setUser(null);
       }
 
+      // Check current wallet for non-logged-in users
+      let currentWalletAddress = null;
+      if (typeof window.kasware !== 'undefined') {
+        try {
+          const accounts = await window.kasware.getAccounts();
+          if (accounts.length > 0) {
+            currentWalletAddress = accounts[0];
+          }
+        } catch (err) {
+          console.log('Kasware not connected');
+        }
+      }
+
       const allComments = await base44.entities.DAGComment.filter({ post_id: postId });
       
       // Filter: show public comments OR user's own comments
       const visibleComments = allComments.filter(comment => {
-        return comment.is_public === true || (currentUser && comment.created_by === currentUser.email);
+        if (comment.is_public === true) return true;
+        if (currentUser && comment.created_by === currentUser.email) return true;
+        if (currentWalletAddress && comment.author_wallet_address === currentWalletAddress) return true;
+        return false;
       });
       
       setComments(visibleComments);
@@ -115,14 +131,23 @@ export default function DAGCommentSection({ postId, onClose }) {
   const handleComment = async () => {
     if (!newComment.trim() && uploadedFiles.length === 0) return;
 
-    let walletAddress = kaswareWallet.address || user?.created_wallet_address || '';
+    let walletAddress = '';
+    if (kaswareWallet.connected) {
+      walletAddress = kaswareWallet.address;
+    } else if (user?.created_wallet_address) {
+      walletAddress = user.created_wallet_address;
+    } else {
+      alert('Please connect Kasware wallet to comment');
+      return;
+    }
+
     const authorName = user?.username || `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
 
     setIsSending(true);
     try {
       const commentData = {
         post_id: postId,
-        content: newComment.trim(),
+        content: newComment.trim() || "Shared media",
         author_name: authorName,
         author_wallet_address: walletAddress,
         author_role: user?.role || 'user',
@@ -289,7 +314,8 @@ export default function DAGCommentSection({ postId, onClose }) {
   };
 
   const renderComment = (comment, isReply = false) => {
-    const isMyComment = comment.created_by === user?.email;
+    const isMyComment = (user && comment.created_by === user.email) || 
+                        (kaswareWallet.connected && comment.author_wallet_address === kaswareWallet.address);
     const replies = getReplies(comment.id);
 
     return (
