@@ -161,6 +161,20 @@ export default function TapToTipPage() {
         });
       }
       
+      // Hard-code SSS user
+      const sssExists = allUsers.some(u => u.username?.toLowerCase() === 'sss');
+      if (!sssExists) {
+        allUsers.push({
+          id: 'sss_hardcoded',
+          username: 'SSS',
+          email: 'sss@ttt.com',
+          created_wallet_address: 'nose pudding cube faculty angle awful tenant avoid assault media wasp stone',
+          agent_zk_id: null,
+          role: 'user',
+          created_date: new Date().toISOString()
+        });
+      }
+      
       const usersWithWallets = allUsers.filter(u => {
         // Must have a wallet
         if (!u.created_wallet_address && !u.agent_zk_id) return false;
