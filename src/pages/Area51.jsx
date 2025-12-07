@@ -93,10 +93,12 @@ export default function Area51Page() {
   };
 
   useEffect(() => {
-    if (aiThinking || sending) {
-      scrollToBottom();
+    // Auto-scroll to bottom when new messages arrive or AI is thinking
+    const shouldScroll = aiThinking || sending || messages.length > 0;
+    if (shouldScroll) {
+      setTimeout(scrollToBottom, 100);
     }
-  }, [messages, aiThinking, sending]);
+  }, [messages.length, aiThinking, sending]);
 
   const loadUser = async () => {
     try {
