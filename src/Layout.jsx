@@ -239,6 +239,7 @@ export default function Layout({ children, currentPageName }) {
     { name: "Receive", icon: Download, path: "Receive" },
     { name: "History", icon: History, path: "History" },
     { name: "TTT Feed", icon: Users, path: "Feed" },
+    { name: "DAG Feed", icon: Network, path: "DAGFeed" },
     { name: "Global History", icon: Clock, path: "GlobalHistory" },
     { name: "Arcade", icon: Gamepad2, path: "Arcade" },
     { name: "Analytics", icon: TrendingUp, path: "Analytics" },
