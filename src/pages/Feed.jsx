@@ -109,6 +109,9 @@ export default function FeedPage() {
   const [userResults, setUserResults] = useState([]);
   const [explainerPost, setExplainerPost] = useState(null);
   const [showNewsModal, setShowNewsModal] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [publishingPost, setPublishingPost] = useState(null);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   const fileInputRef = useRef(null);
   const replyFileInputRef = useRef(null);
@@ -697,7 +700,8 @@ export default function FeedPage() {
         likes: 0,
         comments_count: 0,
         replies_count: 0,
-        tips_received: 0
+        tips_received: 0,
+        is_public: false
       };
 
       if (uploadedFiles.length > 0) {
@@ -810,7 +814,8 @@ export default function FeedPage() {
         likes: 0,
         comments_count: 0,
         replies_count: 0,
-        tips_received: 0
+        tips_received: 0,
+        is_public: false
       };
 
       if (replyFiles.length > 0) {
@@ -1035,6 +1040,87 @@ export default function FeedPage() {
       setTimeout(() => setCopiedPostId(null), 2000);
     } catch (err) {
       console.error('Failed to copy link:', err);
+    }
+  };
+
+  const handleMakePublic = async (post) => {
+    if (!kaswareWallet.connected) {
+      setError('Please connect Kasware wallet to make posts public');
+      await connectKasware();
+      return;
+    }
+
+    setPublishingPost(post);
+    setShowPublishModal(true);
+  };
+
+  const handlePublishPayment = async () => {
+    if (!kaswareWallet.connected || !publishingPost) return;
+
+    setIsPublishing(true);
+    setError(null);
+
+    try {
+      const amountSompi = Math.floor(1 * 100000000); // 1 KAS in sompi
+
+      const txId = await window.kasware.sendKaspa(
+        kaswareWallet.address,
+        amountSompi
+      );
+
+      await base44.entities.Post.update(publishingPost.id, {
+        is_public: true,
+        made_public_at: new Date().toISOString()
+      });
+
+      setPosts(posts.map(p => 
+        p.id === publishingPost.id 
+          ? { ...p, is_public: true, made_public_at: new Date().toISOString() }
+          : p
+      ));
+
+      setShowPublishModal(false);
+      setPublishingPost(null);
+
+      const notification = document.createElement('div');
+      notification.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[1000] max-w-xs';
+      notification.style.top = 'calc(var(--sat, 0px) + 8rem)';
+      notification.innerHTML = `
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0">
+            <span class="text-sm">✓</span>
+          </div>
+          <h3 class="font-bold text-sm">Post Published!</h3>
+        </div>
+        <div class="space-y-1.5 text-xs text-white/60">
+          <div class="flex justify-between gap-3">
+            <span>Amount:</span>
+            <span class="text-white font-semibold">1 KAS</span>
+          </div>
+          <div class="flex justify-between gap-3">
+            <span>Tx:</span>
+            <span class="text-white font-mono text-[10px] truncate">${txId.substring(0, 12)}...</span>
+          </div>
+        </div>
+        <button onclick="this.parentElement.remove()" class="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-lg py-1.5 text-xs font-medium transition-colors border border-white/10">
+          OK
+        </button>
+      `;
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 5000);
+
+      await loadData();
+
+    } catch (err) {
+      console.error('Failed to publish post:', err);
+
+      if (err.message?.includes('User reject')) {
+        setError('Payment cancelled');
+      } else {
+        setError('Failed to publish post: ' + err.message);
+      }
+    } finally {
+      setIsPublishing(false);
     }
   };
 
@@ -2037,6 +2123,16 @@ export default function FeedPage() {
                     STAMPED
                   </Badge>
                 )}
+                {!post.is_public && (post.created_by === user?.email || 
+                  (post.author_wallet_address && (
+                    post.author_wallet_address === kaswareWallet.address ||
+                    post.author_wallet_address === user?.created_wallet_address ||
+                    post.author_wallet_address === localStorage.getItem('ttt_wallet_address')
+                  ))) && (
+                  <Badge className="bg-white/10 text-white/60 border-white/20 text-[10px] px-2 py-0.5">
+                    PRIVATE
+                  </Badge>
+                )}
               </div>
               <div className="text-xs text-white/40">
                 {post.created_date ? format(new Date(post.created_date), 'MMM d, yyyy HH:mm') + ' UTC' : 'Unknown date'}
@@ -2242,6 +2338,24 @@ export default function FeedPage() {
                   <span className="text-sm">Stamp</span>
                 </>
               )}
+            </Button>
+          )}
+
+          {!post.is_public && (post.created_by === user?.email || 
+            (post.author_wallet_address && (
+              post.author_wallet_address === kaswareWallet.address ||
+              post.author_wallet_address === user?.created_wallet_address ||
+              post.author_wallet_address === localStorage.getItem('ttt_wallet_address')
+            ))) && (
+            <Button
+              onClick={() => handleMakePublic(post)}
+              variant="ghost"
+              size="sm"
+              className="text-white/40 hover:text-cyan-400 h-auto p-0 ml-auto"
+              title="Pay 1 KAS to make public"
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              <span className="text-sm">Make Public</span>
             </Button>
           )}
 
@@ -3643,6 +3757,102 @@ export default function FeedPage() {
             currentUser={user}
             onClose={() => setExplainerPost(null)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Publish Payment Modal */}
+      <AnimatePresence>
+        {showPublishModal && publishingPost && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
+            onClick={() => {
+              setShowPublishModal(false);
+              setPublishingPost(null);
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-black border border-white/20 rounded-xl w-full max-w-md p-6"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 rounded-lg flex items-center justify-center">
+                    <Eye className="w-5 h-5 text-cyan-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold text-lg">Make Post Public</h3>
+                    <p className="text-white/60 text-sm">Pay 1 KAS to publish</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => {
+                    setShowPublishModal(false);
+                    setPublishingPost(null);
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="text-white/60 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+                  <div className="text-xs text-white/60 mb-1">Your Post</div>
+                  <div className="text-white text-sm line-clamp-3">
+                    {publishingPost.content}
+                  </div>
+                </div>
+
+                <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Wallet className="w-5 h-5 text-cyan-400" />
+                    <span className="text-white font-semibold">Self-Payment Required</span>
+                  </div>
+                  <p className="text-white/80 text-sm mb-3">
+                    Pay <span className="text-cyan-400 font-bold">1 KAS</span> to your own wallet to make this post visible to everyone.
+                  </p>
+                  <div className="text-xs text-white/60 bg-white/5 rounded p-2 font-mono break-all">
+                    {kaswareWallet.address}
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handlePublishPayment}
+                  disabled={isPublishing}
+                  className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 h-12 text-white font-bold"
+                >
+                  {isPublishing ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Publishing...
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="w-5 h-5 mr-2" />
+                      Pay 1 KAS & Publish
+                    </>
+                  )}
+                </Button>
+
+                <div className="bg-white/5 border border-white/10 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <Sparkles className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-white/60">
+                      Once published, your post will be visible to all users in the feed.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
