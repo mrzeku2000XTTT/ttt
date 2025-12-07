@@ -109,6 +109,9 @@ export default function FeedPage() {
   const [userResults, setUserResults] = useState([]);
   const [explainerPost, setExplainerPost] = useState(null);
   const [showNewsModal, setShowNewsModal] = useState(false);
+  const [publishingPostId, setPublishingPostId] = useState(null);
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [publishingPost, setPublishingPost] = useState(null);
 
   const fileInputRef = useRef(null);
   const replyFileInputRef = useRef(null);
@@ -697,7 +700,8 @@ export default function FeedPage() {
         likes: 0,
         comments_count: 0,
         replies_count: 0,
-        tips_received: 0
+        tips_received: 0,
+        is_public: false
       };
 
       if (uploadedFiles.length > 0) {
@@ -810,7 +814,8 @@ export default function FeedPage() {
         likes: 0,
         comments_count: 0,
         replies_count: 0,
-        tips_received: 0
+        tips_received: 0,
+        is_public: false
       };
 
       if (replyFiles.length > 0) {
@@ -1035,6 +1040,78 @@ export default function FeedPage() {
       setTimeout(() => setCopiedPostId(null), 2000);
     } catch (err) {
       console.error('Failed to copy link:', err);
+    }
+  };
+
+  const handleMakePublic = async () => {
+    if (!publishingPost) return;
+
+    setPublishingPostId(publishingPost.id);
+    setError(null);
+
+    try {
+      // Self-payment: 1 KAS to own wallet
+      const amountSompi = 100000000; // 1 KAS = 100,000,000 sompi
+      
+      const txId = await window.kasware.sendKaspa(
+        kaswareWallet.address,
+        amountSompi
+      );
+
+      // Update post to public
+      await base44.entities.Post.update(publishingPost.id, {
+        is_public: true,
+        made_public_at: new Date().toISOString()
+      });
+
+      // Refresh feed to show updated post
+      await loadData();
+
+      setShowPublishModal(false);
+      setPublishingPost(null);
+
+      // Show success notification
+      const notification = document.createElement('div');
+      notification.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[1000] max-w-xs';
+      notification.style.top = 'calc(var(--sat, 0px) + 8rem)';
+      notification.innerHTML = `
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0">
+            <span class="text-sm">✓</span>
+          </div>
+          <h3 class="font-bold text-sm">Post Published!</h3>
+        </div>
+        <div class="space-y-1.5 text-xs text-white/60">
+          <div class="flex justify-between gap-3">
+            <span>Amount:</span>
+            <span class="text-white font-semibold">1 KAS</span>
+          </div>
+          <div class="flex justify-between gap-3">
+            <span>To:</span>
+            <span class="text-white font-semibold truncate">${kaswareWallet.address?.substring(0, 12)}...</span>
+          </div>
+          <div class="flex justify-between gap-3">
+            <span>Tx:</span>
+            <span class="text-white font-mono text-[10px] truncate">${txId.substring(0, 12)}...</span>
+          </div>
+        </div>
+        <button onclick="this.parentElement.remove()" class="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-lg py-1.5 text-xs font-medium transition-colors border border-white/10">
+          OK
+        </button>
+      `;
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 5000);
+
+    } catch (err) {
+      console.error('Failed to publish post:', err);
+
+      if (err.message?.includes('User reject')) {
+        setError('Payment cancelled');
+      } else {
+        setError('Failed to publish post: ' + err.message);
+      }
+    } finally {
+      setPublishingPostId(null);
     }
   };
 
@@ -2037,6 +2114,11 @@ export default function FeedPage() {
                     STAMPED
                   </Badge>
                 )}
+                {!post.is_public && post.created_by === user?.email && (
+                  <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-[10px] px-2 py-0.5">
+                    PRIVATE
+                  </Badge>
+                )}
               </div>
               <div className="text-xs text-white/40">
                 {post.created_date ? format(new Date(post.created_date), 'MMM d, yyyy HH:mm') + ' UTC' : 'Unknown date'}
@@ -2223,7 +2305,33 @@ export default function FeedPage() {
             )}
           </Button>
 
-          {!post.is_stamped && (
+          {!post.is_public && post.created_by === user?.email && (
+            <Button
+              onClick={() => {
+                setPublishingPost(post);
+                setShowPublishModal(true);
+              }}
+              disabled={!kaswareWallet.connected || publishingPostId === post.id}
+              variant="ghost"
+              size="sm"
+              className="text-white/40 hover:text-yellow-400 h-auto p-0"
+              title="Pay 1 KAS to make public"
+            >
+              {publishingPostId === post.id ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <span className="text-sm">Publishing...</span>
+                </>
+              ) : (
+                <>
+                  <Eye className="w-4 h-4 mr-2" />
+                  <span className="text-sm">Make Public</span>
+                </>
+              )}
+            </Button>
+          )}
+
+          {!post.is_stamped && post.is_public && (
             <Button
               onClick={() => handleStampPost(post)}
               disabled={!kaswareWallet.connected || stampingPostId === post.id}
@@ -2247,7 +2355,7 @@ export default function FeedPage() {
 
           {post.is_stamped && (
             <div className="ml-auto flex items-center gap-2 text-xs text-orange-400/60">
-              <Eye className="w-4 h-4" />
+              <Sparkles className="w-4 h-4" />
               <span className="font-mono">{post.stamper_address?.substring(0, 8)}...</span>
             </div>
           )}
@@ -3643,6 +3751,98 @@ export default function FeedPage() {
             currentUser={user}
             onClose={() => setExplainerPost(null)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Make Public Payment Modal */}
+      <AnimatePresence>
+        {showPublishModal && publishingPost && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
+            onClick={() => {
+              setShowPublishModal(false);
+              setPublishingPost(null);
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-black border border-white/20 rounded-xl w-full max-w-md p-6"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-lg flex items-center justify-center">
+                    <Eye className="w-5 h-5 text-yellow-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold text-lg">Make Post Public</h3>
+                    <p className="text-white/60 text-sm">Pay 1 KAS to publish</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => {
+                    setShowPublishModal(false);
+                    setPublishingPost(null);
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="text-white/60 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+                  <div className="text-xs text-white/60 mb-1">Your Post</div>
+                  <p className="text-white text-sm line-clamp-3">{publishingPost.content}</p>
+                </div>
+
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-white/60 text-sm">Amount:</span>
+                    <span className="text-white font-bold text-lg">1 KAS</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/60 text-sm">To:</span>
+                    <span className="text-white font-mono text-sm">{kaswareWallet.address?.substring(0, 12)}...</span>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handleMakePublic}
+                  disabled={publishingPostId === publishingPost.id}
+                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 h-12 text-white font-bold"
+                >
+                  {publishingPostId === publishingPost.id ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Publishing...
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="w-5 h-5 mr-2" />
+                      Pay 1 KAS & Publish
+                    </>
+                  )}
+                </Button>
+
+                <div className="bg-white/5 border border-white/10 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <Sparkles className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-white/60">
+                      This self-payment makes your post visible to all users. The transaction is on-chain and permanent.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
