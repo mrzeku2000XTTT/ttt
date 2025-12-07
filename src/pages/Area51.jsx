@@ -291,13 +291,14 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
       });
 
       setShowPaymentModal(false);
+      const publishedMessage = messageToPublish.message;
       setMessageToPublish(null);
       
-      // Reload messages and trigger AI response
+      // Reload messages first
       await loadMessages();
       
-      // Trigger AI to respond to the newly public message
-      setTimeout(() => triggerAI(messageToPublish.message), 500);
+      // Then trigger AI to respond
+      triggerAI(publishedMessage);
 
       toast.success('✅ Message published to all users!');
     } catch (err) {
@@ -349,13 +350,14 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
             });
 
             setShowPaymentModal(false);
+            const publishedMessage = messageToPublish.message;
             setMessageToPublish(null);
             
-            // Reload messages and trigger AI response
+            // Reload messages first
             await loadMessages();
             
-            // Trigger AI to respond to the newly public message
-            setTimeout(() => triggerAI(messageToPublish.message), 500);
+            // Then trigger AI to respond
+            triggerAI(publishedMessage);
 
             toast.success('✅ Message published to all users!');
             return true;
