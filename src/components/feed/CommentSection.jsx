@@ -342,10 +342,15 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
 
           setIsCommenting(true);
           try {
-            let authorName = currentUser.username || '';
-            let authorWalletAddress = currentUser.created_wallet_address || '';
+            // Get author info - works with or without login
+            let authorName = '';
+            let authorWalletAddress = kaswareAddress || '';
 
-            if (!authorName && currentUser.created_wallet_address) {
+            if (currentUser?.username) {
+              authorName = currentUser.username;
+              authorWalletAddress = currentUser.created_wallet_address || kaswareAddress || '';
+            } else if (currentUser?.created_wallet_address) {
+              authorWalletAddress = currentUser.created_wallet_address;
               try {
                 const profiles = await base44.entities.AgentZKProfile.filter({
                   wallet_address: currentUser.created_wallet_address
@@ -358,10 +363,15 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
               }
             }
 
+            // Final fallbacks
             if (!authorName) {
-              authorName = currentUser.created_wallet_address 
-                ? `${currentUser.created_wallet_address.slice(0, 6)}...${currentUser.created_wallet_address.slice(-4)}`
-                : currentUser.email.split('@')[0];
+              if (authorWalletAddress) {
+                authorName = `${authorWalletAddress.slice(0, 6)}...${authorWalletAddress.slice(-4)}`;
+              } else if (currentUser?.email) {
+                authorName = currentUser.email.split('@')[0];
+              } else {
+                authorName = 'Anonymous';
+              }
             }
 
             console.log('💬 Creating comment reply...', { postId, parentCommentId: parentComment.id, authorName });
