@@ -24,11 +24,20 @@ export default function FrivPage() {
   });
 
   useEffect(() => {
-    loadUser();
-    checkKasware();
-    loadZkWalletBalance();
-    checkSubscription();
+    const init = async () => {
+      await loadUser();
+      await checkKasware();
+      await loadZkWalletBalance();
+      checkSubscription();
+    };
+    init();
   }, []);
+
+  useEffect(() => {
+    if (user?.created_wallet_address) {
+      loadZkWalletBalance();
+    }
+  }, [user]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -107,8 +116,10 @@ export default function FrivPage() {
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
+      return currentUser;
     } catch (err) {
       console.log("User not logged in");
+      return null;
     }
   };
 
@@ -273,6 +284,11 @@ export default function FrivPage() {
 
                 <Button
                   onClick={() => {
+                    if (!user) {
+                      toast.error('Please login first');
+                      base44.auth.redirectToLogin();
+                      return;
+                    }
                     setShowPaymentModal(false);
                     setShowZkVerification(true);
                   }}
@@ -329,23 +345,25 @@ export default function FrivPage() {
                     <div className="flex gap-2">
                       <Button
                         onClick={() => setSelectedZkWallet('ttt')}
-                        className={`flex-1 h-auto py-3 ${selectedZkWallet === 'ttt' ? 'bg-cyan-500 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+                        disabled={!user?.created_wallet_address}
+                        className={`flex-1 h-auto py-3 ${selectedZkWallet === 'ttt' ? 'bg-cyan-500 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'} disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
                         <div className="text-left">
                           <p className="text-xs font-semibold mb-1">TTT Wallet</p>
                           <p className="text-[10px] font-mono opacity-70">
-                            {user?.created_wallet_address?.substring(0, 10)}...
+                            {user?.created_wallet_address ? `${user.created_wallet_address.substring(0, 10)}...` : 'Not available'}
                           </p>
                         </div>
                       </Button>
                       <Button
                         onClick={() => setSelectedZkWallet('kasware')}
-                        className={`flex-1 h-auto py-3 ${selectedZkWallet === 'kasware' ? 'bg-cyan-500 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+                        disabled={!kaswareWallet.address}
+                        className={`flex-1 h-auto py-3 ${selectedZkWallet === 'kasware' ? 'bg-cyan-500 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'} disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
                         <div className="text-left">
                           <p className="text-xs font-semibold mb-1">Kasware L1</p>
                           <p className="text-[10px] font-mono opacity-70">
-                            {kaswareWallet.address?.substring(0, 10)}...
+                            {kaswareWallet.address ? `${kaswareWallet.address.substring(0, 10)}...` : 'Not connected'}
                           </p>
                         </div>
                       </Button>
