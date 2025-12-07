@@ -40,6 +40,7 @@ export default function DAGFeedPage() {
   const [zkTimestamp, setZkTimestamp] = useState(null);
   const [zkVerifying, setZkVerifying] = useState(false);
   const [zkWalletBalance, setZkWalletBalance] = useState(null);
+  const [likedPosts, setLikedPosts] = useState(new Set());
 
   useEffect(() => {
     loadData();
@@ -492,9 +493,15 @@ export default function DAGFeedPage() {
       return;
     }
 
+    // Prevent double-liking
+    if (likedPosts.has(post.id)) {
+      return;
+    }
+
     // Optimistic update
     const newLikes = (post.likes || 0) + 1;
     setPosts(posts.map(p => p.id === post.id ? { ...p, likes: newLikes } : p));
+    setLikedPosts(prev => new Set([...prev, post.id]));
 
     try {
       await base44.entities.DAGPost.update(post.id, { likes: newLikes });
@@ -503,6 +510,11 @@ export default function DAGFeedPage() {
       console.error('Failed to like:', err);
       // Revert on error
       setPosts(posts.map(p => p.id === post.id ? { ...p, likes: post.likes } : p));
+      setLikedPosts(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(post.id);
+        return newSet;
+      });
     }
   };
 
@@ -652,7 +664,7 @@ export default function DAGFeedPage() {
               size="sm"
               className="text-white/40 hover:text-red-400 transition-colors h-auto p-0"
             >
-              <Heart className="w-5 h-5 mr-2 transition-all" fill={post.likes > 0 ? "currentColor" : "none"} />
+              <Heart className="w-5 h-5 mr-2 transition-all" fill={likedPosts.has(post.id) ? "currentColor" : "none"} />
               <span className="text-sm">{post.likes || 0}</span>
             </Button>
 
