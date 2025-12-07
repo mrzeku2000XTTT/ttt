@@ -31,7 +31,7 @@ function AKContent() {
   const [splitScreenContent, setSplitScreenContent] = useState(null);
   const [multiStreamModal, setMultiStreamModal] = useState(false);
   const [multiStreams, setMultiStreams] = useState([]);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(true);
   const [akUnlocked, setAkUnlocked] = useState(false);
   const [kaswareWallet, setKaswareWallet] = useState({ connected: false, address: null });
   const [showZkVerification, setShowZkVerification] = useState(false);
