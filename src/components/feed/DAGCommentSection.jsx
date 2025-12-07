@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Heart, Reply, Trash2, DollarSign, Upload, X, Loader2 } from "lucide-react";
+import { Send, Heart, Reply, Trash2, DollarSign, Upload, X, Loader2, Lock, LockOpen, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,6 +20,9 @@ export default function DAGCommentSection({ postId, onClose }) {
   const [showTipModal, setShowTipModal] = useState(null);
   const [tipAmount, setTipAmount] = useState("");
   const [isSendingTip, setIsSendingTip] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [commentToPublish, setCommentToPublish] = useState(null);
+  const [publishingCommentId, setPublishingCommentId] = useState(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -52,7 +55,13 @@ export default function DAGCommentSection({ postId, onClose }) {
       }
 
       const allComments = await base44.entities.DAGComment.filter({ post_id: postId });
-      setComments(allComments);
+      
+      // Filter: show public comments OR user's own comments
+      const visibleComments = allComments.filter(comment => {
+        return comment.is_public === true || (currentUser && comment.created_by === currentUser.email);
+      });
+      
+      setComments(visibleComments);
     } catch (err) {
       console.error('Failed to load comments:', err);
     } finally {
@@ -117,6 +126,7 @@ export default function DAGCommentSection({ postId, onClose }) {
         author_name: authorName,
         author_wallet_address: walletAddress,
         author_role: user?.role || 'user',
+        is_public: false,
         likes: 0,
         replies_count: 0,
         tips_received: 0
@@ -192,6 +202,64 @@ export default function DAGCommentSection({ postId, onClose }) {
     }
   };
 
+  const handleUnlockComment = async (comment) => {
+    setCommentToPublish(comment);
+    setShowPaymentModal(true);
+  };
+
+  const handleSelfPayment = async () => {
+    if (!kaswareWallet.connected) {
+      alert('Please connect Kasware wallet');
+      return;
+    }
+
+    setPublishingCommentId(commentToPublish.id);
+
+    try {
+      const amountSompi = 100000000; // 1 KAS
+      const txId = await window.kasware.sendKaspa(
+        kaswareWallet.address,
+        amountSompi
+      );
+
+      await base44.entities.DAGComment.update(commentToPublish.id, {
+        is_public: true,
+        made_public_at: new Date().toISOString(),
+        self_pay_tx_hash: txId
+      });
+
+      setShowPaymentModal(false);
+      setCommentToPublish(null);
+      await loadData();
+
+      const notification = document.createElement('div');
+      notification.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[10000] max-w-xs';
+      notification.style.top = 'calc(var(--sat, 0px) + 8rem)';
+      notification.innerHTML = `
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-6 h-6 bg-green-500/30 rounded-full flex items-center justify-center flex-shrink-0">
+            <span class="text-sm">✓</span>
+          </div>
+          <h3 class="font-bold text-sm">Comment Published!</h3>
+        </div>
+        <div class="space-y-1.5 text-xs text-white/60">
+          <p>Your comment is now visible to everyone.</p>
+        </div>
+        <button onclick="this.parentElement.remove()" class="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-lg py-1.5 text-xs font-medium transition-colors border border-white/10">
+          OK
+        </button>
+      `;
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 5000);
+
+    } catch (err) {
+      console.error('Failed to publish comment:', err);
+      alert('Failed to publish: ' + err.message);
+    } finally {
+      setPublishingCommentId(null);
+    }
+  };
+
   const handleLike = async (comment) => {
     const newLikes = (comment.likes || 0) + 1;
     try {
@@ -233,10 +301,22 @@ export default function DAGCommentSection({ postId, onClose }) {
                 {comment.author_name[0].toUpperCase()}
               </div>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-white text-sm font-semibold">{comment.author_name}</span>
                   {comment.author_role === 'admin' && (
                     <Badge className="bg-cyan-500/20 text-cyan-400 text-[10px] px-1.5 py-0">ADMIN</Badge>
+                  )}
+                  {!comment.is_public && isMyComment && (
+                    <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-[10px] px-1.5 py-0">
+                      <Lock className="w-2.5 h-2.5 mr-1" />
+                      PRIVATE
+                    </Badge>
+                  )}
+                  {comment.is_public && (
+                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[10px] px-1.5 py-0">
+                      <LockOpen className="w-2.5 h-2.5 mr-1" />
+                      PUBLIC
+                    </Badge>
                   )}
                 </div>
                 <div className="text-xs text-white/40">
@@ -244,16 +324,36 @@ export default function DAGCommentSection({ postId, onClose }) {
                 </div>
               </div>
             </div>
-            {isMyComment && (
-              <Button
-                onClick={() => handleDelete(comment.id)}
-                variant="ghost"
-                size="sm"
-                className="text-red-400/60 hover:text-red-400 h-6 w-6 p-0"
-              >
-                <Trash2 className="w-3 h-3" />
-              </Button>
-            )}
+            <div className="flex gap-2">
+              {!comment.is_public && isMyComment && (
+                <Button
+                  onClick={() => handleUnlockComment(comment)}
+                  disabled={publishingCommentId === comment.id}
+                  variant="ghost"
+                  size="sm"
+                  className="text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10 h-6 px-2 text-xs"
+                >
+                  {publishingCommentId === comment.id ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <>
+                      <Lock className="w-3 h-3 mr-1" />
+                      Unlock
+                    </>
+                  )}
+                </Button>
+              )}
+              {isMyComment && (
+                <Button
+                  onClick={() => handleDelete(comment.id)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-400/60 hover:text-red-400 h-6 w-6 p-0"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              )}
+            </div>
           </div>
 
           <p className="text-white text-sm mb-2 whitespace-pre-wrap">{comment.content}</p>
@@ -308,6 +408,90 @@ export default function DAGCommentSection({ postId, onClose }) {
 
   return (
     <>
+      {/* Payment Modal for Comment */}
+      <AnimatePresence>
+        {showPaymentModal && commentToPublish && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => {
+              setShowPaymentModal(false);
+              setCommentToPublish(null);
+            }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[10000] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-black border border-white/20 rounded-xl w-full max-w-md p-6"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-lg flex items-center justify-center">
+                    <Lock className="w-5 h-5 text-yellow-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold text-lg">Publish Comment</h3>
+                    <p className="text-white/60 text-sm">Pay 1 KAS to unlock</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => {
+                    setShowPaymentModal(false);
+                    setCommentToPublish(null);
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="text-white/60 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+                  <div className="text-xs text-white/60 mb-1">Your Wallet</div>
+                  <div className="text-white font-mono text-sm break-all">
+                    {kaswareWallet.address}
+                  </div>
+                </div>
+
+                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+                    <div className="text-xs text-white/80">
+                      <p className="mb-2">You will pay <span className="font-bold text-yellow-400">1 KAS</span> to yourself.</p>
+                      <p className="text-white/60">This unlocks your comment for all users to see.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handleSelfPayment}
+                  disabled={publishingCommentId === commentToPublish.id}
+                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 h-12 text-black font-bold"
+                >
+                  {publishingCommentId === commentToPublish.id ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Publishing...
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-5 h-5 mr-2" />
+                      Pay 1 KAS & Publish
+                    </>
+                  )}
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Tip Comment Modal */}
       <AnimatePresence>
         {showTipModal && (
