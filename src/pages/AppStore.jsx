@@ -56,7 +56,7 @@ export default function AppStorePage() {
     { name: "Duel", icon: "Link2", path: "DuelLobby", category: "Games", defaultIcon: "https://ui-avatars.com/api/?name=Duel&size=128&background=ef4444&color=fff&bold=true" },
     { name: "Area 51", icon: "Link2", path: "Area51", category: "Community", defaultIcon: "https://ui-avatars.com/api/?name=👽+A51&size=128&background=000000&color=10b981&bold=true&font-size=0.28" },
     { name: "MMN", icon: "Link2", path: "MMN", category: "Tools" },
-    { name: "Friv", icon: "Link2", path: "Friv", category: "Games", defaultIcon: "https://ui-avatars.com/api/?name=Friv&size=128&background=ff6b6b&color=fff&bold=true" },
+    { name: "FRIV", icon: "Link2", path: "Friv", category: "Games", defaultIcon: "https://ui-avatars.com/api/?name=F&size=128&background=1a1a2e&color=00ff88&bold=true&font-size=0.5" },
   ];
 
   const getIconComponent = (iconName) => {
