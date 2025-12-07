@@ -77,6 +77,11 @@ export default function DAGFeedPage() {
       try {
         currentUser = await base44.auth.me();
         setUser(currentUser);
+        
+        // Load ZK wallet balance
+        if (currentUser?.created_wallet_address) {
+          loadZkWalletBalance(currentUser.created_wallet_address);
+        }
       } catch (err) {
         console.log('User not logged in');
         setUser(null);
