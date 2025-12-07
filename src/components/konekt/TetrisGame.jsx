@@ -24,6 +24,8 @@ export default function TetrisGame({ onClose }) {
   const [gameOver, setGameOver] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [nextPiece, setNextPiece] = useState(null);
+  const [heldPiece, setHeldPiece] = useState(null);
+  const [canHold, setCanHold] = useState(true);
   const gameLoopRef = useRef(null);
 
   function createEmptyBoard() {
@@ -85,6 +87,7 @@ export default function TetrisGame({ onClose }) {
       setCurrentPiece(nextPiece);
       setNextPiece(getRandomPiece());
       setPosition({ x: 4, y: 0 });
+      setCanHold(true);
     }
   }, [currentPiece, position, board, nextPiece, checkCollision]);
 
@@ -127,7 +130,7 @@ export default function TetrisGame({ onClose }) {
     }
   }, [currentPiece, position, checkCollision, gameOver, isPaused]);
 
-  const rotate = useCallback(() => {
+  const rotateClockwise = useCallback(() => {
     if (!currentPiece || gameOver || isPaused) return;
     
     const rotated = {
@@ -141,6 +144,38 @@ export default function TetrisGame({ onClose }) {
       setCurrentPiece(rotated);
     }
   }, [currentPiece, position, checkCollision, gameOver, isPaused]);
+
+  const rotateCounterClockwise = useCallback(() => {
+    if (!currentPiece || gameOver || isPaused) return;
+    
+    const rotated = {
+      ...currentPiece,
+      shape: currentPiece.shape[0].map((_, i) =>
+        currentPiece.shape.map(row => row[row.length - 1 - i])
+      )
+    };
+    
+    if (!checkCollision(rotated, position)) {
+      setCurrentPiece(rotated);
+    }
+  }, [currentPiece, position, checkCollision, gameOver, isPaused]);
+
+  const holdPiece = useCallback(() => {
+    if (!currentPiece || gameOver || isPaused || !canHold) return;
+    
+    if (heldPiece === null) {
+      setHeldPiece(currentPiece);
+      setCurrentPiece(nextPiece);
+      setNextPiece(getRandomPiece());
+      setPosition({ x: 4, y: 0 });
+    } else {
+      const temp = currentPiece;
+      setCurrentPiece(heldPiece);
+      setHeldPiece(temp);
+      setPosition({ x: 4, y: 0 });
+    }
+    setCanHold(false);
+  }, [currentPiece, heldPiece, nextPiece, gameOver, isPaused, canHold]);
 
   const hardDrop = useCallback(() => {
     if (!currentPiece || gameOver || isPaused) return;
@@ -174,7 +209,16 @@ export default function TetrisGame({ onClose }) {
           break;
         case 'arrowup':
         case 'w':
-          rotate();
+        case 'x':
+          rotateClockwise();
+          break;
+        case 'z':
+        case 'control':
+          rotateCounterClockwise();
+          break;
+        case 'c':
+        case 'shift':
+          holdPiece();
           break;
         case ' ':
           e.preventDefault();
@@ -188,7 +232,7 @@ export default function TetrisGame({ onClose }) {
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [moveLeft, moveRight, moveDown, rotate, hardDrop, gameOver]);
+  }, [moveLeft, moveRight, moveDown, rotateClockwise, rotateCounterClockwise, holdPiece, hardDrop, gameOver]);
 
   useEffect(() => {
     if (gameOver || isPaused) return;
@@ -229,6 +273,8 @@ export default function TetrisGame({ onClose }) {
     setLevel(1);
     setGameOver(false);
     setIsPaused(false);
+    setHeldPiece(null);
+    setCanHold(true);
   };
 
   const displayBoard = renderBoard();
@@ -300,6 +346,27 @@ export default function TetrisGame({ onClose }) {
             </div>
 
             <div className="bg-black/40 border border-white/10 rounded-lg p-4">
+              <p className="text-white/60 text-xs mb-2">Hold (C)</p>
+              <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+                {Array(4).fill(0).map((_, y) =>
+                  Array(4).fill(0).map((_, x) => {
+                    const cell = heldPiece?.shape[y]?.[x];
+                    return (
+                      <div
+                        key={`held-${y}-${x}`}
+                        className="aspect-square rounded-sm"
+                        style={{ 
+                          backgroundColor: cell ? heldPiece.color : '#0a0a0a',
+                          opacity: canHold ? 1 : 0.3
+                        }}
+                      />
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            <div className="bg-black/40 border border-white/10 rounded-lg p-4">
               <p className="text-white/60 text-xs mb-2">Next</p>
               <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
                 {nextPiece && Array(4).fill(0).map((_, y) =>
@@ -328,11 +395,14 @@ export default function TetrisGame({ onClose }) {
             </Button>
 
             <div className="bg-black/40 border border-white/10 rounded-lg p-3 text-xs text-white/60 space-y-1">
-              <p>← → / A D : Move</p>
-              <p>↑ / W : Rotate</p>
-              <p>↓ / S : Soft Drop</p>
-              <p>Space: Hard Drop</p>
-              <p>P: Pause</p>
+              <p className="font-semibold text-white/80 mb-1">Controls</p>
+              <p>A D / ← → : Move</p>
+              <p>W X / ↑ : Rotate ↻</p>
+              <p>Z / Ctrl : Rotate ↺</p>
+              <p>S / ↓ : Soft Drop</p>
+              <p>Space : Hard Drop</p>
+              <p>C / Shift : Hold</p>
+              <p>P : Pause</p>
             </div>
           </div>
         </div>
@@ -342,7 +412,7 @@ export default function TetrisGame({ onClose }) {
           <Button onClick={moveLeft} size="sm" variant="outline" className="bg-white/5 border-white/20">
             <ChevronLeft className="w-5 h-5" />
           </Button>
-          <Button onClick={rotate} size="sm" variant="outline" className="bg-white/5 border-white/20">
+          <Button onClick={rotateClockwise} size="sm" variant="outline" className="bg-white/5 border-white/20">
             <RotateCw className="w-5 h-5" />
           </Button>
           <Button onClick={moveDown} size="sm" variant="outline" className="bg-white/5 border-white/20">
@@ -353,6 +423,9 @@ export default function TetrisGame({ onClose }) {
           </Button>
           <Button onClick={hardDrop} size="sm" className="bg-cyan-500 hover:bg-cyan-600">
             Drop
+          </Button>
+          <Button onClick={holdPiece} size="sm" variant="outline" className="bg-white/5 border-white/20" disabled={!canHold}>
+            Hold
           </Button>
         </div>
       </motion.div>
