@@ -1069,7 +1069,7 @@ export default function FeedPage() {
     setError(null);
 
     try {
-      const amountSompi = Math.floor(0.01 * 100000000);
+      const amountSompi = Math.floor(1 * 100000000);
       const txId = await window.kasware.sendKaspa(
         kaswareWallet.address,
         amountSompi
@@ -2112,7 +2112,7 @@ export default function FeedPage() {
                 variant="ghost"
                 size="sm"
                 className="text-white/40 hover:text-cyan-400 h-8 w-8 p-0"
-                title="Pay 0.01 KAS to make post public"
+                title="Pay 1 KAS to make post public"
               >
                 <Eye className="w-4 h-4" />
               </Button>
@@ -3745,7 +3745,7 @@ export default function FeedPage() {
                   </div>
                   <div>
                     <h3 className="text-white font-bold text-lg">Make Post Public</h3>
-                    <p className="text-white/60 text-sm">Pay 0.01 KAS to publish</p>
+                    <p className="text-white/60 text-sm">Pay 1 KAS to publish</p>
                   </div>
                 </div>
                 <Button
@@ -3772,7 +3772,7 @@ export default function FeedPage() {
                     <AlertCircle className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
                     <div className="text-xs text-white/80">
                       <p className="mb-2">This payment proves your commitment to quality content.</p>
-                      <p className="text-cyan-400 font-semibold">Amount: 0.01 KAS (sent to your own wallet)</p>
+                      <p className="text-cyan-400 font-semibold">Amount: 1 KAS (sent to your own wallet)</p>
                     </div>
                   </div>
                 </div>
@@ -3790,7 +3790,7 @@ export default function FeedPage() {
                   ) : (
                     <>
                       <Wallet className="w-5 h-5 mr-2" />
-                      Pay 0.01 KAS & Publish
+                      Pay 1 KAS & Publish
                     </>
                   )}
                 </Button>
