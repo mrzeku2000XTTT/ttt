@@ -160,6 +160,7 @@ import Articles from './pages/Articles';
 import DAGFeed from './pages/DAGFeed';
 import Timer from './pages/Timer';
 import TetrisBattle from './pages/TetrisBattle';
+import Y9 from './pages/Y9';
 import __Layout from './Layout.jsx';
 
 
@@ -326,6 +327,7 @@ export const PAGES = {
     "DAGFeed": DAGFeed,
     "Timer": Timer,
     "TetrisBattle": TetrisBattle,
+    "Y9": Y9,
 }
 
 export const pagesConfig = {
