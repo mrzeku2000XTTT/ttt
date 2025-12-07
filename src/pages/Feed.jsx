@@ -739,6 +739,7 @@ export default function FeedPage() {
       setNewPost("");
       setUploadedFiles([]);
       setError(null);
+      setIsPosting(false);
       console.log('✨ Post created and added to UI');
 
       // NOW do payment in background (non-blocking)
