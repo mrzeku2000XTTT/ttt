@@ -293,8 +293,11 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
       setShowPaymentModal(false);
       setMessageToPublish(null);
       
-      // Wait a moment then reload to get fresh data from server
-      setTimeout(() => loadMessages(), 1000);
+      // Reload messages and trigger AI response
+      await loadMessages();
+      
+      // Trigger AI to respond to the newly public message
+      setTimeout(() => triggerAIResponse(messageToPublish.message), 500);
 
       toast.success('✅ Message published to all users!');
     } catch (err) {
@@ -348,8 +351,11 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
             setShowPaymentModal(false);
             setMessageToPublish(null);
             
-            // Wait a moment then reload to get fresh data from server
-            setTimeout(() => loadMessages(), 1000);
+            // Reload messages and trigger AI response
+            await loadMessages();
+            
+            // Trigger AI to respond to the newly public message
+            setTimeout(() => triggerAIResponse(messageToPublish.message), 500);
 
             toast.success('✅ Message published to all users!');
             return true;
