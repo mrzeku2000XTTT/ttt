@@ -28,7 +28,7 @@ export default function ReelsViewer({ posts, user, onClose, onLike, onOpenTip, i
 
   // Filter posts with media (videos or images)
   const mediaPosts = posts.filter(p => 
-    p.media_files?.some(m => m.type === 'video' || m.type === 'image') || 
+    p.media_files?.some(m => m.type === 'video' || m.type === 'image' || (m.type === 'file' && /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(m.name))) || 
     p.image_url
   );
 
@@ -195,7 +195,7 @@ export default function ReelsViewer({ posts, user, onClose, onLike, onOpenTip, i
 
   const getMediaUrl = (post) => {
     if (post.media_files?.length > 0) {
-      const media = post.media_files.find(m => m.type === 'video' || m.type === 'image');
+      const media = post.media_files.find(m => m.type === 'video' || m.type === 'image' || (m.type === 'file' && /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(m.name)));
       return media?.url;
     }
     return post.image_url;
@@ -203,8 +203,13 @@ export default function ReelsViewer({ posts, user, onClose, onLike, onOpenTip, i
 
   const getMediaType = (post) => {
     if (post.media_files?.length > 0) {
-      const media = post.media_files.find(m => m.type === 'video' || m.type === 'image');
-      return media?.type;
+      const media = post.media_files.find(m => m.type === 'video' || m.type === 'image' || (m.type === 'file' && /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(m.name)));
+      if (media) {
+        if (media.type === 'video' || (media.type === 'file' && /\.(mp4|webm|ogg|mov|quicktime|m4v|mkv|avi)$/i.test(media.name))) {
+          return 'video';
+        }
+        return 'image';
+      }
     }
     return post.image_url ? 'image' : null;
   };
