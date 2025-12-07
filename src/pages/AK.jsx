@@ -516,7 +516,7 @@ function AKContent() {
     <>
       {/* Payment Modal */}
       <AnimatePresence>
-        {showPaymentModal && !akUnlocked && (
+        {showPaymentModal && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
