@@ -290,16 +290,18 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
         self_pay_tx_hash: txId
       });
 
-      // Update local state immediately
-      setMessages(messages.map(m => 
-        m.id === messageToPublish.id ? { ...m, is_public: true } : m
-      ));
+      // Update local state immediately using functional update
+      setMessages(prevMessages => 
+        prevMessages.map(m => 
+          m.id === messageToPublish.id ? { ...m, is_public: true, made_public_at: new Date().toISOString() } : m
+        )
+      );
 
       setShowPaymentModal(false);
       setMessageToPublish(null);
       
-      // Reload to get fresh data
-      setTimeout(() => loadMessages(), 500);
+      // Reload to get fresh data from server
+      loadMessages();
 
       toast.success('✅ Message published to all users!');
     } catch (err) {
@@ -350,16 +352,18 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
               self_pay_tx_hash: response.data.transaction.id
             });
 
-            // Update local state immediately
-            setMessages(messages.map(m => 
-              m.id === messageToPublish.id ? { ...m, is_public: true } : m
-            ));
+            // Update local state immediately using functional update
+            setMessages(prevMessages => 
+              prevMessages.map(m => 
+                m.id === messageToPublish.id ? { ...m, is_public: true, made_public_at: new Date().toISOString() } : m
+              )
+            );
 
             setShowPaymentModal(false);
             setMessageToPublish(null);
             
-            // Reload to get fresh data
-            setTimeout(() => loadMessages(), 500);
+            // Reload to get fresh data from server
+            loadMessages();
 
             toast.success('✅ Message published to all users!');
             return true;
