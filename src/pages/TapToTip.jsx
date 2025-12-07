@@ -143,15 +143,18 @@ export default function TapToTipPage() {
       
       const allUsers = Array.from(uniqueUsersMap.values());
       
-      // Hard-code destroyer to ensure they always appear
-      const destroyerExists = allUsers.some(u => u.username?.toLowerCase() === 'destroyer');
+      // Hard-code destroyer to ensure they always appear with correct wallet
+      const destroyerExists = allUsers.some(u => 
+        u.username?.toLowerCase() === 'destroyer' && 
+        u.created_wallet_address?.toLowerCase().endsWith('jdf6')
+      );
       if (!destroyerExists) {
-        // Add destroyer manually if not found in posts
+        // Add destroyer manually with correct wallet
         allUsers.push({
           id: 'destroyer_hardcoded',
           username: 'destroyer',
           email: 'destroyer@ttt.com',
-          created_wallet_address: null, // Will be populated from their actual posts if they exist
+          created_wallet_address: 'kaspa:qpx0pwgksy0g7hzeqyajn9r3tavz2ga07v3p4kuptqgcnp7l6j2m5jp85jdf6',
           agent_zk_id: null,
           role: 'admin',
           created_date: new Date().toISOString()
