@@ -516,7 +516,7 @@ function AKContent() {
     <>
       {/* Payment Modal */}
       <AnimatePresence>
-        {showPaymentModal && (
+        {showPaymentModal && !akUnlocked && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -536,8 +536,8 @@ function AKContent() {
                         {expiresAt && expiresAt > Date.now() ? <Lock className="w-5 h-5 text-green-400" /> : <Lock className="w-5 h-5 text-yellow-400" />}
                       </div>
                       <div>
-                        <h3 className="text-white font-bold text-lg">{expiresAt && expiresAt > Date.now() ? 'Add More Time' : 'Unlock AK'}</h3>
-                        <p className="text-white/60 text-sm">1 KAS = 20 minutes {expiresAt && expiresAt > Date.now() ? '(adds to current time)' : ''}</p>
+                        <h3 className="text-white font-bold text-lg">{expiresAt && expiresAt > Date.now() ? 'Extend Time' : 'Unlock AK'}</h3>
+                        <p className="text-white/60 text-sm">1 KAS = 20 minutes</p>
                       </div>
                     </div>
                 <Button
@@ -564,8 +564,8 @@ function AKContent() {
                   <div className="flex items-start gap-2">
                     <AlertCircle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
                     <div className="text-xs text-white/80">
-                      <p className="mb-2">Pay <span className="font-bold text-yellow-400">1 KAS</span> to yourself to {expiresAt && expiresAt > Date.now() ? 'add' : 'unlock AK for'} <span className="font-bold text-cyan-400">20 minutes</span>.</p>
-                      <p className="text-white/60">{expiresAt && expiresAt > Date.now() ? 'Time will be added to your current timer.' : 'Timer-based access. Pay again when time expires.'}</p>
+                      <p className="mb-2">Pay <span className="font-bold text-yellow-400">1 KAS</span> to yourself to unlock AK for <span className="font-bold text-cyan-400">20 minutes</span>.</p>
+                      <p className="text-white/60">Timer-based access. Pay again when time expires.</p>
                     </div>
                   </div>
                 </div>
@@ -867,24 +867,19 @@ function AKContent() {
                   </span>
                 </div>
                 <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setShowPaymentModal(true);
-                  }}
-                  className="flex items-center gap-1 px-3 py-1 rounded-lg hover:scale-105 transition-transform"
+                  onClick={() => setShowPaymentModal(true)}
+                  className="flex items-center justify-center w-8 h-8 rounded-lg hover:scale-110 transition-transform"
                   style={{ 
                     background: 'rgba(6, 182, 212, 0.3)',
                     border: '2px solid rgba(6, 182, 212, 0.5)',
                     color: '#06b6d4',
                     cursor: 'pointer',
-                    fontWeight: 700,
-                    fontSize: '0.75rem'
+                    fontWeight: 900,
+                    fontSize: '1.25rem'
                   }}
                   title="Add 20 more minutes"
                 >
-                  <Shield className="w-3.5 h-3.5" />
-                  ZK
+                  +
                 </button>
               </motion.div>
             )}
