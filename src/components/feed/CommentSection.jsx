@@ -130,27 +130,10 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
       }
     }
 
-    // Desktop/Android: Require 1 KAS self-payment (iOS exempt)
-    if (!isIOS() && isDesktop()) {
-      if (!kaswareAddress) {
-        alert('Desktop users: Connect Kasware to comment (1 KAS self-payment required)');
-        return;
-      }
-
-      try {
-        // Send 1 KAS to self (Kasware address sends to itself)
-        const amountSompi = 100000000; // 1 KAS
-        console.log('💰 Desktop comment: Sending 1 KAS to self...', kaswareAddress);
-        const txHash = await window.kasware.sendKaspa(kaswareAddress, amountSompi);
-        console.log('✅ Desktop comment: Payment successful, txHash:', txHash);
-      } catch (err) {
-        console.error('❌ Desktop comment: Payment failed:', err);
-        if (err.message?.includes('User reject')) {
-          return;
-        }
-        alert('Payment failed: ' + err.message);
-        return;
-      }
+    // Desktop: Check Kasware but don't block
+    if (!isIOS() && isDesktop() && !kaswareAddress) {
+      alert('Desktop users: Connect Kasware to comment (1 KAS self-payment required)');
+      return;
     }
 
     setIsCommenting(true);
