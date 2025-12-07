@@ -120,7 +120,7 @@ export default function TapToTipPage() {
       setLoading(true);
       
       // Fetch all posts to get unique users (posts are publicly readable)
-      const allPosts = await base44.entities.Post.list('-created_date');
+      const allPosts = await base44.entities.Post.list('-created_date', 500);
       
       // Extract unique users from posts
       const uniqueUsersMap = new Map();
@@ -143,31 +143,46 @@ export default function TapToTipPage() {
       
       const allUsers = Array.from(uniqueUsersMap.values());
       
-      // Hard-code destroyer to ensure they always appear
-      const destroyerExists = allUsers.some(u => u.username?.toLowerCase() === 'destroyer');
-      if (!destroyerExists) {
-        // Add destroyer manually if not found in posts
-        allUsers.push({
-          id: 'destroyer_hardcoded',
-          username: 'destroyer',
-          email: 'destroyer@ttt.com',
-          created_wallet_address: null, // Will be populated from their actual posts if they exist
-          agent_zk_id: null,
-          role: 'admin',
-          created_date: new Date().toISOString()
-        });
-      }
-      
       const usersWithWallets = allUsers.filter(u => {
         // Must have a wallet
         if (!u.created_wallet_address && !u.agent_zk_id) return false;
 
-        // ALWAYS include destroyer - hard requirement
+        // Exclude specific olatomiwa wallet
+        if (u.username?.toLowerCase() === 'olatomiwa' && u.created_wallet_address?.toLowerCase().endsWith('x82')) {
+          return false;
+        }
+
+        // Exclude imposter TTT wallet
+        if (u.username?.toLowerCase() === 'ttt' && u.created_wallet_address?.toLowerCase().endsWith('6ft')) {
+          return false;
+        }
+
+        // For TTT users, only keep vru, feq, kq3
+        if (u.username?.toLowerCase() === 'ttt') {
+          const addr = (u.created_wallet_address || u.agent_zk_id || '').toLowerCase();
+          const allowedEndings = ['vru', 'feq', 'kq3'];
+          const isAllowed = allowedEndings.some(ending => addr.endsWith(ending));
+
+          // Remove these specific TTT accounts
+          const blockedEndings = ['x61', 'n78', 'ynd', '55a', 'e92', '244', 'v21', '9fe', 'zg8', 'v7k'];
+          const isBlocked = blockedEndings.some(ending => addr.endsWith(ending));
+
+          if (isBlocked) return false;
+          return isAllowed;
+        }
+
+        // For ESP users, only keep the correct wallet ending in cd7
+        if (u.username?.toLowerCase() === 'esp') {
+          const addr = (u.created_wallet_address || u.agent_zk_id || '').toLowerCase();
+          return addr.endsWith('cd7');
+        }
+
+        // For destroyer users, keep all of them (don't filter)
         if (u.username?.toLowerCase() === 'destroyer') {
           return true;
         }
 
-        // Include everyone else who has ever posted
+        // Include all other users
         return true;
       });
       
@@ -181,7 +196,7 @@ export default function TapToTipPage() {
         badgesMap[badge.username].push(badge);
       });
       
-      // Sort users: Current user FIRST, then destroyer, then TTT, then priority users, then by badges
+      // Sort users: Current user FIRST, then TTT, then destroyer, then priority users, then by badges
       const sortedUsers = usersWithWallets.sort((a, b) => {
         // Current user always first
         const aIsCurrentUser = currentUser && a.email === currentUser.email;
@@ -190,18 +205,18 @@ export default function TapToTipPage() {
         if (aIsCurrentUser && !bIsCurrentUser) return -1;
         if (!aIsCurrentUser && bIsCurrentUser) return 1;
 
-        // Destroyer comes SECOND (right after current user)
-        const aIsDestroyer = a.username?.toLowerCase() === 'destroyer';
-        const bIsDestroyer = b.username?.toLowerCase() === 'destroyer';
-
-        if (aIsDestroyer && !bIsDestroyer) return -1;
-        if (!aIsDestroyer && bIsDestroyer) return 1;
-
         const aIsTTT = a.username?.toLowerCase() === 'ttt';
         const bIsTTT = b.username?.toLowerCase() === 'ttt';
 
         if (aIsTTT && !bIsTTT) return -1;
         if (!aIsTTT && bIsTTT) return 1;
+
+        // Destroyer comes next
+        const aIsDestroyer = a.username?.toLowerCase() === 'destroyer';
+        const bIsDestroyer = b.username?.toLowerCase() === 'destroyer';
+
+        if (aIsDestroyer && !bIsDestroyer) return -1;
+        if (!aIsDestroyer && bIsDestroyer) return 1;
 
         const priorityUsers = ['esp', 'zeku'];
         const aIsPriority = priorityUsers.some(p => a.username?.toLowerCase().includes(p));
