@@ -753,10 +753,9 @@ export default function FeedPage() {
         createdPost = await base44.entities.Post.create(postData);
         console.log('✅ Post created:', createdPost);
 
-        // Reload all posts to get fresh data from server
-        const freshPosts = await base44.entities.Post.list('-created_date', 200);
-        console.log('📋 Reloaded posts:', freshPosts.length);
-        setPosts(freshPosts);
+        // INSTANT UPDATE: Add post to UI immediately
+        setPosts(prev => [createdPost, ...prev]);
+        console.log('⚡ Post added to UI instantly');
       }
 
       setNewPost("");
@@ -859,26 +858,33 @@ export default function FeedPage() {
         replyData.media_files = replyFiles;
       }
 
+      console.log('📝 Creating reply...', replyData);
       const createdReply = await base44.entities.Post.create(replyData);
+      console.log('✅ Reply created:', createdReply);
+
+      // INSTANT UPDATE: Add reply to UI immediately
+      setPosts(prev => [...prev, createdReply]);
 
       // Update parent post's replies count
       await base44.entities.Post.update(parentPost.id, {
         replies_count: (parentPost.replies_count || 0) + 1
       });
 
+      // Update parent in UI
+      setPosts(prev => prev.map(p => 
+        p.id === parentPost.id 
+          ? { ...p, replies_count: (p.replies_count || 0) + 1 }
+          : p
+      ));
+
       setReplyText("");
       setReplyFiles([]);
       setReplyingTo(null);
       setError(null);
 
-      // Automatically expand replies
-      if (!expandedReplies[parentPost.id]) {
-        setExpandedReplies(prev => ({ ...prev, [parentPost.id]: true }));
-      }
-
-      // Reload all posts to get fresh data
-      const freshPosts = await base44.entities.Post.list('-created_date', 200);
-      setPosts(freshPosts);
+      // Automatically expand replies to show new reply
+      setExpandedReplies(prev => ({ ...prev, [parentPost.id]: true }));
+      console.log('⚡ Reply added to UI instantly');
 
       // Check if @zk is mentioned anywhere in the reply
       if (replyText.toLowerCase().includes('@zk') && createdReply) {
