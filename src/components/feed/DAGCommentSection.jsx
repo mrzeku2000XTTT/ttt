@@ -42,8 +42,14 @@ export default function DAGCommentSection({ postId, onClose }) {
 
   const loadData = async () => {
     try {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
+      let currentUser = null;
+      try {
+        currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (err) {
+        console.log('User not logged in');
+        setUser(null);
+      }
 
       const allComments = await base44.entities.DAGComment.filter({ post_id: postId });
       setComments(allComments);
