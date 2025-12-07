@@ -102,6 +102,7 @@ export default function CategoriesPage() {
       { id: "appstore", name: "App Store", icon: "LayoutGrid", path: "AppStore" },
       { id: "gate", name: "Gate", icon: "Activity", path: "Gate" },
       { id: "bullmoon", name: "Bull Moon", icon: "Moon", path: "BullMoon" },
+      { id: "timer", name: "Timer", icon: "Activity", path: "Timer" },
       { id: "tttv", name: "TTTV", icon: "Video", path: "Browser" },
       { id: "camera", name: "Camera", icon: "Camera", path: "QRScanner" },
       { id: "photos", name: "Photos", icon: "ImageIcon", path: "Feed" },
