@@ -143,34 +143,6 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
         console.log('💰 Desktop comment: Sending 1 KAS to self...', kaswareAddress);
         const txHash = await window.kasware.sendKaspa(kaswareAddress, amountSompi);
         console.log('✅ Desktop comment: Payment successful, txHash:', txHash);
-
-        // Show notification
-        const notification = document.createElement('div');
-        notification.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[1000] max-w-xs';
-        notification.style.top = 'calc(var(--sat, 0px) + 8rem)';
-        notification.innerHTML = `
-          <div class="flex items-center gap-2 mb-3">
-            <div class="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0">
-              <span class="text-sm">✓</span>
-            </div>
-            <h3 class="font-bold text-sm">Comment Payment Sent!</h3>
-          </div>
-          <div class="space-y-1.5 text-xs text-white/60">
-            <div class="flex justify-between gap-3">
-              <span>Amount:</span>
-              <span class="text-white font-semibold">1 KAS</span>
-            </div>
-            <div class="flex justify-between gap-3">
-              <span>Status:</span>
-              <span class="text-green-400 font-semibold">Confirmed</span>
-            </div>
-          </div>
-          <button onclick="this.parentElement.remove()" class="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-lg py-1.5 text-xs font-medium transition-colors border border-white/10">
-            OK
-          </button>
-        `;
-        document.body.appendChild(notification);
-        setTimeout(() => notification.remove(), 5000);
       } catch (err) {
         console.error('❌ Desktop comment: Payment failed:', err);
         if (err.message?.includes('User reject')) {
@@ -228,9 +200,36 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
 
       setNewComment("");
       
+      // Optimistically add comment to UI immediately
+      setComments(prev => [createdComment, ...prev]);
+      
       if (onCommentAdded) {
         onCommentAdded();
       }
+
+      // Show success notification AFTER comment is created
+      const notification = document.createElement('div');
+      notification.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[1000] max-w-xs';
+      notification.style.top = 'calc(var(--sat, 0px) + 8rem)';
+      notification.innerHTML = `
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0">
+            <span class="text-sm">✓</span>
+          </div>
+          <h3 class="font-bold text-sm">Comment Posted!</h3>
+        </div>
+        <div class="space-y-1.5 text-xs text-white/60">
+          <div class="flex justify-between gap-3">
+            <span>Status:</span>
+            <span class="text-green-400 font-semibold">Success</span>
+          </div>
+        </div>
+        <button onclick="this.parentElement.remove()" class="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-lg py-1.5 text-xs font-medium transition-colors border border-white/10">
+          OK
+        </button>
+      `;
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 3000);
 
       // If @zk was mentioned anywhere, have it respond
       const zkMentioned = newComment.toLowerCase().includes('@zk');
@@ -302,34 +301,6 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
               console.log('💰 Desktop reply: Sending 1 KAS to self...', kaswareAddress);
               const txHash = await window.kasware.sendKaspa(kaswareAddress, amountSompi);
               console.log('✅ Desktop reply: Payment successful, txHash:', txHash);
-
-              // Show notification
-              const notification = document.createElement('div');
-              notification.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[1000] max-w-xs';
-              notification.style.top = 'calc(var(--sat, 0px) + 8rem)';
-              notification.innerHTML = `
-                <div class="flex items-center gap-2 mb-3">
-                  <div class="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span class="text-sm">✓</span>
-                  </div>
-                  <h3 class="font-bold text-sm">Reply Payment Sent!</h3>
-                </div>
-                <div class="space-y-1.5 text-xs text-white/60">
-                  <div class="flex justify-between gap-3">
-                    <span>Amount:</span>
-                    <span class="text-white font-semibold">1 KAS</span>
-                  </div>
-                  <div class="flex justify-between gap-3">
-                    <span>Status:</span>
-                    <span class="text-green-400 font-semibold">Confirmed</span>
-                  </div>
-                </div>
-                <button onclick="this.parentElement.remove()" class="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-lg py-1.5 text-xs font-medium transition-colors border border-white/10">
-                  OK
-                </button>
-              `;
-              document.body.appendChild(notification);
-              setTimeout(() => notification.remove(), 5000);
             } catch (err) {
               console.error('❌ Desktop reply: Payment failed:', err);
               if (err.message?.includes('User reject')) {
@@ -384,6 +355,9 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
             });
             console.log('✅ Comment reply created:', createdReply);
 
+            // Optimistically add reply to UI immediately
+            setComments(prev => [...prev, createdReply]);
+
             // Update parent comment replies count
             await base44.entities.PostComment.update(parentComment.id, {
               replies_count: (parentComment.replies_count || 0) + 1
@@ -396,11 +370,35 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
               onCommentAdded();
             }
 
-            console.log('🔄 Reloading comments...');
-            await loadComments();
-
-            // Auto-expand replies to show the new reply
+            // Auto-expand replies to show the new reply immediately
             setExpandedReplies(prev => ({ ...prev, [parentComment.id]: true }));
+
+            // Show success notification AFTER reply is created
+            const notification = document.createElement('div');
+            notification.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[1000] max-w-xs';
+            notification.style.top = 'calc(var(--sat, 0px) + 8rem)';
+            notification.innerHTML = `
+              <div class="flex items-center gap-2 mb-3">
+                <div class="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span class="text-sm">✓</span>
+                </div>
+                <h3 class="font-bold text-sm">Reply Posted!</h3>
+              </div>
+              <div class="space-y-1.5 text-xs text-white/60">
+                <div class="flex justify-between gap-3">
+                  <span>Status:</span>
+                  <span class="text-green-400 font-semibold">Success</span>
+                </div>
+              </div>
+              <button onclick="this.parentElement.remove()" class="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-lg py-1.5 text-xs font-medium transition-colors border border-white/10">
+                OK
+              </button>
+            `;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+
+            console.log('🔄 Reloading comments in background...');
+            await loadComments();
 
             console.log('✨ Comment reply flow completed');
           } catch (err) {
