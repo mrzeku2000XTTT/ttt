@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
@@ -446,11 +445,6 @@ export default function NFTMintPage() {
       return;
     }
 
-    if (!user?.created_wallet_address) {
-      showToast('TTT Wallet Required!\n\nYou need a TTT Wallet to mint NFTs.\nPlease create one first.', 'error');
-      return;
-    }
-
     setIsConnectingKasware(true);
 
     try {
@@ -475,11 +469,6 @@ export default function NFTMintPage() {
   const connectMetaMask = async () => {
     if (!window.ethereum) {
       showToast('MetaMask not found!\n\nPlease install MetaMask extension.', 'error');
-      return;
-    }
-
-    if (!user?.created_wallet_address) {
-      showToast('TTT Wallet Required!\n\nYou need a TTT Wallet to mint NFTs.\nPlease create one first.', 'error');
       return;
     }
 
@@ -672,11 +661,6 @@ export default function NFTMintPage() {
   };
 
   const mintNFT = async (isBatch = false) => { // This function now only handles MetaMask (ERC-20) minting
-    if (!user?.created_wallet_address) {
-      showToast('TTT Wallet Required!', 'error');
-      return;
-    }
-
     if (!walletConnected) {
       showToast('Please connect MetaMask first!', 'error');
       return;
@@ -822,7 +806,7 @@ export default function NFTMintPage() {
       console.log('💾 Creating NFTs in database...');
 
       const truncatedWalletAddr = walletAddress.substring(0, 10);
-      const creatorName = agentProfile?.username || `Agent-${user.created_wallet_address.substring(0, 10)}`;
+      const creatorName = agentProfile?.username || user?.username || `Agent-${walletAddress.substring(0, 10)}`;
       const agentZkId = agentProfile?.agent_zk_id || null;
       const listPrice = customListPrice ? parseFloat(customListPrice) : totalMintCost;
 
@@ -936,11 +920,6 @@ export default function NFTMintPage() {
   };
 
   const mintNFTWithKasware = async (isBatch = false) => {
-    if (!user?.created_wallet_address) {
-      showToast('TTT Wallet Required!', 'error');
-      return;
-    }
-
     if (!kaswareConnected) {
       showToast('Please connect Kasware first!', 'error');
       return;
@@ -1087,29 +1066,7 @@ export default function NFTMintPage() {
             </div>
           </motion.div>
 
-          {!user?.created_wallet_address ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-8"
-            >
-              <Card className="bg-black border-white/10">
-                <CardContent className="p-8">
-                  <h2 className="text-2xl font-bold text-white mb-4 text-center">TTT Wallet Required</h2>
-                  <p className="text-gray-400 mb-6 text-center">
-                    You need a TTT Wallet to mint NFTs. The back of your NFT will show your TTT Wallet QR code for receiving payments.
-                  </p>
-                  <Button
-                    onClick={() => window.location.href = createPageUrl("Wallet")}
-                    className="bg-white/10 border border-white/20 text-white hover:bg-white/20 h-12 px-8 w-full md:w-auto mx-auto block"
-                  >
-                    <Wallet className="w-5 h-5 mr-2" />
-                    Create TTT Wallet
-                  </Button>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ) : (!walletConnected && !kaswareConnected) ? (
+          {(!walletConnected && !kaswareConnected) ? (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
