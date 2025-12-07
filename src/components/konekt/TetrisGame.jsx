@@ -184,9 +184,33 @@ export default function TetrisGame({ onClose }) {
     while (!checkCollision(currentPiece, { x: position.x, y: newY + 1 })) {
       newY++;
     }
-    setPosition({ x: position.x, y: newY });
-    mergePiece();
-  }, [currentPiece, position, checkCollision, mergePiece, gameOver, isPaused]);
+    
+    // Merge at the dropped position
+    const newBoard = board.map(row => [...row]);
+    currentPiece.shape.forEach((row, y) => {
+      row.forEach((cell, x) => {
+        if (cell) {
+          const boardY = newY + y;
+          const boardX = position.x + x;
+          if (boardY >= 0 && boardY < BOARD_HEIGHT && boardX >= 0 && boardX < BOARD_WIDTH) {
+            newBoard[boardY][boardX] = currentPiece.color;
+          }
+        }
+      });
+    });
+    
+    setBoard(newBoard);
+    clearLines(newBoard);
+    
+    if (checkCollision(nextPiece, { x: 4, y: 0 }, newBoard)) {
+      setGameOver(true);
+    } else {
+      setCurrentPiece(nextPiece);
+      setNextPiece(getRandomPiece());
+      setPosition({ x: 4, y: 0 });
+      setCanHold(true);
+    }
+  }, [currentPiece, position, board, nextPiece, checkCollision, clearLines, gameOver, isPaused]);
 
   useEffect(() => {
     const handleKeyPress = (e) => {
