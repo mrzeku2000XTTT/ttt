@@ -76,6 +76,7 @@ export default function DAGFeedPage() {
         setUser(null);
       }
 
+      // RLS rules handle filtering on server side
       const allPosts = await base44.entities.DAGPost.list('-created_date', 200);
       setPosts(allPosts);
       setError(null);
