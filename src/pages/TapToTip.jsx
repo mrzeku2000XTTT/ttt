@@ -161,6 +161,23 @@ export default function TapToTipPage() {
         });
       }
       
+      // Hard-code ESP user
+      const espExists = allUsers.some(u => 
+        u.username?.toLowerCase() === 'esp' && 
+        u.created_wallet_address?.toLowerCase().endsWith('gx9h')
+      );
+      if (!espExists) {
+        allUsers.push({
+          id: 'esp_hardcoded',
+          username: 'ESP',
+          email: 'esp@ttt.com',
+          created_wallet_address: 'kaspa:qruat45zkdtuznry8gahmgp7yw78fnelx29wvn0p5cl9slep7x3l553cugx9h',
+          agent_zk_id: null,
+          role: 'user',
+          created_date: new Date().toISOString()
+        });
+      }
+      
       const usersWithWallets = allUsers.filter(u => {
         // Must have a wallet
         if (!u.created_wallet_address && !u.agent_zk_id) return false;
