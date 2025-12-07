@@ -76,8 +76,18 @@ export default function DAGFeedPage() {
         setUser(null);
       }
 
-      // RLS rules handle filtering on server side
       const allPosts = await base44.entities.DAGPost.list('-created_date', 200);
+      console.log('🔍 DAG Feed Debug:', {
+        totalPostsFetched: allPosts.length,
+        currentUser: currentUser?.email,
+        posts: allPosts.map(p => ({
+          id: p.id,
+          author: p.author_name,
+          is_public: p.is_public,
+          created_by: p.created_by
+        }))
+      });
+      
       setPosts(allPosts);
       setError(null);
     } catch (err) {
