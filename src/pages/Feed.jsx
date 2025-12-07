@@ -3737,11 +3737,7 @@ export default function FeedPage() {
                     className="relative text-white/60 hover:text-white hover:bg-white/10 h-8 w-8 p-0 group"
                     title="DAG Feed (Pay to Publish)"
                   >
-                    <div className="relative">
-                      <Box className="w-3 h-3 text-purple-400 group-hover:text-purple-300 transition-colors absolute top-0 left-0" style={{ transform: 'translate(-2px, -2px)' }} />
-                      <Box className="w-3 h-3 text-purple-400 group-hover:text-purple-300 transition-colors absolute top-0 left-0" style={{ transform: 'translate(2px, 0px)' }} />
-                      <Box className="w-3 h-3 text-purple-400 group-hover:text-purple-300 transition-colors absolute top-0 left-0" style={{ transform: 'translate(0px, 2px)' }} />
-                    </div>
+                    <Box className="w-4 h-4 text-purple-400 group-hover:text-purple-300 transition-colors" />
                   </Button>
                   <Button
                     onClick={() => setShowNewsModal(true)}
