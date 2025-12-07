@@ -262,14 +262,17 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
           setZkIsResponding(false);
         }
       } else {
+        console.log('🔄 Reloading comments after creation...');
         await loadComments();
+        console.log('✨ Comment posted successfully');
       }
-        } catch (err) {
-        console.error('Failed to comment:', err);
-        } finally {
-        setIsCommenting(false);
-        }
-        };
+    } catch (err) {
+      console.error('Failed to comment:', err);
+      alert('Failed to post comment: ' + err.message);
+    } finally {
+      setIsCommenting(false);
+    }
+  };
 
         const handleReplyToComment = async (parentComment) => {
           if (!replyText.trim()) return;
