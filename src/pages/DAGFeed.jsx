@@ -35,13 +35,33 @@ export default function DAGFeedPage() {
   const [isSendingTip, setIsSendingTip] = useState(false);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
+  const [showZkVerification, setShowZkVerification] = useState(false);
+  const [zkAmount, setZkAmount] = useState('1');
+  const [zkTimestamp, setZkTimestamp] = useState(null);
+  const [zkVerifying, setZkVerifying] = useState(false);
+  const [zkWalletBalance, setZkWalletBalance] = useState(null);
 
   useEffect(() => {
     loadData();
     checkKasware();
+    loadZkWalletBalance();
     const interval = setInterval(loadData, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  const loadZkWalletBalance = async () => {
+    try {
+      const currentUser = await base44.auth.me();
+      if (currentUser?.created_wallet_address) {
+        const response = await base44.functions.invoke('getKaspaBalance', { address: currentUser.created_wallet_address });
+        if (response.data?.balance) {
+          setZkWalletBalance(response.data.balance);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load balance:', err);
+    }
+  };
 
   const checkKasware = async () => {
     if (typeof window.kasware !== 'undefined') {
@@ -378,6 +398,94 @@ export default function DAGFeedPage() {
     }
   };
 
+  const handleZkVerification = async () => {
+    if (!user?.created_wallet_address) {
+      alert('Please login first');
+      return;
+    }
+
+    const timestamp = Date.now();
+    setZkTimestamp(timestamp);
+    setZkVerifying(true);
+
+    try {
+      const targetAmount = parseFloat(zkAmount);
+      let attempts = 0;
+      const maxAttempts = 200;
+
+      const checkTransaction = async () => {
+        attempts++;
+        console.log(`Attempt ${attempts}/${maxAttempts} - Checking for transaction...`);
+
+        try {
+          const response = await base44.functions.invoke('verifyKaspaSelfTransaction', {
+            address: user.created_wallet_address,
+            expectedAmount: targetAmount,
+            timestamp: timestamp
+          });
+
+          if (response.data?.verified && response.data?.transaction) {
+            console.log('✅ Transaction verified!', response.data.transaction);
+            setZkVerifying(false);
+            setShowZkVerification(false);
+            
+            // Publish the post
+            await base44.entities.DAGPost.update(postToPublish.id, {
+              is_public: true,
+              made_public_at: new Date().toISOString(),
+              self_pay_tx_hash: response.data.transaction.id
+            });
+
+            const freshPosts = await base44.entities.DAGPost.list('-created_date', 200);
+            setPosts(freshPosts);
+            setShowPaymentModal(false);
+            setPostToPublish(null);
+
+            const notification = document.createElement('div');
+            notification.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[1000] max-w-xs';
+            notification.style.top = 'calc(var(--sat, 0px) + 8rem)';
+            notification.innerHTML = `
+              <div class="flex items-center gap-2 mb-3">
+                <div class="w-6 h-6 bg-green-500/30 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span class="text-sm">✓</span>
+                </div>
+                <h3 class="font-bold text-sm">Post Published!</h3>
+              </div>
+              <div class="space-y-1.5 text-xs text-white/60">
+                <p>Your post is now visible to everyone.</p>
+              </div>
+            `;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 5000);
+
+            return true;
+          }
+
+          if (attempts < maxAttempts) {
+            setTimeout(checkTransaction, 3000);
+          } else {
+            setZkVerifying(false);
+            alert('Verification timeout. Transaction not detected within 10 minutes.');
+          }
+        } catch (err) {
+          console.error('❌ Verification error:', err);
+          if (attempts < maxAttempts) {
+            setTimeout(checkTransaction, 3000);
+          } else {
+            setZkVerifying(false);
+            alert('Failed to verify transaction. Please try again or use Kasware option.');
+          }
+        }
+      };
+
+      checkTransaction();
+    } catch (err) {
+      console.error('ZK verification setup error:', err);
+      setZkVerifying(false);
+      alert('Verification failed to start. Please try again.');
+    }
+  };
+
   const handleLike = async (post) => {
     if (!user) {
       setError('Please login to like posts');
@@ -700,7 +808,166 @@ export default function DAGFeedPage() {
                     </>
                   )}
                 </Button>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-white/10"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="bg-black px-2 text-white/40">or</span>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => {
+                    setShowPaymentModal(false);
+                    setShowZkVerification(true);
+                  }}
+                  className="w-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/30 text-cyan-400 h-12 font-semibold"
+                >
+                  <Shield className="w-5 h-5 mr-2" />
+                  ZK (iOS)
+                </Button>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ZK Verification Modal */}
+      <AnimatePresence>
+        {showZkVerification && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => {
+              if (!zkVerifying) {
+                setShowZkVerification(false);
+                setZkAmount('1');
+              }
+            }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-black border border-cyan-500/30 rounded-xl w-full max-w-md p-6"
+            >
+              <h3 className="text-2xl font-bold text-white mb-2">ZK Verification</h3>
+              <p className="text-white/60 text-sm mb-6">
+                Send KAS to yourself in Kaspium to verify this post
+              </p>
+
+              {!zkVerifying ? (
+                <div className="space-y-4">
+                  {zkWalletBalance !== null && (
+                    <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                      <p className="text-white/40 text-xs mb-1">Current Balance</p>
+                      <p className="text-white text-lg font-bold">{zkWalletBalance.toFixed(2)} KAS</p>
+                    </div>
+                  )}
+
+                  <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                    <p className="text-white/40 text-xs mb-1">Your TTT Wallet Address</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-white text-sm font-mono break-all">
+                        {user?.created_wallet_address?.substring(0, 12)}...{user?.created_wallet_address?.slice(-8)}
+                      </p>
+                      <Button
+                        onClick={() => {
+                          navigator.clipboard.writeText(user?.created_wallet_address || '');
+                          const notification = document.createElement('div');
+                          notification.className = 'fixed top-4 right-4 z-[200] bg-black border border-white/20 text-white px-4 py-3 rounded-lg shadow-lg';
+                          notification.textContent = '✓ Address copied';
+                          document.body.appendChild(notification);
+                          setTimeout(() => notification.remove(), 2000);
+                        }}
+                        size="sm"
+                        className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 text-xs h-7"
+                      >
+                        Copy
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-white/60 text-sm mb-2 block">
+                      Amount to send yourself (KAS)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      value={zkAmount}
+                      onChange={(e) => setZkAmount(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white"
+                    />
+                  </div>
+
+                  <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-3">
+                    <p className="text-cyan-400 text-xs font-semibold mb-2">Instructions:</p>
+                    <ol className="text-white/60 text-xs space-y-1 list-decimal list-inside">
+                      <li>Copy your wallet address above</li>
+                      <li>Enter the amount (default: 1 KAS)</li>
+                      <li>Click "Start Verification"</li>
+                      <li>Open Kaspium and send that amount to your own address</li>
+                      <li>Wait for automatic verification</li>
+                    </ol>
+                  </div>
+
+                  <Button
+                    onClick={handleZkVerification}
+                    disabled={!zkAmount || parseFloat(zkAmount) <= 0}
+                    className="w-full bg-cyan-500 hover:bg-cyan-600 text-white h-12 font-semibold disabled:opacity-50"
+                  >
+                    Start Verification
+                  </Button>
+
+                  <Button
+                    onClick={() => {
+                      setShowZkVerification(false);
+                      setShowPaymentModal(true);
+                      setZkAmount('1');
+                    }}
+                    variant="outline"
+                    className="w-full border-white/10 text-white/60"
+                  >
+                    Back
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4" />
+                  <p className="text-cyan-400 font-semibold mb-2">Waiting for Transaction...</p>
+                  <p className="text-white/60 text-sm mb-4">
+                    Send {zkAmount} KAS to yourself in Kaspium
+                  </p>
+                  <div className="bg-white/5 rounded-lg p-3 mb-4">
+                    <p className="text-white/40 text-xs mb-1">Your Address</p>
+                    <p className="text-white text-xs font-mono break-all">
+                      {user?.created_wallet_address}
+                    </p>
+                  </div>
+                  <p className="text-white/40 text-xs">
+                    Verification will happen automatically when the transaction is detected
+                  </p>
+                  <Button
+                    onClick={() => {
+                      setZkVerifying(false);
+                      setShowZkVerification(false);
+                      setShowPaymentModal(true);
+                      setZkAmount('1');
+                    }}
+                    variant="outline"
+                    className="w-full border-white/10 text-white/60 mt-4"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}
