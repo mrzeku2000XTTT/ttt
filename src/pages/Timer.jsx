@@ -148,6 +148,24 @@ export default function TimerPage() {
 
   const processAIRequest = async () => {
     setIsLoading(true);
+    
+    // Show success notification
+    const notification = document.createElement('div');
+    notification.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[10000] max-w-xs';
+    notification.style.top = 'calc(var(--sat, 0px) + 8rem)';
+    notification.innerHTML = `
+      <div class="flex items-center gap-2 mb-3">
+        <div class="w-6 h-6 bg-green-500/30 rounded-full flex items-center justify-center flex-shrink-0">
+          <span class="text-sm">✓</span>
+        </div>
+        <h3 class="font-bold text-sm">Payment Verified!</h3>
+      </div>
+      <div class="space-y-1.5 text-xs text-white/60">
+        <p>Processing your request with AI...</p>
+      </div>
+    `;
+    document.body.appendChild(notification);
+    
     try {
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: `You are a helpful AI assistant for a timer/clock app. The user asked: "${prompt}". Provide a helpful, concise response about time, clocks, timers, scheduling, or time management. If they ask about the current time, mention it's ${currentTime.toLocaleString()}.`
@@ -155,7 +173,29 @@ export default function TimerPage() {
 
       setAiResponse(response);
       setPrompt("");
+      
+      // Remove loading notification and show success
+      notification.remove();
+      
+      const successNotif = document.createElement('div');
+      successNotif.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[10000] max-w-xs';
+      successNotif.style.top = 'calc(var(--sat, 0px) + 8rem)';
+      successNotif.innerHTML = `
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-6 h-6 bg-green-500/30 rounded-full flex items-center justify-center flex-shrink-0">
+            <span class="text-sm">✓</span>
+          </div>
+          <h3 class="font-bold text-sm">AI Response Ready!</h3>
+        </div>
+        <button onclick="this.parentElement.remove()" class="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-lg py-1.5 text-xs font-medium transition-colors border border-white/10">
+          OK
+        </button>
+      `;
+      document.body.appendChild(successNotif);
+      setTimeout(() => successNotif.remove(), 5000);
+      
     } catch (err) {
+      notification.remove();
       alert('AI request failed: ' + err.message);
     } finally {
       setIsLoading(false);
@@ -287,12 +327,12 @@ export default function TimerPage() {
               <Button
                 onClick={handleSubmit}
                 disabled={isLoading || !prompt.trim()}
-                className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white"
+                className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white disabled:opacity-50"
               >
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Processing...
+                    <span className="animate-pulse">AI is thinking...</span>
                   </>
                 ) : (
                   <>
