@@ -7,8 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   Send, Heart, MessageCircle, Trash2, Edit2,
-  Loader2, Image as ImageIcon, X, Lock, LockOpen, Users, Video, FileText, DollarSign, Plus, AlertCircle, Sparkles
+  Loader2, Image as ImageIcon, X, Lock, LockOpen, Users, Video, FileText, DollarSign, Plus, AlertCircle, Sparkles, Shield, Reply
 } from "lucide-react";
+import DAGCommentSection from "../components/feed/DAGCommentSection";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -28,7 +29,12 @@ export default function DAGFeedPage() {
   const [publishingPostId, setPublishingPostId] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [postToPublish, setPostToPublish] = useState(null);
+  const [showComments, setShowComments] = useState(null);
+  const [showTipModal, setShowTipModal] = useState(null);
+  const [tipAmount, setTipAmount] = useState("");
+  const [isSendingTip, setIsSendingTip] = useState(false);
   const fileInputRef = useRef(null);
+  const textareaRef = useRef(null);
 
   useEffect(() => {
     loadData();
@@ -138,6 +144,94 @@ export default function DAGFeedPage() {
 
   const removeFile = (index) => {
     setUploadedFiles(uploadedFiles.filter((_, i) => i !== index));
+  };
+
+  const handlePaste = async (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let item of items) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) {
+          setIsUploadingFile(true);
+          try {
+            const { file_url } = await base44.integrations.Core.UploadFile({ file });
+            setUploadedFiles([...uploadedFiles, { url: file_url, type: 'image', name: file.name, size: file.size }]);
+          } catch (err) {
+            setError('Paste upload failed: ' + err.message);
+          } finally {
+            setIsUploadingFile(false);
+          }
+        }
+      }
+    }
+  };
+
+  const handleStamp = async (post) => {
+    if (!kaswareWallet.connected) {
+      setError('Please connect Kasware wallet to stamp');
+      return;
+    }
+
+    try {
+      const message = `Stamping DAG Post: ${post.id} - ${post.content.substring(0, 50)}`;
+      const signature = await window.kasware.signMessage(message);
+
+      await base44.entities.DAGPost.update(post.id, {
+        is_stamped: true,
+        stamp_signature: signature,
+        stamp_message: message,
+        stamper_address: kaswareWallet.address,
+        stamped_date: new Date().toISOString()
+      });
+
+      await loadData();
+      setError(null);
+    } catch (err) {
+      setError('Failed to stamp: ' + err.message);
+    }
+  };
+
+  const handleTip = async () => {
+    if (!kaswareWallet.connected) {
+      setError('Please connect Kasware wallet');
+      return;
+    }
+
+    if (!tipAmount || Number(tipAmount) <= 0) {
+      setError('Enter valid tip amount');
+      return;
+    }
+
+    setIsSendingTip(true);
+    try {
+      const amountSompi = Math.floor(Number(tipAmount) * 100000000);
+      const txId = await window.kasware.sendKaspa(showTipModal.author_wallet_address, amountSompi);
+
+      await base44.entities.DAGTip.create({
+        from_address: kaswareWallet.address,
+        to_address: showTipModal.author_wallet_address,
+        amount: Number(tipAmount),
+        tx_hash: txId,
+        post_id: showTipModal.id,
+        from_username: user?.username || 'Anonymous',
+        to_username: showTipModal.author_name
+      });
+
+      await base44.entities.DAGPost.update(showTipModal.id, {
+        tips_received: (showTipModal.tips_received || 0) + Number(tipAmount)
+      });
+
+      setShowTipModal(null);
+      setTipAmount("");
+      await loadData();
+    } catch (err) {
+      setError('Tip failed: ' + err.message);
+    } finally {
+      setIsSendingTip(false);
+    }
   };
 
   const handlePost = async () => {
@@ -436,6 +530,7 @@ export default function DAGFeedPage() {
             </Button>
 
             <Button
+              onClick={() => setShowComments(post.id)}
               variant="ghost"
               size="sm"
               className="text-white/40 hover:text-white h-auto p-0"
@@ -443,6 +538,35 @@ export default function DAGFeedPage() {
               <MessageCircle className="w-5 h-5 mr-2" />
               <span className="text-sm">{post.comments_count || 0}</span>
             </Button>
+
+            <Button
+              onClick={() => setShowTipModal(post)}
+              variant="ghost"
+              size="sm"
+              className="text-white/40 hover:text-yellow-400 h-auto p-0"
+            >
+              <DollarSign className="w-5 h-5 mr-2" />
+              <span className="text-sm">{post.tips_received ? post.tips_received.toFixed(2) : 0} KAS</span>
+            </Button>
+
+            {!post.is_stamped && (
+              <Button
+                onClick={() => handleStamp(post)}
+                variant="ghost"
+                size="sm"
+                className="text-white/40 hover:text-purple-400 h-auto p-0"
+              >
+                <Shield className="w-5 h-5 mr-2" />
+                <span className="text-sm">Stamp</span>
+              </Button>
+            )}
+
+            {post.is_stamped && (
+              <div className="flex items-center gap-1 text-purple-400 text-xs">
+                <Shield className="w-4 h-4" />
+                <span>Stamped</span>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -563,6 +687,99 @@ export default function DAGFeedPage() {
         )}
       </AnimatePresence>
 
+      {/* Tip Modal */}
+      <AnimatePresence>
+        {showTipModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowTipModal(null)}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-black border border-white/20 rounded-xl w-full max-w-md p-6"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-lg flex items-center justify-center">
+                    <DollarSign className="w-5 h-5 text-yellow-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold text-lg">Tip {showTipModal.author_name}</h3>
+                    <p className="text-white/60 text-sm">Send KAS tip</p>
+                  </div>
+                </div>
+                <Button onClick={() => setShowTipModal(null)} variant="ghost" size="sm" className="text-white/60 hover:text-white">
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs text-white/60 mb-2 block">Amount (KAS)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={tipAmount}
+                    onChange={(e) => setTipAmount(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white text-lg"
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  {[0.1, 0.5, 1, 5].map(amount => (
+                    <Button
+                      key={amount}
+                      onClick={() => setTipAmount(amount.toString())}
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 bg-white/5 border-white/10 text-white hover:bg-white/10"
+                    >
+                      {amount} KAS
+                    </Button>
+                  ))}
+                </div>
+
+                <Button
+                  onClick={handleTip}
+                  disabled={isSendingTip || !tipAmount || Number(tipAmount) <= 0}
+                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 h-12 text-black font-bold"
+                >
+                  {isSendingTip ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <DollarSign className="w-5 h-5 mr-2" />
+                      Send Tip
+                    </>
+                  )}
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Comments Modal */}
+      {showComments && (
+        <DAGCommentSection
+          postId={showComments}
+          onClose={() => {
+            setShowComments(null);
+            loadData();
+          }}
+        />
+      )}
+
       <div className="relative z-10 p-6 md:p-8 lg:p-12">
         <div className="max-w-2xl mx-auto">
           <motion.div
@@ -660,9 +877,11 @@ export default function DAGFeedPage() {
                     </div>
                     <div className="flex-1">
                       <Textarea
+                        ref={textareaRef}
                         value={newPost}
                         onChange={(e) => setNewPost(e.target.value)}
-                        placeholder="What's on your mind?"
+                        onPaste={handlePaste}
+                        placeholder="What's on your mind? (Paste images directly)"
                         className="bg-white/5 border-white/10 text-white placeholder:text-white/30 min-h-[100px] resize-none"
                       />
                     </div>
