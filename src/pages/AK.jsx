@@ -830,25 +830,58 @@ function AKContent() {
             flexShrink: 0
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
               <Bot className="w-5 h-5 text-purple-400" />
               <h1 style={{ fontSize: '1.25rem', fontWeight: 900, color: 'white', margin: 0 }}>AK</h1>
               <Sparkles className="w-3.5 h-3.5 text-purple-400" />
             </div>
             {akUnlocked && timeRemaining > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.25rem 0.75rem', background: 'rgba(6, 182, 212, 0.1)', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '9999px' }}>
-                <div style={{ width: '6px', height: '6px', background: '#06b6d4', borderRadius: '50%', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }} />
-                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#06b6d4' }}>
-                  {formatTimeRemaining(timeRemaining)}
-                </span>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl"
+                style={{ 
+                  background: timeRemaining < 300000 ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.2))' : 'linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(20, 184, 166, 0.2))',
+                  border: timeRemaining < 300000 ? '2px solid rgba(239, 68, 68, 0.5)' : '2px solid rgba(6, 182, 212, 0.5)',
+                  boxShadow: timeRemaining < 300000 ? '0 0 20px rgba(239, 68, 68, 0.3)' : '0 0 20px rgba(6, 182, 212, 0.3)'
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <div style={{ 
+                    width: '8px', 
+                    height: '8px', 
+                    background: timeRemaining < 300000 ? '#ef4444' : '#06b6d4',
+                    borderRadius: '50%',
+                    animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    boxShadow: timeRemaining < 300000 ? '0 0 10px #ef4444' : '0 0 10px #06b6d4'
+                  }} />
+                  <span style={{ 
+                    fontSize: '1rem', 
+                    fontWeight: 700, 
+                    color: timeRemaining < 300000 ? '#fca5a5' : '#67e8f9',
+                    fontFamily: 'monospace',
+                    letterSpacing: '0.05em'
+                  }}>
+                    {formatTimeRemaining(timeRemaining)}
+                  </span>
+                </div>
                 <button
                   onClick={() => setShowPaymentModal(true)}
-                  style={{ fontSize: '0.625rem', padding: '0.125rem 0.375rem', background: 'rgba(6, 182, 212, 0.2)', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '0.25rem', cursor: 'pointer', fontWeight: 600 }}
+                  className="flex items-center justify-center w-8 h-8 rounded-lg hover:scale-110 transition-transform"
+                  style={{ 
+                    background: 'rgba(6, 182, 212, 0.3)',
+                    border: '2px solid rgba(6, 182, 212, 0.5)',
+                    color: '#06b6d4',
+                    cursor: 'pointer',
+                    fontWeight: 900,
+                    fontSize: '1.25rem'
+                  }}
+                  title="Add 20 more minutes"
                 >
-                  +20min
+                  +
                 </button>
-              </div>
+              </motion.div>
             )}
           </div>
         </motion.div>
