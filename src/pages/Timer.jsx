@@ -232,17 +232,26 @@ export default function TimerPage() {
       
       if (timerSeconds > 0) {
         // Timer command detected
+        const wasRunning = isTimerRunning;
+        
         if (isTimerRunning) {
           // Add to existing timer
+          const newTotal = timerSeconds + timerSeconds;
           setTimerSeconds(prev => prev + timerSeconds);
-          const response = `Added ${Math.floor(timerSeconds / 3600)}h ${Math.floor((timerSeconds % 3600) / 60)}m ${timerSeconds % 60}s to your timer! New total: ${Math.floor((timerSeconds + timerSeconds) / 3600)}h ${Math.floor(((timerSeconds + timerSeconds) % 3600) / 60)}m`;
+          const hrs = Math.floor(timerSeconds / 3600);
+          const mins = Math.floor((timerSeconds % 3600) / 60);
+          const secs = timerSeconds % 60;
+          const response = `✅ Added ${hrs > 0 ? hrs + 'h ' : ''}${mins > 0 ? mins + 'm ' : ''}${secs > 0 ? secs + 's' : ''} to your timer!`;
           setAiResponse(response);
         } else {
           // Start new timer
           setTimerSeconds(timerSeconds);
           setIsTimerRunning(true);
           setIsPaused(false);
-          const response = `Timer set for ${Math.floor(timerSeconds / 3600)}h ${Math.floor((timerSeconds % 3600) / 60)}m ${timerSeconds % 60}s. Timer started!`;
+          const hrs = Math.floor(timerSeconds / 3600);
+          const mins = Math.floor((timerSeconds % 3600) / 60);
+          const secs = timerSeconds % 60;
+          const response = `⏱️ Timer started for ${hrs > 0 ? hrs + 'h ' : ''}${mins > 0 ? mins + 'm ' : ''}${secs > 0 ? secs + 's' : ''}!`;
           setAiResponse(response);
         }
         setPrompt("");
@@ -310,11 +319,7 @@ export default function TimerPage() {
 
   const displayTime = isTimerRunning 
     ? formatTime(timerSeconds)
-    : {
-        hours: currentTime.getHours().toString().padStart(2, '0'),
-        minutes: currentTime.getMinutes().toString().padStart(2, '0'),
-        seconds: currentTime.getSeconds().toString().padStart(2, '0')
-      };
+    : { hours: '00', minutes: '00', seconds: '00' };
 
   const hours = displayTime.hours;
   const minutes = displayTime.minutes;
