@@ -109,6 +109,9 @@ export default function FeedPage() {
   const [userResults, setUserResults] = useState([]);
   const [explainerPost, setExplainerPost] = useState(null);
   const [showNewsModal, setShowNewsModal] = useState(false);
+  const [publishingPostId, setPublishingPostId] = useState(null);
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [postToPublish, setPostToPublish] = useState(null);
 
   const fileInputRef = useRef(null);
   const replyFileInputRef = useRef(null);
@@ -119,6 +122,9 @@ export default function FeedPage() {
     loadDraftFromStorage();
     loadUserBadges();
     preloadTickerCache();
+
+    const interval = setInterval(loadData, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -697,7 +703,8 @@ export default function FeedPage() {
         likes: 0,
         comments_count: 0,
         replies_count: 0,
-        tips_received: 0
+        tips_received: 0,
+        is_public: false
       };
 
       if (uploadedFiles.length > 0) {
@@ -810,7 +817,8 @@ export default function FeedPage() {
         likes: 0,
         comments_count: 0,
         replies_count: 0,
-        tips_received: 0
+        tips_received: 0,
+        is_public: false
       };
 
       if (replyFiles.length > 0) {
@@ -1035,6 +1043,61 @@ export default function FeedPage() {
       setTimeout(() => setCopiedPostId(null), 2000);
     } catch (err) {
       console.error('Failed to copy link:', err);
+    }
+  };
+
+  const handleMakePublic = async (post) => {
+    if (!kaswareWallet.connected) {
+      setError('Please connect Kasware wallet to make posts public');
+      await connectKasware();
+      return;
+    }
+
+    setPublishingPostId(post.id);
+    setPostToPublish(post);
+    setShowPublishModal(true);
+  };
+
+  const confirmMakePublic = async () => {
+    if (!postToPublish || !kaswareWallet.connected) return;
+
+    setError(null);
+
+    try {
+      const amountSompi = Math.floor(1 * 100000000); // 1 KAS in sompi
+
+      const txId = await window.kasware.sendKaspa(
+        kaswareWallet.address,
+        amountSompi
+      );
+
+      await base44.entities.Post.update(postToPublish.id, {
+        is_public: true,
+        made_public_at: new Date().toISOString()
+      });
+
+      setPosts(posts.map(p => p.id === postToPublish.id ? {
+        ...p,
+        is_public: true,
+        made_public_at: new Date().toISOString()
+      } : p));
+
+      setShowPublishModal(false);
+      setPostToPublish(null);
+      setPublishingPostId(null);
+
+    } catch (error) {
+      console.error('Failed to make post public:', error);
+
+      if (error.message && error.message.includes('User reject')) {
+        setError('Transaction cancelled by user');
+      } else {
+        setError('Failed to make post public: ' + error.message);
+      }
+      
+      setShowPublishModal(false);
+      setPostToPublish(null);
+      setPublishingPostId(null);
     }
   };
 
@@ -1873,9 +1936,24 @@ export default function FeedPage() {
     });
   };
 
-  const renderPost = (post, isReply = false) => (
-    <Card id={`post-${post.id}`} className={`backdrop-blur-xl bg-black border-white/10 hover:border-white/20 transition-all ${isReply ? 'ml-12' : ''}`}>
+  const renderPost = (post, isReply = false) => {
+    const isOwnPost = post.created_by === user?.email || 
+                      post.author_wallet_address === kaswareWallet.address ||
+                      post.author_wallet_address === user?.created_wallet_address ||
+                      post.author_wallet_address === localStorage.getItem('ttt_wallet_address');
+    const isPrivate = !post.is_public;
+    const canSeeContent = !isPrivate || isOwnPost;
+
+    return (
+    <Card id={`post-${post.id}`} className={`backdrop-blur-xl bg-black border-white/10 hover:border-white/20 transition-all ${isReply ? 'ml-12' : ''} relative`}>
       <CardContent className="p-6">
+        {isPrivate && !isOwnPost && (
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-md rounded-lg flex flex-col items-center justify-center z-10">
+            <Eye className="w-12 h-12 text-white/20 mb-3" />
+            <p className="text-white/40 text-sm">Private Post</p>
+            <p className="text-white/20 text-xs">Author hasn't made this public yet</p>
+          </div>
+        )}
         <div className="flex items-start justify-between mb-4">
           <div className="flex gap-3">
             <div className="w-10 h-10 bg-white/10 border border-white/20 rounded-full flex items-center justify-center text-sm font-bold text-white">
@@ -2037,6 +2115,11 @@ export default function FeedPage() {
                     STAMPED
                   </Badge>
                 )}
+                {isPrivate && (
+                  <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 text-[10px] px-2 py-0.5">
+                    PRIVATE
+                  </Badge>
+                )}
               </div>
               <div className="text-xs text-white/40">
                 {post.created_date ? format(new Date(post.created_date), 'MMM d, yyyy HH:mm') + ' UTC' : 'Unknown date'}
@@ -2045,6 +2128,25 @@ export default function FeedPage() {
           </div>
 
           <div className="flex gap-2">
+            {isPrivate && isOwnPost && (
+              <Button
+                onClick={() => handleMakePublic(post)}
+                disabled={publishingPostId === post.id}
+                variant="ghost"
+                size="sm"
+                className="text-white/60 hover:text-cyan-400 h-8 px-3"
+                title="Make Public (1 KAS)"
+              >
+                {publishingPostId === post.id ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <Eye className="w-4 h-4 mr-1" />
+                    <span className="text-xs">Make Public</span>
+                  </>
+                )}
+              </Button>
+            )}
             <Button
               onClick={() => setExplainerPost(post)}
               variant="ghost"
@@ -2262,7 +2364,8 @@ export default function FeedPage() {
         )}
       </CardContent>
     </Card>
-  );
+    );
+  };
 
   if (isLoading) {
     return (
@@ -3643,6 +3746,99 @@ export default function FeedPage() {
             currentUser={user}
             onClose={() => setExplainerPost(null)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Make Public Modal */}
+      <AnimatePresence>
+        {showPublishModal && postToPublish && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
+            onClick={() => {
+              setShowPublishModal(false);
+              setPostToPublish(null);
+              setPublishingPostId(null);
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-black border border-white/20 rounded-xl w-full max-w-md p-6"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 rounded-lg flex items-center justify-center">
+                    <Eye className="w-5 h-5 text-cyan-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold text-lg">Make Post Public</h3>
+                    <p className="text-white/60 text-sm">Pay 1 KAS to publish</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => {
+                    setShowPublishModal(false);
+                    setPostToPublish(null);
+                    setPublishingPostId(null);
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="text-white/60 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+                  <div className="text-xs text-white/60 mb-1">Your Wallet</div>
+                  <div className="text-white font-mono text-sm break-all">
+                    {kaswareWallet.address}
+                  </div>
+                </div>
+
+                <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-white/60 text-sm">Amount</span>
+                    <span className="text-white font-bold text-2xl">1 KAS</span>
+                  </div>
+                  <p className="text-xs text-cyan-400">Self-payment to publish your post</p>
+                </div>
+
+                <Button
+                  onClick={confirmMakePublic}
+                  disabled={publishingPostId === postToPublish.id}
+                  className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 h-12 text-white font-bold"
+                >
+                  {publishingPostId === postToPublish.id ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Publishing...
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="w-5 h-5 mr-2" />
+                      Pay 1 KAS & Publish
+                    </>
+                  )}
+                </Button>
+
+                <div className="bg-white/5 border border-white/10 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <Sparkles className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-white/60">
+                      Once published, your post will be visible to all users on the public feed.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
