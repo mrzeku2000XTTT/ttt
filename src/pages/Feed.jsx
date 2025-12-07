@@ -709,7 +709,8 @@ export default function FeedPage() {
         likes: 0,
         comments_count: 0,
         replies_count: 0,
-        tips_received: 0
+        tips_received: 0,
+        is_public: false
       };
 
       if (uploadedFiles.length > 0) {
