@@ -88,13 +88,18 @@ export default function TimerPage() {
 
     try {
       if (kaswareWallet.connected) {
-        // Kasware payment
+        // Kasware payment - verify self-transaction
         const amountSompi = 100000000; // 1 KAS
-        await window.kasware.sendKaspa(kaswareWallet.address, amountSompi);
+        const txId = await window.kasware.sendKaspa(kaswareWallet.address, amountSompi);
         
-        setIsVerifying(false);
-        setShowPaymentModal(false);
-        await processAIRequest();
+        // Verify transaction was successful
+        if (txId) {
+          setIsVerifying(false);
+          setShowPaymentModal(false);
+          await processAIRequest();
+        } else {
+          throw new Error('Transaction failed');
+        }
       } else if (user?.created_wallet_address) {
         // ZK wallet payment - wait for self-transaction
         let attempts = 0;
