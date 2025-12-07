@@ -30,6 +30,7 @@ export default function Area51Page() {
   const [zkWalletBalance, setZkWalletBalance] = useState(null);
   const [selectedZkWallet, setSelectedZkWallet] = useState('ttt');
   const messagesEndRef = useRef(null);
+  const [respondedMessageIds, setRespondedMessageIds] = useState(new Set());
 
   useEffect(() => {
     if (showPaymentModal) {
@@ -134,14 +135,20 @@ export default function Area51Page() {
       const publicMessages = allMsgs.filter(msg => msg.is_public && msg.message_type === 'text');
       if (publicMessages.length > 0) {
         const latestPublic = publicMessages[0];
-        // Check if Agent X already responded to this message
-        const aiResponses = allMsgs.filter(msg => msg.message_type === 'ai');
-        const latestAITime = aiResponses.length > 0 ? new Date(aiResponses[0].created_date).getTime() : 0;
-        const latestPublicTime = new Date(latestPublic.created_date).getTime();
         
-        // If latest public message is newer than latest AI response, trigger AI
-        if (latestPublicTime > latestAITime && !aiThinking) {
-          setTimeout(() => triggerAI(latestPublic.message), 1000);
+        // Check if we've already responded to this message
+        if (!respondedMessageIds.has(latestPublic.id) && !aiThinking) {
+          // Check if Agent X already responded to this message in the database
+          const aiResponses = allMsgs.filter(msg => 
+            msg.message_type === 'ai' && 
+            new Date(msg.created_date).getTime() > new Date(latestPublic.created_date).getTime()
+          );
+          
+          // Only trigger AI if no response exists yet
+          if (aiResponses.length === 0) {
+            setRespondedMessageIds(prev => new Set([...prev, latestPublic.id]));
+            setTimeout(() => triggerAI(latestPublic.message), 1000);
+          }
         }
       }
       
