@@ -172,10 +172,10 @@ export default function TapToTipPage() {
           return false;
         }
 
-        // For TTT users, only keep vru, feq, kq3, cvru, e92
+        // For TTT users, only keep vru, feq, kq3, cvru
         if (u.username?.toLowerCase() === 'ttt') {
           const addr = (u.created_wallet_address || u.agent_zk_id || '').toLowerCase();
-          const allowedEndings = ['vru', 'feq', 'kq3', 'cvru', 'e92'];
+          const allowedEndings = ['vru', 'feq', 'kq3', 'cvru'];
           const isAllowed = allowedEndings.some(ending => addr.endsWith(ending));
 
           // Remove these specific TTT accounts
