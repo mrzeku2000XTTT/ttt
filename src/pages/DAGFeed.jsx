@@ -83,12 +83,20 @@ export default function DAGFeedPage() {
       }
 
       const allPosts = await base44.entities.DAGPost.list('-created_date', 200);
-      
-      // Client-side filter: show public posts OR user's own posts
+
+      // Client-side filter: show public posts OR user's own posts (by email or wallet)
       const visiblePosts = allPosts.filter(post => {
-        return post.is_public === true || (currentUser && post.created_by === currentUser.email);
+        if (post.is_public === true) return true;
+
+        // Check if user owns this post (by email)
+        if (currentUser && post.created_by === currentUser.email) return true;
+
+        // Check if user owns this post (by wallet address when not logged in)
+        if (kaswareWallet.connected && post.author_wallet_address === kaswareWallet.address) return true;
+
+        return false;
       });
-      
+
       setPosts(visiblePosts);
       setError(null);
     } catch (err) {
