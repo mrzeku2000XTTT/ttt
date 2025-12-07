@@ -731,109 +731,92 @@ export default function FeedPage() {
         createdPost = await base44.entities.Post.create(postData);
         console.log('✅ Post created:', createdPost);
 
-        // INSTANT UPDATE: Add post to UI immediately
-        setPosts(prev => [createdPost, ...prev]);
-        console.log('⚡ Post added to UI instantly');
+        // INSTANT UPDATE: Add post to UI immediately with guaranteed re-render
+        setPosts(prev => {
+          const updated = [createdPost, ...prev];
+          console.log('⚡ Posts state updated, count:', updated.length);
+          return updated;
+        });
       }
 
+      // Clear form and unlock UI IMMEDIATELY
       setNewPost("");
       setUploadedFiles([]);
       setError(null);
       setIsPosting(false);
-      console.log('✨ Post created and added to UI');
+      
+      console.log('✨ Post visible in feed NOW');
 
-      // NOW do payment in background (non-blocking)
-      if (isDesktop() && kaswareWallet.connected) {
-        (async () => {
-          try {
-            const amountSompi = 100000000; // 1 KAS
-            console.log('💰 Desktop: Sending 1 KAS to self...', walletAddress);
-            const txHash = await window.kasware.sendKaspa(walletAddress, amountSompi);
-            console.log('✅ Desktop: Payment successful, txHash:', txHash);
+      // Background payment (completely async, won't block)
+      if (isDesktop() && kaswareWallet.connected && createdPost) {
+        setTimeout(() => {
+          (async () => {
+            try {
+              const amountSompi = 100000000;
+              console.log('💰 Background: Sending 1 KAS to self...');
+              const txHash = await window.kasware.sendKaspa(walletAddress, amountSompi);
+              console.log('✅ Background: Payment done');
 
-            // Show success notification
-            const notification = document.createElement('div');
-            notification.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[1000] max-w-xs';
-            notification.style.top = 'calc(var(--sat, 0px) + 8rem)';
-            notification.innerHTML = `
-              <div class="flex items-center gap-2 mb-3">
-                <div class="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span class="text-sm">✓</span>
+              const notification = document.createElement('div');
+              notification.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[1000] max-w-xs';
+              notification.style.top = 'calc(var(--sat, 0px) + 8rem)';
+              notification.innerHTML = `
+                <div class="flex items-center gap-2 mb-3">
+                  <div class="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span class="text-sm">✓</span>
+                  </div>
+                  <h3 class="font-bold text-sm">Payment Sent!</h3>
                 </div>
-                <h3 class="font-bold text-sm">Payment Sent!</h3>
-              </div>
-              <div class="space-y-1.5 text-xs text-white/60">
-                <div class="flex justify-between gap-3">
-                  <span>Amount:</span>
-                  <span class="text-white font-semibold">1 KAS</span>
+                <div class="space-y-1.5 text-xs text-white/60">
+                  <div class="flex justify-between gap-3">
+                    <span>Amount:</span>
+                    <span class="text-white font-semibold">1 KAS</span>
+                  </div>
+                  <div class="flex justify-between gap-3">
+                    <span>To:</span>
+                    <span class="text-white font-semibold">Self</span>
+                  </div>
                 </div>
-                <div class="flex justify-between gap-3">
-                  <span>To:</span>
-                  <span class="text-white font-semibold">Self</span>
-                </div>
-              </div>
-              <button onclick="this.parentElement.remove()" class="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-lg py-1.5 text-xs font-medium transition-colors border border-white/10">
-                OK
-              </button>
-            `;
-            document.body.appendChild(notification);
-            setTimeout(() => notification.remove(), 4000);
-          } catch (err) {
-            console.error('❌ Desktop: Payment failed:', err);
-            if (!err.message?.includes('User reject')) {
-              const errorNotif = document.createElement('div');
-              errorNotif.className = 'fixed right-4 bg-red-500/20 border border-red-500/40 text-white rounded-xl p-4 shadow-2xl z-[1000] max-w-xs';
-              errorNotif.style.top = 'calc(var(--sat, 0px) + 8rem)';
-              errorNotif.innerHTML = `<p class="text-sm">Payment failed but post is live</p>`;
-              document.body.appendChild(errorNotif);
-              setTimeout(() => errorNotif.remove(), 3000);
+                <button onclick="this.parentElement.remove()" class="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-lg py-1.5 text-xs font-medium transition-colors border border-white/10">
+                  OK
+                </button>
+              `;
+              document.body.appendChild(notification);
+              setTimeout(() => notification.remove(), 4000);
+            } catch (err) {
+              console.error('❌ Background payment failed:', err);
             }
-          }
-        })();
+          })();
+        }, 100);
       }
 
-      // Check if @zk is mentioned anywhere in the post (not just at start)
-      const postContent = newPost.toLowerCase();
-      if (postContent.includes('@zk') && createdPost) {
-        console.log('[Feed] @zk mentioned, invoking backend...');
-
-        // Expand comments immediately to show @zk is responding
-        setExpandedComments(prev => ({ ...prev, [createdPost.id]: true }));
-
-        // Gather image URLs for vision analysis
-        const imageUrls = createdPost.media_files 
-          ? createdPost.media_files.filter(f => f.type === 'image').map(f => f.url)
-          : (createdPost.image_url ? [createdPost.image_url] : []);
-
-        // Call backend - it will create AND update the comment
-        try {
-          console.log('[Feed] Invoking zkBotRespond function...');
-          console.log('[Feed] Image URLs:', imageUrls);
-          const response = await base44.functions.invoke('zkBotRespond', { 
-            post_id: createdPost.id,
-            post_content: newPost.trim(),
-            author_name: authorName,
-            image_urls: imageUrls
-          });
-          console.log('[Feed] Response received:', response.data);
-
-          // Reload to see the comment created by backend
-          if (response.data?.success) {
-            console.log('[Feed] Analysis successful! Response:', response.data.analysis);
-            setTimeout(() => loadData(), 500);
-          } else {
-            console.error('[Feed] Analysis failed. Full response:', JSON.stringify(response.data));
-            console.error('[Feed] Error message:', response.data?.error);
-          }
-        } catch (err) {
-          console.error('[Feed] ZK bot error:', err.message, err);
-          setTimeout(() => loadData(), 300);
-        }
+      // ZK bot in background if mentioned
+      if (createdPost && newPost.toLowerCase().includes('@zk')) {
+        setTimeout(() => {
+          (async () => {
+            try {
+              setExpandedComments(prev => ({ ...prev, [createdPost.id]: true }));
+              const imageUrls = createdPost.media_files 
+                ? createdPost.media_files.filter(f => f.type === 'image').map(f => f.url)
+                : [];
+              
+              await base44.functions.invoke('zkBotRespond', { 
+                post_id: createdPost.id,
+                post_content: createdPost.content,
+                author_name: createdPost.author_name,
+                image_urls: imageUrls
+              });
+              
+              await loadData();
+            } catch (err) {
+              console.error('ZK bot error:', err);
+            }
+          })();
+        }, 100);
       }
     } catch (err) {
       console.error('Failed to post:', err);
       setError('Failed to create post');
-    } finally {
       setIsPosting(false);
     }
   };
@@ -891,71 +874,64 @@ export default function FeedPage() {
       const createdReply = await base44.entities.Post.create(replyData);
       console.log('✅ Reply created:', createdReply);
 
-      // INSTANT UPDATE: Add reply to UI immediately
-      setPosts(prev => [...prev, createdReply]);
-
-      // Update parent post's replies count
-      await base44.entities.Post.update(parentPost.id, {
-        replies_count: (parentPost.replies_count || 0) + 1
+      // INSTANT UPDATE: Add reply to UI with forced re-render
+      setPosts(prev => {
+        const updated = [...prev, createdReply];
+        console.log('⚡ Reply added, total posts:', updated.length);
+        return updated;
       });
 
-      // Update parent in UI
-      setPosts(prev => prev.map(p => 
-        p.id === parentPost.id 
-          ? { ...p, replies_count: (p.replies_count || 0) + 1 }
-          : p
-      ));
+      // Update parent post's replies count in background
+      setTimeout(() => {
+        base44.entities.Post.update(parentPost.id, {
+          replies_count: (parentPost.replies_count || 0) + 1
+        });
+        
+        setPosts(prev => prev.map(p => 
+          p.id === parentPost.id 
+            ? { ...p, replies_count: (p.replies_count || 0) + 1 }
+            : p
+        ));
+      }, 100);
 
+      // Clear form and unlock UI IMMEDIATELY
       setReplyText("");
       setReplyFiles([]);
       setReplyingTo(null);
       setError(null);
+      setIsPosting(false);
 
-      // Automatically expand replies to show new reply
+      // Auto-expand to show new reply
       setExpandedReplies(prev => ({ ...prev, [parentPost.id]: true }));
-      console.log('⚡ Reply added to UI instantly');
+      console.log('✨ Reply visible NOW');
 
-      // Check if @zk is mentioned anywhere in the reply
-      if (replyText.toLowerCase().includes('@zk') && createdReply) {
-        console.log('[Feed] @zk mentioned in reply, invoking backend...');
-
-        // Expand comments immediately
-        setExpandedComments(prev => ({ ...prev, [createdReply.id]: true }));
-
-        // Gather image URLs for vision analysis
-        const replyImageUrls = createdReply.media_files 
-          ? createdReply.media_files.filter(f => f.type === 'image').map(f => f.url)
-          : (createdReply.image_url ? [createdReply.image_url] : []);
-
-        // Call backend - it will create AND update the comment
-        try {
-          console.log('[Feed] Invoking zkBotRespond for reply...');
-          console.log('[Feed] Reply Image URLs:', replyImageUrls);
-          const response = await base44.functions.invoke('zkBotRespond', { 
-            post_id: createdReply.id,
-            post_content: replyText.trim(),
-            author_name: authorName,
-            image_urls: replyImageUrls
-          });
-          console.log('[Feed] Reply response received:', response.data);
-
-          // Reload to see comment created by backend
-          if (response.data?.success) {
-            console.log('[Feed] Reply analysis successful! Response:', response.data.analysis);
-            setTimeout(() => loadData(), 500);
-          } else {
-            console.error('[Feed] Reply analysis failed. Full response:', JSON.stringify(response.data));
-            console.error('[Feed] Error message:', response.data?.error);
-          }
-        } catch (err) {
-          console.error('[Feed] ZK bot reply error:', err.message, err);
-          setTimeout(() => loadData(), 300);
-        }
+      // ZK bot in background if mentioned
+      if (createdReply && replyText.toLowerCase().includes('@zk')) {
+        setTimeout(() => {
+          (async () => {
+            try {
+              setExpandedComments(prev => ({ ...prev, [createdReply.id]: true }));
+              const imageUrls = createdReply.media_files 
+                ? createdReply.media_files.filter(f => f.type === 'image').map(f => f.url)
+                : [];
+              
+              await base44.functions.invoke('zkBotRespond', { 
+                post_id: createdReply.id,
+                post_content: createdReply.content,
+                author_name: createdReply.author_name,
+                image_urls: imageUrls
+              });
+              
+              await loadData();
+            } catch (err) {
+              console.error('ZK bot error:', err);
+            }
+          })();
+        }, 100);
       }
     } catch (err) {
       console.error('Failed to reply:', err);
       setError('Failed to post reply');
-    } finally {
       setIsPosting(false);
     }
   };
