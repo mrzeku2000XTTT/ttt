@@ -297,7 +297,7 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
       await loadMessages();
       
       // Trigger AI to respond to the newly public message
-      setTimeout(() => triggerAIResponse(messageToPublish.message), 500);
+      setTimeout(() => triggerAI(messageToPublish.message), 500);
 
       toast.success('✅ Message published to all users!');
     } catch (err) {
@@ -355,7 +355,7 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
             await loadMessages();
             
             // Trigger AI to respond to the newly public message
-            setTimeout(() => triggerAIResponse(messageToPublish.message), 500);
+            setTimeout(() => triggerAI(messageToPublish.message), 500);
 
             toast.success('✅ Message published to all users!');
             return true;
