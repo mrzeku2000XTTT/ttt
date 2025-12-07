@@ -120,7 +120,7 @@ export default function TapToTipPage() {
       setLoading(true);
       
       // Fetch all posts to get unique users (posts are publicly readable)
-      const allPosts = await base44.entities.Post.list('-created_date', 500);
+      const allPosts = await base44.entities.Post.list('-created_date');
       
       // Extract unique users from posts
       const uniqueUsersMap = new Map();
@@ -142,6 +142,21 @@ export default function TapToTipPage() {
       });
       
       const allUsers = Array.from(uniqueUsersMap.values());
+      
+      // Hard-code destroyer to ensure they always appear
+      const destroyerExists = allUsers.some(u => u.username?.toLowerCase() === 'destroyer');
+      if (!destroyerExists) {
+        // Add destroyer manually if not found in posts
+        allUsers.push({
+          id: 'destroyer_hardcoded',
+          username: 'destroyer',
+          email: 'destroyer@ttt.com',
+          created_wallet_address: null, // Will be populated from their actual posts if they exist
+          agent_zk_id: null,
+          role: 'admin',
+          created_date: new Date().toISOString()
+        });
+      }
       
       const usersWithWallets = allUsers.filter(u => {
         // Must have a wallet
@@ -177,7 +192,7 @@ export default function TapToTipPage() {
           return addr.endsWith('cd7');
         }
 
-        // For destroyer users, keep all of them (don't filter)
+        // ALWAYS include destroyer - hard requirement
         if (u.username?.toLowerCase() === 'destroyer') {
           return true;
         }
@@ -196,7 +211,7 @@ export default function TapToTipPage() {
         badgesMap[badge.username].push(badge);
       });
       
-      // Sort users: Current user FIRST, then TTT, then destroyer, then priority users, then by badges
+      // Sort users: Current user FIRST, then destroyer, then TTT, then priority users, then by badges
       const sortedUsers = usersWithWallets.sort((a, b) => {
         // Current user always first
         const aIsCurrentUser = currentUser && a.email === currentUser.email;
@@ -205,18 +220,18 @@ export default function TapToTipPage() {
         if (aIsCurrentUser && !bIsCurrentUser) return -1;
         if (!aIsCurrentUser && bIsCurrentUser) return 1;
 
-        const aIsTTT = a.username?.toLowerCase() === 'ttt';
-        const bIsTTT = b.username?.toLowerCase() === 'ttt';
-
-        if (aIsTTT && !bIsTTT) return -1;
-        if (!aIsTTT && bIsTTT) return 1;
-
-        // Destroyer comes next
+        // Destroyer comes SECOND (right after current user)
         const aIsDestroyer = a.username?.toLowerCase() === 'destroyer';
         const bIsDestroyer = b.username?.toLowerCase() === 'destroyer';
 
         if (aIsDestroyer && !bIsDestroyer) return -1;
         if (!aIsDestroyer && bIsDestroyer) return 1;
+
+        const aIsTTT = a.username?.toLowerCase() === 'ttt';
+        const bIsTTT = b.username?.toLowerCase() === 'ttt';
+
+        if (aIsTTT && !bIsTTT) return -1;
+        if (!aIsTTT && bIsTTT) return 1;
 
         const priorityUsers = ['esp', 'zeku'];
         const aIsPriority = priorityUsers.some(p => a.username?.toLowerCase().includes(p));
