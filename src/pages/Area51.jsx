@@ -137,20 +137,17 @@ export default function Area51Page() {
       if (publicMessages.length > 0) {
         const latestPublic = publicMessages[0];
         
-        // Only process if this is a new message we haven't seen before
-        if (latestPublic.id !== lastProcessedMessageRef.current && !isProcessingRef.current && !aiThinking) {
-          // Check if an AI response already exists after this message
-          const hasAIResponse = allMsgs.some(msg => 
-            msg.message_type === 'ai' && 
-            new Date(msg.created_date).getTime() > new Date(latestPublic.created_date).getTime()
-          );
-          
-          // Only trigger AI if no response exists yet
-          if (!hasAIResponse) {
-            lastProcessedMessageRef.current = latestPublic.id;
-            isProcessingRef.current = true;
-            setTimeout(() => triggerAI(latestPublic.message), 1000);
-          }
+        // Check if an AI response already exists after this message (most important check first)
+        const hasAIResponse = allMsgs.some(msg => 
+          msg.message_type === 'ai' && 
+          new Date(msg.created_date).getTime() > new Date(latestPublic.created_date).getTime()
+        );
+        
+        // Only process if: no AI response exists AND we haven't processed this message AND not already processing
+        if (!hasAIResponse && latestPublic.id !== lastProcessedMessageRef.current && !isProcessingRef.current && !aiThinking) {
+          lastProcessedMessageRef.current = latestPublic.id;
+          isProcessingRef.current = true;
+          setTimeout(() => triggerAI(latestPublic.message), 1000);
         }
       }
       
