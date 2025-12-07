@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 export default function FrivPage() {
   const [user, setUser] = useState(null);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(true);
   const [gameUnlocked, setGameUnlocked] = useState(false);
   const [kaswareWallet, setKaswareWallet] = useState({ connected: false, address: null });
   const [showZkVerification, setShowZkVerification] = useState(false);
