@@ -38,6 +38,7 @@ function AKContent() {
   const [zkAmount, setZkAmount] = useState('1');
   const [zkVerifying, setZkVerifying] = useState(false);
   const [zkWalletBalance, setZkWalletBalance] = useState(null);
+  const [selectedZkWallet, setSelectedZkWallet] = useState('ttt');
   const { getSharedData, getAllSharedData } = useStarGate();
   const messagesEndRef = React.useRef(null);
 
@@ -97,8 +98,10 @@ function AKContent() {
   };
 
   const handleZkVerification = async () => {
-    if (!user?.created_wallet_address) {
-      toast.error('Please login first');
+    const verifyAddress = selectedZkWallet === 'ttt' ? user?.created_wallet_address : kaswareWallet.address;
+    
+    if (!verifyAddress) {
+      toast.error(selectedZkWallet === 'ttt' ? 'Please login first' : 'Please connect Kasware');
       return;
     }
 
@@ -115,7 +118,7 @@ function AKContent() {
 
         try {
           const response = await base44.functions.invoke('verifyKaspaSelfTransaction', {
-            address: user.created_wallet_address,
+            address: verifyAddress,
             expectedAmount: targetAmount,
             timestamp: timestamp
           });
@@ -576,22 +579,54 @@ function AKContent() {
 
               {!zkVerifying ? (
                 <div className="space-y-4">
-                  {zkWalletBalance !== null && (
+                  {zkWalletBalance !== null && selectedZkWallet === 'ttt' && (
                     <div className="bg-white/5 rounded-lg p-3 border border-white/10">
                       <p className="text-white/40 text-xs mb-1">Current Balance</p>
                       <p className="text-white text-lg font-bold">{zkWalletBalance.toFixed(2)} KAS</p>
                     </div>
                   )}
 
+                  <div className="space-y-2">
+                    <p className="text-white/60 text-sm">Select wallet to send from:</p>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => setSelectedZkWallet('ttt')}
+                        className={`flex-1 h-auto py-3 ${selectedZkWallet === 'ttt' ? 'bg-cyan-500 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+                      >
+                        <div className="text-left">
+                          <p className="text-xs font-semibold mb-1">TTT Wallet</p>
+                          <p className="text-[10px] font-mono opacity-70">
+                            {user?.created_wallet_address?.substring(0, 10)}...
+                          </p>
+                        </div>
+                      </Button>
+                      <Button
+                        onClick={() => setSelectedZkWallet('kasware')}
+                        className={`flex-1 h-auto py-3 ${selectedZkWallet === 'kasware' ? 'bg-cyan-500 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+                      >
+                        <div className="text-left">
+                          <p className="text-xs font-semibold mb-1">Kasware L1</p>
+                          <p className="text-[10px] font-mono opacity-70">
+                            {kaswareWallet.address?.substring(0, 10)}...
+                          </p>
+                        </div>
+                      </Button>
+                    </div>
+                  </div>
+
                   <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-                    <p className="text-white/40 text-xs mb-1">Your TTT Wallet Address</p>
+                    <p className="text-white/40 text-xs mb-1">Selected Address</p>
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-white text-sm font-mono break-all">
-                        {user?.created_wallet_address?.substring(0, 12)}...{user?.created_wallet_address?.slice(-8)}
+                        {selectedZkWallet === 'ttt' 
+                          ? `${user?.created_wallet_address?.substring(0, 12)}...${user?.created_wallet_address?.slice(-8)}`
+                          : `${kaswareWallet.address?.substring(0, 12)}...${kaswareWallet.address?.slice(-8)}`
+                        }
                       </p>
                       <Button
                         onClick={() => {
-                          navigator.clipboard.writeText(user?.created_wallet_address || '');
+                          const address = selectedZkWallet === 'ttt' ? user?.created_wallet_address : kaswareWallet.address;
+                          navigator.clipboard.writeText(address || '');
                           toast.success('✓ Address copied');
                         }}
                         size="sm"
@@ -619,10 +654,11 @@ function AKContent() {
                   <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-3">
                     <p className="text-cyan-400 text-xs font-semibold mb-2">Instructions:</p>
                     <ol className="text-white/60 text-xs space-y-1 list-decimal list-inside">
-                      <li>Copy your wallet address above</li>
+                      <li>Select which wallet to send from</li>
+                      <li>Copy your selected wallet address above</li>
                       <li>Enter the amount (default: 1 KAS)</li>
                       <li>Click "Start Verification"</li>
-                      <li>Open Kaspium and send that amount to your own address</li>
+                      <li>Open {selectedZkWallet === 'ttt' ? 'Kaspium' : 'Kasware'} and send that amount to your own address</li>
                       <li>Wait for automatic verification</li>
                     </ol>
                   </div>
@@ -652,13 +688,26 @@ function AKContent() {
                   <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4" />
                   <p className="text-cyan-400 font-semibold mb-2">🔍 Waiting for Transaction...</p>
                   <p className="text-white/60 text-sm mb-4">
-                    Send {zkAmount} KAS to yourself in Kaspium
+                    Send {zkAmount} KAS to yourself in {selectedZkWallet === 'ttt' ? 'Kaspium' : 'Kasware'}
                   </p>
                   <div className="bg-white/5 rounded-lg p-3 mb-4">
-                    <p className="text-white/40 text-xs mb-1">Your Address</p>
-                    <p className="text-white text-xs font-mono break-all">
-                      {user?.created_wallet_address}
-                    </p>
+                    <p className="text-white/40 text-xs mb-1">Send to this address:</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-white text-xs font-mono break-all flex-1">
+                        {selectedZkWallet === 'ttt' ? user?.created_wallet_address : kaswareWallet.address}
+                      </p>
+                      <Button
+                        onClick={() => {
+                          const address = selectedZkWallet === 'ttt' ? user?.created_wallet_address : kaswareWallet.address;
+                          navigator.clipboard.writeText(address || '');
+                          toast.success('Address copied!');
+                        }}
+                        size="sm"
+                        className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 text-xs h-7 px-2"
+                      >
+                        Copy
+                      </Button>
+                    </div>
                   </div>
                   <p className="text-white/40 text-xs">
                     Verification will happen automatically when the transaction is detected
