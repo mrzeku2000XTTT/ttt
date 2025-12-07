@@ -178,6 +178,23 @@ export default function TapToTipPage() {
         });
       }
       
+      // Hard-code olatomiwa2 user
+      const olatomiwa2Exists = allUsers.some(u => 
+        u.username?.toLowerCase() === 'olatomiwa2' && 
+        u.created_wallet_address?.toLowerCase().endsWith('6ppj')
+      );
+      if (!olatomiwa2Exists) {
+        allUsers.push({
+          id: 'olatomiwa2_hardcoded',
+          username: 'olatomiwa2',
+          email: 'olatomiwa2@ttt.com',
+          created_wallet_address: 'kaspa:qpe6jqvzhyhqqphy2c6n047zzlrnrng20fpy2nkm4y54gdd979t279ld96ppj',
+          agent_zk_id: null,
+          role: 'user',
+          created_date: new Date().toISOString()
+        });
+      }
+      
       const usersWithWallets = allUsers.filter(u => {
         // Must have a wallet
         if (!u.created_wallet_address && !u.agent_zk_id) return false;
