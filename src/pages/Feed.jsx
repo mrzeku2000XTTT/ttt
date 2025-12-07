@@ -690,61 +690,15 @@ export default function FeedPage() {
       }
     }
 
-    // Desktop-only: Require 1 KAS self-payment
-    if (isDesktop()) {
-      if (!kaswareWallet.connected) {
-        setError('Desktop users: Connect Kasware to post (1 KAS self-payment required)');
-        await connectKasware();
-        return;
-      }
-
-      setIsPosting(true);
-      setError(null);
-
-      try {
-        const amountSompi = 100000000; // 1 KAS
-        console.log('💰 Desktop: Sending 1 KAS to self...', walletAddress);
-        const txHash = await window.kasware.sendKaspa(walletAddress, amountSompi);
-        console.log('✅ Desktop: Payment successful, txHash:', txHash);
-
-        // Show payment notification immediately
-        const notification = document.createElement('div');
-        notification.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[1000] max-w-xs';
-        notification.style.top = 'calc(var(--sat, 0px) + 8rem)';
-        notification.innerHTML = `
-          <div class="flex items-center gap-2 mb-3">
-            <div class="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0">
-              <span class="text-sm">✓</span>
-            </div>
-            <h3 class="font-bold text-sm">Payment Confirmed!</h3>
-          </div>
-          <div class="space-y-1.5 text-xs text-white/60">
-            <div class="flex justify-between gap-3">
-              <span>Amount:</span>
-              <span class="text-white font-semibold">1 KAS</span>
-            </div>
-            <div class="flex justify-between gap-3">
-              <span>Status:</span>
-              <span class="text-green-400 font-semibold">Posting...</span>
-            </div>
-          </div>
-        `;
-        document.body.appendChild(notification);
-        setTimeout(() => notification.remove(), 3000);
-      } catch (err) {
-        console.error('❌ Desktop: Payment failed:', err);
-        setIsPosting(false);
-        if (err.message?.includes('User reject')) {
-          setError('Payment cancelled - post not created');
-        } else {
-          setError('Payment failed: ' + err.message);
-        }
-        return;
-      }
-    } else {
-      setIsPosting(true);
-      setError(null);
+    // Desktop: Check Kasware but don't block
+    if (isDesktop() && !kaswareWallet.connected) {
+      setError('Desktop users: Connect Kasware to post (1 KAS self-payment required)');
+      await connectKasware();
+      return;
     }
+
+    setIsPosting(true);
+    setError(null);
 
     try {
       const authorName = user?.username ||
@@ -785,7 +739,57 @@ export default function FeedPage() {
       setNewPost("");
       setUploadedFiles([]);
       setError(null);
-      console.log('✨ Post flow completed successfully');
+      console.log('✨ Post created and added to UI');
+
+      // NOW do payment in background (non-blocking)
+      if (isDesktop() && kaswareWallet.connected) {
+        (async () => {
+          try {
+            const amountSompi = 100000000; // 1 KAS
+            console.log('💰 Desktop: Sending 1 KAS to self...', walletAddress);
+            const txHash = await window.kasware.sendKaspa(walletAddress, amountSompi);
+            console.log('✅ Desktop: Payment successful, txHash:', txHash);
+
+            // Show success notification
+            const notification = document.createElement('div');
+            notification.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[1000] max-w-xs';
+            notification.style.top = 'calc(var(--sat, 0px) + 8rem)';
+            notification.innerHTML = `
+              <div class="flex items-center gap-2 mb-3">
+                <div class="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span class="text-sm">✓</span>
+                </div>
+                <h3 class="font-bold text-sm">Payment Sent!</h3>
+              </div>
+              <div class="space-y-1.5 text-xs text-white/60">
+                <div class="flex justify-between gap-3">
+                  <span>Amount:</span>
+                  <span class="text-white font-semibold">1 KAS</span>
+                </div>
+                <div class="flex justify-between gap-3">
+                  <span>To:</span>
+                  <span class="text-white font-semibold">Self</span>
+                </div>
+              </div>
+              <button onclick="this.parentElement.remove()" class="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-lg py-1.5 text-xs font-medium transition-colors border border-white/10">
+                OK
+              </button>
+            `;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 4000);
+          } catch (err) {
+            console.error('❌ Desktop: Payment failed:', err);
+            if (!err.message?.includes('User reject')) {
+              const errorNotif = document.createElement('div');
+              errorNotif.className = 'fixed right-4 bg-red-500/20 border border-red-500/40 text-white rounded-xl p-4 shadow-2xl z-[1000] max-w-xs';
+              errorNotif.style.top = 'calc(var(--sat, 0px) + 8rem)';
+              errorNotif.innerHTML = `<p class="text-sm">Payment failed but post is live</p>`;
+              document.body.appendChild(errorNotif);
+              setTimeout(() => errorNotif.remove(), 3000);
+            }
+          }
+        })();
+      }
 
       // Check if @zk is mentioned anywhere in the post (not just at start)
       const postContent = newPost.toLowerCase();

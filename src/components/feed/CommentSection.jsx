@@ -207,29 +207,47 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
         onCommentAdded();
       }
 
-      // Show success notification AFTER comment is created
-      const notification = document.createElement('div');
-      notification.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[1000] max-w-xs';
-      notification.style.top = 'calc(var(--sat, 0px) + 8rem)';
-      notification.innerHTML = `
-        <div class="flex items-center gap-2 mb-3">
-          <div class="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0">
-            <span class="text-sm">✓</span>
-          </div>
-          <h3 class="font-bold text-sm">Comment Posted!</h3>
-        </div>
-        <div class="space-y-1.5 text-xs text-white/60">
-          <div class="flex justify-between gap-3">
-            <span>Status:</span>
-            <span class="text-green-400 font-semibold">Success</span>
-          </div>
-        </div>
-        <button onclick="this.parentElement.remove()" class="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-lg py-1.5 text-xs font-medium transition-colors border border-white/10">
-          OK
-        </button>
-      `;
-      document.body.appendChild(notification);
-      setTimeout(() => notification.remove(), 3000);
+      // NOW do payment in background (non-blocking)
+      if (!isIOS() && isDesktop() && kaswareAddress) {
+        (async () => {
+          try {
+            const amountSompi = 100000000; // 1 KAS
+            console.log('💰 Desktop comment: Sending 1 KAS to self...', kaswareAddress);
+            const txHash = await window.kasware.sendKaspa(kaswareAddress, amountSompi);
+            console.log('✅ Desktop comment: Payment successful, txHash:', txHash);
+
+            // Show payment notification
+            const notification = document.createElement('div');
+            notification.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[1000] max-w-xs';
+            notification.style.top = 'calc(var(--sat, 0px) + 8rem)';
+            notification.innerHTML = `
+              <div class="flex items-center gap-2 mb-3">
+                <div class="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span class="text-sm">✓</span>
+                </div>
+                <h3 class="font-bold text-sm">Payment Sent!</h3>
+              </div>
+              <div class="space-y-1.5 text-xs text-white/60">
+                <div class="flex justify-between gap-3">
+                  <span>Amount:</span>
+                  <span class="text-white font-semibold">1 KAS</span>
+                </div>
+                <div class="flex justify-between gap-3">
+                  <span>To:</span>
+                  <span class="text-white font-semibold">Self</span>
+                </div>
+              </div>
+              <button onclick="this.parentElement.remove()" class="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-lg py-1.5 text-xs font-medium transition-colors border border-white/10">
+                OK
+              </button>
+            `;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 4000);
+          } catch (err) {
+            console.error('❌ Desktop comment: Payment failed:', err);
+          }
+        })();
+      }
 
       // If @zk was mentioned anywhere, have it respond
       const zkMentioned = newComment.toLowerCase().includes('@zk');
@@ -276,7 +294,7 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
         const handleReplyToComment = async (parentComment) => {
           if (!replyText.trim()) return;
 
-          // Get Kasware wallet if needed for payment
+          // Get Kasware wallet if needed
           let kaswareAddress = null;
           if (!isIOS() && typeof window.kasware !== 'undefined') {
             try {
@@ -289,26 +307,10 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
             }
           }
 
-          // Desktop: Require 1 KAS self-payment (iOS exempt)
-          if (!isIOS() && isDesktop()) {
-            if (!kaswareAddress) {
-              alert('Desktop users: Connect Kasware to reply (1 KAS self-payment required)');
-              return;
-            }
-
-            try {
-              const amountSompi = 100000000; // 1 KAS
-              console.log('💰 Desktop reply: Sending 1 KAS to self...', kaswareAddress);
-              const txHash = await window.kasware.sendKaspa(kaswareAddress, amountSompi);
-              console.log('✅ Desktop reply: Payment successful, txHash:', txHash);
-            } catch (err) {
-              console.error('❌ Desktop reply: Payment failed:', err);
-              if (err.message?.includes('User reject')) {
-                return;
-              }
-              alert('Payment failed: ' + err.message);
-              return;
-            }
+          // Desktop: Check Kasware connection but don't block
+          if (!isIOS() && isDesktop() && !kaswareAddress) {
+            alert('Desktop users: Connect Kasware to reply (1 KAS self-payment required)');
+            return;
           }
 
           setIsCommenting(true);
@@ -373,29 +375,47 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
             // Auto-expand replies to show the new reply immediately
             setExpandedReplies(prev => ({ ...prev, [parentComment.id]: true }));
 
-            // Show success notification AFTER reply is created
-            const notification = document.createElement('div');
-            notification.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[1000] max-w-xs';
-            notification.style.top = 'calc(var(--sat, 0px) + 8rem)';
-            notification.innerHTML = `
-              <div class="flex items-center gap-2 mb-3">
-                <div class="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span class="text-sm">✓</span>
-                </div>
-                <h3 class="font-bold text-sm">Reply Posted!</h3>
-              </div>
-              <div class="space-y-1.5 text-xs text-white/60">
-                <div class="flex justify-between gap-3">
-                  <span>Status:</span>
-                  <span class="text-green-400 font-semibold">Success</span>
-                </div>
-              </div>
-              <button onclick="this.parentElement.remove()" class="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-lg py-1.5 text-xs font-medium transition-colors border border-white/10">
-                OK
-              </button>
-            `;
-            document.body.appendChild(notification);
-            setTimeout(() => notification.remove(), 3000);
+            // NOW do payment in background (non-blocking)
+            if (!isIOS() && isDesktop() && kaswareAddress) {
+              (async () => {
+                try {
+                  const amountSompi = 100000000; // 1 KAS
+                  console.log('💰 Desktop reply: Sending 1 KAS to self...', kaswareAddress);
+                  const txHash = await window.kasware.sendKaspa(kaswareAddress, amountSompi);
+                  console.log('✅ Desktop reply: Payment successful, txHash:', txHash);
+
+                  // Show payment notification
+                  const notification = document.createElement('div');
+                  notification.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[1000] max-w-xs';
+                  notification.style.top = 'calc(var(--sat, 0px) + 8rem)';
+                  notification.innerHTML = `
+                    <div class="flex items-center gap-2 mb-3">
+                      <div class="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span class="text-sm">✓</span>
+                      </div>
+                      <h3 class="font-bold text-sm">Payment Sent!</h3>
+                    </div>
+                    <div class="space-y-1.5 text-xs text-white/60">
+                      <div class="flex justify-between gap-3">
+                        <span>Amount:</span>
+                        <span class="text-white font-semibold">1 KAS</span>
+                      </div>
+                      <div class="flex justify-between gap-3">
+                        <span>To:</span>
+                        <span class="text-white font-semibold">Self</span>
+                      </div>
+                    </div>
+                    <button onclick="this.parentElement.remove()" class="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-lg py-1.5 text-xs font-medium transition-colors border border-white/10">
+                      OK
+                    </button>
+                  `;
+                  document.body.appendChild(notification);
+                  setTimeout(() => notification.remove(), 4000);
+                } catch (err) {
+                  console.error('❌ Desktop reply: Payment failed:', err);
+                }
+              })();
+            }
 
             console.log('🔄 Reloading comments in background...');
             await loadComments();
