@@ -157,6 +157,7 @@ import CountryDetail from './pages/CountryDetail';
 import Guide from './pages/Guide';
 import MMN from './pages/MMN';
 import Articles from './pages/Articles';
+import DAGFeed from './pages/DAGFeed';
 import __Layout from './Layout.jsx';
 
 
@@ -320,6 +321,7 @@ export const PAGES = {
     "Guide": Guide,
     "MMN": MMN,
     "Articles": Articles,
+    "DAGFeed": DAGFeed,
 }
 
 export const pagesConfig = {

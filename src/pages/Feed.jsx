@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   Send, Heart, MessageCircle, Trash2, Edit2,
-  Loader2, Image as ImageIcon, X, Sparkles, Eye, Users, Activity, Video, FileText, DollarSign, Wallet, Plus, CornerDownRight, Pencil, Share, AlertCircle, Palette, Trophy, Hammer, Search, CircleDot, Newspaper
+  Loader2, Image as ImageIcon, X, Sparkles, Eye, Users, Activity, Video, FileText, DollarSign, Wallet, Plus, CornerDownRight, Pencil, Share, AlertCircle, Palette, Trophy, Hammer, Search, CircleDot, Newspaper, Box
 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -3729,6 +3729,19 @@ export default function FeedPage() {
                     >
                       <CircleDot className="w-4 h-4 text-cyan-400 group-hover:text-yellow-400 transition-colors" />
                     </motion.div>
+                  </Button>
+                  <Button
+                    onClick={() => navigate(createPageUrl("DAGFeed"))}
+                    size="sm"
+                    variant="ghost"
+                    className="relative text-white/60 hover:text-white hover:bg-white/10 h-8 w-8 p-0 group"
+                    title="DAG Feed (Pay to Publish)"
+                  >
+                    <div className="relative">
+                      <Box className="w-3 h-3 text-purple-400 group-hover:text-purple-300 transition-colors absolute top-0 left-0" style={{ transform: 'translate(-2px, -2px)' }} />
+                      <Box className="w-3 h-3 text-purple-400 group-hover:text-purple-300 transition-colors absolute top-0 left-0" style={{ transform: 'translate(2px, 0px)' }} />
+                      <Box className="w-3 h-3 text-purple-400 group-hover:text-purple-300 transition-colors absolute top-0 left-0" style={{ transform: 'translate(0px, 2px)' }} />
+                    </div>
                   </Button>
                   <Button
                     onClick={() => setShowNewsModal(true)}
