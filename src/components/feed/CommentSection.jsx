@@ -276,17 +276,22 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
             }
           }
 
-          // Desktop: Require 1 KAS self-payment (iOS exempt)
+          // Desktop: Require 1 KAS payment to comment author (iOS exempt)
           if (!isIOS() && isDesktop()) {
             if (!kaswareAddress) {
-              alert('Desktop users: Connect Kasware to reply (1 KAS self-payment required)');
+              alert('Desktop users: Connect Kasware to reply (1 KAS tip to commenter)');
+              return;
+            }
+
+            if (!parentComment.author_wallet_address) {
+              alert('Cannot tip: Comment author has no wallet connected');
               return;
             }
 
             try {
               const amountSompi = 100000000; // 1 KAS
-              console.log('💰 Desktop reply: Sending 1 KAS to self...', kaswareAddress);
-              const txHash = await window.kasware.sendKaspa(kaswareAddress, amountSompi);
+              console.log('💰 Desktop reply: Sending 1 KAS to commenter...', parentComment.author_wallet_address);
+              const txHash = await window.kasware.sendKaspa(parentComment.author_wallet_address, amountSompi);
               console.log('✅ Desktop reply: Payment successful, txHash:', txHash);
 
               // Show notification
@@ -298,7 +303,7 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                   <div class="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0">
                     <span class="text-sm">✓</span>
                   </div>
-                  <h3 class="font-bold text-sm">Reply Payment Sent!</h3>
+                  <h3 class="font-bold text-sm">Reply Tip Sent!</h3>
                 </div>
                 <div class="space-y-1.5 text-xs text-white/60">
                   <div class="flex justify-between gap-3">
@@ -306,8 +311,8 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                     <span class="text-white font-semibold">1 KAS</span>
                   </div>
                   <div class="flex justify-between gap-3">
-                    <span>Status:</span>
-                    <span class="text-green-400 font-semibold">Confirmed</span>
+                    <span>To:</span>
+                    <span class="text-white font-semibold">${parentComment.author_name || 'Commenter'}</span>
                   </div>
                 </div>
                 <button onclick="this.parentElement.remove()" class="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-lg py-1.5 text-xs font-medium transition-colors border border-white/10">
