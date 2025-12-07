@@ -162,42 +162,12 @@ export default function TapToTipPage() {
         // Must have a wallet
         if (!u.created_wallet_address && !u.agent_zk_id) return false;
 
-        // Exclude specific olatomiwa wallet
-        if (u.username?.toLowerCase() === 'olatomiwa' && u.created_wallet_address?.toLowerCase().endsWith('x82')) {
-          return false;
-        }
-
-        // Exclude imposter TTT wallet
-        if (u.username?.toLowerCase() === 'ttt' && u.created_wallet_address?.toLowerCase().endsWith('6ft')) {
-          return false;
-        }
-
-        // For TTT users, only keep vru, feq, kq3
-        if (u.username?.toLowerCase() === 'ttt') {
-          const addr = (u.created_wallet_address || u.agent_zk_id || '').toLowerCase();
-          const allowedEndings = ['vru', 'feq', 'kq3'];
-          const isAllowed = allowedEndings.some(ending => addr.endsWith(ending));
-
-          // Remove these specific TTT accounts
-          const blockedEndings = ['x61', 'n78', 'ynd', '55a', 'e92', '244', 'v21', '9fe', 'zg8', 'v7k'];
-          const isBlocked = blockedEndings.some(ending => addr.endsWith(ending));
-
-          if (isBlocked) return false;
-          return isAllowed;
-        }
-
-        // For ESP users, only keep the correct wallet ending in cd7
-        if (u.username?.toLowerCase() === 'esp') {
-          const addr = (u.created_wallet_address || u.agent_zk_id || '').toLowerCase();
-          return addr.endsWith('cd7');
-        }
-
         // ALWAYS include destroyer - hard requirement
         if (u.username?.toLowerCase() === 'destroyer') {
           return true;
         }
 
-        // Include all other users
+        // Include everyone else who has ever posted
         return true;
       });
       
