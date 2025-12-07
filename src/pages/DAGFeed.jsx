@@ -77,18 +77,13 @@ export default function DAGFeedPage() {
       }
 
       const allPosts = await base44.entities.DAGPost.list('-created_date', 200);
-      console.log('🔍 DAG Feed Debug:', {
-        totalPostsFetched: allPosts.length,
-        currentUser: currentUser?.email,
-        posts: allPosts.map(p => ({
-          id: p.id,
-          author: p.author_name,
-          is_public: p.is_public,
-          created_by: p.created_by
-        }))
+      
+      // Client-side filter: show public posts OR user's own posts
+      const visiblePosts = allPosts.filter(post => {
+        return post.is_public === true || (currentUser && post.created_by === currentUser.email);
       });
       
-      setPosts(allPosts);
+      setPosts(visiblePosts);
       setError(null);
     } catch (err) {
       console.error('Failed to load data:', err);
