@@ -177,6 +177,11 @@ export default function TapToTipPage() {
           return addr.endsWith('cd7');
         }
 
+        // For destroyer users, keep all of them (don't filter)
+        if (u.username?.toLowerCase() === 'destroyer') {
+          return true;
+        }
+
         // Include all other users
         return true;
       });
@@ -191,7 +196,7 @@ export default function TapToTipPage() {
         badgesMap[badge.username].push(badge);
       });
       
-      // Sort users: Current user FIRST, then TTT, then priority users, then by badges
+      // Sort users: Current user FIRST, then TTT, then destroyer, then priority users, then by badges
       const sortedUsers = usersWithWallets.sort((a, b) => {
         // Current user always first
         const aIsCurrentUser = currentUser && a.email === currentUser.email;
@@ -206,15 +211,25 @@ export default function TapToTipPage() {
         if (aIsTTT && !bIsTTT) return -1;
         if (!aIsTTT && bIsTTT) return 1;
 
-        const priorityUsers = ['destroyer', 'esp', 'zeku'];
+        // Destroyer comes next
+        const aIsDestroyer = a.username?.toLowerCase() === 'destroyer';
+        const bIsDestroyer = b.username?.toLowerCase() === 'destroyer';
+
+        if (aIsDestroyer && !bIsDestroyer) return -1;
+        if (!aIsDestroyer && bIsDestroyer) return 1;
+
+        const priorityUsers = ['esp', 'zeku'];
         const aIsPriority = priorityUsers.some(p => a.username?.toLowerCase().includes(p));
         const bIsPriority = priorityUsers.some(p => b.username?.toLowerCase().includes(p));
 
         if (aIsPriority && !bIsPriority) return -1;
         if (!aIsPriority && bIsPriority) return 1;
 
+        // Users with badges come next
         const aBadges = badgesMap[a.username]?.length || 0;
         const bBadges = badgesMap[b.username]?.length || 0;
+        if (aBadges > 0 && bBadges === 0) return -1;
+        if (aBadges === 0 && bBadges > 0) return 1;
         return bBadges - aBadges;
       });
       
