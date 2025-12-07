@@ -90,25 +90,37 @@ export default function Area51Page() {
     }
 
     setCheckingIn(true);
+    setHasCheckedIn(true); // Update UI immediately
+    
     try {
       const message = `Area 51 Check-In: ${new Date().toISOString()}`;
-      let signature = "";
-      let deviceType = "kasware";
+      let signature = `manual_${Date.now()}`;
+      let deviceType = "manual";
 
-      // Try Kasware first
+      // Try Kasware (non-blocking)
       if (window.kasware) {
         try {
-          const accounts = await window.kasware.requestAccounts();
-          signature = await window.kasware.signMessage(message);
+          const accounts = await Promise.race([
+            window.kasware.requestAccounts(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000))
+          ]);
+          signature = await Promise.race([
+            window.kasware.signMessage(message),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000))
+          ]);
+          deviceType = "kasware";
         } catch (kasErr) {
-          console.log("Kasware not available, trying biometric");
+          console.log("Kasware not available");
         }
       }
 
-      // Fallback to biometric for iOS/mobile
-      if (!signature && window.PublicKeyCredential) {
+      // Fallback to biometric for iOS/mobile (non-blocking)
+      if (deviceType === "manual" && window.PublicKeyCredential) {
         try {
-          const available = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+          const available = await Promise.race([
+            window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1000))
+          ]);
           if (available) {
             deviceType = "ios_faceid";
             signature = `biometric_${Date.now()}`;
@@ -118,30 +130,30 @@ export default function Area51Page() {
         }
       }
 
-      // Create check-in record
-      await base44.entities.Area51CheckIn.create({
-        user_email: user.email,
-        username: user.username || user.email?.split('@')[0],
-        wallet_address: user.created_wallet_address || "",
-        signature: signature || `manual_${Date.now()}`,
-        check_in_message: message,
-        device_type: signature ? deviceType : "android"
-      });
+      // Create both records in parallel
+      await Promise.all([
+        base44.entities.Area51CheckIn.create({
+          user_email: user.email,
+          username: user.username || user.email?.split('@')[0],
+          wallet_address: user.created_wallet_address || "",
+          signature: signature,
+          check_in_message: message,
+          device_type: deviceType
+        }),
+        base44.entities.Area51Message.create({
+          message: `🛸 ${user.username || user.email?.split('@')[0]} has checked into Area 51`,
+          sender_username: "SYSTEM",
+          sender_email: "system@area51",
+          message_type: "system",
+          is_ai: false
+        })
+      ]);
 
-      // Send system message
-      await base44.entities.Area51Message.create({
-        message: `🛸 ${user.username || user.email?.split('@')[0]} has checked into Area 51`,
-        sender_username: "SYSTEM",
-        sender_email: "system@area51",
-        message_type: "system",
-        is_ai: false
-      });
-
-      setHasCheckedIn(true);
       toast.success("Checked in successfully!");
-      loadMessages();
+      setTimeout(loadMessages, 500);
     } catch (error) {
       console.error("Check-in failed:", error);
+      setHasCheckedIn(false); // Revert on error
       toast.error("Check-in failed");
     } finally {
       setCheckingIn(false);
