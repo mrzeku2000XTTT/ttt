@@ -673,12 +673,14 @@ export default function FeedPage() {
       return;
     }
 
+    // Get wallet from Kasware or TTT wallet
     let walletAddress = '';
     if (kaswareWallet.connected) {
       walletAddress = kaswareWallet.address;
     } else if (user?.created_wallet_address) {
       walletAddress = user.created_wallet_address;
     } else {
+      // Try to get local wallet
       const localWallet = localStorage.getItem('ttt_wallet_address');
       if (localWallet) {
         walletAddress = localWallet;
@@ -688,16 +690,12 @@ export default function FeedPage() {
       }
     }
 
+    // Desktop: Check Kasware but don't block
     if (isDesktop() && !kaswareWallet.connected) {
       setError('Desktop users: Connect Kasware to post (1 KAS self-payment required)');
       await connectKasware();
       return;
     }
-
-    const postContent = newPost.trim();
-    const postFiles = [...uploadedFiles];
-    const isEditing = editingPost !== null;
-    const editingPostId = editingPost?.id;
 
     setIsPosting(true);
     setError(null);
@@ -707,7 +705,7 @@ export default function FeedPage() {
                         (walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : 'Anonymous');
 
       const postData = {
-        content: postContent,
+        content: newPost.trim(),
         author_name: authorName,
         author_wallet_address: walletAddress,
         author_agent_zk_id: user?.agent_zk_id || '',
@@ -718,55 +716,103 @@ export default function FeedPage() {
         tips_received: 0
       };
 
-      if (postFiles.length > 0) {
-        postData.media_files = postFiles;
+      if (uploadedFiles.length > 0) {
+        postData.media_files = uploadedFiles;
       }
 
-      if (isEditing) {
-        await base44.entities.Post.update(editingPostId, postData);
-        setPosts(prev => prev.map(p => p.id === editingPostId ? { ...p, ...postData } : p));
+      let createdPost = null;
+
+      if (editingPost) {
+        await base44.entities.Post.update(editingPost.id, postData);
+        setPosts(posts.map(p => p.id === editingPost.id ? { ...editingPost, ...postData, updated_date: new Date().toISOString() } : p));
         setEditingPost(null);
-        setNewPost("");
-        setUploadedFiles([]);
-        setIsPosting(false);
       } else {
-        const createdPost = await base44.entities.Post.create(postData);
-        
-        // Add to UI instantly
-        setPosts(prev => [createdPost, ...prev]);
-        
-        // Clear form instantly
-        setNewPost("");
-        setUploadedFiles([]);
-        setIsPosting(false);
+        console.log('📝 Creating new post...', postData);
+        createdPost = await base44.entities.Post.create(postData);
+        console.log('✅ Post created:', createdPost);
 
-        // Payment in background
-        if (isDesktop() && kaswareWallet.connected) {
-          setTimeout(() => {
-            window.kasware.sendKaspa(walletAddress, 100000000).then(txHash => {
-              const n = document.createElement('div');
-              n.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[1000] max-w-xs';
-              n.style.top = 'calc(var(--sat, 0px) + 8rem)';
-              n.innerHTML = `<div class="flex items-center gap-2 mb-3"><div class="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center"><span class="text-sm">✓</span></div><h3 class="font-bold text-sm">Payment Sent!</h3></div><div class="text-xs text-white/60">1 KAS to Self</div><button onclick="this.remove()" class="mt-3 w-full bg-white/5 rounded-lg py-1.5 text-xs">OK</button>`;
-              document.body.appendChild(n);
-              setTimeout(() => n.remove(), 4000);
-            }).catch(err => console.error('Payment failed:', err));
-          }, 200);
-        }
+        // INSTANT UPDATE: Add post to UI immediately with guaranteed re-render
+        setPosts(prev => {
+          const updated = [createdPost, ...prev];
+          console.log('⚡ Posts state updated, count:', updated.length);
+          return updated;
+        });
+      }
 
-        // ZK bot in background
-        if (postContent.toLowerCase().includes('@zk')) {
-          setTimeout(() => {
-            setExpandedComments(prev => ({ ...prev, [createdPost.id]: true }));
-            const imgs = createdPost.media_files?.filter(f => f.type === 'image').map(f => f.url) || [];
-            base44.functions.invoke('zkBotRespond', { 
-              post_id: createdPost.id,
-              post_content: createdPost.content,
-              author_name: createdPost.author_name,
-              image_urls: imgs
-            }).then(() => loadData()).catch(err => console.error('ZK error:', err));
-          }, 200);
-        }
+      // Clear form and unlock UI IMMEDIATELY
+      setNewPost("");
+      setUploadedFiles([]);
+      setError(null);
+      setIsPosting(false);
+      
+      console.log('✨ Post visible in feed NOW');
+
+      // Background payment (completely async, won't block)
+      if (isDesktop() && kaswareWallet.connected && createdPost) {
+        setTimeout(() => {
+          (async () => {
+            try {
+              const amountSompi = 100000000;
+              console.log('💰 Background: Sending 1 KAS to self...');
+              const txHash = await window.kasware.sendKaspa(walletAddress, amountSompi);
+              console.log('✅ Background: Payment done');
+
+              const notification = document.createElement('div');
+              notification.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[1000] max-w-xs';
+              notification.style.top = 'calc(var(--sat, 0px) + 8rem)';
+              notification.innerHTML = `
+                <div class="flex items-center gap-2 mb-3">
+                  <div class="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span class="text-sm">✓</span>
+                  </div>
+                  <h3 class="font-bold text-sm">Payment Sent!</h3>
+                </div>
+                <div class="space-y-1.5 text-xs text-white/60">
+                  <div class="flex justify-between gap-3">
+                    <span>Amount:</span>
+                    <span class="text-white font-semibold">1 KAS</span>
+                  </div>
+                  <div class="flex justify-between gap-3">
+                    <span>To:</span>
+                    <span class="text-white font-semibold">Self</span>
+                  </div>
+                </div>
+                <button onclick="this.parentElement.remove()" class="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-lg py-1.5 text-xs font-medium transition-colors border border-white/10">
+                  OK
+                </button>
+              `;
+              document.body.appendChild(notification);
+              setTimeout(() => notification.remove(), 4000);
+            } catch (err) {
+              console.error('❌ Background payment failed:', err);
+            }
+          })();
+        }, 100);
+      }
+
+      // ZK bot in background if mentioned
+      if (createdPost && newPost.toLowerCase().includes('@zk')) {
+        setTimeout(() => {
+          (async () => {
+            try {
+              setExpandedComments(prev => ({ ...prev, [createdPost.id]: true }));
+              const imageUrls = createdPost.media_files 
+                ? createdPost.media_files.filter(f => f.type === 'image').map(f => f.url)
+                : [];
+              
+              await base44.functions.invoke('zkBotRespond', { 
+                post_id: createdPost.id,
+                post_content: createdPost.content,
+                author_name: createdPost.author_name,
+                image_urls: imageUrls
+              });
+              
+              await loadData();
+            } catch (err) {
+              console.error('ZK bot error:', err);
+            }
+          })();
+        }, 100);
       }
     } catch (err) {
       console.error('Failed to post:', err);
@@ -781,6 +827,10 @@ export default function FeedPage() {
       return;
     }
 
+    // Check if calling ZK bot
+    const zkMatch = replyText.trim().match(/^@zk\s+(.+)/i);
+
+    // Get wallet from Kasware or TTT wallet
     let walletAddress = '';
     if (kaswareWallet.connected) {
       walletAddress = kaswareWallet.address;
@@ -796,9 +846,6 @@ export default function FeedPage() {
       }
     }
 
-    const replyContent = replyText.trim();
-    const replyMedia = [...replyFiles];
-
     setIsPosting(true);
     setError(null);
 
@@ -807,7 +854,7 @@ export default function FeedPage() {
                         (walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : 'Anonymous');
 
       const replyData = {
-        content: replyContent,
+        content: replyText.trim(),
         author_name: authorName,
         author_wallet_address: walletAddress,
         author_agent_zk_id: user?.agent_zk_id || '',
@@ -819,46 +866,68 @@ export default function FeedPage() {
         tips_received: 0
       };
 
-      if (replyMedia.length > 0) {
-        replyData.media_files = replyMedia;
+      if (replyFiles.length > 0) {
+        replyData.media_files = replyFiles;
       }
 
+      console.log('📝 Creating reply...', replyData);
       const createdReply = await base44.entities.Post.create(replyData);
-      
-      // Add to UI instantly
-      setPosts(prev => [...prev, createdReply]);
-      setPosts(prev => prev.map(p => 
-        p.id === parentPost.id 
-          ? { ...p, replies_count: (p.replies_count || 0) + 1 }
-          : p
-      ));
-      
-      // Clear form instantly
-      setReplyText("");
-      setReplyFiles([]);
-      setReplyingTo(null);
-      setIsPosting(false);
-      setExpandedReplies(prev => ({ ...prev, [parentPost.id]: true }));
+      console.log('✅ Reply created:', createdReply);
 
-      // Background update
+      // INSTANT UPDATE: Add reply to UI with forced re-render
+      setPosts(prev => {
+        const updated = [...prev, createdReply];
+        console.log('⚡ Reply added, total posts:', updated.length);
+        return updated;
+      });
+
+      // Update parent post's replies count in background
       setTimeout(() => {
         base44.entities.Post.update(parentPost.id, {
           replies_count: (parentPost.replies_count || 0) + 1
         });
+        
+        setPosts(prev => prev.map(p => 
+          p.id === parentPost.id 
+            ? { ...p, replies_count: (p.replies_count || 0) + 1 }
+            : p
+        ));
       }, 100);
 
-      // ZK bot in background
-      if (replyContent.toLowerCase().includes('@zk')) {
+      // Clear form and unlock UI IMMEDIATELY
+      setReplyText("");
+      setReplyFiles([]);
+      setReplyingTo(null);
+      setError(null);
+      setIsPosting(false);
+
+      // Auto-expand to show new reply
+      setExpandedReplies(prev => ({ ...prev, [parentPost.id]: true }));
+      console.log('✨ Reply visible NOW');
+
+      // ZK bot in background if mentioned
+      if (createdReply && replyText.toLowerCase().includes('@zk')) {
         setTimeout(() => {
-          setExpandedComments(prev => ({ ...prev, [createdReply.id]: true }));
-          const imgs = createdReply.media_files?.filter(f => f.type === 'image').map(f => f.url) || [];
-          base44.functions.invoke('zkBotRespond', { 
-            post_id: createdReply.id,
-            post_content: createdReply.content,
-            author_name: createdReply.author_name,
-            image_urls: imgs
-          }).then(() => loadData()).catch(err => console.error('ZK error:', err));
-        }, 200);
+          (async () => {
+            try {
+              setExpandedComments(prev => ({ ...prev, [createdReply.id]: true }));
+              const imageUrls = createdReply.media_files 
+                ? createdReply.media_files.filter(f => f.type === 'image').map(f => f.url)
+                : [];
+              
+              await base44.functions.invoke('zkBotRespond', { 
+                post_id: createdReply.id,
+                post_content: createdReply.content,
+                author_name: createdReply.author_name,
+                image_urls: imageUrls
+              });
+              
+              await loadData();
+            } catch (err) {
+              console.error('ZK bot error:', err);
+            }
+          })();
+        }, 100);
       }
     } catch (err) {
       console.error('Failed to reply:', err);
