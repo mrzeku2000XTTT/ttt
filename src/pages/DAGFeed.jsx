@@ -257,7 +257,7 @@ export default function DAGFeedPage() {
       const authorName = user?.username || `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
 
       const postData = {
-        content: newPost.trim(),
+        content: newPost.trim() || "Shared media",
         author_name: authorName,
         author_wallet_address: walletAddress,
         author_agent_zk_id: user?.agent_zk_id || '',
@@ -287,7 +287,7 @@ export default function DAGFeedPage() {
       await loadData();
     } catch (err) {
       console.error('Failed to post:', err);
-      setError('Failed to create post');
+      setError('Failed to create post: ' + (err.message || 'Unknown error'));
     } finally {
       setIsPosting(false);
     }
