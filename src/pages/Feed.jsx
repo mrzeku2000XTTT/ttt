@@ -491,11 +491,6 @@ export default function FeedPage() {
   };
 
   const handleOpenTipModal = (post) => {
-    if (isIOS()) {
-      setError('Tipping is not available on iOS devices');
-      return;
-    }
-
     if (!kaswareWallet.connected) {
       setError('Please connect Kasware wallet to send tips');
       connectKasware();
@@ -659,19 +654,15 @@ export default function FeedPage() {
     }
   };
 
-  const isDesktop = () => {
-    return window.innerWidth >= 1024 && !/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  };
-
-  const isIOS = () => {
-    return /iPhone|iPad|iPod/i.test(navigator.userAgent);
-  };
-
   const handlePost = async () => {
     if (!newPost.trim() && uploadedFiles.length === 0) {
       setError('Please enter some content or upload files');
       return;
     }
+
+    // Check if user is calling ZK bot
+    const zkMatch = newPost.trim().match(/^@zk\s+(.+)/i);
+    const isZKCall = zkMatch !== null;
 
     // Get wallet from Kasware or TTT wallet
     let walletAddress = '';
@@ -688,13 +679,6 @@ export default function FeedPage() {
         setError('Please create a TTT wallet or connect Kasware to post');
         return;
       }
-    }
-
-    // Desktop: Check Kasware but don't block
-    if (isDesktop() && !kaswareWallet.connected) {
-      setError('Desktop users: Connect Kasware to post (1 KAS self-payment required)');
-      await connectKasware();
-      return;
     }
 
     setIsPosting(true);
@@ -721,65 +705,65 @@ export default function FeedPage() {
       }
 
       let createdPost = null;
-      const postContent = newPost.trim();
 
       if (editingPost) {
         await base44.entities.Post.update(editingPost.id, postData);
         setPosts(posts.map(p => p.id === editingPost.id ? { ...editingPost, ...postData, updated_date: new Date().toISOString() } : p));
         setEditingPost(null);
-        setNewPost("");
-        setUploadedFiles([]);
-        setIsPosting(false);
       } else {
-        console.log('📝 Creating post...');
         createdPost = await base44.entities.Post.create(postData);
-        console.log('✅ Created:', createdPost.id);
 
-        // Clear form FIRST
-        setNewPost("");
-        setUploadedFiles([]);
-        
-        // Add to UI SECOND
-        setPosts(prev => [createdPost, ...prev]);
-        
-        // Unlock UI THIRD
-        setIsPosting(false);
-        
-        console.log('⚡ Post live');
+        // Reload all posts to get fresh data from server
+        const freshPosts = await base44.entities.Post.list('-created_date', 200);
+        setPosts(freshPosts);
+      }
 
-        // Everything else in background
-        if (isDesktop() && kaswareWallet.connected) {
-          setTimeout(() => {
-            window.kasware.sendKaspa(walletAddress, 100000000)
-              .then(txHash => {
-                console.log('✅ Payment done');
-                const n = document.createElement('div');
-                n.className = 'fixed right-4 bg-black/95 border border-white/20 text-white rounded-xl p-4 z-[1000]';
-                n.style.top = 'calc(var(--sat, 0px) + 8rem)';
-                n.innerHTML = '<div class="text-sm">✓ 1 KAS sent to self</div><button onclick="this.parentElement.remove()" class="mt-2 text-xs text-white/60">OK</button>';
-                document.body.appendChild(n);
-                setTimeout(() => n.remove(), 3000);
-              })
-              .catch(err => console.log('Payment skipped:', err.message));
-          }, 50);
-        }
+      setNewPost("");
+      setUploadedFiles([]);
+      setError(null);
 
-        if (postContent.toLowerCase().includes('@zk')) {
-          setTimeout(() => {
-            setExpandedComments(prev => ({ ...prev, [createdPost.id]: true }));
-            const imgs = createdPost.media_files?.filter(f => f.type === 'image').map(f => f.url) || [];
-            base44.functions.invoke('zkBotRespond', { 
-              post_id: createdPost.id,
-              post_content: createdPost.content,
-              author_name: createdPost.author_name,
-              image_urls: imgs
-            }).then(() => loadData()).catch(err => console.log('ZK error:', err));
-          }, 50);
+      // Check if @zk is mentioned anywhere in the post (not just at start)
+      const postContent = newPost.toLowerCase();
+      if (postContent.includes('@zk') && createdPost) {
+        console.log('[Feed] @zk mentioned, invoking backend...');
+
+        // Expand comments immediately to show @zk is responding
+        setExpandedComments(prev => ({ ...prev, [createdPost.id]: true }));
+
+        // Gather image URLs for vision analysis
+        const imageUrls = createdPost.media_files 
+          ? createdPost.media_files.filter(f => f.type === 'image').map(f => f.url)
+          : (createdPost.image_url ? [createdPost.image_url] : []);
+
+        // Call backend - it will create AND update the comment
+        try {
+          console.log('[Feed] Invoking zkBotRespond function...');
+          console.log('[Feed] Image URLs:', imageUrls);
+          const response = await base44.functions.invoke('zkBotRespond', { 
+            post_id: createdPost.id,
+            post_content: newPost.trim(),
+            author_name: authorName,
+            image_urls: imageUrls
+          });
+          console.log('[Feed] Response received:', response.data);
+
+          // Reload to see the comment created by backend
+          if (response.data?.success) {
+            console.log('[Feed] Analysis successful! Response:', response.data.analysis);
+            setTimeout(() => loadData(), 500);
+          } else {
+            console.error('[Feed] Analysis failed. Full response:', JSON.stringify(response.data));
+            console.error('[Feed] Error message:', response.data?.error);
+          }
+        } catch (err) {
+          console.error('[Feed] ZK bot error:', err.message, err);
+          setTimeout(() => loadData(), 300);
         }
       }
     } catch (err) {
-      console.error('Post failed:', err);
+      console.error('Failed to post:', err);
       setError('Failed to create post');
+    } finally {
       setIsPosting(false);
     }
   };
@@ -833,51 +817,68 @@ export default function FeedPage() {
         replyData.media_files = replyFiles;
       }
 
-      const replyContent = replyText.trim();
-      
-      console.log('📝 Creating reply...');
       const createdReply = await base44.entities.Post.create(replyData);
-      console.log('✅ Created:', createdReply.id);
 
-      // Clear form FIRST
+      // Update parent post's replies count
+      await base44.entities.Post.update(parentPost.id, {
+        replies_count: (parentPost.replies_count || 0) + 1
+      });
+
       setReplyText("");
       setReplyFiles([]);
       setReplyingTo(null);
-      
-      // Add to UI SECOND
-      setPosts(prev => [...prev, createdReply]);
-      setPosts(prev => prev.map(p => 
-        p.id === parentPost.id 
-          ? { ...p, replies_count: (p.replies_count || 0) + 1 }
-          : p
-      ));
-      
-      // Unlock UI THIRD
-      setIsPosting(false);
-      setExpandedReplies(prev => ({ ...prev, [parentPost.id]: true }));
-      
-      console.log('⚡ Reply live');
+      setError(null);
 
-      // Background tasks
-      setTimeout(() => {
-        base44.entities.Post.update(parentPost.id, {
-          replies_count: (parentPost.replies_count || 0) + 1
-        }).catch(err => console.log('Update count failed:', err));
-        
-        if (replyContent.toLowerCase().includes('@zk')) {
-          setExpandedComments(prev => ({ ...prev, [createdReply.id]: true }));
-          const imgs = createdReply.media_files?.filter(f => f.type === 'image').map(f => f.url) || [];
-          base44.functions.invoke('zkBotRespond', { 
+      // Automatically expand replies
+      if (!expandedReplies[parentPost.id]) {
+        setExpandedReplies(prev => ({ ...prev, [parentPost.id]: true }));
+      }
+
+      // Reload all posts to get fresh data
+      const freshPosts = await base44.entities.Post.list('-created_date', 200);
+      setPosts(freshPosts);
+
+      // Check if @zk is mentioned anywhere in the reply
+      if (replyText.toLowerCase().includes('@zk') && createdReply) {
+        console.log('[Feed] @zk mentioned in reply, invoking backend...');
+
+        // Expand comments immediately
+        setExpandedComments(prev => ({ ...prev, [createdReply.id]: true }));
+
+        // Gather image URLs for vision analysis
+        const replyImageUrls = createdReply.media_files 
+          ? createdReply.media_files.filter(f => f.type === 'image').map(f => f.url)
+          : (createdReply.image_url ? [createdReply.image_url] : []);
+
+        // Call backend - it will create AND update the comment
+        try {
+          console.log('[Feed] Invoking zkBotRespond for reply...');
+          console.log('[Feed] Reply Image URLs:', replyImageUrls);
+          const response = await base44.functions.invoke('zkBotRespond', { 
             post_id: createdReply.id,
-            post_content: createdReply.content,
-            author_name: createdReply.author_name,
-            image_urls: imgs
-          }).then(() => loadData()).catch(err => console.log('ZK error:', err));
+            post_content: replyText.trim(),
+            author_name: authorName,
+            image_urls: replyImageUrls
+          });
+          console.log('[Feed] Reply response received:', response.data);
+
+          // Reload to see comment created by backend
+          if (response.data?.success) {
+            console.log('[Feed] Reply analysis successful! Response:', response.data.analysis);
+            setTimeout(() => loadData(), 500);
+          } else {
+            console.error('[Feed] Reply analysis failed. Full response:', JSON.stringify(response.data));
+            console.error('[Feed] Error message:', response.data?.error);
+          }
+        } catch (err) {
+          console.error('[Feed] ZK bot reply error:', err.message, err);
+          setTimeout(() => loadData(), 300);
         }
-      }, 50);
+      }
     } catch (err) {
-      console.error('Reply failed:', err);
+      console.error('Failed to reply:', err);
       setError('Failed to post reply');
+    } finally {
       setIsPosting(false);
     }
   };
@@ -2192,7 +2193,7 @@ export default function FeedPage() {
             </Button>
           )}
 
-          {post.author_wallet_address && post.created_by !== user?.email && !isIOS() && (
+          {post.author_wallet_address && post.created_by !== user?.email && (
             <Button
               onClick={() => handleOpenTipModal(post)}
               variant="ghost"

@@ -106,49 +106,20 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
     }
   };
 
-  const isDesktop = () => {
-    return window.innerWidth >= 1024 && !/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  };
-
-  const isIOS = () => {
-    return /iPhone|iPad|iPod/i.test(navigator.userAgent);
-  };
-
   const handleComment = async () => {
     if (!newComment.trim()) return;
 
-    // Get Kasware wallet if needed for payment
-    let kaswareAddress = null;
-    if ((isDesktop() || !isIOS()) && typeof window.kasware !== 'undefined') {
-      try {
-        const accounts = await window.kasware.getAccounts();
-        if (accounts.length > 0) {
-          kaswareAddress = accounts[0];
-        }
-      } catch (err) {
-        console.log('Kasware not connected');
-      }
-    }
-
-    // Desktop: Check Kasware but don't block
-    if (!isIOS() && isDesktop() && !kaswareAddress) {
-      alert('Desktop users: Connect Kasware to comment (1 KAS self-payment required)');
-      return;
-    }
+    // Check if calling ZK bot
+    const zkMatch = newComment.trim().match(/^@zk\s+(.+)/i);
 
     setIsCommenting(true);
     try {
-      // Get author info - works with or without login
-      let authorName = '';
-      let authorWalletAddress = kaswareAddress || '';
+      // Prioritize TTT username, fallback to AgentZK profile
+      let authorName = currentUser.username || '';
+      let authorWalletAddress = currentUser.created_wallet_address || '';
 
-      // Try to get username from currentUser
-      if (currentUser?.username) {
-        authorName = currentUser.username;
-        authorWalletAddress = currentUser.created_wallet_address || kaswareAddress || '';
-      } else if (currentUser?.created_wallet_address) {
-        authorWalletAddress = currentUser.created_wallet_address;
-        // Try AgentZK profile
+      // Only use AgentZK username if no TTT username exists
+      if (!authorName && currentUser.created_wallet_address) {
         try {
           const profiles = await base44.entities.AgentZKProfile.filter({
             wallet_address: currentUser.created_wallet_address
@@ -161,75 +132,24 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
         }
       }
 
-      // Final fallbacks
+      // Fallback names
       if (!authorName) {
-        if (authorWalletAddress) {
-          authorName = `${authorWalletAddress.slice(0, 6)}...${authorWalletAddress.slice(-4)}`;
-        } else if (currentUser?.email) {
-          authorName = currentUser.email.split('@')[0];
-        } else {
-          authorName = 'Anonymous';
-        }
+        authorName = currentUser.created_wallet_address 
+          ? `${currentUser.created_wallet_address.slice(0, 6)}...${currentUser.created_wallet_address.slice(-4)}`
+          : currentUser.email.split('@')[0];
       }
 
-      console.log('💬 Creating comment...', { authorName, authorWalletAddress, postId });
       const createdComment = await base44.entities.PostComment.create({
         post_id: postId,
         author_name: authorName,
         author_wallet_address: authorWalletAddress,
         comment_text: newComment.trim()
       });
-      console.log('✅ Comment created:', createdComment);
 
       setNewComment("");
       
-      // Optimistically add comment to UI immediately
-      setComments(prev => [createdComment, ...prev]);
-      
       if (onCommentAdded) {
         onCommentAdded();
-      }
-
-      // NOW do payment in background (non-blocking)
-      if (!isIOS() && isDesktop() && kaswareAddress) {
-        (async () => {
-          try {
-            const amountSompi = 100000000; // 1 KAS
-            console.log('💰 Desktop comment: Sending 1 KAS to self...', kaswareAddress);
-            const txHash = await window.kasware.sendKaspa(kaswareAddress, amountSompi);
-            console.log('✅ Desktop comment: Payment successful, txHash:', txHash);
-
-            // Show payment notification
-            const notification = document.createElement('div');
-            notification.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[1000] max-w-xs';
-            notification.style.top = 'calc(var(--sat, 0px) + 8rem)';
-            notification.innerHTML = `
-              <div class="flex items-center gap-2 mb-3">
-                <div class="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span class="text-sm">✓</span>
-                </div>
-                <h3 class="font-bold text-sm">Payment Sent!</h3>
-              </div>
-              <div class="space-y-1.5 text-xs text-white/60">
-                <div class="flex justify-between gap-3">
-                  <span>Amount:</span>
-                  <span class="text-white font-semibold">1 KAS</span>
-                </div>
-                <div class="flex justify-between gap-3">
-                  <span>To:</span>
-                  <span class="text-white font-semibold">Self</span>
-                </div>
-              </div>
-              <button onclick="this.parentElement.remove()" class="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-lg py-1.5 text-xs font-medium transition-colors border border-white/10">
-                OK
-              </button>
-            `;
-            document.body.appendChild(notification);
-            setTimeout(() => notification.remove(), 4000);
-          } catch (err) {
-            console.error('❌ Desktop comment: Payment failed:', err);
-          }
-        })();
       }
 
       // If @zk was mentioned anywhere, have it respond
@@ -262,154 +182,68 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
           setZkIsResponding(false);
         }
       } else {
-        console.log('🔄 Reloading comments after creation...');
         await loadComments();
-        console.log('✨ Comment posted successfully');
       }
-    } catch (err) {
-      console.error('Failed to comment:', err);
-      alert('Failed to post comment: ' + err.message);
-    } finally {
-      setIsCommenting(false);
-    }
-  };
+        } catch (err) {
+        console.error('Failed to comment:', err);
+        } finally {
+        setIsCommenting(false);
+        }
+        };
 
         const handleReplyToComment = async (parentComment) => {
-          if (!replyText.trim()) return;
+        if (!replyText.trim()) return;
 
-          // Get Kasware wallet if needed
-          let kaswareAddress = null;
-          if (!isIOS() && typeof window.kasware !== 'undefined') {
-            try {
-              const accounts = await window.kasware.getAccounts();
-              if (accounts.length > 0) {
-                kaswareAddress = accounts[0];
-              }
-            } catch (err) {
-              console.log('Kasware not connected');
-            }
+        setIsCommenting(true);
+        try {
+        let authorName = currentUser.username || '';
+        let authorWalletAddress = currentUser.created_wallet_address || '';
+
+        if (!authorName && currentUser.created_wallet_address) {
+        try {
+          const profiles = await base44.entities.AgentZKProfile.filter({
+            wallet_address: currentUser.created_wallet_address
+          });
+          if (profiles.length > 0 && profiles[0].username) {
+            authorName = profiles[0].username;
           }
+        } catch (err) {
+          console.log('No AgentZK profile found');
+        }
+        }
 
-          // Desktop: Check Kasware connection but don't block
-          if (!isIOS() && isDesktop() && !kaswareAddress) {
-            alert('Desktop users: Connect Kasware to reply (1 KAS self-payment required)');
-            return;
-          }
+        if (!authorName) {
+        authorName = currentUser.created_wallet_address 
+          ? `${currentUser.created_wallet_address.slice(0, 6)}...${currentUser.created_wallet_address.slice(-4)}`
+          : currentUser.email.split('@')[0];
+        }
 
-          setIsCommenting(true);
-          try {
-            // Get author info - works with or without login
-            let authorName = '';
-            let authorWalletAddress = kaswareAddress || '';
+        await base44.entities.PostComment.create({
+        post_id: postId,
+        parent_comment_id: parentComment.id,
+        author_name: authorName,
+        author_wallet_address: authorWalletAddress,
+        comment_text: replyText.trim()
+        });
 
-            if (currentUser?.username) {
-              authorName = currentUser.username;
-              authorWalletAddress = currentUser.created_wallet_address || kaswareAddress || '';
-            } else if (currentUser?.created_wallet_address) {
-              authorWalletAddress = currentUser.created_wallet_address;
-              try {
-                const profiles = await base44.entities.AgentZKProfile.filter({
-                  wallet_address: currentUser.created_wallet_address
-                });
-                if (profiles.length > 0 && profiles[0].username) {
-                  authorName = profiles[0].username;
-                }
-              } catch (err) {
-                console.log('No AgentZK profile found');
-              }
-            }
+        // Update parent comment replies count
+        await base44.entities.PostComment.update(parentComment.id, {
+        replies_count: (parentComment.replies_count || 0) + 1
+        });
 
-            // Final fallbacks
-            if (!authorName) {
-              if (authorWalletAddress) {
-                authorName = `${authorWalletAddress.slice(0, 6)}...${authorWalletAddress.slice(-4)}`;
-              } else if (currentUser?.email) {
-                authorName = currentUser.email.split('@')[0];
-              } else {
-                authorName = 'Anonymous';
-              }
-            }
+        setReplyText("");
+        setReplyingTo(null);
 
-            console.log('💬 Creating comment reply...', { postId, parentCommentId: parentComment.id, authorName });
-            const createdReply = await base44.entities.PostComment.create({
-              post_id: postId,
-              parent_comment_id: parentComment.id,
-              author_name: authorName,
-              author_wallet_address: authorWalletAddress,
-              comment_text: replyText.trim()
-            });
-            console.log('✅ Comment reply created:', createdReply);
+        if (onCommentAdded) {
+        onCommentAdded();
+        }
 
-            // Optimistically add reply to UI immediately
-            setComments(prev => [...prev, createdReply]);
-
-            // Update parent comment replies count
-            await base44.entities.PostComment.update(parentComment.id, {
-              replies_count: (parentComment.replies_count || 0) + 1
-            });
-
-            setReplyText("");
-            setReplyingTo(null);
-
-            if (onCommentAdded) {
-              onCommentAdded();
-            }
-
-            // Auto-expand replies to show the new reply immediately
-            setExpandedReplies(prev => ({ ...prev, [parentComment.id]: true }));
-
-            // NOW do payment in background (non-blocking)
-            if (!isIOS() && isDesktop() && kaswareAddress) {
-              (async () => {
-                try {
-                  const amountSompi = 100000000; // 1 KAS
-                  console.log('💰 Desktop reply: Sending 1 KAS to self...', kaswareAddress);
-                  const txHash = await window.kasware.sendKaspa(kaswareAddress, amountSompi);
-                  console.log('✅ Desktop reply: Payment successful, txHash:', txHash);
-
-                  // Show payment notification
-                  const notification = document.createElement('div');
-                  notification.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[1000] max-w-xs';
-                  notification.style.top = 'calc(var(--sat, 0px) + 8rem)';
-                  notification.innerHTML = `
-                    <div class="flex items-center gap-2 mb-3">
-                      <div class="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span class="text-sm">✓</span>
-                      </div>
-                      <h3 class="font-bold text-sm">Payment Sent!</h3>
-                    </div>
-                    <div class="space-y-1.5 text-xs text-white/60">
-                      <div class="flex justify-between gap-3">
-                        <span>Amount:</span>
-                        <span class="text-white font-semibold">1 KAS</span>
-                      </div>
-                      <div class="flex justify-between gap-3">
-                        <span>To:</span>
-                        <span class="text-white font-semibold">Self</span>
-                      </div>
-                    </div>
-                    <button onclick="this.parentElement.remove()" class="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-lg py-1.5 text-xs font-medium transition-colors border border-white/10">
-                      OK
-                    </button>
-                  `;
-                  document.body.appendChild(notification);
-                  setTimeout(() => notification.remove(), 4000);
-                } catch (err) {
-                  console.error('❌ Desktop reply: Payment failed:', err);
-                }
-              })();
-            }
-
-            console.log('🔄 Reloading comments in background...');
-            await loadComments();
-
-            console.log('✨ Comment reply flow completed');
-          } catch (err) {
-            console.error('Failed to reply to comment:', err);
-            alert('Failed to post reply: ' + err.message);
-          } finally {
-            setIsCommenting(false);
-          }
+        await loadComments();
+        } catch (err) {
+        console.error('Failed to reply to comment:', err);
+        } finally {
+        setIsCommenting(false);
+        }
         };
 
   const handleLikeComment = async (comment) => {
@@ -483,10 +317,6 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
   };
 
   const handleTipCommenter = (comment) => {
-    if (isIOS()) {
-      alert('Tipping is not available on iOS devices');
-      return;
-    }
     if (!comment.author_wallet_address) {
       alert('This user has not connected a wallet yet');
       return;
@@ -697,15 +527,13 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                                 <code className="text-xs text-cyan-400">
                                   {comment.author_wallet_address.slice(0, 6)}...{comment.author_wallet_address.slice(-4)}
                                 </code>
-                                {!isIOS() && (
-                                  <button
-                                    onClick={() => handleTipCommenter(comment)}
-                                    className="p-1 bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 rounded transition-colors hover:scale-110 active:scale-95"
-                                    title="Tip this commenter with KAS"
-                                  >
-                                    <DollarSign className="w-3 h-3 text-green-400" />
-                                  </button>
-                                )}
+                                <button
+                                  onClick={() => handleTipCommenter(comment)}
+                                  className="p-1 bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 rounded transition-colors hover:scale-110 active:scale-95"
+                                  title="Tip this commenter with KAS"
+                                >
+                                  <DollarSign className="w-3 h-3 text-green-400" />
+                                </button>
                                 {commenterTips[comment.author_wallet_address] > 0 && (
                                   <span className="text-xs text-green-400 font-semibold">
                                     {commenterTips[comment.author_wallet_address].toFixed(2)} KAS
