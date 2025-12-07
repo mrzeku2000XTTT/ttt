@@ -10,8 +10,8 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import TetrisBattleGame from "../components/tetris/TetrisBattleGame";
-import TetrisLobby from "../components/tetris/TetrisLobby";
+import TetrisBattleGame from "@/components/tetris/TetrisBattleGame";
+import TetrisLobby from "@/components/tetris/TetrisLobby";
 
 export default function TetrisBattlePage() {
   const [user, setUser] = useState(null);
