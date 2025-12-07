@@ -418,34 +418,37 @@ export default function TetrisBattleGame({ match, user, ranking, onGameEnd, onEx
       <div onClick={(e) => e.stopPropagation()} className="bg-black border border-cyan-500/30 rounded-xl p-4 max-w-4xl w-full">
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <h2 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
               TETRIS
             </h2>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 bg-cyan-500/10 border border-cyan-500/30 rounded-lg px-3 py-1.5">
               <div className="w-7 h-7 bg-cyan-500/30 rounded-full flex items-center justify-center border border-cyan-500/50">
                 <span className="text-cyan-400 font-bold text-xs">
                   {(user.username || user.email?.split('@')[0] || 'P')[0].toUpperCase()}
                 </span>
               </div>
               <div>
-                <p className="text-white font-bold text-xs">{user.username || user.email?.split('@')[0] || 'Player'}</p>
-                {user.created_wallet_address && (
-                  <div className="flex items-center gap-1">
-                    <p className="text-cyan-400 text-[10px] font-mono">
-                      {user.created_wallet_address.substring(0, 8)}...{user.created_wallet_address.slice(-4)}
-                    </p>
+                <p className="text-white font-bold text-sm">{user.username || user.email?.split('@')[0] || 'Player'}</p>
+                <div className="flex items-center gap-1">
+                  <p className="text-cyan-400 text-xs font-mono">
+                    {user.created_wallet_address 
+                      ? `${user.created_wallet_address.substring(0, 8)}...${user.created_wallet_address.slice(-4)}`
+                      : 'No wallet'
+                    }
+                  </p>
+                  {user.created_wallet_address && (
                     <button
                       onClick={copyAddress}
                       className="text-cyan-400 hover:text-cyan-300 transition-colors"
                     >
-                      <Copy className="w-2.5 h-2.5" />
+                      <Copy className="w-3 h-3" />
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
-            <Badge className="bg-cyan-500/20 text-cyan-400 text-[10px]">
+            <Badge className="bg-cyan-500/20 text-cyan-400 text-xs">
               Rank {ranking?.rank || 1}
             </Badge>
           </div>
