@@ -158,6 +158,7 @@ import Guide from './pages/Guide';
 import MMN from './pages/MMN';
 import Articles from './pages/Articles';
 import DAGFeed from './pages/DAGFeed';
+import Timer from './pages/Timer';
 import __Layout from './Layout.jsx';
 
 
@@ -322,6 +323,7 @@ export const PAGES = {
     "MMN": MMN,
     "Articles": Articles,
     "DAGFeed": DAGFeed,
+    "Timer": Timer,
 }
 
 export const pagesConfig = {
