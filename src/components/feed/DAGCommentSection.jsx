@@ -306,7 +306,7 @@ export default function DAGCommentSection({ postId, onClose }) {
     }
   };
 
-  const handleZkVerification = async () => {
+  const handleZkCommentVerification = async () => {
     if (!user?.created_wallet_address) {
       alert('Please login first');
       return;
@@ -751,7 +751,7 @@ export default function DAGCommentSection({ postId, onClose }) {
                   </div>
 
                   <Button
-                    onClick={handleZkVerification}
+                    onClick={handleZkCommentVerification}
                     disabled={!zkAmount || parseFloat(zkAmount) <= 0}
                     className="w-full bg-cyan-500 hover:bg-cyan-600 text-white h-12 font-semibold disabled:opacity-50"
                   >
