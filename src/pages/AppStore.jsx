@@ -57,6 +57,7 @@ export default function AppStorePage() {
     { name: "Area 51", icon: "Link2", path: "Area51", category: "Community", defaultIcon: "https://ui-avatars.com/api/?name=👽+A51&size=128&background=000000&color=10b981&bold=true&font-size=0.28" },
     { name: "MMN", icon: "Link2", path: "MMN", category: "Tools" },
     { name: "FRIV", icon: "Link2", path: "Friv", category: "Games", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/d824ecdc5_image.png" },
+    { name: "Y8", icon: "Link2", path: "Y8", category: "Games", defaultIcon: "https://ui-avatars.com/api/?name=Y8&size=128&background=ff6600&color=fff&bold=true" },
   ];
 
   const getIconComponent = (iconName) => {
