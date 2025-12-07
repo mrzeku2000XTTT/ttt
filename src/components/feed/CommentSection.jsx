@@ -403,12 +403,13 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
             setExpandedReplies(prev => ({ ...prev, [parentComment.id]: true }));
 
             console.log('✨ Comment reply flow completed');
-            } catch (err) {
+          } catch (err) {
             console.error('Failed to reply to comment:', err);
-            } finally {
+            alert('Failed to post reply: ' + err.message);
+          } finally {
             setIsCommenting(false);
-            }
-            };
+          }
+        };
 
   const handleLikeComment = async (comment) => {
     if (!currentUser) {
