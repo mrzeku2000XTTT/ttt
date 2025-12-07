@@ -316,21 +316,21 @@ export default function TetrisGame({ onClose }) {
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.9, y: 20 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-black border border-cyan-500/30 rounded-2xl p-6 max-w-2xl w-full"
+        className="bg-black border border-cyan-500/30 rounded-xl p-4 max-w-xl w-full"
       >
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
             TETRIS
           </h2>
           <button onClick={onClose} className="text-white/60 hover:text-white">
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="flex gap-6 items-start">
+        <div className="flex gap-3 items-start">
           {/* Game Board */}
           <div className="flex-1">
-            <div className="bg-black/80 border-2 border-cyan-500/30 rounded-lg p-2" style={{ aspectRatio: '10/20' }}>
+            <div className="bg-black/80 border border-cyan-500/30 rounded-lg p-1" style={{ aspectRatio: '10/20' }}>
               <div className="grid gap-[1px]" style={{ gridTemplateColumns: `repeat(${BOARD_WIDTH}, 1fr)` }}>
                 {displayBoard.map((row, y) => 
                   row.map((cell, x) => (
@@ -348,9 +348,9 @@ export default function TetrisGame({ onClose }) {
             </div>
 
             {gameOver && (
-              <div className="mt-4 text-center">
-                <p className="text-red-500 font-bold text-xl mb-2">GAME OVER!</p>
-                <Button onClick={resetGame} className="bg-cyan-500 hover:bg-cyan-600">
+              <div className="mt-3 text-center">
+                <p className="text-red-500 font-bold text-lg mb-2">GAME OVER!</p>
+                <Button onClick={resetGame} size="sm" className="bg-cyan-500 hover:bg-cyan-600">
                   Play Again
                 </Button>
               </div>
@@ -358,20 +358,20 @@ export default function TetrisGame({ onClose }) {
           </div>
 
           {/* Side Panel */}
-          <div className="w-40 space-y-4">
-            <div className="bg-black/40 border border-white/10 rounded-lg p-4">
-              <p className="text-white/60 text-xs mb-1">Score</p>
-              <p className="text-white font-bold text-2xl">{score}</p>
+          <div className="w-32 space-y-2">
+            <div className="bg-black/40 border border-white/10 rounded-lg p-2">
+              <p className="text-white/60 text-[10px] mb-0.5">Score</p>
+              <p className="text-white font-bold text-lg">{score}</p>
             </div>
 
-            <div className="bg-black/40 border border-white/10 rounded-lg p-4">
-              <p className="text-white/60 text-xs mb-1">Level</p>
-              <p className="text-cyan-400 font-bold text-2xl">{level}</p>
+            <div className="bg-black/40 border border-white/10 rounded-lg p-2">
+              <p className="text-white/60 text-[10px] mb-0.5">Level</p>
+              <p className="text-cyan-400 font-bold text-lg">{level}</p>
             </div>
 
-            <div className="bg-black/40 border border-white/10 rounded-lg p-4">
-              <p className="text-white/60 text-xs mb-2">Hold (C)</p>
-              <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+            <div className="bg-black/40 border border-white/10 rounded-lg p-2">
+              <p className="text-white/60 text-[10px] mb-1">Hold</p>
+              <div className="grid gap-0.5" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
                 {Array(4).fill(0).map((_, y) =>
                   Array(4).fill(0).map((_, x) => {
                     const cell = heldPiece?.shape[y]?.[x];
@@ -390,9 +390,9 @@ export default function TetrisGame({ onClose }) {
               </div>
             </div>
 
-            <div className="bg-black/40 border border-white/10 rounded-lg p-4">
-              <p className="text-white/60 text-xs mb-2">Next</p>
-              <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+            <div className="bg-black/40 border border-white/10 rounded-lg p-2">
+              <p className="text-white/60 text-[10px] mb-1">Next</p>
+              <div className="grid gap-0.5" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
                 {nextPiece && Array(4).fill(0).map((_, y) =>
                   Array(4).fill(0).map((_, x) => {
                     const cell = nextPiece.shape[y]?.[x];
@@ -408,18 +408,28 @@ export default function TetrisGame({ onClose }) {
               </div>
             </div>
 
-            <Button
-              onClick={() => setIsPaused(!isPaused)}
-              disabled={gameOver}
-              variant="outline"
-              className="w-full bg-white/5 border-white/20 text-white"
-            >
-              {isPaused ? <Play className="w-4 h-4 mr-2" /> : <Pause className="w-4 h-4 mr-2" />}
-              {isPaused ? 'Resume' : 'Pause'}
-            </Button>
+            <div className="flex gap-1">
+              <Button
+                onClick={() => setIsPaused(!isPaused)}
+                disabled={gameOver}
+                variant="outline"
+                size="sm"
+                className="flex-1 bg-white/5 border-white/20 text-white h-8"
+              >
+                {isPaused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
+              </Button>
+              <Button
+                onClick={resetGame}
+                variant="outline"
+                size="sm"
+                className="flex-1 bg-white/5 border-white/20 text-white h-8"
+              >
+                Reset
+              </Button>
+            </div>
 
-            <div className="bg-black/40 border border-white/10 rounded-lg p-3 text-xs text-white/60 space-y-1">
-              <p className="font-semibold text-white/80 mb-1">Controls</p>
+            <div className="bg-black/40 border border-white/10 rounded-lg p-2 text-[10px] text-white/60 space-y-0.5">
+              <p className="font-semibold text-white/80 mb-1 text-xs">Controls</p>
               <p>A D / ← → : Move</p>
               <p>W X / ↑ : Rotate ↻</p>
               <p>Z / Ctrl : Rotate ↺</p>
@@ -432,7 +442,7 @@ export default function TetrisGame({ onClose }) {
         </div>
 
         {/* Mobile Controls */}
-        <div className="mt-4 flex gap-2 justify-center md:hidden">
+        <div className="mt-3 flex gap-1 justify-center md:hidden">
           <Button onClick={moveLeft} size="sm" variant="outline" className="bg-white/5 border-white/20">
             <ChevronLeft className="w-5 h-5" />
           </Button>
