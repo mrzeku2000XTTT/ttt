@@ -16,7 +16,6 @@ function AKContent() {
       content: "Hey agent, I'm AK, Your Artificial K 🤖\n\n**Available Commands:**\n• Type 'play [song name]' - Search and play music\n• Type 'watch [movie name]' - Search and watch movies\n• Type '!Split' - Multi-stream mode (watch up to 4 streams!)\n• Type '!Sports' - Watch live sports\n• Type '!Asian' - Browse Asian dramas\n• Type '!African' - Browse African content\n• Type '!Popcorn' - Browse Popcornflix\n• Click 'Browse Genres' - Browse movies by genre\n• Ask me anything - I'm here to help!\n\n⚠️ **Movie Tip:** An ad will pop up when you start a movie. Just close it and the movie will play with no more ads unless the screen is clicked."
     }
   ]);
-  const [userLoading, setUserLoading] = useState(true);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
@@ -285,9 +284,6 @@ function AKContent() {
       setUser(currentUser);
     } catch (err) {
       console.log("User not logged in");
-      setUser(null);
-    } finally {
-      setUserLoading(false);
     }
   };
 
@@ -515,65 +511,6 @@ function AKContent() {
         setLoading(false);
       }
   };
-
-  if (userLoading) {
-    return (
-      <div style={{ 
-        position: 'fixed',
-        top: 'calc(var(--sat, 0px) + 7.5rem)',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'black'
-      }}>
-        <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div style={{ 
-        position: 'fixed',
-        top: 'calc(var(--sat, 0px) + 7.5rem)',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundImage: backgroundUrl ? `url(${backgroundUrl})` : 'linear-gradient(to bottom right, rgb(59, 7, 100), rgb(0, 0, 0), rgb(59, 7, 100))',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        backgroundAttachment: 'fixed'
-      }}>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-black/80 backdrop-blur-xl border border-purple-500/30 rounded-xl p-8 max-w-md w-full mx-4"
-        >
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <Bot className="w-10 h-10 text-purple-400" />
-              <h1 className="text-3xl font-black text-white">AK</h1>
-              <Sparkles className="w-6 h-6 text-purple-400" />
-            </div>
-            <p className="text-white/60 mb-6">Please login to access AK</p>
-            <Button
-              onClick={() => base44.auth.redirectToLogin()}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white h-12 text-lg font-bold"
-            >
-              Login to Continue
-            </Button>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
 
   return (
     <>
