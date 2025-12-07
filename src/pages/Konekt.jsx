@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Send, Loader2, User as UserIcon, Shield, Copy, Check, Book, RefreshCw, X } from "lucide-react";
+import { ArrowLeft, Send, Loader2, User as UserIcon, Shield, Copy, Check, Book, RefreshCw, X, Gamepad2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
 import { motion, AnimatePresence } from "framer-motion";
 import moment from "moment";
+import TetrisGame from "@/components/konekt/TetrisGame";
 
 export default function KonektPage() {
   const [messages, setMessages] = useState([]);
@@ -17,6 +18,8 @@ export default function KonektPage() {
   const [showVersePicker, setShowVersePicker] = useState(false);
   const [randomVerse, setRandomVerse] = useState(null);
   const [loadingVerse, setLoadingVerse] = useState(false);
+  const [showGamesMenu, setShowGamesMenu] = useState(false);
+  const [showTetris, setShowTetris] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -263,6 +266,14 @@ export default function KonektPage() {
               >
                 <Book className="w-5 h-5" />
               </Button>
+              <Button 
+                type="button" 
+                onClick={() => setShowGamesMenu(true)}
+                variant="ghost"
+                className="h-11 w-11 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white transition-all"
+              >
+                <Gamepad2 className="w-5 h-5" />
+              </Button>
               <div className="relative flex-1">
                 <Input
                   value={newMessage}
@@ -309,6 +320,63 @@ export default function KonektPage() {
           )}
         </div>
       </div>
+
+      {/* Games Menu Modal */}
+      <AnimatePresence>
+        {showGamesMenu && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowGamesMenu(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-gradient-to-br from-cyan-900/40 to-blue-900/40 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-6 max-w-md w-full shadow-2xl"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <Gamepad2 className="w-5 h-5 text-cyan-400" />
+                  <h3 className="text-lg font-bold text-white">Games</h3>
+                </div>
+                <button
+                  onClick={() => setShowGamesMenu(false)}
+                  className="text-white/60 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="grid gap-3">
+                <button
+                  onClick={() => {
+                    setShowGamesMenu(false);
+                    setShowTetris(true);
+                  }}
+                  className="flex items-center gap-3 p-4 bg-black/40 hover:bg-black/60 border border-cyan-500/30 hover:border-cyan-500/50 rounded-xl transition-all group"
+                >
+                  <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-lg flex items-center justify-center">
+                    <Gamepad2 className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="text-left">
+                    <h4 className="text-white font-bold group-hover:text-cyan-400 transition-colors">Tetris</h4>
+                    <p className="text-white/60 text-xs">Classic block puzzle game</p>
+                  </div>
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Tetris Game */}
+      <AnimatePresence>
+        {showTetris && <TetrisGame onClose={() => setShowTetris(false)} />}
+      </AnimatePresence>
 
       {/* Verse Picker Modal */}
       <AnimatePresence>
