@@ -441,30 +441,30 @@ export default function TetrisBattleGame({ match, user, ranking, onGameEnd, onEx
         </div>
 
         {/* User Info */}
-        <div className="mb-3 bg-black/40 border border-white/10 rounded-lg p-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-cyan-500/20 rounded-full flex items-center justify-center">
-                <span className="text-cyan-400 font-bold text-sm">
-                  {(user.username || user.email?.split('@')[0] || 'P')[0].toUpperCase()}
-                </span>
-              </div>
-              <div>
-                <p className="text-white font-semibold text-sm">{user.username || user.email?.split('@')[0]}</p>
-                {user.created_wallet_address && (
-                  <div className="flex items-center gap-1">
-                    <p className="text-white/40 text-xs font-mono">
-                      {user.created_wallet_address.substring(0, 6)}...{user.created_wallet_address.slice(-4)}
-                    </p>
-                    <button
-                      onClick={copyAddress}
-                      className="text-white/40 hover:text-cyan-400 transition-colors"
-                    >
-                      <Copy className="w-3 h-3" />
-                    </button>
-                  </div>
-                )}
-              </div>
+        <div className="mb-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-cyan-500/30 rounded-full flex items-center justify-center border border-cyan-500/50">
+              <span className="text-cyan-400 font-bold">
+                {(user.username || user.email?.split('@')[0] || 'P')[0].toUpperCase()}
+              </span>
+            </div>
+            <div className="flex-1">
+              <p className="text-white font-bold">{user.username || user.email?.split('@')[0] || 'Player'}</p>
+              {user.created_wallet_address ? (
+                <div className="flex items-center gap-2">
+                  <p className="text-cyan-400 text-xs font-mono">
+                    {user.created_wallet_address.substring(0, 10)}...{user.created_wallet_address.slice(-6)}
+                  </p>
+                  <button
+                    onClick={copyAddress}
+                    className="text-cyan-400 hover:text-cyan-300 transition-colors"
+                  >
+                    <Copy className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <p className="text-white/40 text-xs">No wallet connected</p>
+              )}
             </div>
           </div>
         </div>
