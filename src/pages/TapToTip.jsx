@@ -189,10 +189,10 @@ export default function TapToTipPage() {
           return isAllowed;
         }
 
-        // For ESP users, only keep the correct wallet ending in cd7
+        // For ESP users, only keep the correct wallet ending in gx9h
         if (u.username?.toLowerCase() === 'esp') {
           const addr = (u.created_wallet_address || u.agent_zk_id || '').toLowerCase();
-          return addr.endsWith('cd7');
+          return addr.endsWith('gx9h');
         }
 
         // For destroyer users, only keep the one ending in jdf6
