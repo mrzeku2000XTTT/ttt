@@ -129,6 +129,22 @@ export default function Area51Page() {
       });
       
       setMessages(visibleMessages.reverse());
+      
+      // Check if there's a new public message that needs AI response
+      const publicMessages = allMsgs.filter(msg => msg.is_public && msg.message_type === 'text');
+      if (publicMessages.length > 0) {
+        const latestPublic = publicMessages[0];
+        // Check if Agent X already responded to this message
+        const aiResponses = allMsgs.filter(msg => msg.message_type === 'ai');
+        const latestAITime = aiResponses.length > 0 ? new Date(aiResponses[0].created_date).getTime() : 0;
+        const latestPublicTime = new Date(latestPublic.created_date).getTime();
+        
+        // If latest public message is newer than latest AI response, trigger AI
+        if (latestPublicTime > latestAITime && !aiThinking) {
+          setTimeout(() => triggerAI(latestPublic.message), 1000);
+        }
+      }
+      
       setLoading(false);
     } catch (error) {
       console.error("Failed to load messages:", error);
