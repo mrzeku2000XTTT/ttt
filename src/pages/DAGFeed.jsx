@@ -280,12 +280,11 @@ export default function DAGFeedPage() {
         await base44.entities.DAGPost.create(postData);
       }
 
-      const freshPosts = await base44.entities.DAGPost.list('-created_date', 200);
-      setPosts(freshPosts);
-
       setNewPost("");
       setUploadedFiles([]);
       setError(null);
+      
+      await loadData();
     } catch (err) {
       console.error('Failed to post:', err);
       setError('Failed to create post');
