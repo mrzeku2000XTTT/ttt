@@ -31,7 +31,7 @@ function AKContent() {
   const [splitScreenContent, setSplitScreenContent] = useState(null);
   const [multiStreamModal, setMultiStreamModal] = useState(false);
   const [multiStreams, setMultiStreams] = useState([]);
-  const [showPaymentModal, setShowPaymentModal] = useState(true);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [akUnlocked, setAkUnlocked] = useState(false);
   const [kaswareWallet, setKaswareWallet] = useState({ connected: false, address: null });
   const [showZkVerification, setShowZkVerification] = useState(false);
@@ -39,6 +39,11 @@ function AKContent() {
   const [zkVerifying, setZkVerifying] = useState(false);
   const [zkWalletBalance, setZkWalletBalance] = useState(null);
   const [selectedZkWallet, setSelectedZkWallet] = useState('ttt');
+  const [timeRemaining, setTimeRemaining] = useState(0);
+  const [expiresAt, setExpiresAt] = useState(() => {
+    const saved = localStorage.getItem('ak_expires_at');
+    return saved ? parseInt(saved) : null;
+  });
   const { getSharedData, getAllSharedData } = useStarGate();
   const messagesEndRef = React.useRef(null);
 
@@ -50,7 +55,55 @@ function AKContent() {
     generateBackgroundIfNeeded();
     checkKasware();
     loadZkWalletBalance();
+    checkSubscription();
   }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      checkSubscription();
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [expiresAt]);
+
+  const checkSubscription = () => {
+    if (!expiresAt) {
+      setAkUnlocked(false);
+      setShowPaymentModal(true);
+      setTimeRemaining(0);
+      return;
+    }
+
+    const now = Date.now();
+    const remaining = expiresAt - now;
+
+    if (remaining <= 0) {
+      setAkUnlocked(false);
+      setShowPaymentModal(true);
+      setTimeRemaining(0);
+      localStorage.removeItem('ak_expires_at');
+      setExpiresAt(null);
+      toast.error('⏰ Time expired! Pay 1 KAS for 20 more minutes');
+    } else {
+      setAkUnlocked(true);
+      setTimeRemaining(remaining);
+    }
+  };
+
+  const addTime = () => {
+    const now = Date.now();
+    const twentyMinutes = 20 * 60 * 1000;
+    const newExpiry = (expiresAt && expiresAt > now ? expiresAt : now) + twentyMinutes;
+    setExpiresAt(newExpiry);
+    localStorage.setItem('ak_expires_at', newExpiry.toString());
+    setAkUnlocked(true);
+  };
+
+  const formatTimeRemaining = (ms) => {
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const checkKasware = async () => {
     if (typeof window.kasware !== 'undefined') {
@@ -88,9 +141,9 @@ function AKContent() {
       const amountSompi = 100000000; // 1 KAS
       const txId = await window.kasware.sendKaspa(kaswareWallet.address, amountSompi);
       
+      addTime();
       setShowPaymentModal(false);
-      setAkUnlocked(true);
-      toast.success('✅ Payment verified! AK unlocked!');
+      toast.success('✅ Payment verified! Added 20 minutes');
     } catch (err) {
       console.error('Payment failed:', err);
       toast.error('Payment failed: ' + err.message);
@@ -127,8 +180,8 @@ function AKContent() {
             setZkVerifying(false);
             setShowZkVerification(false);
             setShowPaymentModal(false);
-            setAkUnlocked(true);
-            toast.success('✅ Payment verified! AK unlocked!');
+            addTime();
+            toast.success('✅ Payment verified! Added 20 minutes');
             return true;
           }
 
@@ -479,14 +532,22 @@ function AKContent() {
             >
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-lg flex items-center justify-center">
-                    <Lock className="w-5 h-5 text-yellow-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-white font-bold text-lg">Unlock AK</h3>
-                    <p className="text-white/60 text-sm">Pay 1 KAS to use AK</p>
-                  </div>
-                </div>
+                      <div className="w-10 h-10 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-lg flex items-center justify-center">
+                        {expiresAt && expiresAt > Date.now() ? <Lock className="w-5 h-5 text-green-400" /> : <Lock className="w-5 h-5 text-yellow-400" />}
+                      </div>
+                      <div>
+                        <h3 className="text-white font-bold text-lg">{expiresAt && expiresAt > Date.now() ? 'Extend Time' : 'Unlock AK'}</h3>
+                        <p className="text-white/60 text-sm">1 KAS = 20 minutes</p>
+                      </div>
+                    </div>
+                <Button
+                  onClick={() => setShowPaymentModal(false)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-white/60 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
               </div>
 
               <div className="space-y-4">
@@ -503,8 +564,8 @@ function AKContent() {
                   <div className="flex items-start gap-2">
                     <AlertCircle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
                     <div className="text-xs text-white/80">
-                      <p className="mb-2">Pay <span className="font-bold text-yellow-400">1 KAS</span> to yourself to unlock AK.</p>
-                      <p className="text-white/60">This enables you to use all AK features.</p>
+                      <p className="mb-2">Pay <span className="font-bold text-yellow-400">1 KAS</span> to yourself to unlock AK for <span className="font-bold text-cyan-400">20 minutes</span>.</p>
+                      <p className="text-white/60">Timer-based access. Pay again when time expires.</p>
                     </div>
                   </div>
                 </div>
@@ -517,7 +578,7 @@ function AKContent() {
                   {kaswareWallet.connected ? (
                     <>
                       <Lock className="w-5 h-5 mr-2" />
-                      Pay 1 KAS & Unlock
+                      Pay 1 KAS - Get 20 Min
                     </>
                   ) : (
                     'Connect Kasware First'
@@ -769,10 +830,26 @@ function AKContent() {
             flexShrink: 0
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem' }}>
-            <Bot className="w-5 h-5 text-purple-400" />
-            <h1 style={{ fontSize: '1.25rem', fontWeight: 900, color: 'white', margin: 0 }}>AK</h1>
-            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+              <Bot className="w-5 h-5 text-purple-400" />
+              <h1 style={{ fontSize: '1.25rem', fontWeight: 900, color: 'white', margin: 0 }}>AK</h1>
+              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+            </div>
+            {akUnlocked && timeRemaining > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.25rem 0.75rem', background: 'rgba(6, 182, 212, 0.1)', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '9999px' }}>
+                <div style={{ width: '6px', height: '6px', background: '#06b6d4', borderRadius: '50%', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }} />
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#06b6d4' }}>
+                  {formatTimeRemaining(timeRemaining)}
+                </span>
+                <button
+                  onClick={() => setShowPaymentModal(true)}
+                  style={{ fontSize: '0.625rem', padding: '0.125rem 0.375rem', background: 'rgba(6, 182, 212, 0.2)', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '0.25rem', cursor: 'pointer', fontWeight: 600 }}
+                >
+                  +20min
+                </button>
+              </div>
+            )}
           </div>
         </motion.div>
 
