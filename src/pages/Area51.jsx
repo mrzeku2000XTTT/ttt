@@ -130,7 +130,7 @@ export default function Area51Page() {
       // Filter: show public messages OR user's own messages OR system messages
       const visibleMessages = allMsgs.filter(msg => {
         if (msg.is_public === true) return true;
-        if (msg.message_type === 'system' || msg.message_type === 'ai') return true;
+        if (msg.message_type === 'system') return true;
         if (currentUser && msg.sender_email === currentUser.email) return true;
         return false;
       });
@@ -150,9 +150,10 @@ export default function Area51Page() {
           return;
         }
         
-        // Count how many AI responses exist after this message's timestamp
+        // Count how many AI responses exist after this message's timestamp AND belong to same user
         const aiResponsesAfter = allMsgs.filter(msg => 
           msg.message_type === 'ai' && 
+          msg.sender_email === latestPublic.sender_email &&
           new Date(msg.created_date).getTime() > new Date(latestPublic.created_date).getTime()
         );
         
@@ -163,7 +164,7 @@ export default function Area51Page() {
           // Only trigger AI if: NO response exists AND not currently processing
           isProcessingRef.current = true;
           aiResponseMapRef.current.set(latestPublic.id, 'processing');
-          setTimeout(() => triggerAI(latestPublic.message, latestPublic.id), 1000);
+          setTimeout(() => triggerAI(latestPublic.message, latestPublic.id, latestPublic.sender_email), 1000);
         }
       }
       
@@ -255,7 +256,7 @@ export default function Area51Page() {
     }
   };
 
-  const triggerAI = async (userMessage, messageId) => {
+  const triggerAI = async (userMessage, messageId, triggeringUserEmail) => {
     setAiThinking(true);
     try {
       const response = await base44.integrations.Core.InvokeLLM({
@@ -269,9 +270,10 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
       const aiMsg = await base44.entities.Area51Message.create({
         message: response,
         sender_username: "AGENT X",
-        sender_email: "ai@area51.gov",
+        sender_email: triggeringUserEmail,
         message_type: "ai",
-        is_ai: true
+        is_ai: true,
+        is_public: false
       });
       
       // Mark as completed in our map
