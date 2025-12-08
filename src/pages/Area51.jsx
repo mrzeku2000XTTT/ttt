@@ -289,10 +289,10 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
         is_public: false
       });
       setNewMessage("");
-      await loadMessages();
       
-      // Trigger AI response after message is created
-      triggerAI(createdMessage.id, messageContent);
+      // Trigger AI response BEFORE loading messages to avoid race conditions
+      await triggerAI(createdMessage.id, messageContent);
+      await loadMessages();
     } catch (error) {
       console.error("Failed to send message:", error);
     } finally {
