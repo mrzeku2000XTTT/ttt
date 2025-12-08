@@ -161,6 +161,7 @@ import DAGFeed from './pages/DAGFeed';
 import Timer from './pages/Timer';
 import TetrisBattle from './pages/TetrisBattle';
 import KASIA from './pages/KASIA';
+import KW from './pages/KW';
 import __Layout from './Layout.jsx';
 
 
@@ -328,6 +329,7 @@ export const PAGES = {
     "Timer": Timer,
     "TetrisBattle": TetrisBattle,
     "KASIA": KASIA,
+    "KW": KW,
 }
 
 export const pagesConfig = {
