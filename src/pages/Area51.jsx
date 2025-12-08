@@ -122,9 +122,23 @@ export default function Area51Page() {
       
       // Filter: show public messages OR user's own messages OR system messages
       const visibleMessages = allMsgs.filter(msg => {
+        // Always show public messages
         if (msg.is_public === true) return true;
-        if (msg.message_type === 'system' || msg.message_type === 'ai') return true;
+        
+        // Always show system messages
+        if (msg.message_type === 'system') return true;
+        
+        // Show user's own messages (including their AI responses)
         if (currentUser && msg.sender_email === currentUser.email) return true;
+        
+        // Show AI responses only if parent message is owned by current user
+        if (msg.is_ai && msg.parent_message_id) {
+          const parentMsg = allMsgs.find(m => m.id === msg.parent_message_id);
+          if (parentMsg && currentUser && parentMsg.sender_email === currentUser.email) {
+            return true;
+          }
+        }
+        
         return false;
       });
       
@@ -351,10 +365,8 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
 
           if (response.data?.verified && response.data?.transaction) {
             console.log('✅ Transaction verified!', response.data.transaction);
-            setZkVerifying(false);
-            setShowZkVerification(false);
             
-            // Update both user message and AI response to public
+            // Update both user message and AI response to public FIRST
             await base44.entities.Area51Message.update(messageToPublish.id, {
               is_public: true,
               made_public_at: new Date().toISOString(),
@@ -370,10 +382,14 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
               });
             }
 
+            // Reload messages to get updated data
+            await loadMessages();
+            
+            // Now close modals and show success
+            setZkVerifying(false);
+            setShowZkVerification(false);
             setShowPaymentModal(false);
             setMessageToPublish(null);
-            
-            await loadMessages();
 
             toast.success('✅ Message published to all users!');
             return true;
