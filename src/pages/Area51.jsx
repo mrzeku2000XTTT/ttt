@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Send, Loader2, User as UserIcon, AlertTriangle, Copy, Sparkles, Shield, CheckCircle, Lock, LockOpen, X, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Send, Loader2, User as UserIcon, AlertTriangle, Copy, Sparkles, Shield, CheckCircle, Lock, LockOpen, X, Eye, EyeOff, Share2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,9 @@ export default function Area51Page() {
   const [zkWalletBalance, setZkWalletBalance] = useState(null);
   const [selectedZkWallet, setSelectedZkWallet] = useState('ttt');
   const [showAgentX, setShowAgentX] = useState(true);
-  const [hiddenAgentXMessages, setHiddenAgentXMessages] = useState(new Set());
+  const [agentXToToggle, setAgentXToToggle] = useState(null);
+  const [showAgentXModal, setShowAgentXModal] = useState(false);
+  const [sharingToFeed, setSharingToFeed] = useState(false);
   const messagesEndRef = useRef(null);
   const lastProcessedMessageRef = useRef(null);
   const isProcessingRef = useRef(false);
@@ -347,6 +349,61 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
     }
   };
 
+  const handleToggleAgentXVisibility = (msg, makePublic) => {
+    setAgentXToToggle({ message: msg, makePublic });
+    setShowAgentXModal(true);
+  };
+
+  const handleAgentXPayment = async () => {
+    if (!kaswareWallet.connected) {
+      toast.error('Please connect Kasware wallet');
+      return;
+    }
+
+    try {
+      const amountSompi = 100000000; // 1 KAS
+      const txId = await window.kasware.sendKaspa(kaswareWallet.address, amountSompi);
+
+      await base44.entities.Area51Message.update(agentXToToggle.message.id, {
+        is_public: agentXToToggle.makePublic,
+        made_public_at: agentXToToggle.makePublic ? new Date().toISOString() : null
+      });
+
+      setShowAgentXModal(false);
+      setAgentXToToggle(null);
+      await loadMessages();
+
+      toast.success(agentXToToggle.makePublic ? '✅ Agent X message is now public!' : '✅ Agent X message is now private!');
+    } catch (err) {
+      console.error('Failed to toggle visibility:', err);
+      toast.error('Failed: ' + err.message);
+    }
+  };
+
+  const handleShareToDAGFeed = async (msg) => {
+    if (!user) {
+      toast.error('Please login first');
+      return;
+    }
+
+    setSharingToFeed(true);
+    try {
+      await base44.entities.DAGPost.create({
+        content: `🛸 AGENT X at Area 51 said:\n\n"${msg.message}"`,
+        author_name: user.username || user.email?.split('@')[0],
+        author_wallet_address: user.created_wallet_address,
+        author_role: user.role || 'user'
+      });
+
+      toast.success('✅ Shared to DAG Feed!');
+    } catch (err) {
+      console.error('Failed to share:', err);
+      toast.error('Failed to share to feed');
+    } finally {
+      setSharingToFeed(false);
+    }
+  };
+
   const handleZkVerification = async () => {
     const verifyAddress = selectedZkWallet === 'ttt' ? user?.created_wallet_address : kaswareWallet.address;
     
@@ -380,20 +437,29 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
             setZkVerifying(false);
             setShowZkVerification(false);
             
-            // Update the message to be public
-            await base44.entities.Area51Message.update(messageToPublish.id, {
-              is_public: true,
-              made_public_at: new Date().toISOString(),
-              self_pay_tx_hash: response.data.transaction.id
-            });
-
-            setShowPaymentModal(false);
-            setMessageToPublish(null);
+            // Check if we're updating Agent X visibility or regular message
+            if (agentXToToggle) {
+              await base44.entities.Area51Message.update(agentXToToggle.message.id, {
+                is_public: agentXToToggle.makePublic,
+                made_public_at: agentXToToggle.makePublic ? new Date().toISOString() : null
+              });
+              setShowAgentXModal(false);
+              setAgentXToToggle(null);
+              toast.success(agentXToToggle.makePublic ? '✅ Agent X message is now public!' : '✅ Agent X message is now private!');
+            } else {
+              // Update the message to be public
+              await base44.entities.Area51Message.update(messageToPublish.id, {
+                is_public: true,
+                made_public_at: new Date().toISOString(),
+                self_pay_tx_hash: response.data.transaction.id
+              });
+              setShowPaymentModal(false);
+              setMessageToPublish(null);
+              toast.success('✅ Message published to all users!');
+            }
             
             // Reload messages
             await loadMessages();
-
-            toast.success('✅ Message published to all users!');
             return true;
           }
 
@@ -524,7 +590,6 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
               const isMe = user && msg.sender_email === user.email;
               const isAI = msg.is_ai === true;
               const isSystem = msg.message_type === 'system';
-              const isHidden = hiddenAgentXMessages.has(msg.id);
               
               // Hide Agent X messages if toggle is off
               if (isAI && !showAgentX) return null;
@@ -564,33 +629,6 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
                           <span className="text-[9px] px-1.5 py-0.5 bg-green-500/20 text-green-400 rounded border border-green-500/30">
                             AI AGENT
                           </span>
-                          <button
-                            onClick={() => {
-                              setHiddenAgentXMessages(prev => {
-                                const newSet = new Set(prev);
-                                if (newSet.has(msg.id)) {
-                                  newSet.delete(msg.id);
-                                } else {
-                                  newSet.add(msg.id);
-                                }
-                                return newSet;
-                              });
-                            }}
-                            className="flex items-center gap-1 px-2 py-0.5 bg-white/5 hover:bg-white/10 rounded border border-white/10 transition-colors"
-                            title={isHidden ? "Show message" : "Hide message"}
-                          >
-                            {isHidden ? (
-                              <>
-                                <Eye className="w-3 h-3 text-white/60" />
-                                <span className="text-[9px] text-white/60">Show</span>
-                              </>
-                            ) : (
-                              <>
-                                <EyeOff className="w-3 h-3 text-white/60" />
-                                <span className="text-[9px] text-white/60">Hide</span>
-                              </>
-                            )}
-                          </button>
                         </>
                       )}
                       {!msg.is_public && isMe && !isAI && !isSystem && (
@@ -627,35 +665,68 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
                       </span>
                     </div>
                     
-                    {!isHidden && (
-                      <div className="flex items-start gap-2">
-                        <div className={`px-4 py-2.5 rounded-2xl backdrop-blur-sm ${
-                          isAI
-                            ? "bg-gradient-to-br from-green-600/30 to-cyan-600/30 border border-green-500/30 text-white shadow-lg shadow-green-900/20 rounded-tl-none"
-                            : isMe 
-                            ? "bg-gradient-to-br from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-900/20 rounded-tr-none" 
-                            : "bg-white/10 border border-white/10 text-white/90 rounded-tl-none hover:bg-white/15 transition-colors"
-                        }`}>
-                          <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.message}</p>
-                        </div>
-                        {!msg.is_public && isMe && !isAI && !isSystem && (
-                          <Button
-                            onClick={() => handleUnlockMessage(msg)}
-                            disabled={publishingMessageId === msg.id}
-                            variant="ghost"
-                            size="sm"
-                            className="text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10 h-7 px-2 text-xs mt-1"
-                          >
-                            {publishingMessageId === msg.id ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <>
-                                <Lock className="w-3 h-3 mr-1" />
-                                Unlock
-                              </>
-                            )}
-                          </Button>
-                        )}
+                    <div className="flex items-start gap-2 w-full">
+                      <div className={`flex-1 px-4 py-2.5 rounded-2xl backdrop-blur-sm ${
+                        isAI
+                          ? "bg-gradient-to-br from-green-600/30 to-cyan-600/30 border border-green-500/30 text-white shadow-lg shadow-green-900/20 rounded-tl-none"
+                          : isMe 
+                          ? "bg-gradient-to-br from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-900/20 rounded-tr-none" 
+                          : "bg-white/10 border border-white/10 text-white/90 rounded-tl-none hover:bg-white/15 transition-colors"
+                      }`}>
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.message}</p>
+                      </div>
+                      {!msg.is_public && isMe && !isAI && !isSystem && (
+                        <Button
+                          onClick={() => handleUnlockMessage(msg)}
+                          disabled={publishingMessageId === msg.id}
+                          variant="ghost"
+                          size="sm"
+                          className="text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10 h-7 px-2 text-xs mt-1"
+                        >
+                          {publishingMessageId === msg.id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <>
+                              <Lock className="w-3 h-3 mr-1" />
+                              Unlock
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                    
+                    {isAI && user && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <button
+                          onClick={() => handleToggleAgentXVisibility(msg, !msg.is_public)}
+                          className="flex items-center gap-1 px-2 py-1 bg-white/5 hover:bg-white/10 rounded border border-white/10 transition-colors text-xs"
+                        >
+                          {msg.is_public ? (
+                            <>
+                              <EyeOff className="w-3 h-3 text-white/60" />
+                              <span className="text-white/60">Make Private</span>
+                            </>
+                          ) : (
+                            <>
+                              <Eye className="w-3 h-3 text-green-400" />
+                              <span className="text-green-400">Make Public</span>
+                            </>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleShareToDAGFeed(msg)}
+                          disabled={sharingToFeed}
+                          className="flex items-center gap-1 px-2 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 rounded border border-cyan-500/30 transition-colors text-xs"
+                        >
+                          {sharingToFeed ? (
+                            <Loader2 className="w-3 h-3 text-cyan-400 animate-spin" />
+                          ) : (
+                            <>
+                              <Share2 className="w-3 h-3 text-cyan-400" />
+                              <span className="text-cyan-400">Share to Feed</span>
+                            </>
+                          )}
+                        </button>
                       </div>
                     )}
                   </div>
@@ -823,6 +894,106 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
         )}
       </AnimatePresence>
 
+      {/* Agent X Visibility Modal */}
+      <AnimatePresence>
+        {showAgentXModal && agentXToToggle && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => {
+              setShowAgentXModal(false);
+              setAgentXToToggle(null);
+            }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-black border border-white/20 rounded-xl w-full max-w-md p-6"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-green-500/20 to-cyan-500/20 border border-green-500/30 rounded-lg flex items-center justify-center">
+                    {agentXToToggle.makePublic ? <Eye className="w-5 h-5 text-green-400" /> : <EyeOff className="w-5 h-5 text-white/60" />}
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold text-lg">
+                      {agentXToToggle.makePublic ? 'Make Public' : 'Make Private'}
+                    </h3>
+                    <p className="text-white/60 text-sm">Pay 1 KAS to toggle visibility</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => {
+                    setShowAgentXModal(false);
+                    setAgentXToToggle(null);
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="text-white/60 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+                  <div className="text-xs text-white/60 mb-1">Your Wallet</div>
+                  <div className="text-white font-mono text-sm break-all">
+                    {kaswareWallet.address}
+                  </div>
+                </div>
+
+                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+                    <div className="text-xs text-white/80">
+                      <p className="mb-2">You will pay <span className="font-bold text-yellow-400">1 KAS</span> to yourself.</p>
+                      <p className="text-white/60">
+                        {agentXToToggle.makePublic 
+                          ? 'This makes the Agent X response visible to everyone.' 
+                          : 'This makes the Agent X response private (only you can see it).'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handleAgentXPayment}
+                  className="w-full bg-gradient-to-r from-green-500 to-cyan-500 hover:from-green-600 hover:to-cyan-600 h-12 text-black font-bold"
+                >
+                  {agentXToToggle.makePublic ? <Eye className="w-5 h-5 mr-2" /> : <EyeOff className="w-5 h-5 mr-2" />}
+                  Pay 1 KAS & {agentXToToggle.makePublic ? 'Make Public' : 'Make Private'}
+                </Button>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-white/10"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="bg-black px-2 text-white/40">or</span>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => {
+                    setShowAgentXModal(false);
+                    setShowZkVerification(true);
+                  }}
+                  className="w-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/30 text-cyan-400 h-12 font-semibold"
+                >
+                  <Shield className="w-5 h-5 mr-2" />
+                  ZK (iOS)
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ZK Verification Modal */}
       <AnimatePresence>
         {showZkVerification && (
@@ -947,7 +1118,11 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
                   <Button
                     onClick={() => {
                       setShowZkVerification(false);
-                      setShowPaymentModal(true);
+                      if (agentXToToggle) {
+                        setShowAgentXModal(true);
+                      } else {
+                        setShowPaymentModal(true);
+                      }
                       setZkAmount('1');
                     }}
                     variant="outline"
