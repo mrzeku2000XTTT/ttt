@@ -56,7 +56,6 @@ export default function AppStorePage() {
     { name: "Duel", icon: "Link2", path: "DuelLobby", category: "Games", defaultIcon: "https://ui-avatars.com/api/?name=Duel&size=128&background=ef4444&color=fff&bold=true" },
     { name: "Area 51", icon: "Link2", path: "Area51", category: "Community", defaultIcon: "https://ui-avatars.com/api/?name=👽+A51&size=128&background=000000&color=10b981&bold=true&font-size=0.28" },
     { name: "MMN", icon: "Link2", path: "MMN", category: "Tools" },
-    { name: "AoT Game", icon: "Link2", path: "AOT", category: "Games", defaultIcon: "https://ui-avatars.com/api/?name=AoT&size=128&background=ef4444&color=fff&bold=true" },
   ];
 
   const getIconComponent = (iconName) => {
