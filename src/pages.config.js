@@ -163,7 +163,7 @@ import TetrisBattle from './pages/TetrisBattle';
 import KASIA from './pages/KASIA';
 import KW from './pages/KW';
 import KWSuccess from './pages/KWSuccess';
-import TTT from './pages/TTT';
+import XYZ from './pages/XYZ';
 import __Layout from './Layout.jsx';
 
 
@@ -333,7 +333,7 @@ export const PAGES = {
     "KASIA": KASIA,
     "KW": KW,
     "KWSuccess": KWSuccess,
-    "TTT": TTT,
+    "XYZ": XYZ,
 }
 
 export const pagesConfig = {

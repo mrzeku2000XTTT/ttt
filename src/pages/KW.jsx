@@ -87,8 +87,8 @@ export default function KWPage() {
           localStorage.setItem('ttt_wallet_name', event.data.walletName);
         }
         
-        // Redirect to TTT wallet page
-        navigate(createPageUrl('TTT'));
+        // Redirect to XYZ wallet page
+        navigate(createPageUrl('XYZ'));
       }
     };
 
