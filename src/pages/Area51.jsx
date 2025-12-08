@@ -234,6 +234,14 @@ export default function Area51Page() {
   const triggerAI = async (userMessageId, userMessage) => {
     setAiThinking(true);
     try {
+      // Check if AI response already exists for this message
+      const existingAI = messages.find(m => m.parent_message_id === userMessageId && m.is_ai);
+      if (existingAI) {
+        console.log('AI response already exists for this message');
+        setAiThinking(false);
+        return;
+      }
+
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: `You are AGENT X - a conspiracy theory expert at AREA51. Someone just said: "${userMessage}". 
         
@@ -516,8 +524,8 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
               
               return (
                 <div key={msg.id} className="flex flex-col gap-3">
-                  {/* AI Response on Left */}
-                  {aiResponse && (msg.is_public || (user && msg.sender_email === user.email)) && (
+                  {/* AI Response on Left - Only show if parent is public OR user owns it */}
+                  {aiResponse && msg.is_public && (
                     <motion.div
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
