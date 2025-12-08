@@ -30,10 +30,10 @@ export default function Area51Page() {
   const [zkWalletBalance, setZkWalletBalance] = useState(null);
   const [selectedZkWallet, setSelectedZkWallet] = useState('ttt');
   const [showAgentX, setShowAgentX] = useState(true);
-  const [hasUnlockedOnce, setHasUnlockedOnce] = useState(false);
   const messagesEndRef = useRef(null);
   const lastProcessedMessageRef = useRef(null);
   const isProcessingRef = useRef(false);
+  const aiResponseMapRef = useRef(new Map());
 
   useEffect(() => {
     if (showPaymentModal) {
@@ -139,17 +139,26 @@ export default function Area51Page() {
       if (publicMessages.length > 0) {
         const latestPublic = publicMessages[0];
         
-        // Check if an AI response already exists after this message (most important check first)
-        const hasAIResponse = allMsgs.some(msg => 
+        // Check if we already responded to this message in our map
+        if (aiResponseMapRef.current.has(latestPublic.id)) {
+          setLoading(false);
+          return;
+        }
+        
+        // Check if an AI response already exists in database after this message
+        const aiResponse = allMsgs.find(msg => 
           msg.message_type === 'ai' && 
           new Date(msg.created_date).getTime() > new Date(latestPublic.created_date).getTime()
         );
         
-        // Only process if: no AI response exists AND we haven't processed this message AND not already processing
-        if (!hasAIResponse && latestPublic.id !== lastProcessedMessageRef.current && !isProcessingRef.current && !aiThinking) {
-          lastProcessedMessageRef.current = latestPublic.id;
+        if (aiResponse) {
+          // Mark this message as responded in our map
+          aiResponseMapRef.current.set(latestPublic.id, aiResponse.id);
+        } else if (!isProcessingRef.current && !aiThinking) {
+          // Only trigger AI if: no response exists AND not processing
           isProcessingRef.current = true;
-          setTimeout(() => triggerAI(latestPublic.message), 1000);
+          aiResponseMapRef.current.set(latestPublic.id, 'processing');
+          setTimeout(() => triggerAI(latestPublic.message, latestPublic.id), 1000);
         }
       }
       
@@ -241,7 +250,7 @@ export default function Area51Page() {
     }
   };
 
-  const triggerAI = async (userMessage) => {
+  const triggerAI = async (userMessage, messageId) => {
     setAiThinking(true);
     try {
       const response = await base44.integrations.Core.InvokeLLM({
@@ -252,17 +261,21 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
         add_context_from_internet: false
       });
 
-      await base44.entities.Area51Message.create({
+      const aiMsg = await base44.entities.Area51Message.create({
         message: response,
         sender_username: "AGENT X",
         sender_email: "ai@area51.gov",
         message_type: "ai",
         is_ai: true
       });
+      
+      // Mark as completed in our map
+      aiResponseMapRef.current.set(messageId, aiMsg.id);
 
       loadMessages();
     } catch (error) {
       console.error("AI failed:", error);
+      aiResponseMapRef.current.delete(messageId);
     } finally {
       setAiThinking(false);
       isProcessingRef.current = false;
@@ -276,27 +289,18 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
     const messageContent = newMessage.trim();
     setSending(true);
     try {
-      // If user has unlocked once, auto-publish their messages
-      const isPublic = hasUnlockedOnce;
-      
-      const createdMsg = await base44.entities.Area51Message.create({
+      await base44.entities.Area51Message.create({
         message: messageContent,
         sender_username: user.username || user.email?.split('@')[0] || "Anonymous",
         sender_email: user.email,
         sender_wallet: user.created_wallet_address,
         message_type: "text",
         is_ai: false,
-        is_public: isPublic,
-        made_public_at: isPublic ? new Date().toISOString() : null
+        is_public: false
       });
       
       setNewMessage("");
-      await loadMessages();
-      
-      // If message was auto-published, trigger AI
-      if (isPublic) {
-        setTimeout(() => triggerAI(messageContent), 1000);
-      }
+      loadMessages();
     } catch (error) {
       console.error("Failed to send message:", error);
     } finally {
@@ -328,17 +332,12 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
       });
 
       setShowPaymentModal(false);
-      const publishedMessage = messageToPublish.message;
       setMessageToPublish(null);
-      setHasUnlockedOnce(true);
       
-      // Reload messages first
+      // Reload messages
       await loadMessages();
-      
-      // Then trigger AI to respond
-      triggerAI(publishedMessage);
 
-      toast.success('✅ Message published! You can now send unlimited messages.');
+      toast.success('✅ Message published to all users!');
     } catch (err) {
       console.error('Failed to publish message:', err);
       toast.error('Failed to publish: ' + err.message);
@@ -388,17 +387,12 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
             });
 
             setShowPaymentModal(false);
-            const publishedMessage = messageToPublish.message;
             setMessageToPublish(null);
-            setHasUnlockedOnce(true);
             
-            // Reload messages first
+            // Reload messages
             await loadMessages();
-            
-            // Then trigger AI to respond
-            triggerAI(publishedMessage);
 
-            toast.success('✅ Message published! You can now send unlimited messages.');
+            toast.success('✅ Message published to all users!');
             return true;
           }
 
