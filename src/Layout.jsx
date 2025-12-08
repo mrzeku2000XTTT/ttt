@@ -39,7 +39,6 @@ export default function Layout({ children, currentPageName }) {
       return false;
     }
   });
-  const [showKasiaIframe, setShowKasiaIframe] = useState(false);
   
   useEffect(() => {
     try {
@@ -63,20 +62,11 @@ export default function Layout({ children, currentPageName }) {
     const connectionsInterval = setInterval(loadPendingConnections, 5000);
     const messagesInterval = setInterval(loadUnreadMessages, 5000);
     
-    // Listen for KASIA iframe visibility events
-    const handleKasiaIframeEvent = (event) => {
-      if (event.detail?.show !== undefined) {
-        setShowKasiaIframe(event.detail.show);
-      }
-    };
-    window.addEventListener('showKasiaIframe', handleKasiaIframeEvent);
-
     return () => {
       clearInterval(interval);
       clearInterval(connectionsInterval);
       clearInterval(messagesInterval);
       document.head.removeChild(metaTag);
-      window.removeEventListener('showKasiaIframe', handleKasiaIframeEvent);
     };
   }, [currentPageName]);
 
@@ -210,9 +200,8 @@ export default function Layout({ children, currentPageName }) {
   const isCountryDetailPage = currentPageName === "CountryDetail";
   const isKonektPage = currentPageName === "Konekt";
   const isArea51Page = currentPageName === "Area51";
-  const isKASIAPage = currentPageName === "KASIA";
 
-  if (isHomePage || isLobbyPage || isEarthPage || isCountryDetailPage || isKonektPage || isArea51Page || isKASIAPage) {
+  if (isHomePage || isLobbyPage || isEarthPage || isCountryDetailPage || isKonektPage || isArea51Page) {
     return (
       <React.Suspense fallback={<div className="min-h-screen bg-black" />}>
         <VideoPlayerProvider>
@@ -852,25 +841,6 @@ export default function Layout({ children, currentPageName }) {
       <React.Suspense fallback={null}>
         <MiniPlayer currentPage={currentPageName} />
       </React.Suspense>
-
-      {/* Persistent KASIA iframe - stays mounted but hidden when not on KASIA page */}
-      <div 
-        className="fixed inset-0 lg:bottom-0 z-50 bg-black overflow-hidden"
-        style={{ 
-          top: 'calc(var(--sat, 0px) + 8.5rem)',
-          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 4rem)',
-          display: showKasiaIframe ? 'block' : 'none'
-        }}
-      >
-        <iframe 
-          src="https://kasia.fyi"
-          className="w-full h-full border-0"
-          title="KASIA"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-        />
-      </div>
       </VideoPlayerProvider>
       </React.Suspense>
       );

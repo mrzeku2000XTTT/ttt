@@ -1,17 +1,16 @@
-import React, { useEffect } from "react";
+import React from "react";
 
 export default function KASIAPage() {
-  useEffect(() => {
-    // Signal to Layout that KASIA iframe should be visible
-    const event = new CustomEvent('showKasiaIframe', { detail: { show: true } });
-    window.dispatchEvent(event);
-
-    return () => {
-      // Hide iframe when leaving KASIA page
-      const event = new CustomEvent('showKasiaIframe', { detail: { show: false } });
-      window.dispatchEvent(event);
-    };
-  }, []);
-
-  return null; // Layout handles the iframe rendering
+  return (
+    <div className="fixed inset-0 lg:bottom-0 bg-black overflow-hidden" style={{ top: 'calc(var(--sat, 0px) + 8.5rem)', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 4rem)' }}>
+      <iframe
+        src="https://kasia.fyi"
+        className="w-full h-full border-0"
+        title="KASIA"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+      />
+    </div>
+  );
 }
