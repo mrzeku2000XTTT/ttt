@@ -313,25 +313,16 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
       const amountSompi = 100000000; // 1 KAS
       const txId = await window.kasware.sendKaspa(kaswareWallet.address, amountSompi);
 
-      // Update both user message and AI response to public
+      // Update only the specific message (not AI response)
       await base44.entities.Area51Message.update(messageToPublish.id, {
         is_public: true,
         made_public_at: new Date().toISOString(),
         self_pay_tx_hash: txId
       });
 
-      // Find and update AI response
-      const aiResponse = messages.find(m => m.parent_message_id === messageToPublish.id && m.is_ai);
-      if (aiResponse) {
-        await base44.entities.Area51Message.update(aiResponse.id, {
-          is_public: true,
-          made_public_at: new Date().toISOString()
-        });
-      }
-
       setShowPaymentModal(false);
       setMessageToPublish(null);
-      
+
       await loadMessages();
 
       toast.success('✅ Message published to all users!');
@@ -373,26 +364,17 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
 
           if (response.data?.verified && response.data?.transaction) {
             console.log('✅ Transaction verified!', response.data.transaction);
-            
-            // Update both user message and AI response to public FIRST
+
+            // Update only the specific message
             await base44.entities.Area51Message.update(messageToPublish.id, {
               is_public: true,
               made_public_at: new Date().toISOString(),
               self_pay_tx_hash: response.data.transaction.id
             });
 
-            // Find and update AI response
-            const aiResponse = messages.find(m => m.parent_message_id === messageToPublish.id && m.is_ai);
-            if (aiResponse) {
-              await base44.entities.Area51Message.update(aiResponse.id, {
-                is_public: true,
-                made_public_at: new Date().toISOString()
-              });
-            }
-
             // Reload messages to get updated data
             await loadMessages();
-            
+
             // Now close modals and show success
             setZkVerifying(false);
             setShowZkVerification(false);
@@ -608,7 +590,7 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
                   </motion.div>
 
                   {/* AI Response Below User Message on Right */}
-                  {aiResponse && (isMe || msg.is_public) && (
+                  {aiResponse && isMe && (
                     <motion.div
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -623,7 +605,7 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
                           <span className="text-[9px] px-1.5 py-0.5 bg-green-500/20 text-green-400 rounded border border-green-500/30">
                             AI AGENT
                           </span>
-                          {!aiResponse.is_public && isMe && (
+                          {!aiResponse.is_public && (
                             <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-[10px] px-1.5 py-0">
                               <Lock className="w-2.5 h-2.5 mr-1" />
                               PRIVATE
@@ -635,6 +617,55 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
                               PUBLIC
                             </Badge>
                           )}
+                          <span className="text-[10px] text-white/30">
+                            {moment(aiResponse.created_date).utc().format('HH:mm')} UTC
+                          </span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <div className="px-4 py-2.5 rounded-2xl backdrop-blur-sm bg-gradient-to-br from-green-600/30 to-cyan-600/30 border border-green-500/30 text-white shadow-lg shadow-green-900/20 rounded-tr-none">
+                            <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{aiResponse.message}</p>
+                          </div>
+                          {!aiResponse.is_public && msg.is_public && (
+                            <Button
+                              onClick={() => handleUnlockMessage(aiResponse)}
+                              disabled={publishingMessageId === aiResponse.id}
+                              variant="ghost"
+                              size="sm"
+                              className="text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10 h-7 px-2 text-xs mt-1"
+                            >
+                              {publishingMessageId === aiResponse.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <>
+                                  <Lock className="w-3 h-3 mr-1" />
+                                  Unlock
+                                </>
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                  {aiResponse && msg.is_public && aiResponse.is_public && !isMe && (
+                    <motion.div
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="flex gap-3 flex-row-reverse"
+                    >
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 border bg-green-500/30 border-green-400/50 shadow-lg shadow-green-500/20">
+                        <Sparkles className="w-4 h-4 text-green-400" />
+                      </div>
+                      <div className="flex flex-col items-end max-w-[85%] sm:max-w-[70%]">
+                        <div className="flex items-center gap-2 mb-1 px-1">
+                          <span className="text-xs font-bold text-green-400">AGENT X</span>
+                          <span className="text-[9px] px-1.5 py-0.5 bg-green-500/20 text-green-400 rounded border border-green-500/30">
+                            AI AGENT
+                          </span>
+                          <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[10px] px-1.5 py-0">
+                            <LockOpen className="w-2.5 h-2.5 mr-1" />
+                            PUBLIC
+                          </Badge>
                           <span className="text-[10px] text-white/30">
                             {moment(aiResponse.created_date).utc().format('HH:mm')} UTC
                           </span>
