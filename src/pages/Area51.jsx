@@ -147,34 +147,34 @@ export default function Area51Page() {
       
       setMessages(visibleMessages.reverse());
       
-      // Check if there's a new public message that needs AI response
+      // Check EACH public message to see if it needs AI response (only for messages without responses)
       const publicMessages = allMsgs.filter(msg => msg.is_public && msg.message_type === 'text');
       
-      // Only process the LATEST public message
-      if (publicMessages.length > 0) {
-        const latestPublic = publicMessages[0];
-        
+      for (const publicMsg of publicMessages) {
         // Skip if we've already tracked this message
-        if (aiResponseMapRef.current.has(latestPublic.id)) {
-          setLoading(false);
-          return;
+        if (aiResponseMapRef.current.has(publicMsg.id)) {
+          continue;
         }
         
-        // Count how many AI responses exist after this message's timestamp AND belong to same user
-        const aiResponsesAfter = allMsgs.filter(msg => 
+        // Check if AI response already exists for THIS specific message
+        const existingAIResponse = allMsgs.find(msg => 
           msg.message_type === 'ai' && 
-          msg.sender_email === latestPublic.sender_email &&
-          new Date(msg.created_date).getTime() > new Date(latestPublic.created_date).getTime()
+          msg.sender_email === publicMsg.sender_email &&
+          new Date(msg.created_date).getTime() > new Date(publicMsg.created_date).getTime() &&
+          Math.abs(new Date(msg.created_date).getTime() - new Date(publicMsg.created_date).getTime()) < 10000 // Within 10 seconds
         );
         
-        // If any AI response exists, mark this message as handled
-        if (aiResponsesAfter.length > 0) {
-          aiResponseMapRef.current.set(latestPublic.id, aiResponsesAfter[0].id);
+        if (existingAIResponse) {
+          // Mark as handled
+          aiResponseMapRef.current.set(publicMsg.id, existingAIResponse.id);
+          console.log(`✅ Found existing AI response for message ${publicMsg.id}`);
         } else if (!isProcessingRef.current && !aiThinking) {
-          // Only trigger AI if: NO response exists AND not currently processing
+          // Only process the LATEST unresponded message
+          console.log(`🤖 Triggering AI for message ${publicMsg.id}`);
           isProcessingRef.current = true;
-          aiResponseMapRef.current.set(latestPublic.id, 'processing');
-          setTimeout(() => triggerAI(latestPublic.message, latestPublic.id, latestPublic.sender_email), 1000);
+          aiResponseMapRef.current.set(publicMsg.id, 'processing');
+          setTimeout(() => triggerAI(publicMsg.message, publicMsg.id, publicMsg.sender_email), 1000);
+          break; // Only process one at a time
         }
       }
       
