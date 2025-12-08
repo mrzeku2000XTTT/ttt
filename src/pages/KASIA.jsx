@@ -2,7 +2,7 @@ import React from "react";
 
 export default function KASIAPage() {
   return (
-    <div className="fixed inset-0 bg-black" style={{ top: 'var(--sat, 0px)' }}>
+    <div className="w-full h-[calc(100vh-160px)] bg-black rounded-xl overflow-hidden border border-white/10 relative z-0">
       <iframe
         src="https://kasia.fyi"
         className="w-full h-full border-0"
