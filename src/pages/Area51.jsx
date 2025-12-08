@@ -545,7 +545,7 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
 
       const checkTransaction = async () => {
         attempts++;
-        console.log(`Attempt ${attempts}/${maxAttempts} - Checking for transaction...`);
+        console.log(`🔍 ZK Check ${attempts}/${maxAttempts} - Verifying ${targetAmount} KAS self-payment after ${new Date(timestamp).toISOString()}`);
 
         try {
           const response = await base44.functions.invoke('verifyKaspaSelfTransaction', {
@@ -554,8 +554,10 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
             timestamp: timestamp
           });
 
-          if (response.data?.verified && response.data?.transaction) {
-            console.log('✅ Transaction verified!', response.data.transaction);
+          console.log('📥 ZK Response:', response.data);
+
+          if (response.data?.verified === true && response.data?.transaction) {
+            console.log('✅ Transaction VERIFIED!', response.data.transaction);
             setZkVerifying(false);
             setShowZkVerification(false);
 
@@ -602,19 +604,24 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
             return true;
           }
 
+          // Only continue if NOT verified
           if (attempts < maxAttempts) {
+            console.log(`⏳ Not verified yet, retrying in 3s... (attempt ${attempts}/${maxAttempts})`);
             setTimeout(checkTransaction, 3000);
           } else {
+            console.log('❌ Timeout reached - no valid transaction found');
             setZkVerifying(false);
-            toast.error('Verification timeout. Transaction not detected within 10 minutes.');
+            toast.error('⏱️ Verification timeout - no transaction detected in 10 minutes');
           }
         } catch (err) {
-          console.error('❌ Verification error:', err);
+          console.error('❌ ZK Verification error:', err);
           if (attempts < maxAttempts) {
+            console.log(`⚠️ Error on attempt ${attempts}, retrying...`);
             setTimeout(checkTransaction, 3000);
           } else {
+            console.log('❌ Max attempts reached with errors');
             setZkVerifying(false);
-            toast.error('Failed to verify transaction. Please try again or use Kasware option.');
+            toast.error('Failed to verify - please try Kasware payment instead');
           }
         }
       };
