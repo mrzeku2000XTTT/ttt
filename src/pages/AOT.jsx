@@ -98,6 +98,7 @@ export default function AOTPage() {
 
       const checkTransaction = async () => {
         attempts++;
+        console.log(`🔍 AOT ZK Check ${attempts}/${maxAttempts} - Verifying ${targetAmount} KAS self-payment after ${new Date(timestamp).toISOString()}`);
 
         try {
           const response = await base44.functions.invoke('verifyKaspaSelfTransaction', {
@@ -106,26 +107,35 @@ export default function AOTPage() {
             timestamp: timestamp
           });
 
-          if (response.data?.verified && response.data?.transaction) {
+          console.log('📥 AOT ZK Response:', response.data);
+
+          if (response.data?.verified === true && response.data?.transaction) {
+            console.log('✅ AOT Transaction VERIFIED!', response.data.transaction);
             setZkVerifying(false);
             setShowZkVerification(false);
             setUnlocked(true);
             toast.success('✅ Payment verified! Access granted!');
-            return true;
+            return;
           }
 
+          // Only continue if NOT verified
           if (attempts < maxAttempts) {
+            console.log(`⏳ Not verified yet, retrying in 3s... (attempt ${attempts}/${maxAttempts})`);
             setTimeout(checkTransaction, 3000);
           } else {
+            console.log('❌ AOT Timeout reached - no valid transaction found');
             setZkVerifying(false);
-            toast.error('Verification timeout');
+            toast.error('⏱️ Verification timeout - no transaction detected');
           }
         } catch (err) {
+          console.error('❌ AOT ZK Verification error:', err);
           if (attempts < maxAttempts) {
+            console.log(`⚠️ Error on attempt ${attempts}, retrying...`);
             setTimeout(checkTransaction, 3000);
           } else {
+            console.log('❌ Max attempts reached with errors');
             setZkVerifying(false);
-            toast.error('Failed to verify transaction');
+            toast.error('Failed to verify - please try Kasware payment instead');
           }
         }
       };
