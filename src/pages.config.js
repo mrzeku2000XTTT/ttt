@@ -162,6 +162,7 @@ import Timer from './pages/Timer';
 import TetrisBattle from './pages/TetrisBattle';
 import KASIA from './pages/KASIA';
 import KW from './pages/KW';
+import KWSuccess from './pages/KWSuccess';
 import __Layout from './Layout.jsx';
 
 
@@ -330,6 +331,7 @@ export const PAGES = {
     "TetrisBattle": TetrisBattle,
     "KASIA": KASIA,
     "KW": KW,
+    "KWSuccess": KWSuccess,
 }
 
 export const pagesConfig = {

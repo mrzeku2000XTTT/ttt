@@ -82,12 +82,17 @@ export default function KWPage() {
         setWalletCreated(true);
         setIsCreating(false);
         showToast('Wallet created successfully!', 'success');
+        
+        // Redirect to success page
+        setTimeout(() => {
+          navigate(createPageUrl('KWSuccess'));
+        }, 1000);
       }
     };
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, []);
+  }, [navigate]);
 
   const handleCreateWallet = () => {
     setIsCreating(true);
@@ -101,6 +106,27 @@ export default function KWPage() {
     }
     
     showToast('Opening Kasia wallet creator...', 'success');
+    
+    // Fallback: If no message received after 3 seconds, assume creation started
+    setTimeout(() => {
+      if (isCreating) {
+        // Listen for navigation changes in iframe to detect wallet creation
+        const checkIframeUrl = setInterval(() => {
+          try {
+            if (iframeRef.current?.contentWindow?.location?.href?.includes('select')) {
+              clearInterval(checkIframeUrl);
+              setIsCreating(false);
+              navigate(createPageUrl('KWSuccess'));
+            }
+          } catch (e) {
+            // Cross-origin access blocked, use alternative detection
+          }
+        }, 500);
+        
+        // Clear check after 30 seconds
+        setTimeout(() => clearInterval(checkIframeUrl), 30000);
+      }
+    }, 3000);
   };
 
   if (isLoading) {
