@@ -855,10 +855,10 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Persistent KASIA iframe - stays mounted but hidden when not on KASIA page */}
       <div 
-        className="fixed inset-0 z-50 bg-black"
+        className="fixed inset-0 lg:bottom-0 z-50 bg-black overflow-hidden"
         style={{ 
-          top: 'calc(var(--sat, 0px) + 7.5rem)',
-          bottom: 0,
+          top: 'calc(var(--sat, 0px) + 8.5rem)',
+          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 4rem)',
           display: showKasiaIframe ? 'block' : 'none'
         }}
       >
@@ -866,7 +866,9 @@ export default function Layout({ children, currentPageName }) {
           src="https://kasia.fyi"
           className="w-full h-full border-0"
           title="KASIA"
-          allow="clipboard-write; same-origin; scripts; popups; forms"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
         />
       </div>
       </VideoPlayerProvider>
