@@ -5,10 +5,12 @@ import { motion } from "framer-motion";
 import { Search, Share } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { StarGateProvider, useStarGate } from "@/components/stargate/StarGateContext";
+import { base44 } from "@/api/base44Client";
 
 function GateContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [user, setUser] = useState(null);
   const { getAllSharedData, clearAllSharedData } = useStarGate();
   const sharedData = getAllSharedData();
 
@@ -20,7 +22,20 @@ function GateContent() {
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (err) {
+        console.log("User not logged in");
+      }
+    };
+    loadUser();
+  }, []);
+
   const apps = [
+    { name: "KW", path: "KW", category: "Wallet", color: "#10B981", adminOnly: true },
     { name: "AK", path: "AK", category: "AI", color: "#A855F7" },
     { name: "TD", path: "TD", category: "App", color: "#06B6D4" },
     { name: "Builders", path: "Builders", category: "Team", color: "#06B6D4" },
@@ -35,11 +50,20 @@ function GateContent() {
   ];
 
   const filteredApps = searchQuery
-    ? apps.filter(app =>
-        app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        app.category.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : apps;
+    ? apps.filter(app => {
+        const matchesSearch = app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          app.category.toLowerCase().includes(searchQuery.toLowerCase());
+        
+        // Filter admin-only apps if user is not admin
+        if (app.adminOnly && (!user || user.role !== 'admin')) return false;
+        
+        return matchesSearch;
+      })
+    : apps.filter(app => {
+        // Filter admin-only apps if user is not admin
+        if (app.adminOnly && (!user || user.role !== 'admin')) return false;
+        return true;
+      });
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
