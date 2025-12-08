@@ -52,7 +52,7 @@ export default function Area51Page() {
     checkIfCheckedIn();
     checkKasware();
     loadZkWalletBalance();
-    const interval = setInterval(loadMessages, 3000);
+    const interval = setInterval(loadMessages, 2000); // Faster polling
     return () => clearInterval(interval);
   }, []);
 
@@ -172,7 +172,7 @@ export default function Area51Page() {
           console.log(`🤖 Triggering AI for message ${publicMsg.id} - no response found`);
           isProcessingRef.current = true;
           aiResponseMapRef.current.set(publicMsg.id, 'processing');
-          setTimeout(() => triggerAI(publicMsg.message, publicMsg.id, publicMsg.sender_email), 1000);
+          setTimeout(() => triggerAI(publicMsg.message, publicMsg.id, publicMsg.sender_email), 500); // Faster trigger
           break; // Only process one at a time
         }
       }
@@ -189,9 +189,22 @@ export default function Area51Page() {
   };
 
   const handleCheckIn = async () => {
-    if (!user) {
-      toast.error("Please login to check in");
+    let checkInUser = user;
+    let checkInWallet = "";
+
+    if (!user && !kaswareWallet.connected) {
+      toast.error("Please connect Kasware wallet to check in");
       return;
+    }
+
+    if (!user && kaswareWallet.connected) {
+      checkInUser = {
+        email: `${kaswareWallet.address}@wallet`,
+        username: `${kaswareWallet.address.slice(0, 6)}...${kaswareWallet.address.slice(-4)}`
+      };
+      checkInWallet = kaswareWallet.address;
+    } else if (user) {
+      checkInWallet = user.created_wallet_address || "";
     }
 
     setCheckingIn(true);
@@ -238,19 +251,20 @@ export default function Area51Page() {
       // Create both records in parallel
       await Promise.all([
         base44.entities.Area51CheckIn.create({
-          user_email: user.email,
-          username: user.username || user.email?.split('@')[0],
-          wallet_address: user.created_wallet_address || "",
+          user_email: checkInUser.email,
+          username: checkInUser.username || checkInUser.email?.split('@')[0],
+          wallet_address: checkInWallet,
           signature: signature,
           check_in_message: message,
           device_type: deviceType
         }),
         base44.entities.Area51Message.create({
-          message: `🛸 ${user.username || user.email?.split('@')[0]} has checked into Area 51`,
+          message: `🛸 ${checkInUser.username || checkInUser.email?.split('@')[0]} has checked into Area 51`,
           sender_username: "SYSTEM",
           sender_email: "system@area51",
           message_type: "system",
-          is_ai: false
+          is_ai: false,
+          is_public: true
         })
       ]);
 
@@ -304,30 +318,64 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
       toast.error('Please enter a message');
       return;
     }
-    
-    if (!user) {
-      toast.error('Please login to send messages');
+
+    const messageContent = newMessage.trim();
+
+    // Determine sender info (works with or without login)
+    let senderUsername = "Anonymous";
+    let senderEmail = "guest@area51";
+    let senderWallet = "";
+
+    if (user) {
+      senderUsername = user.username || user.email?.split('@')[0] || "Anonymous";
+      senderEmail = user.email;
+      senderWallet = user.created_wallet_address || "";
+    } else if (kaswareWallet.connected) {
+      senderUsername = `${kaswareWallet.address.slice(0, 6)}...${kaswareWallet.address.slice(-4)}`;
+      senderWallet = kaswareWallet.address;
+      senderEmail = `${kaswareWallet.address}@wallet`;
+    } else {
+      toast.error('Please connect Kasware wallet to post');
       return;
     }
 
-    const messageContent = newMessage.trim();
     setSending(true);
+
+    // Optimistic update - show message immediately
+    const tempMessage = {
+      id: `temp-${Date.now()}`,
+      message: messageContent,
+      sender_username: senderUsername,
+      sender_email: senderEmail,
+      sender_wallet: senderWallet,
+      message_type: "text",
+      is_ai: false,
+      is_public: false,
+      created_date: new Date().toISOString()
+    };
+
+    setMessages([...messages, tempMessage]);
+    setNewMessage("");
+    scrollToBottom();
+
     try {
-      await base44.entities.Area51Message.create({
+      const newMsg = await base44.entities.Area51Message.create({
         message: messageContent,
-        sender_username: user.username || user.email?.split('@')[0] || "Anonymous",
-        sender_email: user.email,
-        sender_wallet: user.created_wallet_address,
+        sender_username: senderUsername,
+        sender_email: senderEmail,
+        sender_wallet: senderWallet,
         message_type: "text",
         is_ai: false,
         is_public: false
       });
-      
-      setNewMessage("");
+
+      // Replace temp message with real one
+      setMessages(prev => prev.map(m => m.id === tempMessage.id ? newMsg : m));
       toast.success('Message sent! (Private - unlock to publish)');
-      loadMessages();
     } catch (error) {
       console.error("❌ Failed to send message:", error);
+      // Remove temp message on error
+      setMessages(prev => prev.filter(m => m.id !== tempMessage.id));
       toast.error('Failed to send message: ' + (error.message || 'Unknown error'));
     } finally {
       setSending(false);
@@ -616,14 +664,14 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
           </Button>
           <Button
             onClick={handleCheckIn}
-            disabled={checkingIn || hasCheckedIn || !user}
+            disabled={checkingIn || hasCheckedIn}
             size="sm"
             className={`${
               hasCheckedIn 
                 ? "bg-green-500/20 text-green-400 border border-green-500/30" 
                 : "bg-gradient-to-r from-green-500 to-cyan-500 hover:from-green-600 hover:to-cyan-600 text-black"
-            } shadow-lg transition-all ${!user ? 'opacity-50 cursor-not-allowed' : ''}`}
-            title={!user ? 'Login to check in' : hasCheckedIn ? 'Already checked in today' : 'Check in to Area 51'}
+            } shadow-lg transition-all`}
+            title={hasCheckedIn ? 'Already checked in today' : 'Check in to Area 51'}
           >
             {checkingIn ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -830,51 +878,38 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
       {/* Input Area - Fixed */}
       <div className="flex-none p-4 bg-black/80 backdrop-blur-xl border-t border-green-500/20 z-20">
         <div className="max-w-4xl mx-auto w-full">
-          {user ? (
-            <form onSubmit={handleSendMessage} className="flex gap-3 items-end">
-              <div className="relative flex-1">
-                <Input
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Share your conspiracy theories..."
-                  className="bg-white/5 border-green-500/20 text-white placeholder:text-white/30 focus:border-green-500/50 min-h-[44px] py-2 pr-10 rounded-xl"
-                  disabled={sending || aiThinking}
-                  autoComplete="off"
-                />
-              </div>
-              <Button 
-                type="submit" 
-                disabled={!newMessage.trim() || sending || aiThinking}
-                className={`h-11 w-11 rounded-xl bg-gradient-to-r from-green-500 to-cyan-500 hover:from-green-600 hover:to-cyan-600 text-black shadow-lg shadow-green-900/20 transition-all ${
-                  sending ? 'opacity-80' : 'hover:scale-105'
-                }`}
-              >
-                {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-              </Button>
-            </form>
-          ) : (
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-center justify-between gap-4 p-4 rounded-xl bg-gradient-to-r from-white/5 to-white/10 border border-green-500/20 backdrop-blur-md"
+          <form onSubmit={handleSendMessage} className="flex gap-3 items-end">
+            <div className="relative flex-1">
+              <Input
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Share your conspiracy theories..."
+                className="bg-white/5 border-green-500/20 text-white placeholder:text-white/30 focus:border-green-500/50 min-h-[44px] py-2 pr-10 rounded-xl"
+                disabled={sending || aiThinking}
+                autoComplete="off"
+              />
+            </div>
+            <Button 
+              type="submit" 
+              disabled={!newMessage.trim() || sending || aiThinking}
+              className={`h-11 w-11 rounded-xl bg-gradient-to-r from-green-500 to-cyan-500 hover:from-green-600 hover:to-cyan-600 text-black shadow-lg shadow-green-900/20 transition-all ${
+                sending ? 'opacity-80' : 'hover:scale-105'
+              }`}
             >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
-                  <AlertTriangle className="w-4 h-4 text-green-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-white">Clearance Required</p>
-                  <p className="text-xs text-white/50">Sign in to access classified chat</p>
-                </div>
-              </div>
+              {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+            </Button>
+          </form>
+          {!user && !kaswareWallet.connected && (
+            <div className="mt-3 text-center">
               <Button 
-                onClick={() => base44.auth.redirectToLogin()}
+                onClick={connectKasware}
                 size="sm"
-                className="bg-green-500 text-black hover:bg-green-400 font-bold"
+                variant="outline"
+                className="text-xs text-white/60 hover:text-white border-white/20"
               >
-                Login
+                Connect Kasware to Post
               </Button>
-            </motion.div>
+            </div>
           )}
         </div>
       </div>
