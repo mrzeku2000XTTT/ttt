@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
 export default function Area51Page() {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [user, setUser] = useState(null);
