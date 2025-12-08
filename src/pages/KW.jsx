@@ -78,8 +78,13 @@ export default function KWPage() {
       
       console.log('📨 Message from KASIA:', event.data);
       
-      if (event.data?.type === 'walletUnlocked' || event.data?.type === 'walletSelected') {
-        console.log('✅ Wallet unlocked, redirecting to TTT');
+      // Check for any unlock/success events
+      if (event.data?.type === 'walletUnlocked' || 
+          event.data?.type === 'walletSelected' ||
+          event.data?.type === 'unlocked' ||
+          event.data?.status === 'unlocked' ||
+          event.data?.unlocked === true) {
+        console.log('✅ Wallet unlocked, redirecting to XYZ');
         setIsCreating(false);
         
         // Save wallet info
