@@ -160,6 +160,7 @@ export default function KWPage() {
             }}
             title="Kasia Wallet"
             allow="clipboard-write"
+            sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
           />
         </div>
       )}
