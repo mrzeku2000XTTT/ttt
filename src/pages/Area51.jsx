@@ -652,6 +652,18 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
                           <span className="text-[9px] px-1.5 py-0.5 bg-green-500/20 text-green-400 rounded border border-green-500/30">
                             AI AGENT
                           </span>
+                          {!msg.is_public && isMe && (
+                            <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-[10px] px-1.5 py-0">
+                              <Lock className="w-2.5 h-2.5 mr-1" />
+                              PRIVATE
+                            </Badge>
+                          )}
+                          {msg.is_public && (
+                            <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[10px] px-1.5 py-0">
+                              <LockOpen className="w-2.5 h-2.5 mr-1" />
+                              PUBLIC
+                            </Badge>
+                          )}
                         </>
                       )}
                       {!msg.is_public && isMe && !isAI && !isSystem && (
@@ -718,7 +730,7 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
                       )}
                     </div>
                     
-                    {isAI && user && (
+                    {isAI && isMe && (
                       <div className="flex items-center gap-2 mt-2">
                         <button
                           onClick={() => handleToggleAgentXVisibility(msg, !msg.is_public)}
@@ -731,25 +743,27 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
                             </>
                           ) : (
                             <>
-                              <Eye className="w-3 h-3 text-green-400" />
-                              <span className="text-green-400">Make Public</span>
+                              <Lock className="w-3 h-3 text-yellow-400" />
+                              <span className="text-yellow-400">Unlock</span>
                             </>
                           )}
                         </button>
-                        <button
-                          onClick={() => handleShareToDAGFeed(msg)}
-                          disabled={sharingMessageId === msg.id}
-                          className="flex items-center gap-1 px-2 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 rounded border border-cyan-500/30 transition-colors text-xs disabled:opacity-50"
-                        >
-                          {sharingMessageId === msg.id ? (
-                            <Loader2 className="w-3 h-3 text-cyan-400 animate-spin" />
-                          ) : (
-                            <>
-                              <Share2 className="w-3 h-3 text-cyan-400" />
-                              <span className="text-cyan-400">Share to Feed</span>
-                            </>
-                          )}
-                        </button>
+                        {msg.is_public && (
+                          <button
+                            onClick={() => handleShareToDAGFeed(msg)}
+                            disabled={sharingMessageId === msg.id}
+                            className="flex items-center gap-1 px-2 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 rounded border border-cyan-500/30 transition-colors text-xs disabled:opacity-50"
+                          >
+                            {sharingMessageId === msg.id ? (
+                              <Loader2 className="w-3 h-3 text-cyan-400 animate-spin" />
+                            ) : (
+                              <>
+                                <Share2 className="w-3 h-3 text-cyan-400" />
+                                <span className="text-cyan-400">Share to Feed</span>
+                              </>
+                            )}
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
