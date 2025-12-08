@@ -160,6 +160,7 @@ import Articles from './pages/Articles';
 import DAGFeed from './pages/DAGFeed';
 import Timer from './pages/Timer';
 import TetrisBattle from './pages/TetrisBattle';
+import KASIA from './pages/KASIA';
 import __Layout from './Layout.jsx';
 
 
@@ -326,6 +327,7 @@ export const PAGES = {
     "DAGFeed": DAGFeed,
     "Timer": Timer,
     "TetrisBattle": TetrisBattle,
+    "KASIA": KASIA,
 }
 
 export const pagesConfig = {
