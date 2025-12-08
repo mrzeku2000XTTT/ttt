@@ -388,17 +388,38 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
 
     setSharingToFeed(true);
     try {
+      toast.success('🎨 Generating viral post with AI...');
+      
+      // Generate viral post content and image
+      const response = await base44.functions.invoke('generateViralPost', {
+        message: msg.message
+      });
+
+      if (!response.data) {
+        throw new Error('Failed to generate post');
+      }
+
+      const { caption, image_url } = response.data;
+
+      // Create DAG post with generated content and image
       await base44.entities.DAGPost.create({
-        content: `🛸 AGENT X at Area 51 said:\n\n"${msg.message}"`,
+        content: caption,
+        image_url: image_url,
         author_name: user.username || user.email?.split('@')[0],
         author_wallet_address: user.created_wallet_address,
         author_role: user.role || 'user'
       });
 
-      toast.success('✅ Shared to DAG Feed!');
+      toast.success('✅ Posted to DAG Feed!');
+      
+      // Navigate to DAG Feed
+      setTimeout(() => {
+        window.location.href = createPageUrl('DAGFeed');
+      }, 1000);
+
     } catch (err) {
       console.error('Failed to share:', err);
-      toast.error('Failed to share to feed');
+      toast.error('Failed to generate post: ' + err.message);
     } finally {
       setSharingToFeed(false);
     }
