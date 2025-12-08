@@ -32,7 +32,7 @@ export default function Area51Page() {
   const [showAgentX, setShowAgentX] = useState(true);
   const [agentXToToggle, setAgentXToToggle] = useState(null);
   const [showAgentXModal, setShowAgentXModal] = useState(false);
-  const [sharingToFeed, setSharingToFeed] = useState(false);
+  const [sharingMessageId, setSharingMessageId] = useState(null);
   const messagesEndRef = useRef(null);
   const lastProcessedMessageRef = useRef(null);
   const isProcessingRef = useRef(false);
@@ -386,10 +386,15 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
       return;
     }
 
-    setSharingToFeed(true);
+    if (sharingMessageId) {
+      toast.error('Already sharing a message');
+      return;
+    }
+
+    setSharingMessageId(msg.id);
+    toast.success('🎨 Generating viral post...');
+    
     try {
-      toast.success('🎨 Generating viral post with AI...');
-      
       // Generate viral post content and image
       const response = await base44.functions.invoke('generateViralPost', {
         message: msg.message
@@ -401,27 +406,20 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
 
       const { caption, image_url } = response.data;
 
-      // Create DAG post with generated content and image
-      await base44.entities.DAGPost.create({
+      // Store generated content in localStorage for DAG Feed to pick up
+      localStorage.setItem('dagfeed_draft', JSON.stringify({
         content: caption,
         image_url: image_url,
-        author_name: user.username || user.email?.split('@')[0],
-        author_wallet_address: user.created_wallet_address,
-        author_role: user.role || 'user'
-      });
+        from: 'area51'
+      }));
 
-      toast.success('✅ Posted to DAG Feed!');
-      
-      // Navigate to DAG Feed
-      setTimeout(() => {
-        window.location.href = createPageUrl('DAGFeed');
-      }, 1000);
+      // Redirect immediately to DAG Feed
+      window.location.href = createPageUrl('DAGFeed');
 
     } catch (err) {
-      console.error('Failed to share:', err);
-      toast.error('Failed to generate post: ' + err.message);
-    } finally {
-      setSharingToFeed(false);
+      console.error('Failed to generate:', err);
+      toast.error('Failed to generate post');
+      setSharingMessageId(null);
     }
   };
 
@@ -736,10 +734,10 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
                         </button>
                         <button
                           onClick={() => handleShareToDAGFeed(msg)}
-                          disabled={sharingToFeed}
-                          className="flex items-center gap-1 px-2 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 rounded border border-cyan-500/30 transition-colors text-xs"
+                          disabled={sharingMessageId === msg.id}
+                          className="flex items-center gap-1 px-2 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 rounded border border-cyan-500/30 transition-colors text-xs disabled:opacity-50"
                         >
-                          {sharingToFeed ? (
+                          {sharingMessageId === msg.id ? (
                             <Loader2 className="w-3 h-3 text-cyan-400 animate-spin" />
                           ) : (
                             <>
