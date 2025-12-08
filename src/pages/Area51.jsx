@@ -387,10 +387,27 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
       const amountSompi = 100000000; // 1 KAS
       const txId = await window.kasware.sendKaspa(kaswareWallet.address, amountSompi);
 
+      // Update Agent X message
       await base44.entities.Area51Message.update(agentXToToggle.message.id, {
         is_public: agentXToToggle.makePublic,
         made_public_at: agentXToToggle.makePublic ? new Date().toISOString() : null
       });
+
+      // If making public, also make the user's original message public
+      if (agentXToToggle.makePublic) {
+        const allMsgs = await base44.entities.Area51Message.list("-created_date", 100);
+        const userMsg = allMsgs.find(m => 
+          m.sender_email === agentXToToggle.message.sender_email &&
+          m.message_type === 'text' &&
+          new Date(m.created_date).getTime() < new Date(agentXToToggle.message.created_date).getTime()
+        );
+        if (userMsg && !userMsg.is_public) {
+          await base44.entities.Area51Message.update(userMsg.id, {
+            is_public: true,
+            made_public_at: new Date().toISOString()
+          });
+        }
+      }
 
       setShowAgentXModal(false);
       setAgentXToToggle(null);
@@ -478,13 +495,30 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
             console.log('✅ Transaction verified!', response.data.transaction);
             setZkVerifying(false);
             setShowZkVerification(false);
-            
+
             // Check if we're updating Agent X visibility or regular message
             if (agentXToToggle) {
               await base44.entities.Area51Message.update(agentXToToggle.message.id, {
                 is_public: agentXToToggle.makePublic,
                 made_public_at: agentXToToggle.makePublic ? new Date().toISOString() : null
               });
+
+              // If making public, also make the user's original message public
+              if (agentXToToggle.makePublic) {
+                const allMsgs = await base44.entities.Area51Message.list("-created_date", 100);
+                const userMsg = allMsgs.find(m => 
+                  m.sender_email === agentXToToggle.message.sender_email &&
+                  m.message_type === 'text' &&
+                  new Date(m.created_date).getTime() < new Date(agentXToToggle.message.created_date).getTime()
+                );
+                if (userMsg && !userMsg.is_public) {
+                  await base44.entities.Area51Message.update(userMsg.id, {
+                    is_public: true,
+                    made_public_at: new Date().toISOString()
+                  });
+                }
+              }
+
               setShowAgentXModal(false);
               setAgentXToToggle(null);
               toast.success(agentXToToggle.makePublic ? '✅ Agent X message is now public!' : '✅ Agent X message is now private!');
@@ -499,7 +533,7 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
               setMessageToPublish(null);
               toast.success('✅ Message published to all users!');
             }
-            
+
             // Reload messages
             await loadMessages();
             return true;
