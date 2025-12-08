@@ -69,6 +69,21 @@ export default function Area51Page() {
     }
   };
 
+  const connectKasware = async () => {
+    if (typeof window.kasware === 'undefined') {
+      toast.error('Kasware wallet not found. Please install Kasware extension.');
+      return;
+    }
+
+    try {
+      const accounts = await window.kasware.requestAccounts();
+      setKaswareWallet({ connected: true, address: accounts[0] });
+      toast.success('Kasware connected!');
+    } catch (err) {
+      toast.error('Failed to connect Kasware');
+    }
+  };
+
   const loadZkWalletBalance = async () => {
     try {
       const currentUser = await base44.auth.me();
