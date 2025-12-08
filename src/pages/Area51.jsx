@@ -29,6 +29,8 @@ export default function Area51Page() {
   const [zkVerifying, setZkVerifying] = useState(false);
   const [zkWalletBalance, setZkWalletBalance] = useState(null);
   const [selectedZkWallet, setSelectedZkWallet] = useState('ttt');
+  const [showAgentX, setShowAgentX] = useState(true);
+  const [hasUnlockedOnce, setHasUnlockedOnce] = useState(false);
   const messagesEndRef = useRef(null);
   const lastProcessedMessageRef = useRef(null);
   const isProcessingRef = useRef(false);
@@ -274,17 +276,27 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
     const messageContent = newMessage.trim();
     setSending(true);
     try {
-      await base44.entities.Area51Message.create({
+      // If user has unlocked once, auto-publish their messages
+      const isPublic = hasUnlockedOnce;
+      
+      const createdMsg = await base44.entities.Area51Message.create({
         message: messageContent,
         sender_username: user.username || user.email?.split('@')[0] || "Anonymous",
         sender_email: user.email,
         sender_wallet: user.created_wallet_address,
         message_type: "text",
         is_ai: false,
-        is_public: false
+        is_public: isPublic,
+        made_public_at: isPublic ? new Date().toISOString() : null
       });
+      
       setNewMessage("");
-      loadMessages();
+      await loadMessages();
+      
+      // If message was auto-published, trigger AI
+      if (isPublic) {
+        setTimeout(() => triggerAI(messageContent), 1000);
+      }
     } catch (error) {
       console.error("Failed to send message:", error);
     } finally {
@@ -318,6 +330,7 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
       setShowPaymentModal(false);
       const publishedMessage = messageToPublish.message;
       setMessageToPublish(null);
+      setHasUnlockedOnce(true);
       
       // Reload messages first
       await loadMessages();
@@ -325,7 +338,7 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
       // Then trigger AI to respond
       triggerAI(publishedMessage);
 
-      toast.success('✅ Message published to all users!');
+      toast.success('✅ Message published! You can now send unlimited messages.');
     } catch (err) {
       console.error('Failed to publish message:', err);
       toast.error('Failed to publish: ' + err.message);
@@ -377,6 +390,7 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
             setShowPaymentModal(false);
             const publishedMessage = messageToPublish.message;
             setMessageToPublish(null);
+            setHasUnlockedOnce(true);
             
             // Reload messages first
             await loadMessages();
@@ -384,7 +398,7 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
             // Then trigger AI to respond
             triggerAI(publishedMessage);
 
-            toast.success('✅ Message published to all users!');
+            toast.success('✅ Message published! You can now send unlimited messages.');
             return true;
           }
 
@@ -448,12 +462,21 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {aiThinking && (
+          {showAgentX && aiThinking && (
             <div className="flex items-center gap-2 text-green-400 text-xs animate-pulse">
               <Sparkles className="w-3 h-3" />
               <span className="hidden sm:inline">AGENT X typing...</span>
             </div>
           )}
+          <Button
+            onClick={() => setShowAgentX(!showAgentX)}
+            size="sm"
+            variant="ghost"
+            className="text-white/60 hover:text-green-400"
+            title={showAgentX ? "Hide Agent X" : "Show Agent X"}
+          >
+            <Sparkles className={`w-4 h-4 ${showAgentX ? 'text-green-400' : 'text-white/40'}`} />
+          </Button>
           {user && (
             <Button
               onClick={handleCheckIn}
@@ -506,6 +529,10 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
               const isMe = user && msg.sender_email === user.email;
               const isAI = msg.is_ai === true;
               const isSystem = msg.message_type === 'system';
+              
+              // Hide Agent X messages if toggle is off
+              if (isAI && !showAgentX) return null;
+              
               return (
                 <motion.div
                   key={msg.id}
