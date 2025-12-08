@@ -71,6 +71,31 @@ export default function KWPage() {
 
 
 
+  useEffect(() => {
+    // Listen for wallet unlock from KASIA
+    const handleMessage = (event) => {
+      if (event.origin !== 'https://kasia.fyi') return;
+      
+      console.log('📨 Message from KASIA:', event.data);
+      
+      if (event.data?.type === 'walletUnlocked' || event.data?.type === 'walletSelected') {
+        console.log('✅ Wallet unlocked, redirecting to TTT');
+        setIsCreating(false);
+        
+        // Save wallet info
+        if (event.data.walletName) {
+          localStorage.setItem('ttt_wallet_name', event.data.walletName);
+        }
+        
+        // Redirect to TTT wallet page
+        navigate(createPageUrl('TTT'));
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [navigate]);
+
   const handleCreateWallet = () => {
     setIsCreating(true);
     showToast('Opening Kasia wallet creator...', 'success');
@@ -116,12 +141,15 @@ export default function KWPage() {
       {/* Hidden iframe for Kasia wallet - cropped to hide branding */}
       {isCreating && (
         <div className="fixed inset-0 z-50 bg-black overflow-hidden">
-          <Button
-            onClick={() => navigate(createPageUrl('KWSuccess'))}
-            className="absolute top-4 right-4 z-[60] bg-green-500 hover:bg-green-600 text-white"
-          >
-            Done
-          </Button>
+          <div className="absolute top-4 right-4 z-[60] flex gap-2">
+            <Button
+              onClick={() => setIsCreating(false)}
+              variant="outline"
+              className="bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800"
+            >
+              Cancel
+            </Button>
+          </div>
           <iframe 
             ref={iframeRef} 
             src={KASIA_WALLET_URL} 
