@@ -217,7 +217,7 @@ export default function Area51Page() {
     }
   };
 
-  const triggerAI = async (userMessage) => {
+  const triggerAI = async (userMessageId, userMessage) => {
     setAiThinking(true);
     try {
       const response = await base44.integrations.Core.InvokeLLM({
@@ -233,7 +233,9 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
         sender_username: "AGENT X",
         sender_email: "ai@area51.gov",
         message_type: "ai",
-        is_ai: true
+        is_ai: true,
+        is_public: false,
+        parent_message_id: userMessageId
       });
 
       loadMessages();
@@ -251,7 +253,7 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
     const messageContent = newMessage.trim();
     setSending(true);
     try {
-      await base44.entities.Area51Message.create({
+      const createdMessage = await base44.entities.Area51Message.create({
         message: messageContent,
         sender_username: user.username || user.email?.split('@')[0] || "Anonymous",
         sender_email: user.email,
@@ -261,7 +263,10 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
         is_public: false
       });
       setNewMessage("");
-      loadMessages();
+      await loadMessages();
+      
+      // Trigger AI response after message is created
+      triggerAI(createdMessage.id, messageContent);
     } catch (error) {
       console.error("Failed to send message:", error);
     } finally {
@@ -286,21 +291,26 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
       const amountSompi = 100000000; // 1 KAS
       const txId = await window.kasware.sendKaspa(kaswareWallet.address, amountSompi);
 
+      // Update both user message and AI response to public
       await base44.entities.Area51Message.update(messageToPublish.id, {
         is_public: true,
         made_public_at: new Date().toISOString(),
         self_pay_tx_hash: txId
       });
 
+      // Find and update AI response
+      const aiResponse = messages.find(m => m.parent_message_id === messageToPublish.id && m.is_ai);
+      if (aiResponse) {
+        await base44.entities.Area51Message.update(aiResponse.id, {
+          is_public: true,
+          made_public_at: new Date().toISOString()
+        });
+      }
+
       setShowPaymentModal(false);
-      const publishedMessage = messageToPublish.message;
       setMessageToPublish(null);
       
-      // Reload messages first
       await loadMessages();
-      
-      // Then trigger AI to respond
-      triggerAI(publishedMessage);
 
       toast.success('✅ Message published to all users!');
     } catch (err) {
@@ -344,22 +354,26 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
             setZkVerifying(false);
             setShowZkVerification(false);
             
-            // Update the message to be public
+            // Update both user message and AI response to public
             await base44.entities.Area51Message.update(messageToPublish.id, {
               is_public: true,
               made_public_at: new Date().toISOString(),
               self_pay_tx_hash: response.data.transaction.id
             });
 
+            // Find and update AI response
+            const aiResponse = messages.find(m => m.parent_message_id === messageToPublish.id && m.is_ai);
+            if (aiResponse) {
+              await base44.entities.Area51Message.update(aiResponse.id, {
+                is_public: true,
+                made_public_at: new Date().toISOString()
+              });
+            }
+
             setShowPaymentModal(false);
-            const publishedMessage = messageToPublish.message;
             setMessageToPublish(null);
             
-            // Reload messages first
             await loadMessages();
-            
-            // Then trigger AI to respond
-            triggerAI(publishedMessage);
 
             toast.success('✅ Message published to all users!');
             return true;
