@@ -580,7 +580,7 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
                       <div className="flex items-start gap-2">
                         <div className={`px-4 py-2.5 rounded-2xl backdrop-blur-sm ${
                           isMe 
-                            ? "bg-gradient-to-br from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-900/20 rounded-tr-none" 
+                            ? "bg-white/10 border border-white/10 text-white/90 rounded-tr-none" 
                             : "bg-white/10 border border-white/10 text-white/90 rounded-tl-none hover:bg-white/15 transition-colors"
                         }`}>
                           <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.message}</p>
