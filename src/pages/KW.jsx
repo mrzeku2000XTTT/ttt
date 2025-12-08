@@ -69,64 +69,11 @@ export default function KWPage() {
     loadUser();
   }, []);
 
-  useEffect(() => {
-    const handleMessage = (event) => {
-      // Listen for messages from the Kasia iframe
-      if (event.origin !== 'https://kasia.fyi') return;
-      
-      if (event.data?.type === 'kasiaReady') {
-        console.log('✅ Kasia iframe ready');
-        setIframeReady(true);
-      } else if (event.data?.type === 'walletCreated') {
-        console.log('✅ Wallet created from Kasia');
-        setWalletCreated(true);
-        setIsCreating(false);
-        showToast('Wallet created successfully!', 'success');
-        
-        // Redirect to success page
-        setTimeout(() => {
-          navigate(createPageUrl('KWSuccess'));
-        }, 1000);
-      }
-    };
 
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [navigate]);
 
   const handleCreateWallet = () => {
     setIsCreating(true);
-    
-    // Send message to iframe if it's ready
-    if (iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.postMessage({ 
-        type: 'createWallet',
-        userId: user?.email
-      }, 'https://kasia.fyi');
-    }
-    
     showToast('Opening Kasia wallet creator...', 'success');
-    
-    // Fallback: If no message received after 3 seconds, assume creation started
-    setTimeout(() => {
-      if (isCreating) {
-        // Listen for navigation changes in iframe to detect wallet creation
-        const checkIframeUrl = setInterval(() => {
-          try {
-            if (iframeRef.current?.contentWindow?.location?.href?.includes('select')) {
-              clearInterval(checkIframeUrl);
-              setIsCreating(false);
-              navigate(createPageUrl('KWSuccess'));
-            }
-          } catch (e) {
-            // Cross-origin access blocked, use alternative detection
-          }
-        }, 500);
-        
-        // Clear check after 30 seconds
-        setTimeout(() => clearInterval(checkIframeUrl), 30000);
-      }
-    }, 3000);
   };
 
   if (isLoading) {
@@ -169,6 +116,12 @@ export default function KWPage() {
       {/* Hidden iframe for Kasia wallet - cropped to hide branding */}
       {isCreating && (
         <div className="fixed inset-0 z-50 bg-black overflow-hidden">
+          <Button
+            onClick={() => navigate(createPageUrl('KWSuccess'))}
+            className="absolute top-4 right-4 z-[60] bg-green-500 hover:bg-green-600 text-white"
+          >
+            Done
+          </Button>
           <iframe 
             ref={iframeRef} 
             src={KASIA_WALLET_URL} 
