@@ -35,7 +35,7 @@ function GateContent() {
   }, []);
 
   const apps = [
-    { name: "KW", path: "KW", category: "Wallet", color: "#10B981", adminOnly: true },
+    { name: "XYZ", path: "XYZ", category: "Wallet", color: "#10B981", adminOnly: true },
     { name: "AK", path: "AK", category: "AI", color: "#A855F7" },
     { name: "TD", path: "TD", category: "App", color: "#06B6D4" },
     { name: "Builders", path: "Builders", category: "Team", color: "#06B6D4" },

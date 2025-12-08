@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Loader2, AlertTriangle, Wallet, ArrowLeft, RefreshCw } from "lucide-react";
+import { Loader2, AlertTriangle, Wallet, ArrowLeft, RefreshCw, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 const KASIA_WALLET_URL = 'https://kasia.fyi';
+const KASIA_CREATE_URL = 'https://kasia.fyi/wallet/create';
 
 export default function XYZPage() {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ export default function XYZPage() {
   const [balance, setBalance] = useState(null);
   const [walletName, setWalletName] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const loadUser = async () => {
     try {
@@ -173,13 +175,22 @@ export default function XYZPage() {
                 </div>
               </div>
 
-              <Button 
-                onClick={handleOpenWallet}
-                className="w-full max-w-sm h-12 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-bold"
-              >
-                <Wallet className="w-5 h-5 mr-2" />
-                Open Wallet
-              </Button>
+              <div className="flex gap-4 w-full max-w-sm">
+                <Button 
+                  onClick={() => setShowCreateModal(true)}
+                  className="flex-1 h-12 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold"
+                >
+                  <Plus className="w-5 h-5 mr-2" />
+                  Create Wallet
+                </Button>
+                <Button 
+                  onClick={handleOpenWallet}
+                  className="flex-1 h-12 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-bold"
+                >
+                  <Wallet className="w-5 h-5 mr-2" />
+                  Open Wallet
+                </Button>
+              </div>
             </div>
           </motion.div>
 
@@ -222,6 +233,32 @@ export default function XYZPage() {
               height: 'calc(100% + 60px)'
             }}
             title="KASIA Wallet"
+            allow="clipboard-write"
+          />
+        </motion.div>
+      )}
+
+      {/* Create Wallet Modal */}
+      {showCreateModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-50 bg-black"
+        >
+          <Button
+            onClick={() => setShowCreateModal(false)}
+            className="absolute top-4 right-4 z-[60] bg-red-500 hover:bg-red-600 text-white"
+          >
+            Close
+          </Button>
+          <iframe 
+            src={KASIA_CREATE_URL}
+            className="w-full h-full border-0"
+            style={{ 
+              marginTop: '-60px',
+              height: 'calc(100% + 60px)'
+            }}
+            title="Create KASIA Wallet"
             allow="clipboard-write"
           />
         </motion.div>
