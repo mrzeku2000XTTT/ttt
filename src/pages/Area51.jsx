@@ -234,9 +234,13 @@ export default function Area51Page() {
   const triggerAI = async (userMessageId, userMessage) => {
     setAiThinking(true);
     try {
-      // Check if AI response already exists for this message
-      const existingAI = messages.find(m => m.parent_message_id === userMessageId && m.is_ai);
-      if (existingAI) {
+      // Check if AI response already exists by querying database
+      const existingResponses = await base44.entities.Area51Message.filter({
+        parent_message_id: userMessageId,
+        is_ai: true
+      });
+      
+      if (existingResponses.length > 0) {
         console.log('AI response already exists for this message');
         setAiThinking(false);
         return;
