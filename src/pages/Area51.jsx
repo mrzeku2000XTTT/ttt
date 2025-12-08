@@ -521,36 +521,9 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
               const isMe = user && msg.sender_email === user.email;
               const isSystem = msg.message_type === 'system';
               const aiResponse = messages.find(m => m.parent_message_id === msg.id && m.is_ai);
-              
+
               return (
                 <div key={msg.id} className="flex flex-col gap-3">
-                  {/* AI Response on Left - Only show if parent is public OR user owns it */}
-                  {aiResponse && msg.is_public && (
-                    <motion.div
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="flex gap-3 flex-row"
-                    >
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 border bg-green-500/30 border-green-400/50 shadow-lg shadow-green-500/20">
-                        <Sparkles className="w-4 h-4 text-green-400" />
-                      </div>
-                      <div className="flex flex-col items-start max-w-[85%] sm:max-w-[70%]">
-                        <div className="flex items-center gap-2 mb-1 px-1">
-                          <span className="text-xs font-bold text-green-400">AGENT X</span>
-                          <span className="text-[9px] px-1.5 py-0.5 bg-green-500/20 text-green-400 rounded border border-green-500/30">
-                            AI AGENT
-                          </span>
-                          <span className="text-[10px] text-white/30">
-                            {moment(aiResponse.created_date).utc().format('HH:mm')} UTC
-                          </span>
-                        </div>
-                        <div className="px-4 py-2.5 rounded-2xl backdrop-blur-sm bg-gradient-to-br from-green-600/30 to-cyan-600/30 border border-green-500/30 text-white shadow-lg shadow-green-900/20 rounded-tl-none">
-                          <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{aiResponse.message}</p>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-
                   {/* User Message on Right */}
                   <motion.div
                     initial={{ opacity: 0, x: 20 }}
@@ -603,7 +576,7 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
                           {moment(msg.created_date).utc().format('HH:mm')} UTC
                         </span>
                       </div>
-                      
+
                       <div className="flex items-start gap-2">
                         <div className={`px-4 py-2.5 rounded-2xl backdrop-blur-sm ${
                           isMe 
@@ -612,7 +585,7 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
                         }`}>
                           <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.message}</p>
                         </div>
-                        {!msg.is_public && isMe && !isSystem && (
+                        {!msg.is_public && isMe && !isSystem && aiResponse && (
                           <Button
                             onClick={() => handleUnlockMessage(msg)}
                             disabled={publishingMessageId === msg.id}
@@ -633,6 +606,45 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
                       </div>
                     </div>
                   </motion.div>
+
+                  {/* AI Response Below User Message on Right */}
+                  {aiResponse && (isMe || msg.is_public) && (
+                    <motion.div
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="flex gap-3 flex-row-reverse"
+                    >
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 border bg-green-500/30 border-green-400/50 shadow-lg shadow-green-500/20">
+                        <Sparkles className="w-4 h-4 text-green-400" />
+                      </div>
+                      <div className="flex flex-col items-end max-w-[85%] sm:max-w-[70%]">
+                        <div className="flex items-center gap-2 mb-1 px-1">
+                          <span className="text-xs font-bold text-green-400">AGENT X</span>
+                          <span className="text-[9px] px-1.5 py-0.5 bg-green-500/20 text-green-400 rounded border border-green-500/30">
+                            AI AGENT
+                          </span>
+                          {!aiResponse.is_public && isMe && (
+                            <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-[10px] px-1.5 py-0">
+                              <Lock className="w-2.5 h-2.5 mr-1" />
+                              PRIVATE
+                            </Badge>
+                          )}
+                          {aiResponse.is_public && (
+                            <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[10px] px-1.5 py-0">
+                              <LockOpen className="w-2.5 h-2.5 mr-1" />
+                              PUBLIC
+                            </Badge>
+                          )}
+                          <span className="text-[10px] text-white/30">
+                            {moment(aiResponse.created_date).utc().format('HH:mm')} UTC
+                          </span>
+                        </div>
+                        <div className="px-4 py-2.5 rounded-2xl backdrop-blur-sm bg-gradient-to-br from-green-600/30 to-cyan-600/30 border border-green-500/30 text-white shadow-lg shadow-green-900/20 rounded-tr-none">
+                          <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{aiResponse.message}</p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
               );
             })}
