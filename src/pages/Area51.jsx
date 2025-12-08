@@ -517,8 +517,8 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
         from: 'area51'
       }));
 
-      // Redirect immediately to DAG Feed
-      window.location.href = createPageUrl('DAGFeed');
+      // Navigate to DAG Feed (client-side navigation, no reload)
+      navigate(createPageUrl('DAGFeed'));
 
     } catch (err) {
       console.error('Failed to generate:', err);
