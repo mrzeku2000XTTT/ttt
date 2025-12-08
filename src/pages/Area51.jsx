@@ -139,26 +139,28 @@ export default function Area51Page() {
       
       // Check if there's a new public message that needs AI response
       const publicMessages = allMsgs.filter(msg => msg.is_public && msg.message_type === 'text');
+      
+      // Only process the LATEST public message
       if (publicMessages.length > 0) {
         const latestPublic = publicMessages[0];
         
-        // Check if we already responded to this message in our map
+        // Skip if we've already tracked this message
         if (aiResponseMapRef.current.has(latestPublic.id)) {
           setLoading(false);
           return;
         }
         
-        // Check if an AI response already exists in database after this message
-        const aiResponse = allMsgs.find(msg => 
+        // Count how many AI responses exist after this message's timestamp
+        const aiResponsesAfter = allMsgs.filter(msg => 
           msg.message_type === 'ai' && 
           new Date(msg.created_date).getTime() > new Date(latestPublic.created_date).getTime()
         );
         
-        if (aiResponse) {
-          // Mark this message as responded in our map
-          aiResponseMapRef.current.set(latestPublic.id, aiResponse.id);
+        // If any AI response exists, mark this message as handled
+        if (aiResponsesAfter.length > 0) {
+          aiResponseMapRef.current.set(latestPublic.id, aiResponsesAfter[0].id);
         } else if (!isProcessingRef.current && !aiThinking) {
-          // Only trigger AI if: no response exists AND not processing
+          // Only trigger AI if: NO response exists AND not currently processing
           isProcessingRef.current = true;
           aiResponseMapRef.current.set(latestPublic.id, 'processing');
           setTimeout(() => triggerAI(latestPublic.message, latestPublic.id), 1000);
