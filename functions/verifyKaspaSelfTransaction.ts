@@ -57,9 +57,8 @@ Deno.serve(async (req) => {
           txTimestamp = txTimestamp * 1000;
         }
         
-        // Allow 2 minute window before click (for mobile delays)
-        const timeWindow = 120000; // 2 minutes
-        const isInTimeWindow = txTimestamp >= (targetTimestamp - timeWindow);
+        // Only check transactions AFTER the verification started
+        const isInTimeWindow = txTimestamp >= targetTimestamp;
 
         console.log('Checking TX:', {
           id: tx.transaction_id.substring(0, 8),
