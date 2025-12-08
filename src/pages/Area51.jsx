@@ -156,21 +156,20 @@ export default function Area51Page() {
           continue;
         }
         
-        // Check if AI response already exists for THIS specific message
+        // Check if AI response already exists for THIS specific message (check ALL AI messages from same user, not just nearby ones)
         const existingAIResponse = allMsgs.find(msg => 
           msg.message_type === 'ai' && 
           msg.sender_email === publicMsg.sender_email &&
-          new Date(msg.created_date).getTime() > new Date(publicMsg.created_date).getTime() &&
-          Math.abs(new Date(msg.created_date).getTime() - new Date(publicMsg.created_date).getTime()) < 10000 // Within 10 seconds
+          new Date(msg.created_date).getTime() > new Date(publicMsg.created_date).getTime()
         );
         
         if (existingAIResponse) {
-          // Mark as handled
+          // Mark as handled - response already exists (public or private)
           aiResponseMapRef.current.set(publicMsg.id, existingAIResponse.id);
-          console.log(`✅ Found existing AI response for message ${publicMsg.id}`);
+          console.log(`✅ Skipping message ${publicMsg.id} - AI response already exists (${existingAIResponse.is_public ? 'public' : 'private'})`);
         } else if (!isProcessingRef.current && !aiThinking) {
           // Only process the LATEST unresponded message
-          console.log(`🤖 Triggering AI for message ${publicMsg.id}`);
+          console.log(`🤖 Triggering AI for message ${publicMsg.id} - no response found`);
           isProcessingRef.current = true;
           aiResponseMapRef.current.set(publicMsg.id, 'processing');
           setTimeout(() => triggerAI(publicMsg.message, publicMsg.id, publicMsg.sender_email), 1000);
