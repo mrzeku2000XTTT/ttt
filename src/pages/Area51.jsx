@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Send, Loader2, User as UserIcon, AlertTriangle, Copy, Sparkles, Shield, CheckCircle, Lock, LockOpen, X } from "lucide-react";
+import { ArrowLeft, Send, Loader2, User as UserIcon, AlertTriangle, Copy, Sparkles, Shield, CheckCircle, Lock, LockOpen, X, Eye, EyeOff } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ export default function Area51Page() {
   const [zkWalletBalance, setZkWalletBalance] = useState(null);
   const [selectedZkWallet, setSelectedZkWallet] = useState('ttt');
   const [showAgentX, setShowAgentX] = useState(true);
+  const [hiddenAgentXMessages, setHiddenAgentXMessages] = useState(new Set());
   const messagesEndRef = useRef(null);
   const lastProcessedMessageRef = useRef(null);
   const isProcessingRef = useRef(false);
@@ -523,6 +524,7 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
               const isMe = user && msg.sender_email === user.email;
               const isAI = msg.is_ai === true;
               const isSystem = msg.message_type === 'system';
+              const isHidden = hiddenAgentXMessages.has(msg.id);
               
               // Hide Agent X messages if toggle is off
               if (isAI && !showAgentX) return null;
@@ -558,9 +560,38 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
                         {msg.sender_username}
                       </span>
                       {isAI && (
-                        <span className="text-[9px] px-1.5 py-0.5 bg-green-500/20 text-green-400 rounded border border-green-500/30">
-                          AI AGENT
-                        </span>
+                        <>
+                          <span className="text-[9px] px-1.5 py-0.5 bg-green-500/20 text-green-400 rounded border border-green-500/30">
+                            AI AGENT
+                          </span>
+                          <button
+                            onClick={() => {
+                              setHiddenAgentXMessages(prev => {
+                                const newSet = new Set(prev);
+                                if (newSet.has(msg.id)) {
+                                  newSet.delete(msg.id);
+                                } else {
+                                  newSet.add(msg.id);
+                                }
+                                return newSet;
+                              });
+                            }}
+                            className="flex items-center gap-1 px-2 py-0.5 bg-white/5 hover:bg-white/10 rounded border border-white/10 transition-colors"
+                            title={isHidden ? "Show message" : "Hide message"}
+                          >
+                            {isHidden ? (
+                              <>
+                                <Eye className="w-3 h-3 text-white/60" />
+                                <span className="text-[9px] text-white/60">Show</span>
+                              </>
+                            ) : (
+                              <>
+                                <EyeOff className="w-3 h-3 text-white/60" />
+                                <span className="text-[9px] text-white/60">Hide</span>
+                              </>
+                            )}
+                          </button>
+                        </>
                       )}
                       {!msg.is_public && isMe && !isAI && !isSystem && (
                         <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-[10px] px-1.5 py-0">
@@ -596,35 +627,37 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
                       </span>
                     </div>
                     
-                    <div className="flex items-start gap-2">
-                      <div className={`px-4 py-2.5 rounded-2xl backdrop-blur-sm ${
-                        isAI
-                          ? "bg-gradient-to-br from-green-600/30 to-cyan-600/30 border border-green-500/30 text-white shadow-lg shadow-green-900/20 rounded-tl-none"
-                          : isMe 
-                          ? "bg-gradient-to-br from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-900/20 rounded-tr-none" 
-                          : "bg-white/10 border border-white/10 text-white/90 rounded-tl-none hover:bg-white/15 transition-colors"
-                      }`}>
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.message}</p>
+                    {!isHidden && (
+                      <div className="flex items-start gap-2">
+                        <div className={`px-4 py-2.5 rounded-2xl backdrop-blur-sm ${
+                          isAI
+                            ? "bg-gradient-to-br from-green-600/30 to-cyan-600/30 border border-green-500/30 text-white shadow-lg shadow-green-900/20 rounded-tl-none"
+                            : isMe 
+                            ? "bg-gradient-to-br from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-900/20 rounded-tr-none" 
+                            : "bg-white/10 border border-white/10 text-white/90 rounded-tl-none hover:bg-white/15 transition-colors"
+                        }`}>
+                          <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.message}</p>
+                        </div>
+                        {!msg.is_public && isMe && !isAI && !isSystem && (
+                          <Button
+                            onClick={() => handleUnlockMessage(msg)}
+                            disabled={publishingMessageId === msg.id}
+                            variant="ghost"
+                            size="sm"
+                            className="text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10 h-7 px-2 text-xs mt-1"
+                          >
+                            {publishingMessageId === msg.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <>
+                                <Lock className="w-3 h-3 mr-1" />
+                                Unlock
+                              </>
+                            )}
+                          </Button>
+                        )}
                       </div>
-                      {!msg.is_public && isMe && !isAI && !isSystem && (
-                        <Button
-                          onClick={() => handleUnlockMessage(msg)}
-                          disabled={publishingMessageId === msg.id}
-                          variant="ghost"
-                          size="sm"
-                          className="text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10 h-7 px-2 text-xs mt-1"
-                        >
-                          {publishingMessageId === msg.id ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <>
-                              <Lock className="w-3 h-3 mr-1" />
-                              Unlock
-                            </>
-                          )}
-                        </Button>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </motion.div>
               );
