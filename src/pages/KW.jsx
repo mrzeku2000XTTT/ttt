@@ -140,15 +140,22 @@ export default function KWPage() {
         )}
       </AnimatePresence>
 
-      {/* Hidden iframe for Kasia wallet */}
-      <iframe 
-        ref={iframeRef} 
-        src={KASIA_WALLET_URL} 
-        style={{ display: isCreating ? 'block' : 'none' }}
-        className={isCreating ? 'fixed inset-0 w-full h-full z-50' : ''}
-        title="Kasia Wallet"
-        allow="clipboard-write"
-      />
+      {/* Hidden iframe for Kasia wallet - cropped to hide branding */}
+      {isCreating && (
+        <div className="fixed inset-0 z-50 bg-black overflow-hidden">
+          <iframe 
+            ref={iframeRef} 
+            src={KASIA_WALLET_URL} 
+            className="w-full h-full border-0"
+            style={{ 
+              marginTop: '-60px',
+              height: 'calc(100% + 60px)'
+            }}
+            title="Kasia Wallet"
+            allow="clipboard-write"
+          />
+        </div>
+      )}
 
       <div className="max-w-4xl mx-auto">
         <div className="mb-8 flex items-center justify-between">
