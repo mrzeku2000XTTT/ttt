@@ -46,9 +46,32 @@ export default function DAGFeedPage() {
     loadData();
     checkKasware();
     loadZkWalletBalance();
+    checkForDraftPost();
     const interval = setInterval(loadData, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  const checkForDraftPost = () => {
+    try {
+      const draft = localStorage.getItem('dagfeed_draft');
+      if (draft) {
+        const { content, image_url } = JSON.parse(draft);
+        setNewPost(content);
+        if (image_url) {
+          setUploadedFiles([{ url: image_url, type: 'image', name: 'area51-ai.png', size: 0 }]);
+        }
+        localStorage.removeItem('dagfeed_draft');
+        
+        // Scroll to textarea
+        setTimeout(() => {
+          textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          textareaRef.current?.focus();
+        }, 300);
+      }
+    } catch (err) {
+      console.error('Failed to load draft:', err);
+    }
+  };
 
   const loadZkWalletBalance = async () => {
     try {
