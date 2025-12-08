@@ -313,12 +313,21 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
       const amountSompi = 100000000; // 1 KAS
       const txId = await window.kasware.sendKaspa(kaswareWallet.address, amountSompi);
 
-      // Update only the specific message (not AI response)
+      // Update user message
       await base44.entities.Area51Message.update(messageToPublish.id, {
         is_public: true,
         made_public_at: new Date().toISOString(),
         self_pay_tx_hash: txId
       });
+
+      // Find and update AI response
+      const aiResponse = messages.find(m => m.parent_message_id === messageToPublish.id && m.is_ai);
+      if (aiResponse) {
+        await base44.entities.Area51Message.update(aiResponse.id, {
+          is_public: true,
+          made_public_at: new Date().toISOString()
+        });
+      }
 
       setShowPaymentModal(false);
       setMessageToPublish(null);
@@ -365,12 +374,21 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
           if (response.data?.verified && response.data?.transaction) {
             console.log('✅ Transaction verified!', response.data.transaction);
 
-            // Update only the specific message
+            // Update user message
             await base44.entities.Area51Message.update(messageToPublish.id, {
               is_public: true,
               made_public_at: new Date().toISOString(),
               self_pay_tx_hash: response.data.transaction.id
             });
+
+            // Find and update AI response
+            const aiResponse = messages.find(m => m.parent_message_id === messageToPublish.id && m.is_ai);
+            if (aiResponse) {
+              await base44.entities.Area51Message.update(aiResponse.id, {
+                is_public: true,
+                made_public_at: new Date().toISOString()
+              });
+            }
 
             // Reload messages to get updated data
             await loadMessages();
@@ -621,28 +639,8 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
                             {moment(aiResponse.created_date).utc().format('HH:mm')} UTC
                           </span>
                         </div>
-                        <div className="flex items-start gap-2">
-                          <div className="px-4 py-2.5 rounded-2xl backdrop-blur-sm bg-gradient-to-br from-green-600/30 to-cyan-600/30 border border-green-500/30 text-white shadow-lg shadow-green-900/20 rounded-tr-none">
-                            <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{aiResponse.message}</p>
-                          </div>
-                          {!aiResponse.is_public && msg.is_public && (
-                            <Button
-                              onClick={() => handleUnlockMessage(aiResponse)}
-                              disabled={publishingMessageId === aiResponse.id}
-                              variant="ghost"
-                              size="sm"
-                              className="text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10 h-7 px-2 text-xs mt-1"
-                            >
-                              {publishingMessageId === aiResponse.id ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
-                              ) : (
-                                <>
-                                  <Lock className="w-3 h-3 mr-1" />
-                                  Unlock
-                                </>
-                              )}
-                            </Button>
-                          )}
+                        <div className="px-4 py-2.5 rounded-2xl backdrop-blur-sm bg-gradient-to-br from-green-600/30 to-cyan-600/30 border border-green-500/30 text-white shadow-lg shadow-green-900/20 rounded-tr-none">
+                          <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{aiResponse.message}</p>
                         </div>
                       </div>
                     </motion.div>
