@@ -111,8 +111,10 @@ export default function Area51Page() {
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
+      console.log('✅ Area51 User loaded:', currentUser?.email);
     } catch (error) {
-      console.log("Guest user");
+      console.log("❌ Guest user - not logged in");
+      setUser(null);
     }
   };
 
@@ -129,11 +131,19 @@ export default function Area51Page() {
       
       // Filter: show public messages OR user's own messages OR system messages
       const visibleMessages = allMsgs.filter(msg => {
+        // Always show public messages
         if (msg.is_public === true) return true;
+        
+        // Always show system messages
         if (msg.message_type === 'system') return true;
+        
+        // Show user's own messages (both text and AI responses)
         if (currentUser && msg.sender_email === currentUser.email) return true;
+        
         return false;
       });
+      
+      console.log(`📊 Loaded ${allMsgs.length} total messages, showing ${visibleMessages.length} to ${currentUser?.email || 'guest'}`);
       
       setMessages(visibleMessages.reverse());
       
@@ -291,7 +301,15 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || !user) return;
+    if (!newMessage.trim()) {
+      toast.error('Please enter a message');
+      return;
+    }
+    
+    if (!user) {
+      toast.error('Please login to send messages');
+      return;
+    }
 
     const messageContent = newMessage.trim();
     setSending(true);
@@ -307,9 +325,11 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
       });
       
       setNewMessage("");
+      toast.success('Message sent! (Private - unlock to publish)');
       loadMessages();
     } catch (error) {
-      console.error("Failed to send message:", error);
+      console.error("❌ Failed to send message:", error);
+      toast.error('Failed to send message: ' + (error.message || 'Unknown error'));
     } finally {
       setSending(false);
     }
@@ -561,32 +581,31 @@ Topics: aliens, government secrets, shadow organizations, hidden technology.`,
           >
             <Sparkles className={`w-4 h-4 ${showAgentX ? 'text-green-400' : 'text-white/40'}`} />
           </Button>
-          {user && (
-            <Button
-              onClick={handleCheckIn}
-              disabled={checkingIn || hasCheckedIn}
-              size="sm"
-              className={`${
-                hasCheckedIn 
-                  ? "bg-green-500/20 text-green-400 border border-green-500/30" 
-                  : "bg-gradient-to-r from-green-500 to-cyan-500 hover:from-green-600 hover:to-cyan-600 text-black"
-              } shadow-lg transition-all`}
-            >
-              {checkingIn ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : hasCheckedIn ? (
-                <>
-                  <CheckCircle className="w-4 h-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Checked In</span>
-                </>
-              ) : (
-                <>
-                  <Shield className="w-4 h-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Check In</span>
-                </>
-              )}
-            </Button>
-          )}
+          <Button
+            onClick={handleCheckIn}
+            disabled={checkingIn || hasCheckedIn || !user}
+            size="sm"
+            className={`${
+              hasCheckedIn 
+                ? "bg-green-500/20 text-green-400 border border-green-500/30" 
+                : "bg-gradient-to-r from-green-500 to-cyan-500 hover:from-green-600 hover:to-cyan-600 text-black"
+            } shadow-lg transition-all ${!user ? 'opacity-50 cursor-not-allowed' : ''}`}
+            title={!user ? 'Login to check in' : hasCheckedIn ? 'Already checked in today' : 'Check in to Area 51'}
+          >
+            {checkingIn ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : hasCheckedIn ? (
+              <>
+                <CheckCircle className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Checked In</span>
+              </>
+            ) : (
+              <>
+                <Shield className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Check In</span>
+              </>
+            )}
+          </Button>
         </div>
       </div>
 
