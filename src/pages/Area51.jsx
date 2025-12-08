@@ -120,11 +120,8 @@ export default function Area51Page() {
 
       const allMsgs = await base44.entities.Area51Message.list("-created_date", 50);
       
-      // Store all messages for finding AI responses
+      // Filter visible messages but keep ALL in state for finding AI responses
       const visibleMessages = allMsgs.filter(msg => {
-        // Skip AI responses with parent_message_id - they'll be shown with their parent
-        if (msg.is_ai && msg.parent_message_id) return false;
-        
         // Always show public messages
         if (msg.is_public === true) return true;
         
@@ -133,6 +130,14 @@ export default function Area51Page() {
         
         // Show user's own messages
         if (currentUser && msg.sender_email === currentUser.email) return true;
+        
+        // Show AI responses only if parent is visible
+        if (msg.is_ai && msg.parent_message_id) {
+          const parentMsg = allMsgs.find(m => m.id === msg.parent_message_id);
+          if (parentMsg && currentUser && parentMsg.sender_email === currentUser.email) {
+            return true;
+          }
+        }
         
         return false;
       });
@@ -512,7 +517,7 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
           </div>
         ) : (
           <div className="max-w-4xl mx-auto w-full flex flex-col gap-6 pb-4">
-            {messages.map((msg) => {
+            {messages.filter(m => !m.parent_message_id).map((msg) => {
               const isMe = user && msg.sender_email === user.email;
               const isSystem = msg.message_type === 'system';
               const aiResponse = messages.find(m => m.parent_message_id === msg.id && m.is_ai);
