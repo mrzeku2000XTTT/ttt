@@ -160,7 +160,7 @@ import Articles from './pages/Articles';
 import DAGFeed from './pages/DAGFeed';
 import Timer from './pages/Timer';
 import TetrisBattle from './pages/TetrisBattle';
-import AOT from './pages/AOT';
+import ROC from './pages/ROC';
 import __Layout from './Layout.jsx';
 
 
@@ -327,7 +327,7 @@ export const PAGES = {
     "DAGFeed": DAGFeed,
     "Timer": Timer,
     "TetrisBattle": TetrisBattle,
-    "AOT": AOT,
+    "ROC": ROC,
 }
 
 export const pagesConfig = {
