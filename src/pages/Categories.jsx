@@ -109,6 +109,7 @@ export default function CategoriesPage() {
       { id: "feed", name: "Feed", icon: "Users", path: "Feed" },
       { id: "bullreels", name: "Bull Reels", icon: "Flame", path: "ProofOfBullish" },
       { id: "kasfans", name: "KAS Fans", icon: "Users", path: "KasFans" },
+      { id: "kaspanodemap", name: "Kaspa Node Map", icon: "Network", path: "KaspaNodeMap" },
       { id: "life", name: "LIFE", icon: "Activity", path: "Life" },
       { id: "swan", name: "SWAN.AI", icon: "Terminal", path: "SWAN", premium: true },
       { id: "agentzk", name: "Agent ZK", icon: "Bot", path: "AgentZK", premium: true },

@@ -228,6 +228,7 @@ export default function Layout({ children, currentPageName }) {
     { name: "Hercules", icon: Brain, path: "Hercules", premium: true },
     { name: "Balance Viewer", icon: Wallet, path: "KaspaBalanceViewer" },
     { name: "Kaspa Node", icon: Network, path: "KaspaNode" },
+    { name: "Kaspa Node Map", icon: Network, path: "KaspaNodeMap" },
     { name: "Shop", icon: ShoppingCart, path: "Shop" },
     { name: "Marketplace", icon: ShoppingBag, path: "Marketplace" },
     { name: "Market X", icon: Briefcase, path: "MarketX" },
