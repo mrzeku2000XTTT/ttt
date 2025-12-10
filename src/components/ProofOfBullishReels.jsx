@@ -427,9 +427,7 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                   </span>
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
+                    onClick={() => {
                       navigator.clipboard.writeText(video.kasware_address);
                       setCopied(true);
                       setTimeout(() => setCopied(false), 2000);
