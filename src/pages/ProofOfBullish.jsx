@@ -37,16 +37,8 @@ export default function ProofOfBullishPage() {
   const [zkVerifying, setZkVerifying] = useState(false);
   const [zkWalletBalance, setZkWalletBalance] = useState(null);
   const [user, setUser] = useState(null);
-  const [isSafariIOS, setIsSafariIOS] = useState(false);
 
   useEffect(() => {
-    // Detect Safari iOS
-    const ua = navigator.userAgent;
-    const iOS = /iPad|iPhone|iPod/.test(ua);
-    const webkit = /WebKit/.test(ua);
-    const isSafari = iOS && webkit && !/CriOS|FxiOS|OPiOS|mercury/.test(ua);
-    setIsSafariIOS(isSafari);
-    
     loadProofs();
     checkKasware();
     loadUser();
@@ -772,23 +764,19 @@ Respond as BULL AI:`,
             </h2>
             
             {proofs.filter(p => p.media_type === 'video').length > 0 && (
-              <button
-                type="button"
+              <div 
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg font-medium cursor-pointer active:scale-95 transition-transform"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  console.log('🎬 Bull Reels button clicked!');
                   const videos = proofs.filter(p => p.media_type === 'video');
-                  console.log('📹 Found videos:', videos.length);
                   setReelStartIndex(0);
                   setShowReels(true);
-                  console.log('✅ Set showReels to true');
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg font-medium cursor-pointer active:scale-95 transition-transform"
               >
                 <Play className="w-4 h-4" />
                 Bull Reels
-              </button>
+              </div>
             )}
           </div>
 
