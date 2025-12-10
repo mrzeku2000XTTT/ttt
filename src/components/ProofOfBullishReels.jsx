@@ -347,21 +347,14 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                 src={video.media_url}
                 loop
                 playsInline
-                preload={Math.abs(index - initialIndex) <= 1 ? "auto" : "none"}
+                preload="metadata"
                 webkit-playsinline="true"
                 x5-video-player-type="h5"
                 x5-video-player-fullscreen="true"
                 x5-playsinline="true"
                 crossOrigin="anonymous"
                 className="w-full h-full object-contain bg-black cursor-pointer"
-                onLoadStart={() => {
-                  setLoadingStates(prev => ({ ...prev, [index]: true }));
-                }}
                 onLoadedData={() => {
-                  setLoadingStates(prev => ({ ...prev, [index]: false }));
-                  setErrorStates(prev => ({ ...prev, [index]: false }));
-                }}
-                onCanPlay={() => {
                   setLoadingStates(prev => ({ ...prev, [index]: false }));
                   setErrorStates(prev => ({ ...prev, [index]: false }));
                 }}
@@ -369,12 +362,6 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                   console.error('Video error:', e);
                   setLoadingStates(prev => ({ ...prev, [index]: false }));
                   setErrorStates(prev => ({ ...prev, [index]: true }));
-                }}
-                onWaiting={() => {
-                  setLoadingStates(prev => ({ ...prev, [index]: true }));
-                }}
-                onPlaying={() => {
-                  setLoadingStates(prev => ({ ...prev, [index]: false }));
                 }}
                 onClick={(e) => {
                   const vid = e.target;
