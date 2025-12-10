@@ -10,6 +10,8 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
   const [mutedStates, setMutedStates] = useState({});
   const [copied, setCopied] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
+  const [loadingStates, setLoadingStates] = useState({});
+  const [errorStates, setErrorStates] = useState({});
 
   const [currentUser, setCurrentUser] = useState(null);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
@@ -21,7 +23,7 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
     loadUser();
   }, []);
 
-  // Intersection Observer for auto-play
+  // Intersection Observer for auto-play - Mobile optimized
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -29,16 +31,29 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
           const video = entry.target;
           const index = parseInt(video.dataset.index);
           
-          if (entry.isIntersecting && entry.intersectionRatio >= 0.75) {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
             setCurrentIndex(index);
-            video.muted = mutedStates[index] || false;
-            video.play().catch(err => console.log('Auto-play prevented:', err));
+            video.muted = mutedStates[index] !== false; // Default muted for mobile autoplay
+            
+            // Try to play with error handling
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+              playPromise
+                .then(() => {
+                  setLoadingStates(prev => ({ ...prev, [index]: false }));
+                  setErrorStates(prev => ({ ...prev, [index]: false }));
+                })
+                .catch(err => {
+                  console.log('Auto-play prevented for video', index, err);
+                  setErrorStates(prev => ({ ...prev, [index]: true }));
+                });
+            }
           } else {
             video.pause();
           }
         });
       },
-      { threshold: 0.75 }
+      { threshold: [0.5, 0.75] }
     );
 
     videoRefs.current.forEach((video) => {
@@ -53,11 +68,25 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
     if (containerRef.current && videoRefs.current[initialIndex]) {
       // Add a small delay to ensure DOM is ready
       setTimeout(() => {
-        videoRefs.current[initialIndex]?.scrollIntoView({ behavior: 'instant', block: 'start' });
-        // Auto-play the video
+        videoRefs.current[initialIndex]?.scrollIntoView({ behavior: 'instant', block: 'center' });
+        // Auto-play the video with muted for mobile
         const video = videoRefs.current[initialIndex];
         if (video) {
-          video.play().catch(err => console.log('Auto-play prevented:', err));
+          video.muted = true; // Start muted for better mobile compatibility
+          setLoadingStates(prev => ({ ...prev, [initialIndex]: true }));
+          video.load();
+          const playPromise = video.play();
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => {
+                setLoadingStates(prev => ({ ...prev, [initialIndex]: false }));
+              })
+              .catch(err => {
+                console.log('Initial play prevented:', err);
+                setLoadingStates(prev => ({ ...prev, [initialIndex]: false }));
+                setErrorStates(prev => ({ ...prev, [initialIndex]: true }));
+              });
+          }
         }
       }, 100);
     }
@@ -300,10 +329,12 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
           className="h-screen overflow-y-scroll snap-y snap-mandatory"
           style={{ 
             scrollbarWidth: 'none',
-            msOverflowStyle: 'none'
+            msOverflowStyle: 'none',
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehavior: 'contain'
           }}
         >
-          <style jsx>{`
+          <style>{`
             div::-webkit-scrollbar {
               display: none;
             }
@@ -320,17 +351,61 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                 src={video.media_url}
                 loop
                 playsInline
-                preload="auto"
-                className="w-full h-full object-contain"
+                preload="metadata"
+                muted
+                webkit-playsinline="true"
+                x5-playsinline="true"
+                className="w-full h-full object-contain bg-black"
+                onLoadStart={() => {
+                  setLoadingStates(prev => ({ ...prev, [index]: true }));
+                  setErrorStates(prev => ({ ...prev, [index]: false }));
+                }}
+                onLoadedData={() => {
+                  setLoadingStates(prev => ({ ...prev, [index]: false }));
+                }}
+                onError={(e) => {
+                  console.error('Video error:', video.media_url, e);
+                  setErrorStates(prev => ({ ...prev, [index]: true }));
+                  setLoadingStates(prev => ({ ...prev, [index]: false }));
+                }}
                 onClick={(e) => {
                   const vid = e.target;
                   if (vid.paused) {
-                    vid.play();
+                    vid.play().catch(err => console.log('Play error:', err));
                   } else {
                     vid.pause();
                   }
                 }}
               />
+
+              {/* Loading State */}
+              {loadingStates[index] && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 pointer-events-none z-40">
+                  <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+                </div>
+              )}
+
+              {/* Error State */}
+              {errorStates[index] && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 pointer-events-none z-40">
+                  <X className="w-12 h-12 text-red-400 mb-2" />
+                  <p className="text-white/60 text-sm">Failed to load video</p>
+                  <button
+                    onClick={() => {
+                      const vid = videoRefs.current[index];
+                      if (vid) {
+                        setErrorStates(prev => ({ ...prev, [index]: false }));
+                        setLoadingStates(prev => ({ ...prev, [index]: true }));
+                        vid.load();
+                        vid.play().catch(err => console.log('Retry failed:', err));
+                      }
+                    }}
+                    className="mt-3 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm pointer-events-auto"
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
 
               {/* Gradient overlays */}
               <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
