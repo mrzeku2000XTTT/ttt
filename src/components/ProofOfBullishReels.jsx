@@ -10,12 +10,8 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
   const [mutedStates, setMutedStates] = useState({});
   const [copied, setCopied] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
-  const [loadingStates, setLoadingStates] = useState({});
-  const [errorStates, setErrorStates] = useState({});
 
   const [currentUser, setCurrentUser] = useState(null);
-  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
-  const [volumes, setVolumes] = useState({});
   const videoRefs = useRef([]);
   const containerRef = useRef(null);
 
@@ -33,11 +29,8 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
           
           if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
             setCurrentIndex(index);
-            video.muted = mutedStates[index] ?? true;
-            video.play().catch(err => {
-              console.log('Play prevented:', err);
-              setErrorStates(prev => ({ ...prev, [index]: true }));
-            });
+            video.muted = mutedStates[index] ?? false;
+            video.play().catch(err => console.log('Play prevented:', err));
           } else {
             video.pause();
           }
@@ -60,14 +53,11 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
         videoRefs.current[initialIndex]?.scrollIntoView({ behavior: 'instant', block: 'center' });
         const video = videoRefs.current[initialIndex];
         if (video) {
-          video.muted = true;
-          setLoadingStates(prev => ({ ...prev, [initialIndex]: false }));
-          video.play().catch(err => {
-            console.log('Initial play prevented:', err);
-            setErrorStates(prev => ({ ...prev, [initialIndex]: true }));
-          });
+          video.muted = false;
+          video.volume = 1;
+          video.play().catch(err => console.log('Initial play prevented:', err));
         }
-      }, 150);
+      }, 100);
     }
   }, [initialIndex]);
 
@@ -106,23 +96,7 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
     }
   };
 
-  const handleVolumeChange = (index, value) => {
-    const video = videoRefs.current[index];
-    if (video) {
-      video.volume = value;
-      setVolumes(prev => ({
-        ...prev,
-        [index]: value
-      }));
-      if (value === 0) {
-        video.muted = true;
-        setMutedStates(prev => ({ ...prev, [index]: true }));
-      } else if (video.muted) {
-        video.muted = false;
-        setMutedStates(prev => ({ ...prev, [index]: false }));
-      }
-    }
-  };
+
 
 
 
@@ -331,44 +305,13 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                 data-index={index}
                 src={video.media_url}
                 loop
-                muted
                 playsInline
                 preload="auto"
                 webkit-playsinline="true"
                 className="w-full h-full object-contain bg-black"
-                onLoadStart={() => setLoadingStates(prev => ({ ...prev, [index]: true }))}
-                onLoadedData={() => setLoadingStates(prev => ({ ...prev, [index]: false }))}
-                onError={() => setErrorStates(prev => ({ ...prev, [index]: true }))}
               />
 
-              {/* Loading State */}
-              {loadingStates[index] && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/50 pointer-events-none z-40">
-                  <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin" />
-                </div>
-              )}
 
-              {/* Error State */}
-              {errorStates[index] && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 pointer-events-none z-40">
-                  <X className="w-12 h-12 text-red-400 mb-2" />
-                  <p className="text-white/60 text-sm">Failed to load video</p>
-                  <button
-                    onClick={() => {
-                      const vid = videoRefs.current[index];
-                      if (vid) {
-                        setErrorStates(prev => ({ ...prev, [index]: false }));
-                        setLoadingStates(prev => ({ ...prev, [index]: true }));
-                        vid.load();
-                        vid.play().catch(err => console.log('Retry failed:', err));
-                      }
-                    }}
-                    className="mt-3 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm pointer-events-auto"
-                  >
-                    Retry
-                  </button>
-                </div>
-              )}
 
               {/* Gradient overlays */}
               <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
@@ -482,50 +425,20 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
 
 
 
-                {/* Volume Control with Slider */}
-                <div className="relative">
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (window.innerWidth < 1024) {
-                        toggleMute(index);
-                      } else {
-                        setShowVolumeSlider(!showVolumeSlider);
-                      }
-                    }}
-                    className="flex flex-col items-center gap-1 text-white touch-manipulation active:scale-90"
-                    style={{ WebkitTapHighlightColor: 'transparent' }}
-                  >
-                    <div className="w-12 h-12 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center active:scale-95 transition-transform">
-                      {mutedStates[index] ? <VolumeX className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
-                    </div>
-                  </button>
-                  
-                  {/* Volume Slider for Desktop */}
-                  {showVolumeSlider && window.innerWidth >= 1024 && (
-                    <motion.div
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="absolute right-full mr-4 top-1/2 -translate-y-1/2 bg-black/80 backdrop-blur-sm rounded-full px-4 py-2 flex items-center gap-2"
-                    >
-                      <VolumeX className="w-4 h-4" />
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.01"
-                        value={volumes[index] || 1}
-                        onChange={(e) => handleVolumeChange(index, parseFloat(e.target.value))}
-                        className="w-24 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer"
-                        style={{
-                          background: `linear-gradient(to right, white ${((volumes[index] || 1) * 100)}%, rgba(255,255,255,0.2) ${((volumes[index] || 1) * 100)}%)`
-                        }}
-                      />
-                      <Volume2 className="w-4 h-4" />
-                    </motion.div>
-                  )}
-                </div>
+                {/* Volume Control */}
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleMute(index);
+                  }}
+                  className="flex flex-col items-center gap-1 text-white touch-manipulation active:scale-90"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  <div className="w-12 h-12 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center active:scale-95 transition-transform">
+                    {mutedStates[index] ? <VolumeX className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
+                  </div>
+                </button>
 
                 {/* Down Arrow - Below Volume */}
                 {index < localVideos.length - 1 && (
