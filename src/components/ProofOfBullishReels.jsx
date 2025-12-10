@@ -308,7 +308,15 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                 playsInline
                 preload="auto"
                 webkit-playsinline="true"
-                className="w-full h-full object-contain bg-black"
+                className="w-full h-full object-contain bg-black cursor-pointer"
+                onClick={(e) => {
+                  const vid = e.target;
+                  if (vid.paused) {
+                    vid.play().catch(err => console.log('Play error:', err));
+                  } else {
+                    vid.pause();
+                  }
+                }}
               />
 
 
