@@ -604,11 +604,7 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
               </p>
               <button
                 type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setShowLinkModal(false);
-                }}
+                onClick={() => setShowLinkModal(false)}
                 className="w-full bg-white/10 hover:bg-white/20 text-white py-2 px-4 rounded-lg transition-colors"
               >
                 Close
