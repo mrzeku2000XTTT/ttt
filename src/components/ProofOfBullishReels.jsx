@@ -55,9 +55,14 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
         videoRefs.current[initialIndex]?.scrollIntoView({ behavior: 'instant', block: 'center' });
         const video = videoRefs.current[initialIndex];
         if (video) {
+          setLoadingStates(prev => ({ ...prev, [initialIndex]: true }));
           video.muted = false;
           video.volume = 1;
-          video.play().catch(err => console.log('Initial play prevented:', err));
+          video.load();
+          video.play().catch(err => {
+            console.log('Initial play prevented:', err);
+            setErrorStates(prev => ({ ...prev, [initialIndex]: true }));
+          });
         }
       }, 100);
     }
