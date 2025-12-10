@@ -784,19 +784,22 @@ Respond as BULL AI:`,
               <CardContent className="p-0">
                 {proof.media_type === 'video' ? (
                   <div 
-                    className="relative cursor-pointer group"
-                    onClick={(e) => {
+                    className="relative cursor-pointer group active:scale-95 transition-transform"
+                    onClick={() => {
+                      setReelStartIndex(proofs.filter(p => p.media_type === 'video').findIndex(p => p.id === proof.id));
+                      setShowReels(true);
+                    }}
+                    onTouchEnd={(e) => {
                       e.preventDefault();
-                      e.stopPropagation();
                       setReelStartIndex(proofs.filter(p => p.media_type === 'video').findIndex(p => p.id === proof.id));
                       setShowReels(true);
                     }}
                   >
                     <video
                       src={proof.media_url}
-                      className="w-full max-h-[500px] object-contain bg-black"
+                      className="w-full max-h-[500px] object-contain bg-black pointer-events-none"
                     />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
                       <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
                         <Play className="w-8 h-8 text-white ml-1" />
                       </div>
