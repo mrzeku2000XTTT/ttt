@@ -765,23 +765,12 @@ Respond as BULL AI:`,
             
             {proofs.filter(p => p.media_type === 'video').length > 0 && (
               <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
+                onClick={() => {
                   console.log('Bull Reels clicked!', proofs.filter(p => p.media_type === 'video').length, 'videos');
                   setReelStartIndex(0);
                   setShowReels(true);
                 }}
-                onTouchEnd={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  console.log('Bull Reels touch!');
-                  setReelStartIndex(0);
-                  setShowReels(true);
-                }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg font-medium transition-all active:scale-95 touch-manipulation"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg font-medium transition-all active:scale-95"
               >
                 <Play className="w-4 h-4" />
                 Bull Reels
