@@ -479,21 +479,7 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                 )}
               </div>
 
-              {/* Progress indicator */}
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 flex gap-1">
-                {localVideos.map((_, idx) => (
-                  <div
-                    key={idx}
-                    className={`h-1 rounded-full transition-all ${
-                      idx === index
-                        ? 'w-6 bg-white'
-                        : idx < index
-                        ? 'w-3 bg-white/50'
-                        : 'w-3 bg-white/20'
-                    }`}
-                  />
-                ))}
-              </div>
+
             </div>
           ))}
         </div>
