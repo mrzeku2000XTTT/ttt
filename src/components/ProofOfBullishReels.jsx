@@ -534,8 +534,11 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
 
                 {/* Volume Control */}
                 <button
-                  type="button"
-                  onClick={() => toggleMute(index)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleMute(index);
+                  }}
                   className="flex flex-col items-center gap-1 text-white touch-manipulation active:scale-90"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
