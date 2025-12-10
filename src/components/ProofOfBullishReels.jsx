@@ -308,12 +308,20 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
               className="h-screen w-screen snap-start snap-always relative bg-black flex items-center justify-center"
             >
               <video
-                ref={(el) => (videoRefs.current[index] = el)}
+                ref={(el) => {
+                  if (el) {
+                    videoRefs.current[index] = el;
+                    // Aggressive preload for adjacent videos
+                    if (Math.abs(index - currentIndex) <= 1) {
+                      el.load();
+                    }
+                  }
+                }}
                 data-index={index}
                 src={video.media_url}
                 loop
                 playsInline
-                preload="metadata"
+                preload="auto"
                 webkit-playsinline="true"
                 x5-video-player-type="h5"
                 x5-video-player-fullscreen="true"
@@ -322,9 +330,12 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                 onLoadStart={() => {
                   setLoadingStates(prev => ({ ...prev, [index]: true }));
                 }}
-                onCanPlay={() => {
+                onLoadedData={() => {
                   setLoadingStates(prev => ({ ...prev, [index]: false }));
                   setErrorStates(prev => ({ ...prev, [index]: false }));
+                }}
+                onCanPlayThrough={() => {
+                  setLoadingStates(prev => ({ ...prev, [index]: false }));
                 }}
                 onError={(e) => {
                   console.error('Video error:', e);
