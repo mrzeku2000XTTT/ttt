@@ -504,11 +504,8 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                 {/* Up Arrow - Above Heart */}
                 {index > 0 && (
                   <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handlePrev();
-                    }}
+                    type="button"
+                    onClick={handlePrev}
                     className="flex flex-col items-center gap-1 text-white lg:hidden touch-manipulation active:scale-90"
                     style={{ WebkitTapHighlightColor: 'transparent' }}
                   >
@@ -519,11 +516,8 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                 )}
 
                 <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleTip();
-                  }}
+                  type="button"
+                  onClick={handleTip}
                   className="flex flex-col items-center gap-1 text-white touch-manipulation active:scale-90"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
@@ -537,11 +531,8 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
 
                 {/* Volume Control */}
                 <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    toggleMute(index);
-                  }}
+                  type="button"
+                  onClick={() => toggleMute(index)}
                   className="flex flex-col items-center gap-1 text-white touch-manipulation active:scale-90"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
@@ -553,11 +544,8 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                 {/* Down Arrow - Below Volume */}
                 {index < localVideos.length - 1 && (
                   <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleNext();
-                    }}
+                    type="button"
+                    onClick={handleNext}
                     className="flex flex-col items-center gap-1 text-white lg:hidden touch-manipulation active:scale-90"
                     style={{ WebkitTapHighlightColor: 'transparent' }}
                   >
