@@ -67,13 +67,26 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
         const video = videoRefs.current[initialIndex];
         if (video) {
           setLoadingStates(prev => ({ ...prev, [initialIndex]: true }));
-          video.muted = false;
+          // Mobile devices require muted autoplay
+          video.muted = true;
           video.volume = 1;
+          setMutedStates(prev => ({ ...prev, [initialIndex]: true }));
           video.load();
-          video.play().catch(err => {
-            console.log('Initial play prevented:', err);
-            setErrorStates(prev => ({ ...prev, [initialIndex]: true }));
-          });
+          
+          // Try to play, handle mobile restrictions
+          const playPromise = video.play();
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => {
+                console.log('Auto-play started');
+                setLoadingStates(prev => ({ ...prev, [initialIndex]: false }));
+              })
+              .catch(err => {
+                console.log('Auto-play prevented, waiting for user interaction:', err);
+                setLoadingStates(prev => ({ ...prev, [initialIndex]: false }));
+                // Video will play when user scrolls/taps
+              });
+          }
         }
       }, 100);
     }
