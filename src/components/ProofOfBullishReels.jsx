@@ -62,33 +62,40 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
   // Scroll to initial video on mount
   useEffect(() => {
     if (containerRef.current && videoRefs.current[initialIndex]) {
+      console.log('🎬 Initializing video at index:', initialIndex);
       setTimeout(() => {
         videoRefs.current[initialIndex]?.scrollIntoView({ behavior: 'instant', block: 'center' });
         const video = videoRefs.current[initialIndex];
         if (video) {
+          console.log('📹 Video element found:', video.src);
           setLoadingStates(prev => ({ ...prev, [initialIndex]: true }));
           // Mobile devices require muted autoplay
           video.muted = true;
           video.volume = 1;
           setMutedStates(prev => ({ ...prev, [initialIndex]: true }));
           video.load();
+          console.log('📥 Video loading started');
           
           // Try to play, handle mobile restrictions
           const playPromise = video.play();
           if (playPromise !== undefined) {
             playPromise
               .then(() => {
-                console.log('Auto-play started');
+                console.log('✅ Auto-play started successfully');
                 setLoadingStates(prev => ({ ...prev, [initialIndex]: false }));
               })
               .catch(err => {
-                console.log('Auto-play prevented, waiting for user interaction:', err);
+                console.log('⚠️ Auto-play prevented:', err);
                 setLoadingStates(prev => ({ ...prev, [initialIndex]: false }));
                 // Video will play when user scrolls/taps
               });
           }
+        } else {
+          console.error('❌ Video element not found at index:', initialIndex);
         }
       }, 100);
+    } else {
+      console.error('❌ Container or video ref not ready');
     }
   }, [initialIndex]);
 
