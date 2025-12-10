@@ -789,13 +789,11 @@ Respond as BULL AI:`,
                 {proof.media_type === 'video' ? (
                   <div 
                     className="relative cursor-pointer group active:scale-95 transition-transform"
-                    onClick={() => {
-                      setReelStartIndex(proofs.filter(p => p.media_type === 'video').findIndex(p => p.id === proof.id));
-                      setShowReels(true);
-                    }}
-                    onTouchEnd={(e) => {
+                    onClick={(e) => {
                       e.preventDefault();
-                      setReelStartIndex(proofs.filter(p => p.media_type === 'video').findIndex(p => p.id === proof.id));
+                      e.stopPropagation();
+                      const videoIndex = proofs.filter(p => p.media_type === 'video').findIndex(p => p.id === proof.id);
+                      setReelStartIndex(videoIndex);
                       setShowReels(true);
                     }}
                   >
