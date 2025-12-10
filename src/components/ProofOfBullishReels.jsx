@@ -31,6 +31,17 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
           
           if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
             setCurrentIndex(index);
+            
+            // Preload adjacent videos for smooth scrolling
+            [index - 1, index, index + 1].forEach(i => {
+              if (i >= 0 && i < localVideos.length && videoRefs.current[i]) {
+                const adjacentVideo = videoRefs.current[i];
+                if (adjacentVideo.readyState < 2) {
+                  adjacentVideo.load();
+                }
+              }
+            });
+            
             video.muted = mutedStates[index] ?? false;
             video.play().catch(err => console.log('Play prevented:', err));
           } else {
