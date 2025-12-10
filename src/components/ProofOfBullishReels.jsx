@@ -23,7 +23,7 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
     loadUser();
   }, []);
 
-  // Intersection Observer for auto-play - Mobile optimized
+  // Intersection Observer for auto-play
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -33,28 +33,14 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
           
           if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
             setCurrentIndex(index);
-            // Set muted state - start muted on mobile for autoplay, can unmute after
-            video.muted = mutedStates[index] === undefined ? true : mutedStates[index];
-            
-            // Try to play with error handling
-            const playPromise = video.play();
-            if (playPromise !== undefined) {
-              playPromise
-                .then(() => {
-                  setLoadingStates(prev => ({ ...prev, [index]: false }));
-                  setErrorStates(prev => ({ ...prev, [index]: false }));
-                })
-                .catch(err => {
-                  console.log('Auto-play prevented for video', index, err);
-                  setErrorStates(prev => ({ ...prev, [index]: true }));
-                });
-            }
+            video.muted = mutedStates[index] ?? true;
+            video.play().catch(err => console.log('Play prevented:', err));
           } else {
             video.pause();
           }
         });
       },
-      { threshold: [0.5, 0.75] }
+      { threshold: 0.5 }
     );
 
     videoRefs.current.forEach((video) => {
@@ -62,32 +48,17 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
     });
 
     return () => observer.disconnect();
-  }, [localVideos, mutedStates]);
+  }, [localVideos]);
 
   // Scroll to initial video on mount
   useEffect(() => {
     if (containerRef.current && videoRefs.current[initialIndex]) {
-      // Add a small delay to ensure DOM is ready
       setTimeout(() => {
         videoRefs.current[initialIndex]?.scrollIntoView({ behavior: 'instant', block: 'center' });
-        // Auto-play the video with muted for mobile
         const video = videoRefs.current[initialIndex];
         if (video) {
-          video.muted = true; // Start muted for better mobile compatibility
-          setLoadingStates(prev => ({ ...prev, [initialIndex]: true }));
-          video.load();
-          const playPromise = video.play();
-          if (playPromise !== undefined) {
-            playPromise
-              .then(() => {
-                setLoadingStates(prev => ({ ...prev, [initialIndex]: false }));
-              })
-              .catch(err => {
-                console.log('Initial play prevented:', err);
-                setLoadingStates(prev => ({ ...prev, [initialIndex]: false }));
-                setErrorStates(prev => ({ ...prev, [initialIndex]: true }));
-              });
-          }
+          video.muted = true;
+          video.play().catch(err => console.log('Initial play prevented:', err));
         }
       }, 100);
     }
@@ -119,17 +90,12 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
   const toggleMute = (index) => {
     const video = videoRefs.current[index];
     if (video) {
-      const newMutedState = !video.muted;
-      video.muted = newMutedState;
+      video.muted = !video.muted;
+      video.volume = 1;
       setMutedStates(prev => ({
         ...prev,
-        [index]: newMutedState
+        [index]: video.muted
       }));
-      
-      // If unmuting, set volume to max
-      if (!newMutedState) {
-        video.volume = 1;
-      }
     }
   };
 
@@ -333,7 +299,7 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
         {/* TikTok-style snap scroll container */}
         <div 
           ref={containerRef}
-          className="h-screen overflow-y-scroll snap-y snap-mandatory"
+          className="h-screen overflow-y-scroll overflow-x-hidden snap-y snap-mandatory"
           style={{ 
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
@@ -360,37 +326,11 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                 loop
                 playsInline
                 preload="auto"
-                muted
-                autoPlay
                 webkit-playsinline="true"
-                x5-playsinline="true"
-                x-webkit-airplay="allow"
                 className="w-full h-full object-contain bg-black"
-                style={{ touchAction: 'none' }}
-                onLoadStart={() => {
-                  setLoadingStates(prev => ({ ...prev, [index]: true }));
-                  setErrorStates(prev => ({ ...prev, [index]: false }));
-                }}
-                onCanPlay={(e) => {
-                  setLoadingStates(prev => ({ ...prev, [index]: false }));
-                  const vid = e.target;
-                  if (index === currentIndex) {
-                    vid.play().catch(err => console.log('Play error:', err));
-                  }
-                }}
-                onError={(e) => {
-                  console.error('Video error:', video.media_url, e);
-                  setErrorStates(prev => ({ ...prev, [index]: true }));
-                  setLoadingStates(prev => ({ ...prev, [index]: false }));
-                }}
-                onClick={(e) => {
-                  const vid = e.target;
-                  if (vid.paused) {
-                    vid.play().catch(err => console.log('Play error:', err));
-                  } else {
-                    vid.pause();
-                  }
-                }}
+                onLoadStart={() => setLoadingStates(prev => ({ ...prev, [index]: true }))}
+                onLoadedData={() => setLoadingStates(prev => ({ ...prev, [index]: false }))}
+                onError={() => setErrorStates(prev => ({ ...prev, [index]: true }))}
               />
 
               {/* Loading State */}
@@ -430,7 +370,7 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
               <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 35 }} />
 
               {/* Video info */}
-              <div className="absolute bottom-0 left-0 right-0 px-4 text-white pointer-events-auto" style={{ paddingBottom: 'max(1rem, calc(1rem + env(safe-area-inset-bottom, 0px)))', zIndex: 45 }}>
+              <div className="absolute bottom-0 left-0 right-0 px-4 text-white pointer-events-auto" style={{ paddingBottom: 'max(5rem, calc(5rem + env(safe-area-inset-bottom, 0px)))', zIndex: 45 }}>
                 <p className="text-sm mb-2 line-clamp-2">{video.message}</p>
 
                 <div className="flex items-center gap-2 text-xs text-white/60 mb-1">
@@ -499,7 +439,7 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
               </div>
 
               {/* Action buttons */}
-              <div className="absolute right-4 flex flex-col gap-3 pointer-events-auto" style={{ bottom: 'max(2rem, calc(2rem + env(safe-area-inset-bottom, 0px)))', zIndex: 50 }}>
+              <div className="absolute right-4 flex flex-col gap-3 pointer-events-auto" style={{ bottom: 'max(6rem, calc(6rem + env(safe-area-inset-bottom, 0px)))', zIndex: 50 }}>
                 {/* Up Arrow - Above Heart */}
                 {index > 0 && (
                   <button
