@@ -32,7 +32,22 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
           if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
             setCurrentIndex(index);
             video.muted = mutedStates[index] ?? false;
-            video.play().catch(err => console.log('Play prevented:', err));
+            video.volume = 1;
+            
+            // Force load and play
+            if (video.readyState < 3) {
+              video.load();
+            }
+            
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+              playPromise.catch(err => {
+                console.log('Play prevented:', err);
+                // Retry with muted on iOS Safari
+                video.muted = true;
+                video.play().catch(e => console.log('Muted play failed:', e));
+              });
+            }
           } else {
             video.pause();
           }
