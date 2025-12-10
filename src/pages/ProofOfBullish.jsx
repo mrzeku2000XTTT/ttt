@@ -765,7 +765,9 @@ Respond as BULL AI:`,
             
             {proofs.filter(p => p.media_type === 'video').length > 0 && (
               <Button
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   const videos = proofs.filter(p => p.media_type === 'video');
                   if (videos.length > 0) {
                     setReelStartIndex(0);
