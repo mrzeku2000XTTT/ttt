@@ -610,6 +610,7 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                 href={localVideos[currentIndex]?.proof_link}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
                 className="block w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg text-center font-semibold transition-colors mb-3"
               >
                 Open Link
