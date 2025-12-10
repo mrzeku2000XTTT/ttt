@@ -764,19 +764,18 @@ Respond as BULL AI:`,
             </h2>
             
             {proofs.filter(p => p.media_type === 'video').length > 0 && (
-              <Button
+              <button
                 type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
+                onClick={() => {
+                  console.log('Bull Reels clicked!', proofs.filter(p => p.media_type === 'video').length, 'videos');
                   setReelStartIndex(0);
                   setShowReels(true);
                 }}
-                className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg font-medium transition-all"
               >
-                <Play className="w-4 h-4 mr-2" />
+                <Play className="w-4 h-4" />
                 Bull Reels
-              </Button>
+              </button>
             )}
           </div>
 
