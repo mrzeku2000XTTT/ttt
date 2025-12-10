@@ -764,8 +764,9 @@ Respond as BULL AI:`,
             </h2>
             
             {proofs.filter(p => p.media_type === 'video').length > 0 && (
-              <Button
-                onClick={(e) => {
+              <button
+                type="button"
+                onPointerDown={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   const videos = proofs.filter(p => p.media_type === 'video');
@@ -774,11 +775,11 @@ Respond as BULL AI:`,
                     setShowReels(true);
                   }
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg font-medium transition-all"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg font-medium transition-all active:scale-95"
               >
                 <Play className="w-4 h-4" />
                 Bull Reels
-              </Button>
+              </button>
             )}
           </div>
 
