@@ -293,6 +293,11 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentIndex]);
 
+  useEffect(() => {
+    console.log('🎥 ProofOfBullishReels mounted with', videos.length, 'videos');
+    console.log('📍 Starting at index:', initialIndex);
+  }, []);
+
   return (
     <AnimatePresence>
       <motion.div
@@ -300,6 +305,7 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 bg-black z-[100]"
+        onClick={(e) => e.stopPropagation()}
       >
         <button
           type="button"
