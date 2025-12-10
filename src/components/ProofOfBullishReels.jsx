@@ -466,7 +466,9 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                   )}
                   
                   <button
+                    type="button"
                     onClick={(e) => {
+                      e.preventDefault();
                       e.stopPropagation();
                       const shareUrl = `${window.location.origin}/ProofOfBullish?proof=${video.id}`;
                       navigator.clipboard.writeText(shareUrl);
