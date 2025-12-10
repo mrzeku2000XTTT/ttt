@@ -313,9 +313,24 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                 src={video.media_url}
                 loop
                 playsInline
-                preload="auto"
+                preload="metadata"
                 webkit-playsinline="true"
+                x5-video-player-type="h5"
+                x5-video-player-fullscreen="true"
+                x5-playsinline="true"
                 className="w-full h-full object-contain bg-black cursor-pointer"
+                onLoadStart={() => {
+                  setLoadingStates(prev => ({ ...prev, [index]: true }));
+                }}
+                onCanPlay={() => {
+                  setLoadingStates(prev => ({ ...prev, [index]: false }));
+                  setErrorStates(prev => ({ ...prev, [index]: false }));
+                }}
+                onError={(e) => {
+                  console.error('Video error:', e);
+                  setLoadingStates(prev => ({ ...prev, [index]: false }));
+                  setErrorStates(prev => ({ ...prev, [index]: true }));
+                }}
                 onClick={(e) => {
                   const vid = e.target;
                   if (vid.paused) {
@@ -325,6 +340,36 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                   }
                 }}
               />
+
+              {/* Loading Spinner */}
+              {loadingStates[index] && !errorStates[index] && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-none">
+                  <div className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+                </div>
+              )}
+
+              {/* Error State */}
+              {errorStates[index] && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-none">
+                  <div className="text-center px-4">
+                    <div className="text-white/60 text-sm mb-2">Video failed to load</div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const vid = videoRefs.current[index];
+                        if (vid) {
+                          setErrorStates(prev => ({ ...prev, [index]: false }));
+                          setLoadingStates(prev => ({ ...prev, [index]: true }));
+                          vid.load();
+                        }
+                      }}
+                      className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-xs pointer-events-auto"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                </div>
+              )}
 
 
 
