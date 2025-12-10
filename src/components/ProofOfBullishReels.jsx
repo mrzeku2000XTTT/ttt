@@ -443,11 +443,7 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                   {video.proof_link && (
                     <button
                       type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setShowLinkModal(true);
-                      }}
+                      onClick={() => setShowLinkModal(true)}
                       className="p-1 hover:bg-white/10 rounded transition-colors"
                       title="View proof link"
                     >
