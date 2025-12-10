@@ -32,22 +32,7 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
           if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
             setCurrentIndex(index);
             video.muted = mutedStates[index] ?? false;
-            video.volume = 1;
-            
-            // Force load and play
-            if (video.readyState < 3) {
-              video.load();
-            }
-            
-            const playPromise = video.play();
-            if (playPromise !== undefined) {
-              playPromise.catch(err => {
-                console.log('Play prevented:', err);
-                // Retry with muted on iOS Safari
-                video.muted = true;
-                video.play().catch(e => console.log('Muted play failed:', e));
-              });
-            }
+            video.play().catch(err => console.log('Play prevented:', err));
           } else {
             video.pause();
           }
@@ -323,20 +308,12 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
               className="h-screen w-screen snap-start snap-always relative bg-black flex items-center justify-center"
             >
               <video
-                ref={(el) => {
-                  if (el) {
-                    videoRefs.current[index] = el;
-                    // Aggressive preload for adjacent videos
-                    if (Math.abs(index - currentIndex) <= 1) {
-                      el.load();
-                    }
-                  }
-                }}
+                ref={(el) => (videoRefs.current[index] = el)}
                 data-index={index}
                 src={video.media_url}
                 loop
                 playsInline
-                preload="auto"
+                preload="metadata"
                 webkit-playsinline="true"
                 x5-video-player-type="h5"
                 x5-video-player-fullscreen="true"
@@ -345,12 +322,9 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                 onLoadStart={() => {
                   setLoadingStates(prev => ({ ...prev, [index]: true }));
                 }}
-                onLoadedData={() => {
+                onCanPlay={() => {
                   setLoadingStates(prev => ({ ...prev, [index]: false }));
                   setErrorStates(prev => ({ ...prev, [index]: false }));
-                }}
-                onCanPlayThrough={() => {
-                  setLoadingStates(prev => ({ ...prev, [index]: false }));
                 }}
                 onError={(e) => {
                   console.error('Video error:', e);
