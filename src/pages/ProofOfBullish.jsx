@@ -765,8 +765,10 @@ Respond as BULL AI:`,
             
             {proofs.filter(p => p.media_type === 'video').length > 0 && (
               <Button
+                type="button"
                 onClick={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   setReelStartIndex(0);
                   setShowReels(true);
                 }}
@@ -786,6 +788,7 @@ Respond as BULL AI:`,
                     className="relative cursor-pointer group"
                     onClick={(e) => {
                       e.preventDefault();
+                      e.stopPropagation();
                       setReelStartIndex(proofs.filter(p => p.media_type === 'video').findIndex(p => p.id === proof.id));
                       setShowReels(true);
                     }}
