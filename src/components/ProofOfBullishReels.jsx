@@ -33,7 +33,8 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
           
           if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
             setCurrentIndex(index);
-            video.muted = mutedStates[index] !== false; // Default muted for mobile autoplay
+            // Set muted state - start muted on mobile for autoplay, can unmute after
+            video.muted = mutedStates[index] === undefined ? true : mutedStates[index];
             
             // Try to play with error handling
             const playPromise = video.play();
@@ -118,11 +119,17 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
   const toggleMute = (index) => {
     const video = videoRefs.current[index];
     if (video) {
-      video.muted = !video.muted;
+      const newMutedState = !video.muted;
+      video.muted = newMutedState;
       setMutedStates(prev => ({
         ...prev,
-        [index]: video.muted
+        [index]: newMutedState
       }));
+      
+      // If unmuting, set volume to max
+      if (!newMutedState) {
+        video.volume = 1;
+      }
     }
   };
 
@@ -331,7 +338,8 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
             WebkitOverflowScrolling: 'touch',
-            overscrollBehavior: 'contain'
+            overscrollBehavior: 'contain',
+            touchAction: 'pan-y'
           }}
         >
           <style>{`
@@ -352,10 +360,10 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                 loop
                 playsInline
                 preload="metadata"
-                muted
                 webkit-playsinline="true"
                 x5-playsinline="true"
                 className="w-full h-full object-contain bg-black"
+                style={{ touchAction: 'none' }}
                 onLoadStart={() => {
                   setLoadingStates(prev => ({ ...prev, [index]: true }));
                   setErrorStates(prev => ({ ...prev, [index]: false }));
@@ -415,7 +423,7 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
               <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 35 }} />
 
               {/* Video info */}
-              <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 text-white pointer-events-auto" style={{ paddingBottom: 'max(7rem, calc(7rem + env(safe-area-inset-bottom, 0px)))', zIndex: 45 }}>
+              <div className="absolute bottom-0 left-0 right-0 px-4 text-white pointer-events-auto" style={{ paddingBottom: 'max(1rem, calc(1rem + env(safe-area-inset-bottom, 0px)))', zIndex: 45 }}>
                 <p className="text-sm mb-2 line-clamp-2">{video.message}</p>
 
                 <div className="flex items-center gap-2 text-xs text-white/60 mb-1">
@@ -484,7 +492,7 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
               </div>
 
               {/* Action buttons */}
-              <div className="absolute right-4 flex flex-col gap-3 pointer-events-auto" style={{ bottom: 'max(8rem, calc(8rem + env(safe-area-inset-bottom, 0px)))', zIndex: 50 }}>
+              <div className="absolute right-4 flex flex-col gap-3 pointer-events-auto" style={{ bottom: 'max(2rem, calc(2rem + env(safe-area-inset-bottom, 0px)))', zIndex: 50 }}>
                 {/* Up Arrow - Above Heart */}
                 {index > 0 && (
                   <button
