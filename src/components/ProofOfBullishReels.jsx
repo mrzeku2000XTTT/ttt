@@ -561,11 +561,7 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                 {currentIndex > 0 && (
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handlePrev();
-                    }}
+                    onClick={handlePrev}
                     className="w-8 h-8 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-black/80 transition-colors"
                   >
                     <ChevronUp className="w-4 h-4" />
@@ -575,11 +571,7 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                 {currentIndex < localVideos.length - 1 && (
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleNext();
-                    }}
+                    onClick={handleNext}
                     className="w-8 h-8 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-black/80 transition-colors"
                   >
                     <ChevronDown className="w-4 h-4" />
