@@ -359,17 +359,24 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                 src={video.media_url}
                 loop
                 playsInline
-                preload="metadata"
+                preload="auto"
+                muted
+                autoPlay
                 webkit-playsinline="true"
                 x5-playsinline="true"
+                x-webkit-airplay="allow"
                 className="w-full h-full object-contain bg-black"
                 style={{ touchAction: 'none' }}
                 onLoadStart={() => {
                   setLoadingStates(prev => ({ ...prev, [index]: true }));
                   setErrorStates(prev => ({ ...prev, [index]: false }));
                 }}
-                onLoadedData={() => {
+                onCanPlay={(e) => {
                   setLoadingStates(prev => ({ ...prev, [index]: false }));
+                  const vid = e.target;
+                  if (index === currentIndex) {
+                    vid.play().catch(err => console.log('Play error:', err));
+                  }
                 }}
                 onError={(e) => {
                   console.error('Video error:', video.media_url, e);
