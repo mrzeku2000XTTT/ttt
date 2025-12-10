@@ -578,10 +578,7 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4"
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowLinkModal(false);
-            }}
+            onClick={() => setShowLinkModal(false)}
           >
             <motion.div
               initial={{ scale: 0.9, y: 20 }}
