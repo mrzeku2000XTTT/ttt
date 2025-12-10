@@ -765,28 +765,13 @@ Respond as BULL AI:`,
             
             {proofs.filter(p => p.media_type === 'video').length > 0 && (
               <div
-                role="button"
-                tabIndex={0}
-                onTouchEnd={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  const videos = proofs.filter(p => p.media_type === 'video');
-                  if (videos.length > 0) {
-                    setReelStartIndex(0);
-                    setShowReels(true);
-                  }
-                }}
+                className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg font-medium transition-all active:scale-95"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  const videos = proofs.filter(p => p.media_type === 'video');
-                  if (videos.length > 0) {
-                    setReelStartIndex(0);
-                    setShowReels(true);
-                  }
+                  setReelStartIndex(0);
+                  setShowReels(true);
                 }}
-                style={{ cursor: 'pointer', WebkitTapHighlightColor: 'rgba(0,0,0,0)' }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg font-medium transition-all active:scale-95"
               >
                 <Play className="w-4 h-4" />
                 Bull Reels
