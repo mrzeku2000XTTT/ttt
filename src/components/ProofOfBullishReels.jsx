@@ -10,6 +10,8 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
   const [mutedStates, setMutedStates] = useState({});
   const [copied, setCopied] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
+  const [loadingStates, setLoadingStates] = useState({});
+  const [errorStates, setErrorStates] = useState({});
 
   const [currentUser, setCurrentUser] = useState(null);
   const videoRefs = useRef([]);
