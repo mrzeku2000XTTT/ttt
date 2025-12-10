@@ -308,8 +308,11 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
         onClick={(e) => e.stopPropagation()}
       >
         <button
-          type="button"
-          onClick={onClose}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onClose();
+          }}
           className="fixed top-4 right-4 z-50 w-10 h-10 flex items-center justify-center bg-black/80 backdrop-blur-sm rounded-full text-white hover:bg-black transition-colors border border-white/10"
         >
           <X className="w-5 h-5" />
