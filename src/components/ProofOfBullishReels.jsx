@@ -34,7 +34,10 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
           if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
             setCurrentIndex(index);
             video.muted = mutedStates[index] ?? true;
-            video.play().catch(err => console.log('Play prevented:', err));
+            video.play().catch(err => {
+              console.log('Play prevented:', err);
+              setErrorStates(prev => ({ ...prev, [index]: true }));
+            });
           } else {
             video.pause();
           }
@@ -48,7 +51,7 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
     });
 
     return () => observer.disconnect();
-  }, [localVideos]);
+  }, [localVideos, mutedStates]);
 
   // Scroll to initial video on mount
   useEffect(() => {
@@ -58,9 +61,13 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
         const video = videoRefs.current[initialIndex];
         if (video) {
           video.muted = true;
-          video.play().catch(err => console.log('Initial play prevented:', err));
+          setLoadingStates(prev => ({ ...prev, [initialIndex]: false }));
+          video.play().catch(err => {
+            console.log('Initial play prevented:', err);
+            setErrorStates(prev => ({ ...prev, [initialIndex]: true }));
+          });
         }
-      }, 100);
+      }, 150);
     }
   }, [initialIndex]);
 
@@ -324,6 +331,7 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                 data-index={index}
                 src={video.media_url}
                 loop
+                muted
                 playsInline
                 preload="auto"
                 webkit-playsinline="true"
