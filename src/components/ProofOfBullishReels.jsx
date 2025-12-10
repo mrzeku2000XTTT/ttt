@@ -501,8 +501,11 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                 {/* Up Arrow - Above Heart */}
                 {index > 0 && (
                   <button
-                    type="button"
-                    onClick={handlePrev}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handlePrev();
+                    }}
                     className="flex flex-col items-center gap-1 text-white lg:hidden touch-manipulation active:scale-90"
                     style={{ WebkitTapHighlightColor: 'transparent' }}
                   >
