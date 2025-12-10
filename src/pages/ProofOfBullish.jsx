@@ -764,22 +764,19 @@ Respond as BULL AI:`,
             </h2>
             
             {proofs.filter(p => p.media_type === 'video').length > 0 && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  console.log('🎬 Bull Reels button clicked');
+              <Button
+                onClick={() => {
                   const videos = proofs.filter(p => p.media_type === 'video');
-                  console.log('📹 Videos found:', videos.length);
-                  setReelStartIndex(0);
-                  setShowReels(true);
-                  console.log('✅ Modal should open now');
+                  if (videos.length > 0) {
+                    setReelStartIndex(0);
+                    setShowReels(true);
+                  }
                 }}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg font-medium transition-all"
               >
                 <Play className="w-4 h-4" />
                 Bull Reels
-              </button>
+              </Button>
             )}
           </div>
 
