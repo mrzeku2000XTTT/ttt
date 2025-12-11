@@ -72,21 +72,30 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
           video.volume = 1;
           setMutedStates(prev => ({ ...prev, [initialIndex]: true }));
           video.load();
-          
-          // Try to play, handle mobile restrictions
-          const playPromise = video.play();
-          if (playPromise !== undefined) {
-            playPromise
-              .then(() => {
-                console.log('Auto-play started');
-                setLoadingStates(prev => ({ ...prev, [initialIndex]: false }));
-              })
-              .catch(err => {
-                console.log('Auto-play prevented, waiting for user interaction:', err);
-                setLoadingStates(prev => ({ ...prev, [initialIndex]: false }));
-                // Video will play when user scrolls/taps
-              });
-          }
+
+          // Force play with multiple attempts
+          const attemptPlay = () => {
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+              playPromise
+                .then(() => {
+                  console.log('✅ Video playing');
+                  setLoadingStates(prev => ({ ...prev, [initialIndex]: false }));
+                })
+                .catch(err => {
+                  console.log('⚠️ Play attempt failed, retrying...', err);
+                  setLoadingStates(prev => ({ ...prev, [initialIndex]: false }));
+                  // Retry after short delay
+                  setTimeout(attemptPlay, 100);
+                });
+            }
+          };
+
+          // Start first attempt after load
+          video.addEventListener('loadeddata', attemptPlay, { once: true });
+
+          // Also try to play immediately
+          attemptPlay();
         }
       }, 100);
     }
@@ -377,9 +386,31 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                   setLoadingStates(prev => ({ ...prev, [index]: false }));
                 }}
                 onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   const vid = e.target;
                   if (vid.paused) {
-                    vid.play().catch(err => console.log('Play error:', err));
+                    vid.muted = false;
+                    vid.play().catch(err => {
+                      console.log('Play error:', err);
+                      vid.muted = true;
+                      vid.play().catch(e => console.log('Muted play error:', e));
+                    });
+                  } else {
+                    vid.pause();
+                  }
+                }}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const vid = e.target;
+                  if (vid.paused) {
+                    vid.muted = false;
+                    vid.play().catch(err => {
+                      console.log('Play error:', err);
+                      vid.muted = true;
+                      vid.play().catch(e => console.log('Muted play error:', e));
+                    });
                   } else {
                     vid.pause();
                   }
