@@ -120,6 +120,23 @@ export default function ProofOfBullishPage() {
       alert('Please trim your video to 60 seconds or less');
       return;
     }
+
+    // Check for existing uploads to prevent duplicates
+    const existingProofs = await base44.entities.ProofOfBullish.filter({
+      kasware_address: kaswareAddress || user?.created_wallet_address || 'ZK_VERIFIED'
+    });
+    
+    const recentUpload = existingProofs.find(p => {
+      const uploadTime = new Date(p.created_date).getTime();
+      const now = Date.now();
+      const timeDiff = (now - uploadTime) / 1000; // seconds
+      return timeDiff < 30 && p.video_duration === videoDuration;
+    });
+
+    if (recentUpload) {
+      alert('⚠️ You just uploaded this video! Please wait 30 seconds before uploading again.');
+      return;
+    }
     
     setIsUploading(true);
     try {
