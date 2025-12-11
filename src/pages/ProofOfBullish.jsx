@@ -217,14 +217,48 @@ export default function ProofOfBullishPage() {
   };
 
   const handleFinalSubmit = async (transactionHash) => {
+    if (isSubmitting) {
+      console.log('Already submitting, ignoring duplicate call');
+      return;
+    }
+
     const cleanTxHash = typeof transactionHash === 'string' ? transactionHash : transactionHash?.id || '';
     
     if (!uploadedFileUrl || !selectedFile || !cleanTxHash) {
       alert('Error: Missing required data. Please try again.');
       return;
     }
+
+    setIsSubmitting(true);
     
     try {
+      // Check for duplicate transaction hash
+      const existingProof = await base44.entities.ProofOfBullish.filter({
+        transaction_hash: cleanTxHash
+      });
+
+      if (existingProof.length > 0) {
+        console.log('Duplicate transaction detected, aborting');
+        setSelectedFile(null);
+        setMessage("");
+        setProofLink("");
+        setUploadedFileUrl(null);
+        setTxHash(null);
+        setShowKaswareModal(false);
+        setShowZkVerification(false);
+        setZkVerifying(false);
+        setIsSubmitting(false);
+        
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 z-[200] bg-yellow-500/20 border border-yellow-500/40 text-yellow-400 px-4 py-3 rounded-lg shadow-lg';
+        notification.textContent = '⚠️ This video was already submitted';
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+        
+        await loadProofs();
+        return;
+      }
+
       const proofData = {
         media_url: uploadedFileUrl,
         media_type: 'video',
@@ -245,6 +279,7 @@ export default function ProofOfBullishPage() {
       setShowKaswareModal(false);
       setShowZkVerification(false);
       setZkVerifying(false);
+      setIsSubmitting(false);
       
       const notification = document.createElement('div');
       notification.className = 'fixed top-4 right-4 z-[200] bg-black border border-white/20 text-white px-4 py-3 rounded-lg shadow-lg';
@@ -256,6 +291,7 @@ export default function ProofOfBullishPage() {
       
     } catch (err) {
       console.error('Submit error:', err);
+      setIsSubmitting(false);
       alert(`Failed to submit proof: ${err.response?.data?.message || err.message}`);
     }
   };
