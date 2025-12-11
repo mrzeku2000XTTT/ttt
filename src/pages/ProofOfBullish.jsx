@@ -23,12 +23,7 @@ export default function ProofOfBullishPage() {
   const [uploadedFileUrl, setUploadedFileUrl] = useState(null);
   const [videoDuration, setVideoDuration] = useState(0);
   const [showTrimModal, setShowTrimModal] = useState(false);
-  const [showReels, setShowReels] = useState(() => {
-    // Restore state from session if exists
-    const saved = sessionStorage.getItem('bullsheez_open');
-    return saved === 'true';
-  });
-  const [reelStartIndex, setReelStartIndex] = useState(0);
+  const [showReels, setShowReels] = useState(false);
   const videoRef = useRef(null);
   const [aiMessages, setAiMessages] = useState([]);
   const [aiInput, setAiInput] = useState("");
@@ -770,10 +765,9 @@ Respond as BULL AI:`,
             {proofs.filter(p => p.media_type === 'video').length > 0 && (
               <button
                 type="button"
-                onClick={() => {
-                  console.log('🎬 Bull Sheez clicked');
-                  sessionStorage.setItem('bullsheez_open', 'true');
-                  setReelStartIndex(0);
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   setShowReels(true);
                 }}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg font-medium transition-all active:scale-95"
@@ -1004,16 +998,11 @@ Respond as BULL AI:`,
         )}
 
         {/* Reels Viewer */}
-        {showReels && (
+        {showReels && proofs.filter(p => p.media_type === 'video').length > 0 && (
           <ProofOfBullishReels
-            key={Date.now()}
             videos={proofs.filter(p => p.media_type === 'video')}
             initialIndex={0}
-            onClose={() => {
-              console.log('🔒 Closing reels');
-              sessionStorage.removeItem('bullsheez_open');
-              setShowReels(false);
-            }}
+            onClose={() => setShowReels(false)}
           />
         )}
       </div>
