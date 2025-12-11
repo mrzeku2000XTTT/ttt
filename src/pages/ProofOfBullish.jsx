@@ -315,77 +315,7 @@ export default function ProofOfBullishPage() {
     }
   };
 
-  const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
-    }
-  };
 
-  useEffect(() => {
-    if (aiMessages.length > 0) {
-      scrollToBottom();
-    }
-  }, [aiMessages]);
-
-  const handleAiChat = async () => {
-    if (!aiInput.trim() || aiLoading) return;
-
-    const userMessage = aiInput.trim();
-    setAiInput("");
-    
-    const newMessages = [...aiMessages, { role: "user", content: userMessage }];
-    setAiMessages(newMessages);
-    setAiLoading(true);
-
-    try {
-      // Get current KAS price
-      const priceResponse = await base44.functions.invoke('getKaspaPrice');
-      const kasPrice = priceResponse.data?.price || 0;
-
-      // Build context from conversation
-      const conversationContext = newMessages.map(m => 
-        `${m.role === 'user' ? 'User' : 'Bull AI'}: ${m.content}`
-      ).join('\n');
-
-      // Call LLM with price data and conversation context
-      const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are BULL AI, an enthusiastic and knowledgeable Kaspa (KAS) cryptocurrency expert and price analyst. You help users understand Kaspa's potential and predict price movements based on market data and sentiment.
-
-Current KAS Price: $${kasPrice}
-
-Conversation so far:
-${conversationContext}
-
-Latest user question: ${userMessage}
-
-Instructions:
-- Be bullish but realistic about Kaspa
-- Provide price predictions when asked (short-term and long-term)
-- Use technical analysis terminology naturally
-- Reference the current price of $${kasPrice} in your analysis
-- Be conversational and engaging
-- Use emojis occasionally: 🚀 💎 📈 🔥 💪
-- Keep responses under 150 words
-- If user talks about uploading proof, encourage them to share their conviction with the community
-
-Respond as BULL AI:`,
-        add_context_from_internet: true
-      });
-
-      setAiMessages([...newMessages, { 
-        role: "assistant", 
-        content: response 
-      }]);
-    } catch (err) {
-      console.error('AI chat failed:', err);
-      setAiMessages([...newMessages, { 
-        role: "assistant", 
-        content: "Sorry, I'm having trouble connecting right now. Try again in a moment! 🔥" 
-      }]);
-    } finally {
-      setAiLoading(false);
-    }
-  };
 
   const handleZkVerification = async () => {
     if (!user?.created_wallet_address) {
