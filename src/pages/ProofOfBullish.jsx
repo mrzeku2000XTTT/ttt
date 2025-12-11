@@ -764,51 +764,17 @@ Respond as BULL AI:`,
             </h2>
             
             {proofs.filter(p => p.media_type === 'video').length > 0 && (
-              <div
-                role="button"
-                tabIndex={0}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
+              <button
+                type="button"
+                onClick={() => {
+                  setReelStartIndex(0);
+                  setShowReels(true);
                 }}
-                onTouchStart={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  e.nativeEvent.preventDefault();
-                  e.nativeEvent.stopImmediatePropagation();
-                }}
-                onTouchEnd={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  e.nativeEvent.preventDefault();
-                  e.nativeEvent.stopImmediatePropagation();
-                  setTimeout(() => {
-                    setReelStartIndex(0);
-                    setShowReels(true);
-                  }, 0);
-                }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  e.nativeEvent.preventDefault();
-                  e.nativeEvent.stopImmediatePropagation();
-                  setTimeout(() => {
-                    setReelStartIndex(0);
-                    setShowReels(true);
-                  }, 0);
-                }}
-                className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg font-medium transition-all active:scale-95"
-                style={{ 
-                  WebkitTapHighlightColor: 'transparent', 
-                  touchAction: 'none',
-                  userSelect: 'none',
-                  WebkitUserSelect: 'none',
-                  pointerEvents: 'auto'
-                }}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg font-medium transition-all active:scale-95"
               >
-                <Play className="w-4 h-4" style={{ pointerEvents: 'none' }} />
-                <span style={{ pointerEvents: 'none' }}>Bull Sheez</span>
-              </div>
+                <Play className="w-4 h-4" />
+                <span>Bull Sheez</span>
+              </button>
             )}
           </div>
 
