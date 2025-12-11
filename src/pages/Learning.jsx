@@ -558,106 +558,96 @@ Hint: ${currentQuestion.hint || 'N/A'}`,
             animate={{ opacity: 1, scale: 1 }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="fixed bottom-24 right-6 z-40 w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full shadow-2xl shadow-blue-500/30 flex items-center justify-center text-white hover:shadow-blue-500/50 transition-all"
+            className="fixed bottom-24 right-4 z-40 w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full shadow-lg shadow-blue-500/30 flex items-center justify-center text-white hover:shadow-blue-500/50 transition-all"
           >
-            <Languages className="w-6 h-6" />
+            <Languages className="w-5 h-5" />
           </motion.button>
 
-          {/* Translator Widget - Toggleable Modal */}
+          {/* Translator Widget - Mobile Optimized */}
           <AnimatePresence>
             {showTranslator && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
-                className="fixed bottom-24 right-24 z-40 w-[500px]"
+                className="fixed bottom-20 right-4 left-4 md:left-auto md:right-20 z-40 md:w-80"
               >
-                <Card className="bg-zinc-900/95 backdrop-blur-xl border-white/10 shadow-2xl">
-                  <div className="p-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-blue-500/20 border border-blue-500/30 rounded-lg flex items-center justify-center">
-                          <Languages className="w-4 h-4 text-blue-400" />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-bold text-white">AI Translator</h3>
-                          <p className="text-[10px] text-white/40">Instant translation</p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => setShowTranslator(false)}
-                        className="w-6 h-6 bg-white/5 hover:bg-white/10 rounded-lg flex items-center justify-center text-white/60 hover:text-white transition-colors"
-                      >
-                        ✕
-                      </button>
+                <div className="bg-zinc-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Languages className="w-4 h-4 text-blue-400" />
+                      <span className="text-xs font-bold text-white">AI Translator</span>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-3 mb-3">
-                      <select
-                        value={fromLang}
-                        onChange={(e) => setFromLang(e.target.value)}
-                        className="bg-black border border-white/10 text-white rounded-lg px-2 py-1.5 text-xs"
-                      >
-                        <option>English</option>
-                        <option>Spanish</option>
-                        <option>French</option>
-                        <option>German</option>
-                        <option>Japanese</option>
-                        <option>Chinese</option>
-                        <option>Arabic</option>
-                        <option>Russian</option>
-                      </select>
-                      <select
-                        value={toLang}
-                        onChange={(e) => setToLang(e.target.value)}
-                        className="bg-black border border-white/10 text-white rounded-lg px-2 py-1.5 text-xs"
-                      >
-                        <option>Spanish</option>
-                        <option>English</option>
-                        <option>French</option>
-                        <option>German</option>
-                        <option>Japanese</option>
-                        <option>Chinese</option>
-                        <option>Arabic</option>
-                        <option>Russian</option>
-                      </select>
-                    </div>
-
-                    <Textarea
-                      value={translateFrom}
-                      onChange={(e) => setTranslateFrom(e.target.value)}
-                      placeholder="Enter text to translate..."
-                      className="bg-black border-white/10 text-white placeholder-white/30 resize-none mb-3 text-sm"
-                      rows={3}
-                    />
-
-                    <Textarea
-                      value={translateTo}
-                      readOnly
-                      placeholder="Translation will appear here..."
-                      className="bg-black border-white/10 text-white placeholder-white/30 resize-none mb-3 text-sm"
-                      rows={3}
-                    />
-
-                    <Button
-                      onClick={handleTranslate}
-                      disabled={translating || !translateFrom.trim()}
-                      className="w-full bg-blue-500 hover:bg-blue-600 text-white h-9 text-sm"
+                    <button
+                      onClick={() => setShowTranslator(false)}
+                      className="w-6 h-6 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center text-white/60 hover:text-white"
                     >
-                      {translating ? (
-                        <>
-                          <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                          Translating...
-                        </>
-                      ) : (
-                        <>
-                          <Languages className="w-3 h-3 mr-2" />
-                          Translate
-                        </>
-                      )}
-                    </Button>
+                      ✕
+                    </button>
                   </div>
-                </Card>
+
+                  <div className="flex gap-2 mb-2">
+                    <select
+                      value={fromLang}
+                      onChange={(e) => setFromLang(e.target.value)}
+                      className="flex-1 bg-black/50 border border-white/10 text-white rounded-lg px-2 py-1.5 text-xs"
+                    >
+                      <option>English</option>
+                      <option>Spanish</option>
+                      <option>French</option>
+                      <option>German</option>
+                      <option>Japanese</option>
+                      <option>Chinese</option>
+                      <option>Arabic</option>
+                      <option>Russian</option>
+                    </select>
+                    <select
+                      value={toLang}
+                      onChange={(e) => setToLang(e.target.value)}
+                      className="flex-1 bg-black/50 border border-white/10 text-white rounded-lg px-2 py-1.5 text-xs"
+                    >
+                      <option>Spanish</option>
+                      <option>English</option>
+                      <option>French</option>
+                      <option>German</option>
+                      <option>Japanese</option>
+                      <option>Chinese</option>
+                      <option>Arabic</option>
+                      <option>Russian</option>
+                    </select>
+                  </div>
+
+                  <Textarea
+                    value={translateFrom}
+                    onChange={(e) => setTranslateFrom(e.target.value)}
+                    placeholder="Type here..."
+                    className="bg-black/50 border-white/10 text-white placeholder-white/30 resize-none mb-2 text-xs"
+                    rows={2}
+                  />
+
+                  <Textarea
+                    value={translateTo}
+                    readOnly
+                    placeholder="Translation..."
+                    className="bg-black/50 border-white/10 text-white placeholder-white/30 resize-none mb-2 text-xs"
+                    rows={2}
+                  />
+
+                  <Button
+                    onClick={handleTranslate}
+                    disabled={translating || !translateFrom.trim()}
+                    className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white h-8 text-xs font-semibold"
+                  >
+                    {translating ? (
+                      <>
+                        <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-1.5" />
+                        Translating...
+                      </>
+                    ) : (
+                      'Translate'
+                    )}
+                  </Button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -990,62 +980,72 @@ Hint: ${currentQuestion.hint || 'N/A'}`,
                 🗺️ Learning Map - {currentQuestion?.topic}
               </h3>
 
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {[1, 2, 3, 4, 5].map(stage => {
                   const progress = userProgress[currentQuestion?.topic];
                   const totalAnswered = progress?.total_answered || 0;
-                  const stageQuestions = Math.min((stage - 1) * 100, totalAnswered);
                   const currentStageProgress = Math.max(0, Math.min(100, totalAnswered - (stage - 1) * 100));
                   const isUnlocked = stage === 1 || totalAnswered >= (stage - 1) * 100;
                   const isCompleted = totalAnswered >= stage * 100;
 
                   return (
-                    <div
+                    <motion.div
                       key={stage}
-                      className={`bg-gradient-to-r ${
-                        isCompleted
-                          ? 'from-green-500/20 to-emerald-500/20 border-green-500/30'
-                          : isUnlocked
-                          ? 'from-cyan-500/20 to-blue-500/20 border-cyan-500/30'
-                          : 'from-white/5 to-white/5 border-white/10'
-                      } border rounded-xl p-4`}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: stage * 0.05 }}
+                      className="relative"
                     >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-2xl ${
-                            isCompleted
-                              ? 'bg-green-500/20 border-green-500/30'
-                              : isUnlocked
-                              ? 'bg-cyan-500/20 border-cyan-500/30'
-                              : 'bg-white/5 border-white/10'
-                          } border`}>
-                            {isCompleted ? '✅' : isUnlocked ? '🎯' : '🔒'}
-                          </div>
-                          <div>
-                            <h4 className="text-lg font-bold text-white">Stage {stage}</h4>
-                            <p className="text-xs text-white/60">
-                              {isCompleted
-                                ? 'Completed! 100/100 questions'
-                                : isUnlocked
-                                ? `${currentStageProgress}/100 questions`
-                                : 'Locked - Complete previous stage'}
-                            </p>
-                          </div>
-                        </div>
-                        {isCompleted && (
-                          <div className="text-green-400 text-sm font-bold">🏆 MASTERED</div>
-                        )}
-                      </div>
-
-                      {isUnlocked && !isCompleted && (
-                        <div className="w-full bg-black/40 rounded-full h-2 overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500"
+                      <div className={`relative overflow-hidden rounded-xl ${
+                        isCompleted
+                          ? 'bg-gradient-to-r from-green-500/10 to-emerald-500/10'
+                          : isUnlocked
+                          ? 'bg-gradient-to-r from-cyan-500/10 to-blue-500/10'
+                          : 'bg-white/5'
+                      }`}>
+                        {/* Progress bar as background */}
+                        {isUnlocked && !isCompleted && (
+                          <div 
+                            className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 transition-all duration-500"
                             style={{ width: `${currentStageProgress}%` }}
                           />
+                        )}
+
+                        {/* Content */}
+                        <div className="relative z-10 flex items-center justify-between p-3">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl ${
+                              isCompleted
+                                ? 'bg-green-500/30 border border-green-500/50'
+                                : isUnlocked
+                                ? 'bg-cyan-500/30 border border-cyan-500/50'
+                                : 'bg-white/10 border border-white/20'
+                            }`}>
+                              {isCompleted ? '✓' : isUnlocked ? stage : '🔒'}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h4 className="text-sm font-bold text-white">Stage {stage}</h4>
+                                {isCompleted && (
+                                  <span className="text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded">DONE</span>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-white/50">
+                                {isCompleted
+                                  ? '100/100'
+                                  : isUnlocked
+                                  ? `${currentStageProgress}/100`
+                                  : 'Locked'}
+                              </p>
+                            </div>
+                          </div>
+
+                          {isUnlocked && !isCompleted && (
+                            <span className="text-xs font-bold text-cyan-400">{currentStageProgress}%</span>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    </motion.div>
                   );
                 })}
               </div>
