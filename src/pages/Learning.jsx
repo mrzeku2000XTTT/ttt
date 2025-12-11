@@ -34,6 +34,11 @@ export default function LearningPage() {
   const [streak, setStreak] = useState(0);
   const [totalAnswered, setTotalAnswered] = useState(0);
   const [questionBank, setQuestionBank] = useState({});
+  const [userProgress, setUserProgress] = useState({});
+  const [difficultyLevel, setDifficultyLevel] = useState("10+");
+  const [showHint, setShowHint] = useState(false);
+  const [textAnswer, setTextAnswer] = useState("");
+  const [isGeneratingQuestion, setIsGeneratingQuestion] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -41,19 +46,48 @@ export default function LearningPage() {
     initializeQuestionBank();
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      loadUserProgress();
+    }
+  }, [user]);
+
+  const loadUserProgress = async () => {
+    if (!user?.email) return;
+    
+    try {
+      const progress = await base44.entities.UserProgress.filter({
+        user_email: user.email
+      });
+      
+      const progressMap = {};
+      progress.forEach(p => {
+        progressMap[p.topic] = p;
+      });
+      
+      setUserProgress(progressMap);
+      
+      if (progress.length > 0 && progress[0].difficulty_level) {
+        setDifficultyLevel(progress[0].difficulty_level);
+      }
+    } catch (err) {
+      console.error('Failed to load progress:', err);
+    }
+  };
+
   const initializeQuestionBank = () => {
     const questions = {
       "Web3 & Blockchain": [
-        { q: "What is the primary purpose of a blockchain?", o: ["To store data in a decentralized manner", "To create video games", "To enhance social media connectivity", "To improve traditional banking methods"], c: 0 },
-        { q: "What does 'decentralized' mean in blockchain?", o: ["No single authority controls the network", "Faster transaction speeds", "Lower costs", "Better graphics"], c: 0 },
-        { q: "What is a smart contract?", o: ["Self-executing code on blockchain", "A legal document", "A wallet app", "A mining tool"], c: 0 },
-        { q: "Who created Bitcoin?", o: ["Satoshi Nakamoto", "Vitalik Buterin", "Elon Musk", "Bill Gates"], c: 0 },
-        { q: "What is a hash in blockchain?", o: ["A cryptographic output of data", "A type of wallet", "A trading strategy", "A mining machine"], c: 0 },
-        { q: "What consensus mechanism does Bitcoin use?", o: ["Proof of Work", "Proof of Stake", "Proof of Authority", "Delegated Proof of Stake"], c: 0 },
-        { q: "What is a blockchain node?", o: ["A computer maintaining a copy of the blockchain", "A type of cryptocurrency", "A wallet address", "A mining pool"], c: 0 },
-        { q: "What is gas in Ethereum?", o: ["Fee for transactions", "A type of token", "Mining reward", "Wallet feature"], c: 0 },
-        { q: "What is Web3?", o: ["Decentralized internet", "Third version of website design", "Faster internet", "Mobile-first web"], c: 0 },
-        { q: "What is a DAO?", o: ["Decentralized Autonomous Organization", "Digital Asset Ownership", "Distributed Application Online", "Data Access Object"], c: 0 },
+        { id: "web3_1", q: "What is the primary purpose of a blockchain?", o: ["To store data in a decentralized manner", "To create video games", "To enhance social media connectivity", "To improve traditional banking methods"], c: 0, hint: "Think about data storage and control", difficulty: "5+" },
+        { id: "web3_2", q: "What does 'decentralized' mean in blockchain?", o: ["No single authority controls the network", "Faster transaction speeds", "Lower costs", "Better graphics"], c: 0, hint: "Think about who has control", difficulty: "5+" },
+        { id: "web3_3", q: "What is a smart contract?", o: ["Self-executing code on blockchain", "A legal document", "A wallet app", "A mining tool"], c: 0, hint: "It runs automatically", difficulty: "10+" },
+        { id: "web3_4", q: "Who created Bitcoin?", type: "text", answer: "Satoshi Nakamoto", hint: "Japanese-sounding pseudonym", difficulty: "5+" },
+        { id: "web3_5", q: "What is a hash in blockchain?", o: ["A cryptographic output of data", "A type of wallet", "A trading strategy", "A mining machine"], c: 0, hint: "It's a unique fingerprint", difficulty: "10+" },
+        { id: "web3_6", q: "What consensus mechanism does Bitcoin use?", o: ["Proof of Work", "Proof of Stake", "Proof of Authority", "Delegated Proof of Stake"], c: 0, hint: "Miners solve puzzles", difficulty: "15+" },
+        { id: "web3_7", q: "What is a blockchain node?", o: ["A computer maintaining a copy of the blockchain", "A type of cryptocurrency", "A wallet address", "A mining pool"], c: 0, hint: "Think about network participants", difficulty: "15+" },
+        { id: "web3_8", q: "What is gas in Ethereum?", o: ["Fee for transactions", "A type of token", "Mining reward", "Wallet feature"], c: 0, hint: "You pay this to miners", difficulty: "10+" },
+        { id: "web3_9", q: "What is Web3?", o: ["Decentralized internet", "Third version of website design", "Faster internet", "Mobile-first web"], c: 0, hint: "The future of internet ownership", difficulty: "5+" },
+        { id: "web3_10", q: "What does DAO stand for?", type: "text", answer: "Decentralized Autonomous Organization", hint: "Three words: D___ A___ O___", difficulty: "10+" },
         { q: "What is immutability in blockchain?", o: ["Data cannot be changed once recorded", "Fast transactions", "Low fees", "High scalability"], c: 0 },
         { q: "What is a private key?", o: ["Secret code to access wallet", "Public wallet address", "Transaction ID", "Network password"], c: 0 },
         { q: "What is mining?", o: ["Validating transactions and securing network", "Trading cryptocurrencies", "Creating wallets", "Sending tokens"], c: 0 },
@@ -88,26 +122,26 @@ export default function LearningPage() {
         { q: "What is clustering?", o: ["Grouping similar data", "Network topology", "File organization", "Database backup"], c: 0 }
       ],
       "Kaspa Ecosystem": [
-        { q: "What is Kaspa?", o: ["BlockDAG cryptocurrency", "Bitcoin fork", "Ethereum clone", "Centralized coin"], c: 0 },
-        { q: "What makes Kaspa unique?", o: ["BlockDAG structure with parallel blocks", "Slow transactions", "High fees", "Centralized control"], c: 0 },
-        { q: "What is KAS?", o: ["Kaspa's native token", "Wallet application", "Mining pool", "Exchange platform"], c: 0 },
-        { q: "What is Kaspa's block time?", o: ["1 second", "10 minutes", "2.5 minutes", "15 seconds"], c: 0 },
-        { q: "What consensus does Kaspa use?", o: ["Proof of Work", "Proof of Stake", "Proof of Authority", "Delegated PoS"], c: 0 },
-        { q: "What is GHOSTDAG?", o: ["Kaspa's DAG protocol", "Mining algorithm", "Wallet type", "Exchange name"], c: 0 },
-        { q: "What is Kaspa's max supply?", o: ["28.7 billion KAS", "21 million", "Unlimited", "100 billion"], c: 0 },
-        { q: "What is a BlockDAG?", o: ["Directed Acyclic Graph of blocks", "Linear blockchain", "Centralized database", "Cloud storage"], c: 0 },
-        { q: "Can Kaspa handle high TPS?", o: ["Yes, designed for scalability", "No, limited to 7 TPS", "Maybe with upgrades", "Only with Layer 2"], c: 0 },
-        { q: "Is Kaspa ASIC-resistant?", o: ["No, optimized for ASICs", "Yes, GPU only", "Yes, CPU only", "Quantum resistant"], c: 0 },
-        { q: "What is Kaspa's hashing algorithm?", o: ["kHeavyHash", "SHA-256", "Ethash", "Scrypt"], c: 0 },
-        { q: "Does Kaspa have smart contracts?", o: ["Not yet, in development", "Yes, fully functional", "No, never planned", "Only basic contracts"], c: 0 },
-        { q: "What is Kasplex?", o: ["Layer 2 solution for Kaspa", "Mining pool", "Wallet app", "Exchange"], c: 0 },
-        { q: "What is Kaspa's advantage?", o: ["Speed and scalability", "Privacy features", "Smart contracts", "Proof of Stake"], c: 0 },
-        { q: "Who founded Kaspa?", o: ["Yonatan Sompolinsky and team", "Satoshi Nakamoto", "Vitalik Buterin", "Unknown"], c: 0 },
-        { q: "Is Kaspa mineable?", o: ["Yes, Proof of Work", "No, Proof of Stake", "Pre-mined only", "Not applicable"], c: 0 },
-        { q: "What wallets support KAS?", o: ["Kaspium, OneKey, Tangem", "MetaMask only", "Hardware wallets only", "No wallets yet"], c: 0 },
-        { q: "What is Kaspa's vision?", o: ["Fast, scalable, decentralized payments", "Replace Bitcoin", "Smart contract platform", "Privacy coin"], c: 0 },
-        { q: "Is Kaspa open source?", o: ["Yes, fully open source", "No, proprietary", "Partially open", "Closed beta"], c: 0 },
-        { q: "What is Kaspa's block reward?", o: ["Decreasing with halvings", "Fixed forever", "No rewards", "Increasing over time"], c: 0 }
+        { id: "kas_1", q: "What is Kaspa?", o: ["BlockDAG cryptocurrency", "Bitcoin fork", "Ethereum clone", "Centralized coin"], c: 0, hint: "It uses a DAG structure", difficulty: "5+" },
+        { id: "kas_2", q: "What makes Kaspa unique?", o: ["BlockDAG structure with parallel blocks", "Slow transactions", "High fees", "Centralized control"], c: 0, hint: "Multiple blocks at once", difficulty: "10+" },
+        { id: "kas_3", q: "What is KAS?", o: ["Kaspa's native token", "Wallet application", "Mining pool", "Exchange platform"], c: 0, hint: "The coin of Kaspa", difficulty: "5+" },
+        { id: "kas_4", q: "What is Kaspa's block time?", o: ["1 second", "10 minutes", "2.5 minutes", "15 seconds"], c: 0, hint: "Fastest in crypto", difficulty: "10+" },
+        { id: "kas_5", q: "What consensus does Kaspa use?", o: ["Proof of Work", "Proof of Stake", "Proof of Authority", "Delegated PoS"], c: 0, hint: "Mining-based", difficulty: "10+" },
+        { id: "kas_6", q: "What is GHOSTDAG?", type: "text", answer: "GHOSTDAG", hint: "Kaspa's DAG protocol name", difficulty: "15+" },
+        { id: "kas_7", q: "What is Kaspa's max supply?", o: ["28.7 billion KAS", "21 million", "Unlimited", "100 billion"], c: 0, hint: "Much higher than Bitcoin", difficulty: "15+" },
+        { id: "kas_8", q: "What is a BlockDAG?", o: ["Directed Acyclic Graph of blocks", "Linear blockchain", "Centralized database", "Cloud storage"], c: 0, hint: "Graph structure, not chain", difficulty: "15+" },
+        { id: "kas_9", q: "Can Kaspa handle high TPS?", o: ["Yes, designed for scalability", "No, limited to 7 TPS", "Maybe with upgrades", "Only with Layer 2"], c: 0, hint: "Scalability is key feature", difficulty: "10+" },
+        { id: "kas_10", q: "Is Kaspa ASIC-resistant?", o: ["No, optimized for ASICs", "Yes, GPU only", "Yes, CPU only", "Quantum resistant"], c: 0, hint: "Not resistant", difficulty: "15+" },
+        { id: "kas_11", q: "What is Kaspa's hashing algorithm?", type: "text", answer: "kHeavyHash", hint: "Starts with 'k'", difficulty: "20+" },
+        { id: "kas_12", q: "Does Kaspa have smart contracts?", o: ["Not yet, in development", "Yes, fully functional", "No, never planned", "Only basic contracts"], c: 0, hint: "Coming soon", difficulty: "10+" },
+        { id: "kas_13", q: "What is Kasplex?", o: ["Layer 2 solution for Kaspa", "Mining pool", "Wallet app", "Exchange"], c: 0, hint: "Built on top of Kaspa", difficulty: "15+" },
+        { id: "kas_14", q: "What is Kaspa's advantage?", o: ["Speed and scalability", "Privacy features", "Smart contracts", "Proof of Stake"], c: 0, hint: "Fast and can grow", difficulty: "5+" },
+        { id: "kas_15", q: "Who founded Kaspa?", type: "text", answer: "Yonatan Sompolinsky", hint: "Israeli researcher", difficulty: "15+" },
+        { id: "kas_16", q: "Is Kaspa mineable?", o: ["Yes, Proof of Work", "No, Proof of Stake", "Pre-mined only", "Not applicable"], c: 0, hint: "Uses miners", difficulty: "5+" },
+        { id: "kas_17", q: "What wallet supports KAS?", o: ["Kaspium, OneKey, Tangem", "MetaMask only", "Hardware wallets only", "No wallets yet"], c: 0, hint: "Multiple options", difficulty: "10+" },
+        { id: "kas_18", q: "What is Kaspa's vision?", o: ["Fast, scalable, decentralized payments", "Replace Bitcoin", "Smart contract platform", "Privacy coin"], c: 0, hint: "Speed + Scale", difficulty: "10+" },
+        { id: "kas_19", q: "Is Kaspa open source?", o: ["Yes, fully open source", "No, proprietary", "Partially open", "Closed beta"], c: 0, hint: "Community-driven", difficulty: "5+" },
+        { id: "kas_20", q: "What is Kaspa's block reward?", o: ["Decreasing with halvings", "Fixed forever", "No rewards", "Increasing over time"], c: 0, hint: "Like Bitcoin", difficulty: "15+" }
       ],
       "DeFi & Trading": [
         { q: "What is DeFi?", o: ["Decentralized Finance", "Digital Finance", "Direct Finance", "Distributed Finance"], c: 0 },
@@ -172,26 +206,142 @@ export default function LearningPage() {
     }
   };
 
-  const generateQuiz = (topic) => {
+  const generateQuiz = async (topic) => {
     const questions = questionBank[topic] || [];
-    if (questions.length === 0) return;
+    const progress = userProgress[topic];
+    const answeredIds = progress?.answered_questions || [];
     
-    const randomIndex = Math.floor(Math.random() * questions.length);
-    const q = questions[randomIndex];
+    // Filter out answered questions and match difficulty
+    let availableQuestions = questions.filter(q => 
+      !answeredIds.includes(q.id) && 
+      (q.difficulty === difficultyLevel || difficultyLevel === "20+")
+    );
+    
+    // If no questions left or running low, generate with AI
+    if (availableQuestions.length < 5) {
+      setIsGeneratingQuestion(true);
+      try {
+        const response = await base44.integrations.Core.InvokeLLM({
+          prompt: `Generate a unique, educational quiz question about ${topic} for difficulty level ${difficultyLevel}. Make it engaging and accurate. Return ONLY a JSON object:
+{
+  "question": "the question text",
+  "options": ["option A", "option B", "option C", "option D"],
+  "correct": 0,
+  "hint": "helpful hint",
+  "type": "multiple"
+}`,
+          response_json_schema: {
+            type: "object",
+            properties: {
+              question: { type: "string" },
+              options: { type: "array", items: { type: "string" } },
+              correct: { type: "number" },
+              hint: { type: "string" },
+              type: { type: "string" }
+            }
+          }
+        });
+        
+        const newQuestion = {
+          id: `ai_${Date.now()}_${Math.random()}`,
+          q: response.question,
+          o: response.options,
+          c: response.correct,
+          hint: response.hint,
+          difficulty: difficultyLevel,
+          topic
+        };
+        
+        setCurrentQuestion({
+          ...newQuestion,
+          question: newQuestion.q,
+          options: newQuestion.o,
+          correct: newQuestion.c,
+          topic
+        });
+        setQuizActive(true);
+        setIsGeneratingQuestion(false);
+        return;
+      } catch (err) {
+        console.error('AI generation failed:', err);
+        setIsGeneratingQuestion(false);
+      }
+    }
+    
+    if (availableQuestions.length === 0) {
+      // Reset progress if all questions answered
+      availableQuestions = questions.filter(q => q.difficulty === difficultyLevel);
+      if (progress) {
+        await base44.entities.UserProgress.update(progress.id, {
+          answered_questions: []
+        });
+      }
+    }
+    
+    const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+    const q = availableQuestions[randomIndex];
     
     setCurrentQuestion({
+      id: q.id,
       question: q.q,
       options: q.o,
       correct: q.c,
+      hint: q.hint,
+      type: q.type || "multiple",
+      answer: q.answer,
       topic
     });
     setQuizActive(true);
+    setShowHint(false);
+    setTextAnswer("");
   };
 
-  const checkAnswer = (index) => {
+  const checkAnswer = async (index) => {
+    const isCorrect = currentQuestion.type === "text" 
+      ? textAnswer.toLowerCase().trim() === currentQuestion.answer.toLowerCase().trim()
+      : index === currentQuestion.correct;
+    
     setTotalAnswered(totalAnswered + 1);
     
-    if (index === currentQuestion.correct) {
+    // Save progress
+    if (user?.email && currentQuestion.id) {
+      const progress = userProgress[currentQuestion.topic];
+      const answeredIds = progress?.answered_questions || [];
+      
+      if (!answeredIds.includes(currentQuestion.id)) {
+        answeredIds.push(currentQuestion.id);
+      }
+      
+      const newScore = isCorrect ? (progress?.current_score || 0) + 1 : (progress?.current_score || 0);
+      const newTotal = (progress?.total_answered || 0) + 1;
+      const newStreak = isCorrect ? (progress?.current_streak || 0) + 1 : 0;
+      const bestStreak = Math.max(newStreak, progress?.best_streak || 0);
+      
+      if (progress) {
+        await base44.entities.UserProgress.update(progress.id, {
+          answered_questions: answeredIds,
+          current_score: newScore,
+          total_answered: newTotal,
+          current_streak: newStreak,
+          best_streak: bestStreak
+        });
+      } else {
+        await base44.entities.UserProgress.create({
+          user_email: user.email,
+          topic: currentQuestion.topic,
+          answered_questions: answeredIds,
+          current_score: newScore,
+          total_answered: newTotal,
+          current_streak: newStreak,
+          best_streak: bestStreak,
+          difficulty_level: difficultyLevel
+        });
+      }
+      
+      await loadUserProgress();
+    }
+    
+    if (isCorrect) {
       const newScore = score + 1;
       const newStreak = streak + 1;
       setScore(newScore);
@@ -301,9 +451,24 @@ export default function LearningPage() {
                 <BookOpen className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl md:text-4xl font-black text-white">Learning Hub</h1>
-                <p className="text-white/40 text-sm">Master Web3, AI, and more</p>
+                <h1 className="text-3xl md:text-4xl font-black text-white">K Learning Hub</h1>
+                <p className="text-white/40 text-sm">Master Kaspa, Web3, AI, and more</p>
               </div>
+            </div>
+
+            {/* Difficulty Selector */}
+            <div className="bg-zinc-900 border border-white/5 rounded-xl p-3 mt-4">
+              <label className="text-xs text-white/60 mb-2 block">Difficulty Level</label>
+              <select
+                value={difficultyLevel}
+                onChange={(e) => setDifficultyLevel(e.target.value)}
+                className="w-full bg-black border border-white/10 text-white rounded-lg px-3 py-2 text-sm"
+              >
+                <option value="5+">5+ Beginner</option>
+                <option value="10+">10+ Intermediate</option>
+                <option value="15+">15+ Advanced</option>
+                <option value="20+">20+ Expert</option>
+              </select>
             </div>
 
             {/* Stats Bar */}
@@ -539,15 +704,56 @@ export default function LearningPage() {
               {/* Progress indicator */}
               <div className="mb-4">
                 <div className="flex items-center justify-between text-xs text-white/40 mb-2">
-                  <span>Question {totalAnswered + 1}</span>
-                  {streak > 0 && <span className="text-orange-400">🔥 {streak} streak</span>}
+                  <span>Question {(userProgress[currentQuestion.topic]?.total_answered || 0) + 1}</span>
+                  <div className="flex items-center gap-2">
+                    {streak > 0 && <span className="text-orange-400">🔥 {streak} streak</span>}
+                    <span className="text-cyan-400">{difficultyLevel}</span>
+                  </div>
                 </div>
               </div>
 
-              <p className="text-white text-lg mb-6">{currentQuestion.question}</p>
+              <p className="text-white text-lg mb-4">{currentQuestion.question}</p>
 
-              <div className="space-y-3">
-                {currentQuestion.options.map((option, index) => (
+              {/* Hint Button */}
+              {currentQuestion.hint && (
+                <button
+                  onClick={() => setShowHint(!showHint)}
+                  className="mb-4 text-xs text-yellow-400 hover:text-yellow-300 flex items-center gap-1"
+                >
+                  💡 {showHint ? 'Hide' : 'Show'} Hint
+                </button>
+              )}
+              
+              {showHint && currentQuestion.hint && (
+                <div className="mb-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-sm text-yellow-200">
+                  {currentQuestion.hint}
+                </div>
+              )}
+
+              {currentQuestion.type === "text" ? (
+                <div className="space-y-3">
+                  <Input
+                    value={textAnswer}
+                    onChange={(e) => setTextAnswer(e.target.value)}
+                    placeholder="Type your answer..."
+                    className="bg-black border-white/10 text-white placeholder-white/30"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && textAnswer.trim()) {
+                        checkAnswer(0);
+                      }
+                    }}
+                  />
+                  <Button
+                    onClick={() => checkAnswer(0)}
+                    disabled={!textAnswer.trim()}
+                    className="w-full bg-cyan-500 hover:bg-cyan-600 text-white"
+                  >
+                    Submit Answer
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {currentQuestion.options.map((option, index) => (
                   <Button
                     key={index}
                     onClick={() => checkAnswer(index)}
@@ -556,8 +762,9 @@ export default function LearningPage() {
                     <span className="font-semibold mr-3">{String.fromCharCode(65 + index)}.</span>
                     {option}
                   </Button>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
 
               <div className="mt-6 pt-4 border-t border-white/10">
                 <div className="flex items-center justify-between text-sm">
