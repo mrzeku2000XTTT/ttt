@@ -59,6 +59,7 @@ export default function AppStorePage() {
     { name: "KASIA", icon: "Link2", path: "KASIA", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/2e9ccc018_image.png" },
     { name: "MMN", icon: "Link2", path: "MMN", category: "Tools" },
     { name: "KAS Bridge", icon: "Link2", path: "KASBridge", category: "Finance", defaultIcon: "https://ui-avatars.com/api/?name=KB&size=128&background=06b6d4&color=fff&bold=true" },
+    { name: "Kurve", icon: "Link2", path: "Kurve", category: "Finance", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/7be912bf3_image.png" },
     ];
 
   const getIconComponent = (iconName) => {
