@@ -42,6 +42,7 @@ export default function AppStorePage() {
   };
 
   const apps = [
+    { name: "Learning Hub", icon: "Link2", path: "Learning", category: "Education", defaultIcon: "https://ui-avatars.com/api/?name=📚+Learn&size=128&background=3b82f6&color=fff&bold=true&font-size=0.28" },
     { name: "TapToTip", icon: "Link2", path: "TapToTip", category: "Finance", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/416c87773_image.png" },
     { name: "BRAHIM", icon: "Link2", path: "BRAHIMHub", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/88322e438_image.png" },
     { name: "AYOMUIZ", icon: "Link2", path: "AYOMUIZHub", category: "Games", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/120ea91b8_image.png" },
