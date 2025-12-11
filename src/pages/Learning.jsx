@@ -44,6 +44,7 @@ export default function LearningPage() {
   const [quizLanguage, setQuizLanguage] = useState("English");
   const [translatedQuestion, setTranslatedQuestion] = useState(null);
   const [currentStage, setCurrentStage] = useState(1);
+  const [showTranslator, setShowTranslator] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -550,32 +551,52 @@ Hint: ${currentQuestion.hint || 'N/A'}`,
             </div>
           </motion.div>
 
-          {/* Translator Widget - First Priority */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="mb-6"
+          {/* Floating Translator Button */}
+          <motion.button
+            onClick={() => setShowTranslator(!showTranslator)}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="fixed bottom-24 right-6 z-40 w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full shadow-2xl shadow-blue-500/30 flex items-center justify-center text-white hover:shadow-blue-500/50 transition-all"
           >
-            <Card className="bg-zinc-900 border-white/5">
-              <div className="p-4 md:p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-blue-500/20 border border-blue-500/30 rounded-lg flex items-center justify-center">
-                    <Languages className="w-5 h-5 text-blue-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-white">AI Translator</h3>
-                    <p className="text-xs text-white/40">Instant language translation</p>
-                  </div>
-                </div>
+            <Languages className="w-6 h-6" />
+          </motion.button>
 
-                <div className="grid md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
+          {/* Translator Widget - Toggleable Modal */}
+          <AnimatePresence>
+            {showTranslator && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                className="fixed bottom-24 right-24 z-40 w-[500px]"
+              >
+                <Card className="bg-zinc-900/95 backdrop-blur-xl border-white/10 shadow-2xl">
+                  <div className="p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-blue-500/20 border border-blue-500/30 rounded-lg flex items-center justify-center">
+                          <Languages className="w-4 h-4 text-blue-400" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-white">AI Translator</h3>
+                          <p className="text-[10px] text-white/40">Instant translation</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setShowTranslator(false)}
+                        className="w-6 h-6 bg-white/5 hover:bg-white/10 rounded-lg flex items-center justify-center text-white/60 hover:text-white transition-colors"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 mb-3">
                       <select
                         value={fromLang}
                         onChange={(e) => setFromLang(e.target.value)}
-                        className="flex-1 bg-black border border-white/10 text-white rounded-lg px-3 py-2 text-sm"
+                        className="bg-black border border-white/10 text-white rounded-lg px-2 py-1.5 text-xs"
                       >
                         <option>English</option>
                         <option>Spanish</option>
@@ -586,63 +607,60 @@ Hint: ${currentQuestion.hint || 'N/A'}`,
                         <option>Arabic</option>
                         <option>Russian</option>
                       </select>
+                      <select
+                        value={toLang}
+                        onChange={(e) => setToLang(e.target.value)}
+                        className="bg-black border border-white/10 text-white rounded-lg px-2 py-1.5 text-xs"
+                      >
+                        <option>Spanish</option>
+                        <option>English</option>
+                        <option>French</option>
+                        <option>German</option>
+                        <option>Japanese</option>
+                        <option>Chinese</option>
+                        <option>Arabic</option>
+                        <option>Russian</option>
+                      </select>
                     </div>
+
                     <Textarea
                       value={translateFrom}
                       onChange={(e) => setTranslateFrom(e.target.value)}
                       placeholder="Enter text to translate..."
-                      className="bg-black border-white/10 text-white placeholder-white/30 resize-none"
-                      rows={4}
+                      className="bg-black border-white/10 text-white placeholder-white/30 resize-none mb-3 text-sm"
+                      rows={3}
                     />
-                  </div>
 
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <select
-                        value={toLang}
-                        onChange={(e) => setToLang(e.target.value)}
-                        className="flex-1 bg-black border border-white/10 text-white rounded-lg px-3 py-2 text-sm"
-                      >
-                        <option>Spanish</option>
-                        <option>English</option>
-                        <option>French</option>
-                        <option>German</option>
-                        <option>Japanese</option>
-                        <option>Chinese</option>
-                        <option>Arabic</option>
-                        <option>Russian</option>
-                      </select>
-                    </div>
                     <Textarea
                       value={translateTo}
                       readOnly
                       placeholder="Translation will appear here..."
-                      className="bg-black border-white/10 text-white placeholder-white/30 resize-none"
-                      rows={4}
+                      className="bg-black border-white/10 text-white placeholder-white/30 resize-none mb-3 text-sm"
+                      rows={3}
                     />
-                  </div>
-                </div>
 
-                <Button
-                  onClick={handleTranslate}
-                  disabled={translating || !translateFrom.trim()}
-                  className="w-full bg-blue-500 hover:bg-blue-600 text-white"
-                >
-                  {translating ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                      Translating...
-                    </>
-                  ) : (
-                    <>
-                      <Languages className="w-4 h-4 mr-2" />
-                      Translate
-                    </>
-                  )}
-                </Button>
-              </div>
-            </Card>
-          </motion.div>
+                    <Button
+                      onClick={handleTranslate}
+                      disabled={translating || !translateFrom.trim()}
+                      className="w-full bg-blue-500 hover:bg-blue-600 text-white h-9 text-sm"
+                    >
+                      {translating ? (
+                        <>
+                          <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                          Translating...
+                        </>
+                      ) : (
+                        <>
+                          <Languages className="w-3 h-3 mr-2" />
+                          Translate
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Interactive Learning Topics */}
           <motion.div
