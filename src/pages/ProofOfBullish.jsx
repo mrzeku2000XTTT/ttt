@@ -23,7 +23,11 @@ export default function ProofOfBullishPage() {
   const [uploadedFileUrl, setUploadedFileUrl] = useState(null);
   const [videoDuration, setVideoDuration] = useState(0);
   const [showTrimModal, setShowTrimModal] = useState(false);
-  const [showReels, setShowReels] = useState(false);
+  const [showReels, setShowReels] = useState(() => {
+    // Restore state from session if exists
+    const saved = sessionStorage.getItem('bullsheez_open');
+    return saved === 'true';
+  });
   const [reelStartIndex, setReelStartIndex] = useState(0);
   const videoRef = useRef(null);
   const [aiMessages, setAiMessages] = useState([]);
@@ -768,6 +772,7 @@ Respond as BULL AI:`,
                 type="button"
                 onClick={() => {
                   console.log('🎬 Bull Sheez clicked');
+                  sessionStorage.setItem('bullsheez_open', 'true');
                   setReelStartIndex(0);
                   setShowReels(true);
                 }}
@@ -1006,6 +1011,7 @@ Respond as BULL AI:`,
             initialIndex={0}
             onClose={() => {
               console.log('🔒 Closing reels');
+              sessionStorage.removeItem('bullsheez_open');
               setShowReels(false);
             }}
           />
