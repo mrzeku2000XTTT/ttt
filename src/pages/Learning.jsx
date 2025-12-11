@@ -663,7 +663,7 @@ Hint: ${currentQuestion.hint || 'N/A'}`,
               <Target className="w-5 h-5 text-cyan-400" />
               Learning Paths
             </h2>
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-2 gap-3">
               {topics.map((topic, index) => {
                 const Icon = topic.icon;
                 return (
@@ -678,63 +678,45 @@ Hint: ${currentQuestion.hint || 'N/A'}`,
                       stiffness: 100
                     }}
                     whileHover={{ 
-                      scale: 1.03,
-                      y: -5,
+                      scale: 1.02,
+                      y: -3,
                       transition: { duration: 0.2 }
                     }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <Card className={`bg-gradient-to-br ${topic.color} border ${topic.borderColor} cursor-pointer group relative overflow-hidden hover:shadow-2xl transition-all duration-300`}>
+                    <div 
+                      className="bg-black/40 border border-white/10 hover:border-white/20 rounded-xl cursor-pointer group relative overflow-hidden backdrop-blur-sm transition-all duration-300"
+                      onClick={() => generateQuiz(topic.name)}
+                    >
                       <div className="absolute inset-0 bg-gradient-to-br from-white/0 via-white/0 to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                      <div className="p-4 relative z-10" onClick={() => generateQuiz(topic.name)}>
-                        <div className="flex items-start justify-between mb-3">
+                      <div className="p-4 relative z-10">
+                        <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-3">
                             <motion.div 
-                              className={`w-12 h-12 bg-black/40 border ${topic.borderColor} rounded-lg flex items-center justify-center`}
+                              className="w-10 h-10 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center"
                               whileHover={{ 
                                 rotate: [0, -10, 10, -10, 0],
-                                scale: 1.15,
+                                scale: 1.1,
                                 transition: { duration: 0.5 }
                               }}
                             >
-                              <Icon className="w-6 h-6 text-white" />
+                              <Icon className="w-5 h-5 text-white" />
                             </motion.div>
                             <div>
-                              <h3 className="text-lg font-bold text-white group-hover:text-white/90 transition-colors">{topic.name}</h3>
-                              <p className="text-xs text-white/60 group-hover:text-white/80 transition-colors">{topic.description}</p>
+                              <h3 className="text-base font-bold text-white">{topic.name}</h3>
+                              <p className="text-[10px] text-white/40">{topic.description}</p>
                             </div>
                           </div>
-                          <motion.div
-                            animate={{ x: [0, 5, 0] }}
-                            transition={{ 
-                              repeat: Infinity, 
-                              duration: 1.5,
-                              ease: "easeInOut"
-                            }}
-                          >
-                            <ChevronRight className="w-5 h-5 text-white/40 group-hover:text-white transition-colors" />
-                          </motion.div>
+                          <ChevronRight className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors" />
                         </div>
 
-                        <div className="flex items-center gap-2 text-xs text-white/60 group-hover:text-white/80 transition-colors">
-                          <motion.div
-                            animate={{ 
-                              scale: [1, 1.2, 1],
-                              rotate: [0, 10, -10, 0]
-                            }}
-                            transition={{ 
-                              repeat: Infinity, 
-                              duration: 2,
-                              ease: "easeInOut"
-                            }}
-                          >
-                            <Sparkles className="w-3 h-3" />
-                          </motion.div>
-                          <span>Click to start interactive quiz</span>
+                        <div className="flex items-center gap-1.5 text-[10px] text-white/40 group-hover:text-white/60 transition-colors">
+                          <Sparkles className="w-3 h-3" />
+                          <span>Start quiz</span>
                         </div>
                       </div>
-                    </Card>
+                    </div>
                   </motion.div>
                 );
               })}
