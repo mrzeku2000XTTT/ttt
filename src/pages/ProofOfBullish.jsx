@@ -774,8 +774,8 @@ Respond as BULL AI:`,
                 }}
               >
                 <Play className="w-4 h-4" />
-                Bull Reels
-              </div>
+                Bull Sheez
+                </div>
             )}
           </div>
 
