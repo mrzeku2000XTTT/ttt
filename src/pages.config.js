@@ -165,6 +165,7 @@ import KWSuccess from './pages/KWSuccess';
 import XYZ from './pages/XYZ';
 import KaspaNodeMap from './pages/KaspaNodeMap';
 import Learning from './pages/Learning';
+import KASBridge from './pages/KASBridge';
 import __Layout from './Layout.jsx';
 
 
@@ -336,6 +337,7 @@ export const PAGES = {
     "XYZ": XYZ,
     "KaspaNodeMap": KaspaNodeMap,
     "Learning": Learning,
+    "KASBridge": KASBridge,
 }
 
 export const pagesConfig = {
