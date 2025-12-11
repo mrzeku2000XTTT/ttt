@@ -12,13 +12,39 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [loadingStates, setLoadingStates] = useState({});
   const [errorStates, setErrorStates] = useState({});
+  const [isMounted, setIsMounted] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
 
   const [currentUser, setCurrentUser] = useState(null);
   const videoRefs = useRef([]);
   const containerRef = useRef(null);
+  const closeTimeoutRef = useRef(null);
 
   useEffect(() => {
+    console.log('🎬 ProofOfBullishReels MOUNTED');
+    console.log('📹 Videos count:', videos.length);
+    console.log('📍 Initial index:', initialIndex);
+    
+    // Prevent body scroll
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
+    
+    setIsMounted(true);
     loadUser();
+    
+    return () => {
+      console.log('🎬 ProofOfBullishReels UNMOUNTING');
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+      
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+    };
   }, []);
 
   // Intersection Observer for auto-play
@@ -302,38 +328,90 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
 
   useEffect(() => {
     const handleKeyDown = (e) => {
+      if (isClosing) return;
       if (e.key === 'ArrowUp') handlePrev();
       if (e.key === 'ArrowDown') handleNext();
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') handleClose();
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentIndex]);
+  }, [currentIndex, isClosing]);
 
-  useEffect(() => {
-    console.log('🎥 ProofOfBullishReels mounted with', videos.length, 'videos');
-    console.log('📍 Starting at index:', initialIndex);
-  }, []);
+  const handleClose = () => {
+    if (isClosing) return;
+    
+    console.log('🔒 Starting close sequence');
+    setIsClosing(true);
+    
+    // Pause all videos immediately
+    videoRefs.current.forEach((video) => {
+      if (video) {
+        video.pause();
+        video.currentTime = 0;
+        video.src = '';
+      }
+    });
+    
+    // Call onClose after short delay
+    closeTimeoutRef.current = setTimeout(() => {
+      onClose();
+    }, 50);
+  };
+
+  if (!isMounted) {
+    return (
+      <div className="fixed inset-0 bg-black z-[9999] flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
+  }
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black z-[100]"
-        onClick={(e) => e.stopPropagation()}
+        transition={{ duration: 0.2 }}
+        className="fixed inset-0 bg-black z-[9999]"
+        onClick={(e) => {
+          console.log('🔍 Modal background clicked');
+          e.stopPropagation();
+        }}
+        onTouchStart={(e) => {
+          console.log('📱 Modal background touched');
+          e.stopPropagation();
+        }}
+        style={{
+          isolation: 'isolate',
+          touchAction: 'none',
+          WebkitTapHighlightColor: 'transparent'
+        }}
       >
         <button
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            onClose();
+            console.log('❌ Close button clicked');
+            handleClose();
           }}
-          className="fixed top-4 right-4 z-50 w-10 h-10 flex items-center justify-center bg-black/80 backdrop-blur-sm rounded-full text-white hover:bg-black transition-colors border border-white/10"
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('❌ Close button touched');
+            handleClose();
+          }}
+          disabled={isClosing}
+          className="fixed top-4 right-4 z-[10000] w-12 h-12 flex items-center justify-center bg-black/80 backdrop-blur-sm rounded-full text-white hover:bg-black transition-colors border border-white/10 active:scale-95 disabled:opacity-50 touch-manipulation"
+          style={{
+            WebkitTapHighlightColor: 'transparent',
+            WebkitTouchCallout: 'none',
+            WebkitUserSelect: 'none',
+            userSelect: 'none'
+          }}
         >
-          <X className="w-5 h-5" />
+          <X className="w-6 h-6" />
         </button>
 
         {/* TikTok-style snap scroll container */}
@@ -409,12 +487,18 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                     vid.pause();
                   }
                 }}
+                onTouchStart={(e) => {
+                  console.log('📱 Video touched');
+                  e.stopPropagation();
+                }}
                 onTouchEnd={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
+                  console.log('📱 Video touch ended');
                   const vid = e.target;
                   if (vid.paused) {
                     vid.muted = false;
+                    vid.volume = 1;
                     vid.play().catch(err => {
                       console.log('Play error:', err);
                       vid.muted = true;
@@ -544,13 +628,24 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
+                      console.log('⬆️ Previous button clicked');
                       handlePrev();
                     }}
+                    onTouchEnd={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('⬆️ Previous button touched');
+                    }}
                     className="flex flex-col items-center gap-1 text-white lg:hidden touch-manipulation active:scale-90"
-                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                    style={{ 
+                      WebkitTapHighlightColor: 'transparent',
+                      WebkitTouchCallout: 'none',
+                      WebkitUserSelect: 'none',
+                      userSelect: 'none'
+                    }}
                   >
-                    <div className="w-10 h-10 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center active:scale-95 transition-transform">
-                      <ChevronUp className="w-5 h-5" />
+                    <div className="w-12 h-12 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center active:scale-95 transition-transform">
+                      <ChevronUp className="w-6 h-6" />
                     </div>
                   </button>
                 )}
@@ -593,13 +688,24 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
+                      console.log('⬇️ Next button clicked');
                       handleNext();
                     }}
+                    onTouchEnd={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('⬇️ Next button touched');
+                    }}
                     className="flex flex-col items-center gap-1 text-white lg:hidden touch-manipulation active:scale-90"
-                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                    style={{ 
+                      WebkitTapHighlightColor: 'transparent',
+                      WebkitTouchCallout: 'none',
+                      WebkitUserSelect: 'none',
+                      userSelect: 'none'
+                    }}
                   >
-                    <div className="w-10 h-10 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center active:scale-95 transition-transform">
-                      <ChevronDown className="w-5 h-5" />
+                    <div className="w-12 h-12 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center active:scale-95 transition-transform">
+                      <ChevronDown className="w-6 h-6" />
                     </div>
                   </button>
                 )}
