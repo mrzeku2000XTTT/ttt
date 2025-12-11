@@ -24,7 +24,6 @@ export default function ProofOfBullishPage() {
   const [videoDuration, setVideoDuration] = useState(0);
   const [showTrimModal, setShowTrimModal] = useState(false);
   const [showReels, setShowReels] = useState(false);
-  const [isModalMounting, setIsModalMounting] = useState(false);
   const videoRef = useRef(null);
   const [aiMessages, setAiMessages] = useState([]);
   const [aiInput, setAiInput] = useState("");
@@ -766,37 +765,15 @@ Respond as BULL AI:`,
             {proofs.filter(p => p.media_type === 'video').length > 0 && (
               <button
                 type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  console.log('🎬 Bull Sheez button clicked - starting mount');
-                  setIsModalMounting(true);
-                  
-                  // Use requestAnimationFrame to ensure state update before modal render
-                  requestAnimationFrame(() => {
-                    requestAnimationFrame(() => {
-                      console.log('✅ Setting showReels to true');
-                      setShowReels(true);
-                      setTimeout(() => setIsModalMounting(false), 100);
-                    });
-                  });
+                onClick={() => {
+                  console.log('🎬 Bull Sheez clicked');
+                  setShowReels(true);
                 }}
-                onTouchEnd={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  console.log('📱 Touch end on Bull Sheez button');
-                }}
-                disabled={isModalMounting}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg font-medium transition-all active:scale-95 disabled:opacity-70 touch-manipulation"
-                style={{
-                  WebkitTapHighlightColor: 'transparent',
-                  WebkitTouchCallout: 'none',
-                  WebkitUserSelect: 'none',
-                  userSelect: 'none'
-                }}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg font-medium transition-all active:scale-95 touch-manipulation"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 <Play className="w-4 h-4" />
-                <span>{isModalMounting ? 'Opening...' : 'Bull Sheez'}</span>
+                <span>Bull Sheez</span>
               </button>
             )}
           </div>
@@ -1020,33 +997,13 @@ Respond as BULL AI:`,
           </motion.div>
         )}
 
-        {/* Reels Viewer - Portal to prevent layout interference */}
+        {/* Reels Viewer */}
         {showReels && proofs.filter(p => p.media_type === 'video').length > 0 && (
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 9999,
-              isolation: 'isolate',
-            }}
-            onClick={(e) => {
-              console.log('🔍 Portal wrapper clicked');
-              e.stopPropagation();
-            }}
-          >
-            <ProofOfBullishReels
-              videos={proofs.filter(p => p.media_type === 'video')}
-              initialIndex={0}
-              onClose={() => {
-                console.log('🔒 Closing reels from ProofOfBullish');
-                setShowReels(false);
-                setIsModalMounting(false);
-              }}
-            />
-          </div>
+          <ProofOfBullishReels
+            videos={proofs.filter(p => p.media_type === 'video')}
+            initialIndex={0}
+            onClose={() => setShowReels(false)}
+          />
         )}
       </div>
     </div>
