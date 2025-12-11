@@ -446,10 +446,12 @@ export default function LearningPage() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 bg-zinc-900 border border-white/10 rounded-xl flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-white" />
-              </div>
+            <div className="flex items-center gap-4 mb-2">
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/20e6a2f95_image.png" 
+                alt="K Learning Hub"
+                className="w-16 h-16 rounded-full object-cover border-2 border-cyan-500/30 shadow-lg shadow-cyan-500/20"
+              />
               <div>
                 <h1 className="text-3xl md:text-4xl font-black text-white">K Learning Hub</h1>
                 <p className="text-white/40 text-sm">Master Kaspa, Web3, AI, and more</p>
