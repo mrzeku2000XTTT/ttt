@@ -608,11 +608,22 @@ export default function ProofOfBullishPage() {
                     Cancel
                   </Button>
                 </div>
+              ) : txHash ? (
+                <div className="text-center py-6">
+                  <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Flame className="w-8 h-8 text-green-400" />
+                  </div>
+                  <p className="text-green-400 font-semibold mb-2">Payment Detected! ✓</p>
+                  <p className="text-white/60 text-sm">Submitting your reel...</p>
+                </div>
               ) : (
                 <div className="text-center py-6">
                   <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4" />
                   <p className="text-cyan-400 font-semibold mb-2">Waiting for Transaction...</p>
-                  <p className="text-white/60 text-sm mb-4">Send {zkAmount} KAS to yourself</p>
+                  <p className="text-white/60 text-sm mb-4">Send {zkAmount} KAS to yourself in Kaspium</p>
+                  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
+                    <p className="text-yellow-400 text-xs">💡 Make sure to send from the same wallet</p>
+                  </div>
                   <Button
                     onClick={() => {
                       setZkVerifying(false);
