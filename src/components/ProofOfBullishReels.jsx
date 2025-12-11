@@ -56,7 +56,16 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
       if (video) observer.observe(video);
     });
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      // Cleanup: pause all videos when component unmounts
+      videoRefs.current.forEach((video) => {
+        if (video) {
+          video.pause();
+          video.currentTime = 0;
+        }
+      });
+    };
   }, [localVideos, mutedStates]);
 
   // Scroll to initial video on mount
