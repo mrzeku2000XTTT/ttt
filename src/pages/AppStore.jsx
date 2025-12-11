@@ -75,15 +75,14 @@ export default function AppStorePage() {
 
 
   return (
-    <div className="min-h-screen relative bg-slate-950">
+    <div className="min-h-screen relative bg-black">
       <div 
         className="absolute inset-0 z-0"
         style={{
-          backgroundImage: 'url(https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=2000&q=80)',
+          backgroundImage: 'url(https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=2000&q=80)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          opacity: 0.25,
-          filter: 'blur(1px)'
+          opacity: 0.4
         }}
       />
       <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
@@ -93,7 +92,7 @@ export default function AppStorePage() {
           className="mb-8 flex items-center justify-between"
         >
           <div>
-            <h1 className="text-4xl font-black text-white mb-2">TTT App Store</h1>
+            <h1 className="text-4xl font-black text-white mb-2">K - Apps Store</h1>
             <p className="text-white/60">Discover amazing apps</p>
           </div>
           {user && (
