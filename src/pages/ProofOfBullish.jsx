@@ -428,23 +428,27 @@ export default function ProofOfBullishPage() {
                 setSelectedReelIndex(index);
                 setShowReels(true);
               }}
-              className="relative aspect-[9/16] bg-black/40 rounded-xl overflow-hidden cursor-pointer group"
+              className="relative aspect-[9/16] bg-zinc-900 rounded-xl overflow-hidden cursor-pointer group border border-white/10"
             >
               <video
-                src={proof.media_url}
+                src={`${proof.media_url}#t=0.001`}
                 preload="metadata"
                 muted
                 playsInline
+                webkit-playsinline="true"
                 className="w-full h-full object-cover"
+                onLoadedData={(e) => {
+                  e.target.currentTime = 0.1;
+                }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                    <Play className="w-8 h-8 text-white ml-1" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none">
+                <div className="absolute top-2 right-2">
+                  <div className="w-8 h-8 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center">
+                    <Play className="w-4 h-4 text-white ml-0.5" fill="white" />
                   </div>
                 </div>
-                <div className="absolute bottom-0 left-0 right-0 p-3">
-                  <p className="text-white text-sm font-medium line-clamp-2">{proof.message}</p>
+                <div className="absolute bottom-0 left-0 right-0 p-2">
+                  <p className="text-white text-xs font-medium line-clamp-2">{proof.message}</p>
                 </div>
               </div>
             </motion.div>
