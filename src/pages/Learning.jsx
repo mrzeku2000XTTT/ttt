@@ -503,7 +503,7 @@ Hint: ${currentQuestion.hint || 'N/A'}`,
               {/* Logo and Title */}
               <div className="flex items-center gap-4">
                 <img 
-                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/20e6a2f95_image.png" 
+                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/0f7f76839_image.png" 
                   alt="K Learning Hub"
                   className="w-16 h-16 rounded-full object-cover border-2 border-cyan-500/30 shadow-lg shadow-cyan-500/20"
                 />
