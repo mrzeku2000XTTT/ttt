@@ -444,52 +444,55 @@ export default function LearningPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
+            className="mb-8 bg-zinc-900/50 border border-white/5 rounded-2xl p-6"
           >
-            <div className="flex items-center gap-4 mb-2">
-              <img 
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/20e6a2f95_image.png" 
-                alt="K Learning Hub"
-                className="w-16 h-16 rounded-full object-cover border-2 border-cyan-500/30 shadow-lg shadow-cyan-500/20"
-              />
-              <div>
-                <h1 className="text-3xl md:text-4xl font-black text-white">K Learning Hub</h1>
-                <p className="text-white/40 text-sm">Master Kaspa, Web3, AI, and more</p>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+              {/* Logo and Title */}
+              <div className="flex items-center gap-4">
+                <img 
+                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/20e6a2f95_image.png" 
+                  alt="K Learning Hub"
+                  className="w-16 h-16 rounded-full object-cover border-2 border-cyan-500/30 shadow-lg shadow-cyan-500/20"
+                />
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-black text-white">K Learning Hub</h1>
+                  <p className="text-white/40 text-xs">Master Kaspa, Web3, AI, and more</p>
+                </div>
+              </div>
+
+              {/* Difficulty Selector */}
+              <div className="flex-shrink-0 w-full md:w-64">
+                <label className="text-xs text-white/60 mb-2 block">Difficulty Level</label>
+                <select
+                  value={difficultyLevel}
+                  onChange={(e) => setDifficultyLevel(e.target.value)}
+                  className="w-full bg-black border border-white/10 text-white rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="5+">5+ Beginner</option>
+                  <option value="10+">10+ Intermediate</option>
+                  <option value="15+">15+ Advanced</option>
+                  <option value="20+">20+ Expert</option>
+                </select>
               </div>
             </div>
 
-            {/* Difficulty Selector */}
-            <div className="bg-zinc-900 border border-white/5 rounded-xl p-3 mt-4">
-              <label className="text-xs text-white/60 mb-2 block">Difficulty Level</label>
-              <select
-                value={difficultyLevel}
-                onChange={(e) => setDifficultyLevel(e.target.value)}
-                className="w-full bg-black border border-white/10 text-white rounded-lg px-3 py-2 text-sm"
-              >
-                <option value="5+">5+ Beginner</option>
-                <option value="10+">10+ Intermediate</option>
-                <option value="15+">15+ Advanced</option>
-                <option value="20+">20+ Expert</option>
-              </select>
-            </div>
-
-            {/* Stats Bar */}
+            {/* Stats Bar - Compact */}
             <div className="grid grid-cols-4 gap-3 mt-6">
-              <div className="bg-zinc-900 border border-white/5 rounded-xl p-3">
-                <div className="text-2xl font-bold text-white">{score}</div>
-                <div className="text-xs text-white/40">Points</div>
+              <div className="bg-black/40 border border-white/5 rounded-lg p-2">
+                <div className="text-xl font-bold text-white">{score}</div>
+                <div className="text-[10px] text-white/40">Points</div>
               </div>
-              <div className="bg-zinc-900 border border-white/5 rounded-xl p-3">
-                <div className="text-2xl font-bold text-orange-400">{streak} 🔥</div>
-                <div className="text-xs text-white/40">Streak</div>
+              <div className="bg-black/40 border border-white/5 rounded-lg p-2">
+                <div className="text-xl font-bold text-orange-400">{streak} 🔥</div>
+                <div className="text-[10px] text-white/40">Streak</div>
               </div>
-              <div className="bg-zinc-900 border border-white/5 rounded-xl p-3">
-                <div className="text-2xl font-bold text-cyan-400">{totalAnswered}</div>
-                <div className="text-xs text-white/40">Answered</div>
+              <div className="bg-black/40 border border-white/5 rounded-lg p-2">
+                <div className="text-xl font-bold text-cyan-400">{totalAnswered}</div>
+                <div className="text-[10px] text-white/40">Answered</div>
               </div>
-              <div className="bg-zinc-900 border border-white/5 rounded-xl p-3">
-                <div className="text-2xl font-bold text-purple-400">{totalAnswered > 0 ? Math.round((score / totalAnswered) * 100) : 0}%</div>
-                <div className="text-xs text-white/40">Accuracy</div>
+              <div className="bg-black/40 border border-white/5 rounded-lg p-2">
+                <div className="text-xl font-bold text-purple-400">{totalAnswered > 0 ? Math.round((score / totalAnswered) * 100) : 0}%</div>
+                <div className="text-[10px] text-white/40">Accuracy</div>
               </div>
             </div>
           </motion.div>
