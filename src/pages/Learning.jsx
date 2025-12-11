@@ -304,42 +304,46 @@ export default function LearningPage() {
       
       setTotalAnswered(totalAnswered + 1);
     
-    // Save progress
+    // Save progress (non-blocking)
     if (user?.email && currentQuestion.id) {
-      const progress = userProgress[currentQuestion.topic];
-      const answeredIds = progress?.answered_questions || [];
-      
-      if (!answeredIds.includes(currentQuestion.id)) {
-        answeredIds.push(currentQuestion.id);
+      try {
+        const progress = userProgress[currentQuestion.topic];
+        const answeredIds = progress?.answered_questions || [];
+        
+        if (!answeredIds.includes(currentQuestion.id)) {
+          answeredIds.push(currentQuestion.id);
+        }
+        
+        const newScore = isCorrect ? (progress?.current_score || 0) + 1 : (progress?.current_score || 0);
+        const newTotal = (progress?.total_answered || 0) + 1;
+        const newStreak = isCorrect ? (progress?.current_streak || 0) + 1 : 0;
+        const bestStreak = Math.max(newStreak, progress?.best_streak || 0);
+        
+        if (progress) {
+          await base44.entities.UserProgress.update(progress.id, {
+            answered_questions: answeredIds,
+            current_score: newScore,
+            total_answered: newTotal,
+            current_streak: newStreak,
+            best_streak: bestStreak
+          });
+        } else {
+          await base44.entities.UserProgress.create({
+            user_email: user.email,
+            topic: currentQuestion.topic,
+            answered_questions: answeredIds,
+            current_score: newScore,
+            total_answered: newTotal,
+            current_streak: newStreak,
+            best_streak: bestStreak,
+            difficulty_level: difficultyLevel
+          });
+        }
+        
+        await loadUserProgress();
+      } catch (progressErr) {
+        console.error('Failed to save progress (continuing anyway):', progressErr);
       }
-      
-      const newScore = isCorrect ? (progress?.current_score || 0) + 1 : (progress?.current_score || 0);
-      const newTotal = (progress?.total_answered || 0) + 1;
-      const newStreak = isCorrect ? (progress?.current_streak || 0) + 1 : 0;
-      const bestStreak = Math.max(newStreak, progress?.best_streak || 0);
-      
-      if (progress) {
-        await base44.entities.UserProgress.update(progress.id, {
-          answered_questions: answeredIds,
-          current_score: newScore,
-          total_answered: newTotal,
-          current_streak: newStreak,
-          best_streak: bestStreak
-        });
-      } else {
-        await base44.entities.UserProgress.create({
-          user_email: user.email,
-          topic: currentQuestion.topic,
-          answered_questions: answeredIds,
-          current_score: newScore,
-          total_answered: newTotal,
-          current_streak: newStreak,
-          best_streak: bestStreak,
-          difficulty_level: difficultyLevel
-        });
-      }
-      
-      await loadUserProgress();
     }
     
     if (isCorrect) {
