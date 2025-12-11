@@ -85,19 +85,19 @@ export default function LearningPage() {
         { id: "web3_5", q: "What is a hash in blockchain?", o: ["A cryptographic output of data", "A type of wallet", "A trading strategy", "A mining machine"], c: 0, hint: "It's a unique fingerprint", difficulty: "10+" },
         { id: "web3_6", q: "What consensus mechanism does Bitcoin use?", o: ["Proof of Work", "Proof of Stake", "Proof of Authority", "Delegated Proof of Stake"], c: 0, hint: "Miners solve puzzles", difficulty: "15+" },
         { id: "web3_7", q: "What is a blockchain node?", o: ["A computer maintaining a copy of the blockchain", "A type of cryptocurrency", "A wallet address", "A mining pool"], c: 0, hint: "Think about network participants", difficulty: "15+" },
-        { id: "web3_8", q: "What is gas in Ethereum?", o: ["Fee for transactions", "A type of token", "Mining reward", "Wallet feature"], c: 0, hint: "You pay this to miners", difficulty: "10+" },
+        { id: "web3_8", q: "In which way does the concept of 'gas' in Ethereum differ from traditional transaction fees in centralized financial systems?", o: ["Gas is a fixed cost determined annually", "Gas is variable and depends on network congestion and transaction complexity", "Gas fees are paid to central authorities for validation", "Gas is used only for NFT transactions"], c: 1, hint: "Think about how gas prices change", difficulty: "10+" },
         { id: "web3_9", q: "What is Web3?", o: ["Decentralized internet", "Third version of website design", "Faster internet", "Mobile-first web"], c: 0, hint: "The future of internet ownership", difficulty: "5+" },
         { id: "web3_10", q: "What does DAO stand for?", type: "text", answer: "Decentralized Autonomous Organization", hint: "Three words: D___ A___ O___", difficulty: "10+" },
-        { q: "What is immutability in blockchain?", o: ["Data cannot be changed once recorded", "Fast transactions", "Low fees", "High scalability"], c: 0 },
-        { q: "What is a private key?", o: ["Secret code to access wallet", "Public wallet address", "Transaction ID", "Network password"], c: 0 },
-        { q: "What is mining?", o: ["Validating transactions and securing network", "Trading cryptocurrencies", "Creating wallets", "Sending tokens"], c: 0 },
-        { q: "What is a block?", o: ["Collection of transactions", "A single transaction", "A wallet type", "A mining tool"], c: 0 },
-        { q: "What is a fork in blockchain?", o: ["Split in blockchain protocol", "Mining tool", "Wallet feature", "Trading strategy"], c: 0 },
-        { q: "What is Layer 2?", o: ["Scaling solution built on Layer 1", "Second generation blockchain", "Type of wallet", "Mining layer"], c: 0 },
-        { q: "What is DeFi?", o: ["Decentralized Finance", "Digital Finance", "Direct Finance", "Distributed Finance"], c: 0 },
-        { q: "What is an NFT?", o: ["Non-Fungible Token", "New Finance Technology", "Network Function Token", "Next Future Token"], c: 0 },
-        { q: "What is staking?", o: ["Locking tokens to support network", "Trading strategy", "Mining process", "Wallet creation"], c: 0 },
-        { q: "What is a wallet address?", o: ["Public identifier for receiving crypto", "Private password", "Transaction ID", "Network name"], c: 0 }
+        { id: "web3_11", q: "What is immutability in blockchain?", o: ["Data cannot be changed once recorded", "Fast transactions", "Low fees", "High scalability"], c: 0, hint: "Think about permanence", difficulty: "5+" },
+        { id: "web3_12", q: "What is a private key?", o: ["Secret code to access wallet", "Public wallet address", "Transaction ID", "Network password"], c: 0, hint: "Keep it safe!", difficulty: "5+" },
+        { id: "web3_13", q: "What is mining?", o: ["Validating transactions and securing network", "Trading cryptocurrencies", "Creating wallets", "Sending tokens"], c: 0, hint: "It secures the blockchain", difficulty: "10+" },
+        { id: "web3_14", q: "What is a block?", o: ["Collection of transactions", "A single transaction", "A wallet type", "A mining tool"], c: 0, hint: "Multiple transactions grouped together", difficulty: "5+" },
+        { id: "web3_15", q: "What is a fork in blockchain?", o: ["Split in blockchain protocol", "Mining tool", "Wallet feature", "Trading strategy"], c: 0, hint: "The chain splits", difficulty: "10+" },
+        { id: "web3_16", q: "What is Layer 2?", o: ["Scaling solution built on Layer 1", "Second generation blockchain", "Type of wallet", "Mining layer"], c: 0, hint: "Built on top", difficulty: "15+" },
+        { id: "web3_17", q: "What is DeFi?", o: ["Decentralized Finance", "Digital Finance", "Direct Finance", "Distributed Finance"], c: 0, hint: "No banks needed", difficulty: "5+" },
+        { id: "web3_18", q: "What is an NFT?", o: ["Non-Fungible Token", "New Finance Technology", "Network Function Token", "Next Future Token"], c: 0, hint: "Each one is unique", difficulty: "5+" },
+        { id: "web3_19", q: "What is staking?", o: ["Locking tokens to support network", "Trading strategy", "Mining process", "Wallet creation"], c: 0, hint: "Lock to earn rewards", difficulty: "10+" },
+        { id: "web3_20", q: "What is a wallet address?", o: ["Public identifier for receiving crypto", "Private password", "Transaction ID", "Network name"], c: 0, hint: "Like your bank account number", difficulty: "5+" }
       ],
       "AI & Machine Learning": [
         { q: "What is Machine Learning?", o: ["Computer learning from data", "Manual programming", "Internet browsing", "Video editing"], c: 0 },
@@ -297,11 +297,12 @@ export default function LearningPage() {
   };
 
   const checkAnswer = async (index) => {
-    const isCorrect = currentQuestion.type === "text" 
-      ? textAnswer.toLowerCase().trim() === currentQuestion.answer.toLowerCase().trim()
-      : index === currentQuestion.correct;
-    
-    setTotalAnswered(totalAnswered + 1);
+    try {
+      const isCorrect = currentQuestion.type === "text" 
+        ? textAnswer.toLowerCase().trim() === currentQuestion.answer.toLowerCase().trim()
+        : index === currentQuestion.correct;
+      
+      setTotalAnswered(totalAnswered + 1);
     
     // Save progress
     if (user?.email && currentQuestion.id) {
@@ -400,6 +401,14 @@ export default function LearningPage() {
         notification.style.transition = 'all 0.3s ease-out';
       }, 1500);
       setTimeout(() => notification.remove(), 1800);
+    }
+    } catch (err) {
+      console.error('Error checking answer:', err);
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 z-[300] bg-red-500/20 border border-red-500/40 text-red-400 px-4 py-3 rounded-lg';
+      notification.textContent = 'An error occurred. Please try again.';
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 3000);
     }
   };
 
@@ -758,16 +767,19 @@ export default function LearningPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {currentQuestion.options.map((option, index) => (
-                  <Button
-                    key={index}
-                    onClick={() => checkAnswer(index)}
-                    className="w-full bg-black border border-white/10 hover:border-cyan-500/50 hover:bg-cyan-500/10 text-white justify-start text-left h-auto py-4 px-4"
-                  >
-                    <span className="font-semibold mr-3">{String.fromCharCode(65 + index)}.</span>
-                    {option}
-                  </Button>
-                  ))}
+                  {currentQuestion.options && currentQuestion.options.map((option, index) => {
+                    const cleanOption = typeof option === 'string' ? option.replace(/^[A-D][\.:]\s*/i, '') : option;
+                    return (
+                      <Button
+                        key={index}
+                        onClick={() => checkAnswer(index)}
+                        className="w-full bg-black border border-white/10 hover:border-cyan-500/50 hover:bg-cyan-500/10 text-white justify-start text-left h-auto py-4 px-4"
+                      >
+                        <span className="font-semibold mr-3">{String.fromCharCode(65 + index)}.</span>
+                        <span>{cleanOption}</span>
+                      </Button>
+                    );
+                  })}
                 </div>
               )}
 
