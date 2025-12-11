@@ -25,7 +25,6 @@ export default function ProofOfBullishPage() {
   const [showTrimModal, setShowTrimModal] = useState(false);
   const [showReels, setShowReels] = useState(false);
   const [reelStartIndex, setReelStartIndex] = useState(0);
-  const [isOpeningReels, setIsOpeningReels] = useState(false);
   const videoRef = useRef(null);
   const [aiMessages, setAiMessages] = useState([]);
   const [aiInput, setAiInput] = useState("");
@@ -767,18 +766,12 @@ Respond as BULL AI:`,
             {proofs.filter(p => p.media_type === 'video').length > 0 && (
               <button
                 type="button"
-                disabled={isOpeningReels}
-                onClick={(e) => {
-                  if (isOpeningReels) return;
-                  setIsOpeningReels(true);
-                  console.log('🎬 Opening Bull Sheez reels...');
-                  requestAnimationFrame(() => {
-                    setReelStartIndex(0);
-                    setShowReels(true);
-                    setTimeout(() => setIsOpeningReels(false), 500);
-                  });
+                onClick={() => {
+                  console.log('🎬 Bull Sheez clicked');
+                  setReelStartIndex(0);
+                  setShowReels(true);
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg font-medium transition-all active:scale-95 disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg font-medium transition-all active:scale-95"
               >
                 <Play className="w-4 h-4" />
                 <span>Bull Sheez</span>
@@ -1006,16 +999,14 @@ Respond as BULL AI:`,
         )}
 
         {/* Reels Viewer */}
-        {showReels && proofs.filter(p => p.media_type === 'video').length > 0 && (
+        {showReels && (
           <ProofOfBullishReels
-            key={`reels-${reelStartIndex}-${Date.now()}`}
+            key={Date.now()}
             videos={proofs.filter(p => p.media_type === 'video')}
-            initialIndex={reelStartIndex}
+            initialIndex={0}
             onClose={() => {
-              console.log('🔒 Closing Bull Sheez reels');
+              console.log('🔒 Closing reels');
               setShowReels(false);
-              setReelStartIndex(0);
-              setIsOpeningReels(false);
             }}
           />
         )}
