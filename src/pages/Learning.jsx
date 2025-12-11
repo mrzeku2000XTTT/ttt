@@ -39,6 +39,11 @@ export default function LearningPage() {
   const [showHint, setShowHint] = useState(false);
   const [textAnswer, setTextAnswer] = useState("");
   const [isGeneratingQuestion, setIsGeneratingQuestion] = useState(false);
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [showMapModal, setShowMapModal] = useState(false);
+  const [quizLanguage, setQuizLanguage] = useState("English");
+  const [translatedQuestion, setTranslatedQuestion] = useState(null);
+  const [currentStage, setCurrentStage] = useState(1);
 
   useEffect(() => {
     loadUser();
@@ -294,6 +299,41 @@ export default function LearningPage() {
     setQuizActive(true);
     setShowHint(false);
     setTextAnswer("");
+  };
+
+  const translateQuestion = async (lang) => {
+    if (lang === "English") {
+      setTranslatedQuestion(null);
+      return;
+    }
+    
+    try {
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: `Translate this quiz question and options to ${lang}. Return ONLY JSON:
+{
+  "question": "translated question",
+  "options": ["option 1", "option 2", "option 3", "option 4"],
+  "hint": "translated hint"
+}
+
+Original:
+Question: ${currentQuestion.question}
+Options: ${currentQuestion.options ? JSON.stringify(currentQuestion.options) : 'N/A'}
+Hint: ${currentQuestion.hint || 'N/A'}`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            question: { type: "string" },
+            options: { type: "array", items: { type: "string" } },
+            hint: { type: "string" }
+          }
+        }
+      });
+      
+      setTranslatedQuestion(response);
+    } catch (err) {
+      console.error('Translation failed:', err);
+    }
   };
 
   const checkAnswer = async (index) => {
@@ -704,15 +744,32 @@ export default function LearningPage() {
               onClick={(e) => e.stopPropagation()}
               className="bg-zinc-900 border border-white/10 rounded-2xl p-6 max-w-2xl w-full relative"
             >
-              <button
-                onClick={() => {
-                  setQuizActive(false);
-                  setCurrentQuestion(null);
-                }}
-                className="absolute top-4 right-4 w-8 h-8 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg flex items-center justify-center text-white/60 hover:text-white transition-colors"
-              >
-                ✕
-              </button>
+              <div className="absolute top-4 right-4 flex items-center gap-2">
+                <button
+                  onClick={() => setShowMapModal(true)}
+                  className="w-8 h-8 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg flex items-center justify-center text-white/60 hover:text-white transition-colors"
+                  title="Progress Map"
+                >
+                  🗺️
+                </button>
+                <button
+                  onClick={() => setShowLanguageModal(true)}
+                  className="w-8 h-8 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg flex items-center justify-center text-white/60 hover:text-white transition-colors"
+                  title="Change Language"
+                >
+                  🌐
+                </button>
+                <button
+                  onClick={() => {
+                    setQuizActive(false);
+                    setCurrentQuestion(null);
+                    setTranslatedQuestion(null);
+                  }}
+                  className="w-8 h-8 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg flex items-center justify-center text-white/60 hover:text-white transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
               
               <div className="flex items-center gap-3 mb-4">
                 <Brain className="w-6 h-6 text-purple-400" />
@@ -730,7 +787,9 @@ export default function LearningPage() {
                 </div>
               </div>
 
-              <p className="text-white text-lg mb-4">{currentQuestion.question}</p>
+              <p className="text-white text-lg mb-4">
+                {translatedQuestion?.question || currentQuestion.question}
+              </p>
 
               {/* Hint Button */}
               {currentQuestion.hint && (
@@ -744,7 +803,7 @@ export default function LearningPage() {
               
               {showHint && currentQuestion.hint && (
                 <div className="mb-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-sm text-yellow-200">
-                  {currentQuestion.hint}
+                  {translatedQuestion?.hint || currentQuestion.hint}
                 </div>
               )}
 
@@ -771,7 +830,7 @@ export default function LearningPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {currentQuestion.options && currentQuestion.options.map((option, index) => {
+                  {(translatedQuestion?.options || currentQuestion.options)?.map((option, index) => {
                     const cleanOption = typeof option === 'string' ? option.replace(/^[A-D][\.:]\s*/i, '') : option;
                     return (
                       <Button
@@ -796,6 +855,147 @@ export default function LearningPage() {
                     Accuracy: <span className="text-cyan-400 font-bold">{totalAnswered > 0 ? Math.round((score / totalAnswered) * 100) : 0}%</span>
                   </div>
                 </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Language Selection Modal */}
+      <AnimatePresence>
+        {showLanguageModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowLanguageModal(false)}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-zinc-900 border border-white/10 rounded-2xl p-6 max-w-md w-full"
+            >
+              <h3 className="text-xl font-bold text-white mb-4">Select Language</h3>
+              
+              <button
+                onClick={() => {
+                  setQuizLanguage("English");
+                  setTranslatedQuestion(null);
+                  setShowLanguageModal(false);
+                }}
+                className="w-full bg-blue-500/20 border border-blue-500/30 hover:bg-blue-500/30 text-white py-3 px-4 rounded-lg mb-3 font-semibold transition-colors"
+              >
+                🇬🇧 Back to English
+              </button>
+
+              <div className="grid grid-cols-2 gap-2">
+                {['Spanish', 'French', 'German', 'Japanese', 'Chinese', 'Arabic', 'Russian', 'Portuguese', 'Italian', 'Korean', 'Hindi', 'Turkish'].map(lang => (
+                  <button
+                    key={lang}
+                    onClick={async () => {
+                      setQuizLanguage(lang);
+                      await translateQuestion(lang);
+                      setShowLanguageModal(false);
+                    }}
+                    className="bg-white/5 hover:bg-white/10 border border-white/10 text-white py-2 px-3 rounded-lg text-sm transition-colors"
+                  >
+                    {lang}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Progress Map Modal */}
+      <AnimatePresence>
+        {showMapModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowMapModal(false)}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-zinc-900 border border-white/10 rounded-2xl p-6 max-w-4xl w-full max-h-[80vh] overflow-y-auto"
+            >
+              <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                🗺️ Learning Map - {currentQuestion?.topic}
+              </h3>
+
+              <div className="space-y-4">
+                {[1, 2, 3, 4, 5].map(stage => {
+                  const progress = userProgress[currentQuestion?.topic];
+                  const totalAnswered = progress?.total_answered || 0;
+                  const stageQuestions = Math.min((stage - 1) * 100, totalAnswered);
+                  const currentStageProgress = Math.max(0, Math.min(100, totalAnswered - (stage - 1) * 100));
+                  const isUnlocked = stage === 1 || totalAnswered >= (stage - 1) * 100;
+                  const isCompleted = totalAnswered >= stage * 100;
+
+                  return (
+                    <div
+                      key={stage}
+                      className={`bg-gradient-to-r ${
+                        isCompleted
+                          ? 'from-green-500/20 to-emerald-500/20 border-green-500/30'
+                          : isUnlocked
+                          ? 'from-cyan-500/20 to-blue-500/20 border-cyan-500/30'
+                          : 'from-white/5 to-white/5 border-white/10'
+                      } border rounded-xl p-4`}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-2xl ${
+                            isCompleted
+                              ? 'bg-green-500/20 border-green-500/30'
+                              : isUnlocked
+                              ? 'bg-cyan-500/20 border-cyan-500/30'
+                              : 'bg-white/5 border-white/10'
+                          } border`}>
+                            {isCompleted ? '✅' : isUnlocked ? '🎯' : '🔒'}
+                          </div>
+                          <div>
+                            <h4 className="text-lg font-bold text-white">Stage {stage}</h4>
+                            <p className="text-xs text-white/60">
+                              {isCompleted
+                                ? 'Completed! 100/100 questions'
+                                : isUnlocked
+                                ? `${currentStageProgress}/100 questions`
+                                : 'Locked - Complete previous stage'}
+                            </p>
+                          </div>
+                        </div>
+                        {isCompleted && (
+                          <div className="text-green-400 text-sm font-bold">🏆 MASTERED</div>
+                        )}
+                      </div>
+
+                      {isUnlocked && !isCompleted && (
+                        <div className="w-full bg-black/40 rounded-full h-2 overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500"
+                            style={{ width: `${currentStageProgress}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-6 bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                <p className="text-sm text-blue-200">
+                  💡 <strong>Complete 100 questions</strong> in each stage to unlock the next level!
+                </p>
               </div>
             </motion.div>
           </motion.div>
