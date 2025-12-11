@@ -23,8 +23,8 @@ export default function ProofOfBullishPage() {
   const [uploadedFileUrl, setUploadedFileUrl] = useState(null);
   const [videoDuration, setVideoDuration] = useState(0);
   const [showTrimModal, setShowTrimModal] = useState(false);
-  const [showReels, setShowReels] = useState(false);
   const [reelsKey, setReelsKey] = useState(0);
+  const [showReels, setShowReels] = useState(false);
   const videoRef = useRef(null);
   const [aiMessages, setAiMessages] = useState([]);
   const [aiInput, setAiInput] = useState("");
@@ -767,9 +767,8 @@ Respond as BULL AI:`,
               <button
                 type="button"
                 onClick={() => {
-                  console.log('🎬 Bull Sheez clicked - current state:', showReels);
-                  setReelsKey(prev => prev + 1);
-                  setShowReels(true);
+                  setReelsKey(Date.now());
+                  setTimeout(() => setShowReels(true), 0);
                 }}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg font-medium transition-all active:scale-95 touch-manipulation"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -1000,15 +999,12 @@ Respond as BULL AI:`,
         )}
 
         {/* Reels Viewer */}
-        {showReels && proofs.filter(p => p.media_type === 'video').length > 0 && (
+        {showReels && (
           <ProofOfBullishReels
             key={reelsKey}
             videos={proofs.filter(p => p.media_type === 'video')}
             initialIndex={0}
-            onClose={() => {
-              console.log('🔒 Closing reels - resetting state');
-              setShowReels(false);
-            }}
+            onClose={() => setShowReels(false)}
           />
         )}
       </div>
