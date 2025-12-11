@@ -42,7 +42,7 @@ export default function AppStorePage() {
   };
 
   const apps = [
-    { name: "K Learning Hub", icon: "Link2", path: "Learning", category: "Education", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/20e6a2f95_image.png", circular: true },
+    { name: "K Learning Hub", icon: "Link2", path: "Learning", category: "Education", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/0f7f76839_image.png", circular: true },
     { name: "TapToTip", icon: "Link2", path: "TapToTip", category: "Finance", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/416c87773_image.png" },
     { name: "BRAHIM", icon: "Link2", path: "BRAHIMHub", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/88322e438_image.png" },
     { name: "AYOMUIZ", icon: "Link2", path: "AYOMUIZHub", category: "Games", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/120ea91b8_image.png" },
@@ -79,10 +79,11 @@ export default function AppStorePage() {
       <div 
         className="absolute inset-0 z-0"
         style={{
-          backgroundImage: 'url(https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/33eac8767_image.png)',
+          backgroundImage: 'url(https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=2000&q=80)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          opacity: 0.3
+          opacity: 0.25,
+          filter: 'blur(1px)'
         }}
       />
       <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
