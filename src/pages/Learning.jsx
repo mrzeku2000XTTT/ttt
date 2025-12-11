@@ -824,7 +824,7 @@ Hint: ${currentQuestion.hint || 'N/A'}`,
               {/* Progress indicator */}
               <div className="mb-4">
                 <div className="flex items-center justify-between text-xs text-white/40 mb-2">
-                  <span>Question {(userProgress[currentQuestion.topic]?.total_answered || 0) + 1}</span>
+                  <span>Question {questionCounter}</span>
                   <div className="flex items-center gap-2">
                     {streak > 0 && <span className="text-orange-400">🔥 {streak} streak</span>}
                     <span className="text-cyan-400">{difficultyLevel}</span>
