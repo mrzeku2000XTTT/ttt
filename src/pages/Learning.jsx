@@ -368,7 +368,7 @@ Hint: ${currentQuestion.hint || 'N/A'}`,
             current_streak: newStreak,
             best_streak: bestStreak
           });
-        } else {
+          } else {
           await base44.entities.UserProgress.create({
             user_email: user.email,
             topic: currentQuestion.topic,
@@ -379,9 +379,22 @@ Hint: ${currentQuestion.hint || 'N/A'}`,
             best_streak: bestStreak,
             difficulty_level: difficultyLevel
           });
-        }
-        
-        await loadUserProgress();
+          }
+
+          // Immediately update local state for instant UI feedback
+          setUserProgress(prev => ({
+          ...prev,
+          [currentQuestion.topic]: {
+            ...progress,
+            answered_questions: answeredIds,
+            current_score: newScore,
+            total_answered: newTotal,
+            current_streak: newStreak,
+            best_streak: bestStreak
+          }
+          }));
+
+          await loadUserProgress();
       } catch (progressErr) {
         console.error('Failed to save progress (continuing anyway):', progressErr);
       }
