@@ -301,6 +301,7 @@ export default function LearningPage() {
     setQuizActive(true);
     setShowHint(false);
     setTextAnswer("");
+    setQuestionCounter(prev => prev + 1);
   };
 
   const translateQuestion = async (lang) => {
