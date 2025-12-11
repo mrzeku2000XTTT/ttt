@@ -432,12 +432,12 @@ export default function ProofOfBullishPage() {
             >
               <video
                 src={`${proof.media_url}#t=0.001`}
-                preload="none"
+                preload="metadata"
                 muted
                 playsInline
                 webkit-playsinline="true"
                 className="w-full h-full object-cover"
-                loading="lazy"
+                poster={proof.media_url}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none">
                 <div className="absolute top-2 right-2">
