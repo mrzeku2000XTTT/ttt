@@ -45,6 +45,7 @@ export default function LearningPage() {
   const [translatedQuestion, setTranslatedQuestion] = useState(null);
   const [currentStage, setCurrentStage] = useState(1);
   const [showTranslator, setShowTranslator] = useState(false);
+  const [questionCounter, setQuestionCounter] = useState(0);
 
   useEffect(() => {
     loadUser();
