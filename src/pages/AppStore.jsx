@@ -42,7 +42,7 @@ export default function AppStorePage() {
   };
 
   const apps = [
-    { name: "K Learning Hub", icon: "Link2", path: "Learning", category: "Education", defaultIcon: "https://ui-avatars.com/api/?name=K+Learn&size=128&background=3b82f6&color=fff&bold=true&font-size=0.4" },
+    { name: "K Learning Hub", icon: "Link2", path: "Learning", category: "Education", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/20e6a2f95_image.png", circular: true },
     { name: "TapToTip", icon: "Link2", path: "TapToTip", category: "Finance", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/416c87773_image.png" },
     { name: "BRAHIM", icon: "Link2", path: "BRAHIMHub", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/88322e438_image.png" },
     { name: "AYOMUIZ", icon: "Link2", path: "AYOMUIZHub", category: "Games", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/120ea91b8_image.png" },
@@ -129,12 +129,12 @@ export default function AppStorePage() {
                   whileTap={{ scale: 0.95 }}
                   className="flex flex-col items-center gap-2"
                 >
-                  <div className="relative w-16 h-16 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl flex items-center justify-center group-hover:bg-white/10 transition-all">
+                  <div className={`relative w-16 h-16 bg-white/5 backdrop-blur-xl border border-white/10 ${app.circular ? 'rounded-full' : 'rounded-xl'} flex items-center justify-center group-hover:bg-white/10 transition-all`}>
                     {app.premium && (
                       <Crown className="absolute -top-1 -right-1 w-3 h-3 text-yellow-400" />
                     )}
                     {appImages[app.path] || app.defaultIcon ? (
-                      <img src={appImages[app.path] || app.defaultIcon} alt={app.name} className="w-full h-full object-cover rounded-xl" />
+                      <img src={appImages[app.path] || app.defaultIcon} alt={app.name} className={`w-full h-full object-cover ${app.circular ? 'rounded-full' : 'rounded-xl'}`} />
                     ) : (
                       <Icon className="w-8 h-8 text-white/80" strokeWidth={1.5} />
                     )}
