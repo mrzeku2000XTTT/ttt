@@ -73,7 +73,7 @@ export default function ProofOfBullishPage() {
 
   const loadProofs = async () => {
     try {
-      const data = await base44.entities.ProofOfBullish.list('-created_date', 200);
+      const data = await base44.entities.ProofOfBullish.list('-created_date', 50);
       setProofs(data);
     } catch (err) {
       console.error('Failed to load proofs:', err);
@@ -432,14 +432,12 @@ export default function ProofOfBullishPage() {
             >
               <video
                 src={`${proof.media_url}#t=0.001`}
-                preload="metadata"
+                preload="none"
                 muted
                 playsInline
                 webkit-playsinline="true"
                 className="w-full h-full object-cover"
-                onLoadedData={(e) => {
-                  e.target.currentTime = 0.1;
-                }}
+                loading="lazy"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none">
                 <div className="absolute top-2 right-2">
