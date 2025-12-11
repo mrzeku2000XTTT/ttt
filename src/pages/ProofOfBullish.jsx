@@ -28,6 +28,7 @@ export default function ProofOfBullishPage() {
   const [user, setUser] = useState(null);
   const [selectedReelIndex, setSelectedReelIndex] = useState(null);
   const [showReels, setShowReels] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     loadProofs();
