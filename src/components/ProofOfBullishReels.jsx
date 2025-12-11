@@ -507,6 +507,15 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                   )}
                   <span>•</span>
                   <span>{new Date(video.created_date).toLocaleDateString()}</span>
+                  {(video.tips_received || 0) > 0 && (
+                    <>
+                      <span>•</span>
+                      <div className="flex items-center gap-1 text-green-400">
+                        <DollarSign className="w-3 h-3" />
+                        <span className="font-semibold">{(video.tips_received || 0).toFixed(2)}</span>
+                      </div>
+                    </>
+                  )}
                 </div>
                 
                 <div className="flex items-center gap-3">
