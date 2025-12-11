@@ -290,11 +290,15 @@ export default function ProofOfBullishPage() {
 
           if (response.data?.verified && response.data?.transaction) {
             setTxHash(response.data.transaction.id);
-            setZkVerifying(false);
             
-            setTimeout(() => {
-              handleFinalSubmit(response.data.transaction.id);
-            }, 500);
+            // Show success state briefly
+            setTimeout(async () => {
+              await handleFinalSubmit(response.data.transaction.id);
+              // Close modal after successful submission
+              setZkVerifying(false);
+              setShowZkVerification(false);
+              setZkAmount('');
+            }, 1000);
 
             return true;
           }
@@ -306,10 +310,12 @@ export default function ProofOfBullishPage() {
             alert('Verification timeout. Transaction not detected within 10 minutes.');
           }
         } catch (err) {
+          console.error('Verification check failed:', err);
           if (attempts < maxAttempts) {
             setTimeout(checkTransaction, 3000);
           } else {
             setZkVerifying(false);
+            setShowZkVerification(false);
             alert('Failed to verify transaction after multiple attempts.');
           }
         }
@@ -317,6 +323,7 @@ export default function ProofOfBullishPage() {
 
       checkTransaction();
     } catch (err) {
+      console.error('Verification start failed:', err);
       setZkVerifying(false);
       alert('Verification failed to start. Please try again.');
     }
