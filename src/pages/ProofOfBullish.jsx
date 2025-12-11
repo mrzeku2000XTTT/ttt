@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { TrendingUp, Upload, Flame, Link as LinkIcon, X, Scissors, Heart, ArrowLeft, Play } from "lucide-react";
+import { motion } from "framer-motion";
+import { Upload, Flame, X, ArrowLeft, Play } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { createPageUrl } from "@/utils";
@@ -22,20 +21,13 @@ export default function ProofOfBullishPage() {
   const [txHash, setTxHash] = useState(null);
   const [uploadedFileUrl, setUploadedFileUrl] = useState(null);
   const [videoDuration, setVideoDuration] = useState(0);
-  const [showTrimModal, setShowTrimModal] = useState(false);
-
-  const videoRef = useRef(null);
-  const [aiMessages, setAiMessages] = useState([]);
-  const [aiInput, setAiInput] = useState("");
-  const [aiLoading, setAiLoading] = useState(false);
-  const [showAiChat, setShowAiChat] = useState(false);
-  const messagesEndRef = useRef(null);
   const [showZkVerification, setShowZkVerification] = useState(false);
   const [zkAmount, setZkAmount] = useState('');
-  const [zkTimestamp, setZkTimestamp] = useState(null);
   const [zkVerifying, setZkVerifying] = useState(false);
   const [zkWalletBalance, setZkWalletBalance] = useState(null);
   const [user, setUser] = useState(null);
+  const [selectedReelIndex, setSelectedReelIndex] = useState(null);
+  const [showReels, setShowReels] = useState(false);
 
   useEffect(() => {
     loadProofs();
@@ -63,29 +55,6 @@ export default function ProofOfBullishPage() {
       }
     } catch (err) {
       console.error('Failed to load balance:', err);
-    }
-  };
-
-  useEffect(() => {
-    if (proofs.length > 0) {
-      checkForSharedProof();
-    }
-  }, [proofs]);
-
-  const checkForSharedProof = () => {
-    const fullHash = window.location.hash;
-    const queryString = fullHash.includes('?') ? fullHash.split('?')[1] : window.location.search.substring(1);
-    const urlParams = new URLSearchParams(queryString);
-    const proofId = urlParams.get('proof');
-    
-    if (proofId && proofs.length > 0) {
-      const videos = proofs.filter(p => p.media_type === 'video');
-      const videoIndex = videos.findIndex(v => String(v.id) === String(proofId));
-      
-      if (videoIndex !== -1) {
-        setReelStartIndex(videoIndex);
-        setShowReels(true);
-      }
     }
   };
 
@@ -129,7 +98,8 @@ export default function ProofOfBullishPage() {
         setVideoDuration(duration);
         
         if (duration > 60) {
-          setShowTrimModal(true);
+          alert('Please trim your video to 60 seconds or less');
+          return;
         }
       };
       video.src = URL.createObjectURL(file);
@@ -141,14 +111,13 @@ export default function ProofOfBullishPage() {
   const handleUpload = async () => {
     if (!selectedFile || isUploading) return;
     
-    if (!selectedFile.type.startsWith('image/') && !selectedFile.type.startsWith('video/')) {
-      alert('Please upload an image or video file');
+    if (!selectedFile.type.startsWith('video/')) {
+      alert('Please upload a video file');
       return;
     }
 
-    if (selectedFile.type.startsWith('video/') && videoDuration > 60) {
+    if (videoDuration > 60) {
       alert('Please trim your video to 60 seconds or less');
-      setShowTrimModal(true);
       return;
     }
     
@@ -197,32 +166,26 @@ export default function ProofOfBullishPage() {
     }
 
     try {
-      const txResponse = await window.kasware.sendKaspa(kaswareAddress, 100000000); // 1 KAS
+      const txResponse = await window.kasware.sendKaspa(kaswareAddress, 100000000);
       
-      // Extract transaction ID - handle all response formats
       let txid;
       if (typeof txResponse === 'string') {
-        // If it's a string, try to parse it as JSON first
         try {
           const parsed = JSON.parse(txResponse);
           txid = parsed.id;
         } catch {
-          // If parsing fails, it's already the transaction ID
           txid = txResponse;
         }
       } else if (txResponse && typeof txResponse === 'object') {
-        // If it's an object, get the id field
         txid = txResponse.id;
       }
       
-      // Validate it's a proper transaction ID (64 hex characters)
       if (!txid || !/^[a-f0-9]{64}$/i.test(txid)) {
         console.error('Invalid transaction ID format:', txid);
         alert('Failed to get valid transaction ID');
         return;
       }
       
-      console.log('Transaction ID:', txid);
       setTxHash(txid);
       
       setTimeout(() => {
@@ -238,35 +201,15 @@ export default function ProofOfBullishPage() {
   const handleFinalSubmit = async (transactionHash) => {
     const cleanTxHash = typeof transactionHash === 'string' ? transactionHash : transactionHash?.id || '';
     
-    console.log('📤 Submitting proof:', {
-      hasUploadedUrl: !!uploadedFileUrl,
-      hasSelectedFile: !!selectedFile,
-      txHash: cleanTxHash,
-      walletAddress: kaswareAddress || user?.created_wallet_address
-    });
-
-    if (!uploadedFileUrl) {
-      console.error('❌ No uploaded file URL');
-      alert('Error: Media file was not uploaded. Please try again.');
-      return;
-    }
-
-    if (!selectedFile) {
-      console.error('❌ No selected file');
-      alert('Error: No file selected. Please try again.');
-      return;
-    }
-
-    if (!cleanTxHash) {
-      console.error('❌ No transaction hash');
-      alert('Error: Transaction hash missing. Please try again.');
+    if (!uploadedFileUrl || !selectedFile || !cleanTxHash) {
+      alert('Error: Missing required data. Please try again.');
       return;
     }
     
     try {
       const proofData = {
         media_url: uploadedFileUrl,
-        media_type: selectedFile.type.startsWith('video') ? 'video' : 'image',
+        media_type: 'video',
         message: message || 'Bullish AF 🚀',
         proof_link: proofLink || '',
         transaction_hash: cleanTxHash,
@@ -274,11 +217,7 @@ export default function ProofOfBullishPage() {
         video_duration: videoDuration || 0
       };
 
-      console.log('Creating proof with data:', proofData);
-
       await base44.entities.ProofOfBullish.create(proofData);
-      
-      console.log('✅ Proof created successfully');
 
       setSelectedFile(null);
       setMessage("");
@@ -299,23 +238,9 @@ export default function ProofOfBullishPage() {
       
     } catch (err) {
       console.error('Submit error:', err);
-      console.error('Error details:', err.response?.data || err.message);
       alert(`Failed to submit proof: ${err.response?.data?.message || err.message}`);
     }
   };
-
-  const likeProof = async (proofId, currentLikes) => {
-    try {
-      await base44.entities.ProofOfBullish.update(proofId, {
-        likes: currentLikes + 1
-      });
-      loadProofs();
-    } catch (err) {
-      console.error('Like failed:', err);
-    }
-  };
-
-
 
   const handleZkVerification = async () => {
     if (!user?.created_wallet_address) {
@@ -328,26 +253,16 @@ export default function ProofOfBullishPage() {
       return;
     }
 
-    // Record timestamp NOW - transactions must be sent AFTER this moment
     const timestamp = Date.now();
-    setZkTimestamp(timestamp);
     setZkVerifying(true);
-
-    console.log('🚀 Starting ZK verification:', {
-      address: user.created_wallet_address,
-      amount: zkAmount,
-      timestamp: new Date(timestamp),
-      message: 'User must send transaction NOW'
-    });
 
     try {
       const targetAmount = parseFloat(zkAmount);
       let attempts = 0;
-      const maxAttempts = 200; // 10 minutes (3s intervals)
+      const maxAttempts = 200;
 
       const checkTransaction = async () => {
         attempts++;
-        console.log(`Attempt ${attempts}/${maxAttempts} - Checking for transaction...`);
 
         try {
           const response = await base44.functions.invoke('verifyKaspaSelfTransaction', {
@@ -356,14 +271,10 @@ export default function ProofOfBullishPage() {
             timestamp: timestamp
           });
 
-          console.log('Backend response:', response.data);
-
           if (response.data?.verified && response.data?.transaction) {
-            console.log('✅ Transaction verified!', response.data.transaction);
             setTxHash(response.data.transaction.id);
             setZkVerifying(false);
             
-            // Auto-submit proof after verification
             setTimeout(() => {
               handleFinalSubmit(response.data.transaction.id);
             }, 500);
@@ -371,40 +282,34 @@ export default function ProofOfBullishPage() {
             return true;
           }
 
-          // Continue checking
           if (attempts < maxAttempts) {
             setTimeout(checkTransaction, 3000);
           } else {
-            console.error('⏱️ Verification timeout');
             setZkVerifying(false);
-            alert('Verification timeout. Transaction not detected within 10 minutes. Please ensure you sent the exact amount to your own address.');
+            alert('Verification timeout. Transaction not detected within 10 minutes.');
           }
         } catch (err) {
-          console.error('❌ Verification error:', err);
-          
-          // Retry on error
           if (attempts < maxAttempts) {
-            console.log('Retrying in 3 seconds...');
             setTimeout(checkTransaction, 3000);
           } else {
             setZkVerifying(false);
-            alert('Failed to verify transaction after multiple attempts. Please try again or use Kasware option.');
+            alert('Failed to verify transaction after multiple attempts.');
           }
         }
       };
 
-      // Start checking immediately
       checkTransaction();
     } catch (err) {
-      console.error('ZK verification setup error:', err);
       setZkVerifying(false);
       alert('Verification failed to start. Please try again.');
     }
   };
 
+  const videoProofs = proofs.filter(p => p.media_type === 'video');
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950/30 via-black to-blue-900/25 p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-black p-4 md:p-8">
+      <div className="max-w-7xl mx-auto">
         <Button
           onClick={() => navigate(createPageUrl('Singularity'))}
           variant="ghost"
@@ -423,27 +328,20 @@ export default function ProofOfBullishPage() {
             <Flame className="w-8 h-8 text-orange-400" />
           </div>
           <h1 className="text-4xl md:text-5xl font-black mb-2 text-white">
-            Proof of Bullish
+            Bull Reels
           </h1>
-          <p className="text-white/50 text-lg">Show the world your conviction 🚀</p>
+          <p className="text-white/50 text-lg">Show your conviction 🚀</p>
         </motion.div>
 
-        {/* Upload Section - Top */}
+        {/* Upload Section */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="bg-black/60 backdrop-blur-xl border border-orange-500/30 rounded-2xl p-4 mb-8"
         >
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 bg-orange-500/20 rounded-lg flex items-center justify-center">
-              <Flame className="w-5 h-5 text-orange-400" />
-            </div>
-            <span className="text-sm font-bold text-orange-400">BULL AI</span>
-          </div>
-
           <input
             type="file"
-            accept="image/*,video/*"
+            accept="video/*"
             onChange={handleFileSelect}
             className="hidden"
             id="proof-upload"
@@ -508,119 +406,61 @@ export default function ProofOfBullishPage() {
               </Button>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
-              <label htmlFor="proof-upload">
-                <Button
-                  type="button"
-                  size="icon"
-                  className="bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 border border-orange-500/30"
-                  asChild
-                >
-                  <div className="cursor-pointer w-10 h-10 flex items-center justify-center">
-                    <Upload className="w-5 h-5" />
-                  </div>
-                </Button>
-              </label>
-              <Input
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Tell us why you're bullish on KAS..."
-                className="flex-1 bg-white/5 border-white/10 text-white placeholder-white/30"
-              />
-            </div>
+            <label htmlFor="proof-upload" className="cursor-pointer">
+              <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-white/10 rounded-xl hover:border-orange-500/50 transition-colors">
+                <Upload className="w-12 h-12 text-orange-400 mb-4" />
+                <p className="text-white font-semibold mb-2">Upload Your Bull Reel</p>
+                <p className="text-white/40 text-sm">Click to select a video (max 60s, 50MB)</p>
+              </div>
+            </label>
           )}
         </motion.div>
 
-        {/* Bull AI Chat Section - Bottom */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-black/60 backdrop-blur-xl border border-orange-500/30 rounded-2xl overflow-hidden mb-8"
-        >
-          {/* Chat Messages - Fixed Height with Internal Scroll Only */}
-          <div 
-            className="h-64 overflow-y-auto p-4 space-y-3"
-            style={{
-              scrollbarWidth: 'thin',
-              scrollbarColor: 'rgba(251, 146, 60, 0.3) transparent'
-            }}
-          >
-            {aiMessages.length === 0 ? (
-              <div className="text-center text-white/40 py-6">
-                <Flame className="w-10 h-10 mx-auto mb-2 text-orange-400/30" />
-                <p className="text-sm">Ask me about KAS price predictions!</p>
-                <p className="text-xs mt-1">Try: "What's your price target?" or "Should I buy now?"</p>
-              </div>
-            ) : (
-              aiMessages.map((msg, idx) => (
-                <div
-                  key={idx}
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[80%] rounded-xl px-3 py-2 ${
-                      msg.role === 'user'
-                        ? 'bg-orange-500 text-white'
-                        : 'bg-white/5 text-white border border-white/10'
-                    }`}
-                  >
-                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                  </div>
-                </div>
-              ))
-            )}
-            {aiLoading && (
-              <div className="flex justify-start">
-                <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <div className="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <div className="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                  </div>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Chat Input - Bottom */}
-          <div className="p-4 border-t border-orange-500/20">
-            <div className="flex items-center gap-2">
-              <Input
-                value={aiInput}
-                onChange={(e) => setAiInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAiChat()}
-                placeholder="Ask about KAS price predictions..."
-                className="flex-1 bg-white/5 border-white/10 text-white placeholder-white/30"
-                disabled={aiLoading}
+        {/* Reels Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {videoProofs.map((proof, index) => (
+            <motion.div
+              key={proof.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: index * 0.05 }}
+              onClick={() => {
+                setSelectedReelIndex(index);
+                setShowReels(true);
+              }}
+              className="relative aspect-[9/16] bg-black/40 rounded-xl overflow-hidden cursor-pointer group"
+            >
+              <video
+                src={proof.media_url}
+                className="w-full h-full object-cover"
               />
-              <Button
-                onClick={handleAiChat}
-                disabled={aiLoading || !aiInput.trim()}
-                className="bg-orange-500 hover:bg-orange-600 text-white"
-              >
-                <TrendingUp className="w-4 h-4" />
-              </Button>
-            </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                    <Play className="w-8 h-8 text-white ml-1" />
+                  </div>
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 p-3">
+                  <p className="text-white text-sm font-medium line-clamp-2">{proof.message}</p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {videoProofs.length === 0 && (
+          <div className="text-center py-12">
+            <Flame className="w-16 h-16 text-orange-400/30 mx-auto mb-4" />
+            <p className="text-white/40">No reels yet. Be the first to share your conviction!</p>
           </div>
-        </motion.div>
+        )}
 
         {/* Kasware Modal */}
         {showKaswareModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              className="bg-black/90 border border-orange-500/30 rounded-2xl p-6 max-w-md w-full"
-            >
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-black/90 border border-orange-500/30 rounded-2xl p-6 max-w-md w-full">
               <h3 className="text-2xl font-bold text-white mb-4">Prove Your Conviction</h3>
-              <p className="text-white/60 mb-6">
-                Send 1 KAS to yourself to verify this proof
-              </p>
+              <p className="text-white/60 mb-6">Send 1 KAS to yourself to verify</p>
 
               {!kaswareAddress ? (
                 <div className="space-y-3">
@@ -647,7 +487,7 @@ export default function ProofOfBullishPage() {
                     }}
                     className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white h-12 font-semibold"
                   >
-                    ZK
+                    Use ZK Verification
                   </Button>
                 </div>
               ) : !txHash ? (
@@ -680,35 +520,19 @@ export default function ProofOfBullishPage() {
                   <div className="w-8 h-8 border-2 border-orange-500/30 border-t-orange-500 rounded-full animate-spin mx-auto" />
                 </div>
               )}
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
-
-        {/* Feed */}
-        <div className="space-y-4">
-
-        </div>
 
         {/* ZK Verification Modal */}
         {showZkVerification && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              className="bg-black/90 border border-cyan-500/30 rounded-2xl p-6 max-w-md w-full"
-            >
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-black/90 border border-cyan-500/30 rounded-2xl p-6 max-w-md w-full">
               <h3 className="text-2xl font-bold text-white mb-2">ZK Verification</h3>
-              <p className="text-white/60 text-sm mb-6">
-                Send KAS to yourself in Kaspium to verify this proof
-              </p>
+              <p className="text-white/60 text-sm mb-6">Send KAS to yourself in Kaspium</p>
 
               {!zkVerifying ? (
                 <div className="space-y-4">
-                  {/* Current Balance */}
                   {zkWalletBalance !== null && (
                     <div className="bg-white/5 rounded-lg p-3 border border-white/10">
                       <p className="text-white/40 text-xs mb-1">Current Balance</p>
@@ -716,35 +540,15 @@ export default function ProofOfBullishPage() {
                     </div>
                   )}
 
-                  {/* Wallet Address */}
                   <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-                    <p className="text-white/40 text-xs mb-1">Your TTT Wallet Address</p>
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-white text-sm font-mono break-all">
-                        {user?.created_wallet_address?.substring(0, 12)}...{user?.created_wallet_address?.slice(-8)}
-                      </p>
-                      <Button
-                        onClick={() => {
-                          navigator.clipboard.writeText(user?.created_wallet_address || '');
-                          const notification = document.createElement('div');
-                          notification.className = 'fixed top-4 right-4 z-[200] bg-black border border-white/20 text-white px-4 py-3 rounded-lg shadow-lg';
-                          notification.textContent = '✓ Address copied';
-                          document.body.appendChild(notification);
-                          setTimeout(() => notification.remove(), 2000);
-                        }}
-                        size="sm"
-                        className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 text-xs h-7"
-                      >
-                        Copy
-                      </Button>
-                    </div>
+                    <p className="text-white/40 text-xs mb-1">Your TTT Wallet</p>
+                    <p className="text-white text-sm font-mono break-all">
+                      {user?.created_wallet_address}
+                    </p>
                   </div>
 
-                  {/* Amount Input */}
                   <div>
-                    <label className="text-white/60 text-sm mb-2 block">
-                      How much KAS will you send yourself?
-                    </label>
+                    <label className="text-white/60 text-sm mb-2 block">Amount to send yourself</label>
                     <Input
                       type="number"
                       step="0.01"
@@ -754,18 +558,6 @@ export default function ProofOfBullishPage() {
                       placeholder="1.00"
                       className="bg-white/5 border-white/10 text-white placeholder-white/30"
                     />
-                  </div>
-
-                  {/* Instructions */}
-                  <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-3">
-                    <p className="text-cyan-400 text-xs font-semibold mb-2">Instructions:</p>
-                    <ol className="text-white/60 text-xs space-y-1 list-decimal list-inside">
-                      <li>Copy your wallet address above</li>
-                      <li>Enter the amount you'll send</li>
-                      <li>Click "Start Verification"</li>
-                      <li>Open Kaspium and send that amount to your own address</li>
-                      <li>Wait for automatic verification</li>
-                    </ol>
                   </div>
 
                   <Button
@@ -791,18 +583,7 @@ export default function ProofOfBullishPage() {
                 <div className="text-center py-6">
                   <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4" />
                   <p className="text-cyan-400 font-semibold mb-2">Waiting for Transaction...</p>
-                  <p className="text-white/60 text-sm mb-4">
-                    Send {zkAmount} KAS to yourself in Kaspium
-                  </p>
-                  <div className="bg-white/5 rounded-lg p-3 mb-4">
-                    <p className="text-white/40 text-xs mb-1">Your Address</p>
-                    <p className="text-white text-xs font-mono break-all">
-                      {user?.created_wallet_address}
-                    </p>
-                  </div>
-                  <p className="text-white/40 text-xs">
-                    Verification will happen automatically when the transaction is detected
-                  </p>
+                  <p className="text-white/60 text-sm mb-4">Send {zkAmount} KAS to yourself</p>
                   <Button
                     onClick={() => {
                       setZkVerifying(false);
@@ -816,11 +597,21 @@ export default function ProofOfBullishPage() {
                   </Button>
                 </div>
               )}
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
 
-
+        {/* Reels Viewer */}
+        {showReels && selectedReelIndex !== null && (
+          <ProofOfBullishReels
+            videos={videoProofs}
+            initialIndex={selectedReelIndex}
+            onClose={() => {
+              setShowReels(false);
+              setSelectedReelIndex(null);
+            }}
+          />
+        )}
       </div>
     </div>
   );
