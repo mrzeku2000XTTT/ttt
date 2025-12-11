@@ -23,8 +23,7 @@ export default function ProofOfBullishPage() {
   const [uploadedFileUrl, setUploadedFileUrl] = useState(null);
   const [videoDuration, setVideoDuration] = useState(0);
   const [showTrimModal, setShowTrimModal] = useState(false);
-  const [reelsKey, setReelsKey] = useState(0);
-  const [showReels, setShowReels] = useState(false);
+
   const videoRef = useRef(null);
   const [aiMessages, setAiMessages] = useState([]);
   const [aiInput, setAiInput] = useState("");
@@ -757,114 +756,7 @@ Respond as BULL AI:`,
 
         {/* Feed */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-              <Flame className="w-6 h-6 text-orange-400" />
-              Community Proofs
-            </h2>
-            
-            {proofs.filter(p => p.media_type === 'video').length > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  setReelsKey(Date.now());
-                  setTimeout(() => setShowReels(true), 0);
-                }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg font-medium transition-all active:scale-95 touch-manipulation"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-              >
-                <Play className="w-4 h-4" />
-                <span>Bull Sheez</span>
-              </button>
-            )}
-          </div>
 
-          {proofs.map((proof, index) => (
-            <Card key={proof.id} className="bg-black/40 backdrop-blur-xl border-white/10 overflow-hidden">
-              <CardContent className="p-0">
-                {proof.media_type === 'video' ? (
-                  <div 
-                    className="relative cursor-pointer group active:scale-95 transition-transform"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      const videoIndex = proofs.filter(p => p.media_type === 'video').findIndex(p => p.id === proof.id);
-                      setReelStartIndex(videoIndex);
-                      setShowReels(true);
-                    }}
-                  >
-                    <video
-                      src={proof.media_url}
-                      className="w-full max-h-[500px] object-contain bg-black pointer-events-none"
-                    />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                      <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                        <Play className="w-8 h-8 text-white ml-1" />
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <img
-                    src={proof.media_url}
-                    alt="Proof"
-                    className="w-full max-h-[500px] object-contain bg-black"
-                  />
-                )}
-                
-                <div className="p-4">
-                  <p className="text-white mb-2">{proof.message}</p>
-                  
-                  {proof.proof_link && (
-                    <a
-                      href={proof.proof_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-400 text-sm hover:underline flex items-center gap-1 mb-2"
-                    >
-                      <LinkIcon className="w-3 h-3" />
-                      Proof Link
-                    </a>
-                  )}
-                  
-                  {proof.transaction_hash && (
-                    <a
-                      href={`https://kas.fyi/transaction/${proof.transaction_hash}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-cyan-400 text-sm hover:underline flex items-center gap-1 mb-2 font-mono"
-                    >
-                      <TrendingUp className="w-3 h-3" />
-                      kas.fyi/transaction/{proof.transaction_hash.substring(0, 8)}...
-                    </a>
-                  )}
-                  
-                  <div className="flex items-center justify-between">
-                    <p className="text-white/40 text-xs">
-                      {new Date(proof.created_date).toLocaleDateString()}
-                    </p>
-                    
-                    {proof.media_type === 'video' && (
-                      <button
-                        onClick={() => {
-                          const shareUrl = `${window.location.origin}${createPageUrl('ProofOfBullish')}?proof=${proof.id}`;
-                          navigator.clipboard.writeText(shareUrl);
-                          const notification = document.createElement('div');
-                          notification.className = 'fixed top-4 right-4 z-[200] bg-black border border-white/20 text-white px-4 py-3 rounded-lg shadow-lg';
-                          notification.textContent = '🔗 Link copied to clipboard!';
-                          document.body.appendChild(notification);
-                          setTimeout(() => notification.remove(), 2000);
-                        }}
-                        className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors"
-                      >
-                        <LinkIcon className="w-4 h-4" />
-                        <span className="text-xs">Share</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
         </div>
 
         {/* ZK Verification Modal */}
@@ -998,15 +890,7 @@ Respond as BULL AI:`,
           </motion.div>
         )}
 
-        {/* Reels Viewer */}
-        {showReels && (
-          <ProofOfBullishReels
-            key={reelsKey}
-            videos={proofs.filter(p => p.media_type === 'video')}
-            initialIndex={0}
-            onClose={() => setShowReels(false)}
-          />
-        )}
+
       </div>
     </div>
   );
