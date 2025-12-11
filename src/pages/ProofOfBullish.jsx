@@ -765,20 +765,36 @@ Respond as BULL AI:`,
             
             {proofs.filter(p => p.media_type === 'video').length > 0 && (
               <div
+                role="button"
+                tabIndex={0}
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
                 onTouchEnd={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   setReelStartIndex(0);
                   setShowReels(true);
+                  return false;
                 }}
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   setReelStartIndex(0);
                   setShowReels(true);
+                  return false;
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setReelStartIndex(0);
+                    setShowReels(true);
+                  }
                 }}
                 className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg font-medium transition-all active:scale-95"
-                style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
+                style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation', userSelect: 'none' }}
               >
                 <Play className="w-4 h-4" />
                 Bull Sheez
@@ -1008,9 +1024,13 @@ Respond as BULL AI:`,
         {/* Reels Viewer */}
         {showReels && (
           <ProofOfBullishReels
+            key={`reels-${reelStartIndex}-${Date.now()}`}
             videos={proofs.filter(p => p.media_type === 'video')}
             initialIndex={reelStartIndex}
-            onClose={() => setShowReels(false)}
+            onClose={() => {
+              setShowReels(false);
+              setReelStartIndex(0);
+            }}
           />
         )}
       </div>
