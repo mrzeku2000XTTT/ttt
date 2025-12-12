@@ -11,7 +11,7 @@ export default function KaspaNodeMapPage() {
 
         <div className="bg-zinc-900 border border-white/10 rounded-2xl overflow-hidden" style={{ height: 'calc(100vh - 14rem)' }}>
           <iframe
-            src="https://kaspa.stream/nodes"
+            src="https://nodes.kaspa.ws"
             className="w-full h-full border-0"
             title="Kaspa Node Map"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
