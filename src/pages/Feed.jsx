@@ -109,9 +109,11 @@ export default function FeedPage() {
   const [userResults, setUserResults] = useState([]);
   const [explainerPost, setExplainerPost] = useState(null);
   const [showNewsModal, setShowNewsModal] = useState(false);
+  const [viewedPosts, setViewedPosts] = useState(new Set());
 
   const fileInputRef = useRef(null);
   const replyFileInputRef = useRef(null);
+  const postRefs = useRef({});
 
   useEffect(() => {
     loadData();
@@ -119,7 +121,47 @@ export default function FeedPage() {
     loadDraftFromStorage();
     loadUserBadges();
     preloadTickerCache();
+    setupViewTracking();
   }, []);
+
+  const setupViewTracking = () => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(async (entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+            const postId = entry.target.getAttribute('data-post-id');
+            
+            if (postId && !viewedPosts.has(postId)) {
+              setViewedPosts(prev => new Set([...prev, postId]));
+              
+              try {
+                const post = posts.find(p => p.id === postId);
+                if (post) {
+                  const newViews = (post.views || 0) + 1;
+                  await base44.entities.Post.update(postId, { views: newViews });
+                  setPosts(prev => prev.map(p => p.id === postId ? { ...p, views: newViews } : p));
+                }
+              } catch (err) {
+                console.error('Failed to track view:', err);
+              }
+            }
+          }
+        });
+      },
+      { threshold: 0.5, rootMargin: '0px' }
+    );
+
+    Object.values(postRefs.current).forEach(ref => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => observer.disconnect();
+  };
+
+  useEffect(() => {
+    const cleanup = setupViewTracking();
+    return cleanup;
+  }, [posts, viewedPosts]);
 
   useEffect(() => {
     // Update ticker cache when posts change
@@ -1874,7 +1916,12 @@ export default function FeedPage() {
   };
 
   const renderPost = (post, isReply = false) => (
-    <Card id={`post-${post.id}`} className={`backdrop-blur-xl bg-black border-white/10 hover:border-white/20 transition-all ${isReply ? 'ml-12' : ''}`}>
+    <Card 
+      id={`post-${post.id}`} 
+      ref={(el) => { if (el && !isReply) postRefs.current[post.id] = el; }}
+      data-post-id={!isReply ? post.id : undefined}
+      className={`backdrop-blur-xl bg-black border-white/10 hover:border-white/20 transition-all ${isReply ? 'ml-12' : ''}`}
+    >
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex gap-3">
@@ -2179,6 +2226,11 @@ export default function FeedPage() {
             <MessageCircle className="w-5 h-5 mr-2" />
             <span className="text-sm">{post.comments_count || 0}</span>
           </Button>
+
+          <div className="flex items-center gap-2 text-white/40">
+            <Eye className="w-5 h-5" />
+            <span className="text-sm">{post.views || 0}</span>
+          </div>
 
           {!isReply && ( // Only show reply button for main posts
             <Button
