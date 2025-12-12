@@ -25,6 +25,12 @@ export default function AgentZK2Page() {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
       
+      // Only allow admins
+      if (!currentUser || currentUser.role !== 'admin') {
+        setIsLoading(false);
+        return;
+      }
+      
       if (currentUser?.created_wallet_address) {
         await checkNodeStatus();
         await loadBalance(currentUser.created_wallet_address);
@@ -115,6 +121,18 @@ export default function AgentZK2Page() {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <Loader2 className="w-12 h-12 text-cyan-400 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user || user.role !== 'admin') {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <div className="backdrop-blur-xl bg-white/5 border border-red-500/30 rounded-2xl p-8 max-w-md text-center">
+          <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-white mb-2">Admin Only</h2>
+          <p className="text-gray-400 text-sm">This page is restricted to administrators</p>
+        </div>
       </div>
     );
   }
