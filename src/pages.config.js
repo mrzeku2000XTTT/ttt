@@ -167,6 +167,7 @@ import KaspaNodeMap from './pages/KaspaNodeMap';
 import Learning from './pages/Learning';
 import KASBridge from './pages/KASBridge';
 import Kurve from './pages/Kurve';
+import AgentZK2 from './pages/AgentZK2';
 import __Layout from './Layout.jsx';
 
 
@@ -340,6 +341,7 @@ export const PAGES = {
     "Learning": Learning,
     "KASBridge": KASBridge,
     "Kurve": Kurve,
+    "AgentZK2": AgentZK2,
 }
 
 export const pagesConfig = {

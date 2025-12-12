@@ -113,6 +113,7 @@ export default function CategoriesPage() {
       { id: "life", name: "LIFE", icon: "Activity", path: "Life" },
       { id: "swan", name: "SWAN.AI", icon: "Terminal", path: "SWAN", premium: true },
       { id: "agentzk", name: "Agent ZK", icon: "Bot", path: "AgentZK", premium: true },
+      { id: "agentzk2", name: "Agent ZK 2", icon: "Network", path: "AgentZK2", premium: true },
       { id: "zekuai", name: "Zeku AI", icon: "Brain", path: "ZekuAI", premium: true },
       { id: "agentfye", name: "Agent FYE", icon: "TrendingUp", path: "AgentFYE" },
       { id: "knowledge", name: "Knowledge", icon: "BookOpen", path: "KnowledgeBase", blackOnBlack: true },
