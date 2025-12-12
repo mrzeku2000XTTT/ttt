@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Terminal, Zap, Loader2, Network, Activity, CheckCircle2, AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 export default function AgentZK2Page() {
   const [user, setUser] = useState(null);
@@ -11,6 +12,9 @@ export default function AgentZK2Page() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [balance, setBalance] = useState(null);
   const [dagInfo, setDagInfo] = useState(null);
+  const [testAddress, setTestAddress] = useState("");
+  const [testBalance, setTestBalance] = useState(null);
+  const [isTesting, setIsTesting] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -76,6 +80,34 @@ export default function AgentZK2Page() {
       }
     } catch (err) {
       console.error('Failed to load DAG info:', err);
+    }
+  };
+
+  const handleTestBalance = async () => {
+    if (!testAddress.trim()) {
+      alert('Please enter a Kaspa address');
+      return;
+    }
+
+    setIsTesting(true);
+    setTestBalance(null);
+
+    try {
+      const response = await base44.functions.invoke('agentZKKaspaNode', {
+        action: 'getBalance',
+        address: testAddress.trim()
+      });
+
+      if (response.data?.success) {
+        setTestBalance(response.data);
+      } else {
+        alert('Failed to fetch balance: ' + (response.data?.error || 'Unknown error'));
+      }
+    } catch (err) {
+      console.error('Test balance failed:', err);
+      alert('Error: ' + err.message);
+    } finally {
+      setIsTesting(false);
     }
   };
 
@@ -226,7 +258,7 @@ export default function AgentZK2Page() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-black/60 backdrop-blur-xl border border-blue-500/30 rounded-2xl p-6"
+            className="bg-black/60 backdrop-blur-xl border border-blue-500/30 rounded-2xl p-6 mb-6"
           >
             <h2 className="text-xl font-bold text-white mb-4">BlockDAG Info</h2>
             <div className="space-y-3">
@@ -251,6 +283,71 @@ export default function AgentZK2Page() {
             </div>
           </motion.div>
         )}
+
+        {/* Test Balance Card */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-black/60 backdrop-blur-xl border border-green-500/30 rounded-2xl p-6"
+        >
+          <h2 className="text-xl font-bold text-white mb-4">Test Balance Checker</h2>
+          <div className="space-y-4">
+            <div>
+              <label className="text-white/60 text-sm mb-2 block">Enter Kaspa Address</label>
+              <input
+                type="text"
+                value={testAddress}
+                onChange={(e) => setTestAddress(e.target.value)}
+                placeholder="kaspa:..."
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-green-500/50"
+              />
+            </div>
+            <Button
+              onClick={handleTestBalance}
+              disabled={isTesting || !testAddress.trim()}
+              className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold py-3"
+            >
+              {isTesting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Checking Balance...
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4 mr-2" />
+                  Check Balance
+                </>
+              )}
+            </Button>
+
+            {testBalance && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-3 mt-4"
+              >
+                <div className="flex items-center justify-between bg-green-500/10 border border-green-500/30 rounded-lg p-3">
+                  <span className="text-white/60">Address</span>
+                  <span className="text-white font-mono text-xs">
+                    {testBalance.address.slice(0, 12)}...{testBalance.address.slice(-12)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+                  <span className="text-white/60">Balance</span>
+                  <span className="text-white font-bold text-2xl">
+                    {testBalance.balanceKAS.toFixed(2)} KAS
+                  </span>
+                </div>
+                <div className="flex items-center justify-between bg-green-500/10 border border-green-500/30 rounded-lg p-3">
+                  <span className="text-white/60">Sompi</span>
+                  <span className="text-white font-mono text-sm">
+                    {testBalance.balance.toLocaleString()}
+                  </span>
+                </div>
+              </motion.div>
+            )}
+          </div>
+        </motion.div>
 
         {/* Footer Info */}
         <motion.div
