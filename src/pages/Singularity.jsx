@@ -188,12 +188,11 @@ export default function SingularityPage() {
       path: "AuraDashboard"
     },
     {
-      name: "TTT ENERGY",
+      name: "TTT Energy",
       description: "Peer-to-peer energy network",
       icon: Zap,
       gradient: "from-yellow-500 to-orange-500",
-      path: "TTTClassic",
-      adminOnly: true
+      path: "TTTClassic"
     },
     {
       name: "Veritas",
@@ -558,7 +557,7 @@ export default function SingularityPage() {
             </h1>
           </div>
           <h2 className="text-4xl md:text-5xl font-black mb-4 text-white/90 tracking-tight bg-gradient-to-r from-blue-400 to-cyan-400 text-transparent bg-clip-text">
-            Singularity
+            TTT Energy
           </h2>
           <p className="text-white/50 text-xl">Experimental Apps & Features</p>
         </motion.div>
