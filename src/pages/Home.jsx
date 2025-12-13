@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Loader2, Wand2, Shield, LogIn, ArrowRight, Zap, LogOut } from "lucide-react";
+import { Sparkles, Loader2, Wand2, Shield, LogIn, ArrowRight, Zap, LogOut, Link as LinkIcon, Hand } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -82,22 +82,21 @@ export default function HomePage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1 }}
-          className="absolute top-6 right-6 z-50"
+          className="absolute top-4 right-4 md:top-6 md:right-6 z-50"
         >
           <Button
             onClick={handleLogout}
-            className="bg-cyan-900/80 hover:bg-cyan-800/90 border border-cyan-400/30 text-white backdrop-blur-xl"
-            size="sm"
+            className="bg-cyan-900/80 hover:bg-cyan-800/90 border border-cyan-400/30 text-white backdrop-blur-xl h-8 px-3 text-xs md:h-10 md:px-4 md:text-sm"
           >
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
+            <LogOut className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
+            <span className="hidden md:inline">Logout</span>
           </Button>
         </motion.div>
       )}
 
-      {/* Main Content - Centered */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ zIndex: 10 }}>
-        {/* Top UNCHAIN REALITY - Glassy Effect */}
+      {/* Main Content - Centered but Lower */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center pt-32" style={{ zIndex: 10 }}>
+        {/* Top UNCHAIN HUMANITY - Darker */}
         <motion.div
           initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}
@@ -105,14 +104,14 @@ export default function HomePage() {
           className="mb-8"
         >
           <h1 
-            className="text-6xl md:text-8xl lg:text-9xl font-black text-white mb-2 tracking-tight"
+            className="text-5xl md:text-7xl lg:text-8xl font-black text-white mb-2 tracking-tight"
             style={{
-              textShadow: '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 80px rgba(6, 182, 212, 0.3)',
-              background: 'linear-gradient(to bottom, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.8))',
+              textShadow: '0 8px 32px rgba(0, 0, 0, 0.8), 0 0 60px rgba(0, 0, 0, 0.5)',
+              background: 'linear-gradient(to bottom, rgba(180, 180, 180, 0.95), rgba(140, 140, 140, 0.9))',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backdropFilter: 'blur(20px)',
-              filter: 'drop-shadow(0 0 40px rgba(255, 255, 255, 0.5))',
+              filter: 'drop-shadow(0 0 30px rgba(0, 0, 0, 0.6))',
             }}
           >
             UNCHAIN HUMANITY
@@ -142,12 +141,9 @@ export default function HomePage() {
           >
             <Link to={createPageUrl("AgentZK")}>
               <Button
-                className="h-16 px-12 text-lg font-bold bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-500 hover:to-blue-700 text-white border-0 shadow-[0_0_40px_rgba(37,99,235,0.5)] hover:shadow-[0_0_60px_rgba(37,99,235,0.7)] transition-all duration-300"
-                style={{
-                  backdropFilter: 'blur(10px)',
-                }}
+                className="h-16 px-12 text-lg font-bold bg-black/60 hover:bg-black/40 text-white border border-white/20 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                <span className="mr-2">○</span>
+                <LinkIcon className="w-5 h-5 mr-2" />
                 Claim Agent ZK Identity
               </Button>
             </Link>
@@ -161,9 +157,9 @@ export default function HomePage() {
           >
             <Link to={createPageUrl("Feed")}>
               <Button
-                className="h-14 px-10 text-base font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/30 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                className="h-14 px-10 text-base font-semibold bg-black/60 hover:bg-black/40 text-white border border-white/20 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                <span className="mr-2">→</span>
+                <Hand className="w-5 h-5 mr-2" />
                 Enter TTT
               </Button>
             </Link>
