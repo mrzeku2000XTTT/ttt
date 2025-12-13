@@ -443,45 +443,9 @@ export default function AgentZKPage() {
     );
   }
 
-  if (!user?.created_wallet_address) {
-    return (
-      <div className="min-h-screen bg-black relative overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <motion.div
-            animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.3, 0.5, 0.3],
-            }}
-            transition={{
-              duration: 8,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-            className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-purple-500/20 rounded-full blur-[120px]"
-          />
-        </div>
-
-        <div className="relative z-10 p-4 md:p-8 lg:p-12">
-          <div className="max-w-4xl mx-auto">
-            <Card className="bg-black border-zinc-800">
-              <CardContent className="p-12 text-center">
-                <Shield className="w-16 h-16 text-gray-700 mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-white mb-2">No TTT Wallet Found</h2>
-                <p className="text-gray-400 mb-6">
-                  You need to create a TTT Wallet to generate your unique Agent ZK identity.
-                </p>
-                <Link to={createPageUrl("Wallet")}>
-                  <Button className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600">
-                        <Shield className="w-5 h-5 mr-2" />
-                    Create TTT Wallet
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    );
+  // Show identity claiming modal
+  if (!user?.created_wallet_address && !kaswareWallet.connected && !agentZKId) {
+    return <AgentZKClaimModal onClaim={loadData} kaswareWallet={kaswareWallet} checkWallets={checkWallets} />;
   }
 
   const agentPhoto = user?.agent_zk_photo;

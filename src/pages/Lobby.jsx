@@ -110,7 +110,7 @@ export default function LobbyPage() {
                 filter: 'drop-shadow(0 0 40px rgba(255, 255, 255, 0.5))',
               }}
             >
-              UNCHAIN REALITY
+              UNCHAIN HUMANITY
             </h1>
           </motion.div>
 
@@ -137,7 +137,7 @@ export default function LobbyPage() {
             >
               <Button
                 onClick={() => navigate(createPageUrl("AgentZK"))}
-                className="h-16 px-12 text-lg font-bold bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 hover:from-cyan-400 hover:via-blue-400 hover:to-purple-400 text-white border-0 shadow-[0_0_40px_rgba(6,182,212,0.5)] hover:shadow-[0_0_60px_rgba(6,182,212,0.7)] transition-all duration-300"
+                className="h-16 px-12 text-lg font-bold bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-500 hover:to-blue-700 text-white border-0 shadow-[0_0_40px_rgba(37,99,235,0.5)] hover:shadow-[0_0_60px_rgba(37,99,235,0.7)] transition-all duration-300"
                 style={{
                   backdropFilter: 'blur(10px)',
                 }}
@@ -184,7 +184,7 @@ export default function LobbyPage() {
                 WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.3) 70%, rgba(0,0,0,0) 100%)',
               }}
             >
-              UNCHAIN REALITY
+              UNCHAIN HUMANITY
             </h1>
           </motion.div>
         </div>
