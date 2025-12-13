@@ -101,10 +101,10 @@ export default function HomePage() {
           initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.2, delay: 0.5 }}
-          className="mb-8"
+          className="mb-8 px-4 text-center"
         >
           <h1 
-            className="text-5xl md:text-7xl lg:text-8xl font-black mb-2 tracking-tight"
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-2 tracking-tight leading-tight"
             style={{
               color: '#d1d5db',
               textShadow: '0 4px 20px rgba(0, 0, 0, 0.8), 0 0 40px rgba(255, 255, 255, 0.1)',
