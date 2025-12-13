@@ -17,8 +17,11 @@ import {
   Target,
   Award,
   TrendingUp,
-  Users
+  Users,
+  Hammer
 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function LearningPage() {
   const [user, setUser] = useState(null);
@@ -528,6 +531,23 @@ Hint: ${currentQuestion.hint || 'N/A'}`,
                   <p className="text-white/40 text-xs">Master Kaspa, Web3, AI, and more</p>
                 </div>
               </div>
+
+              {/* Learn to Build Button */}
+              <Link to={createPageUrl("BuildGuide")} className="hidden md:block">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex items-center gap-2 bg-gradient-to-r from-orange-600 to-red-600 border border-orange-400/30 px-4 py-2 rounded-xl shadow-lg shadow-orange-500/20 group"
+                >
+                  <div className="bg-white/20 p-1.5 rounded-lg group-hover:rotate-12 transition-transform">
+                    <Hammer className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <span className="text-[10px] text-white/80 font-medium uppercase tracking-wider">PROTOCOL</span>
+                    <span className="text-sm font-bold text-white leading-none">LEARN TO BUILD</span>
+                  </div>
+                </motion.button>
+              </Link>
 
               {/* Difficulty Selector */}
               <div className="flex-shrink-0 w-full md:w-64">

@@ -168,6 +168,7 @@ import Learning from './pages/Learning';
 import KASBridge from './pages/KASBridge';
 import Kurve from './pages/Kurve';
 import AgentZK2 from './pages/AgentZK2';
+import BuildGuide from './pages/BuildGuide';
 import __Layout from './Layout.jsx';
 
 
@@ -342,6 +343,7 @@ export const PAGES = {
     "KASBridge": KASBridge,
     "Kurve": Kurve,
     "AgentZK2": AgentZK2,
+    "BuildGuide": BuildGuide,
 }
 
 export const pagesConfig = {
