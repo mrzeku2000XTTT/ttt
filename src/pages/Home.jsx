@@ -104,14 +104,10 @@ export default function HomePage() {
           className="mb-8"
         >
           <h1 
-            className="text-5xl md:text-7xl lg:text-8xl font-black text-white mb-2 tracking-tight"
+            className="text-5xl md:text-7xl lg:text-8xl font-black mb-2 tracking-tight"
             style={{
-              textShadow: '0 8px 32px rgba(0, 0, 0, 0.8), 0 0 60px rgba(0, 0, 0, 0.5)',
-              background: 'linear-gradient(to bottom, rgba(180, 180, 180, 0.95), rgba(140, 140, 140, 0.9))',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backdropFilter: 'blur(20px)',
-              filter: 'drop-shadow(0 0 30px rgba(0, 0, 0, 0.6))',
+              color: '#d1d5db',
+              textShadow: '0 4px 20px rgba(0, 0, 0, 0.8), 0 0 40px rgba(255, 255, 255, 0.1)',
             }}
           >
             UNCHAIN HUMANITY
