@@ -11,6 +11,7 @@ import { createPageUrl } from "@/utils";
 import WorkspaceModal from "@/components/agentZK/WorkspaceModal";
 import ToolsModal from "@/components/agentZK/ToolsModal";
 import TermsModal from "@/components/TermsModal";
+import AgentZKClaimModal from "@/components/agentZK/AgentZKClaimModal";
 
 export default function AgentZKPage() {
   const [user, setUser] = useState(null);
