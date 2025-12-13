@@ -139,6 +139,7 @@ export default function CategoriesPage() {
       { id: "hypemind", name: "HYPEMIND", icon: "Brain", path: "HYPEMIND" },
       { id: "bible", name: "Bible", icon: "BookOpen", path: "Bible" },
       { id: "articles", name: "Articles", icon: "FileText", path: "Articles" },
+      { id: "bmtuniv", name: "BMT Univ", icon: "BookOpen", path: "BMTUniv" },
       ];
 
     if (isAdmin) {

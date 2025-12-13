@@ -169,6 +169,7 @@ import KASBridge from './pages/KASBridge';
 import Kurve from './pages/Kurve';
 import AgentZK2 from './pages/AgentZK2';
 import BuildGuide from './pages/BuildGuide';
+import BMTUniv from './pages/BMTUniv';
 import __Layout from './Layout.jsx';
 
 
@@ -344,6 +345,7 @@ export const PAGES = {
     "Kurve": Kurve,
     "AgentZK2": AgentZK2,
     "BuildGuide": BuildGuide,
+    "BMTUniv": BMTUniv,
 }
 
 export const pagesConfig = {
