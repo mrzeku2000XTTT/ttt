@@ -172,6 +172,7 @@ import BuildGuide from './pages/BuildGuide';
 import BMTUniv from './pages/BMTUniv';
 import TheRealm from './pages/TheRealm';
 import TruthLanding from './pages/TruthLanding';
+import CoinSpace from './pages/CoinSpace';
 import __Layout from './Layout.jsx';
 
 
@@ -350,6 +351,7 @@ export const PAGES = {
     "BMTUniv": BMTUniv,
     "TheRealm": TheRealm,
     "TruthLanding": TruthLanding,
+    "CoinSpace": CoinSpace,
 }
 
 export const pagesConfig = {
