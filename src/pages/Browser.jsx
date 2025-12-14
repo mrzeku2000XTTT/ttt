@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Play, RefreshCw, Home, ExternalLink, Loader2, Youtube, History, Minimize2, Maximize2 } from "lucide-react";
+import { Play, RefreshCw, Home, ExternalLink, Loader2, Youtube, History, Minimize2, Maximize2, Tv } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -17,6 +17,9 @@ export default function TTTVPage() {
   const [recentlyWatched, setRecentlyWatched] = useState([]);
   const [isMiniPlayer, setIsMiniPlayer] = useState(false);
   const [customVideos, setCustomVideos] = useState([]);
+  const [customChannels, setCustomChannels] = useState([]);
+  const [channelVideos, setChannelVideos] = useState({});
+  const [isFetchingChannel, setIsFetchingChannel] = useState(false);
   const iframeRef = useRef(null);
   const inputRef = useRef(null);
   const navigate = useNavigate();
@@ -26,6 +29,7 @@ export default function TTTVPage() {
     loadRecentlyWatched();
     checkForMiniPlayer();
     loadCustomVideos();
+    loadCustomChannels();
   }, []);
 
   const loadCustomVideos = () => {
@@ -35,6 +39,30 @@ export default function TTTVPage() {
     } catch (err) {
       console.error('Failed to load custom videos:', err);
     }
+  };
+
+  const loadCustomChannels = () => {
+    try {
+      const saved = localStorage.getItem('tttv_custom_channels');
+      if (saved) setCustomChannels(JSON.parse(saved));
+    } catch (err) {
+      console.error('Failed to load custom channels:', err);
+    }
+  };
+
+  const handleAddChannel = () => {
+    const channelName = prompt("Enter YouTube Channel Name:");
+    if (!channelName) return;
+    
+    if (customChannels.includes(channelName)) {
+      alert("Channel already added!");
+      return;
+    }
+
+    const updated = [channelName, ...customChannels];
+    setCustomChannels(updated);
+    localStorage.setItem('tttv_custom_channels', JSON.stringify(updated));
+    alert(`Channel '${channelName}' added!`);
   };
 
   const handleAddVideo = () => {
@@ -193,7 +221,7 @@ export default function TTTVPage() {
     ...baseVideoLibrary
   };
 
-  const allCategories = Object.keys(videoLibrary);
+  const allCategories = [...customChannels, ...Object.keys(videoLibrary)];
 
   const extractVideoId = (input) => {
     const patterns = [
@@ -289,14 +317,39 @@ export default function TTTVPage() {
     handleLoadVideo(video.id, video.title);
   };
 
-  const handleCategoryClick = (category) => {
+  const handleCategoryClick = async (category) => {
     setSelectedCategory(category);
     setVideoUrl("");
     setVideoId("");
     setIsMiniPlayer(false);
+
+    // If it's a custom channel (not in static library and not "My Videos")
+    if (customChannels.includes(category)) {
+      if (!channelVideos[category]) {
+        setIsFetchingChannel(true);
+        try {
+          const response = await base44.functions.invoke('youtubeApiSearch', { query: category });
+          if (response.data.success && response.data.videos) {
+            const mappedVideos = response.data.videos.map(v => ({
+              id: v.videoId,
+              title: v.title,
+              channel: v.channelName,
+              thumbnail: v.thumbnail,
+              views: 'New'
+            }));
+            setChannelVideos(prev => ({ ...prev, [category]: mappedVideos }));
+          }
+        } catch (err) {
+          console.error("Failed to fetch channel videos:", err);
+        } finally {
+          setIsFetchingChannel(false);
+        }
+      }
+    }
   };
 
   const getCategoryIcon = (category) => {
+    if (customChannels.includes(category)) return <span className="text-lg">📺</span>;
     if (category.includes('Viral')) return <span className="text-lg">🔥</span>;
     if (category.includes('My Videos')) return <span className="text-lg">✨</span>;
     if (category.includes('Music')) return <span className="text-lg">🎵</span>;
@@ -409,14 +462,53 @@ export default function TTTVPage() {
           </h2>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {videoLibrary[selectedCategory].map((video) => (
-              <motion.div
-                key={video.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                onClick={() => handlePlayVideo(video)}
-                className="group bg-black border border-cyan-500/30 rounded-lg overflow-hidden cursor-pointer hover:border-cyan-500 transition-all hover:shadow-[0_0_20px_rgba(6,182,212,0.4)]"
-              >
+            {isFetchingChannel ? (
+              <div className="col-span-full flex flex-col items-center justify-center py-20 text-white/50">
+                <Loader2 className="w-10 h-10 animate-spin mb-4 text-cyan-400" />
+                <p>Loading channel videos...</p>
+              </div>
+            ) : (
+              (customChannels.includes(selectedCategory) ? (channelVideos[selectedCategory] || []) : videoLibrary[selectedCategory]).map((video) => (
+                <motion.div
+                  key={video.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  onClick={() => handlePlayVideo(video)}
+                  className="group bg-black border border-cyan-500/30 rounded-lg overflow-hidden cursor-pointer hover:border-cyan-500 transition-all hover:shadow-[0_0_20px_rgba(6,182,212,0.4)]"
+                >
+                  <div className="aspect-video bg-black border-b border-cyan-500/20 relative overflow-hidden">
+                    <img 
+                      src={video.thumbnail || `https://img.youtube.com/vi/${video.id}/mqdefault.jpg`}
+                      alt={video.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 group-hover:bg-black/30 transition-colors">
+                      <Play className="w-12 h-12 text-cyan-400 fill-current opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all drop-shadow-[0_0_10px_rgba(6,182,212,0.8)]" />
+                    </div>
+                    {video.views && (
+                      <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-sm px-2 py-1 rounded text-xs text-white font-semibold">
+                        {video.views} views
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <h3 className="text-white font-semibold text-xs mb-1 line-clamp-2">
+                      {video.title}
+                    </h3>
+                    <p className="text-gray-500 text-[10px] flex items-center gap-1">
+                      <Youtube className="w-3 h-3 fill-current" />
+                      {video.channel}
+                    </p>
+                  </div>
+                </motion.div>
+              ))
+            )}
+            {!isFetchingChannel && customChannels.includes(selectedCategory) && (!channelVideos[selectedCategory] || channelVideos[selectedCategory].length === 0) && (
+              <div className="col-span-full text-center py-20 text-white/50">
+                No videos found for this channel.
+              </div>
+            )}
+          </div>
                 <div className="aspect-video bg-black border-b border-cyan-500/20 relative overflow-hidden">
                   <img 
                     src={video.thumbnail || `https://img.youtube.com/vi/${video.id}/mqdefault.jpg`}
@@ -483,18 +575,29 @@ export default function TTTVPage() {
           transition={{ delay: 0.1 }}
           className="max-w-2xl mx-auto mb-8 flex flex-col items-center gap-4"
         >
-          {/* Custom Add Button */}
-          <button 
-            onClick={handleAddVideo}
-            className="w-8 h-8 rounded-full overflow-hidden hover:scale-110 transition-transform shadow-[0_0_15px_rgba(6,182,212,0.3)] border border-cyan-500/50 bg-black flex-shrink-0"
-            title="Add Video"
-          >
-            <img 
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/b3c82bda2_image.png" 
-              alt="Add" 
-              className="w-full h-full object-cover" 
-            />
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Add Video Button */}
+            <button 
+              onClick={handleAddVideo}
+              className="w-10 h-10 rounded-full overflow-hidden hover:scale-110 transition-transform shadow-[0_0_15px_rgba(6,182,212,0.3)] border border-cyan-500/50 bg-black flex-shrink-0 flex items-center justify-center group"
+              title="Add Video"
+            >
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/b3c82bda2_image.png" 
+                alt="Add" 
+                className="w-full h-full object-cover" 
+              />
+            </button>
+
+            {/* Add Channel Button */}
+            <button 
+              onClick={handleAddChannel}
+              className="w-10 h-10 rounded-full hover:scale-110 transition-transform shadow-[0_0_15px_rgba(168,85,247,0.3)] border border-purple-500/50 bg-black flex-shrink-0 flex items-center justify-center group"
+              title="Add Channel"
+            >
+              <Tv className="w-5 h-5 text-purple-400 group-hover:text-purple-300" />
+            </button>
+          </div>
 
           <div className="w-full flex items-center gap-2 bg-black border border-cyan-500/50 rounded-lg px-3 py-2 shadow-[0_0_20px_rgba(6,182,212,0.2)]">
             <div className="w-7 h-7 bg-cyan-500/20 border border-cyan-500 rounded flex items-center justify-center shadow-[0_0_10px_rgba(6,182,212,0.5)]">
@@ -585,7 +688,10 @@ export default function TTTVPage() {
                   {category}
                 </h3>
                 <div className="text-cyan-400 text-xs font-semibold">
-                  {videoLibrary[category].length} videos
+                  {customChannels.includes(category) 
+                    ? 'Channel' 
+                    : `${videoLibrary[category].length} videos`
+                  }
                 </div>
               </div>
             </motion.div>
