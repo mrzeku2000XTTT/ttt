@@ -51,9 +51,27 @@ export default function TTTVPage() {
   };
 
   const handleAddChannel = () => {
-    const channelName = prompt("Enter YouTube Channel Name:");
-    if (!channelName) return;
+    let input = prompt("Enter YouTube Channel Name or URL (e.g. @ChannelName):");
+    if (!input) return;
     
+    input = input.trim();
+    
+    // Extract handle/name if it's a URL
+    let channelName = input;
+    if (input.includes('youtube.com/') || input.includes('youtu.be/')) {
+        const handleMatch = input.match(/@[\w\d_.-]+/);
+        if (handleMatch) {
+            channelName = handleMatch[0];
+        } else {
+            // If it's a channel URL without @ (e.g. /channel/ID), try to extract ID or user
+            const parts = input.split('/');
+            const lastPart = parts[parts.length - 1] || parts[parts.length - 2];
+            if (lastPart && lastPart.length > 0) {
+                channelName = lastPart;
+            }
+        }
+    }
+
     if (customChannels.includes(channelName)) {
       alert("Channel already added!");
       return;
@@ -63,6 +81,18 @@ export default function TTTVPage() {
     setCustomChannels(updated);
     localStorage.setItem('tttv_custom_channels', JSON.stringify(updated));
     alert(`Channel '${channelName}' added!`);
+  };
+
+  const removeCustomChannel = (channelToRemove, e) => {
+    e.stopPropagation();
+    if (confirm(`Remove '${channelToRemove}' from your channels?`)) {
+        const updated = customChannels.filter(c => c !== channelToRemove);
+        setCustomChannels(updated);
+        localStorage.setItem('tttv_custom_channels', JSON.stringify(updated));
+        if (selectedCategory === channelToRemove) {
+            setSelectedCategory(null);
+        }
+    }
   };
 
   const handleAddVideo = () => {
@@ -658,14 +688,25 @@ export default function TTTVPage() {
                 {getCategoryIcon(category)}
               </div>
               <div className="flex-1">
-                <h3 className="text-white font-bold text-sm">
+                <h3 className="text-white font-bold text-sm truncate pr-2">
                   {category}
                 </h3>
-                <div className="text-cyan-400 text-xs font-semibold">
-                  {customChannels.includes(category) 
-                    ? 'Channel' 
-                    : `${videoLibrary[category].length} videos`
-                  }
+                <div className="text-cyan-400 text-xs font-semibold flex items-center justify-between">
+                  <span>
+                    {customChannels.includes(category) 
+                      ? 'Channel' 
+                      : `${videoLibrary[category].length} videos`
+                    }
+                  </span>
+                  {customChannels.includes(category) && (
+                    <button 
+                        onClick={(e) => removeCustomChannel(category, e)}
+                        className="text-gray-500 hover:text-red-400 p-1 -mr-2"
+                        title="Remove Channel"
+                    >
+                        <span className="text-xs">✕</span>
+                    </button>
+                  )}
                 </div>
               </div>
             </motion.div>
