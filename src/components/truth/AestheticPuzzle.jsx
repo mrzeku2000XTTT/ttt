@@ -65,7 +65,7 @@ export default function AestheticPuzzle({ onSolve }) {
 
   const handleVictory = async (finalTiles, manualWin = false) => {
     setSolved(true);
-    if (onSolve) setTimeout(() => onSolve(), 1500);
+    // Auto-enter removed. User must click to enter.
 
     // Track user data for ML
     try {
@@ -340,14 +340,24 @@ export default function AestheticPuzzle({ onSolve }) {
 
           {/* Victory Message */}
           {solved && (
-            <div className="bg-gradient-to-r from-green-400 to-emerald-500 rounded-2xl p-4 text-center shadow-xl animate-in fade-in zoom-in duration-300">
-              <div className="flex items-center justify-center gap-2 text-white">
-                <Check className="w-6 h-6" />
-                <div>
-                  <div className="text-xl font-bold">Solved!</div>
-                  <div className="text-sm opacity-90">{moves} moves</div>
+            <div className="space-y-4 animate-in fade-in zoom-in duration-300">
+              <div className="bg-gradient-to-r from-green-400 to-emerald-500 rounded-2xl p-4 text-center shadow-xl">
+                <div className="flex items-center justify-center gap-2 text-white mb-2">
+                  <Check className="w-6 h-6" />
+                  <div>
+                    <div className="text-xl font-bold">Solved!</div>
+                    <div className="text-sm opacity-90">{moves} moves</div>
+                  </div>
                 </div>
               </div>
+              
+              <button
+                onClick={onSolve}
+                className="w-full py-4 bg-white text-black font-black text-xl rounded-2xl shadow-xl hover:scale-105 transition-transform flex items-center justify-center gap-2"
+              >
+                <span>ENTER TRUTH</span>
+                <Sparkles className="w-5 h-5" />
+              </button>
             </div>
           )}
 
