@@ -16,6 +16,7 @@ export default function TTTVPage() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [recentlyWatched, setRecentlyWatched] = useState([]);
   const [isMiniPlayer, setIsMiniPlayer] = useState(false);
+  const [customVideos, setCustomVideos] = useState([]);
   const iframeRef = useRef(null);
   const inputRef = useRef(null);
   const navigate = useNavigate();
@@ -24,7 +25,41 @@ export default function TTTVPage() {
   useEffect(() => {
     loadRecentlyWatched();
     checkForMiniPlayer();
+    loadCustomVideos();
   }, []);
+
+  const loadCustomVideos = () => {
+    try {
+      const saved = localStorage.getItem('tttv_custom_videos');
+      if (saved) setCustomVideos(JSON.parse(saved));
+    } catch (err) {
+      console.error('Failed to load custom videos:', err);
+    }
+  };
+
+  const handleAddVideo = () => {
+    const videoUrlInput = prompt("Enter YouTube URL to add:");
+    if (!videoUrlInput) return;
+    
+    const vidId = extractVideoId(videoUrlInput);
+    if (!vidId) {
+      alert("Invalid YouTube URL");
+      return;
+    }
+
+    const titleInput = prompt("Enter a title for this video:");
+    const newVideo = {
+      id: vidId,
+      title: titleInput || "My Custom Video",
+      channel: "Me",
+      views: "0"
+    };
+
+    const updated = [newVideo, ...customVideos];
+    setCustomVideos(updated);
+    localStorage.setItem('tttv_custom_videos', JSON.stringify(updated));
+    alert("Video added to '✨ My Videos'!");
+  };
 
   const checkForMiniPlayer = () => {
     const miniPlayerData = localStorage.getItem('tttv_mini_player');
@@ -66,7 +101,7 @@ export default function TTTVPage() {
     }
   };
 
-  const videoLibrary = {
+  const baseVideoLibrary = {
     "🔥 Viral Hits": [
       { id: "dQw4w9WgXcQ", title: "Rick Astley - Never Gonna Give You Up", channel: "Rick Astley", views: "1.4B" },
       { id: "kJQP7kiw5Fk", title: "Luis Fonsi - Despacito ft. Daddy Yankee", channel: "Luis Fonsi", views: "8.1B" },
@@ -151,6 +186,11 @@ export default function TTTVPage() {
       { id: "quuuXBgHU18", title: "Top Headlines", channel: "News Network" },
       { id: "OkW_nYEOUnQ", title: "What's Happening Now", channel: "Live Updates" },
     ],
+  };
+
+  const videoLibrary = {
+    ...(customVideos.length > 0 ? { "✨ My Videos": customVideos } : {}),
+    ...baseVideoLibrary
   };
 
   const allCategories = Object.keys(videoLibrary);
@@ -258,6 +298,7 @@ export default function TTTVPage() {
 
   const getCategoryIcon = (category) => {
     if (category.includes('Viral')) return <span className="text-lg">🔥</span>;
+    if (category.includes('My Videos')) return <span className="text-lg">✨</span>;
     if (category.includes('Music')) return <span className="text-lg">🎵</span>;
     if (category.includes('Gaming')) return <span className="text-lg">🎮</span>;
     if (category.includes('Comedy')) return <span className="text-lg">😂</span>;
@@ -440,9 +481,22 @@ export default function TTTVPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="max-w-2xl mx-auto mb-8"
+          className="max-w-2xl mx-auto mb-8 flex items-center gap-4"
         >
-          <div className="flex items-center gap-2 bg-black border border-cyan-500/50 rounded-lg px-3 py-2 shadow-[0_0_20px_rgba(6,182,212,0.2)]">
+          {/* Custom Add Button */}
+          <button 
+            onClick={handleAddVideo}
+            className="w-12 h-12 rounded-full overflow-hidden hover:scale-105 transition-transform shadow-[0_0_20px_rgba(6,182,212,0.3)] border border-cyan-500/50 bg-black flex-shrink-0"
+            title="Add Video"
+          >
+            <img 
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/81668b9d4_image.png" 
+              alt="Add" 
+              className="w-full h-full object-cover" 
+            />
+          </button>
+
+          <div className="flex-1 flex items-center gap-2 bg-black border border-cyan-500/50 rounded-lg px-3 py-2 shadow-[0_0_20px_rgba(6,182,212,0.2)]">
             <div className="w-7 h-7 bg-cyan-500/20 border border-cyan-500 rounded flex items-center justify-center shadow-[0_0_10px_rgba(6,182,212,0.5)]">
               <Youtube className="w-4 h-4 text-cyan-400 fill-current" />
             </div>
