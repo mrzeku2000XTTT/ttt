@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft } from "lucide-react";
 import AestheticPuzzle from "@/components/truth/AestheticPuzzle";
 
 export default function TruthLandingPage() {
@@ -24,7 +25,21 @@ export default function TruthLandingPage() {
   return (
     <div className={`fixed inset-0 z-50 overflow-hidden transition-all duration-1000 ${isLightsOn ? 'bg-white cursor-default' : 'bg-black cursor-none'}`}>
       {/* TTT Logo Top Left */}
-      <div className="absolute top-6 left-6 z-50 mix-blend-difference">
+      <div className="absolute top-6 left-6 z-50 mix-blend-difference flex items-center gap-4">
+        <AnimatePresence>
+          {isLightsOn && (
+            <motion.button
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              onClick={() => setIsLightsOn(false)}
+              className="text-black hover:opacity-70 transition-opacity"
+            >
+              <ArrowLeft className="w-8 h-8" />
+            </motion.button>
+          )}
+        </AnimatePresence>
+        
         <Link to={createPageUrl("Home")}>
           <h1 className={`text-3xl font-black tracking-tighter transition-colors ${isLightsOn ? 'text-black' : 'text-white/50 hover:text-white'}`}>
             TTT
