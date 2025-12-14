@@ -481,22 +481,22 @@ export default function TTTVPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="max-w-2xl mx-auto mb-8 flex items-center gap-4"
+          className="max-w-2xl mx-auto mb-8 flex flex-col items-center gap-4"
         >
           {/* Custom Add Button */}
           <button 
             onClick={handleAddVideo}
-            className="w-12 h-12 rounded-full overflow-hidden hover:scale-105 transition-transform shadow-[0_0_20px_rgba(6,182,212,0.3)] border border-cyan-500/50 bg-black flex-shrink-0"
+            className="w-8 h-8 rounded-full overflow-hidden hover:scale-110 transition-transform shadow-[0_0_15px_rgba(6,182,212,0.3)] border border-cyan-500/50 bg-black flex-shrink-0"
             title="Add Video"
           >
             <img 
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/81668b9d4_image.png" 
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/b3c82bda2_image.png" 
               alt="Add" 
               className="w-full h-full object-cover" 
             />
           </button>
 
-          <div className="flex-1 flex items-center gap-2 bg-black border border-cyan-500/50 rounded-lg px-3 py-2 shadow-[0_0_20px_rgba(6,182,212,0.2)]">
+          <div className="w-full flex items-center gap-2 bg-black border border-cyan-500/50 rounded-lg px-3 py-2 shadow-[0_0_20px_rgba(6,182,212,0.2)]">
             <div className="w-7 h-7 bg-cyan-500/20 border border-cyan-500 rounded flex items-center justify-center shadow-[0_0_10px_rgba(6,182,212,0.5)]">
               <Youtube className="w-4 h-4 text-cyan-400 fill-current" />
             </div>

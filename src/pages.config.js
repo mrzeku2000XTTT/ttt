@@ -173,6 +173,7 @@ import BMTUniv from './pages/BMTUniv';
 import TheRealm from './pages/TheRealm';
 import TruthLanding from './pages/TruthLanding';
 import CoinSpace from './pages/CoinSpace';
+import KaspaHub from './pages/KaspaHub';
 import __Layout from './Layout.jsx';
 
 
@@ -352,6 +353,7 @@ export const PAGES = {
     "TheRealm": TheRealm,
     "TruthLanding": TruthLanding,
     "CoinSpace": CoinSpace,
+    "KaspaHub": KaspaHub,
 }
 
 export const pagesConfig = {
