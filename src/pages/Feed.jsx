@@ -8,10 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   Send, Heart, MessageCircle, Trash2, Edit2,
-  Loader2, Image as ImageIcon, X, Sparkles, Eye, Users, Activity, Video, FileText, DollarSign, Wallet, Plus, CornerDownRight, Pencil, Share, AlertCircle, Palette, Trophy, Hammer, Search, CircleDot, Newspaper, Box
+  Loader2, Image as ImageIcon, X, Sparkles, Eye, Users, Activity, Video, FileText, DollarSign, Wallet, Plus, CornerDownRight, Pencil, Share, AlertCircle, Palette, Trophy, Hammer, Search, CircleDot, Newspaper, Box, Moon
 } from "lucide-react";
 import { format } from "date-fns";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import EncryptedNotepad from "@/components/feed/EncryptedNotepad";
 import CommentSection from "@/components/feed/CommentSection";
@@ -3760,17 +3760,16 @@ export default function FeedPage() {
                   >
                     <Palette className="w-4 h-4" />
                   </Button>
-                  {user?.role === 'admin' && (
+                  <Link to={createPageUrl("TheRealm")}>
                     <Button
-                      onClick={() => setShowBadgeManager(true)}
                       size="sm"
                       variant="ghost"
-                      className="text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10 h-8 px-2"
-                      title="Manage Badges"
+                      className="text-white/60 hover:text-white hover:bg-white/10 h-8 w-8 p-0"
+                      title="Enter The Realm"
                     >
-                      <Trophy className="w-4 h-4" />
+                      <Moon className="w-4 h-4" />
                     </Button>
-                  )}
+                  </Link>
                 </div>
                 <p className="text-white/40 text-sm">Community Posts</p>
               </div>
