@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RotateCw, Check, Upload, Sparkles } from 'lucide-react';
+import { RotateCw, Check, Upload, Sparkles, Wand2 } from 'lucide-react';
 
 export default function AestheticPuzzle({ onSolve }) {
   const [tiles, setTiles] = useState([]);
@@ -7,6 +7,8 @@ export default function AestheticPuzzle({ onSolve }) {
   const [solved, setSolved] = useState(false);
   const [difficulty, setDifficulty] = useState(3);
   const [backgroundImage, setBackgroundImage] = useState('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800');
+  const [history, setHistory] = useState([]);
+  const solverIntervalRef = React.useRef(null);
 
   useEffect(() => {
     initializePuzzle();
@@ -18,15 +20,22 @@ export default function AestheticPuzzle({ onSolve }) {
     const puzzleTiles = Array.from({ length: totalTiles - 1 }, (_, i) => i + 1);
     puzzleTiles.push(null);
     
+    const initialHistory = [];
+    
     // Shuffle
     for (let i = 0; i < 1000; i++) {
       const emptyIndex = puzzleTiles.indexOf(null);
       const validMoves = getValidMoves(emptyIndex, size);
       const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
+      
+      // Record the empty position BEFORE the swap (this is where we need to move back to undo)
+      initialHistory.push(emptyIndex);
+      
       [puzzleTiles[emptyIndex], puzzleTiles[randomMove]] = [puzzleTiles[randomMove], puzzleTiles[emptyIndex]];
     }
     
     setTiles(puzzleTiles);
+    setHistory(initialHistory);
     setMoves(0);
     setSolved(false);
   };
@@ -52,6 +61,10 @@ export default function AestheticPuzzle({ onSolve }) {
     
     if (validMoves.includes(index)) {
       const newTiles = [...tiles];
+      
+      // Record move for undo history
+      setHistory([...history, emptyIndex]);
+      
       [newTiles[emptyIndex], newTiles[index]] = [newTiles[index], newTiles[emptyIndex]];
       setTiles(newTiles);
       setMoves(moves + 1);
@@ -78,6 +91,52 @@ export default function AestheticPuzzle({ onSolve }) {
         setBackgroundImage(event.target.result);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const autoSolveStep = () => {
+    setHistory(prevHistory => {
+      if (prevHistory.length === 0) return prevHistory;
+
+      const newHistory = [...prevHistory];
+      const targetIndex = newHistory.pop(); // The position the empty tile should move TO
+
+      setTiles(prevTiles => {
+        const emptyIndex = prevTiles.indexOf(null);
+        // We want to swap emptyIndex with targetIndex
+        // But we must verify if it's a valid neighbor (it should be if logic is correct)
+        
+        const newTiles = [...prevTiles];
+        [newTiles[emptyIndex], newTiles[targetIndex]] = [newTiles[targetIndex], newTiles[emptyIndex]];
+        
+        // Check if solved
+        const isSolved = newTiles.every((tile, i) => {
+           if (i === newTiles.length - 1) return tile === null;
+           return tile === i + 1;
+        });
+
+        if (isSolved) {
+           setSolved(true);
+           if (onSolve) setTimeout(() => onSolve(), 1500);
+        }
+
+        return newTiles;
+      });
+      
+      return newHistory;
+    });
+  };
+
+  const startAutoSolve = () => {
+    if (solved) return;
+    if (solverIntervalRef.current) clearInterval(solverIntervalRef.current);
+    solverIntervalRef.current = setInterval(autoSolveStep, 100); // Speed of auto-solve
+  };
+
+  const stopAutoSolve = () => {
+    if (solverIntervalRef.current) {
+      clearInterval(solverIntervalRef.current);
+      solverIntervalRef.current = null;
     }
   };
 
@@ -143,6 +202,27 @@ export default function AestheticPuzzle({ onSolve }) {
               title="New Game"
             >
               <RotateCw className="w-5 h-5" />
+            </button>
+          </div>
+          
+          <div className="mb-4 flex justify-center">
+            <button
+              onMouseDown={startAutoSolve}
+              onMouseUp={stopAutoSolve}
+              onMouseLeave={stopAutoSolve}
+              onTouchStart={startAutoSolve}
+              onTouchEnd={stopAutoSolve}
+              disabled={solved || history.length === 0}
+              className={`
+                flex items-center gap-2 px-6 py-2 rounded-full font-bold text-white shadow-lg transition-all active:scale-95
+                ${solved || history.length === 0 
+                  ? 'bg-gray-400 cursor-not-allowed opacity-50' 
+                  : 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 ring-2 ring-white/20'
+                }
+              `}
+            >
+              <Wand2 className="w-4 h-4 animate-pulse" />
+              <span>Hold to Auto-Solve</span>
             </button>
           </div>
 
