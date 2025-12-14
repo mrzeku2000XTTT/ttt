@@ -25,7 +25,7 @@ export default function TruthLandingPage() {
   return (
     <div className={`fixed inset-0 z-50 overflow-hidden transition-all duration-1000 ${isLightsOn ? 'bg-white cursor-default' : 'bg-black cursor-none'}`}>
       {/* TTT Logo Top Left */}
-      <div className="absolute top-6 left-6 z-50 mix-blend-difference flex items-center gap-4">
+      <div className={`absolute top-6 left-6 z-50 flex items-center gap-4 ${isLightsOn ? '' : 'mix-blend-difference'}`}>
         <AnimatePresence>
           {isLightsOn && (
             <motion.button
