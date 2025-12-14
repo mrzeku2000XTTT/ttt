@@ -509,33 +509,7 @@ export default function TTTVPage() {
               </div>
             )}
           </div>
-                <div className="aspect-video bg-black border-b border-cyan-500/20 relative overflow-hidden">
-                  <img 
-                    src={video.thumbnail || `https://img.youtube.com/vi/${video.id}/mqdefault.jpg`}
-                    alt={video.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 group-hover:bg-black/30 transition-colors">
-                    <Play className="w-12 h-12 text-cyan-400 fill-current opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all drop-shadow-[0_0_10px_rgba(6,182,212,0.8)]" />
-                  </div>
-                  {video.views && (
-                    <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-sm px-2 py-1 rounded text-xs text-white font-semibold">
-                      {video.views} views
-                    </div>
-                  )}
-                </div>
-                <div className="p-3">
-                  <h3 className="text-white font-semibold text-xs mb-1 line-clamp-2">
-                    {video.title}
-                  </h3>
-                  <p className="text-gray-500 text-[10px] flex items-center gap-1">
-                    <Youtube className="w-3 h-3 fill-current" />
-                    {video.channel}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+
         </div>
       </div>
     );
