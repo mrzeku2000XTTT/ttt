@@ -63,6 +63,29 @@ export default function AestheticPuzzle({ onSolve }) {
     return moves;
   };
 
+  const handleVictory = async (finalTiles, manualWin = false) => {
+    setSolved(true);
+    if (onSolve) setTimeout(() => onSolve(), 1500);
+
+    // Track user data for ML
+    try {
+        const user = await base44.auth.me();
+        if (user) {
+            await base44.entities.PuzzleSession.create({
+                user_email: user.email,
+                difficulty: difficulty,
+                moves_count: moves + 1,
+                time_taken_seconds: (Date.now() - startTime) / 1000,
+                was_auto_solved: isAutoSolving || !manualWin,
+                move_history: history,
+                initial_state: initialState
+            });
+        }
+    } catch (err) {
+        console.error("Failed to track puzzle session", err);
+    }
+  };
+
   const handleTileClick = (index) => {
     if (solved) return;
     
@@ -72,8 +95,20 @@ export default function AestheticPuzzle({ onSolve }) {
     if (validMoves.includes(index)) {
       const newTiles = [...tiles];
       
-      // Record move for undo history
-      setHistory([...history, emptyIndex]);
+      // Smart history: if we are undoing the last move, pop it. Otherwise push.
+      const lastEmptyIndex = history[history.length - 1];
+      let newHistory;
+      
+      if (index === lastEmptyIndex) {
+          // We are moving the tile BACK to where it was (undoing)
+          newHistory = history.slice(0, -1);
+      } else {
+          newHistory = [...history, emptyIndex];
+      }
+      setHistory(newHistory);
+      
+      // Invalidate calculated path if user interacts
+      solutionPathRef.current = null;
       
       [newTiles[emptyIndex], newTiles[index]] = [newTiles[index], newTiles[emptyIndex]];
       setTiles(newTiles);
