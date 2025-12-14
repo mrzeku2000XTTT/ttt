@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { RotateCw, Check, Upload, Sparkles, Wand2 } from 'lucide-react';
+import { solvePuzzle } from './puzzleSolver';
+import { base44 } from "@/api/base44Client";
 
 export default function AestheticPuzzle({ onSolve }) {
   const [tiles, setTiles] = useState([]);
@@ -8,7 +10,11 @@ export default function AestheticPuzzle({ onSolve }) {
   const [difficulty, setDifficulty] = useState(3);
   const [backgroundImage, setBackgroundImage] = useState('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800');
   const [history, setHistory] = useState([]);
+  const [initialState, setInitialState] = useState([]);
+  const [startTime, setStartTime] = useState(null);
+  const [isAutoSolving, setIsAutoSolving] = useState(false);
   const solverIntervalRef = React.useRef(null);
+  const solutionPathRef = React.useRef(null);
 
   useEffect(() => {
     initializePuzzle();
@@ -35,9 +41,13 @@ export default function AestheticPuzzle({ onSolve }) {
     }
     
     setTiles(puzzleTiles);
+    setInitialState([...puzzleTiles]);
     setHistory(initialHistory);
     setMoves(0);
     setSolved(false);
+    setStartTime(Date.now());
+    setIsAutoSolving(false);
+    solutionPathRef.current = null;
   };
 
   const getValidMoves = (emptyIndex, size) => {
@@ -75,10 +85,7 @@ export default function AestheticPuzzle({ onSolve }) {
       });
       
       if (isSolved) {
-        setSolved(true);
-        if (onSolve) {
-            setTimeout(() => onSolve(), 1500); // Delay to show victory state
-        }
+        handleVictory(newTiles, true);
       }
     }
   };
@@ -95,17 +102,32 @@ export default function AestheticPuzzle({ onSolve }) {
   };
 
   const autoSolveStep = () => {
-    setHistory(prevHistory => {
-      if (prevHistory.length === 0) return prevHistory;
+    setTiles(prevTiles => {
+        let targetIndex;
+        let newHistory = [...history];
 
-      const newHistory = [...prevHistory];
-      const targetIndex = newHistory.pop(); // The position the empty tile should move TO
-
-      setTiles(prevTiles => {
-        const emptyIndex = prevTiles.indexOf(null);
-        // We want to swap emptyIndex with targetIndex
-        // But we must verify if it's a valid neighbor (it should be if logic is correct)
+        // Try to get next move from A* path first
+        if (solutionPathRef.current && solutionPathRef.current.length > 0) {
+            targetIndex = solutionPathRef.current.shift();
+            // We need to update history to keep it consistent even if we don't use it for solving anymore
+            // But actually, if we follow A*, we are diverging from history stack.
+            // So we can just ignore history update or reset it.
+        } else {
+            // Fallback to history reversal (guaranteed solution)
+            if (newHistory.length === 0) return prevTiles;
+            targetIndex = newHistory.pop();
+        }
         
+        // Update history state in parent scope if we used history
+        if (!solutionPathRef.current) {
+            setHistory(newHistory);
+        }
+
+        const emptyIndex = prevTiles.indexOf(null);
+        
+        // If targetIndex is undefined (path empty or history empty), stop
+        if (targetIndex === undefined) return prevTiles;
+
         const newTiles = [...prevTiles];
         [newTiles[emptyIndex], newTiles[targetIndex]] = [newTiles[targetIndex], newTiles[emptyIndex]];
         
@@ -116,21 +138,31 @@ export default function AestheticPuzzle({ onSolve }) {
         });
 
         if (isSolved) {
-           setSolved(true);
-           if (onSolve) setTimeout(() => onSolve(), 1500);
+           handleVictory(newTiles, false);
+           stopAutoSolve();
         }
 
         return newTiles;
-      });
-      
-      return newHistory;
     });
   };
 
   const startAutoSolve = () => {
     if (solved) return;
+    setIsAutoSolving(true);
+    
+    // Attempt to calculate optimal path if not already done
+    if (!solutionPathRef.current && difficulty <= 3) {
+        const path = solvePuzzle(tiles, difficulty);
+        if (path) {
+            solutionPathRef.current = path;
+            console.log("A* Solution found:", path.length, "moves");
+        } else {
+            console.log("A* too complex, falling back to history reversal");
+        }
+    }
+
     if (solverIntervalRef.current) clearInterval(solverIntervalRef.current);
-    solverIntervalRef.current = setInterval(autoSolveStep, 100); // Speed of auto-solve
+    solverIntervalRef.current = setInterval(autoSolveStep, 100);
   };
 
   const stopAutoSolve = () => {
