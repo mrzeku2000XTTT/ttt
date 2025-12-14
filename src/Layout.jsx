@@ -200,8 +200,10 @@ export default function Layout({ children, currentPageName }) {
   const isCountryDetailPage = currentPageName === "CountryDetail";
   const isKonektPage = currentPageName === "Konekt";
   const isArea51Page = currentPageName === "Area51";
+  const isTheRealmPage = currentPageName === "TheRealm";
+  const isTruthLandingPage = currentPageName === "TruthLanding";
 
-  if (isHomePage || isLobbyPage || isEarthPage || isCountryDetailPage || isKonektPage || isArea51Page) {
+  if (isHomePage || isLobbyPage || isEarthPage || isCountryDetailPage || isKonektPage || isArea51Page || isTheRealmPage || isTruthLandingPage) {
     return (
       <React.Suspense fallback={<div className="min-h-screen bg-black" />}>
         <VideoPlayerProvider>

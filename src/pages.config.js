@@ -170,6 +170,8 @@ import Kurve from './pages/Kurve';
 import AgentZK2 from './pages/AgentZK2';
 import BuildGuide from './pages/BuildGuide';
 import BMTUniv from './pages/BMTUniv';
+import TheRealm from './pages/TheRealm';
+import TruthLanding from './pages/TruthLanding';
 import __Layout from './Layout.jsx';
 
 
@@ -346,6 +348,8 @@ export const PAGES = {
     "AgentZK2": AgentZK2,
     "BuildGuide": BuildGuide,
     "BMTUniv": BMTUniv,
+    "TheRealm": TheRealm,
+    "TruthLanding": TruthLanding,
 }
 
 export const pagesConfig = {
