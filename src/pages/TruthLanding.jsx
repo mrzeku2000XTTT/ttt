@@ -1,7 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { motion } from "framer-motion";
 
 export default function TruthLandingPage() {
   return (
@@ -13,17 +12,6 @@ export default function TruthLandingPage() {
             TTT
           </h1>
         </Link>
-      </div>
-
-      <div className="w-full h-full flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 2, delay: 0.5 }}
-          className="text-white/20 font-black text-9xl tracking-tighter select-none"
-        >
-          TRUTH
-        </motion.div>
       </div>
     </div>
   );
