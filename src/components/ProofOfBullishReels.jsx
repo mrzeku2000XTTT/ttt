@@ -520,16 +520,28 @@ export default function ProofOfBullishReels({ videos, initialIndex = 0, onClose 
                 
                 <div className="flex items-center gap-3">
                   {video.transaction_hash && (
-                    <a
-                      href={`https://kas.fyi/transaction/${video.transaction_hash}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-xs text-cyan-400 hover:underline font-mono"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <LinkIcon className="w-3 h-3" />
-                      kas.fyi/transaction/{video.transaction_hash.substring(0, 8)}...
-                    </a>
+                    <div className="flex flex-col gap-1">
+                      <a
+                        href={`https://explorer.kaspa.org/transactions/${video.transaction_hash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-xs text-cyan-400 hover:underline font-mono"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <LinkIcon className="w-3 h-3" />
+                        explorer.kaspa.org...{video.transaction_hash.substring(0, 8)}...
+                      </a>
+                      <a
+                        href={`https://kaspa.stream/transactions/${video.transaction_hash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-xs text-purple-400 hover:underline font-mono"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <LinkIcon className="w-3 h-3" />
+                        kaspa.stream...{video.transaction_hash.substring(0, 8)}...
+                      </a>
+                    </div>
                   )}
                   
                   <button
