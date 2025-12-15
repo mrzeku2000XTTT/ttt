@@ -265,18 +265,77 @@ export default function EnochPage() {
                 className="w-full h-full"
               ></iframe>
               
-              {/* Entry Timestamp Overlay */}
+              {/* Entry Timestamp & Timer Overlay */}
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1 }}
-                className="absolute top-6 right-6 bg-black/50 backdrop-blur-md border border-white/10 rounded-full px-4 py-2 flex items-center gap-2 text-white/60 font-mono text-sm"
+                className="absolute top-6 right-6 flex flex-col items-end gap-2"
               >
-                <Clock className="w-4 h-4 text-cyan-400" />
-                <span>
-                  ENTRY: {entryTime?.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                </span>
+                <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-full px-4 py-2 flex items-center gap-2 text-white/60 font-mono text-sm">
+                  <Clock className="w-4 h-4 text-cyan-400" />
+                  <span>
+                    ENTRY: {entryTime?.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                  </span>
+                </div>
+
+                <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-full px-4 py-2 flex items-center gap-2 text-white font-mono text-sm">
+                  <Play className="w-3 h-3 text-green-400 animate-pulse" />
+                  <span>WATCHING: {formatElapsedTime(elapsedTime)}</span>
+                </div>
+
+                <Button
+                  onClick={handleFinishMovie}
+                  size="sm"
+                  className="bg-cyan-600/80 hover:bg-cyan-500 text-white border border-cyan-400/30 backdrop-blur-md rounded-full shadow-lg"
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  I've finished!
+                </Button>
               </motion.div>
+
+              {/* Story Modal */}
+              <AnimatePresence>
+                {showStoryModal && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+                  >
+                    <motion.div
+                      initial={{ scale: 0.9, y: 20 }}
+                      animate={{ scale: 1, y: 0 }}
+                      exit={{ scale: 0.9, y: 20 }}
+                      className="bg-zinc-900 border border-white/10 p-8 rounded-3xl max-w-md w-full text-center shadow-2xl relative overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 pointer-events-none" />
+                      
+                      <PenTool className="w-16 h-16 text-cyan-400 mx-auto mb-6" />
+                      
+                      <h2 className="text-3xl font-black text-white mb-4">The Truth Is Revealed</h2>
+                      <p className="text-gray-400 mb-8 text-lg">
+                        You have witnessed the ancient knowledge. Now, are you ready to write your own story?
+                      </p>
+                      
+                      <div className="flex flex-col gap-3">
+                        <Link to={createPageUrl("OriginStory")}>
+                          <Button className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-6 text-lg rounded-xl">
+                            Yes, Write My Story
+                          </Button>
+                        </Link>
+                        <Button 
+                          variant="ghost" 
+                          onClick={() => setShowStoryModal(false)}
+                          className="text-white/40 hover:text-white"
+                        >
+                          Not yet, I want to reflect
+                        </Button>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           )}
         </AnimatePresence>
