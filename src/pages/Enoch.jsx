@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Loader2, Zap, Lock, Play, ArrowLeft, ShieldCheck, Bot, Clock } from "lucide-react";
+import { Loader2, Zap, Lock, Play, ArrowLeft, ShieldCheck, Bot, Clock, Smartphone } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
 
