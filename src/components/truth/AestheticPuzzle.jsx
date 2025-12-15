@@ -15,6 +15,7 @@ export default function AestheticPuzzle({ onSolve }) {
   const [isAutoSolving, setIsAutoSolving] = useState(false);
   const solverIntervalRef = React.useRef(null);
   const solutionPathRef = React.useRef(null);
+  const historyRef = React.useRef([]);
 
   useEffect(() => {
     initializePuzzle();
@@ -43,6 +44,7 @@ export default function AestheticPuzzle({ onSolve }) {
     setTiles(puzzleTiles);
     setInitialState([...puzzleTiles]);
     setHistory(initialHistory);
+    historyRef.current = initialHistory;
     setMoves(0);
     setSolved(false);
     setStartTime(Date.now());
@@ -106,6 +108,7 @@ export default function AestheticPuzzle({ onSolve }) {
           newHistory = [...history, emptyIndex];
       }
       setHistory(newHistory);
+      historyRef.current = newHistory;
       
       // Invalidate calculated path if user interacts
       solutionPathRef.current = null;
@@ -139,14 +142,13 @@ export default function AestheticPuzzle({ onSolve }) {
   const autoSolveStep = () => {
     setTiles(prevTiles => {
         let targetIndex;
-        let newHistory = [...history];
+        // Use ref for latest history to avoid stale closures in interval
+        let currentHistory = historyRef.current;
+        let newHistory = [...currentHistory];
 
         // Try to get next move from A* path first
         if (solutionPathRef.current && solutionPathRef.current.length > 0) {
             targetIndex = solutionPathRef.current.shift();
-            // We need to update history to keep it consistent even if we don't use it for solving anymore
-            // But actually, if we follow A*, we are diverging from history stack.
-            // So we can just ignore history update or reset it.
         } else {
             // Fallback to history reversal (guaranteed solution)
             if (newHistory.length === 0) return prevTiles;
@@ -156,6 +158,7 @@ export default function AestheticPuzzle({ onSolve }) {
         // Update history state in parent scope if we used history
         if (!solutionPathRef.current) {
             setHistory(newHistory);
+            historyRef.current = newHistory;
         }
 
         const emptyIndex = prevTiles.indexOf(null);
