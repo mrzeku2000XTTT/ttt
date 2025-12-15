@@ -157,6 +157,12 @@ export default function EnochPage() {
       {/* Background Ambience */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-black to-black pointer-events-none" />
       
+      <ZKMobileModal 
+        isOpen={showZKModal} 
+        onClose={() => setShowZKModal(false)} 
+        onVerify={handleZKVerify} 
+      />
+
       <div className="absolute top-6 left-6 z-50">
         <Link to={createPageUrl("TruthLanding")}>
           <Button variant="ghost" className="text-white/60 hover:text-white hover:bg-white/10">
