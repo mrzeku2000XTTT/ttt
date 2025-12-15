@@ -182,6 +182,19 @@ export default function EnochPage() {
                 allowFullScreen
                 className="w-full h-full"
               ></iframe>
+              
+              {/* Entry Timestamp Overlay */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1 }}
+                className="absolute top-6 right-6 bg-black/50 backdrop-blur-md border border-white/10 rounded-full px-4 py-2 flex items-center gap-2 text-white/60 font-mono text-sm"
+              >
+                <Clock className="w-4 h-4 text-cyan-400" />
+                <span>
+                  ENTRY: {entryTime?.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
