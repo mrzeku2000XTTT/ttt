@@ -106,7 +106,16 @@ export default function TruthLandingPage() {
               transition={{ duration: 1, delay: 0.5 }}
               className="text-black font-black text-9xl tracking-tighter select-none flex flex-col items-center"
             >
-              <span>TRUTH</span>
+              <div className="flex items-center">
+                <Link 
+                  to={createPageUrl("Enoch")} 
+                  className="hover:text-cyan-400 transition-colors cursor-pointer"
+                  title="The Truth"
+                >
+                  T
+                </Link>
+                <span>RUTH</span>
+              </div>
               <span className="text-xl font-normal tracking-widest mt-4 opacity-50">IS REVEALED</span>
             </motion.div>
           </motion.div>

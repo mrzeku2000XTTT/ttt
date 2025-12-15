@@ -176,6 +176,7 @@ import CoinSpace from './pages/CoinSpace';
 import KaspaHub from './pages/KaspaHub';
 import KFlow from './pages/KFlow';
 import Explorer from './pages/Explorer';
+import Enoch from './pages/Enoch';
 import __Layout from './Layout.jsx';
 
 
@@ -358,6 +359,7 @@ export const PAGES = {
     "KaspaHub": KaspaHub,
     "KFlow": KFlow,
     "Explorer": Explorer,
+    "Enoch": Enoch,
 }
 
 export const pagesConfig = {
