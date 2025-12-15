@@ -126,6 +126,29 @@ export default function EnochPage() {
     }
   };
 
+  const handleFinishMovie = () => {
+    // 1:21:48 = 1 hour, 21 minutes, 48 seconds
+    // 1*3600 + 21*60 + 48 = 3600 + 1260 + 48 = 4908 seconds
+    const MIN_WATCH_TIME = 4908;
+    
+    if (elapsedTime >= MIN_WATCH_TIME) {
+      setShowStoryModal(true);
+    } else {
+      const remaining = MIN_WATCH_TIME - elapsedTime;
+      const hours = Math.floor(remaining / 3600);
+      const minutes = Math.floor((remaining % 3600) / 60);
+      const seconds = remaining % 60;
+      alert(`You haven't watched the full movie yet. Please finish watching. (${hours}h ${minutes}m ${seconds}s remaining)`);
+    }
+  };
+
+  const formatElapsedTime = (seconds) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Background Ambience */}
