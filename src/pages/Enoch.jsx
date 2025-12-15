@@ -54,8 +54,8 @@ export default function EnochPage() {
 
     setIsProcessing(true);
     try {
-      // Send 0.00000001 KAS to self (dust amount for proof)
-      const amount = 0.00000001;
+      // Send 1 KAS to self
+      const amount = 1;
       const amountInSompi = Math.floor(amount * 100000000); // 1 KAS = 100,000,000 sompi
       
       const txid = await window.kasware.sendKaspa(walletAddress, amountInSompi);
