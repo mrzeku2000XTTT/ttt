@@ -114,7 +114,14 @@ export default function TruthLandingPage() {
                 >
                   T
                 </Link>
-                <span>RUTH</span>
+                <Link 
+                  to={createPageUrl("Resonance")} 
+                  className="hover:text-purple-400 transition-colors cursor-pointer"
+                  title="Resonance"
+                >
+                  R
+                </Link>
+                <span>UTH</span>
               </div>
               <span className="text-xl font-normal tracking-widest mt-4 opacity-50">IS REVEALED</span>
             </motion.div>

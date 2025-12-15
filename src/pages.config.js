@@ -177,6 +177,7 @@ import KaspaHub from './pages/KaspaHub';
 import KFlow from './pages/KFlow';
 import Explorer from './pages/Explorer';
 import Enoch from './pages/Enoch';
+import Resonance from './pages/Resonance';
 import __Layout from './Layout.jsx';
 
 
@@ -360,6 +361,7 @@ export const PAGES = {
     "KFlow": KFlow,
     "Explorer": Explorer,
     "Enoch": Enoch,
+    "Resonance": Resonance,
 }
 
 export const pagesConfig = {
