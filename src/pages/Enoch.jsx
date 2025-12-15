@@ -11,6 +11,7 @@ export default function EnochPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [kaswareConnected, setKaswareConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState(null);
+  const [entryTime, setEntryTime] = useState(null);
 
   useEffect(() => {
     checkKasware();
