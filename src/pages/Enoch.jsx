@@ -191,6 +191,25 @@ export default function EnochPage() {
                   </Button>
                 )}
               </motion.div>
+
+              {/* Mobile/iOS Fallback Button */}
+              {!isVerified && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 1 }}
+                  className="flex justify-center mt-4"
+                >
+                  <button
+                    onClick={handleMobileProof}
+                    disabled={isProcessing}
+                    className="text-white/30 hover:text-white/80 text-sm flex items-center gap-2 transition-colors px-4 py-2"
+                  >
+                    <Smartphone className="w-4 h-4" />
+                    ZK Mobile Access (iOS)
+                  </button>
+                </motion.div>
+              )}
             </motion.div>
           ) : (
             <motion.div
