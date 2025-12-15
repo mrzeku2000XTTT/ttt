@@ -12,10 +12,22 @@ export default function EnochPage() {
   const [kaswareConnected, setKaswareConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState(null);
   const [entryTime, setEntryTime] = useState(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [showStoryModal, setShowStoryModal] = useState(false);
 
   useEffect(() => {
     checkKasware();
   }, []);
+
+  useEffect(() => {
+    let interval;
+    if (entryTime) {
+      interval = setInterval(() => {
+        setElapsedTime(Math.floor((new Date() - entryTime) / 1000));
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [entryTime]);
 
   const checkKasware = async () => {
     if (typeof window.kasware !== 'undefined') {
