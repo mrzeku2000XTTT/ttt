@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Zap, Lock, Play, ArrowLeft, ShieldCheck, Bot, Clock, Smartphone, CheckCircle, PenTool } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
+import ZKMobileModal from "@/components/truth/ZKMobileModal";
 
 export default function EnochPage() {
   const [isVerified, setIsVerified] = useState(false);
@@ -14,6 +15,7 @@ export default function EnochPage() {
   const [entryTime, setEntryTime] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showStoryModal, setShowStoryModal] = useState(false);
+  const [showZKModal, setShowZKModal] = useState(false);
 
   useEffect(() => {
     checkKasware();
