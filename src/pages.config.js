@@ -175,6 +175,7 @@ import TruthLanding from './pages/TruthLanding';
 import CoinSpace from './pages/CoinSpace';
 import KaspaHub from './pages/KaspaHub';
 import KFlow from './pages/KFlow';
+import Explorer from './pages/Explorer';
 import __Layout from './Layout.jsx';
 
 
@@ -356,6 +357,7 @@ export const PAGES = {
     "CoinSpace": CoinSpace,
     "KaspaHub": KaspaHub,
     "KFlow": KFlow,
+    "Explorer": Explorer,
 }
 
 export const pagesConfig = {
