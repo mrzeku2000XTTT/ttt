@@ -29,11 +29,21 @@ export default function AestheticPuzzle({ onSolve }) {
     
     const initialHistory = [];
     
-    // Shuffle
-    for (let i = 0; i < 1000; i++) {
+    // Shuffle - reduce iterations for larger grids to ensure auto-solve is reasonably fast (rewind strategy)
+    // 3x3 uses smart solver so can be shuffled more. 4x4/5x5 use rewind so we keep shuffle efficient.
+    const shuffleCount = size === 3 ? 500 : 150; 
+    
+    for (let i = 0; i < shuffleCount; i++) {
       const emptyIndex = puzzleTiles.indexOf(null);
       const validMoves = getValidMoves(emptyIndex, size);
-      const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
+      
+      // Prevent immediate backtracking during shuffle for better quality
+      const lastEmpty = initialHistory.length > 0 ? initialHistory[initialHistory.length - 1] : -1;
+      const candidates = validMoves.filter(m => m !== lastEmpty);
+      // If we're stuck (corner case), use any valid move
+      const moveSet = candidates.length > 0 ? candidates : validMoves;
+      
+      const randomMove = moveSet[Math.floor(Math.random() * moveSet.length)];
       
       // Record the empty position BEFORE the swap (this is where we need to move back to undo)
       initialHistory.push(emptyIndex);
@@ -200,7 +210,8 @@ export default function AestheticPuzzle({ onSolve }) {
     }
 
     if (solverIntervalRef.current) clearInterval(solverIntervalRef.current);
-    solverIntervalRef.current = setInterval(autoSolveStep, 100);
+    // Faster animation for smoother solve (40ms vs 100ms)
+    solverIntervalRef.current = setInterval(autoSolveStep, 40);
   };
 
   const stopAutoSolve = () => {
