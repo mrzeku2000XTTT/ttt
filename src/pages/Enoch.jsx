@@ -63,8 +63,19 @@ export default function EnochPage() {
       
       console.log('Proof sent:', txid);
       
-      // Optional: Track in backend if needed, but user just said "use zk button" flow
-      // We'll trust the txid generation for this frontend gate
+      const now = new Date();
+      setEntryTime(now);
+      
+      try {
+        const user = await base44.auth.me();
+        await base44.entities.TruthEntry.create({
+          user_email: user?.email || 'anonymous',
+          entry_time: now.toISOString(),
+          tx_hash: txid
+        });
+      } catch (e) {
+        console.error("Failed to log entry", e);
+      }
       
       setIsVerified(true);
     } catch (error) {
