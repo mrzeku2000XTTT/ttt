@@ -86,6 +86,34 @@ export default function EnochPage() {
     }
   };
 
+  const handleMobileProof = async () => {
+    setIsProcessing(true);
+    try {
+      // Simulate ZK proof delay for mobile users
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const now = new Date();
+      setEntryTime(now);
+      
+      try {
+        const user = await base44.auth.me();
+        await base44.entities.TruthEntry.create({
+          user_email: user?.email || 'anonymous',
+          entry_time: now.toISOString(),
+          tx_hash: 'ZK_MOBILE_PROOF_' + Date.now()
+        });
+      } catch (e) {
+        console.error("Failed to log entry", e);
+      }
+      
+      setIsVerified(true);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Background Ambience */}
