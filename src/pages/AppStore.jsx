@@ -62,7 +62,7 @@ export default function AppStorePage() {
     { name: "Kurve", icon: "Link2", path: "Kurve", category: "Finance", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/7be912bf3_image.png" },
     { name: "CoinSpace", icon: "Link2", path: "CoinSpace", category: "Finance", defaultIcon: "https://www.google.com/s2/favicons?domain=coin.space&sz=128" },
     { name: "KaspaHub", icon: "Link2", path: "KaspaHub", category: "Community", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/b3c82bda2_image.png", circular: true },
-    { name: "KFlow", icon: "Link2", path: "KFlow", category: "Tools", defaultIcon: "https://kaspaflow.com/favicon.ico" },
+    { name: "KFlow", icon: "Link2", path: "KFlow", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/ef500e681_image.png" },
     ];
 
   const getIconComponent = (iconName) => {
