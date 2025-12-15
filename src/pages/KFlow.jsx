@@ -14,7 +14,7 @@ export default function KFlowPage() {
               <ArrowLeft className="w-5 h-5" />
             </Button>
           </Link>
-          <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/3a29545d4_image.png" alt="KFlow" className="w-8 h-8" />
+          <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/3a29545d4_image.png" alt="KFlow" className="w-8 h-8 object-contain" />
           <h1 className="text-xl font-bold text-white">KaspaFlow</h1>
         </div>
         <a 
