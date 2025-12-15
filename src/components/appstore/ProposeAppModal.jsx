@@ -96,7 +96,7 @@ export default function ProposeAppModal({ onClose, user }) {
             <CheckCircle2 className="w-8 h-8 text-green-400" />
           </div>
           <h3 className="text-2xl font-bold text-white mb-2">Proposal Submitted!</h3>
-          <p className="text-white/60">Your app proposal has been sent to the admins for review.</p>
+          <p className="text-gray-300">Your app proposal has been sent to the admins for review.</p>
         </motion.div>
       </motion.div>
     );

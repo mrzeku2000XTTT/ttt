@@ -31,7 +31,8 @@ export default function AestheticPuzzle({ onSolve }) {
     
     // Shuffle - reduce iterations for larger grids to ensure auto-solve is reasonably fast (rewind strategy)
     // 3x3 uses smart solver so can be shuffled more. 4x4/5x5 use rewind so we keep shuffle efficient.
-    const shuffleCount = size === 3 ? 500 : 150; 
+    // For 5x5 we reduce it further to make it solve faster while still looking shuffled
+    const shuffleCount = size === 3 ? 500 : size === 4 ? 120 : 80; 
     
     for (let i = 0; i < shuffleCount; i++) {
       const emptyIndex = puzzleTiles.indexOf(null);
@@ -210,8 +211,8 @@ export default function AestheticPuzzle({ onSolve }) {
     }
 
     if (solverIntervalRef.current) clearInterval(solverIntervalRef.current);
-    // Faster animation for smoother solve (40ms vs 100ms)
-    solverIntervalRef.current = setInterval(autoSolveStep, 40);
+    // Ultra fast animation for smoother solve (10ms)
+    solverIntervalRef.current = setInterval(autoSolveStep, 10);
   };
 
   const stopAutoSolve = () => {
@@ -295,15 +296,23 @@ export default function AestheticPuzzle({ onSolve }) {
               onTouchEnd={stopAutoSolve}
               disabled={solved || history.length === 0}
               className={`
-                flex items-center gap-2 px-6 py-2 rounded-full font-bold text-white shadow-lg transition-all active:scale-95
+                relative flex items-center gap-2 px-6 py-2 rounded-full font-bold text-white shadow-lg transition-all active:scale-95 overflow-hidden
                 ${solved || history.length === 0 
                   ? 'bg-gray-400 cursor-not-allowed opacity-50' 
                   : 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 ring-2 ring-white/20'
                 }
               `}
             >
-              <Wand2 className="w-4 h-4 animate-pulse" />
-              <span>Hold to Auto-Solve</span>
+              {isAutoSolving && (
+                <div className="absolute inset-0 bg-white/20 animate-pulse" />
+              )}
+              <Wand2 className={`w-4 h-4 ${isAutoSolving ? 'animate-spin' : 'animate-pulse'}`} />
+              <span>
+                {isAutoSolving 
+                  ? `Solving... (${history.length} left)`
+                  : 'Hold to Auto-Solve'
+                }
+              </span>
             </button>
           </div>
 
