@@ -6,7 +6,13 @@ const ElementalVisualizer = ({ activeElement, powerHandEnabled }) => {
 
   useEffect(() => {
     const handleMouseMove = (e) => {
-      mouseRef.current = { x: e.clientX, y: e.clientY };
+      if (canvasRef.current) {
+        const rect = canvasRef.current.getBoundingClientRect();
+        mouseRef.current = { 
+          x: e.clientX - rect.left, 
+          y: e.clientY - rect.top 
+        };
+      }
     };
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
@@ -30,59 +36,90 @@ const ElementalVisualizer = ({ activeElement, powerHandEnabled }) => {
 
     // --- Background Generators ---
     const drawMagmaBackground = (ctx, time) => {
-      // Create a shifting plasma/noise effect
       const w = canvas.width;
       const h = canvas.height;
       
-      // Base dark red
-      ctx.fillStyle = '#1a0505';
+      // Deep pulsating red/black base
+      const pulse = Math.sin(time * 0.001) * 0.1 + 0.9;
+      ctx.fillStyle = '#0f0202';
       ctx.fillRect(0, 0, w, h);
 
-      // Additive pulsing glow spots
       ctx.globalCompositeOperation = 'lighter';
       
-      const cx = w / 2;
-      const cy = h / 2;
-      
-      // Moving heat waves
-      for (let i = 0; i < 3; i++) {
-        const t = time * 0.0005 + i * 2;
-        const x = cx + Math.sin(t) * (w * 0.3);
-        const y = cy + Math.cos(t * 1.3) * (h * 0.3);
-        const radius = Math.max(w, h) * 0.6;
+      // Turbulent Lava Flows
+      for (let i = 0; i < 5; i++) {
+        const t = time * 0.0008 + i * 100;
+        // Lissajous-like movement for chaotic flow
+        const x = w/2 + Math.sin(t * 0.7) * (w * 0.5) + Math.cos(t * 0.3) * (w * 0.2);
+        const y = h/2 + Math.cos(t * 0.8) * (h * 0.5) + Math.sin(t * 0.5) * (h * 0.2);
+        const r = Math.max(w, h) * (0.4 + Math.sin(t) * 0.1);
         
-        const grad = ctx.createRadialGradient(x, y, 0, x, y, radius);
-        grad.addColorStop(0, 'rgba(255, 50, 0, 0.15)');
-        grad.addColorStop(0.5, 'rgba(100, 0, 0, 0.05)');
-        grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+        // Intense core colors
+        grad.addColorStop(0, `rgba(255, ${100 + Math.sin(t*2)*50}, 0, 0.3)`); 
+        grad.addColorStop(0.4, 'rgba(200, 20, 0, 0.1)');
+        grad.addColorStop(1, 'rgba(50, 0, 0, 0)');
         
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, w, h);
       }
       
+      // Cracking effect (random lines)
+      if (Math.random() > 0.8) {
+          ctx.strokeStyle = `rgba(255, 200, 100, ${Math.random() * 0.2})`;
+          ctx.lineWidth = Math.random() * 2 + 1;
+          ctx.beginPath();
+          const startX = Math.random() * w;
+          const startY = Math.random() * h;
+          ctx.moveTo(startX, startY);
+          ctx.lineTo(startX + (Math.random()-0.5)*100, startY + (Math.random()-0.5)*100);
+          ctx.stroke();
+      }
+
       ctx.globalCompositeOperation = 'source-over';
     };
 
     const drawIonBackground = (ctx, time) => {
         const w = canvas.width;
         const h = canvas.height;
-        ctx.fillStyle = '#050a1a';
+        ctx.fillStyle = '#020510';
         ctx.fillRect(0, 0, w, h);
   
-        ctx.globalCompositeOperation = 'lighter';
-        for (let i = 0; i < 4; i++) {
-          const t = time * 0.0003 + i;
-          const x = w/2 + Math.sin(t * 0.7) * (w * 0.4);
-          const y = h/2 + Math.cos(t * 0.5) * (h * 0.4);
-          const r = Math.max(w, h) * 0.5;
+        ctx.globalCompositeOperation = 'screen'; // Use screen for cleaner blue glow
+        
+        // Ion streams
+        for (let i = 0; i < 6; i++) {
+          const t = time * 0.001 + i;
+          const x = w/2 + Math.sin(t) * (w * 0.6);
+          const y = h/2 + Math.cos(t * 0.9) * (h * 0.6);
+          const r = Math.max(w, h) * 0.4;
   
           const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
-          grad.addColorStop(0, `rgba(${50 + i * 30}, ${100 + i * 20}, 255, 0.1)`);
+          grad.addColorStop(0, `rgba(100, 200, 255, 0.15)`);
+          grad.addColorStop(0.5, `rgba(50, 100, 255, 0.05)`);
           grad.addColorStop(1, 'rgba(0,0,0,0)');
           
           ctx.fillStyle = grad;
           ctx.fillRect(0, 0, w, h);
         }
+
+        // Electric arcs
+        if (Math.random() > 0.92) {
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.strokeStyle = `rgba(200, 240, 255, ${Math.random() * 0.5})`;
+            ctx.lineWidth = Math.random() * 3;
+            ctx.beginPath();
+            let lx = Math.random() * w;
+            let ly = Math.random() * h;
+            ctx.moveTo(lx, ly);
+            for(let k=0; k<5; k++) {
+                lx += (Math.random()-0.5) * 100;
+                ly += (Math.random()-0.5) * 100;
+                ctx.lineTo(lx, ly);
+            }
+            ctx.stroke();
+        }
+        
         ctx.globalCompositeOperation = 'source-over';
     };
     
