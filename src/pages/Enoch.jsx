@@ -159,8 +159,65 @@ export default function EnochPage() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      {/* Background Ambience */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-black to-black pointer-events-none" />
+      {/* Elemental Visualizer Background */}
+      <ElementalVisualizer activeElement={activeElement} powerHandEnabled={powerHandEnabled} />
+      
+      {/* Visualizer Controls */}
+      {isVerified && (
+        <motion.div 
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1 }}
+          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 p-2 rounded-full bg-black/60 backdrop-blur-md border border-white/10"
+        >
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setActiveElement(activeElement === 'fire' ? null : 'fire')}
+            className={`rounded-full transition-all ${activeElement === 'fire' ? 'bg-red-500/20 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'text-white/40 hover:text-red-400'}`}
+            title="Fire Element"
+          >
+            <Flame className="w-5 h-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setActiveElement(activeElement === 'water' ? null : 'water')}
+            className={`rounded-full transition-all ${activeElement === 'water' ? 'bg-blue-500/20 text-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'text-white/40 hover:text-blue-400'}`}
+            title="Water Element"
+          >
+            <Droplets className="w-5 h-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setActiveElement(activeElement === 'earth' ? null : 'earth')}
+            className={`rounded-full transition-all ${activeElement === 'earth' ? 'bg-green-500/20 text-green-500 shadow-[0_0_15px_rgba(34,197,94,0.5)]' : 'text-white/40 hover:text-green-400'}`}
+            title="Earth Element"
+          >
+            <Mountain className="w-5 h-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setActiveElement(activeElement === 'lightning' ? null : 'lightning')}
+            className={`rounded-full transition-all ${activeElement === 'lightning' ? 'bg-yellow-500/20 text-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.5)]' : 'text-white/40 hover:text-yellow-400'}`}
+            title="Lightning Element"
+          >
+            <Zap className="w-5 h-5" />
+          </Button>
+          <div className="w-px h-6 bg-white/10 mx-1" />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setPowerHandEnabled(!powerHandEnabled)}
+            className={`rounded-full transition-all ${powerHandEnabled ? 'bg-purple-500/20 text-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.5)]' : 'text-white/40 hover:text-purple-400'}`}
+            title="Power Hand"
+          >
+            <Hand className="w-5 h-5" />
+          </Button>
+        </motion.div>
+      )}
       
       <ZKMobileModal 
         isOpen={showZKModal} 
