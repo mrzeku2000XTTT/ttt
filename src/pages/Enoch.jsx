@@ -100,12 +100,13 @@ export default function EnochPage() {
     }
   };
 
-  const handleMobileProof = async () => {
+  const handleMobileProof = () => {
+    setShowZKModal(true);
+  };
+
+  const handleZKVerify = async (txHash, address) => {
     setIsProcessing(true);
     try {
-      // Simulate ZK proof delay for mobile users
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
       const now = new Date();
       setEntryTime(now);
       
@@ -114,7 +115,7 @@ export default function EnochPage() {
         await base44.entities.TruthEntry.create({
           user_email: user?.email || 'anonymous',
           entry_time: now.toISOString(),
-          tx_hash: 'ZK_MOBILE_PROOF_' + Date.now()
+          tx_hash: txHash
         });
       } catch (e) {
         console.error("Failed to log entry", e);
