@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Loader2, Zap, Lock, Play, ArrowLeft, ShieldCheck } from "lucide-react";
+import { Loader2, Zap, Lock, Play, ArrowLeft, ShieldCheck, Bot } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
 
@@ -127,8 +127,8 @@ export default function EnochPage() {
                     size="lg"
                     className="bg-white text-black hover:bg-gray-200 font-bold px-8 py-6 rounded-2xl text-lg shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-all hover:scale-105"
                   >
-                    <img src="https://kasware.xyz/logo.svg" className="w-6 h-6 mr-3" alt="Kasware" />
-                    Connect Kasware
+                    <Zap className="w-6 h-6 mr-3 text-yellow-500" />
+                    Connect Wallet
                   </Button>
                 ) : (
                   <Button 
@@ -140,12 +140,12 @@ export default function EnochPage() {
                     {isProcessing ? (
                       <>
                         <Loader2 className="w-6 h-6 mr-3 animate-spin" />
-                        Verifying Proof...
+                        Processing...
                       </>
                     ) : (
                       <>
-                        <ShieldCheck className="w-6 h-6 mr-3" />
-                        Verify & Watch
+                        <Bot className="w-6 h-6 mr-3" />
+                        ZK Verify Access
                       </>
                     )}
                   </Button>
