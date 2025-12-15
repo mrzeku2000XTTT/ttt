@@ -2,10 +2,11 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Loader2, Zap, Lock, Play, ArrowLeft, ShieldCheck, Bot, Clock, Smartphone, CheckCircle, PenTool } from "lucide-react";
+import { Loader2, Zap, Lock, Play, ArrowLeft, ShieldCheck, Bot, Clock, Smartphone, CheckCircle, PenTool, Flame, Droplets, Mountain, Hand } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
 import ZKMobileModal from "@/components/truth/ZKMobileModal";
+import ElementalVisualizer from "@/components/truth/ElementalVisualizer";
 
 export default function EnochPage() {
   const [isVerified, setIsVerified] = useState(false);
@@ -16,6 +17,10 @@ export default function EnochPage() {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showStoryModal, setShowStoryModal] = useState(false);
   const [showZKModal, setShowZKModal] = useState(false);
+  
+  // Visualizer State
+  const [activeElement, setActiveElement] = useState(null);
+  const [powerHandEnabled, setPowerHandEnabled] = useState(false);
 
   useEffect(() => {
     checkKasware();
