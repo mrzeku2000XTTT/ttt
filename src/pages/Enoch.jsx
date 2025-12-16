@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Loader2, Zap, Lock, Play, ArrowLeft, ShieldCheck, Bot, Clock, Smartphone, CheckCircle, PenTool, Flame, Droplets, Mountain, Hand } from "lucide-react";
+import { Loader2, Zap, Lock, Play, ArrowLeft, ShieldCheck, Bot, Clock, Smartphone, CheckCircle, PenTool, Flame, Droplets, Mountain, Hand, Wind } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
 import ZKMobileModal from "@/components/truth/ZKMobileModal";
@@ -200,11 +200,11 @@ export default function EnochPage() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setActiveElement(activeElement === 'lightning' ? null : 'lightning')}
-            className={`rounded-full transition-all ${activeElement === 'lightning' ? 'bg-yellow-500/20 text-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.5)]' : 'text-white/40 hover:text-yellow-400'}`}
-            title="Lightning Element"
+            onClick={() => setActiveElement(activeElement === 'air' ? null : 'air')}
+            className={`rounded-full transition-all ${activeElement === 'air' ? 'bg-slate-500/20 text-slate-300 shadow-[0_0_15px_rgba(200,200,255,0.5)]' : 'text-white/40 hover:text-slate-300'}`}
+            title="Air Element"
           >
-            <Zap className="w-5 h-5" />
+            <Wind className="w-5 h-5" />
           </Button>
           <div className="w-px h-6 bg-white/10 mx-1" />
           <Button

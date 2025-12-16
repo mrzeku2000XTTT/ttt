@@ -22,9 +22,9 @@ const ElementalVisualizer = ({ activeElement, powerHandEnabled }) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d', { alpha: false }); // Optimize for no transparency on base
+    const ctx = canvas.getContext('2d', { alpha: false });
     let animationFrameId;
-    let particles = [];
+    let clouds = []; // Replaces particles with "clouds"
     let backgroundTime = 0;
 
     const resize = () => {
@@ -34,230 +34,237 @@ const ElementalVisualizer = ({ activeElement, powerHandEnabled }) => {
     window.addEventListener('resize', resize);
     resize();
 
-    // --- Background Generators ---
-    const drawMagmaBackground = (ctx, time) => {
-      const w = canvas.width;
-      const h = canvas.height;
-      
-      // Deep pulsating red/black base
-      const pulse = Math.sin(time * 0.001) * 0.1 + 0.9;
-      ctx.fillStyle = '#0f0202';
-      ctx.fillRect(0, 0, w, h);
-
-      ctx.globalCompositeOperation = 'lighter';
-      
-      // Turbulent Lava Flows
-      for (let i = 0; i < 5; i++) {
-        const t = time * 0.0008 + i * 100;
-        // Lissajous-like movement for chaotic flow
-        const x = w/2 + Math.sin(t * 0.7) * (w * 0.5) + Math.cos(t * 0.3) * (w * 0.2);
-        const y = h/2 + Math.cos(t * 0.8) * (h * 0.5) + Math.sin(t * 0.5) * (h * 0.2);
-        const r = Math.max(w, h) * (0.4 + Math.sin(t) * 0.1);
+    // --- Modern Cloudy Backgrounds ---
+    
+    const drawFireBackground = (ctx, time) => {
+        const w = canvas.width;
+        const h = canvas.height;
         
-        const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
-        // Intense core colors
-        grad.addColorStop(0, `rgba(255, ${100 + Math.sin(t*2)*50}, 0, 0.3)`); 
-        grad.addColorStop(0.4, 'rgba(200, 20, 0, 0.1)');
-        grad.addColorStop(1, 'rgba(50, 0, 0, 0)');
-        
+        // Deep scorched earth base
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, '#0a0000');
+        grad.addColorStop(1, '#1a0500');
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, w, h);
-      }
-      
-      // Cracking effect (random lines)
-      if (Math.random() > 0.8) {
-          ctx.strokeStyle = `rgba(255, 200, 100, ${Math.random() * 0.2})`;
-          ctx.lineWidth = Math.random() * 2 + 1;
-          ctx.beginPath();
-          const startX = Math.random() * w;
-          const startY = Math.random() * h;
-          ctx.moveTo(startX, startY);
-          ctx.lineTo(startX + (Math.random()-0.5)*100, startY + (Math.random()-0.5)*100);
-          ctx.stroke();
-      }
 
-      ctx.globalCompositeOperation = 'source-over';
-    };
-
-    const drawIonBackground = (ctx, time) => {
-        const w = canvas.width;
-        const h = canvas.height;
-        ctx.fillStyle = '#020510';
-        ctx.fillRect(0, 0, w, h);
-  
-        ctx.globalCompositeOperation = 'screen'; // Use screen for cleaner blue glow
-        
-        // Ion streams
-        for (let i = 0; i < 6; i++) {
-          const t = time * 0.001 + i;
-          const x = w/2 + Math.sin(t) * (w * 0.6);
-          const y = h/2 + Math.cos(t * 0.9) * (h * 0.6);
-          const r = Math.max(w, h) * 0.4;
-  
-          const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
-          grad.addColorStop(0, `rgba(100, 200, 255, 0.15)`);
-          grad.addColorStop(0.5, `rgba(50, 100, 255, 0.05)`);
-          grad.addColorStop(1, 'rgba(0,0,0,0)');
-          
-          ctx.fillStyle = grad;
-          ctx.fillRect(0, 0, w, h);
-        }
-
-        // Electric arcs
-        if (Math.random() > 0.92) {
-            ctx.globalCompositeOperation = 'lighter';
-            ctx.strokeStyle = `rgba(200, 240, 255, ${Math.random() * 0.5})`;
-            ctx.lineWidth = Math.random() * 3;
-            ctx.beginPath();
-            let lx = Math.random() * w;
-            let ly = Math.random() * h;
-            ctx.moveTo(lx, ly);
-            for(let k=0; k<5; k++) {
-                lx += (Math.random()-0.5) * 100;
-                ly += (Math.random()-0.5) * 100;
-                ctx.lineTo(lx, ly);
-            }
-            ctx.stroke();
-        }
-        
-        ctx.globalCompositeOperation = 'source-over';
-    };
-    
-    const drawEarthBackground = (ctx, time) => {
-        const w = canvas.width;
-        const h = canvas.height;
-        ctx.fillStyle = '#0a1a0a';
-        ctx.fillRect(0, 0, w, h);
-        
-        // Floating spores feel
+        // Ambient heat haze (using large soft circles)
         ctx.globalCompositeOperation = 'screen';
-        for (let i = 0; i < 2; i++) {
-            const t = time * 0.0002 + i * 10;
-            const y = (t * 50) % h;
-            const grad = ctx.createLinearGradient(0, y, 0, y + h);
-            grad.addColorStop(0, 'rgba(20, 50, 20, 0.0)');
-            grad.addColorStop(0.5, 'rgba(40, 100, 40, 0.1)');
-            grad.addColorStop(1, 'rgba(20, 50, 20, 0.0)');
-            ctx.fillStyle = grad;
+        const t = time * 0.0005;
+        
+        for (let i = 0; i < 3; i++) {
+            const x = w * 0.5 + Math.sin(t + i) * (w * 0.3);
+            const y = h * 0.8 + Math.cos(t * 1.5 + i) * (h * 0.1);
+            const r = h * 0.6;
+            
+            const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+            g.addColorStop(0, 'rgba(100, 20, 0, 0.1)');
+            g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            
+            ctx.fillStyle = g;
             ctx.fillRect(0, 0, w, h);
         }
         ctx.globalCompositeOperation = 'source-over';
     };
-    
-    const drawLightningBackground = (ctx, time) => {
+
+    const drawWaterBackground = (ctx, time) => {
         const w = canvas.width;
         const h = canvas.height;
-        ctx.fillStyle = '#0a0a0a'; // Dark grey
-        ctx.fillRect(0, 0, w, h);
         
-        // Random flashes
-        if (Math.random() > 0.96) {
-             ctx.fillStyle = `rgba(200, 200, 255, ${Math.random() * 0.1})`;
-             ctx.fillRect(0,0,w,h);
+        // Deep ocean abyss
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, '#000510');
+        grad.addColorStop(1, '#001020');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+
+        // Caustics / Underwater light
+        ctx.globalCompositeOperation = 'lighter';
+        const t = time * 0.0003;
+        
+        for (let i = 0; i < 3; i++) {
+            const x = w * 0.5 + Math.cos(t + i) * (w * 0.4);
+            const y = h * 0.4 + Math.sin(t * 0.8 + i) * (h * 0.2);
+            const r = h * 0.8;
+            
+            const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+            g.addColorStop(0, 'rgba(0, 50, 100, 0.15)');
+            g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, w, h);
         }
+        ctx.globalCompositeOperation = 'source-over';
     };
 
-    // --- Particle System ---
-    class Particle {
+    const drawEarthBackground = (ctx, time) => {
+        const w = canvas.width;
+        const h = canvas.height;
+        
+        // Dark forest/cave
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, '#050a05');
+        grad.addColorStop(1, '#0f1a0f');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+
+        // Floating dust/pollen
+        ctx.globalCompositeOperation = 'screen';
+        const t = time * 0.0002;
+        
+        for (let i = 0; i < 3; i++) {
+            const x = w * 0.5 + Math.sin(t * 0.5 + i) * (w * 0.4);
+            const y = h * 0.5 + Math.cos(t * 0.3 + i) * (h * 0.4);
+            const r = h * 0.7;
+            
+            const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+            g.addColorStop(0, 'rgba(20, 40, 20, 0.15)');
+            g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, w, h);
+        }
+        ctx.globalCompositeOperation = 'source-over';
+    };
+
+    const drawAirBackground = (ctx, time) => {
+        const w = canvas.width;
+        const h = canvas.height;
+        
+        // High altitude/Storm
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, '#1a1a20');
+        grad.addColorStop(1, '#0a0a10');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+
+        // Flowing wind streams
+        ctx.globalCompositeOperation = 'screen';
+        const t = time * 0.001;
+        
+        for (let i = 0; i < 4; i++) {
+            const x = w * 0.5 + Math.sin(t + i) * (w * 0.2);
+            const y = h * 0.5 + Math.sin(t * 0.5 + i) * (h * 0.3);
+            const r = h * 0.5;
+            
+            const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+            g.addColorStop(0, 'rgba(150, 160, 180, 0.08)');
+            g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, w, h);
+        }
+        ctx.globalCompositeOperation = 'source-over';
+    };
+
+    // --- Cloud Sprite Generator ---
+    // Instead of small dots, we use large, soft "puffs"
+    class Cloud {
       constructor(x, y, type) {
         this.x = x;
         this.y = y;
         this.type = type;
         this.life = 1.0;
         
-        // Velocity randomness
         const angle = Math.random() * Math.PI * 2;
-        const speed = Math.random() * 2 + 1;
+        const speed = Math.random() * 2 + 0.5;
         
-        this.vx = Math.cos(angle) * speed * 0.5;
-        this.vy = Math.sin(angle) * speed * 0.5;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
         
+        // Clouds rotate slowly
+        this.rotation = Math.random() * Math.PI * 2;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.02;
+
         if (type === 'fire') {
-            this.vy -= Math.random() * 3 + 1; // Upward bias
-            this.vx *= 0.5;
-            this.size = Math.random() * 15 + 5;
-            this.decay = Math.random() * 0.02 + 0.01;
+            this.vy -= Math.random() * 2 + 1; // Rise fast
+            this.vx *= 0.3; // Less horizontal
+            this.size = Math.random() * 80 + 40; // Large puffs
+            this.decay = Math.random() * 0.015 + 0.005;
         } else if (type === 'water') {
-            this.vy -= Math.random() * 2 + 0.5;
-            this.size = Math.random() * 8 + 2;
-            this.decay = Math.random() * 0.01 + 0.005;
+            this.vy -= Math.random() * 1 + 0.5; // Rise slow (bubbles/mist)
+            this.size = Math.random() * 60 + 30;
+            this.decay = Math.random() * 0.008 + 0.002;
         } else if (type === 'earth') {
-            this.vy += Math.random() * 1 + 0.5; // Gravity
-            this.size = Math.random() * 6 + 2;
+            this.vy += Math.random() * 1 + 0.5; // Fall (dust/rocks)
+            this.size = Math.random() * 50 + 20;
             this.decay = Math.random() * 0.01 + 0.005;
-        } else if (type === 'lightning') {
-            this.vx = (Math.random() - 0.5) * 10;
-            this.vy = (Math.random() - 0.5) * 10;
-            this.size = Math.random() * 3 + 1;
-            this.decay = Math.random() * 0.1 + 0.05;
+        } else if (type === 'air') {
+            this.vx = (Math.random() - 0.5) * 8; // Fast horizontal
+            this.vy = (Math.random() - 0.5) * 2;
+            this.size = Math.random() * 100 + 50; // Huge wisps
+            this.decay = Math.random() * 0.02 + 0.01;
         }
       }
 
       update() {
         this.x += this.vx;
         this.y += this.vy;
+        this.rotation += this.rotationSpeed;
         this.life -= this.decay;
+        this.size *= 1.01; // Expand as they dissipate
 
         if (this.type === 'fire') {
-            this.size *= 0.96; // Shrink as it burns
-            this.vx += (Math.random() - 0.5) * 0.5; // Turbulent jitter
-        } else if (this.type === 'earth') {
-             this.x += Math.sin(this.y * 0.05) * 0.5; // Wiggle fall
+            this.vx += (Math.random() - 0.5) * 0.2; // Turbulence
+        } else if (this.type === 'air') {
+            this.vx *= 1.01; // Accelerate
         }
       }
 
       draw(ctx) {
         if (this.life <= 0) return;
         
-        const x = this.x;
-        const y = this.y;
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        
+        // Soft radial gradient for the cloud puff
+        const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size);
         
         if (this.type === 'fire') {
-            // Magma Gradient: White -> Yellow -> Orange -> Red -> Dark
-            // Life goes 1.0 -> 0.0
+            // Smoke + Fire core
+            // Starts bright orange, fades to dark grey smoke
             const alpha = this.life;
-            let color;
-            
-            if (this.life > 0.8) {
-                color = `rgba(255, 255, 200, ${alpha})`; // White/Yellow hot center
-            } else if (this.life > 0.5) {
-                color = `rgba(255, 150, 0, ${alpha})`; // Orange
-            } else if (this.life > 0.2) {
-                color = `rgba(200, 50, 0, ${alpha * 0.8})`; // Red
+            if (this.life > 0.6) {
+                // Fire core
+                ctx.globalCompositeOperation = 'lighter';
+                grad.addColorStop(0, `rgba(255, 200, 50, ${alpha * 0.5})`);
+                grad.addColorStop(0.4, `rgba(200, 50, 0, ${alpha * 0.3})`);
+                grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
             } else {
-                color = `rgba(50, 50, 50, ${alpha * 0.5})`; // Smoke
+                // Smoke trail
+                ctx.globalCompositeOperation = 'source-over';
+                grad.addColorStop(0, `rgba(50, 50, 50, ${alpha * 0.4})`);
+                grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
             }
-            
-            ctx.globalCompositeOperation = 'lighter'; // Additive blending makes it glow
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.arc(x, y, this.size, 0, Math.PI * 2);
-            ctx.fill();
-            
         } else if (this.type === 'water') {
+            // Mist / bubbles
             ctx.globalCompositeOperation = 'screen';
-            ctx.fillStyle = `rgba(100, 200, 255, ${this.life * 0.6})`;
-            ctx.beginPath();
-            ctx.arc(x, y, this.size, 0, Math.PI * 2);
-            ctx.fill();
-            // Highlight
-            ctx.fillStyle = `rgba(255, 255, 255, ${this.life * 0.8})`;
-            ctx.beginPath();
-            ctx.arc(x - this.size * 0.3, y - this.size * 0.3, this.size * 0.3, 0, Math.PI * 2);
-            ctx.fill();
+            const alpha = this.life * 0.4;
+            grad.addColorStop(0, `rgba(200, 255, 255, ${alpha})`);
+            grad.addColorStop(0.5, `rgba(0, 150, 255, ${alpha * 0.5})`);
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
         } else if (this.type === 'earth') {
-             ctx.globalCompositeOperation = 'source-over';
-             ctx.fillStyle = `rgba(100, 200, 100, ${this.life})`;
-             ctx.beginPath();
-             ctx.arc(x, y, this.size, 0, Math.PI * 2);
-             ctx.fill();
-        } else if (this.type === 'lightning') {
-             ctx.globalCompositeOperation = 'lighter';
-             ctx.fillStyle = `rgba(200, 220, 255, ${this.life})`;
-             ctx.beginPath();
-             ctx.arc(x, y, this.size * 2, 0, Math.PI * 2);
-             ctx.fill();
+            // Dust cloud
+            ctx.globalCompositeOperation = 'source-over';
+            const alpha = this.life * 0.5;
+            grad.addColorStop(0, `rgba(60, 50, 40, ${alpha})`);
+            grad.addColorStop(0.6, `rgba(30, 25, 20, ${alpha * 0.5})`);
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        } else if (this.type === 'air') {
+            // Wind wisp
+            ctx.globalCompositeOperation = 'screen';
+            const alpha = this.life * 0.15;
+            grad.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
+            grad.addColorStop(1, 'rgba(100, 100, 150, 0)');
+            // Stretch air clouds
+            ctx.scale(2, 0.5); 
         }
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
       }
     }
 
@@ -265,52 +272,56 @@ const ElementalVisualizer = ({ activeElement, powerHandEnabled }) => {
       backgroundTime = time;
       
       // 1. Draw Background
-      if (activeElement === 'fire') drawMagmaBackground(ctx, time);
-      else if (activeElement === 'water') drawIonBackground(ctx, time); // Blueish ion
+      if (activeElement === 'fire') drawFireBackground(ctx, time);
+      else if (activeElement === 'water') drawWaterBackground(ctx, time);
       else if (activeElement === 'earth') drawEarthBackground(ctx, time);
-      else if (activeElement === 'lightning') drawLightningBackground(ctx, time);
+      else if (activeElement === 'air') drawAirBackground(ctx, time);
       else {
           // Default void
-          ctx.fillStyle = '#000000';
+          ctx.fillStyle = '#050505';
           ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      // 2. Emit Particles from Power Hand
+      // 2. Emit "Clouds" from Power Hand
       if (powerHandEnabled && activeElement) {
-        // Emit more particles for fire to make it dense
-        const count = activeElement === 'fire' ? 8 : 4;
+        // Emit rate
+        const count = 1; // Clouds are big, we need fewer
         for (let i = 0; i < count; i++) {
-            // Random offset for spray effect
-            const offset = activeElement === 'fire' ? 10 : 2;
+            const offset = 20;
             const rx = (Math.random() - 0.5) * offset;
             const ry = (Math.random() - 0.5) * offset;
-            particles.push(new Particle(mouseRef.current.x + rx, mouseRef.current.y + ry, activeElement));
+            clouds.push(new Cloud(mouseRef.current.x + rx, mouseRef.current.y + ry, activeElement));
         }
       }
 
-      // 3. Ambient Particles (Background activity)
+      // 3. Ambient Clouds (Background activity)
       if (activeElement) {
-          if (activeElement === 'fire') {
-             // Rising sparks from bottom
-             if (Math.random() > 0.5) {
-                 const x = Math.random() * canvas.width;
-                 particles.push(new Particle(x, canvas.height, 'fire'));
+          // Add random ambient clouds for atmosphere
+          if (Math.random() > 0.92) {
+             const x = Math.random() * canvas.width;
+             const y = activeElement === 'fire' || activeElement === 'water' ? canvas.height + 50 : 
+                       activeElement === 'earth' ? -50 :
+                       Math.random() * canvas.height;
+             
+             if (activeElement === 'air') {
+                 // Air comes from sides
+                 clouds.push(new Cloud(-50, Math.random() * canvas.height, 'air'));
+             } else {
+                 clouds.push(new Cloud(x, y, activeElement));
              }
           }
       }
 
-      // 4. Update & Draw Particles
-      // Optimization: use a loop backwards to splice safely
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
+      // 4. Update & Draw Clouds
+      for (let i = clouds.length - 1; i >= 0; i--) {
+        const p = clouds[i];
         p.update();
         p.draw(ctx);
         if (p.life <= 0) {
-          particles.splice(i, 1);
+          clouds.splice(i, 1);
         }
       }
 
-      ctx.globalCompositeOperation = 'source-over'; // Reset
       animationFrameId = requestAnimationFrame(render);
     };
 
@@ -320,7 +331,7 @@ const ElementalVisualizer = ({ activeElement, powerHandEnabled }) => {
       window.removeEventListener('resize', resize);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [activeElement, powerHandEnabled]); // mouseRef is stable, not needed in deps
+  }, [activeElement, powerHandEnabled]);
 
   return (
     <canvas 
