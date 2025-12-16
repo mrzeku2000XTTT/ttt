@@ -1,20 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Activity, Zap, CheckCircle2, Play, Trophy, Music, Volume2, VolumeX, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Activity, Zap, CheckCircle2, Play, Trophy, Music, Volume2, VolumeX, RotateCcw, Maximize2, Hexagon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { base44 } from "@/api/base44Client";
+import QuantumVisualizer from "@/components/resonance/QuantumVisualizer";
 
 // Audio Context helper
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 
 export default function ResonancePage() {
   // Game State
-  const [gameState, setGameState] = useState('MENU'); // MENU, PLAYING, LEVEL_COMPLETE, VICTORY, GAMEOVER
+  const [gameState, setGameState] = useState('MENU'); // MENU, PLAYING, LEVEL_COMPLETE, VICTORY, GAMEOVER, QUANTUM
   const [mode, setMode] = useState('CHALLENGE'); // CHALLENGE, ZEN
   const [level, setLevel] = useState(1);
   const [score, setScore] = useState(0);
+  const [perfectSyncs, setPerfectSyncs] = useState(0);
   const [highScore, setHighScore] = useState(0);
   const [user, setUser] = useState(null);
   
@@ -331,6 +333,8 @@ export default function ResonancePage() {
   }, [frequency, amplitude, targetFreq, targetAmp, gameState, level, mode, matchPercentage]);
 
   const handleLevelComplete = () => {
+    setPerfectSyncs(p => p + 1);
+
     if (mode === 'ZEN') {
         // Just new target, chill vibes
         setScore(s => s + 100);
@@ -372,25 +376,48 @@ export default function ResonancePage() {
           >
             <div className="max-w-md w-full p-8 text-center space-y-8">
               <div>
-                <h1 className="text-6xl font-black text-white tracking-tighter mb-2">RESONANCE</h1>
-                <p className="text-white/60">Find the frequency. Sync the wave.</p>
+                <h1 className="text-6xl font-black text-white tracking-tighter mb-2 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">RESONANCE</h1>
+                <p className="text-cyan-400 font-light tracking-[0.2em] uppercase">Find the frequency. Sync the wave.</p>
               </div>
+
+              {perfectSyncs >= 10 && (
+                 <motion.div
+                   initial={{ scale: 0.9, opacity: 0 }}
+                   animate={{ scale: 1, opacity: 1 }}
+                   className="mb-8"
+                 >
+                    <Button
+                       onClick={() => setGameState('QUANTUM')}
+                       className="w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white border-none py-8 rounded-2xl shadow-[0_0_30px_rgba(168,85,247,0.5)] group relative overflow-hidden"
+                    >
+                       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
+                       <div className="relative flex items-center justify-center gap-3">
+                          <Maximize2 className="w-6 h-6 animate-pulse" />
+                          <span className="text-lg font-black tracking-widest">ENTER QUANTUM DIMENSION</span>
+                       </div>
+                    </Button>
+                 </motion.div>
+              )}
 
               <div className="grid grid-cols-1 gap-4">
                 <Button 
                   onClick={() => startGame('CHALLENGE')}
-                  className="h-16 text-xl bg-white text-black hover:bg-gray-200"
+                  className="h-16 text-xl bg-cyan-950/50 border border-cyan-500/50 text-cyan-100 hover:bg-cyan-900/80 backdrop-blur-md"
                 >
                   <Trophy className="w-6 h-6 mr-3" />
                   Challenge Mode
                 </Button>
                 <Button 
                   onClick={() => startGame('ZEN')}
-                  className="h-16 text-xl bg-transparent border border-white/20 text-white hover:bg-white/10"
+                  className="h-16 text-xl bg-transparent border border-purple-500/30 text-purple-100 hover:bg-purple-900/20 backdrop-blur-md"
                 >
                   <Music className="w-6 h-6 mr-3" />
                   Zen Mode
                 </Button>
+              </div>
+
+              <div className="text-xs text-white/30 tracking-widest mt-4">
+                 PERFECT SYNCS: {perfectSyncs}/10
               </div>
 
               {highScore > 0 && (
@@ -410,61 +437,105 @@ export default function ResonancePage() {
         )}
       </AnimatePresence>
 
-      {/* --- HUD --- */}
+      {/* --- QUANTUM DIMENSION --- */}
+      {gameState === 'QUANTUM' && (
+         <div className="fixed inset-0 z-50">
+            <QuantumVisualizer />
+            <div className="absolute top-6 left-6 z-50">
+               <Button 
+                  variant="outline" 
+                  onClick={() => setGameState('MENU')}
+                  className="bg-black/50 text-white border-white/20 backdrop-blur-md"
+               >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Exit Quantum
+               </Button>
+            </div>
+         </div>
+      )}
+
+      {/* --- HUD (Futuristic WidgetBox) --- */}
       {gameState === 'PLAYING' && (
-        <div className="absolute inset-0 z-10 pointer-events-none flex flex-col justify-between p-6">
-          {/* Header */}
-          <div className="flex justify-between items-start pointer-events-auto">
-             <div className="flex gap-2">
+        <div className="absolute inset-0 z-10 pointer-events-none">
+          {/* Top Control Bar */}
+          <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-start pointer-events-auto">
+             <div className="flex flex-col gap-4">
                 <Button 
-                    size="icon" variant="ghost" 
+                    variant="outline" 
                     onClick={() => setGameState('MENU')}
-                    className="text-white/50 hover:text-white"
+                    className="bg-black/40 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 hover:text-cyan-300 backdrop-blur-md rounded-tl-xl rounded-br-xl skew-x-[-10deg] w-fit"
                 >
-                    <ArrowLeft className="w-5 h-5" />
+                    <ArrowLeft className="w-4 h-4 mr-2 skew-x-[10deg]" />
+                    <span className="skew-x-[10deg]">ABORT</span>
                 </Button>
-                <Button 
-                    size="icon" variant="ghost" 
-                    onClick={toggleMute}
-                    className="text-white/50 hover:text-white"
+
+                {/* Sync Widget */}
+                <motion.div 
+                  initial={{ x: -50, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  className="bg-black/60 backdrop-blur-xl border border-cyan-500/30 p-5 w-64 rounded-r-2xl border-l-0 shadow-[0_0_20px_rgba(6,182,212,0.1)] relative group"
                 >
-                    {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-                </Button>
+                  <div className="absolute top-0 right-0 w-3 h-3 border-t border-r border-cyan-500" />
+                  <div className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-cyan-500" />
+                  
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-cyan-500/80 text-[10px] tracking-[0.2em] font-bold">SYNC_RATE</span>
+                    <Activity className="w-3 h-3 text-cyan-400 animate-pulse" />
+                  </div>
+                  
+                  <div className="h-2 w-full bg-cyan-900/30 rounded-full overflow-hidden mb-2">
+                    <motion.div 
+                      className="h-full bg-gradient-to-r from-cyan-600 via-cyan-400 to-white"
+                      style={{ width: `${lockProgress}%` }}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between text-xs font-mono">
+                     <span className={lockProgress > 0 ? "text-cyan-300 animate-pulse" : "text-white/30"}>
+                        {lockProgress > 0 ? "LOCKING..." : "SEARCHING"}
+                     </span>
+                     <span className="text-cyan-400">{Math.round(lockProgress)}%</span>
+                  </div>
+                </motion.div>
              </div>
 
-             <div className="text-right">
-                <div className="text-4xl font-black text-white tracking-widest">{score}</div>
-                <div className="flex items-center justify-end gap-4 text-sm font-mono text-white/60">
-                   <span>LVL {level}</span>
-                   {mode === 'CHALLENGE' && (
-                       <span className={`${timeLeft < 10 ? 'text-red-500 animate-pulse' : ''}`}>
-                           {timeLeft}s
-                       </span>
-                   )}
+             {/* Right Stats Widget */}
+             <div className="flex flex-col gap-3 items-end">
+                <div className="bg-black/60 backdrop-blur-xl border border-purple-500/30 p-4 w-48 rounded-l-2xl border-r-0 shadow-[0_0_20px_rgba(168,85,247,0.1)] relative">
+                  <div className="absolute top-0 left-0 w-3 h-3 border-t border-l border-purple-500" />
+                  <div className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-purple-500" />
+                  
+                  <div className="text-purple-500/80 text-[10px] tracking-[0.2em] font-bold text-right mb-1">SCORE_DATA</div>
+                  <div className="text-2xl font-black text-white text-right font-mono tracking-wider">{score.toLocaleString()}</div>
                 </div>
+
+                <div className="bg-black/60 backdrop-blur-xl border border-pink-500/30 p-4 w-32 rounded-l-2xl border-r-0 shadow-[0_0_20px_rgba(236,72,153,0.1)] relative">
+                   <div className="absolute top-0 left-0 w-3 h-3 border-t border-l border-pink-500" />
+                   <div className="text-pink-500/80 text-[10px] tracking-[0.2em] font-bold text-right mb-1">LEVEL</div>
+                   <div className="flex items-center justify-end gap-2">
+                      <Hexagon className="w-4 h-4 text-pink-500" />
+                      <div className="text-2xl font-black text-white font-mono">{level}</div>
+                   </div>
+                </div>
+                
+                {mode === 'CHALLENGE' && (
+                    <div className={`bg-black/60 backdrop-blur-xl border p-2 px-4 rounded-l-xl border-r-0 font-mono text-xl font-bold ${timeLeft < 10 ? 'border-red-500 text-red-500 animate-pulse' : 'border-white/10 text-white'}`}>
+                        {timeLeft}s
+                    </div>
+                )}
              </div>
           </div>
-
-          {/* Center Info */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-             {lockProgress > 0 && (
-                 <div className="flex flex-col items-center gap-2">
-                     <div className="text-2xl font-black text-cyan-400 tracking-[0.5em] animate-pulse">
-                        SYNCING
-                     </div>
-                     <div className="w-48 h-2 bg-white/10 rounded-full overflow-hidden">
-                        <motion.div 
-                            className="h-full bg-cyan-400"
-                            style={{ width: `${lockProgress}%` }}
-                        />
-                     </div>
-                 </div>
-             )}
-          </div>
-
-          {/* Footer Debug/Guides */}
-          <div className="flex justify-between items-end text-xs font-mono text-white/20">
+          
+          {/* Controls Footer */}
+          <div className="absolute bottom-6 left-6 right-6 flex justify-between items-end text-xs font-mono text-white/20">
              <div>FREQ: {frequency.toFixed(2)}</div>
+             <Button 
+                size="icon" variant="ghost" 
+                onClick={toggleMute}
+                className="text-white/30 hover:text-white pointer-events-auto"
+             >
+                {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+             </Button>
              <div>AMP: {Math.round(amplitude)}%</div>
           </div>
         </div>
