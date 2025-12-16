@@ -59,19 +59,11 @@ export default function LLMScraperPage() {
       setSearchStatus("");
       console.error("Research failed:", err);
       setError(err.message || "Failed to conduct research. The agent encountered an issue.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-      if (response.data.error) {
-        throw new Error(response.data.error);
-      }
-
-      setResult(response.data.result);
     } catch (err) {
-      console.error("Scraping failed:", err);
-      setError(err.message || "Failed to scrape and mine data. The website might be protected or unreachable.");
+      clearInterval(statusInterval);
+      setSearchStatus("");
+      console.error("Research failed:", err);
+      setError(err.message || "Failed to conduct research. The agent encountered an issue.");
     } finally {
       setIsLoading(false);
     }
