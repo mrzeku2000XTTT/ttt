@@ -178,6 +178,7 @@ import KFlow from './pages/KFlow';
 import Explorer from './pages/Explorer';
 import Enoch from './pages/Enoch';
 import Resonance from './pages/Resonance';
+import UNI from './pages/UNI';
 import __Layout from './Layout.jsx';
 
 
@@ -362,6 +363,7 @@ export const PAGES = {
     "Explorer": Explorer,
     "Enoch": Enoch,
     "Resonance": Resonance,
+    "UNI": UNI,
 }
 
 export const pagesConfig = {

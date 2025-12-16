@@ -19,6 +19,7 @@ import AgentYingChat from "@/components/AgentYingChat";
 import ImageEditor from "@/components/feed/ImageEditor";
 import BadgeManagerModal from "@/components/feed/BadgeManagerModal";
 import PostExplainerModal from "@/components/feed/PostExplainerModal";
+import MatrixGridBackground from "@/components/feed/MatrixGridBackground";
 
 export default function FeedPage() {
   const navigate = useNavigate();
@@ -109,6 +110,7 @@ export default function FeedPage() {
   const [userResults, setUserResults] = useState([]);
   const [explainerPost, setExplainerPost] = useState(null);
   const [showNewsModal, setShowNewsModal] = useState(false);
+  const [showLayer01, setShowLayer01] = useState(false);
 
   const fileInputRef = useRef(null);
   const replyFileInputRef = useRef(null);
@@ -3698,6 +3700,8 @@ export default function FeedPage() {
         )}
       </AnimatePresence>
 
+      {showLayer01 && <MatrixGridBackground />}
+
       <div className="relative z-10 p-6 md:p-8 lg:p-12">
         <div className="max-w-2xl mx-auto">
           <motion.div
@@ -3773,15 +3777,37 @@ export default function FeedPage() {
                         </Button>
                       </Link>
                     </div>
-                    <div className="flex justify-center w-full">
+                    <div className="flex justify-center w-full items-center gap-2">
                       <Button
+                        onClick={() => setShowLayer01(!showLayer01)}
                         size="sm"
                         variant="ghost"
-                        className="text-white/40 hover:text-white hover:bg-white/10 h-5 px-1.5 text-[10px] font-mono tracking-widest"
+                        className={`h-5 px-1.5 text-[10px] font-mono tracking-widest transition-all ${showLayer01 ? 'text-green-400 bg-green-500/10 shadow-[0_0_10px_rgba(74,222,128,0.3)]' : 'text-white/40 hover:text-white hover:bg-white/10'}`}
                         title="Layer 01"
                       >
                         01
                       </Button>
+                      
+                      <AnimatePresence>
+                        {showLayer01 && (
+                          <motion.div
+                            initial={{ width: 0, opacity: 0 }}
+                            animate={{ width: 'auto', opacity: 1 }}
+                            exit={{ width: 0, opacity: 0 }}
+                            className="overflow-hidden"
+                          >
+                            <Link to={createPageUrl("UNI")}>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-5 px-2 text-[10px] font-mono tracking-widest text-green-400 hover:text-green-300 hover:bg-green-500/20 border border-green-500/30"
+                              >
+                                UNI
+                              </Button>
+                            </Link>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </div>
                 </div>
