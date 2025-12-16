@@ -57,11 +57,11 @@ Deno.serve(async (req) => {
         `;
 
         // Use InvokeLLM with the file_url attached
-        // Disable internet context for speed unless explicitly needed for file analysis
+        // Enable internet context to allow Agent Ying to verify facts found in the document
         const result = await base44.integrations.Core.InvokeLLM({
             prompt: prompt,
             file_urls: [file_url],
-            add_context_from_internet: false
+            add_context_from_internet: true
         });
 
         return Response.json({ result: result });
