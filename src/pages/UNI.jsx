@@ -10,6 +10,14 @@ export default function UNIPage() {
   return (
     <div className="min-h-screen bg-black relative overflow-hidden flex flex-col items-center justify-center">
       <MatrixGridBackground />
+
+      <div className="absolute top-6 left-6 z-50">
+        <Link to={createPageUrl("Feed")}>
+          <Button variant="ghost" className="text-green-500 hover:text-green-400 hover:bg-green-500/10">
+            <ArrowLeft className="w-6 h-6" />
+          </Button>
+        </Link>
+      </div>
       
       <div className="relative z-10 text-center space-y-8">
         <motion.h1 
@@ -31,15 +39,6 @@ export default function UNIPage() {
           SYSTEM INITIALIZED
         </motion.p>
 
-        <Link to={createPageUrl("Feed")}>
-          <Button 
-            variant="outline"
-            className="border-green-500 text-green-500 hover:bg-green-500/20 mt-8"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            RETURN TO SOURCE
-          </Button>
-        </Link>
       </div>
 
       <style jsx>{`
