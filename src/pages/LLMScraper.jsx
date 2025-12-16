@@ -5,49 +5,77 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Bot, Search, Database, ArrowLeft, Terminal, Copy } from "lucide-react";
+import { Loader2, Bot, Search, Database, ArrowLeft, Terminal, Copy, Upload, FileText } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ReactMarkdown from "react-markdown";
 
 export default function LLMScraperPage() {
-  const [url, setUrl] = useState("");
   const [instruction, setInstruction] = useState("");
   const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [searchStatus, setSearchStatus] = useState("");
+  const [status, setStatus] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
-  const handleScrape = async () => {
-    if (!url) {
-      setError("Please enter a URL");
+  const handleFileSelect = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+      setError(null);
+      setResult(null);
+    }
+  };
+
+  const handleAnalyze = async () => {
+    if (!selectedFile) {
+      setError("Please select a file to analyze");
       return;
     }
 
     setIsLoading(true);
     setError(null);
     setResult(null);
-    setSearchStatus("Initializing research agent...");
-
-    // Simulate search steps for UX
-    const statusInterval = setInterval(() => {
-      setSearchStatus(prev => {
-        if (prev === "Initializing research agent...") return "Browsing target website...";
-        if (prev === "Browsing target website...") return "Searching external sources (News, Social, Docs)...";
-        if (prev === "Searching external sources (News, Social, Docs)...") return "Cross-referencing data...";
-        if (prev === "Cross-referencing data...") return "Synthesizing research report...";
-        return prev;
-      });
-    }, 4000);
+    setStatus("Uploading file...");
+    setUploadProgress(10);
 
     try {
-      const response = await base44.functions.invoke("scrapeAndMine", {
-        url,
-        instruction: instruction || "Conduct deep research and analysis",
+      // 1. Upload the file
+      // Convert file to base64 for upload if needed, or pass directly depending on SDK
+      // The integration usually takes a base64 string or similar for 'file' parameter
+      const reader = new FileReader();
+      reader.readAsDataURL(selectedFile);
+      
+      const fileUrl = await new Promise((resolve, reject) => {
+        reader.onload = async () => {
+          try {
+            setUploadProgress(30);
+            // The UploadFile integration expects the file content
+            const base64Content = reader.result; 
+            const uploadRes = await base44.integrations.Core.UploadFile({
+              file: base64Content
+            });
+            setUploadProgress(60);
+            resolve(uploadRes.file_url);
+          } catch (e) {
+            reject(e);
+          }
+        };
+        reader.onerror = (error) => reject(error);
       });
 
-      clearInterval(statusInterval);
-      setSearchStatus("");
+      setStatus("Analyzing document contents...");
+      setUploadProgress(80);
+
+      // 2. Analyze the file
+      const response = await base44.functions.invoke("analyzeUploadedFile", {
+        file_url: fileUrl,
+        file_type: selectedFile.type,
+        instruction: instruction || "Analyze and extract key information",
+      });
+
+      setUploadProgress(100);
+      setStatus("Complete!");
 
       if (response.data.error) {
         throw new Error(response.data.error);
@@ -55,12 +83,12 @@ export default function LLMScraperPage() {
 
       setResult(response.data.result);
     } catch (err) {
-      clearInterval(statusInterval);
-      setSearchStatus("");
-      console.error("Research failed:", err);
-      setError(err.message || "Failed to conduct research. The agent encountered an issue.");
+      console.error("Analysis failed:", err);
+      setError(err.message || "Failed to analyze file.");
     } finally {
       setIsLoading(false);
+      setStatus("");
+      setUploadProgress(0);
     }
   };
 
@@ -82,51 +110,65 @@ export default function LLMScraperPage() {
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3">
               <Bot className="w-8 h-8 text-cyan-400" />
-              Deep Web Research
+              AI File Analyst
             </h1>
-            <p className="text-white/60">Enter a URL to have an AI agent browse, investigate, and report on it (Perplexity-style).</p>
+            <p className="text-white/60">Upload PDFs, images, or text files to extract insights and analyze data.</p>
           </div>
         </div>
 
         <Card className="bg-white/5 border-white/10 backdrop-blur-xl">
           <CardContent className="p-6 space-y-6">
+            
+            {/* File Upload Area */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-white/80">Target Website URL</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
-                <Input
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://example.com/products"
-                  className="pl-10 bg-black/40 border-white/10 text-white placeholder:text-white/20 h-12"
+              <label className="text-sm font-medium text-white/80">Upload File</label>
+              <div className="border-2 border-dashed border-white/20 rounded-xl p-8 text-center hover:bg-white/5 transition-colors relative">
+                <input 
+                  type="file" 
+                  onChange={handleFileSelect}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.csv"
                 />
+                {selectedFile ? (
+                  <div className="flex flex-col items-center gap-2 text-green-400">
+                    <Database className="w-10 h-10" />
+                    <span className="font-semibold text-lg">{selectedFile.name}</span>
+                    <span className="text-xs text-white/40">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2 text-white/40">
+                    <Search className="w-10 h-10 mb-2" />
+                    <span className="font-medium">Click or Drag file here</span>
+                    <span className="text-xs">PDF, Images, Text, CSV</span>
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-white/80">Mining Instructions (Optional)</label>
+              <label className="text-sm font-medium text-white/80">Analysis Instructions (Optional)</label>
               <Textarea
                 value={instruction}
                 onChange={(e) => setInstruction(e.target.value)}
-                placeholder="e.g., Extract all product names and prices, or Summarize the article..."
+                placeholder="e.g., Summarize the main points, Extract financial data, Describe the image..."
                 className="bg-black/40 border-white/10 text-white placeholder:text-white/20 min-h-[100px]"
               />
             </div>
 
             <Button
-              onClick={handleScrape}
-              disabled={isLoading || !url}
+              onClick={handleAnalyze}
+              disabled={isLoading || !selectedFile}
               className="w-full h-12 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold shadow-lg shadow-cyan-500/20"
             >
               {isLoading ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Mining Data...
+                  Processing...
                 </>
               ) : (
                 <>
-                  <Database className="w-5 h-5 mr-2" />
-                  Start Mining
+                  <Bot className="w-5 h-5 mr-2" />
+                  Analyze File
                 </>
               )}
             </Button>
@@ -137,19 +179,19 @@ export default function LLMScraperPage() {
               </div>
             )}
             
-            {/* Search Status Indicator */}
+            {/* Progress Status */}
             {isLoading && (
               <div className="mt-4 flex flex-col items-center gap-2">
                 <div className="flex items-center gap-2 text-cyan-400 animate-pulse">
                   <Bot className="w-5 h-5" />
-                  <span className="text-sm font-medium">{searchStatus}</span>
+                  <span className="text-sm font-medium">{status}</span>
                 </div>
                 <div className="w-full max-w-md h-1 bg-white/10 rounded-full overflow-hidden">
                   <motion.div 
                     className="h-full bg-cyan-500"
                     initial={{ width: "0%" }}
-                    animate={{ width: "100%" }}
-                    transition={{ duration: 20, ease: "linear", repeat: Infinity }}
+                    animate={{ width: `${uploadProgress}%` }}
+                    transition={{ duration: 0.5 }}
                   />
                 </div>
               </div>
