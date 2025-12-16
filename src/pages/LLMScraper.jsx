@@ -59,11 +59,6 @@ export default function LLMScraperPage() {
       setSearchStatus("");
       console.error("Research failed:", err);
       setError(err.message || "Failed to conduct research. The agent encountered an issue.");
-    } catch (err) {
-      clearInterval(statusInterval);
-      setSearchStatus("");
-      console.error("Research failed:", err);
-      setError(err.message || "Failed to conduct research. The agent encountered an issue.");
     } finally {
       setIsLoading(false);
     }
