@@ -36,14 +36,20 @@ Deno.serve(async (req) => {
         const content = cleanHtml.substring(0, 100000);
 
         const prompt = `
-        You are a data mining AI. Your task is to extract meaningful information from the provided website content.
+        You are a professional technical writer and data analyst. 
+        Your task is to analyze the provided website content and produce a high-quality "Article / Documentation" that explains the site.
         
-        User Instruction: ${instruction || "Extract the main data, summary, and key insights from this page."}
+        User Instruction: ${instruction || "Create a comprehensive article explaining this website, its purpose, key features, and data."}
         
         Website Content (truncated):
         ${content}
         
-        Format the output clearly. If structured data is found, present it in a readable format (e.g. Markdown tables or JSON).
+        **Output Format Requirements:**
+        - **Title:** A clear, engaging title for the article.
+        - **Introduction:** A professional summary of what the site is.
+        - **Key Features/Data:** Structured sections (using H2/H3 headers) detailing the main content, products, or data found.
+        - **Analysis:** Insights or summary of the value proposition.
+        - **Format:** Use clean Markdown with headers, bullet points, and **bold** text for readability. Make it look like a polished documentation page or blog post.
         `;
 
         const result = await base44.integrations.Core.InvokeLLM({

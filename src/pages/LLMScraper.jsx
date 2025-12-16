@@ -142,8 +142,8 @@ export default function LLMScraperPage() {
                   Copy
                 </Button>
               </CardHeader>
-              <CardContent className="p-6">
-                <div className="prose prose-invert max-w-none">
+              <CardContent className="p-8 md:p-10 bg-black/40">
+                <div className="prose prose-invert max-w-none prose-headings:text-white prose-h1:text-3xl prose-h1:font-bold prose-h2:text-2xl prose-h2:text-cyan-400 prose-h3:text-xl prose-p:text-gray-300 prose-p:leading-relaxed prose-a:text-cyan-400 prose-a:no-underline hover:prose-a:underline prose-strong:text-white prose-ul:text-gray-300 prose-li:marker:text-cyan-500 prose-code:text-cyan-300 prose-code:bg-cyan-900/20 prose-code:px-1 prose-code:rounded prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/10 prose-blockquote:border-l-cyan-500 prose-blockquote:text-gray-400 prose-blockquote:italic">
                   <ReactMarkdown>{result}</ReactMarkdown>
                 </div>
               </CardContent>
