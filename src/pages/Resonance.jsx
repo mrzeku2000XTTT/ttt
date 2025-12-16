@@ -562,27 +562,54 @@ export default function ResonancePage() {
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md"
             >
-                <div className="text-center space-y-6">
+                <div className="text-center space-y-6 bg-black/50 p-12 rounded-3xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
                     {gameState === 'VICTORY' ? (
-                        <Trophy className="w-24 h-24 text-yellow-400 mx-auto mb-4" />
+                        <Zap className="w-24 h-24 text-yellow-400 mx-auto mb-4 animate-pulse" />
                     ) : (
                         <Activity className="w-24 h-24 text-red-500 mx-auto mb-4" />
                     )}
                     
                     <div>
-                        <h1 className="text-5xl font-black text-white mb-2">
+                        <h1 className="text-5xl font-black text-white mb-2 tracking-tighter">
                             {gameState === 'VICTORY' ? 'RESONANCE ACHIEVED' : 'SIGNAL LOST'}
                         </h1>
-                        <p className="text-2xl text-white/60">Final Score: {score}</p>
+                        <p className="text-2xl font-mono text-cyan-400">Final Score: {score}</p>
+                    </div>
+
+                    {/* Progress Bar for Quantum Unlock */}
+                    <div className="bg-white/5 p-6 rounded-xl border border-white/10 max-w-sm mx-auto">
+                        <div className="flex justify-between items-center mb-2">
+                           <span className="text-xs text-white/50 uppercase tracking-widest">Quantum Synchronization</span>
+                           <span className="text-xs font-mono text-cyan-400">{Math.min(perfectSyncs, 10)}/10</span>
+                        </div>
+                        <div className="flex items-center gap-1 justify-center h-4">
+                            {Array.from({ length: 10 }).map((_, i) => (
+                                <motion.div 
+                                    key={i} 
+                                    initial={{ height: '50%', opacity: 0.3 }}
+                                    animate={{ 
+                                        height: i < perfectSyncs ? '100%' : '50%', 
+                                        opacity: i < perfectSyncs ? 1 : 0.3,
+                                        backgroundColor: i < perfectSyncs ? '#22d3ee' : '#ffffff'
+                                    }}
+                                    className="w-full rounded-sm"
+                                />
+                            ))}
+                        </div>
+                        {perfectSyncs >= 10 && (
+                            <div className="mt-3 text-yellow-400 text-xs font-bold animate-pulse tracking-widest">
+                                DIMENSION UNLOCKED - CHECK MENU
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex justify-center gap-4">
                         <Button 
                             onClick={() => startGame(mode)}
-                            className="bg-white text-black hover:bg-gray-200 h-12 px-8 text-lg"
+                            className="bg-cyan-500 text-black hover:bg-cyan-400 h-12 px-8 text-lg font-bold"
                         >
                             <RotateCcw className="w-5 h-5 mr-2" />
-                            Try Again
+                            Re-Sync
                         </Button>
                         <Button 
                             onClick={() => setGameState('MENU')}
