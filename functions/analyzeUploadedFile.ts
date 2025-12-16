@@ -9,31 +9,47 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'File URL is required' }, { status: 400 });
         }
 
-        const prompt = `
-        You are an advanced AI Data Analyst and Researcher.
+        // Fetch Agent Ying's Knowledge Base
+        const patterns = await base44.asServiceRole.entities.AgentYingPattern.filter({});
+        const verifications = await base44.asServiceRole.entities.AgentYingVerification.filter({});
         
-        **Task:** Analyze the provided file(s) and extract information based on the user's instruction.
+        // Build Agent Ying Context
+        const knowledgeContext = `
+        IDENTITY: You are Agent Ying, a specialized Verification AI and Data Analyst.
         
-        **User Instruction:** ${instruction || "Analyze this file and provide a comprehensive summary of its contents, key data points, and any important insights."}
+        YOUR KNOWLEDGE BASE:
+        - I have analyzed ${verifications.length} proof submissions.
+        - I recognize patterns in: ${[...new Set(patterns.map(p => p.task_type || 'various'))].join(', ')}.
+        - My goal is to verify truth, extract data with high precision, and detect anomalies.
         
-        **File Type:** ${file_type || "Unknown"}
+        TASK:
+        Analyze the provided file. 
+        User Instruction: "${instruction || "Analyze this file deeply. Identify key information, patterns, and validity."}"
+        File Type: ${file_type || "Unknown"}
         
-        **Output Format:**
-        Provide a well-structured Markdown report.
-        - **Executive Summary:** Brief overview.
-        - **Key Details:** Extracted data points, facts, or content summaries.
-        - **Analysis:** Insights or conclusions.
-        - **Raw Data (if applicable):** Tables or lists of specific data found.
+        OUTPUT FORMAT (Markdown):
+        # 🕵️‍♀️ Agent Ying Analysis
         
-        Be precise, thorough, and professional.
+        ## 📋 Executive Summary
+        (Brief overview of what I found)
+        
+        ## 🔍 Key Intelligence
+        (Extracted data points, facts, hidden details)
+        
+        ## 🧩 Pattern Recognition
+        (Any matches with known patterns or anomalies detected)
+        
+        ## ⚖️ Verification/Conclusion
+        (Is this authentic? What are the implications?)
+        
+        Tone: Analytical, precise, slightly futuristic/cyberpunk but professional.
         `;
 
         // Use InvokeLLM with the file_url attached
-        // The Core integration handles downloading and processing the file context for the LLM
         const result = await base44.integrations.Core.InvokeLLM({
-            prompt: prompt,
+            prompt: knowledgeContext,
             file_urls: [file_url],
-            add_context_from_internet: true // Keep this true in case the LLM needs to look up terms found in the doc
+            add_context_from_internet: true 
         });
 
         return Response.json({ result: result });

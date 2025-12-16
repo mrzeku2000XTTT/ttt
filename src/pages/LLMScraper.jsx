@@ -41,30 +41,17 @@ export default function LLMScraperPage() {
 
     try {
       // 1. Upload the file
-      // Convert file to base64 for upload if needed, or pass directly depending on SDK
-      // The integration usually takes a base64 string or similar for 'file' parameter
-      const reader = new FileReader();
-      reader.readAsDataURL(selectedFile);
+      setUploadProgress(30);
       
-      const fileUrl = await new Promise((resolve, reject) => {
-        reader.onload = async () => {
-          try {
-            setUploadProgress(30);
-            // The UploadFile integration expects the file content
-            const base64Content = reader.result; 
-            const uploadRes = await base44.integrations.Core.UploadFile({
-              file: base64Content
-            });
-            setUploadProgress(60);
-            resolve(uploadRes.file_url);
-          } catch (e) {
-            reject(e);
-          }
-        };
-        reader.onerror = (error) => reject(error);
+      // Pass the File object directly to the SDK
+      const uploadRes = await base44.integrations.Core.UploadFile({
+        file: selectedFile
       });
+      
+      const fileUrl = uploadRes.file_url;
+      setUploadProgress(60);
 
-      setStatus("Analyzing document contents...");
+      setStatus("Agent Ying is analyzing patterns...");
       setUploadProgress(80);
 
       // 2. Analyze the file
