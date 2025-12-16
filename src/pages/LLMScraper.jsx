@@ -118,6 +118,13 @@ export default function LLMScraperPage() {
                 {error}
               </div>
             )}
+            
+            {/* Debug/Status info if mining is taking long */}
+            {isLoading && (
+              <div className="text-center text-xs text-white/40 mt-2 animate-pulse">
+                Analyzing content and browsing the web... This may take up to 30 seconds.
+              </div>
+            )}
           </CardContent>
         </Card>
 

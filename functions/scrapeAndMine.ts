@@ -37,12 +37,16 @@ Deno.serve(async (req) => {
 
         const prompt = `
         You are a professional technical writer and data analyst. 
-        Your task is to analyze the provided website content and produce a high-quality "Article / Documentation" that explains the site.
+        Your task is to analyze the provided website URL and its content to produce a high-quality "Article / Documentation" that explains the site.
         
+        Target URL: ${url}
         User Instruction: ${instruction || "Create a comprehensive article explaining this website, its purpose, key features, and data."}
         
-        Website Content (truncated):
+        Website Content (fetched text - might be incomplete if site uses JS):
         ${content}
+        
+        **CRITICAL INSTRUCTION:** 
+        If the fetched content above is empty, sparse, or looks like a "Need JS" warning, USE YOUR BROWSING CAPABILITIES (Context from Internet) to search for this URL and gather information about it.
         
         **Output Format Requirements:**
         - **Title:** A clear, engaging title for the article.
@@ -53,7 +57,8 @@ Deno.serve(async (req) => {
         `;
 
         const result = await base44.integrations.Core.InvokeLLM({
-            prompt: prompt
+            prompt: prompt,
+            add_context_from_internet: true
         });
 
         return Response.json({ result: result });
