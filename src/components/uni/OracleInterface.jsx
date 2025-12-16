@@ -152,13 +152,25 @@ export default function OracleInterface() {
     };
 
     const toggleListening = () => {
-        if (isListening) {
-            recognitionRef.current?.stop();
-            setIsListening(false);
-        } else {
-            setResponse('');
-            setTranscript('');
-            recognitionRef.current?.start();
+        try {
+            if (isListening) {
+                recognitionRef.current?.stop();
+                setIsListening(false);
+            } else {
+                setResponse('');
+                setTranscript('');
+                recognitionRef.current?.start();
+            }
+        } catch (error) {
+            console.error("Speech recognition error:", error);
+            // If we get an "already started" error, just set state to listening
+            if (error.name === 'InvalidStateError' || error.message?.includes('already started')) {
+                setIsListening(true);
+                setStatus('listening');
+            } else {
+                setIsListening(false);
+                setStatus('idle');
+            }
         }
     };
 
