@@ -179,6 +179,7 @@ import Explorer from './pages/Explorer';
 import Enoch from './pages/Enoch';
 import Resonance from './pages/Resonance';
 import UNI from './pages/UNI';
+import LLMScraper from './pages/LLMScraper';
 import __Layout from './Layout.jsx';
 
 
@@ -364,6 +365,7 @@ export const PAGES = {
     "Enoch": Enoch,
     "Resonance": Resonance,
     "UNI": UNI,
+    "LLMScraper": LLMScraper,
 }
 
 export const pagesConfig = {
