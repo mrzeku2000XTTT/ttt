@@ -10,30 +10,38 @@ Deno.serve(async (req) => {
         }
 
         // Fetch the website content
-        // Using a User-Agent to avoid some basic blocks
-        const response = await fetch(url, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        let content = "";
+        try {
+            // Using a User-Agent to avoid some basic blocks
+            const response = await fetch(url, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.5'
+                }
+            });
+
+            if (response.ok) {
+                const html = await response.text();
+                // Simple cleanup to reduce token usage
+                // Remove scripts, styles, and comments
+                const cleanHtml = html
+                    .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, "")
+                    .replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gim, "")
+                    .replace(/<!--[\s\S]*?-->/g, "")
+                    .replace(/\s+/g, " ")
+                    .trim();
+
+                // Truncate if still too long (e.g. 50k chars is usually enough for context)
+                content = cleanHtml.substring(0, 50000);
+            } else {
+                console.log(`Direct fetch failed with status ${response.status}. Relying on LLM web search.`);
+                content = `[Direct fetch failed (Status: ${response.status}). PLEASE USE WEB SEARCH TO FIND INFORMATION ABOUT THIS URL.]`;
             }
-        });
-
-        if (!response.ok) {
-            return Response.json({ error: `Failed to fetch URL: ${response.status} ${response.statusText}` }, { status: 500 });
+        } catch (fetchError) {
+            console.error('Fetch error:', fetchError);
+            content = `[Direct fetch error: ${fetchError.message}. PLEASE USE WEB SEARCH TO FIND INFORMATION ABOUT THIS URL.]`;
         }
-
-        const html = await response.text();
-
-        // Simple cleanup to reduce token usage
-        // Remove scripts, styles, and comments
-        const cleanHtml = html
-            .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, "")
-            .replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gim, "")
-            .replace(/<!--[\s\S]*?-->/g, "")
-            .replace(/\s+/g, " ")
-            .trim();
-
-        // Truncate if still too long (e.g. 100k chars)
-        const content = cleanHtml.substring(0, 100000);
 
         const prompt = `
         You are a "Deep Research AI" acting like a perplexity-style search engine. 
