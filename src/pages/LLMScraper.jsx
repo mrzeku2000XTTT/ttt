@@ -58,6 +58,7 @@ export default function LLMScraperPage() {
       const response = await base44.functions.invoke("analyzeUploadedFile", {
         file_url: fileUrl,
         file_type: selectedFile.type,
+        file_name: selectedFile.name,
         instruction: instruction || "Analyze and extract key information",
       });
 
@@ -69,6 +70,9 @@ export default function LLMScraperPage() {
       }
 
       setResult(response.data.result);
+      // We can also store the returned file_url if we want to display what was analyzed/saved
+      // But we can use the local preview for now or the uploaded url if we want
+      
     } catch (err) {
       console.error("Analysis failed:", err);
       setError(err.message || "Failed to analyze file.");
@@ -190,22 +194,50 @@ export default function LLMScraperPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
           >
+            {/* Display Uploaded Image/File */}
+            {selectedFile && selectedFile.type.startsWith('image/') && (
+              <Card className="bg-white/5 border-white/10 backdrop-blur-xl overflow-hidden">
+                <CardHeader className="border-b border-white/10 pb-4">
+                  <CardTitle className="text-xl font-bold flex items-center gap-2">
+                    <Database className="w-5 h-5 text-cyan-400" />
+                    Analyzed Proof
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="w-full bg-black/40 flex justify-center p-4">
+                    <img 
+                      src={URL.createObjectURL(selectedFile)} 
+                      alt="Analyzed content" 
+                      className="max-w-full max-h-[500px] object-contain rounded-lg border border-white/10 shadow-2xl"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <Card className="bg-white/5 border-white/10 backdrop-blur-xl">
               <CardHeader className="flex flex-row items-center justify-between border-b border-white/10 pb-4">
                 <CardTitle className="text-xl font-bold flex items-center gap-2">
                   <Bot className="w-5 h-5 text-green-400" />
                   Mined Data
                 </CardTitle>
-                <Button
-                  onClick={copyToClipboard}
-                  variant="ghost"
-                  size="sm"
-                  className="text-white/60 hover:text-white"
-                >
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copy
-                </Button>
+                <div className="flex items-center gap-2">
+                    <div className="px-3 py-1 bg-green-500/20 border border-green-500/30 rounded-full text-green-400 text-xs font-mono flex items-center gap-1">
+                        <Database className="w-3 h-3" />
+                        AUTO-SAVED
+                    </div>
+                    <Button
+                    onClick={copyToClipboard}
+                    variant="ghost"
+                    size="sm"
+                    className="text-white/60 hover:text-white"
+                    >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy
+                    </Button>
+                </div>
               </CardHeader>
               <CardContent className="p-8 md:p-10 bg-black/40">
                 <div className="text-gray-300 space-y-4 prose prose-invert max-w-none prose-headings:text-white prose-h1:text-3xl prose-h1:font-bold prose-h2:text-2xl prose-h2:text-cyan-400 prose-h3:text-xl prose-p:text-gray-300 prose-p:leading-relaxed prose-a:text-cyan-400 prose-a:no-underline hover:prose-a:underline prose-strong:text-white prose-ul:text-gray-300 prose-li:text-gray-300 prose-li:marker:text-cyan-500 prose-code:text-cyan-300 prose-code:bg-cyan-900/20 prose-code:px-1 prose-code:rounded prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/10 prose-blockquote:border-l-cyan-500 prose-blockquote:text-gray-400 prose-blockquote:italic [&>*]:text-gray-300">
