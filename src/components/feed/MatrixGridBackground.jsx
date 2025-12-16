@@ -33,6 +33,7 @@ const MatrixGridBackground = () => {
 
       ctx.fillStyle = '#0F0'; // Matrix Green
       ctx.font = `${fontSize}px monospace`;
+      ctx.font = `${fontSize}px monospace`;
 
       for (let i = 0; i < drops.length; i++) {
         const text = characters.charAt(Math.floor(Math.random() * characters.length));
@@ -172,8 +173,7 @@ const MatrixGridBackground = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 z-[5] pointer-events-none mix-blend-screen"
-      style={{ opacity: 0.8 }}
+      className="fixed inset-0 z-[5] pointer-events-none bg-black"
     />
   );
 };
