@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import MatrixGridBackground from '@/components/feed/MatrixGridBackground';
+import OracleInterface from '@/components/uni/OracleInterface';
 
 export default function UNIPage() {
   return (
@@ -39,6 +40,13 @@ export default function UNIPage() {
           SYSTEM INITIALIZED
         </motion.p>
 
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.5 }}
+        >
+          <OracleInterface />
+        </motion.div>
       </div>
 
       <style jsx>{`
