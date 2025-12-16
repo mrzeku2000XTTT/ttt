@@ -51,7 +51,7 @@ export default function LLMScraperPage() {
       const fileUrl = uploadRes.file_url;
       setUploadProgress(60);
 
-      setStatus("Agent Ying is analyzing patterns...");
+      setStatus("Agent Ying is analyzing patterns... (This may take a moment)");
       setUploadProgress(80);
 
       // 2. Analyze the file

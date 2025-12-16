@@ -9,19 +9,30 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'File URL is required' }, { status: 400 });
         }
 
-        // Fetch Agent Ying's Knowledge Base
-        const patterns = await base44.asServiceRole.entities.AgentYingPattern.filter({});
-        const verifications = await base44.asServiceRole.entities.AgentYingVerification.filter({});
+        // Fetch Agent Ying's Knowledge Base (Safely)
+        let knowledgeContext = "";
+        try {
+            const patterns = await base44.asServiceRole.entities.AgentYingPattern.list({ limit: 10 }) || [];
+            const verifications = await base44.asServiceRole.entities.AgentYingVerification.list({ limit: 10 }) || [];
+            
+            knowledgeContext = `
+            IDENTITY: You are Agent Ying, a specialized Verification AI and Data Analyst.
+            
+            YOUR KNOWLEDGE BASE:
+            - I recognize patterns in: ${[...new Set(patterns.map(p => p.task_type || 'various'))].join(', ') || 'General Data'}.
+            - My goal is to verify truth, extract data with high precision, and detect anomalies.
+            `;
+        } catch (e) {
+            console.log("Agent Ying entities not found, using fallback identity.");
+            knowledgeContext = `
+            IDENTITY: You are Agent Ying, a specialized Verification AI and Data Analyst.
+            My goal is to verify truth, extract data with high precision, and detect anomalies.
+            `;
+        }
         
-        // Build Agent Ying Context
-        const knowledgeContext = `
-        IDENTITY: You are Agent Ying, a specialized Verification AI and Data Analyst.
-        
-        YOUR KNOWLEDGE BASE:
-        - I have analyzed ${verifications.length} proof submissions.
-        - I recognize patterns in: ${[...new Set(patterns.map(p => p.task_type || 'various'))].join(', ')}.
-        - My goal is to verify truth, extract data with high precision, and detect anomalies.
-        
+        const prompt = `
+        ${knowledgeContext}
+
         TASK:
         Analyze the provided file. 
         User Instruction: "${instruction || "Analyze this file deeply. Identify key information, patterns, and validity."}"
@@ -46,10 +57,11 @@ Deno.serve(async (req) => {
         `;
 
         // Use InvokeLLM with the file_url attached
+        // Disable internet context for speed unless explicitly needed for file analysis
         const result = await base44.integrations.Core.InvokeLLM({
-            prompt: knowledgeContext,
+            prompt: prompt,
             file_urls: [file_url],
-            add_context_from_internet: true 
+            add_context_from_internet: false
         });
 
         return Response.json({ result: result });
