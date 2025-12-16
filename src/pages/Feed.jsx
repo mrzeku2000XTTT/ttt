@@ -3707,69 +3707,83 @@ export default function FeedPage() {
           >
             <div className="flex items-center gap-3 mb-4">
               <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h1 className="text-3xl font-bold text-white tracking-tight">TTT Feed</h1>
-                  <Button
-                    onClick={() => navigate(createPageUrl("Lobby"))}
-                    size="sm"
-                    variant="ghost"
-                    className="relative text-white/60 hover:text-white hover:bg-white/10 h-8 w-8 p-0 group"
-                    title="Enter The Lobby"
-                  >
-                    <motion.div
-                      animate={{
-                        rotate: 360,
-                        scale: [1, 1.1, 1],
-                      }}
-                      transition={{
-                        rotate: { duration: 20, repeat: Infinity, ease: "linear" },
-                        scale: { duration: 2, repeat: Infinity },
-                      }}
-                      className="w-4 h-4"
-                    >
-                      <CircleDot className="w-4 h-4 text-cyan-400 group-hover:text-yellow-400 transition-colors" />
-                    </motion.div>
-                  </Button>
-                  <Button
-                    onClick={() => navigate(createPageUrl("DAGFeed"))}
-                    size="sm"
-                    variant="ghost"
-                    className="relative text-white/60 hover:text-white hover:bg-white/10 h-8 w-8 p-0 group"
-                    title="DAG Feed (Pay to Publish)"
-                  >
-                    <Box className="w-4 h-4 text-purple-400 group-hover:text-purple-300 transition-colors" />
-                  </Button>
-                  <Button
-                    onClick={() => setShowNewsModal(true)}
-                    size="sm"
-                    variant="ghost"
-                    className="text-white/60 hover:text-white hover:bg-white/10 h-8 w-8 p-0"
-                    title="Kaspa News"
-                  >
-                    <Newspaper className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setTempGradientColors(gradientColors);
-                      setShowGradientModal(true);
-                    }}
-                    size="sm"
-                    variant="ghost"
-                    className="text-white/60 hover:text-white hover:bg-white/10 h-8 w-8 p-0"
-                    title="Customize background"
-                  >
-                    <Palette className="w-4 h-4" />
-                  </Button>
-                  <Link to={createPageUrl("TheRealm")}>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-white/60 hover:text-white hover:bg-white/10 h-8 w-8 p-0"
-                      title="Enter The Realm"
-                    >
-                      <Moon className="w-4 h-4" />
-                    </Button>
-                  </Link>
+                <div className="flex items-start gap-2">
+                  <h1 className="text-3xl font-bold text-white tracking-tight leading-8">TTT Feed</h1>
+                  <div className="flex flex-col gap-1 pt-0.5">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() => navigate(createPageUrl("Lobby"))}
+                        size="sm"
+                        variant="ghost"
+                        className="relative text-white/60 hover:text-white hover:bg-white/10 h-8 w-8 p-0 group"
+                        title="Enter The Lobby"
+                      >
+                        <motion.div
+                          animate={{
+                            rotate: 360,
+                            scale: [1, 1.1, 1],
+                          }}
+                          transition={{
+                            rotate: { duration: 20, repeat: Infinity, ease: "linear" },
+                            scale: { duration: 2, repeat: Infinity },
+                          }}
+                          className="w-4 h-4"
+                        >
+                          <CircleDot className="w-4 h-4 text-cyan-400 group-hover:text-yellow-400 transition-colors" />
+                        </motion.div>
+                      </Button>
+                      <Button
+                        onClick={() => navigate(createPageUrl("DAGFeed"))}
+                        size="sm"
+                        variant="ghost"
+                        className="relative text-white/60 hover:text-white hover:bg-white/10 h-8 w-8 p-0 group"
+                        title="DAG Feed (Pay to Publish)"
+                      >
+                        <Box className="w-4 h-4 text-purple-400 group-hover:text-purple-300 transition-colors" />
+                      </Button>
+                      <Button
+                        onClick={() => setShowNewsModal(true)}
+                        size="sm"
+                        variant="ghost"
+                        className="text-white/60 hover:text-white hover:bg-white/10 h-8 w-8 p-0"
+                        title="Kaspa News"
+                      >
+                        <Newspaper className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setTempGradientColors(gradientColors);
+                          setShowGradientModal(true);
+                        }}
+                        size="sm"
+                        variant="ghost"
+                        className="text-white/60 hover:text-white hover:bg-white/10 h-8 w-8 p-0"
+                        title="Customize background"
+                      >
+                        <Palette className="w-4 h-4" />
+                      </Button>
+                      <Link to={createPageUrl("TheRealm")}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-white/60 hover:text-white hover:bg-white/10 h-8 w-8 p-0"
+                          title="Enter The Realm"
+                        >
+                          <Moon className="w-4 h-4" />
+                        </Button>
+                      </Link>
+                    </div>
+                    <div className="flex justify-center w-full">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-white/40 hover:text-white hover:bg-white/10 h-5 px-1.5 text-[10px] font-mono tracking-widest"
+                        title="Layer 01"
+                      >
+                        01
+                      </Button>
+                    </div>
+                  </div>
                 </div>
                 <p className="text-white/40 text-sm">Community Posts</p>
               </div>
