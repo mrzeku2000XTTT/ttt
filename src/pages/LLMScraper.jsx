@@ -16,6 +16,7 @@ export default function LLMScraperPage() {
   const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [searchStatus, setSearchStatus] = useState("");
 
   const handleScrape = async () => {
     if (!url) {
@@ -26,12 +27,42 @@ export default function LLMScraperPage() {
     setIsLoading(true);
     setError(null);
     setResult(null);
+    setSearchStatus("Initializing research agent...");
+
+    // Simulate search steps for UX
+    const statusInterval = setInterval(() => {
+      setSearchStatus(prev => {
+        if (prev === "Initializing research agent...") return "Browsing target website...";
+        if (prev === "Browsing target website...") return "Searching external sources (News, Social, Docs)...";
+        if (prev === "Searching external sources (News, Social, Docs)...") return "Cross-referencing data...";
+        if (prev === "Cross-referencing data...") return "Synthesizing research report...";
+        return prev;
+      });
+    }, 4000);
 
     try {
       const response = await base44.functions.invoke("scrapeAndMine", {
         url,
-        instruction: instruction || "Extract all key information",
+        instruction: instruction || "Conduct deep research and analysis",
       });
+
+      clearInterval(statusInterval);
+      setSearchStatus("");
+
+      if (response.data.error) {
+        throw new Error(response.data.error);
+      }
+
+      setResult(response.data.result);
+    } catch (err) {
+      clearInterval(statusInterval);
+      setSearchStatus("");
+      console.error("Research failed:", err);
+      setError(err.message || "Failed to conduct research. The agent encountered an issue.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
       if (response.data.error) {
         throw new Error(response.data.error);
@@ -63,10 +94,10 @@ export default function LLMScraperPage() {
           </Link>
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3">
-              <Terminal className="w-8 h-8 text-cyan-400" />
-              LLM Web Miner
+              <Bot className="w-8 h-8 text-cyan-400" />
+              Deep Web Research
             </h1>
-            <p className="text-white/60">Enter a URL to scrape and mine data using AI</p>
+            <p className="text-white/60">Enter a URL to have an AI agent browse, investigate, and report on it (Perplexity-style).</p>
           </div>
         </div>
 
@@ -119,10 +150,21 @@ export default function LLMScraperPage() {
               </div>
             )}
             
-            {/* Debug/Status info if mining is taking long */}
+            {/* Search Status Indicator */}
             {isLoading && (
-              <div className="text-center text-xs text-white/40 mt-2 animate-pulse">
-                Analyzing content and browsing the web... This may take up to 30 seconds.
+              <div className="mt-4 flex flex-col items-center gap-2">
+                <div className="flex items-center gap-2 text-cyan-400 animate-pulse">
+                  <Bot className="w-5 h-5" />
+                  <span className="text-sm font-medium">{searchStatus}</span>
+                </div>
+                <div className="w-full max-w-md h-1 bg-white/10 rounded-full overflow-hidden">
+                  <motion.div 
+                    className="h-full bg-cyan-500"
+                    initial={{ width: "0%" }}
+                    animate={{ width: "100%" }}
+                    transition={{ duration: 20, ease: "linear", repeat: Infinity }}
+                  />
+                </div>
               </div>
             )}
           </CardContent>
