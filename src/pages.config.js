@@ -180,6 +180,7 @@ import Enoch from './pages/Enoch';
 import Resonance from './pages/Resonance';
 import UNI from './pages/UNI';
 import LLMScraper from './pages/LLMScraper';
+import BridgeMind from './pages/BridgeMind';
 import __Layout from './Layout.jsx';
 
 
@@ -366,6 +367,7 @@ export const PAGES = {
     "Resonance": Resonance,
     "UNI": UNI,
     "LLMScraper": LLMScraper,
+    "BridgeMind": BridgeMind,
 }
 
 export const pagesConfig = {
