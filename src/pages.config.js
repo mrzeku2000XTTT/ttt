@@ -183,6 +183,7 @@ import LLMScraper from './pages/LLMScraper';
 import BridgeMind from './pages/BridgeMind';
 import Oracle from './pages/Oracle';
 import Truman from './pages/Truman';
+import Shill from './pages/Shill';
 import __Layout from './Layout.jsx';
 
 
@@ -372,6 +373,7 @@ export const PAGES = {
     "BridgeMind": BridgeMind,
     "Oracle": Oracle,
     "Truman": Truman,
+    "Shill": Shill,
 }
 
 export const pagesConfig = {

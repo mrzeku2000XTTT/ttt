@@ -6,7 +6,8 @@ import { base44 } from "@/api/base44Client";
 import {
   ArrowLeft,
   Eye,
-  Play
+  Play,
+  Share2
 } from "lucide-react";
 
 export default function BridgeMindPage() {
@@ -29,6 +30,7 @@ export default function BridgeMindPage() {
   const bridgeMindApps = [
     { id: "oracle", name: "Oracle", icon: Eye, path: "Oracle", description: "Seek wisdom and insights" },
     { id: "truman", name: "Truman", icon: Play, path: "Truman", description: "Watch and learn" },
+    { id: "shill", name: "Shill", icon: Share2, path: "Shill", description: "Your link-in-bio page" },
   ];
 
   const getIconComponent = (Icon) => Icon;
