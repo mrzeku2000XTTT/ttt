@@ -184,6 +184,7 @@ import BridgeMind from './pages/BridgeMind';
 import Oracle from './pages/Oracle';
 import Truman from './pages/Truman';
 import Shill from './pages/Shill';
+import AGENTZK from './pages/AGENTZK';
 import __Layout from './Layout.jsx';
 
 
@@ -374,6 +375,7 @@ export const PAGES = {
     "Oracle": Oracle,
     "Truman": Truman,
     "Shill": Shill,
+    "AGENTZK": AGENTZK,
 }
 
 export const pagesConfig = {
