@@ -5,11 +5,13 @@ import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Plus, Play, Zap, Database, Send, GitBranch, Clock } from "lucide-react";
+import { ArrowLeft, Plus, Play, Zap, Database, Send, GitBranch, Clock, Edit2 } from "lucide-react";
+import WorkflowCanvas from "@/components/simple/WorkflowCanvas";
 
 export default function SIMPLEPage() {
   const [user, setUser] = useState(null);
   const [workflows, setWorkflows] = useState([]);
+  const [editingWorkflow, setEditingWorkflow] = useState(null);
 
   useEffect(() => {
     loadUser();
@@ -38,10 +40,28 @@ export default function SIMPLEPage() {
       id: Date.now().toString(),
       name: "New Workflow",
       nodes: [],
+      connections: [],
       active: false,
       created: new Date().toISOString()
     };
-    const updated = [...workflows, newWorkflow];
+    setEditingWorkflow(newWorkflow);
+  };
+
+  const saveWorkflow = (workflow) => {
+    const existing = workflows.find(w => w.id === workflow.id);
+    let updated;
+    if (existing) {
+      updated = workflows.map(w => w.id === workflow.id ? workflow : w);
+    } else {
+      updated = [...workflows, workflow];
+    }
+    setWorkflows(updated);
+    localStorage.setItem('simple_workflows', JSON.stringify(updated));
+    setEditingWorkflow(null);
+  };
+
+  const deleteWorkflow = (id) => {
+    const updated = workflows.filter(w => w.id !== id);
     setWorkflows(updated);
     localStorage.setItem('simple_workflows', JSON.stringify(updated));
   };
@@ -152,17 +172,19 @@ export default function SIMPLEPage() {
                     <div className="flex items-center gap-2">
                       <Button
                         size="sm"
+                        onClick={() => setEditingWorkflow(workflow)}
                         className="bg-purple-500 hover:bg-purple-600"
                       >
-                        <Play className="w-3 h-3 mr-1" />
+                        <Edit2 className="w-3 h-3 mr-1" />
                         Edit
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
-                        className="border-white/20 text-white hover:bg-white/10"
+                        onClick={() => deleteWorkflow(workflow.id)}
+                        className="border-red-500/20 text-red-400 hover:bg-red-500/10"
                       >
-                        View
+                        Delete
                       </Button>
                     </div>
                   </Card>
@@ -172,6 +194,14 @@ export default function SIMPLEPage() {
           )}
         </div>
       </div>
+
+      {editingWorkflow && (
+        <WorkflowCanvas
+          workflow={editingWorkflow}
+          onClose={() => setEditingWorkflow(null)}
+          onSave={saveWorkflow}
+        />
+      )}
     </div>
   );
 }
