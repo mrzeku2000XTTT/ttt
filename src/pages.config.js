@@ -181,6 +181,8 @@ import Resonance from './pages/Resonance';
 import UNI from './pages/UNI';
 import LLMScraper from './pages/LLMScraper';
 import BridgeMind from './pages/BridgeMind';
+import Oracle from './pages/Oracle';
+import Truman from './pages/Truman';
 import __Layout from './Layout.jsx';
 
 
@@ -368,6 +370,8 @@ export const PAGES = {
     "UNI": UNI,
     "LLMScraper": LLMScraper,
     "BridgeMind": BridgeMind,
+    "Oracle": Oracle,
+    "Truman": Truman,
 }
 
 export const pagesConfig = {

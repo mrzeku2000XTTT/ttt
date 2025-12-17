@@ -5,15 +5,8 @@ import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import {
   ArrowLeft,
-  Brain,
-  Users,
-  MessageSquare,
-  TrendingUp,
-  Shield,
-  Zap,
-  Activity,
-  BookOpen,
-  Network
+  Eye,
+  Play
 } from "lucide-react";
 
 export default function BridgeMindPage() {
@@ -34,19 +27,15 @@ export default function BridgeMindPage() {
   };
 
   const bridgeMindApps = [
-    { id: "community", name: "Community", icon: Users, path: "Feed", description: "Connect with BridgeMind members" },
-    { id: "chat", name: "Chat", icon: MessageSquare, path: "AgentZK", description: "AI-powered conversations" },
-    { id: "analytics", name: "Analytics", icon: TrendingUp, path: "Analytics", description: "Track community insights" },
-    { id: "knowledge", name: "Knowledge Base", icon: BookOpen, path: "KnowledgeBase", description: "Learn and grow" },
-    { id: "network", name: "Network", icon: Network, path: "DAGFeed", description: "Decentralized connections" },
-    { id: "security", name: "Security", icon: Shield, path: "RegisterTTTID", description: "Verify your identity" },
+    { id: "oracle", name: "Oracle", icon: Eye, path: "Oracle", description: "Seek wisdom and insights" },
+    { id: "truman", name: "Truman", icon: Play, path: "Truman", description: "Watch and learn" },
   ];
 
   const getIconComponent = (Icon) => Icon;
 
   return (
     <div className="min-h-screen bg-black">
-      <div className="fixed inset-0 bg-gradient-to-br from-purple-900/20 via-black to-blue-900/20" />
+      <div className="fixed inset-0 bg-black" />
       
       <div className="relative z-10 min-h-screen p-6">
         <div className="max-w-6xl mx-auto">
@@ -56,16 +45,22 @@ export default function BridgeMindPage() {
                 <ArrowLeft className="w-5 h-5 text-white" />
               </button>
             </Link>
-            <div>
-              <h1 className="text-3xl font-black text-white flex items-center gap-3">
-                <Brain className="w-8 h-8 text-purple-400" />
-                BridgeMind
-              </h1>
-              <p className="text-white/60">Community Apps & Tools</p>
+            <div className="flex items-center gap-4">
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/3b1c445ba_image.png" 
+                alt="BridgeMind Logo"
+                className="w-12 h-12 object-contain"
+              />
+              <div>
+                <h1 className="text-3xl font-black text-white">
+                  BridgeMind
+                </h1>
+                <p className="text-white/60">Community Apps & Tools</p>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
             {bridgeMindApps.map((app, index) => {
               const Icon = getIconComponent(app.icon);
               
@@ -77,37 +72,22 @@ export default function BridgeMindPage() {
                   transition={{ delay: index * 0.1 }}
                 >
                   <Link to={createPageUrl(app.path)}>
-                    <div className="group relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:bg-white/10 hover:border-purple-500/50 transition-all cursor-pointer overflow-hidden">
+                    <div className="group relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 hover:bg-white/10 hover:border-purple-500/50 transition-all cursor-pointer overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 to-blue-500/0 group-hover:from-purple-500/10 group-hover:to-blue-500/10 transition-all" />
                       
                       <div className="relative">
-                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-purple-500/30 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                          <Icon className="w-7 h-7 text-purple-400" />
+                        <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-purple-500/30 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                          <Icon className="w-8 h-8 text-purple-400" />
                         </div>
                         
-                        <h3 className="text-xl font-bold text-white mb-2">{app.name}</h3>
-                        <p className="text-white/60 text-sm">{app.description}</p>
+                        <h3 className="text-2xl font-bold text-white mb-2">{app.name}</h3>
+                        <p className="text-white/60">{app.description}</p>
                       </div>
                     </div>
                   </Link>
                 </motion.div>
               );
             })}
-          </div>
-
-          <div className="mt-12 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center flex-shrink-0">
-                <Zap className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-white mb-2">Welcome to BridgeMind</h2>
-                <p className="text-white/70 leading-relaxed">
-                  A community-driven platform for connecting minds, sharing knowledge, and building the future together. 
-                  Explore our suite of tools designed to empower collaboration and innovation.
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </div>
