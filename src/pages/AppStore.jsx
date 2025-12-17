@@ -140,8 +140,12 @@ export default function AppStorePage() {
                     {app.premium && (
                       <Crown className="absolute -top-1 -right-1 w-3 h-3 text-yellow-400" />
                     )}
-                    {appImages[app.path] || app.defaultIcon ? (
-                      <img src={appImages[app.path] || app.defaultIcon} alt={app.name} className={`w-full h-full ${app.objectFit || 'object-cover'} ${app.circular ? 'rounded-full' : 'rounded-xl'}`} />
+                    {appImages[app.path] ? (
+                      <img src={appImages[app.path]} alt={app.name} className={`w-full h-full ${app.objectFit || 'object-cover'} ${app.circular ? 'rounded-full' : 'rounded-xl'}`} />
+                    ) : app.isEmoji ? (
+                      <span className="text-3xl">{app.defaultIcon}</span>
+                    ) : app.defaultIcon ? (
+                      <img src={app.defaultIcon} alt={app.name} className={`w-full h-full ${app.objectFit || 'object-cover'} ${app.circular ? 'rounded-full' : 'rounded-xl'}`} />
                     ) : (
                       <Icon className="w-8 h-8 text-white/80" strokeWidth={1.5} />
                     )}
