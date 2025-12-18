@@ -23,8 +23,11 @@ export default function ShillPage() {
   const [backgroundFile, setBackgroundFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [backgroundPreview, setBackgroundPreview] = useState(null);
+  const [kaspaQrFile, setKaspaQrFile] = useState(null);
+  const [kaspaQrPreview, setKaspaQrPreview] = useState(null);
   const [showQrModal, setShowQrModal] = useState(false);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState("");
+  const [showingKaspaQr, setShowingKaspaQr] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -73,6 +76,7 @@ export default function ShillPage() {
           setLinks(loadedProfile.links || []);
           setAvatarPreview(loadedProfile.avatar_url || null);
           setBackgroundPreview(loadedProfile.background_url || null);
+          setKaspaQrPreview(loadedProfile.kaspa_qr_url || null);
       }
     } catch (err) {
       console.error("Load failed:", err);
@@ -117,6 +121,14 @@ export default function ShillPage() {
     }
   };
 
+  const handleKaspaQrSelect = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setKaspaQrFile(file);
+      setKaspaQrPreview(URL.createObjectURL(file));
+    }
+  };
+
   const addLink = () => {
     setLinks([...links, { title: "", url: "", icon: "ExternalLink" }]);
   };
@@ -138,6 +150,7 @@ export default function ShillPage() {
     try {
       let avatarUrl = profile?.avatar_url || null;
       let backgroundUrl = profile?.background_url || null;
+      let kaspaQrUrl = profile?.kaspa_qr_url || null;
 
       if (avatarFile) {
         const res = await base44.integrations.Core.UploadFile({ file: avatarFile });
@@ -149,13 +162,19 @@ export default function ShillPage() {
         backgroundUrl = res.file_url;
       }
 
+      if (kaspaQrFile) {
+        const res = await base44.integrations.Core.UploadFile({ file: kaspaQrFile });
+        kaspaQrUrl = res.file_url;
+      }
+
       const data = {
         user_email: user.email,
         display_name: displayName,
         bio: bio,
         links: links.filter(l => l.title && l.url),
         avatar_url: avatarUrl,
-        background_url: backgroundUrl
+        background_url: backgroundUrl,
+        kaspa_qr_url: kaspaQrUrl
       };
 
       if (profile) {
@@ -196,20 +215,22 @@ export default function ShillPage() {
                 </button>
               </Link>
               <div>
-                <h1 className="text-3xl font-black text-white">Shill</h1>
-                <p className="text-white/60">Your link-in-bio page</p>
+                <h1 className="text-3xl font-black text-white tracking-tighter">
+                  <span className="text-cyan-400">Shill</span>Profile
+                </h1>
+                <p className="text-white/40 text-xs font-medium tracking-widest uppercase">Your digital identity</p>
               </div>
             </div>
             
             <div className="flex gap-2">
               {profile && (
-                <Button onClick={generateQrCode} variant="outline" className="border-white/20 text-white hover:bg-white/10">
+                <Button onClick={generateQrCode} className="bg-white text-black hover:bg-gray-200 font-bold border-none">
                   <QrCode className="w-4 h-4 mr-2" />
                   Share
                 </Button>
               )}
               {profile && user && profile.user_email === user.email && !isEditing && (
-                <Button onClick={() => setIsEditing(true)} className="bg-purple-600 hover:bg-purple-700">
+                <Button onClick={() => setIsEditing(true)} className="bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 border border-cyan-500/50">
                   Edit Profile
                 </Button>
               )}
@@ -217,125 +238,119 @@ export default function ShillPage() {
           </div>
 
           {isEditing ? (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-              <Card className="bg-white/5 border-white/10 backdrop-blur-xl">
-                <CardHeader>
-                  <CardTitle className="text-white">Background Photo</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="relative w-full h-48 bg-white/5 rounded-xl border-2 border-dashed border-white/20 overflow-hidden">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+              {/* Compact Layout for Images */}
+              <div className="grid grid-cols-2 gap-4">
+                <Card className="bg-black/40 border-white/10 overflow-hidden">
+                  <div className="relative h-32 w-full group cursor-pointer bg-white/5">
                     {backgroundPreview ? (
-                      <img src={backgroundPreview} alt="Background" className="w-full h-full object-cover" />
+                      <img src={backgroundPreview} alt="Background" className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
                     ) : (
-                      <div className="flex items-center justify-center h-full">
-                        <Upload className="w-8 h-8 text-white/40" />
+                      <div className="flex items-center justify-center h-full text-white/20">
+                        <Upload className="w-8 h-8" />
                       </div>
                     )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleBackgroundSelect}
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-xs font-bold text-white">Change Banner</span>
+                    </div>
+                    <input type="file" accept="image/*" onChange={handleBackgroundSelect} className="absolute inset-0 opacity-0 cursor-pointer" />
                   </div>
-                </CardContent>
-              </Card>
+                </Card>
 
-              <Card className="bg-white/5 border-white/10 backdrop-blur-xl">
-                <CardHeader>
-                  <CardTitle className="text-white">Avatar Photo</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="relative w-32 h-32 bg-white/5 rounded-full border-2 border-dashed border-white/20 overflow-hidden mx-auto">
+                <Card className="bg-black/40 border-white/10 overflow-hidden flex items-center justify-center">
+                  <div className="relative h-24 w-24 rounded-full overflow-hidden group cursor-pointer bg-white/5 border-2 border-white/10">
                     {avatarPreview ? (
-                      <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                      <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover group-hover:opacity-80 transition-opacity" />
                     ) : (
-                      <div className="flex items-center justify-center h-full">
-                        <Upload className="w-8 h-8 text-white/40" />
+                      <div className="flex items-center justify-center h-full text-white/20">
+                        <Upload className="w-6 h-6" />
                       </div>
                     )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarSelect}
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-[10px] font-bold text-white">Avatar</span>
+                    </div>
+                    <input type="file" accept="image/*" onChange={handleAvatarSelect} className="absolute inset-0 opacity-0 cursor-pointer" />
                   </div>
-                </CardContent>
+                </Card>
+              </div>
+
+              {/* Compact Info */}
+              <Card className="bg-black/40 border-white/10 p-4 space-y-3">
+                <Input
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Display Name"
+                  className="bg-white/5 border-white/10 text-white h-9 text-sm"
+                />
+                <Textarea
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="Short Bio..."
+                  className="bg-white/5 border-white/10 text-white min-h-[60px] text-sm resize-none"
+                />
               </Card>
 
-              <Card className="bg-white/5 border-white/10 backdrop-blur-xl">
-                <CardHeader>
-                  <CardTitle className="text-white">Profile Info</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="text-white/80 text-sm mb-2 block">Display Name</label>
-                    <Input
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                      placeholder="Your Name"
-                      className="bg-black/40 border-white/10 text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-white/80 text-sm mb-2 block">Bio</label>
-                    <Textarea
-                      value={bio}
-                      onChange={(e) => setBio(e.target.value)}
-                      placeholder="Tell people about yourself..."
-                      className="bg-black/40 border-white/10 text-white"
-                    />
-                  </div>
-                </CardContent>
+              {/* Kaspa QR Code */}
+               <Card className="bg-black/40 border-white/10 p-4">
+                 <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-white/80">Kaspa QR Code</span>
+                    {kaspaQrPreview && <span className="text-xs text-green-400">Uploaded</span>}
+                 </div>
+                 <div className="relative h-12 bg-white/5 rounded-lg border border-dashed border-white/20 flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors">
+                    <span className="text-xs text-white/40 flex items-center gap-2">
+                       <QrCode className="w-3 h-3" /> {kaspaQrPreview ? "Change QR Image" : "Upload Kaspa QR"}
+                    </span>
+                    <input type="file" accept="image/*" onChange={handleKaspaQrSelect} className="absolute inset-0 opacity-0 cursor-pointer" />
+                 </div>
               </Card>
 
-              <Card className="bg-white/5 border-white/10 backdrop-blur-xl">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-white">Links</CardTitle>
-                  <Button onClick={addLink} size="sm" className="bg-purple-600 hover:bg-purple-700">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Link
+              {/* Links */}
+              <Card className="bg-black/40 border-white/10 p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-white/80">Links</span>
+                  <Button onClick={addLink} size="sm" variant="ghost" className="h-6 px-2 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-950/30">
+                    <Plus className="w-3 h-3 mr-1" /> Add
                   </Button>
-                </CardHeader>
-                <CardContent className="space-y-4">
+                </div>
+                <div className="space-y-2">
                   {links.map((link, index) => (
                     <div key={index} className="flex gap-2">
                       <Input
                         value={link.title}
                         onChange={(e) => updateLink(index, "title", e.target.value)}
                         placeholder="Title"
-                        className="bg-black/40 border-white/10 text-white"
+                        className="bg-white/5 border-white/10 text-white h-8 text-xs w-1/3"
                       />
                       <Input
                         value={link.url}
                         onChange={(e) => updateLink(index, "url", e.target.value)}
-                        placeholder="https://..."
-                        className="bg-black/40 border-white/10 text-white flex-1"
+                        placeholder="URL"
+                        className="bg-white/5 border-white/10 text-white h-8 text-xs flex-1"
                       />
                       <Button
                         onClick={() => removeLink(index)}
                         size="icon"
                         variant="ghost"
-                        className="text-red-400 hover:text-red-300"
+                        className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-950/30"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-3 h-3" />
                       </Button>
                     </div>
                   ))}
-                </CardContent>
+                  {links.length === 0 && <div className="text-center text-xs text-white/20 py-2">No links added</div>}
+                </div>
               </Card>
 
-              <div className="flex gap-4">
+              <div className="flex gap-3 pt-2">
                 <Button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="flex-1 bg-purple-600 hover:bg-purple-700"
+                  className="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold h-10"
                 >
-                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Profile"}
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}
                 </Button>
                 {profile && (
-                  <Button onClick={() => setIsEditing(false)} variant="outline" className="border-white/10 text-white">
+                  <Button onClick={() => setIsEditing(false)} variant="outline" className="border-white/10 text-white hover:bg-white/5 h-10">
                     Cancel
                   </Button>
                 )}
@@ -396,11 +411,25 @@ export default function ShillPage() {
               <X className="w-5 h-5" />
             </button>
             
-            <h3 className="text-xl font-bold text-white mb-6 text-center">Share Profile</h3>
+            <h3 className="text-xl font-bold text-white mb-2 text-center">
+              {showingKaspaQr ? "Kaspa Address" : "Share Profile"}
+            </h3>
+            <p className="text-white/40 text-xs text-center mb-6">
+              {profile?.kaspa_qr_url ? "Tap QR code to switch" : "Scan to visit profile"}
+            </p>
             
-            <div className="bg-white p-4 rounded-xl mb-6 mx-auto w-fit">
-              {qrCodeDataUrl && (
-                <img src={qrCodeDataUrl} alt="Profile QR Code" className="w-48 h-48" />
+            <div 
+              className="bg-white p-4 rounded-xl mb-6 mx-auto w-fit cursor-pointer transition-transform hover:scale-105 active:scale-95"
+              onClick={() => {
+                if (profile?.kaspa_qr_url) {
+                  setShowingKaspaQr(!showingKaspaQr);
+                }
+              }}
+            >
+              {showingKaspaQr && profile?.kaspa_qr_url ? (
+                <img src={profile.kaspa_qr_url} alt="Kaspa QR Code" className="w-48 h-48 object-contain" />
+              ) : (
+                qrCodeDataUrl && <img src={qrCodeDataUrl} alt="Profile QR Code" className="w-48 h-48" />
               )}
             </div>
 
@@ -409,7 +438,7 @@ export default function ShillPage() {
                 {profile?.display_name || "A KAS-User"}
               </p>
               <p className="text-white/40 text-xs mt-1">
-                TTT App • Shill Profile
+                {showingKaspaQr ? "Kaspa QR Code" : "TTT App • Shill Profile"}
               </p>
             </div>
 
