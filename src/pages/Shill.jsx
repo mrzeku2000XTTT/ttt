@@ -36,26 +36,43 @@ export default function ShillPage() {
       setUser(currentUser);
       
       const urlParams = new URLSearchParams(window.location.search);
+      const targetId = urlParams.get('id');
       const targetEmail = urlParams.get('user');
       
-      // If target email is provided, load that profile. Otherwise load current user's profile.
-      // If no target and no user, do nothing (or show empty state)
-      const emailToLoad = targetEmail || currentUser?.email;
-      
-      if (emailToLoad) {
-        const profiles = await base44.entities.ShillProfile.filter({ user_email: emailToLoad });
-        if (profiles.length > 0) {
-          const p = profiles[0];
-          setProfile(p);
-          setDisplayName(p.display_name || "");
-          setBio(p.bio || "");
-          setLinks(p.links || []);
-          setAvatarPreview(p.avatar_url || null);
-          setBackgroundPreview(p.background_url || null);
-        } else if (currentUser && emailToLoad === currentUser.email) {
-          // Only enter edit mode if it's the current user's profile that's missing
-          setIsEditing(true);
+      let loadedProfile = null;
+
+      // 1. Try loading by ID
+      if (targetId) {
+        try {
+          loadedProfile = await base44.entities.ShillProfile.get(targetId);
+        } catch (e) {
+          console.log("Profile not found by ID");
         }
+      } 
+      
+      // 2. Try loading by Email if not found by ID
+      if (!loadedProfile && targetEmail) {
+        const profiles = await base44.entities.ShillProfile.filter({ user_email: targetEmail });
+        if (profiles.length > 0) loadedProfile = profiles[0];
+      }
+      
+      // 3. Fallback to current user if no target params provided
+      if (!loadedProfile && !targetId && !targetEmail && currentUser) {
+         const profiles = await base44.entities.ShillProfile.filter({ user_email: currentUser.email });
+         if (profiles.length > 0) {
+           loadedProfile = profiles[0];
+         } else {
+           setIsEditing(true);
+         }
+      }
+
+      if (loadedProfile) {
+          setProfile(loadedProfile);
+          setDisplayName(loadedProfile.display_name || "");
+          setBio(loadedProfile.bio || "");
+          setLinks(loadedProfile.links || []);
+          setAvatarPreview(loadedProfile.avatar_url || null);
+          setBackgroundPreview(loadedProfile.background_url || null);
       }
     } catch (err) {
       console.error("Load failed:", err);
@@ -67,8 +84,8 @@ export default function ShillPage() {
   const generateQrCode = async () => {
     if (!profile) return;
     try {
-      // Generate URL for this profile
-      const url = `${window.location.origin}${createPageUrl("Shill")}?user=${profile.user_email}`;
+      // Generate URL for this profile using ID to hide email
+      const url = `${window.location.origin}${createPageUrl("Shill")}?id=${profile.id}`;
       const dataUrl = await QRCode.toDataURL(url, {
         width: 300,
         margin: 2,
@@ -398,7 +415,7 @@ export default function ShillPage() {
 
             <Button 
               onClick={() => {
-                navigator.clipboard.writeText(`${window.location.origin}${createPageUrl("Shill")}?user=${profile?.user_email}`);
+                navigator.clipboard.writeText(`${window.location.origin}${createPageUrl("Shill")}?id=${profile?.id}`);
                 alert("Link copied!");
               }}
               className="w-full bg-purple-600 hover:bg-purple-700"
