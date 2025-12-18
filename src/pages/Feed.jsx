@@ -54,7 +54,7 @@ export default function FeedPage() {
   const [fullscreenImage, setFullscreenImage] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileUsername, setProfileUsername] = useState(null);
-  const [profileData, setProfileData] = useState({ posts: [], followers: 0, following: 0, trustScore: 0, isFollowing: false, zekuBalance: 0, feedTipsSent: 0, feedTipsReceived: 0, bullTipsSent: 0, bullTipsReceived: 0, commentTipsSent: 0, commentTipsReceived: 0 });
+  const [profileData, setProfileData] = useState({ posts: [], followers: 0, following: 0, trustScore: 0, isFollowing: false, zekuBalance: 0, feedTipsSent: 0, feedTipsReceived: 0, bullTipsSent: 0, bullTipsReceived: 0, commentTipsSent: 0, commentTipsReceived: 0, shillProfile: null });
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [isFollowingUser, setIsFollowingUser] = useState(false);
   const [showProfileStats, setShowProfileStats] = useState(false);
@@ -1499,6 +1499,7 @@ export default function FeedPage() {
       let bullTipsReceived = 0;
       let commentTipsSent = 0;
       let commentTipsReceived = 0;
+      let shillProfile = null;
       
       if (targetEmail) {
         try {
@@ -1513,6 +1514,15 @@ export default function FeedPage() {
           }
         } catch (err) {
           console.log('Tip stats not accessible:', err);
+        }
+
+        try {
+          const profiles = await base44.entities.ShillProfile.filter({ user_email: targetEmail });
+          if (profiles.length > 0) {
+            shillProfile = profiles[0];
+          }
+        } catch (err) {
+          console.log('Shill profile not accessible:', err);
         }
       }
       
@@ -1605,7 +1615,8 @@ export default function FeedPage() {
         bullTipsSent,
         bullTipsReceived,
         commentTipsSent,
-        commentTipsReceived
+        commentTipsReceived,
+        shillProfile
       });
     } catch (err) {
       console.error('Failed to load profile:', err);
@@ -2475,6 +2486,20 @@ export default function FeedPage() {
                         )}
                       </Button>
                     )}
+                    
+                    {profileData.shillProfile && (
+                      <Link to={`${createPageUrl("Shill")}?user=${profileData.shillProfile.user_email}`}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="bg-purple-500/10 border-purple-500/30 text-purple-400 hover:bg-purple-500/20 hover:text-purple-300"
+                        >
+                          <Share className="w-4 h-4 mr-2" />
+                          Shill Profile
+                        </Button>
+                      </Link>
+                    )}
+
                     <Button
                       onClick={() => setShowProfileModal(false)}
                       variant="ghost"
