@@ -35,7 +35,7 @@ export default function BridgeMindPage() {
     { id: "oracle", name: "Oracle", icon: Eye, path: "Oracle", description: "Seek wisdom and insights" },
     { id: "truman", name: "Truman", icon: Play, path: "Truman", description: "Watch and learn" },
     { id: "shill", name: "Shill", icon: Share2, path: "Shill", description: "Your link-in-bio page" },
-    { id: "optiqcode", name: "OptiqCode", icon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/e603efa8b_image.png", path: "https://optiqcode.com", description: "Visual Code Identity", isExternal: true },
+    { id: "optiqcode", name: "OptiqCode", icon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/e603efa8b_image.png", path: "https://optiqcode.com", description: "Visual Code Identity", isExternal: true, blackBackground: true },
     ];
 
   const filteredApps = bridgeMindApps.filter(app => 
@@ -108,7 +108,7 @@ export default function BridgeMindPage() {
                 whileTap={{ scale: 0.95 }}
                 className="flex flex-col items-center gap-1.5"
               >
-                <div className="w-16 h-16 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center relative overflow-hidden hover:bg-white/10 transition-colors group">
+                <div className={`w-16 h-16 rounded-2xl ${app.blackBackground ? 'bg-black border-white/20' : 'bg-white/5 border-white/10'} backdrop-blur-md border flex items-center justify-center relative overflow-hidden hover:bg-white/10 transition-colors group`}>
                   <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                   {isImage ? (
                     <img src={app.icon} alt={app.name} className="w-full h-full object-cover" />
