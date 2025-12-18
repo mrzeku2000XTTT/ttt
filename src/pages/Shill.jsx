@@ -387,9 +387,14 @@ export default function ShillPage() {
               )}
             </div>
 
-            <p className="text-white/60 text-center text-sm mb-6 break-all">
-              {`${window.location.origin}${createPageUrl("Shill")}?user=${profile?.user_email}`}
-            </p>
+            <div className="bg-white/5 rounded-lg p-3 mb-6 text-center border border-white/10">
+              <p className="text-white font-semibold">
+                {profile?.display_name || "A KAS-User"}
+              </p>
+              <p className="text-white/40 text-xs mt-1">
+                TTT App • Shill Profile
+              </p>
+            </div>
 
             <Button 
               onClick={() => {
