@@ -27,7 +27,9 @@ export default function ShillPage() {
   const [kaspaQrPreview, setKaspaQrPreview] = useState(null);
   const [showQrModal, setShowQrModal] = useState(false);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState("");
+  const [kaspaQrDataUrl, setKaspaQrDataUrl] = useState("");
   const [isFlipped, setIsFlipped] = useState(false);
+  const [kaspaAddress, setKaspaAddress] = useState("");
 
   useEffect(() => {
     loadData();
@@ -77,11 +79,36 @@ export default function ShillPage() {
           setAvatarPreview(loadedProfile.avatar_url || null);
           setBackgroundPreview(loadedProfile.background_url || null);
           setKaspaQrPreview(loadedProfile.kaspa_qr_url || null);
+          setKaspaAddress(loadedProfile.kaspa_address || "");
+          
+          // Generate Kaspa QR if address exists
+          if (loadedProfile.kaspa_address) {
+            generateKaspaQr(loadedProfile.kaspa_address);
+          }
       }
     } catch (err) {
       console.error("Load failed:", err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const generateKaspaQr = async (address) => {
+    if (!address) return;
+    try {
+      // Ensure proper URI scheme for wallets
+      const uri = address.startsWith("kaspa:") ? address : `kaspa:${address}`;
+      const dataUrl = await QRCode.toDataURL(uri, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#ffffff'
+        }
+      });
+      setKaspaQrDataUrl(dataUrl);
+    } catch (err) {
+      console.error("Kaspa QR Generation failed", err);
     }
   };
 
@@ -99,6 +126,11 @@ export default function ShillPage() {
         }
       });
       setQrCodeDataUrl(dataUrl);
+      
+      if (profile.kaspa_address) {
+        generateKaspaQr(profile.kaspa_address);
+      }
+      
       setIsFlipped(false);
       setShowQrModal(true);
     } catch (err) {
@@ -175,7 +207,8 @@ export default function ShillPage() {
         links: links.filter(l => l.title && l.url),
         avatar_url: avatarUrl,
         background_url: backgroundUrl,
-        kaspa_qr_url: kaspaQrUrl
+        kaspa_qr_url: kaspaQrUrl,
+        kaspa_address: kaspaAddress
       };
 
       if (profile) {
@@ -307,17 +340,30 @@ export default function ShillPage() {
               />
             </Card>
 
-            {/* Kaspa QR Code */}
-             <Card className="bg-white/5 backdrop-blur-xl border-white/10 p-4 shadow-xl">
-               <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-white/80">Kaspa QR Code</span>
-                  {kaspaQrPreview && <span className="text-xs text-green-400">Uploaded</span>}
+            {/* Kaspa Address */}
+             <Card className="bg-white/5 backdrop-blur-xl border-white/10 p-4 shadow-xl space-y-3">
+               <div>
+                  <span className="text-sm font-medium text-white/80 block mb-2">Kaspa Address</span>
+                  <Input
+                    value={kaspaAddress}
+                    onChange={(e) => setKaspaAddress(e.target.value)}
+                    placeholder="kaspa:..."
+                    className="bg-black/20 border-white/10 text-white h-9 text-xs font-mono focus:bg-black/40 transition-colors"
+                  />
+                  <p className="text-[10px] text-white/40 mt-1">Enter address to auto-generate scannable QR code</p>
                </div>
-               <div className="relative h-12 bg-black/20 rounded-lg border border-dashed border-white/20 flex items-center justify-center cursor-pointer hover:bg-black/30 transition-colors">
-                  <span className="text-xs text-white/40 flex items-center gap-2">
-                     <QrCode className="w-3 h-3" /> {kaspaQrPreview ? "Change QR Image" : "Upload Kaspa QR"}
-                  </span>
-                  <input type="file" accept="image/*" onChange={handleKaspaQrSelect} className="absolute inset-0 opacity-0 cursor-pointer" />
+
+               <div className="border-t border-white/10 pt-3">
+                  <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-white/80">Custom QR Image (Optional)</span>
+                      {kaspaQrPreview && <span className="text-xs text-green-400">Uploaded</span>}
+                  </div>
+                  <div className="relative h-12 bg-black/20 rounded-lg border border-dashed border-white/20 flex items-center justify-center cursor-pointer hover:bg-black/30 transition-colors">
+                      <span className="text-xs text-white/40 flex items-center gap-2">
+                      <QrCode className="w-3 h-3" /> {kaspaQrPreview ? "Change Image" : "Upload Custom QR"}
+                      </span>
+                      <input type="file" accept="image/*" onChange={handleKaspaQrSelect} className="absolute inset-0 opacity-0 cursor-pointer" />
+                  </div>
                </div>
             </Card>
 
@@ -439,14 +485,14 @@ export default function ShillPage() {
               {isFlipped ? "KASPA ADDRESS" : "SHARE PROFILE"}
             </h3>
             <p className="text-cyan-400 text-xs text-center mb-6 font-mono uppercase tracking-wider">
-              {profile?.kaspa_qr_url ? "TAP CARD TO FLIP" : "SCAN TO VISIT"}
+              {(profile?.kaspa_address || profile?.kaspa_qr_url) ? "TAP CARD TO FLIP" : "SCAN TO VISIT"}
             </p>
             
             {/* Flip Card Container */}
             <div 
               className="relative w-56 h-56 mx-auto mb-8 cursor-pointer perspective-[1000px] group"
               onClick={() => {
-                if (profile?.kaspa_qr_url) {
+                if (profile?.kaspa_address || profile?.kaspa_qr_url) {
                   setIsFlipped(!isFlipped);
                 }
               }}
@@ -479,11 +525,13 @@ export default function ShillPage() {
                      transform: "rotateY(180deg)" 
                    }}
                  >
-                   {profile?.kaspa_qr_url ? (
+                   {kaspaQrDataUrl ? (
+                     <img src={kaspaQrDataUrl} alt="Kaspa QR" className="w-full h-full object-contain rounded-lg" />
+                   ) : profile?.kaspa_qr_url ? (
                      <img src={profile.kaspa_qr_url} alt="Kaspa QR" className="w-full h-full object-contain rounded-lg" />
                    ) : (
                      <div className="text-center text-cyan-400">
-                       <p className="text-xs">No Kaspa QR</p>
+                       <p className="text-xs">No Kaspa Address</p>
                      </div>
                    )}
                    <div className="absolute bottom-2 left-0 right-0 text-center">
