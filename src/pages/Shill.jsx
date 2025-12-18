@@ -263,7 +263,7 @@ export default function ShillPage() {
               </Link>
               <div>
                 <h1 className="text-3xl font-black text-white tracking-tighter">
-                  <span className="text-cyan-400">Shill</span>Profile
+                  <span className="text-cyan-400">TTT</span> ID
                 </h1>
                 <p className="text-white/40 text-xs font-medium tracking-widest uppercase">Your decentralized identity</p>
               </div>
