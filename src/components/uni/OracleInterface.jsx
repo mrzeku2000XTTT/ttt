@@ -189,22 +189,7 @@ export default function OracleInterface() {
                 </div>
             </div>
 
-            {/* Controls */}
-            <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={toggleListening}
-                className={`
-                    w-20 h-20 rounded-full flex items-center justify-center
-                    border-2 transition-all duration-300
-                    ${status === 'listening' 
-                        ? 'bg-red-500/20 border-red-500 text-red-500 shadow-[0_0_30px_rgba(255,0,0,0.4)] animate-pulse' 
-                        : 'bg-green-500/10 border-green-500 text-green-500 hover:bg-green-500/20 shadow-[0_0_20px_rgba(0,255,0,0.2)]'
-                    }
-                `}
-            >
-                {status === 'listening' ? <Mic className="w-8 h-8" /> : <MicOff className="w-8 h-8" />}
-            </motion.button>
+            {/* Controls removed as requested */}
 
             {/* Transcript / Response Display */}
             <div className="min-h-[100px] w-full text-center space-y-4">

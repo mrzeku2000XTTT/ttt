@@ -47,6 +47,23 @@ export default function UNIPage() {
         >
           <OracleInterface />
         </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 2 }}
+          className="mt-8"
+        >
+          <Link to={createPageUrl("Shill")}>
+            <div className="group relative w-24 h-24 cursor-pointer">
+              <div className="absolute inset-0 bg-green-500/20 rounded-2xl blur-md group-hover:bg-green-500/40 transition-all duration-500" />
+              <div className="relative w-full h-full bg-black/80 border border-green-500/50 rounded-2xl flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform duration-300">
+                <span className="text-green-500 font-bold font-mono tracking-wider text-xs group-hover:text-green-400">SHILL</span>
+                <div className="absolute inset-0 bg-green-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </div>
+            </div>
+          </Link>
+        </motion.div>
       </div>
 
       <style jsx>{`
