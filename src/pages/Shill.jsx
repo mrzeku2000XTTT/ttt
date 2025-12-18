@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Upload, Plus, X, ExternalLink, Loader2 } from "lucide-react";
+import { ArrowLeft, Upload, Plus, X, ExternalLink, Loader2, QrCode, Share2 } from "lucide-react";
+import QRCode from "qrcode";
 
 export default function ShillPage() {
   const [user, setUser] = useState(null);
@@ -22,6 +23,8 @@ export default function ShillPage() {
   const [backgroundFile, setBackgroundFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [backgroundPreview, setBackgroundPreview] = useState(null);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState("");
 
   useEffect(() => {
     loadData();
@@ -29,25 +32,55 @@ export default function ShillPage() {
 
   const loadData = async () => {
     try {
-      const currentUser = await base44.auth.me();
+      const currentUser = await base44.auth.me().catch(() => null);
       setUser(currentUser);
       
-      const profiles = await base44.entities.ShillProfile.filter({ user_email: currentUser.email });
-      if (profiles.length > 0) {
-        const p = profiles[0];
-        setProfile(p);
-        setDisplayName(p.display_name || "");
-        setBio(p.bio || "");
-        setLinks(p.links || []);
-        setAvatarPreview(p.avatar_url || null);
-        setBackgroundPreview(p.background_url || null);
-      } else {
-        setIsEditing(true);
+      const urlParams = new URLSearchParams(window.location.search);
+      const targetEmail = urlParams.get('user');
+      
+      // If target email is provided, load that profile. Otherwise load current user's profile.
+      // If no target and no user, do nothing (or show empty state)
+      const emailToLoad = targetEmail || currentUser?.email;
+      
+      if (emailToLoad) {
+        const profiles = await base44.entities.ShillProfile.filter({ user_email: emailToLoad });
+        if (profiles.length > 0) {
+          const p = profiles[0];
+          setProfile(p);
+          setDisplayName(p.display_name || "");
+          setBio(p.bio || "");
+          setLinks(p.links || []);
+          setAvatarPreview(p.avatar_url || null);
+          setBackgroundPreview(p.background_url || null);
+        } else if (currentUser && emailToLoad === currentUser.email) {
+          // Only enter edit mode if it's the current user's profile that's missing
+          setIsEditing(true);
+        }
       }
     } catch (err) {
       console.error("Load failed:", err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const generateQrCode = async () => {
+    if (!profile) return;
+    try {
+      // Generate URL for this profile
+      const url = `${window.location.origin}${createPageUrl("Shill")}?user=${profile.user_email}`;
+      const dataUrl = await QRCode.toDataURL(url, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#ffffff'
+        }
+      });
+      setQrCodeDataUrl(dataUrl);
+      setShowQrModal(true);
+    } catch (err) {
+      console.error("QR Generation failed", err);
     }
   };
 
@@ -151,11 +184,19 @@ export default function ShillPage() {
               </div>
             </div>
             
-            {profile && !isEditing && (
-              <Button onClick={() => setIsEditing(true)} className="bg-purple-600 hover:bg-purple-700">
-                Edit Profile
-              </Button>
-            )}
+            <div className="flex gap-2">
+              {profile && (
+                <Button onClick={generateQrCode} variant="outline" className="border-white/20 text-white hover:bg-white/10">
+                  <QrCode className="w-4 h-4 mr-2" />
+                  Share
+                </Button>
+              )}
+              {profile && user && profile.user_email === user.email && !isEditing && (
+                <Button onClick={() => setIsEditing(true)} className="bg-purple-600 hover:bg-purple-700">
+                  Edit Profile
+                </Button>
+              )}
+            </div>
           </div>
 
           {isEditing ? (
@@ -323,6 +364,46 @@ export default function ShillPage() {
           ) : null}
         </div>
       </div>
+
+      {showQrModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-zinc-900 border border-white/10 p-6 rounded-2xl max-w-sm w-full relative"
+          >
+            <button
+              onClick={() => setShowQrModal(false)}
+              className="absolute top-4 right-4 text-white/40 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h3 className="text-xl font-bold text-white mb-6 text-center">Share Profile</h3>
+            
+            <div className="bg-white p-4 rounded-xl mb-6 mx-auto w-fit">
+              {qrCodeDataUrl && (
+                <img src={qrCodeDataUrl} alt="Profile QR Code" className="w-48 h-48" />
+              )}
+            </div>
+
+            <p className="text-white/60 text-center text-sm mb-6 break-all">
+              {`${window.location.origin}${createPageUrl("Shill")}?user=${profile?.user_email}`}
+            </p>
+
+            <Button 
+              onClick={() => {
+                navigator.clipboard.writeText(`${window.location.origin}${createPageUrl("Shill")}?user=${profile?.user_email}`);
+                alert("Link copied!");
+              }}
+              className="w-full bg-purple-600 hover:bg-purple-700"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              Copy Link
+            </Button>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
