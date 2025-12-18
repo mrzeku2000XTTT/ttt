@@ -35,7 +35,8 @@ export default function BridgeMindPage() {
     { id: "oracle", name: "Oracle", icon: Eye, path: "Oracle", description: "Seek wisdom and insights" },
     { id: "truman", name: "Truman", icon: Play, path: "Truman", description: "Watch and learn" },
     { id: "shill", name: "Shill", icon: Share2, path: "Shill", description: "Your link-in-bio page" },
-  ];
+    { id: "optiqcode", name: "OptiqCode", icon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/e603efa8b_image.png", path: "https://optiqcode.com", description: "Visual Code Identity", isExternal: true },
+    ];
 
   const filteredApps = bridgeMindApps.filter(app => 
     app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -96,28 +97,52 @@ export default function BridgeMindPage() {
         <div className="flex-1 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 content-start overflow-y-auto pb-20">
           {filteredApps.map((app, index) => {
             const Icon = app.icon;
+            const isImage = typeof app.icon === 'string';
+
+            const content = (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.05 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex flex-col items-center gap-1.5"
+              >
+                <div className="w-16 h-16 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center relative overflow-hidden hover:bg-white/10 transition-colors group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  {isImage ? (
+                    <img src={app.icon} alt={app.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <Icon className="w-7 h-7 text-white/90" strokeWidth={1.5} />
+                  )}
+                </div>
+                <span className="text-white/90 text-[10px] font-medium text-center line-clamp-1 w-full px-0.5">
+                  {app.name}
+                </span>
+              </motion.div>
+            );
+
+            if (app.isExternal) {
+              return (
+                <a
+                  key={app.id}
+                  href={app.path}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block"
+                >
+                  {content}
+                </a>
+              );
+            }
+
             return (
               <Link
                 key={app.id}
                 to={createPageUrl(app.path)}
                 className="block"
               >
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.05 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex flex-col items-center gap-1.5"
-                >
-                  <div className="w-16 h-16 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center relative overflow-hidden hover:bg-white/10 transition-colors group">
-                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <Icon className="w-7 h-7 text-white/90" strokeWidth={1.5} />
-                  </div>
-                  <span className="text-white/90 text-[10px] font-medium text-center line-clamp-1 w-full px-0.5">
-                    {app.name}
-                  </span>
-                </motion.div>
+                {content}
               </Link>
             );
           })}
