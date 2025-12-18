@@ -203,8 +203,21 @@ export default function ShillPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
-      <div className="fixed inset-0 bg-black" />
+    <div className="min-h-screen bg-black relative overflow-hidden">
+      {/* Full Screen Background */}
+      <div className="fixed inset-0 z-0">
+        {(profile?.background_url || backgroundPreview) ? (
+          <img 
+            src={backgroundPreview || profile.background_url} 
+            alt="Background" 
+            className="w-full h-full object-cover opacity-60" 
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-gray-900 to-black" />
+        )}
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-md" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/60" />
+      </div>
       
       <div className="relative z-10 min-h-screen p-6">
         <div className="max-w-4xl mx-auto">
@@ -242,142 +255,145 @@ export default function ShillPage() {
           </div>
 
           {isEditing ? (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-              {/* Compact Layout for Images */}
-              <div className="grid grid-cols-2 gap-4">
-                <Card className="bg-black/40 border-white/10 overflow-hidden">
-                  <div className="relative h-32 w-full group cursor-pointer bg-white/5">
-                    {backgroundPreview ? (
-                      <img src={backgroundPreview} alt="Background" className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-white/20">
-                        <Upload className="w-8 h-8" />
-                      </div>
-                    )}
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="text-xs font-bold text-white">Change Banner</span>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4 max-w-lg mx-auto">
+            {/* Compact Layout for Images */}
+            <div className="grid grid-cols-2 gap-4">
+              <Card className="bg-white/5 backdrop-blur-xl border-white/10 overflow-hidden shadow-xl">
+                <div className="relative h-32 w-full group cursor-pointer hover:bg-white/5 transition-colors">
+                  {backgroundPreview ? (
+                    <img src={backgroundPreview} alt="Background" className="w-full h-full object-cover group-hover:opacity-100 transition-opacity" />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-white/20">
+                      <Upload className="w-8 h-8" />
                     </div>
-                    <input type="file" accept="image/*" onChange={handleBackgroundSelect} className="absolute inset-0 opacity-0 cursor-pointer" />
+                  )}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="text-xs font-bold text-white">Change Banner</span>
                   </div>
-                </Card>
-
-                <Card className="bg-black/40 border-white/10 overflow-hidden flex items-center justify-center">
-                  <div className="relative h-24 w-24 rounded-full overflow-hidden group cursor-pointer bg-white/5 border-2 border-white/10">
-                    {avatarPreview ? (
-                      <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover group-hover:opacity-80 transition-opacity" />
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-white/20">
-                        <Upload className="w-6 h-6" />
-                      </div>
-                    )}
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="text-[10px] font-bold text-white">Avatar</span>
-                    </div>
-                    <input type="file" accept="image/*" onChange={handleAvatarSelect} className="absolute inset-0 opacity-0 cursor-pointer" />
-                  </div>
-                </Card>
-              </div>
-
-              {/* Compact Info */}
-              <Card className="bg-black/40 border-white/10 p-4 space-y-3">
-                <Input
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Display Name"
-                  className="bg-white/5 border-white/10 text-white h-9 text-sm"
-                />
-                <Textarea
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  placeholder="Short Bio..."
-                  className="bg-white/5 border-white/10 text-white min-h-[60px] text-sm resize-none"
-                />
-              </Card>
-
-              {/* Kaspa QR Code */}
-               <Card className="bg-black/40 border-white/10 p-4">
-                 <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-white/80">Kaspa QR Code</span>
-                    {kaspaQrPreview && <span className="text-xs text-green-400">Uploaded</span>}
-                 </div>
-                 <div className="relative h-12 bg-white/5 rounded-lg border border-dashed border-white/20 flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors">
-                    <span className="text-xs text-white/40 flex items-center gap-2">
-                       <QrCode className="w-3 h-3" /> {kaspaQrPreview ? "Change QR Image" : "Upload Kaspa QR"}
-                    </span>
-                    <input type="file" accept="image/*" onChange={handleKaspaQrSelect} className="absolute inset-0 opacity-0 cursor-pointer" />
-                 </div>
-              </Card>
-
-              {/* Links */}
-              <Card className="bg-black/40 border-white/10 p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-white/80">Links</span>
-                  <Button onClick={addLink} size="sm" variant="ghost" className="h-6 px-2 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-950/30">
-                    <Plus className="w-3 h-3 mr-1" /> Add
-                  </Button>
-                </div>
-                <div className="space-y-2">
-                  {links.map((link, index) => (
-                    <div key={index} className="flex gap-2">
-                      <Input
-                        value={link.title}
-                        onChange={(e) => updateLink(index, "title", e.target.value)}
-                        placeholder="Title"
-                        className="bg-white/5 border-white/10 text-white h-8 text-xs w-1/3"
-                      />
-                      <Input
-                        value={link.url}
-                        onChange={(e) => updateLink(index, "url", e.target.value)}
-                        placeholder="URL"
-                        className="bg-white/5 border-white/10 text-white h-8 text-xs flex-1"
-                      />
-                      <Button
-                        onClick={() => removeLink(index)}
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-950/30"
-                      >
-                        <X className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  ))}
-                  {links.length === 0 && <div className="text-center text-xs text-white/20 py-2">No links added</div>}
+                  <input type="file" accept="image/*" onChange={handleBackgroundSelect} className="absolute inset-0 opacity-0 cursor-pointer" />
                 </div>
               </Card>
 
-              <div className="flex gap-3 pt-2">
-                <Button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold h-10"
-                >
-                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}
+              <Card className="bg-white/5 backdrop-blur-xl border-white/10 overflow-hidden flex items-center justify-center shadow-xl">
+                <div className="relative h-24 w-24 rounded-full overflow-hidden group cursor-pointer border-2 border-white/10">
+                  {avatarPreview ? (
+                    <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover group-hover:opacity-80 transition-opacity" />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-white/20">
+                      <Upload className="w-6 h-6" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="text-[10px] font-bold text-white">Avatar</span>
+                  </div>
+                  <input type="file" accept="image/*" onChange={handleAvatarSelect} className="absolute inset-0 opacity-0 cursor-pointer" />
+                </div>
+              </Card>
+            </div>
+
+            {/* Compact Info */}
+            <Card className="bg-white/5 backdrop-blur-xl border-white/10 p-4 space-y-3 shadow-xl">
+              <Input
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Display Name"
+                className="bg-black/20 border-white/10 text-white h-9 text-sm focus:bg-black/40 transition-colors"
+              />
+              <Textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="Short Bio..."
+                className="bg-black/20 border-white/10 text-white min-h-[60px] text-sm resize-none focus:bg-black/40 transition-colors"
+              />
+            </Card>
+
+            {/* Kaspa QR Code */}
+             <Card className="bg-white/5 backdrop-blur-xl border-white/10 p-4 shadow-xl">
+               <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-white/80">Kaspa QR Code</span>
+                  {kaspaQrPreview && <span className="text-xs text-green-400">Uploaded</span>}
+               </div>
+               <div className="relative h-12 bg-black/20 rounded-lg border border-dashed border-white/20 flex items-center justify-center cursor-pointer hover:bg-black/30 transition-colors">
+                  <span className="text-xs text-white/40 flex items-center gap-2">
+                     <QrCode className="w-3 h-3" /> {kaspaQrPreview ? "Change QR Image" : "Upload Kaspa QR"}
+                  </span>
+                  <input type="file" accept="image/*" onChange={handleKaspaQrSelect} className="absolute inset-0 opacity-0 cursor-pointer" />
+               </div>
+            </Card>
+
+            {/* Links */}
+            <Card className="bg-white/5 backdrop-blur-xl border-white/10 p-4 shadow-xl">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-medium text-white/80">Links</span>
+                <Button onClick={addLink} size="sm" variant="ghost" className="h-6 px-2 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10">
+                  <Plus className="w-3 h-3 mr-1" /> Add
                 </Button>
-                {profile && (
-                  <Button onClick={() => setIsEditing(false)} variant="outline" className="border-white/10 text-white hover:bg-white/5 h-10">
-                    Cancel
-                  </Button>
-                )}
               </div>
-            </motion.div>
-          ) : profile ? (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-              {profile.background_url && (
-                <div className="w-full h-64 rounded-2xl overflow-hidden">
-                  <img src={profile.background_url} alt="Background" className="w-full h-full object-cover" />
-                </div>
-              )}
+              <div className="space-y-2">
+                {links.map((link, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      value={link.title}
+                      onChange={(e) => updateLink(index, "title", e.target.value)}
+                      placeholder="Title"
+                      className="bg-black/20 border-white/10 text-white h-8 text-xs w-1/3 focus:bg-black/40"
+                    />
+                    <Input
+                      value={link.url}
+                      onChange={(e) => updateLink(index, "url", e.target.value)}
+                      placeholder="URL"
+                      className="bg-black/20 border-white/10 text-white h-8 text-xs flex-1 focus:bg-black/40"
+                    />
+                    <Button
+                      onClick={() => removeLink(index)}
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+                {links.length === 0 && <div className="text-center text-xs text-white/20 py-2">No links added</div>}
+              </div>
+            </Card>
 
+            <div className="flex gap-3 pt-2">
+              <Button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="flex-1 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white font-bold h-10 shadow-lg"
+              >
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}
+              </Button>
+              {profile && (
+                <Button onClick={() => setIsEditing(false)} variant="outline" className="border-white/10 text-white bg-black/40 hover:bg-black/60 h-10">
+                  Cancel
+                </Button>
+              )}
+            </div>
+          </motion.div>
+          ) : profile ? (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 max-w-lg mx-auto pt-8">
               <div className="flex flex-col items-center">
                 {profile.avatar_url && (
-                  <img src={profile.avatar_url} alt="Avatar" className="w-32 h-32 rounded-full border-4 border-white/10 mb-4" />
+                  <div className="relative group">
+                    <div className="absolute inset-0 bg-cyan-500/20 blur-xl rounded-full" />
+                    <img 
+                      src={profile.avatar_url} 
+                      alt="Avatar" 
+                      className="relative w-32 h-32 rounded-full border-4 border-white/10 mb-4 shadow-2xl object-cover" 
+                    />
+                  </div>
                 )}
-                <h2 className="text-3xl font-bold text-white mb-2">{profile.display_name}</h2>
-                {profile.bio && <p className="text-white/60 text-center max-w-md">{profile.bio}</p>}
+                <div className="bg-white/5 backdrop-blur-md rounded-2xl p-6 w-full border border-white/10 shadow-xl">
+                    <h2 className="text-3xl font-black text-white mb-2 text-center tracking-tight">{profile.display_name}</h2>
+                    {profile.bio && <p className="text-white/70 text-center text-sm leading-relaxed">{profile.bio}</p>}
+                </div>
               </div>
 
               {profile.links && profile.links.length > 0 && (
-                <div className="space-y-3 max-w-md mx-auto">
+                <div className="space-y-3">
                   {profile.links.map((link, index) => (
                     <a
                       key={index}
@@ -386,12 +402,16 @@ export default function ShillPage() {
                       rel="noopener noreferrer"
                       className="block"
                     >
-                      <div className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-4 transition-all group">
-                        <div className="flex items-center justify-between">
-                          <span className="text-white font-medium">{link.title}</span>
-                          <ExternalLink className="w-4 h-4 text-white/40 group-hover:text-white/80 transition-colors" />
-                        </div>
-                      </div>
+                      <motion.div 
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="bg-white/5 hover:bg-white/10 backdrop-blur-md border border-white/10 rounded-xl p-4 transition-all group shadow-lg flex items-center justify-between"
+                      >
+                          <span className="text-white font-bold">{link.title}</span>
+                          <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors">
+                            <ExternalLink className="w-4 h-4 text-white/60 group-hover:text-white transition-colors" />
+                          </div>
+                      </motion.div>
                     </a>
                   ))}
                 </div>
