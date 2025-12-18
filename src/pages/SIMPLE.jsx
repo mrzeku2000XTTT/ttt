@@ -5,13 +5,15 @@ import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Plus, Play, Zap, Database, Send, GitBranch, Clock, Edit2 } from "lucide-react";
+import { ArrowLeft, Plus, Play, Zap, Database, Send, GitBranch, Clock, Edit2, Search } from "lucide-react";
 import WorkflowCanvas from "@/components/simple/WorkflowCanvas";
+import ExaSearchModal from "@/components/simple/ExaSearchModal";
 
 export default function SIMPLEPage() {
   const [user, setUser] = useState(null);
   const [workflows, setWorkflows] = useState([]);
   const [editingWorkflow, setEditingWorkflow] = useState(null);
+  const [showSearch, setShowSearch] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -116,13 +118,23 @@ export default function SIMPLEPage() {
 
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold text-white">Your Workflows</h2>
-            <Button
-              onClick={createNewWorkflow}
-              className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Workflow
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => setShowSearch(true)}
+                variant="outline"
+                className="border-white/20 text-white hover:bg-white/10"
+              >
+                <Search className="w-4 h-4 mr-2" />
+                EXA Search
+              </Button>
+              <Button
+                onClick={createNewWorkflow}
+                className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Workflow
+              </Button>
+            </div>
           </div>
 
           {workflows.length === 0 ? (
@@ -201,6 +213,10 @@ export default function SIMPLEPage() {
           onClose={() => setEditingWorkflow(null)}
           onSave={saveWorkflow}
         />
+      )}
+
+      {showSearch && (
+        <ExaSearchModal onClose={() => setShowSearch(false)} />
       )}
     </div>
   );
