@@ -65,6 +65,7 @@ export default function AppStorePage() {
     { name: "KaspaHub", icon: "Link2", path: "KaspaHub", category: "Community", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/b3c82bda2_image.png", circular: true },
     { name: "KFlow", icon: "Link2", path: "KFlow", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/3a29545d4_image.png", objectFit: "contain" },
     { name: "EXPLORER", icon: "Link2", path: "Explorer", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/2b446e5a2_image.png", circular: true },
+    { name: "Kaspascope", icon: "Link2", path: "Kaspascope", category: "Finance", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/72c3bca47_image.png", circular: true },
     ];
 
   const getIconComponent = (iconName) => {

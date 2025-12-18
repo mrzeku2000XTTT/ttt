@@ -185,6 +185,7 @@ import Oracle from './pages/Oracle';
 import Truman from './pages/Truman';
 import Shill from './pages/Shill';
 import SIMPLE from './pages/SIMPLE';
+import Kaspascope from './pages/Kaspascope';
 import __Layout from './Layout.jsx';
 
 
@@ -376,6 +377,7 @@ export const PAGES = {
     "Truman": Truman,
     "Shill": Shill,
     "SIMPLE": SIMPLE,
+    "Kaspascope": Kaspascope,
 }
 
 export const pagesConfig = {
