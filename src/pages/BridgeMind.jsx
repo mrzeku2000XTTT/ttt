@@ -46,7 +46,7 @@ export default function BridgeMindPage() {
   return (
     <div className="min-h-screen bg-black overflow-hidden">
       {/* Background */}
-      <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900" />
+      <div className="fixed inset-0 bg-black" />
       
       <div className="relative z-10 h-screen w-full flex flex-col px-3 pt-3 pb-3">
         {/* Header */}
