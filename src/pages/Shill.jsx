@@ -265,7 +265,7 @@ export default function ShillPage() {
                 <h1 className="text-3xl font-black text-white tracking-tighter">
                   <span className="text-cyan-400">Shill</span>Profile
                 </h1>
-                <p className="text-white/40 text-xs font-medium tracking-widest uppercase">Your digital identity</p>
+                <p className="text-white/40 text-xs font-medium tracking-widest uppercase">Your decentralized identity</p>
               </div>
             </div>
             
