@@ -27,7 +27,7 @@ export default function ShillPage() {
   const [kaspaQrPreview, setKaspaQrPreview] = useState(null);
   const [showQrModal, setShowQrModal] = useState(false);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState("");
-  const [showingKaspaQr, setShowingKaspaQr] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -99,6 +99,7 @@ export default function ShillPage() {
         }
       });
       setQrCodeDataUrl(dataUrl);
+      setIsFlipped(false);
       setShowQrModal(true);
     } catch (err) {
       console.error("QR Generation failed", err);
@@ -224,13 +225,16 @@ export default function ShillPage() {
             
             <div className="flex gap-2">
               {profile && (
-                <Button onClick={generateQrCode} className="bg-white text-black hover:bg-gray-200 font-bold border-none">
+                <Button 
+                  onClick={generateQrCode} 
+                  className="bg-black border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 font-bold shadow-[0_0_10px_rgba(6,182,212,0.2)]"
+                >
                   <QrCode className="w-4 h-4 mr-2" />
                   Share
                 </Button>
               )}
               {profile && user && profile.user_email === user.email && !isEditing && (
-                <Button onClick={() => setIsEditing(true)} className="bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 border border-cyan-500/50">
+                <Button onClick={() => setIsEditing(true)} className="bg-gradient-to-r from-cyan-600 to-purple-600 text-white hover:from-cyan-500 hover:to-purple-500 border-none">
                   Edit Profile
                 </Button>
               )}
@@ -411,34 +415,70 @@ export default function ShillPage() {
               <X className="w-5 h-5" />
             </button>
             
-            <h3 className="text-xl font-bold text-white mb-2 text-center">
-              {showingKaspaQr ? "Kaspa Address" : "Share Profile"}
+            <h3 className="text-xl font-black text-white mb-2 text-center tracking-tight">
+              {isFlipped ? "KASPA ADDRESS" : "SHARE PROFILE"}
             </h3>
-            <p className="text-white/40 text-xs text-center mb-6">
-              {profile?.kaspa_qr_url ? "Tap QR code to switch" : "Scan to visit profile"}
+            <p className="text-cyan-400 text-xs text-center mb-6 font-mono uppercase tracking-wider">
+              {profile?.kaspa_qr_url ? "TAP CARD TO FLIP" : "SCAN TO VISIT"}
             </p>
             
+            {/* Flip Card Container */}
             <div 
-              className="bg-white p-4 rounded-xl mb-6 mx-auto w-fit cursor-pointer transition-transform hover:scale-105 active:scale-95"
+              className="relative w-56 h-56 mx-auto mb-8 cursor-pointer perspective-[1000px] group"
               onClick={() => {
                 if (profile?.kaspa_qr_url) {
-                  setShowingKaspaQr(!showingKaspaQr);
+                  setIsFlipped(!isFlipped);
                 }
               }}
             >
-              {showingKaspaQr && profile?.kaspa_qr_url ? (
-                <img src={profile.kaspa_qr_url} alt="Kaspa QR Code" className="w-48 h-48 object-contain" />
-              ) : (
-                qrCodeDataUrl && <img src={qrCodeDataUrl} alt="Profile QR Code" className="w-48 h-48" />
-              )}
+               <motion.div
+                 className="w-full h-full relative preserve-3d"
+                 initial={false}
+                 animate={{ rotateY: isFlipped ? 180 : 0 }}
+                 transition={{ duration: 0.6, type: "spring", stiffness: 260, damping: 20 }}
+                 style={{ transformStyle: "preserve-3d" }}
+               >
+                 {/* Front Face (Profile QR) */}
+                 <div 
+                   className="absolute inset-0 backface-hidden bg-white rounded-2xl p-4 shadow-[0_0_20px_rgba(255,255,255,0.1)] flex items-center justify-center border-2 border-white/20"
+                   style={{ backfaceVisibility: "hidden" }}
+                 >
+                   {qrCodeDataUrl && (
+                     <img src={qrCodeDataUrl} alt="Profile QR" className="w-full h-full object-contain" />
+                   )}
+                   <div className="absolute bottom-2 left-0 right-0 text-center">
+                      <span className="text-[8px] font-bold text-black uppercase tracking-widest">TTT Profile</span>
+                   </div>
+                 </div>
+
+                 {/* Back Face (Kaspa QR) */}
+                 <div 
+                   className="absolute inset-0 backface-hidden bg-gradient-to-br from-cyan-900 to-black rounded-2xl p-4 shadow-[0_0_20px_rgba(6,182,212,0.3)] flex items-center justify-center border-2 border-cyan-500/50"
+                   style={{ 
+                     backfaceVisibility: "hidden",
+                     transform: "rotateY(180deg)" 
+                   }}
+                 >
+                   {profile?.kaspa_qr_url ? (
+                     <img src={profile.kaspa_qr_url} alt="Kaspa QR" className="w-full h-full object-contain rounded-lg" />
+                   ) : (
+                     <div className="text-center text-cyan-400">
+                       <p className="text-xs">No Kaspa QR</p>
+                     </div>
+                   )}
+                   <div className="absolute bottom-2 left-0 right-0 text-center">
+                      <span className="text-[8px] font-bold text-cyan-400 uppercase tracking-widest">Kaspa Wallet</span>
+                   </div>
+                 </div>
+               </motion.div>
             </div>
 
-            <div className="bg-white/5 rounded-lg p-3 mb-6 text-center border border-white/10">
-              <p className="text-white font-semibold">
+            <div className="bg-white/5 rounded-lg p-3 mb-6 text-center border border-white/10 backdrop-blur-md">
+              <p className="text-white font-bold text-lg tracking-tight">
                 {profile?.display_name || "A KAS-User"}
               </p>
-              <p className="text-white/40 text-xs mt-1">
-                {showingKaspaQr ? "Kaspa QR Code" : "TTT App • Shill Profile"}
+              <p className="text-white/40 text-xs mt-1 font-mono uppercase">
+                {isFlipped ? "Kaspa Network" : "TTT App • Shill"}
               </p>
             </div>
 
@@ -447,10 +487,10 @@ export default function ShillPage() {
                 navigator.clipboard.writeText(`${window.location.origin}${createPageUrl("Shill")}?id=${profile?.id}`);
                 alert("Link copied!");
               }}
-              className="w-full bg-purple-600 hover:bg-purple-700"
+              className="w-full bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white font-bold h-12 rounded-xl shadow-[0_4px_20px_rgba(6,182,212,0.3)]"
             >
-              <Share2 className="w-4 h-4 mr-2" />
-              Copy Link
+              <Share2 className="w-5 h-5 mr-2" />
+              COPY LINK
             </Button>
           </motion.div>
         </div>
