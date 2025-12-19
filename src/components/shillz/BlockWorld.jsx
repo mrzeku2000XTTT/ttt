@@ -32,7 +32,7 @@ function Ground() {
   );
 }
 
-function FloatingBlock({ position, onClick, color = "#00ff00" }) {
+function FloatingBlock({ id, position, onClick, onHover, color = "#00ff00" }) {
   const [ref, api] = useBox(() => ({ mass: 1, position, args: [1, 1, 1] }));
   
   return (
@@ -41,8 +41,15 @@ function FloatingBlock({ position, onClick, color = "#00ff00" }) {
       castShadow 
       receiveShadow 
       onClick={onClick}
-      onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
-      onPointerOut={() => { document.body.style.cursor = 'auto'; }}
+      onPointerOver={(e) => { 
+        e.stopPropagation(); 
+        document.body.style.cursor = 'pointer';
+        onHover(id);
+      }}
+      onPointerOut={() => { 
+        document.body.style.cursor = 'auto'; 
+        onHover(null);
+      }}
     >
       <boxGeometry args={[1, 1, 1]} />
       <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.5} />
