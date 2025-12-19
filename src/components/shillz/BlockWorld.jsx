@@ -70,7 +70,7 @@ function Player({ onMine }) {
   }, [api.velocity, api.position]);
 
   useFrame(() => {
-    camera.position.copy(new THREE.Vector3(position.current[0], position.current[1] + 1.5, position.current[2]));
+    camera.position.set(position.current[0], position.current[1] + 1.5, position.current[2]);
   });
 
   return (
