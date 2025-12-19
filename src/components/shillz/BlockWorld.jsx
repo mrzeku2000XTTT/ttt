@@ -161,7 +161,7 @@ function Hand({ isMining }) {
 
 // --- Main World Component ---
 
-export default function BlockWorld() {
+export default function BlockWorld({ walletAddress }) {
   const [blocks, setBlocks] = useState([]);
   const [isMining, setIsMining] = useState(false);
   const [locked, setLocked] = useState(false);
