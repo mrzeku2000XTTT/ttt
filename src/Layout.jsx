@@ -204,8 +204,9 @@ export default function Layout({ children, currentPageName }) {
   const isTruthLandingPage = currentPageName === "TruthLanding";
   const isUNIPage = currentPageName === "UNI";
   const isShiLLzPage = currentPageName === "ShiLLz";
+  const isOliviaAppsPage = currentPageName === "OliviaApps";
 
-  if (isHomePage || isLobbyPage || isEarthPage || isCountryDetailPage || isKonektPage || isArea51Page || isTheRealmPage || isTruthLandingPage || isUNIPage || isShiLLzPage) {
+  if (isHomePage || isLobbyPage || isEarthPage || isCountryDetailPage || isKonektPage || isArea51Page || isTheRealmPage || isTruthLandingPage || isUNIPage || isShiLLzPage || isOliviaAppsPage) {
     return (
       <React.Suspense fallback={<div className="min-h-screen bg-black" />}>
         <VideoPlayerProvider>
