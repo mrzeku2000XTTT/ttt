@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Physics, useBox, usePlane, useSphere } from '@react-three/cannon';
-import { PointerLockControls, Stars, Sky } from '@react-three/drei';
+import { PointerLockControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { ArrowLeft, Crosshair, MousePointer2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
