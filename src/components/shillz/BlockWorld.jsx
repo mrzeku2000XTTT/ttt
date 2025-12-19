@@ -206,11 +206,12 @@ export default function BlockWorld() {
   };
 
   const handleInteract = () => {
-      // Raycasting logic is handled by onClick on blocks for simplicity in R3F
-      // But for "E" key we'd need manual raycaster. 
-      // For now, click is easier to map to "mining".
       setIsMining(true);
       setTimeout(() => setIsMining(false), 200);
+      
+      if (hoveredBlockId !== null) {
+          handleMine(hoveredBlockId);
+      }
   };
 
   useEffect(() => {
