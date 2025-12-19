@@ -100,7 +100,7 @@ export default function CategoriesPage() {
 
     const defaultApps = [
       { id: "appstore", name: "App Store", icon: "LayoutGrid", path: "AppStore" },
-      { id: "oliviaapps", name: "OLIVIA APPS", icon: "Brain", path: "OliviaApps", customIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/497a6f83b_image.png" },
+      { id: "oliviaapps", name: "OLIVIA APPS", icon: "Brain", path: "OliviaApps", customIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/1f4d18802_image.png" },
       { id: "gate", name: "Gate", icon: "Activity", path: "Gate" },
       { id: "bullmoon", name: "Bull Moon", icon: "Moon", path: "BullMoon" },
       { id: "timer", name: "Timer", icon: "Activity", path: "Timer" },

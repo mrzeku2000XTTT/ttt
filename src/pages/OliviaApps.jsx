@@ -59,7 +59,7 @@ export default function OliviaAppsPage() {
           </Link>
           <div className="flex items-center gap-3">
             <img 
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/0ebb0b23c_image.png" 
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/1f4d18802_image.png" 
               alt="OLIVIA APPS Logo"
               className="w-10 h-10 object-contain"
             />
