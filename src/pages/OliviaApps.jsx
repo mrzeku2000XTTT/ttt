@@ -37,7 +37,7 @@ export default function OliviaAppsPage() {
     { id: "shill", name: "Shill", icon: Share2, path: "Shill", description: "Your link-in-bio page" },
     { id: "optiqcode", name: "OptiqCode", icon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/e603efa8b_image.png", path: "https://optiqcode.com", description: "Visual Code Identity", isExternal: true, blackBackground: true },
     { id: "digidripbot", name: "DigiDripBot", icon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/3e5403251_image.png", path: "https://t.me/ser_minning_bot", description: "Mining Bot", isExternal: true, blackBackground: true },
-    { id: "kasmi", name: "Kasmi", icon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/ca73d2b8f_image.png", path: "Kasmi", description: "Kasmi App", blackBackground: true },
+    { id: "kasmi", name: "Kasmi", icon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/2216b4c09_image.png", path: "Kasmi", description: "Kasmi App", blackBackground: true },
     ];
 
   const filteredApps = bridgeMindApps.filter(app => 

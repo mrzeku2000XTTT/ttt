@@ -36,7 +36,7 @@ export default function KasmiPage() {
           className="w-32 h-32 md:w-40 md:h-40 relative rounded-3xl bg-black/50 border border-white/10 flex items-center justify-center shadow-[0_0_50px_rgba(168,85,247,0.2)]"
         >
           <img 
-            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/ca73d2b8f_image.png" 
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/2216b4c09_image.png" 
             alt="Kasmi Logo" 
             className="w-full h-full object-contain p-4 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"
           />
