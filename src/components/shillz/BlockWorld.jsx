@@ -165,6 +165,7 @@ export default function BlockWorld() {
   const [blocks, setBlocks] = useState([]);
   const [isMining, setIsMining] = useState(false);
   const [locked, setLocked] = useState(false);
+  const [hoveredBlockId, setHoveredBlockId] = useState(null);
   
   // Initial blocks
   useEffect(() => {
