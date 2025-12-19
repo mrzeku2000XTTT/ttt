@@ -81,7 +81,12 @@ export default function ShiLLzPage() {
       </div>
       
       <div className="flex-1 w-full h-full">
-        <BlockWorld walletAddress={walletAddress} />
+        <iframe 
+          src={`https://shillzzz.base44.app${walletAddress ? `?wallet=${walletAddress}` : ''}`} 
+          className="w-full h-full border-0" 
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+        />
       </div>
     </div>
   );
