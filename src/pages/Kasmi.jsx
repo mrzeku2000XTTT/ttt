@@ -4,10 +4,12 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { motion } from "framer-motion";
+import MatrixGridBackground from '@/components/feed/MatrixGridBackground';
 
 export default function KasmiPage() {
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center relative overflow-hidden">
+      <MatrixGridBackground />
       {/* Back Button */}
       <div className="absolute top-4 left-4 z-50">
         <Link 
@@ -19,10 +21,6 @@ export default function KasmiPage() {
           </Button>
         </Link>
       </div>
-
-      {/* Background Ambience */}
-      <div className="absolute inset-0 bg-[url('https://wallpapers.com/images/hd/matrix-background-4k-j8q9q6q9q6q9q6q9.jpg')] bg-cover bg-center opacity-30 pointer-events-none" />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black pointer-events-none" />
 
       {/* Content */}
       <motion.div 
