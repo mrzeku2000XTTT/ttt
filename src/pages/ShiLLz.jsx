@@ -3,7 +3,7 @@ import { ArrowLeft, Wallet } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
-import BlockWorld from '@/components/shillz/BlockWorld';
+// import BlockWorld from '@/components/shillz/BlockWorld';
 
 export default function ShiLLzPage() {
   const [walletAddress, setWalletAddress] = useState(null);
