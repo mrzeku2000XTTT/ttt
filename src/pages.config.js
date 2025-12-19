@@ -186,6 +186,7 @@ import Shill from './pages/Shill';
 import SIMPLE from './pages/SIMPLE';
 import ShiLLz from './pages/ShiLLz';
 import OliviaApps from './pages/OliviaApps';
+import Kasmi from './pages/Kasmi';
 import __Layout from './Layout.jsx';
 
 
@@ -378,6 +379,7 @@ export const PAGES = {
     "SIMPLE": SIMPLE,
     "ShiLLz": ShiLLz,
     "OliviaApps": OliviaApps,
+    "Kasmi": Kasmi,
 }
 
 export const pagesConfig = {
