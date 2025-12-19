@@ -237,7 +237,7 @@ export default function BlockWorld({ walletAddress }) {
                    <div className="flex items-center gap-2 text-xs text-green-400 font-mono">
                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                        ONLINE
-                       <span className="text-white/50 ml-2">15 AGENTS</span>
+                       {walletAddress && <span className="text-cyan-400 ml-2 border border-cyan-500/30 px-1 rounded bg-cyan-500/10">Connected: {walletAddress.slice(0,4)}...{walletAddress.slice(-4)}</span>}
                    </div>
                </div>
            </div>
