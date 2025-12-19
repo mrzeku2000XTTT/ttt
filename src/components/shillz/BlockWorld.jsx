@@ -222,7 +222,7 @@ export default function BlockWorld() {
       };
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [hoveredBlockId, blocks]);
 
   return (
     <div className="w-full h-full relative bg-black cursor-none">
