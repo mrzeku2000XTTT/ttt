@@ -180,12 +180,12 @@ import Enoch from './pages/Enoch';
 import Resonance from './pages/Resonance';
 import UNI from './pages/UNI';
 import LLMScraper from './pages/LLMScraper';
-import BridgeMind from './pages/BridgeMind';
 import Oracle from './pages/Oracle';
 import Truman from './pages/Truman';
 import Shill from './pages/Shill';
 import SIMPLE from './pages/SIMPLE';
 import ShiLLz from './pages/ShiLLz';
+import OliviaApps from './pages/OliviaApps';
 import __Layout from './Layout.jsx';
 
 
@@ -372,12 +372,12 @@ export const PAGES = {
     "Resonance": Resonance,
     "UNI": UNI,
     "LLMScraper": LLMScraper,
-    "BridgeMind": BridgeMind,
     "Oracle": Oracle,
     "Truman": Truman,
     "Shill": Shill,
     "SIMPLE": SIMPLE,
     "ShiLLz": ShiLLz,
+    "OliviaApps": OliviaApps,
 }
 
 export const pagesConfig = {
