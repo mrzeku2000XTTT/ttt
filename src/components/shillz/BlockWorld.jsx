@@ -273,8 +273,10 @@ export default function BlockWorld() {
             {blocks.map(block => (
                 <FloatingBlock 
                     key={block.id} 
+                    id={block.id}
                     position={block.position} 
                     color={block.color}
+                    onHover={setHoveredBlockId}
                     onClick={(e) => {
                         e.stopPropagation();
                         if (locked) handleMine(block.id);
