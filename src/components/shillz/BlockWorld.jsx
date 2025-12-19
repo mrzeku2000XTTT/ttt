@@ -262,9 +262,9 @@ export default function BlockWorld({ walletAddress }) {
        )}
 
       <Canvas shadows camera={{ fov: 75 }}>
-        <Sky sunPosition={[100, 20, 100]} inclination={0} azimuth={0.25} turbidity={10} rayleigh={0.5} />
-        <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-        <ambientLight intensity={0.3} />
+        <color attach="background" args={['#050505']} />
+        <fog attach="fog" args={['#050505', 10, 50]} />
+        <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} castShadow intensity={0.8} />
         
         <Physics gravity={[0, -9.8, 0]}>
