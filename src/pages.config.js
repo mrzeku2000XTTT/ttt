@@ -189,7 +189,6 @@ import OliviaApps from './pages/OliviaApps';
 import Kasmi from './pages/Kasmi';
 import Seeles from './pages/Seeles';
 import JustDance from './pages/JustDance';
-import BlockRun from './pages/BlockRun';
 import __Layout from './Layout.jsx';
 
 
@@ -385,7 +384,6 @@ export const PAGES = {
     "Kasmi": Kasmi,
     "Seeles": Seeles,
     "JustDance": JustDance,
-    "BlockRun": BlockRun,
 }
 
 export const pagesConfig = {
