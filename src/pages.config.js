@@ -188,6 +188,7 @@ import ShiLLz from './pages/ShiLLz';
 import OliviaApps from './pages/OliviaApps';
 import Kasmi from './pages/Kasmi';
 import Seeles from './pages/Seeles';
+import JustDance from './pages/JustDance';
 import __Layout from './Layout.jsx';
 
 
@@ -382,6 +383,7 @@ export const PAGES = {
     "OliviaApps": OliviaApps,
     "Kasmi": Kasmi,
     "Seeles": Seeles,
+    "JustDance": JustDance,
 }
 
 export const pagesConfig = {
