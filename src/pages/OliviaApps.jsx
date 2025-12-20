@@ -40,6 +40,7 @@ export default function OliviaAppsPage() {
     { id: "kasmi", name: "Kasmi", icon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/2216b4c09_image.png", path: "Kasmi", description: "Kasmi App", blackBackground: true },
     { id: "seeles", name: "Seeles", icon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/103e51df3_image.png", path: "Seeles", description: "Seek Answers", blackBackground: true },
     { id: "justdance", name: "JustDance", icon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/7fdfe64ca_image.png", path: "JustDance", description: "Dance & Music", blackBackground: true, circularIcon: true },
+    { id: "blockrun", name: "BlockRun", icon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/5e601e579_image.png", path: "BlockRun", description: "Endless Runner", blackBackground: true, circularIcon: true, fisheye: true },
     ];
 
   const filteredApps = bridgeMindApps.filter(app => 
@@ -115,7 +116,11 @@ export default function OliviaAppsPage() {
                 <div className={`w-16 h-16 ${app.circularIcon ? 'rounded-full' : 'rounded-2xl'} ${app.blackBackground ? 'bg-black border-white/20' : 'bg-white/5 border-white/10'} backdrop-blur-md border flex items-center justify-center relative overflow-hidden hover:bg-white/10 transition-colors group`}>
                   <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                   {isImage ? (
-                    <img src={app.icon} alt={app.name} className="w-full h-full object-cover" />
+                    <img 
+                      src={app.icon} 
+                      alt={app.name} 
+                      className={`w-full h-full object-cover transition-transform duration-500 ${app.fisheye ? 'scale-125 hover:scale-150' : ''}`} 
+                    />
                   ) : (
                     <Icon className="w-7 h-7 text-white/90" strokeWidth={1.5} />
                   )}
