@@ -21,7 +21,7 @@ export default function BlockRunPage() {
 
       {/* Iframe */}
       <iframe
-        src="https://www.seeles.ai/play/97c951fc-95c9-42c0-b46f-a40c4f40465d?fromShare=true"
+        src="https://www.seeles.ai/play/836478f6-97fc-483c-938d-730cb26a0ec3?fromShare=true"
         className="w-full h-full border-0"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
