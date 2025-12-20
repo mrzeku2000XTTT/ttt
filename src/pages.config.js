@@ -189,6 +189,7 @@ import OliviaApps from './pages/OliviaApps';
 import Kasmi from './pages/Kasmi';
 import Seeles from './pages/Seeles';
 import JustDance from './pages/JustDance';
+import FHZ from './pages/FHZ';
 import __Layout from './Layout.jsx';
 
 
@@ -384,6 +385,7 @@ export const PAGES = {
     "Kasmi": Kasmi,
     "Seeles": Seeles,
     "JustDance": JustDance,
+    "FHZ": FHZ,
 }
 
 export const pagesConfig = {

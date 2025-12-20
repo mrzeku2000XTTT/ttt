@@ -10,7 +10,8 @@ import {
   Share2,
   Search,
   X,
-  LayoutGrid
+  LayoutGrid,
+  Gamepad2
 } from "lucide-react";
 
 export default function OliviaAppsPage() {
