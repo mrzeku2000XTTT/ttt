@@ -41,7 +41,7 @@ export default function OliviaAppsPage() {
     { id: "kasmi", name: "Kasmi", icon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/2216b4c09_image.png", path: "Kasmi", description: "Kasmi App", blackBackground: true },
     { id: "seeles", name: "Seeles", icon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/103e51df3_image.png", path: "Seeles", description: "Seek Answers", blackBackground: true },
     { id: "justdance", name: "JustDance", icon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/7fdfe64ca_image.png", path: "JustDance", description: "Dance & Music", blackBackground: true, circularIcon: true },
-
+    { id: "fhz", name: "FHZ", icon: Gamepad2, path: "FHZ", description: "Play FHZ", blackBackground: true },
     ];
 
   const filteredApps = bridgeMindApps.filter(app => 
