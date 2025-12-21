@@ -11,7 +11,8 @@ import {
   Search,
   X,
   LayoutGrid,
-  Gamepad2
+  Gamepad2,
+  Brain
 } from "lucide-react";
 
 export default function OliviaAppsPage() {
