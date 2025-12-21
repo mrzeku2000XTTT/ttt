@@ -191,6 +191,7 @@ import Seeles from './pages/Seeles';
 import JustDance from './pages/JustDance';
 import FHZ from './pages/FHZ';
 import BlockRun from './pages/BlockRun';
+import FalAI from './pages/FalAI';
 import __Layout from './Layout.jsx';
 
 
@@ -388,6 +389,7 @@ export const PAGES = {
     "JustDance": JustDance,
     "FHZ": FHZ,
     "BlockRun": BlockRun,
+    "FalAI": FalAI,
 }
 
 export const pagesConfig = {
