@@ -64,7 +64,6 @@ import EmployerTask from './pages/EmployerTask';
 import Enoch from './pages/Enoch';
 import Explorer from './pages/Explorer';
 import FHZ from './pages/FHZ';
-import FalAI from './pages/FalAI';
 import Feed from './pages/Feed';
 import Focus from './pages/Focus';
 import Gate from './pages/Gate';
@@ -89,6 +88,7 @@ import KASari from './pages/KASari';
 import KFlow from './pages/KFlow';
 import KP from './pages/KP';
 import KWSuccess from './pages/KWSuccess';
+import KasCompute from './pages/KasCompute';
 import KasFans from './pages/KasFans';
 import Kasdate from './pages/Kasdate';
 import Kasmi from './pages/Kasmi';
@@ -192,7 +192,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import KasCompute from './pages/KasCompute';
 import __Layout from './Layout.jsx';
 
 
@@ -263,7 +262,6 @@ export const PAGES = {
     "Enoch": Enoch,
     "Explorer": Explorer,
     "FHZ": FHZ,
-    "FalAI": FalAI,
     "Feed": Feed,
     "Focus": Focus,
     "Gate": Gate,
@@ -288,6 +286,7 @@ export const PAGES = {
     "KFlow": KFlow,
     "KP": KP,
     "KWSuccess": KWSuccess,
+    "KasCompute": KasCompute,
     "KasFans": KasFans,
     "Kasdate": Kasdate,
     "Kasmi": Kasmi,
@@ -391,7 +390,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "KasCompute": KasCompute,
 }
 
 export const pagesConfig = {
