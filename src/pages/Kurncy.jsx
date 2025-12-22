@@ -138,7 +138,7 @@ export default function KurncyPage() {
     try {
       const { data } = await base44.functions.invoke("kurncyWallet", {
         action: "balance",
-        privateKey: wallet.address,
+        address: wallet.address,
         network: "mainnet"
       });
 
@@ -170,6 +170,7 @@ export default function KurncyPage() {
         action: "transfer",
         encryptedKey: wallet.privateKey,
         pin,
+        fromAddress: wallet.address,
         toAddress,
         amount,
         ticker,
@@ -208,6 +209,7 @@ export default function KurncyPage() {
         action: "mint",
         encryptedKey: wallet.privateKey,
         pin,
+        fromAddress: wallet.address,
         ticker: mintTicker,
         iterations,
         network: "mainnet"
