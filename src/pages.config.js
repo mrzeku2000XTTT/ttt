@@ -1,399 +1,399 @@
+import AIAnalytics from './pages/AIAnalytics';
+import AK from './pages/AK';
+import APIDocumentation from './pages/APIDocumentation';
+import AYOMUIZ from './pages/AYOMUIZ';
+import AYOMUIZ2 from './pages/AYOMUIZ2';
+import AYOMUIZHub from './pages/AYOMUIZHub';
+import AgentFYE from './pages/AgentFYE';
+import AgentZK from './pages/AgentZK';
+import AgentZK2 from './pages/AgentZK2';
+import AgentZKChat from './pages/AgentZKChat';
+import AgentZKDirectory from './pages/AgentZKDirectory';
+import AgentZKProfile from './pages/AgentZKProfile';
+import Analytics from './pages/Analytics';
+import AppStore from './pages/AppStore';
+import Arcade from './pages/Arcade';
+import Area51 from './pages/Area51';
+import Articles from './pages/Articles';
+import AuraDashboard from './pages/AuraDashboard';
+import BMTUniv from './pages/BMTUniv';
+import BRAHIM from './pages/BRAHIM';
+import BRAHIMHub from './pages/BRAHIMHub';
+import BackgroundGenerator from './pages/BackgroundGenerator';
+import Bible from './pages/Bible';
+import BingoLobbyBrowser from './pages/BingoLobbyBrowser';
+import BingoLobbyPlay from './pages/BingoLobbyPlay';
+import BingoLobbyRoom from './pages/BingoLobbyRoom';
+import BlockRun from './pages/BlockRun';
 import Bridge from './pages/Bridge';
+import Browser from './pages/Browser';
+import BuildGuide from './pages/BuildGuide';
+import Builders from './pages/Builders';
+import BullMoon from './pages/BullMoon';
+import Calculator from './pages/Calculator';
+import Career from './pages/Career';
+import CargoWays from './pages/CargoWays';
+import Cart from './pages/Cart';
+import Categories from './pages/Categories';
+import Champions from './pages/Champions';
+import Channel from './pages/Channel';
+import Channels from './pages/Channels';
+import CivicVerify from './pages/CivicVerify';
+import CoinSpace from './pages/CoinSpace';
+import ConnectWallet from './pages/ConnectWallet';
+import ContributorHistory from './pages/ContributorHistory';
+import CosmicEye from './pages/CosmicEye';
+import Countdown from './pages/Countdown';
+import CountryDetail from './pages/CountryDetail';
+import CreateListing from './pages/CreateListing';
+import CreateShopListing from './pages/CreateShopListing';
+import Creator from './pages/Creator';
+import CryptoHire from './pages/CryptoHire';
+import DAGFeed from './pages/DAGFeed';
+import DAGKnightWallet from './pages/DAGKnightWallet';
+import DeployContract from './pages/DeployContract';
+import DevProfile from './pages/DevProfile';
+import Docs from './pages/Docs';
+import Duel from './pages/Duel';
+import DuelLobby from './pages/DuelLobby';
+import ESC from './pages/ESC';
+import Earth from './pages/Earth';
+import Echo from './pages/Echo';
+import EditListing from './pages/EditListing';
+import EmployerTask from './pages/EmployerTask';
+import Enoch from './pages/Enoch';
+import Explorer from './pages/Explorer';
+import FHZ from './pages/FHZ';
+import FalAI from './pages/FalAI';
+import Feed from './pages/Feed';
+import Focus from './pages/Focus';
+import Gate from './pages/Gate';
+import Gift from './pages/Gift';
+import GlobalHistory from './pages/GlobalHistory';
+import God from './pages/God';
+import Guide from './pages/Guide';
+import HAYPHASE from './pages/HAYPHASE';
+import HYPEMIND from './pages/HYPEMIND';
+import Hercules from './pages/Hercules';
 import History from './pages/History';
 import Home from './pages/Home';
 import Hub from './pages/Hub';
-import Marketplace from './pages/Marketplace';
-import CreateListing from './pages/CreateListing';
-import TradeView from './pages/TradeView';
-import DeployContract from './pages/DeployContract';
-import UserProfile from './pages/UserProfile';
-import ConnectWallet from './pages/ConnectWallet';
-import EditListing from './pages/EditListing';
-import GlobalHistory from './pages/GlobalHistory';
-import Subscription from './pages/Subscription';
-import Profile from './pages/Profile';
-import Countdown from './pages/Countdown';
-import ZekuAI from './pages/ZekuAI';
-import Feed from './pages/Feed';
-import Arcade from './pages/Arcade';
-import Analytics from './pages/Analytics';
-import MobileTest from './pages/MobileTest';
-import Settings from './pages/Settings';
-import Career from './pages/Career';
-import ContributorHistory from './pages/ContributorHistory';
-import Browser from './pages/Browser';
-import AIAnalytics from './pages/AIAnalytics';
-import SSHManager from './pages/SSHManager';
-import RegisterTTTID from './pages/RegisterTTTID';
-import KaspaBalanceViewer from './pages/KaspaBalanceViewer';
-import APIDocumentation from './pages/APIDocumentation';
-import TestKaspaAPI from './pages/TestKaspaAPI';
-import Wallet from './pages/Wallet';
-import Receive from './pages/Receive';
-import SealedWalletDetails from './pages/SealedWalletDetails';
-import DAGKnightWallet from './pages/DAGKnightWallet';
-import TTTIDProfile from './pages/TTTIDProfile';
-import AgentZK from './pages/AgentZK';
-import KaspaNode from './pages/KaspaNode';
-import VPImport from './pages/VPImport';
-import ZKWallet from './pages/ZKWallet';
-import Pera from './pages/Pera';
-import MarketX from './pages/MarketX';
-import WorkerTask from './pages/WorkerTask';
-import EmployerTask from './pages/EmployerTask';
-import Waitlist from './pages/Waitlist';
-import Shop from './pages/Shop';
-import CreateShopListing from './pages/CreateShopListing';
-import AgentZKProfile from './pages/AgentZKProfile';
-import AgentZKDirectory from './pages/AgentZKDirectory';
-import AgentZKChat from './pages/AgentZKChat';
-import ShopItemView from './pages/ShopItemView';
-import Cart from './pages/Cart';
-import BingoLobbyBrowser from './pages/BingoLobbyBrowser';
-import BingoLobbyRoom from './pages/BingoLobbyRoom';
-import BingoLobbyPlay from './pages/BingoLobbyPlay';
-import POLFeed from './pages/POLFeed';
-import NFTMint from './pages/NFTMint';
-import BackgroundGenerator from './pages/BackgroundGenerator';
-import ZKVault from './pages/ZKVault';
-import Hercules from './pages/Hercules';
-import X from './pages/X';
-import ESC from './pages/ESC';
-import Categories from './pages/Categories';
-import AgentFYE from './pages/AgentFYE';
-import Docs from './pages/Docs';
-import Terms from './pages/Terms';
-import CryptoHire from './pages/CryptoHire';
-import Channels from './pages/Channels';
-import MyChannel from './pages/MyChannel';
-import Channel from './pages/Channel';
-import Life from './pages/Life';
-import Gift from './pages/Gift';
-import SharedCart from './pages/SharedCart';
-import Jobs from './pages/Jobs';
-import Calculator from './pages/Calculator';
-import IWork from './pages/IWork';
-import TestJobAPI from './pages/TestJobAPI';
-import God from './pages/God';
-import KnowledgeBase from './pages/KnowledgeBase';
-import Singularity from './pages/Singularity';
-import ProofOfBullish from './pages/ProofOfBullish';
-import LinkChecker from './pages/LinkChecker';
-import Zelcore from './pages/Zelcore';
-import KasFans from './pages/KasFans';
-import CivicVerify from './pages/CivicVerify';
-import VibeSetup from './pages/VibeSetup';
-import QRScanner from './pages/QRScanner';
-import Vibe from './pages/Vibe';
-import VibeSession from './pages/VibeSession';
-import SWAN from './pages/SWAN';
-import Landing from './pages/Landing';
-import TTTProfile from './pages/TTTProfile';
-import VProgs from './pages/VProgs';
-import BullMoon from './pages/BullMoon';
-import StateOfMind from './pages/StateOfMind';
-import Tools from './pages/Tools';
-import RegisterBusiness from './pages/RegisterBusiness';
-import KaspaTTT from './pages/KaspaTTT';
-import TTTClassic from './pages/TTTClassic';
-import Champions from './pages/Champions';
-import Matrix from './pages/Matrix';
-import NASA from './pages/NASA';
-import Veritas from './pages/Veritas';
-import TTTWallet from './pages/TTTWallet';
-import TransportProtocol from './pages/TransportProtocol';
-import KaspaLocal from './pages/KaspaLocal';
-import CosmicEye from './pages/CosmicEye';
-import CargoWays from './pages/CargoWays';
-import Echo from './pages/Echo';
-import AuraDashboard from './pages/AuraDashboard';
 import IOS from './pages/IOS';
-import AppStore from './pages/AppStore';
-import BRAHIM from './pages/BRAHIM';
-import AYOMUIZ from './pages/AYOMUIZ';
-import Kehinde from './pages/Kehinde';
-import HYPEMIND from './pages/HYPEMIND';
-import OriginStory from './pages/OriginStory';
-import HAYPHASE from './pages/HAYPHASE';
-import Vault from './pages/Vault';
-import Gate from './pages/Gate';
-import AK from './pages/AK';
-import AYOMUIZ2 from './pages/AYOMUIZ2';
-import Peculiar from './pages/Peculiar';
-import Bible from './pages/Bible';
-import TD from './pages/TD';
-import Builders from './pages/Builders';
-import Olatomiwa from './pages/Olatomiwa';
-import TemplateBuilder from './pages/TemplateBuilder';
-import Taiwo from './pages/Taiwo';
-import TTTAudit from './pages/TTTAudit';
-import TapToTip from './pages/TapToTip';
-import Kolade from './pages/Kolade';
+import IWork from './pages/IWork';
+import Jobs from './pages/Jobs';
+import JustDance from './pages/JustDance';
+import KASBOOKS from './pages/KASBOOKS';
+import KASBridge from './pages/KASBridge';
+import KASIA from './pages/KASIA';
+import KASari from './pages/KASari';
+import KFlow from './pages/KFlow';
+import KP from './pages/KP';
+import KWSuccess from './pages/KWSuccess';
+import KasFans from './pages/KasFans';
 import Kasdate from './pages/Kasdate';
+import Kasmi from './pages/Kasmi';
+import KaspaBalanceViewer from './pages/KaspaBalanceViewer';
+import KaspaHub from './pages/KaspaHub';
+import KaspaLFG from './pages/KaspaLFG';
+import KaspaLocal from './pages/KaspaLocal';
+import KaspaNode from './pages/KaspaNode';
+import KaspaNodeMap from './pages/KaspaNodeMap';
+import KaspaSTORE from './pages/KaspaSTORE';
+import KaspaTTT from './pages/KaspaTTT';
+import Kehinde from './pages/Kehinde';
+import KnowledgeBase from './pages/KnowledgeBase';
+import Kolade from './pages/Kolade';
+import Konekt from './pages/Konekt';
+import Kurve from './pages/Kurve';
+import LLMScraper from './pages/LLMScraper';
+import Landing from './pages/Landing';
+import Learning from './pages/Learning';
+import Life from './pages/Life';
+import LinkChecker from './pages/LinkChecker';
+import Lobby from './pages/Lobby';
+import MMN from './pages/MMN';
 import MODZ from './pages/MODZ';
 import MODZHub from './pages/MODZHub';
-import KASari from './pages/KASari';
-import KaspaSTORE from './pages/KaspaSTORE';
-import AYOMUIZHub from './pages/AYOMUIZHub';
-import OlatomiwaHub from './pages/OlatomiwaHub';
-import BRAHIMHub from './pages/BRAHIMHub';
-import KASBOOKS from './pages/KASBOOKS';
-import Movies from './pages/Movies';
-import Creator from './pages/Creator';
-import Lobby from './pages/Lobby';
-import Focus from './pages/Focus';
-import KaspaLFG from './pages/KaspaLFG';
-import KP from './pages/KP';
-import DevProfile from './pages/DevProfile';
-import SendTip from './pages/SendTip';
-import TestZelcore from './pages/TestZelcore';
-import DuelLobby from './pages/DuelLobby';
-import Duel from './pages/Duel';
-import Konekt from './pages/Konekt';
 import Machine from './pages/Machine';
-import Area51 from './pages/Area51';
-import Earth from './pages/Earth';
-import CountryDetail from './pages/CountryDetail';
-import Guide from './pages/Guide';
-import MMN from './pages/MMN';
-import Articles from './pages/Articles';
-import DAGFeed from './pages/DAGFeed';
-import Timer from './pages/Timer';
-import TetrisBattle from './pages/TetrisBattle';
-import KASIA from './pages/KASIA';
-import KWSuccess from './pages/KWSuccess';
-import XYZ from './pages/XYZ';
-import KaspaNodeMap from './pages/KaspaNodeMap';
-import Learning from './pages/Learning';
-import KASBridge from './pages/KASBridge';
-import Kurve from './pages/Kurve';
-import AgentZK2 from './pages/AgentZK2';
-import BuildGuide from './pages/BuildGuide';
-import BMTUniv from './pages/BMTUniv';
-import TheRealm from './pages/TheRealm';
-import TruthLanding from './pages/TruthLanding';
-import CoinSpace from './pages/CoinSpace';
-import KaspaHub from './pages/KaspaHub';
-import KFlow from './pages/KFlow';
-import Explorer from './pages/Explorer';
-import Enoch from './pages/Enoch';
-import Resonance from './pages/Resonance';
-import UNI from './pages/UNI';
-import LLMScraper from './pages/LLMScraper';
-import Oracle from './pages/Oracle';
-import Truman from './pages/Truman';
-import Shill from './pages/Shill';
-import SIMPLE from './pages/SIMPLE';
-import ShiLLz from './pages/ShiLLz';
+import MarketX from './pages/MarketX';
+import Marketplace from './pages/Marketplace';
+import Matrix from './pages/Matrix';
+import MobileTest from './pages/MobileTest';
+import Movies from './pages/Movies';
+import MyChannel from './pages/MyChannel';
+import NASA from './pages/NASA';
+import NFTMint from './pages/NFTMint';
+import Olatomiwa from './pages/Olatomiwa';
+import OlatomiwaHub from './pages/OlatomiwaHub';
 import OliviaApps from './pages/OliviaApps';
-import Kasmi from './pages/Kasmi';
+import Oracle from './pages/Oracle';
+import OriginStory from './pages/OriginStory';
+import POLFeed from './pages/POLFeed';
+import Peculiar from './pages/Peculiar';
+import Pera from './pages/Pera';
+import Profile from './pages/Profile';
+import ProofOfBullish from './pages/ProofOfBullish';
+import QRScanner from './pages/QRScanner';
+import Receive from './pages/Receive';
+import RegisterBusiness from './pages/RegisterBusiness';
+import RegisterTTTID from './pages/RegisterTTTID';
+import Resonance from './pages/Resonance';
+import SIMPLE from './pages/SIMPLE';
+import SSHManager from './pages/SSHManager';
+import SWAN from './pages/SWAN';
+import SealedWalletDetails from './pages/SealedWalletDetails';
 import Seeles from './pages/Seeles';
-import JustDance from './pages/JustDance';
-import FHZ from './pages/FHZ';
-import BlockRun from './pages/BlockRun';
-import FalAI from './pages/FalAI';
+import SendTip from './pages/SendTip';
+import Settings from './pages/Settings';
+import SharedCart from './pages/SharedCart';
+import ShiLLz from './pages/ShiLLz';
+import Shill from './pages/Shill';
+import Shop from './pages/Shop';
+import ShopItemView from './pages/ShopItemView';
+import Singularity from './pages/Singularity';
+import StateOfMind from './pages/StateOfMind';
+import Subscription from './pages/Subscription';
+import TD from './pages/TD';
+import TTTAudit from './pages/TTTAudit';
+import TTTClassic from './pages/TTTClassic';
+import TTTIDProfile from './pages/TTTIDProfile';
+import TTTProfile from './pages/TTTProfile';
+import TTTWallet from './pages/TTTWallet';
+import Taiwo from './pages/Taiwo';
+import TapToTip from './pages/TapToTip';
+import TemplateBuilder from './pages/TemplateBuilder';
+import Terms from './pages/Terms';
+import TestJobAPI from './pages/TestJobAPI';
+import TestKaspaAPI from './pages/TestKaspaAPI';
+import TestZelcore from './pages/TestZelcore';
+import TetrisBattle from './pages/TetrisBattle';
+import TheRealm from './pages/TheRealm';
+import Timer from './pages/Timer';
+import Tools from './pages/Tools';
+import TradeView from './pages/TradeView';
+import TransportProtocol from './pages/TransportProtocol';
+import Truman from './pages/Truman';
+import TruthLanding from './pages/TruthLanding';
+import UNI from './pages/UNI';
+import UserProfile from './pages/UserProfile';
+import VPImport from './pages/VPImport';
+import VProgs from './pages/VProgs';
+import Vault from './pages/Vault';
+import Veritas from './pages/Veritas';
+import Vibe from './pages/Vibe';
+import VibeSession from './pages/VibeSession';
+import VibeSetup from './pages/VibeSetup';
+import Waitlist from './pages/Waitlist';
+import Wallet from './pages/Wallet';
+import WorkerTask from './pages/WorkerTask';
+import X from './pages/X';
+import XYZ from './pages/XYZ';
+import ZKVault from './pages/ZKVault';
+import ZKWallet from './pages/ZKWallet';
+import ZekuAI from './pages/ZekuAI';
+import Zelcore from './pages/Zelcore';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "AIAnalytics": AIAnalytics,
+    "AK": AK,
+    "APIDocumentation": APIDocumentation,
+    "AYOMUIZ": AYOMUIZ,
+    "AYOMUIZ2": AYOMUIZ2,
+    "AYOMUIZHub": AYOMUIZHub,
+    "AgentFYE": AgentFYE,
+    "AgentZK": AgentZK,
+    "AgentZK2": AgentZK2,
+    "AgentZKChat": AgentZKChat,
+    "AgentZKDirectory": AgentZKDirectory,
+    "AgentZKProfile": AgentZKProfile,
+    "Analytics": Analytics,
+    "AppStore": AppStore,
+    "Arcade": Arcade,
+    "Area51": Area51,
+    "Articles": Articles,
+    "AuraDashboard": AuraDashboard,
+    "BMTUniv": BMTUniv,
+    "BRAHIM": BRAHIM,
+    "BRAHIMHub": BRAHIMHub,
+    "BackgroundGenerator": BackgroundGenerator,
+    "Bible": Bible,
+    "BingoLobbyBrowser": BingoLobbyBrowser,
+    "BingoLobbyPlay": BingoLobbyPlay,
+    "BingoLobbyRoom": BingoLobbyRoom,
+    "BlockRun": BlockRun,
     "Bridge": Bridge,
+    "Browser": Browser,
+    "BuildGuide": BuildGuide,
+    "Builders": Builders,
+    "BullMoon": BullMoon,
+    "Calculator": Calculator,
+    "Career": Career,
+    "CargoWays": CargoWays,
+    "Cart": Cart,
+    "Categories": Categories,
+    "Champions": Champions,
+    "Channel": Channel,
+    "Channels": Channels,
+    "CivicVerify": CivicVerify,
+    "CoinSpace": CoinSpace,
+    "ConnectWallet": ConnectWallet,
+    "ContributorHistory": ContributorHistory,
+    "CosmicEye": CosmicEye,
+    "Countdown": Countdown,
+    "CountryDetail": CountryDetail,
+    "CreateListing": CreateListing,
+    "CreateShopListing": CreateShopListing,
+    "Creator": Creator,
+    "CryptoHire": CryptoHire,
+    "DAGFeed": DAGFeed,
+    "DAGKnightWallet": DAGKnightWallet,
+    "DeployContract": DeployContract,
+    "DevProfile": DevProfile,
+    "Docs": Docs,
+    "Duel": Duel,
+    "DuelLobby": DuelLobby,
+    "ESC": ESC,
+    "Earth": Earth,
+    "Echo": Echo,
+    "EditListing": EditListing,
+    "EmployerTask": EmployerTask,
+    "Enoch": Enoch,
+    "Explorer": Explorer,
+    "FHZ": FHZ,
+    "FalAI": FalAI,
+    "Feed": Feed,
+    "Focus": Focus,
+    "Gate": Gate,
+    "Gift": Gift,
+    "GlobalHistory": GlobalHistory,
+    "God": God,
+    "Guide": Guide,
+    "HAYPHASE": HAYPHASE,
+    "HYPEMIND": HYPEMIND,
+    "Hercules": Hercules,
     "History": History,
     "Home": Home,
     "Hub": Hub,
-    "Marketplace": Marketplace,
-    "CreateListing": CreateListing,
-    "TradeView": TradeView,
-    "DeployContract": DeployContract,
-    "UserProfile": UserProfile,
-    "ConnectWallet": ConnectWallet,
-    "EditListing": EditListing,
-    "GlobalHistory": GlobalHistory,
-    "Subscription": Subscription,
-    "Profile": Profile,
-    "Countdown": Countdown,
-    "ZekuAI": ZekuAI,
-    "Feed": Feed,
-    "Arcade": Arcade,
-    "Analytics": Analytics,
-    "MobileTest": MobileTest,
-    "Settings": Settings,
-    "Career": Career,
-    "ContributorHistory": ContributorHistory,
-    "Browser": Browser,
-    "AIAnalytics": AIAnalytics,
-    "SSHManager": SSHManager,
-    "RegisterTTTID": RegisterTTTID,
-    "KaspaBalanceViewer": KaspaBalanceViewer,
-    "APIDocumentation": APIDocumentation,
-    "TestKaspaAPI": TestKaspaAPI,
-    "Wallet": Wallet,
-    "Receive": Receive,
-    "SealedWalletDetails": SealedWalletDetails,
-    "DAGKnightWallet": DAGKnightWallet,
-    "TTTIDProfile": TTTIDProfile,
-    "AgentZK": AgentZK,
-    "KaspaNode": KaspaNode,
-    "VPImport": VPImport,
-    "ZKWallet": ZKWallet,
-    "Pera": Pera,
-    "MarketX": MarketX,
-    "WorkerTask": WorkerTask,
-    "EmployerTask": EmployerTask,
-    "Waitlist": Waitlist,
-    "Shop": Shop,
-    "CreateShopListing": CreateShopListing,
-    "AgentZKProfile": AgentZKProfile,
-    "AgentZKDirectory": AgentZKDirectory,
-    "AgentZKChat": AgentZKChat,
-    "ShopItemView": ShopItemView,
-    "Cart": Cart,
-    "BingoLobbyBrowser": BingoLobbyBrowser,
-    "BingoLobbyRoom": BingoLobbyRoom,
-    "BingoLobbyPlay": BingoLobbyPlay,
-    "POLFeed": POLFeed,
-    "NFTMint": NFTMint,
-    "BackgroundGenerator": BackgroundGenerator,
-    "ZKVault": ZKVault,
-    "Hercules": Hercules,
-    "X": X,
-    "ESC": ESC,
-    "Categories": Categories,
-    "AgentFYE": AgentFYE,
-    "Docs": Docs,
-    "Terms": Terms,
-    "CryptoHire": CryptoHire,
-    "Channels": Channels,
-    "MyChannel": MyChannel,
-    "Channel": Channel,
-    "Life": Life,
-    "Gift": Gift,
-    "SharedCart": SharedCart,
-    "Jobs": Jobs,
-    "Calculator": Calculator,
-    "IWork": IWork,
-    "TestJobAPI": TestJobAPI,
-    "God": God,
-    "KnowledgeBase": KnowledgeBase,
-    "Singularity": Singularity,
-    "ProofOfBullish": ProofOfBullish,
-    "LinkChecker": LinkChecker,
-    "Zelcore": Zelcore,
-    "KasFans": KasFans,
-    "CivicVerify": CivicVerify,
-    "VibeSetup": VibeSetup,
-    "QRScanner": QRScanner,
-    "Vibe": Vibe,
-    "VibeSession": VibeSession,
-    "SWAN": SWAN,
-    "Landing": Landing,
-    "TTTProfile": TTTProfile,
-    "VProgs": VProgs,
-    "BullMoon": BullMoon,
-    "StateOfMind": StateOfMind,
-    "Tools": Tools,
-    "RegisterBusiness": RegisterBusiness,
-    "KaspaTTT": KaspaTTT,
-    "TTTClassic": TTTClassic,
-    "Champions": Champions,
-    "Matrix": Matrix,
-    "NASA": NASA,
-    "Veritas": Veritas,
-    "TTTWallet": TTTWallet,
-    "TransportProtocol": TransportProtocol,
-    "KaspaLocal": KaspaLocal,
-    "CosmicEye": CosmicEye,
-    "CargoWays": CargoWays,
-    "Echo": Echo,
-    "AuraDashboard": AuraDashboard,
     "IOS": IOS,
-    "AppStore": AppStore,
-    "BRAHIM": BRAHIM,
-    "AYOMUIZ": AYOMUIZ,
-    "Kehinde": Kehinde,
-    "HYPEMIND": HYPEMIND,
-    "OriginStory": OriginStory,
-    "HAYPHASE": HAYPHASE,
-    "Vault": Vault,
-    "Gate": Gate,
-    "AK": AK,
-    "AYOMUIZ2": AYOMUIZ2,
-    "Peculiar": Peculiar,
-    "Bible": Bible,
-    "TD": TD,
-    "Builders": Builders,
-    "Olatomiwa": Olatomiwa,
-    "TemplateBuilder": TemplateBuilder,
-    "Taiwo": Taiwo,
-    "TTTAudit": TTTAudit,
-    "TapToTip": TapToTip,
-    "Kolade": Kolade,
+    "IWork": IWork,
+    "Jobs": Jobs,
+    "JustDance": JustDance,
+    "KASBOOKS": KASBOOKS,
+    "KASBridge": KASBridge,
+    "KASIA": KASIA,
+    "KASari": KASari,
+    "KFlow": KFlow,
+    "KP": KP,
+    "KWSuccess": KWSuccess,
+    "KasFans": KasFans,
     "Kasdate": Kasdate,
+    "Kasmi": Kasmi,
+    "KaspaBalanceViewer": KaspaBalanceViewer,
+    "KaspaHub": KaspaHub,
+    "KaspaLFG": KaspaLFG,
+    "KaspaLocal": KaspaLocal,
+    "KaspaNode": KaspaNode,
+    "KaspaNodeMap": KaspaNodeMap,
+    "KaspaSTORE": KaspaSTORE,
+    "KaspaTTT": KaspaTTT,
+    "Kehinde": Kehinde,
+    "KnowledgeBase": KnowledgeBase,
+    "Kolade": Kolade,
+    "Konekt": Konekt,
+    "Kurve": Kurve,
+    "LLMScraper": LLMScraper,
+    "Landing": Landing,
+    "Learning": Learning,
+    "Life": Life,
+    "LinkChecker": LinkChecker,
+    "Lobby": Lobby,
+    "MMN": MMN,
     "MODZ": MODZ,
     "MODZHub": MODZHub,
-    "KASari": KASari,
-    "KaspaSTORE": KaspaSTORE,
-    "AYOMUIZHub": AYOMUIZHub,
-    "OlatomiwaHub": OlatomiwaHub,
-    "BRAHIMHub": BRAHIMHub,
-    "KASBOOKS": KASBOOKS,
-    "Movies": Movies,
-    "Creator": Creator,
-    "Lobby": Lobby,
-    "Focus": Focus,
-    "KaspaLFG": KaspaLFG,
-    "KP": KP,
-    "DevProfile": DevProfile,
-    "SendTip": SendTip,
-    "TestZelcore": TestZelcore,
-    "DuelLobby": DuelLobby,
-    "Duel": Duel,
-    "Konekt": Konekt,
     "Machine": Machine,
-    "Area51": Area51,
-    "Earth": Earth,
-    "CountryDetail": CountryDetail,
-    "Guide": Guide,
-    "MMN": MMN,
-    "Articles": Articles,
-    "DAGFeed": DAGFeed,
-    "Timer": Timer,
-    "TetrisBattle": TetrisBattle,
-    "KASIA": KASIA,
-    "KWSuccess": KWSuccess,
-    "XYZ": XYZ,
-    "KaspaNodeMap": KaspaNodeMap,
-    "Learning": Learning,
-    "KASBridge": KASBridge,
-    "Kurve": Kurve,
-    "AgentZK2": AgentZK2,
-    "BuildGuide": BuildGuide,
-    "BMTUniv": BMTUniv,
-    "TheRealm": TheRealm,
-    "TruthLanding": TruthLanding,
-    "CoinSpace": CoinSpace,
-    "KaspaHub": KaspaHub,
-    "KFlow": KFlow,
-    "Explorer": Explorer,
-    "Enoch": Enoch,
-    "Resonance": Resonance,
-    "UNI": UNI,
-    "LLMScraper": LLMScraper,
-    "Oracle": Oracle,
-    "Truman": Truman,
-    "Shill": Shill,
-    "SIMPLE": SIMPLE,
-    "ShiLLz": ShiLLz,
+    "MarketX": MarketX,
+    "Marketplace": Marketplace,
+    "Matrix": Matrix,
+    "MobileTest": MobileTest,
+    "Movies": Movies,
+    "MyChannel": MyChannel,
+    "NASA": NASA,
+    "NFTMint": NFTMint,
+    "Olatomiwa": Olatomiwa,
+    "OlatomiwaHub": OlatomiwaHub,
     "OliviaApps": OliviaApps,
-    "Kasmi": Kasmi,
+    "Oracle": Oracle,
+    "OriginStory": OriginStory,
+    "POLFeed": POLFeed,
+    "Peculiar": Peculiar,
+    "Pera": Pera,
+    "Profile": Profile,
+    "ProofOfBullish": ProofOfBullish,
+    "QRScanner": QRScanner,
+    "Receive": Receive,
+    "RegisterBusiness": RegisterBusiness,
+    "RegisterTTTID": RegisterTTTID,
+    "Resonance": Resonance,
+    "SIMPLE": SIMPLE,
+    "SSHManager": SSHManager,
+    "SWAN": SWAN,
+    "SealedWalletDetails": SealedWalletDetails,
     "Seeles": Seeles,
-    "JustDance": JustDance,
-    "FHZ": FHZ,
-    "BlockRun": BlockRun,
-    "FalAI": FalAI,
+    "SendTip": SendTip,
+    "Settings": Settings,
+    "SharedCart": SharedCart,
+    "ShiLLz": ShiLLz,
+    "Shill": Shill,
+    "Shop": Shop,
+    "ShopItemView": ShopItemView,
+    "Singularity": Singularity,
+    "StateOfMind": StateOfMind,
+    "Subscription": Subscription,
+    "TD": TD,
+    "TTTAudit": TTTAudit,
+    "TTTClassic": TTTClassic,
+    "TTTIDProfile": TTTIDProfile,
+    "TTTProfile": TTTProfile,
+    "TTTWallet": TTTWallet,
+    "Taiwo": Taiwo,
+    "TapToTip": TapToTip,
+    "TemplateBuilder": TemplateBuilder,
+    "Terms": Terms,
+    "TestJobAPI": TestJobAPI,
+    "TestKaspaAPI": TestKaspaAPI,
+    "TestZelcore": TestZelcore,
+    "TetrisBattle": TetrisBattle,
+    "TheRealm": TheRealm,
+    "Timer": Timer,
+    "Tools": Tools,
+    "TradeView": TradeView,
+    "TransportProtocol": TransportProtocol,
+    "Truman": Truman,
+    "TruthLanding": TruthLanding,
+    "UNI": UNI,
+    "UserProfile": UserProfile,
+    "VPImport": VPImport,
+    "VProgs": VProgs,
+    "Vault": Vault,
+    "Veritas": Veritas,
+    "Vibe": Vibe,
+    "VibeSession": VibeSession,
+    "VibeSetup": VibeSetup,
+    "Waitlist": Waitlist,
+    "Wallet": Wallet,
+    "WorkerTask": WorkerTask,
+    "X": X,
+    "XYZ": XYZ,
+    "ZKVault": ZKVault,
+    "ZKWallet": ZKWallet,
+    "ZekuAI": ZekuAI,
+    "Zelcore": Zelcore,
 }
 
 export const pagesConfig = {
-    mainPage: "AgentZK",
+    mainPage: "Home",
     Pages: PAGES,
     Layout: __Layout,
 };
