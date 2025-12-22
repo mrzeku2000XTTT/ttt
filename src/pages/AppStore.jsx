@@ -67,6 +67,7 @@ export default function AppStorePage() {
     { name: "EXPLORER", icon: "Link2", path: "Explorer", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/2b446e5a2_image.png", circular: true },
     { name: "ShiLLz", icon: "Link2", path: "ShiLLz", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/c28359c35_image.png" },
     { name: "KasCompute", icon: "Link2", path: "KasCompute", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/1b55211d7_image.png" },
+    { name: "Kurncy", icon: "Link2", path: "Kurncy", category: "Finance", defaultIcon: "https://ui-avatars.com/api/?name=K&size=128&background=06b6d4&color=fff&bold=true" },
     ];
 
   const getIconComponent = (iconName) => {
