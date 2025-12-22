@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { PrivateKey, Address, Transaction } from 'npm:@kaspa/wallet@0.1.6';
 
 Deno.serve(async (req) => {
   try {
@@ -17,8 +18,20 @@ Deno.serve(async (req) => {
       ticker,
       network = 'mainnet',
       priorityFee = '0',
-      iterations = 20 
+      iterations = 20,
+      encryptedKey,
+      pin
     } = await req.json();
+
+    // Decrypt private key if needed
+    let privateKey = fromPrivateKey;
+    if (encryptedKey && pin) {
+      privateKey = await base44.functions.invoke('kurncyWallet', {
+        action: 'decrypt',
+        privateKey: encryptedKey,
+        pin
+      }).then(r => r.data.privateKey);
+    }
 
     if (action === 'transfer') {
       // Validate required fields
@@ -111,71 +124,176 @@ Deno.serve(async (req) => {
 async function transferKRC20(params) {
   const { fromPrivateKey, toAddress, amount, ticker, network, priorityFee } = params;
   
-  // Connect to Kaspa node
-  const nodeUrl = network === 'mainnet' 
+  const privKey = new PrivateKey(fromPrivateKey);
+  const fromAddress = Address.fromPublicKey(privKey.toPublicKey(), network);
+  
+  const apiUrl = network === 'mainnet' 
     ? 'https://api.kaspa.org' 
     : 'https://api-testnet.kaspa.org';
 
-  // Build KRC-20 transfer transaction
-  // This is a simplified version - actual implementation would use Kaspa SDK
-  const response = await fetch(`${nodeUrl}/v1/transactions/send`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      privateKey: fromPrivateKey,
-      outputs: [{
-        address: toAddress,
-        amount: '0', // KRC-20 uses OP_RETURN, KAS amount is 0
-        scriptPublicKey: {
-          version: 0,
-          script: buildKRC20TransferScript(ticker, amount)
-        }
-      }],
-      priorityFee
-    })
-  });
+  // Get UTXOs
+  const utxosResponse = await fetch(`${apiUrl}/addresses/${fromAddress}/utxos`);
+  const utxosData = await utxosResponse.json();
+  const utxos = utxosData.utxos || [];
 
-  if (!response.ok) {
-    throw new Error(`Transfer failed: ${await response.text()}`);
+  if (utxos.length === 0) {
+    throw new Error('No UTXOs available');
   }
 
-  return await response.json();
+  // Build KRC-20 transfer transaction with OP_RETURN
+  const krc20Data = `krc20:transfer:${ticker}:${amount}`;
+  
+  const tx = {
+    version: 0,
+    inputs: utxos.slice(0, 5).map(utxo => ({
+      previousOutpoint: {
+        transactionId: utxo.transactionId,
+        index: utxo.index
+      },
+      signatureScript: '',
+      sequence: 0
+    })),
+    outputs: [
+      {
+        value: 0,
+        scriptPublicKey: {
+          version: 0,
+          script: `OP_RETURN ${Buffer.from(krc20Data).toString('hex')}`
+        }
+      },
+      {
+        value: utxos[0].value - 1000, // Change output (minus fee)
+        scriptPublicKey: {
+          version: 0,
+          script: fromAddress.scriptPublicKey
+        }
+      }
+    ],
+    lockTime: 0
+  };
+
+  // Sign transaction
+  const signedTx = await signTransaction(tx, privKey);
+
+  // Submit transaction
+  const submitResponse = await fetch(`${apiUrl}/transactions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ transaction: signedTx })
+  });
+
+  if (!submitResponse.ok) {
+    throw new Error(`Transaction submission failed: ${await submitResponse.text()}`);
+  }
+
+  const result = await submitResponse.json();
+  
+  return {
+    transactionId: result.transactionId,
+    fromAddress: fromAddress.toString(),
+    toAddress,
+    amount,
+    ticker,
+    network
+  };
 }
 
 async function mintKRC20(params) {
   const { fromPrivateKey, ticker, network, priorityFee, iterations } = params;
   
-  const nodeUrl = network === 'mainnet' 
+  const privKey = new PrivateKey(fromPrivateKey);
+  const fromAddress = Address.fromPublicKey(privKey.toPublicKey(), network);
+  
+  const apiUrl = network === 'mainnet' 
     ? 'https://api.kaspa.org' 
     : 'https://api-testnet.kaspa.org';
 
   const results = [];
+  const failed = [];
   
   for (let i = 0; i < iterations; i++) {
-    const response = await fetch(`${nodeUrl}/v1/transactions/send`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        privateKey: fromPrivateKey,
-        outputs: [{
-          amount: '0',
-          scriptPublicKey: {
-            version: 0,
-            script: buildKRC20MintScript(ticker)
-          }
-        }],
-        priorityFee
-      })
-    });
+    try {
+      // Get fresh UTXOs for each mint
+      const utxosResponse = await fetch(`${apiUrl}/addresses/${fromAddress}/utxos`);
+      const utxosData = await utxosResponse.json();
+      const utxos = utxosData.utxos || [];
 
-    if (response.ok) {
-      results.push(await response.json());
+      if (utxos.length === 0) {
+        failed.push({ iteration: i + 1, error: 'No UTXOs available' });
+        continue;
+      }
+
+      const krc20Data = `krc20:mint:${ticker}`;
+      
+      const tx = {
+        version: 0,
+        inputs: [utxos[0]].map(utxo => ({
+          previousOutpoint: {
+            transactionId: utxo.transactionId,
+            index: utxo.index
+          },
+          signatureScript: '',
+          sequence: 0
+        })),
+        outputs: [
+          {
+            value: 0,
+            scriptPublicKey: {
+              version: 0,
+              script: `OP_RETURN ${Buffer.from(krc20Data).toString('hex')}`
+            }
+          },
+          {
+            value: utxos[0].value - 1000,
+            scriptPublicKey: {
+              version: 0,
+              script: fromAddress.scriptPublicKey
+            }
+          }
+        ],
+        lockTime: 0
+      };
+
+      const signedTx = await signTransaction(tx, privKey);
+
+      const submitResponse = await fetch(`${apiUrl}/transactions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transaction: signedTx })
+      });
+
+      if (submitResponse.ok) {
+        const result = await submitResponse.json();
+        results.push({
+          iteration: i + 1,
+          transactionId: result.transactionId,
+          ticker
+        });
+      } else {
+        failed.push({
+          iteration: i + 1,
+          error: await submitResponse.text()
+        });
+      }
+
+      // Small delay between mints
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+    } catch (error) {
+      failed.push({
+        iteration: i + 1,
+        error: error.message
+      });
     }
   }
 
   return {
     totalMinted: results.length,
-    transactions: results
+    totalFailed: failed.length,
+    successfulMints: results,
+    failedMints: failed,
+    ticker,
+    network
   };
 }
 
@@ -193,14 +311,20 @@ async function estimateKRC20Fee(params) {
   };
 }
 
-function buildKRC20TransferScript(ticker, amount) {
-  // Build OP_RETURN script for KRC-20 transfer
-  // Format: OP_RETURN "krc20:transfer" <ticker> <amount>
-  return `OP_RETURN krc20:transfer ${ticker} ${amount}`;
-}
+async function signTransaction(tx, privateKey) {
+  // Sign each input with the private key
+  const signedInputs = await Promise.all(
+    tx.inputs.map(async (input) => {
+      const signature = await privateKey.sign(JSON.stringify(tx));
+      return {
+        ...input,
+        signatureScript: signature.toString('hex')
+      };
+    })
+  );
 
-function buildKRC20MintScript(ticker) {
-  // Build OP_RETURN script for KRC-20 mint
-  // Format: OP_RETURN "krc20:mint" <ticker>
-  return `OP_RETURN krc20:mint ${ticker}`;
+  return {
+    ...tx,
+    inputs: signedInputs
+  };
 }
