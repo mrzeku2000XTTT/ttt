@@ -311,32 +311,44 @@ export default function NFTMintPage() {
         }
       }
     } catch (err) {
-      console.error('Failed to load user:', err);
+      console.log('👤 No user logged in - wallet-only mode');
+      setUser(null);
     }
   };
 
   const loadMyNFTs = async () => {
     setIsLoadingNFTs(true);
     try {
+      // Try to load by email first
       const currentUser = await base44.auth.me();
       
-      // ✅ Get ALL NFTs for this user
       const allNFTs = await base44.entities.NFT.filter({
         owner_email: currentUser.email
       }, '-minted_at', 500);
       
       console.log('📦 All user NFTs:', allNFTs.length);
-      console.log('🔍 NFTs in NFT vault:', allNFTs.filter(n => n.in_nft_vault).length);
       
-      // ✅ Filter out only those NOT in NFT vault for display
       const myNFTsList = allNFTs.filter(n => !n.in_nft_vault);
-      
-      console.log('🖼️ NFTs to display:', myNFTsList.length);
-      
       setMyNFTs(myNFTsList);
     } catch (err) {
-      console.error('Failed to load NFTs:', err);
-      setMyNFTs([]);
+      // If not logged in, try loading by wallet address
+      if (walletAddress) {
+        try {
+          const nftsByWallet = await base44.entities.NFT.filter({
+            owner_wallet: walletAddress
+          }, '-minted_at', 500);
+          
+          const myNFTsList = nftsByWallet.filter(n => !n.in_nft_vault);
+          setMyNFTs(myNFTsList);
+          console.log('📦 Loaded NFTs by wallet:', myNFTsList.length);
+        } catch (walletErr) {
+          console.error('Failed to load NFTs by wallet:', walletErr);
+          setMyNFTs([]);
+        }
+      } else {
+        console.log('No email or wallet available for loading NFTs');
+        setMyNFTs([]);
+      }
     } finally {
       setIsLoadingNFTs(false);
     }
@@ -803,10 +815,10 @@ export default function NFTMintPage() {
         throw new Error('Transaction confirmation timeout. Check MetaMask activity.');
       }
 
-      console.log('💾 Creating NFTs in database...');
+      console.log('💾 Creating NFT metadata...');
 
       const truncatedWalletAddr = walletAddress.substring(0, 10);
-      const creatorName = agentProfile?.username || user?.username || `Agent-${walletAddress.substring(0, 10)}`;
+      const creatorName = agentProfile?.username || user?.username || `Wallet-${walletAddress.substring(0, 8)}`;
       const agentZkId = agentProfile?.agent_zk_id || null;
       const listPrice = customListPrice ? parseFloat(customListPrice) : totalMintCost;
 
@@ -838,7 +850,7 @@ export default function NFTMintPage() {
 
         const nftData = {
           token_id: uniqueHash,
-          owner_email: user.email,
+          owner_email: user?.email || `wallet_${walletAddress}`,
           owner_wallet: walletAddress,
           owner_agent_zk_id: agentZkId,
           owner_agent_name: creatorName,
@@ -867,11 +879,23 @@ export default function NFTMintPage() {
           in_nft_vault: false
         };
 
-        const nft = await base44.entities.NFT.create(nftData);
-        mintedNFTs.push(nft);
+        // Try to save to database (optional if user not logged in)
+        try {
+          const nft = await base44.entities.NFT.create(nftData);
+          mintedNFTs.push(nft);
 
-        if (i === 0) {
-          setLastMintedNFT(nft);
+          if (i === 0) {
+            setLastMintedNFT(nft);
+          }
+          
+          console.log(`✅ NFT #${i + 1} saved to database`);
+        } catch (dbErr) {
+          console.log(`⚠️ NFT #${i + 1} minted on-chain but not saved to database (user not logged in)`);
+          // Still track the NFT locally even if DB save fails
+          mintedNFTs.push(nftData);
+          if (i === 0) {
+            setLastMintedNFT(nftData);
+          }
         }
 
         if (i < nftsToMint - 1) {
@@ -893,8 +917,8 @@ export default function NFTMintPage() {
       setCustomListPrice('');
       
       const successMsg = nftsToMint > 1 
-        ? `${nftsToMint} NFTs Minted!\n\n💰 Cost: ${totalMintCost} ZEKU\n🎯 Rarity: ${currentRarity.label}\n👤 Creator: ${creatorName}\n\n✅ Check "My NFTs"!`
-        : `NFT Minted!\n\n💰 Cost: ${totalMintCost} ZEKU\n🎯 Rarity: ${currentRarity.label}\n👤 Creator: ${creatorName}\n\n✅ Check "My NFTs"!`;
+        ? `${nftsToMint} NFTs Minted!\n\n💰 Cost: ${totalMintCost} ZEKU\n🎯 Rarity: ${currentRarity.label}\n👤 Creator: ${creatorName}\n🔥 Tokens burned to: 0x...dEaD\n\n${user ? '✅ Check "My NFTs"!' : '⚠️ Login to save NFTs to your account'}`
+        : `NFT Minted!\n\n💰 Cost: ${totalMintCost} ZEKU\n🎯 Rarity: ${currentRarity.label}\n👤 Creator: ${creatorName}\n🔥 Tokens burned to: 0x...dEaD\n\n${user ? '✅ Check "My NFTs"!' : '⚠️ Login to save NFTs to your account'}`;
       
       showToast(successMsg, 'success', 10000);
       
