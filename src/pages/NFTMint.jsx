@@ -1615,15 +1615,17 @@ export default function NFTMintPage() {
                           My NFTs ({myNFTs.length + (lastMintedNFT && !myNFTs.find(n => n.id === lastMintedNFT.id) ? 1 : 0)})
                         </h2>
                         <div className="flex items-center gap-2">
-                          <Button
-                            onClick={() => setShowVault(true)}
-                            size="sm"
-                            variant="outline"
-                            className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10 bg-purple-500/5"
-                            title="Open ZK Vault"
-                          >
-                            <Shield className="w-4 h-4" />
-                          </Button>
+                          {user && (
+                            <Button
+                              onClick={() => setShowVault(true)}
+                              size="sm"
+                              variant="outline"
+                              className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10 bg-purple-500/5"
+                              title="Open ZK Vault"
+                            >
+                              <Shield className="w-4 h-4" />
+                            </Button>
+                          )}
                           <Button
                             onClick={loadMyNFTs}
                             size="sm"
