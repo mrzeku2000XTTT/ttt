@@ -41,6 +41,7 @@ export default function DAGFeedPage() {
   const [zkVerifying, setZkVerifying] = useState(false);
   const [zkWalletBalance, setZkWalletBalance] = useState(null);
   const [likedPosts, setLikedPosts] = useState(new Set());
+  const [manualKaspaAddress, setManualKaspaAddress] = useState('');
 
   useEffect(() => {
     loadData();
@@ -400,8 +401,10 @@ export default function DAGFeedPage() {
   };
 
   const handleZkVerification = async () => {
-    if (!user?.created_wallet_address) {
-      alert('Please login first');
+    const addressToVerify = user?.created_wallet_address || manualKaspaAddress;
+    
+    if (!addressToVerify) {
+      alert('Please enter a Kaspa address');
       return;
     }
 
@@ -420,7 +423,7 @@ export default function DAGFeedPage() {
 
         try {
           const response = await base44.functions.invoke('verifyKaspaSelfTransaction', {
-            address: user.created_wallet_address,
+            address: addressToVerify,
             expectedAmount: targetAmount,
             timestamp: timestamp
           });
@@ -885,35 +888,53 @@ export default function DAGFeedPage() {
 
               {!zkVerifying ? (
                 <div className="space-y-4">
-                  {zkWalletBalance !== null && (
+                  {zkWalletBalance !== null && user?.created_wallet_address && (
                     <div className="bg-white/5 rounded-lg p-3 border border-white/10">
                       <p className="text-white/40 text-xs mb-1">Current Balance</p>
                       <p className="text-white text-lg font-bold">{zkWalletBalance.toFixed(2)} KAS</p>
                     </div>
                   )}
 
-                  <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-                    <p className="text-white/40 text-xs mb-1">Your TTT Wallet Address</p>
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-white text-sm font-mono break-all">
-                        {user?.created_wallet_address?.substring(0, 12)}...{user?.created_wallet_address?.slice(-8)}
-                      </p>
-                      <Button
-                        onClick={() => {
-                          navigator.clipboard.writeText(user?.created_wallet_address || '');
-                          const notification = document.createElement('div');
-                          notification.className = 'fixed top-4 right-4 z-[200] bg-black border border-white/20 text-white px-4 py-3 rounded-lg shadow-lg';
-                          notification.textContent = '✓ Address copied';
-                          document.body.appendChild(notification);
-                          setTimeout(() => notification.remove(), 2000);
-                        }}
-                        size="sm"
-                        className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 text-xs h-7"
-                      >
-                        Copy
-                      </Button>
+                  {user?.created_wallet_address ? (
+                    <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                      <p className="text-white/40 text-xs mb-1">Your TTT Wallet Address</p>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-white text-sm font-mono break-all">
+                          {user.created_wallet_address.substring(0, 12)}...{user.created_wallet_address.slice(-8)}
+                        </p>
+                        <Button
+                          onClick={() => {
+                            navigator.clipboard.writeText(user.created_wallet_address);
+                            const notification = document.createElement('div');
+                            notification.className = 'fixed top-4 right-4 z-[200] bg-black border border-white/20 text-white px-4 py-3 rounded-lg shadow-lg';
+                            notification.textContent = '✓ Address copied';
+                            document.body.appendChild(notification);
+                            setTimeout(() => notification.remove(), 2000);
+                          }}
+                          size="sm"
+                          className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 text-xs h-7"
+                        >
+                          Copy
+                        </Button>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div>
+                      <label className="text-white/60 text-sm mb-2 block">
+                        Your Kaspa Address
+                      </label>
+                      <input
+                        type="text"
+                        value={manualKaspaAddress}
+                        onChange={(e) => setManualKaspaAddress(e.target.value)}
+                        placeholder="kaspa:qz..."
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white font-mono text-sm"
+                      />
+                      <p className="text-white/40 text-xs mt-1">
+                        Enter your Kaspa wallet address to verify transactions
+                      </p>
+                    </div>
+                  )}
 
                   <div>
                     <label className="text-white/60 text-sm mb-2 block">
@@ -942,7 +963,7 @@ export default function DAGFeedPage() {
 
                   <Button
                     onClick={handleZkVerification}
-                    disabled={!zkAmount || parseFloat(zkAmount) <= 0}
+                    disabled={!zkAmount || parseFloat(zkAmount) <= 0 || (!user?.created_wallet_address && !manualKaspaAddress)}
                     className="w-full bg-cyan-500 hover:bg-cyan-600 text-white h-12 font-semibold disabled:opacity-50"
                   >
                     Start Verification
@@ -970,7 +991,7 @@ export default function DAGFeedPage() {
                   <div className="bg-white/5 rounded-lg p-3 mb-4">
                     <p className="text-white/40 text-xs mb-1">Your Address</p>
                     <p className="text-white text-xs font-mono break-all">
-                      {user?.created_wallet_address}
+                      {user?.created_wallet_address || manualKaspaAddress}
                     </p>
                   </div>
                   <p className="text-white/40 text-xs">
