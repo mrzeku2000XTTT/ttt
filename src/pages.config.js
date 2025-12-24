@@ -104,6 +104,7 @@ import Kehinde from './pages/Kehinde';
 import KnowledgeBase from './pages/KnowledgeBase';
 import Kolade from './pages/Kolade';
 import Konekt from './pages/Konekt';
+import Kurncy from './pages/Kurncy';
 import Kurve from './pages/Kurve';
 import LLMScraper from './pages/LLMScraper';
 import Landing from './pages/Landing';
@@ -192,7 +193,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import Kurncy from './pages/Kurncy';
 import __Layout from './Layout.jsx';
 
 
@@ -303,6 +303,7 @@ export const PAGES = {
     "KnowledgeBase": KnowledgeBase,
     "Kolade": Kolade,
     "Konekt": Konekt,
+    "Kurncy": Kurncy,
     "Kurve": Kurve,
     "LLMScraper": LLMScraper,
     "Landing": Landing,
@@ -391,7 +392,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "Kurncy": Kurncy,
 }
 
 export const pagesConfig = {
