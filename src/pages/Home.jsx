@@ -173,15 +173,15 @@ export default function HomePage() {
             KASPA L1
           </motion.span>
           
-          <div className="relative flex items-center gap-1">
-            {/* Glow effect behind chains */}
+          <div className="relative w-16 h-16 flex items-center justify-center">
+            {/* Glow effect */}
             <motion.div
               className="absolute inset-0 blur-xl"
               animate={{
-                opacity: [0.1, 0.3, 0.1],
+                opacity: [0.1, 0.4, 0.1],
               }}
               transition={{
-                duration: 2,
+                duration: 6,
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
@@ -189,28 +189,17 @@ export default function HomePage() {
               <div className="w-full h-full bg-cyan-500/20" />
             </motion.div>
 
-            {/* Connecting beam */}
+            {/* Chain 1 - Forms pyramid, square, line */}
             <motion.div
-              className="absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-black/40 to-transparent"
+              className="absolute"
               animate={{
-                opacity: [0, 0.6, 0],
-                scaleX: [0.5, 1, 0.5],
+                x: [0, 0, 8, 0],
+                y: [0, -8, 0, 0],
+                opacity: [0.4, 0.6, 0.5, 0.4],
+                rotate: [0, 45, 90, 0],
               }}
               transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-
-            {/* Chain links */}
-            <motion.div
-              animate={{
-                x: [0, 10, 0],
-                opacity: [0.3, 0.6, 0.3],
-              }}
-              transition={{
-                duration: 2,
+                duration: 6,
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
@@ -220,14 +209,19 @@ export default function HomePage() {
             >
               <Link2 className="w-4 h-4 md:w-5 md:h-5 text-black/80" strokeWidth={2.5} />
             </motion.div>
+
+            {/* Chain 2 - Center, morphs with others */}
             <motion.div
+              className="absolute"
               animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0.3, 0.8, 0.3],
-                rotate: [0, 15, 0],
+                x: [0, 0, 0, 0],
+                y: [0, 0, 0, 0],
+                scale: [1, 1.3, 1, 1],
+                opacity: [0.5, 0.8, 0.6, 0.5],
+                rotate: [0, 90, 180, 360],
               }}
               transition={{
-                duration: 2,
+                duration: 6,
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
@@ -237,13 +231,18 @@ export default function HomePage() {
             >
               <Link2 className="w-4 h-4 md:w-5 md:h-5 text-black/80" strokeWidth={2.5} />
             </motion.div>
+
+            {/* Chain 3 - Completes shapes */}
             <motion.div
+              className="absolute"
               animate={{
-                x: [0, -10, 0],
-                opacity: [0.3, 0.6, 0.3],
+                x: [0, 0, -8, 0],
+                y: [0, 8, 0, 0],
+                opacity: [0.4, 0.6, 0.5, 0.4],
+                rotate: [0, -45, -90, 0],
               }}
               transition={{
-                duration: 2,
+                duration: 6,
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
@@ -254,21 +253,37 @@ export default function HomePage() {
               <Link2 className="w-4 h-4 md:w-5 md:h-5 text-black/80" strokeWidth={2.5} />
             </motion.div>
 
+            {/* Connecting lines */}
+            <motion.div
+              className="absolute w-12 h-0.5 bg-gradient-to-r from-transparent via-black/30 to-transparent"
+              animate={{
+                opacity: [0, 0.5, 0],
+                rotate: [0, 45, 90, 0],
+                scaleX: [0.5, 1, 0.7, 0.5],
+              }}
+              transition={{
+                duration: 6,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+
             {/* Energy particles */}
-            {[...Array(3)].map((_, i) => (
+            {[...Array(5)].map((_, i) => (
               <motion.div
                 key={i}
                 className="absolute w-1 h-1 bg-black/40 rounded-full"
                 animate={{
-                  x: [0, 20, 0],
-                  y: [-10, 10, -10],
-                  opacity: [0, 0.5, 0],
+                  x: [0, Math.cos(i * 72 * Math.PI / 180) * 20, 0],
+                  y: [0, Math.sin(i * 72 * Math.PI / 180) * 20, 0],
+                  opacity: [0, 0.6, 0],
+                  scale: [0, 1.5, 0],
                 }}
                 transition={{
-                  duration: 2,
+                  duration: 6,
                   repeat: Infinity,
                   ease: "easeInOut",
-                  delay: i * 0.3,
+                  delay: i * 0.2,
                 }}
               />
             ))}
