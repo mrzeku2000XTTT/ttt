@@ -13,6 +13,7 @@ export default function HomePage() {
   const [showKaspaModal, setShowKaspaModal] = useState(false);
   const [kaspaPrice, setKaspaPrice] = useState(null);
   const [loadingPrice, setLoadingPrice] = useState(false);
+  const [showPortal, setShowPortal] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -173,7 +174,11 @@ export default function HomePage() {
             KASPA L1
           </motion.span>
 
-          <div className="relative w-12 h-12 md:w-16 md:h-16 flex items-center justify-center flex-shrink-0">
+          <button
+            onClick={() => setShowPortal(true)}
+            className="relative w-12 h-12 md:w-16 md:h-16 flex items-center justify-center flex-shrink-0 cursor-pointer hover:scale-110 transition-transform duration-300"
+            title="Open Portal"
+          >
             {/* Glow effect */}
             <motion.div
               className="absolute inset-0 blur-xl"
@@ -453,6 +458,137 @@ export default function HomePage() {
                   </motion.div>
                   )}
                   </AnimatePresence>
-    </div>
-  );
-}
+
+                  {/* Portal Modal */}
+                  <AnimatePresence>
+                  {showPortal && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      onClick={() => setShowPortal(false)}
+                      className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[200] flex items-center justify-center overflow-hidden"
+                    >
+                      <motion.div
+                        initial={{ scale: 0, rotate: 0 }}
+                        animate={{ scale: 1, rotate: 360 }}
+                        exit={{ scale: 0, rotate: 0 }}
+                        transition={{ duration: 1, ease: "easeOut" }}
+                        className="relative w-full h-full max-w-4xl max-h-4xl flex items-center justify-center"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {/* Swirling Portal Effect */}
+                        <div className="relative w-[80vmin] h-[80vmin]">
+                          {/* Center Glow */}
+                          <motion.div
+                            animate={{
+                              scale: [1, 1.2, 1],
+                              opacity: [0.8, 1, 0.8],
+                            }}
+                            transition={{
+                              duration: 2,
+                              repeat: Infinity,
+                              ease: "easeInOut"
+                            }}
+                            className="absolute inset-0 flex items-center justify-center"
+                          >
+                            <div className="w-32 h-32 bg-cyan-400 rounded-full blur-3xl opacity-80" />
+                          </motion.div>
+
+                          {/* Rotating Spiral Rings */}
+                          {[...Array(5)].map((_, i) => (
+                            <motion.div
+                              key={i}
+                              animate={{
+                                rotate: [0, 360],
+                                scale: [1, 1.1, 1],
+                              }}
+                              transition={{
+                                rotate: {
+                                  duration: 10 + i * 2,
+                                  repeat: Infinity,
+                                  ease: "linear"
+                                },
+                                scale: {
+                                  duration: 3 + i,
+                                  repeat: Infinity,
+                                  ease: "easeInOut"
+                                }
+                              }}
+                              className="absolute inset-0"
+                              style={{
+                                transform: `scale(${1 - i * 0.15})`,
+                              }}
+                            >
+                              <div 
+                                className="w-full h-full rounded-full"
+                                style={{
+                                  border: `${4 - i}px solid rgba(6, 182, 212, ${0.6 - i * 0.1})`,
+                                  boxShadow: `0 0 ${50 - i * 10}px rgba(6, 182, 212, ${0.8 - i * 0.15}), inset 0 0 ${50 - i * 10}px rgba(6, 182, 212, ${0.4 - i * 0.08})`
+                                }}
+                              />
+                            </motion.div>
+                          ))}
+
+                          {/* Particle Stream */}
+                          {[...Array(30)].map((_, i) => (
+                            <motion.div
+                              key={`particle-${i}`}
+                              animate={{
+                                x: [0, Math.cos(i * 12 * Math.PI / 180) * 300, 0],
+                                y: [0, Math.sin(i * 12 * Math.PI / 180) * 300, 0],
+                                opacity: [0, 0.8, 0],
+                                scale: [0, 1.5, 0],
+                              }}
+                              transition={{
+                                duration: 3,
+                                repeat: Infinity,
+                                ease: "easeInOut",
+                                delay: i * 0.1,
+                              }}
+                              className="absolute top-1/2 left-1/2 w-2 h-2 bg-cyan-400 rounded-full blur-sm"
+                            />
+                          ))}
+
+                          {/* Center Portal Text */}
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.5 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.5 }}
+                            className="absolute inset-0 flex items-center justify-center"
+                          >
+                            <div className="text-center">
+                              <motion.div
+                                animate={{
+                                  textShadow: [
+                                    '0 0 20px rgba(6, 182, 212, 0.8)',
+                                    '0 0 40px rgba(6, 182, 212, 1)',
+                                    '0 0 20px rgba(6, 182, 212, 0.8)',
+                                  ]
+                                }}
+                                transition={{
+                                  duration: 2,
+                                  repeat: Infinity,
+                                  ease: "easeInOut"
+                                }}
+                                className="text-4xl md:text-6xl font-black text-cyan-400 mb-4"
+                              >
+                                PORTAL
+                              </motion.div>
+                              <motion.p
+                                animate={{ opacity: [0.6, 1, 0.6] }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                                className="text-white/70 text-sm md:text-base"
+                              >
+                                Click anywhere to close
+                              </motion.p>
+                            </div>
+                          </motion.div>
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                  </AnimatePresence>
+                  </div>
+                  );
+                  }
