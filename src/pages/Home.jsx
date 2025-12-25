@@ -176,7 +176,7 @@ export default function HomePage() {
           <div className="flex items-center gap-1">
             <motion.div
               animate={{
-                x: [0, 6, 0],
+                x: [0, 10, 0],
                 opacity: [0.3, 0.6, 0.3],
               }}
               transition={{
@@ -189,7 +189,7 @@ export default function HomePage() {
             </motion.div>
             <motion.div
               animate={{
-                scale: [1, 0.5, 1],
+                scale: [1, 1.2, 1],
                 opacity: [0.3, 0.8, 0.3],
               }}
               transition={{
@@ -202,7 +202,7 @@ export default function HomePage() {
             </motion.div>
             <motion.div
               animate={{
-                x: [0, -6, 0],
+                x: [0, -10, 0],
                 opacity: [0.3, 0.6, 0.3],
               }}
               transition={{
