@@ -159,7 +159,7 @@ export default function HomePage() {
         </motion.div>
 
         {/* Subtitle */}
-        <div className="flex items-center justify-center gap-3 mb-8">
+        <div className="flex items-center justify-center gap-3 mb-8 ml-8 md:ml-12">
           <motion.span
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
