@@ -169,7 +169,7 @@ export default function HomePage() {
             fontFamily: '"Orbitron", "Rajdhani", sans-serif',
           }}
         >
-          KASPA L1 ←→ KASPLEX L2
+          KASPA L1 🔗🔗🔗 KASPLEX L2
         </motion.p>
 
         {/* Buttons - Vertical Stack Centered - Moved Lower and Smaller */}
