@@ -477,13 +477,13 @@ export default function HomePage() {
                         className="relative w-full h-full max-w-4xl max-h-4xl flex items-center justify-center"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        {/* Wormhole Tunnel Effect */}
-                        <div className="relative w-full h-full overflow-hidden">
+                        {/* Optimized Wormhole Tunnel Effect */}
+                        <div className="relative w-full h-full overflow-hidden" style={{ willChange: 'transform' }}>
                           {/* Center Bright Glow */}
                           <motion.div
                             animate={{
-                              scale: [1, 1.5, 1],
-                              opacity: [0.6, 1, 0.6],
+                              scale: [1, 1.3, 1],
+                              opacity: [0.7, 1, 0.7],
                             }}
                             transition={{
                               duration: 2,
@@ -491,148 +491,112 @@ export default function HomePage() {
                               ease: "easeInOut"
                             }}
                             className="absolute inset-0 flex items-center justify-center z-10"
+                            style={{ willChange: 'transform, opacity' }}
                           >
-                            <div className="w-40 h-40 bg-white rounded-full blur-3xl opacity-90" />
+                            <div className="w-40 h-40 bg-cyan-400 rounded-full blur-3xl opacity-80" />
                           </motion.div>
 
-                          {/* Tunnel Rings - Moving Towards Viewer */}
-                          {[...Array(15)].map((_, i) => (
+                          {/* Tunnel Rings - Reduced to 8 */}
+                          {[...Array(8)].map((_, i) => (
                             <motion.div
                               key={`ring-${i}`}
                               animate={{
-                                scale: [0.3 + i * 0.15, 3],
+                                scale: [0.2 + i * 0.2, 3],
                                 opacity: [0.8, 0],
-                                rotate: [0, 180],
-                              }}
-                              transition={{
-                                duration: 3,
-                                repeat: Infinity,
-                                ease: "easeOut",
-                                delay: i * 0.2,
-                              }}
-                              className="absolute inset-0 flex items-center justify-center"
-                            >
-                              <div 
-                                className="rounded-full"
-                                style={{
-                                  width: `${20 + i * 10}%`,
-                                  height: `${20 + i * 10}%`,
-                                  border: `${3 - i * 0.15}px solid rgba(6, 182, 212, ${0.7 - i * 0.04})`,
-                                  boxShadow: `0 0 30px rgba(6, 182, 212, 0.6), inset 0 0 30px rgba(147, 51, 234, 0.4)`,
-                                }}
-                              />
-                            </motion.div>
-                          ))}
-
-                          {/* Electric Sparks */}
-                          {[...Array(20)].map((_, i) => (
-                            <motion.div
-                              key={`spark-${i}`}
-                              animate={{
-                                x: [
-                                  Math.cos(i * 18 * Math.PI / 180) * 50,
-                                  Math.cos(i * 18 * Math.PI / 180) * 600
-                                ],
-                                y: [
-                                  Math.sin(i * 18 * Math.PI / 180) * 50,
-                                  Math.sin(i * 18 * Math.PI / 180) * 600
-                                ],
-                                opacity: [0.9, 0],
-                                scale: [0.5, 2],
-                              }}
-                              transition={{
-                                duration: 2,
-                                repeat: Infinity,
-                                ease: "easeOut",
-                                delay: i * 0.1,
-                              }}
-                              className="absolute top-1/2 left-1/2"
-                            >
-                              <div 
-                                className="w-1 h-8 bg-gradient-to-b from-cyan-400 to-purple-500 blur-sm"
-                                style={{
-                                  transform: `rotate(${i * 18}deg)`
-                                }}
-                              />
-                            </motion.div>
-                          ))}
-
-                          {/* Energy Particles Streaming */}
-                          {[...Array(50)].map((_, i) => (
-                            <motion.div
-                              key={`particle-${i}`}
-                              animate={{
-                                x: [
-                                  Math.cos(i * 7.2 * Math.PI / 180) * 100,
-                                  Math.cos(i * 7.2 * Math.PI / 180) * 800
-                                ],
-                                y: [
-                                  Math.sin(i * 7.2 * Math.PI / 180) * 100,
-                                  Math.sin(i * 7.2 * Math.PI / 180) * 800
-                                ],
-                                opacity: [0.8, 0],
-                                scale: [0.3, 1.5],
+                                rotate: [0, 360],
                               }}
                               transition={{
                                 duration: 2.5,
                                 repeat: Infinity,
                                 ease: "linear",
-                                delay: Math.random() * 2,
-                              }}
-                              className="absolute top-1/2 left-1/2 w-2 h-2 bg-cyan-400 rounded-full blur-[1px]"
-                            />
-                          ))}
-
-                          {/* Swirling Clouds */}
-                          {[...Array(8)].map((_, i) => (
-                            <motion.div
-                              key={`cloud-${i}`}
-                              animate={{
-                                scale: [0.5, 4],
-                                opacity: [0.3, 0],
-                                rotate: [i * 45, i * 45 + 360],
-                              }}
-                              transition={{
-                                duration: 4,
-                                repeat: Infinity,
-                                ease: "easeOut",
-                                delay: i * 0.5,
+                                delay: i * 0.3,
                               }}
                               className="absolute inset-0 flex items-center justify-center"
+                              style={{ willChange: 'transform, opacity' }}
                             >
                               <div 
-                                className="w-32 h-32 rounded-full blur-2xl"
+                                className="rounded-full"
                                 style={{
-                                  background: `radial-gradient(circle, rgba(147, 51, 234, 0.4) 0%, rgba(6, 182, 212, 0.2) 50%, transparent 70%)`
+                                  width: `${25 + i * 12}%`,
+                                  height: `${25 + i * 12}%`,
+                                  border: `2px solid rgba(6, 182, 212, ${0.6 - i * 0.06})`,
+                                  boxShadow: `0 0 20px rgba(6, 182, 212, 0.5)`,
                                 }}
                               />
                             </motion.div>
                           ))}
 
-                          {/* Lightning Cracks */}
-                          {[...Array(12)].map((_, i) => (
+                          {/* Energy Particles - Reduced to 20 */}
+                          {[...Array(20)].map((_, i) => {
+                            const angle = i * 18 * Math.PI / 180;
+                            return (
+                              <motion.div
+                                key={`particle-${i}`}
+                                animate={{
+                                  x: [Math.cos(angle) * 80, Math.cos(angle) * 600],
+                                  y: [Math.sin(angle) * 80, Math.sin(angle) * 600],
+                                  opacity: [0.9, 0],
+                                  scale: [0.5, 1.8],
+                                }}
+                                transition={{
+                                  duration: 2,
+                                  repeat: Infinity,
+                                  ease: "linear",
+                                  delay: (i % 5) * 0.4,
+                                }}
+                                className="absolute top-1/2 left-1/2 w-2 h-2 bg-cyan-400 rounded-full"
+                                style={{ willChange: 'transform, opacity' }}
+                              />
+                            );
+                          })}
+
+                          {/* Lightning Streaks - Reduced to 8 */}
+                          {[...Array(8)].map((_, i) => (
                             <motion.div
-                              key={`lightning-${i}`}
+                              key={`streak-${i}`}
                               animate={{
-                                opacity: [0, 0.8, 0],
-                                scaleY: [0.5, 1.5, 0.5],
+                                scaleX: [0, 2, 0],
+                                opacity: [0, 0.7, 0],
                               }}
                               transition={{
-                                duration: 0.5,
+                                duration: 1.5,
                                 repeat: Infinity,
                                 ease: "easeInOut",
-                                delay: Math.random() * 3,
+                                delay: i * 0.5,
                               }}
-                              className="absolute top-1/2 left-1/2"
+                              className="absolute top-1/2 left-1/2 w-1 h-32 bg-gradient-to-b from-cyan-300 to-purple-400"
                               style={{
-                                width: '2px',
-                                height: `${100 + Math.random() * 200}px`,
-                                background: 'linear-gradient(to bottom, #06b6d4, #8b5cf6)',
-                                transform: `translate(-50%, -50%) rotate(${i * 30}deg) translateY(-50%)`,
-                                filter: 'blur(1px)',
-                                boxShadow: '0 0 10px rgba(6, 182, 212, 0.8)'
+                                transform: `translate(-50%, -50%) rotate(${i * 45}deg)`,
+                                willChange: 'transform, opacity'
                               }}
                             />
+                          ))}
+
+                          {/* Swirling Energy Clouds - Reduced to 4 */}
+                          {[...Array(4)].map((_, i) => (
+                            <motion.div
+                              key={`cloud-${i}`}
+                              animate={{
+                                scale: [0.6, 3.5],
+                                opacity: [0.4, 0],
+                                rotate: [i * 90, i * 90 + 180],
+                              }}
+                              transition={{
+                                duration: 3.5,
+                                repeat: Infinity,
+                                ease: "easeOut",
+                                delay: i * 0.8,
+                              }}
+                              className="absolute inset-0 flex items-center justify-center"
+                              style={{ willChange: 'transform, opacity' }}
+                            >
+                              <div 
+                                className="w-40 h-40 rounded-full blur-2xl"
+                                style={{
+                                  background: `radial-gradient(circle, rgba(147, 51, 234, 0.3) 0%, rgba(6, 182, 212, 0.2) 60%, transparent 80%)`
+                                }}
+                              />
+                            </motion.div>
                           ))}
                         </div>
                       </motion.div>
