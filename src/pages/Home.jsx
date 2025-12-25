@@ -538,6 +538,92 @@ export default function HomePage() {
                                   transformOrigin: 'center',
                                 }}
                               />
+                              
+                              {/* Clock Tick Marks */}
+                              {[...Array(12)].map((_, i) => {
+                                const angle = (i * 30 - 90) * Math.PI / 180;
+                                const innerRadius = 85;
+                                const outerRadius = i % 3 === 0 ? 95 : 90;
+                                return (
+                                  <motion.line
+                                    key={`tick-${i}`}
+                                    x1={150 + Math.cos(angle) * innerRadius}
+                                    y1={150 + Math.sin(angle) * innerRadius}
+                                    x2={150 + Math.cos(angle) * outerRadius}
+                                    y2={150 + Math.sin(angle) * outerRadius}
+                                    stroke="#06b6d4"
+                                    strokeWidth={i % 3 === 0 ? "2" : "1"}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 2 + i * 0.05 }}
+                                    style={{
+                                      filter: 'drop-shadow(0 0 4px rgba(6, 182, 212, 0.8))'
+                                    }}
+                                  />
+                                );
+                              })}
+                              
+                              {/* Hour Hand */}
+                              <motion.line
+                                x1="150"
+                                y1="150"
+                                x2="150"
+                                y2="100"
+                                stroke="#06b6d4"
+                                strokeWidth="4"
+                                strokeLinecap="round"
+                                initial={{ opacity: 0, rotate: 0 }}
+                                animate={{ 
+                                  opacity: 1,
+                                  rotate: 360
+                                }}
+                                transition={{
+                                  opacity: { delay: 2.5, duration: 0.3 },
+                                  rotate: { delay: 2.5, duration: 12, repeat: Infinity, ease: "linear" }
+                                }}
+                                style={{
+                                  transformOrigin: '150px 150px',
+                                  filter: 'drop-shadow(0 0 8px rgba(6, 182, 212, 1))'
+                                }}
+                              />
+                              
+                              {/* Minute Hand */}
+                              <motion.line
+                                x1="150"
+                                y1="150"
+                                x2="150"
+                                y2="80"
+                                stroke="#8b5cf6"
+                                strokeWidth="3"
+                                strokeLinecap="round"
+                                initial={{ opacity: 0, rotate: 0 }}
+                                animate={{ 
+                                  opacity: 1,
+                                  rotate: 360
+                                }}
+                                transition={{
+                                  opacity: { delay: 2.7, duration: 0.3 },
+                                  rotate: { delay: 2.7, duration: 6, repeat: Infinity, ease: "linear" }
+                                }}
+                                style={{
+                                  transformOrigin: '150px 150px',
+                                  filter: 'drop-shadow(0 0 8px rgba(139, 92, 246, 1))'
+                                }}
+                              />
+                              
+                              {/* Center Dot */}
+                              <motion.circle
+                                cx="150"
+                                cy="150"
+                                r="6"
+                                fill="#ffffff"
+                                initial={{ opacity: 0, scale: 0 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 2.9, duration: 0.3 }}
+                                style={{
+                                  filter: 'drop-shadow(0 0 8px rgba(255, 255, 255, 1))'
+                                }}
+                              />
                               <defs>
                                 <linearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                                   <stop offset="0%" stopColor="#06b6d4" stopOpacity="1" />
