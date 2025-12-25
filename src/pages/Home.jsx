@@ -479,13 +479,86 @@ export default function HomePage() {
                       >
                         {/* Optimized Wormhole Tunnel Effect */}
                         <div className="relative w-full h-full overflow-hidden" style={{ willChange: 'transform' }}>
+                          {/* Opening Line to Circle Animation */}
+                          <motion.div
+                            initial={{ pathLength: 0 }}
+                            animate={{ 
+                              pathLength: 1,
+                            }}
+                            transition={{
+                              duration: 1.5,
+                              ease: "easeInOut"
+                            }}
+                            className="absolute inset-0 flex items-center justify-center z-20"
+                          >
+                            <svg width="300" height="300" viewBox="0 0 300 300" className="absolute">
+                              <motion.line
+                                x1="150"
+                                y1="50"
+                                x2="150"
+                                y2="250"
+                                stroke="url(#lineGradient)"
+                                strokeWidth="4"
+                                initial={{ pathLength: 1 }}
+                                animate={{ 
+                                  pathLength: [1, 0],
+                                  opacity: [1, 0]
+                                }}
+                                transition={{
+                                  duration: 1,
+                                  ease: "easeOut"
+                                }}
+                                style={{
+                                  filter: 'drop-shadow(0 0 8px rgba(6, 182, 212, 1)) drop-shadow(0 0 16px rgba(6, 182, 212, 0.8))'
+                                }}
+                              />
+                              <motion.circle
+                                cx="150"
+                                cy="150"
+                                r="100"
+                                stroke="url(#circleGradient)"
+                                strokeWidth="4"
+                                fill="none"
+                                initial={{ pathLength: 0, opacity: 0 }}
+                                animate={{ 
+                                  pathLength: 1,
+                                  opacity: 1
+                                }}
+                                transition={{
+                                  delay: 0.5,
+                                  duration: 1.5,
+                                  ease: "easeInOut"
+                                }}
+                                style={{
+                                  filter: 'drop-shadow(0 0 12px rgba(6, 182, 212, 1)) drop-shadow(0 0 24px rgba(6, 182, 212, 0.6))',
+                                  strokeDasharray: '628',
+                                  transformOrigin: 'center',
+                                }}
+                              />
+                              <defs>
+                                <linearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                  <stop offset="0%" stopColor="#06b6d4" stopOpacity="1" />
+                                  <stop offset="50%" stopColor="#ffffff" stopOpacity="1" />
+                                  <stop offset="100%" stopColor="#8b5cf6" stopOpacity="1" />
+                                </linearGradient>
+                                <linearGradient id="circleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                  <stop offset="0%" stopColor="#06b6d4" stopOpacity="1" />
+                                  <stop offset="50%" stopColor="#ffffff" stopOpacity="1" />
+                                  <stop offset="100%" stopColor="#8b5cf6" stopOpacity="1" />
+                                </linearGradient>
+                              </defs>
+                            </svg>
+                          </motion.div>
+
                           {/* Center Bright Glow */}
                           <motion.div
+                            initial={{ scale: 0, opacity: 0 }}
                             animate={{
                               scale: [1, 1.3, 1],
                               opacity: [0.7, 1, 0.7],
                             }}
                             transition={{
+                              delay: 1.5,
                               duration: 2,
                               repeat: Infinity,
                               ease: "easeInOut"
