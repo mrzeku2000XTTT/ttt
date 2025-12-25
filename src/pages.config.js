@@ -16,6 +16,7 @@ import Arcade from './pages/Arcade';
 import Area51 from './pages/Area51';
 import Articles from './pages/Articles';
 import AuraDashboard from './pages/AuraDashboard';
+import B44Prompts from './pages/B44Prompts';
 import BMTUniv from './pages/BMTUniv';
 import BRAHIM from './pages/BRAHIM';
 import BRAHIMHub from './pages/BRAHIMHub';
@@ -194,7 +195,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import B44Prompts from './pages/B44Prompts';
 import __Layout from './Layout.jsx';
 
 
@@ -217,6 +217,7 @@ export const PAGES = {
     "Area51": Area51,
     "Articles": Articles,
     "AuraDashboard": AuraDashboard,
+    "B44Prompts": B44Prompts,
     "BMTUniv": BMTUniv,
     "BRAHIM": BRAHIM,
     "BRAHIMHub": BRAHIMHub,
@@ -395,7 +396,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "B44Prompts": B44Prompts,
 }
 
 export const pagesConfig = {
