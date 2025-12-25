@@ -621,20 +621,17 @@ Format your response in a clear, engaging way that helps the user understand thi
                             </div>
 
                             <div>
-                              <label className="text-sm text-gray-300 mb-2 block">Model</label>
-                              <select
+                              <label className="text-sm text-gray-300 mb-2 block">Model Name</label>
+                              <Input
+                                type="text"
                                 value={selectedModel}
                                 onChange={(e) => setSelectedModel(e.target.value)}
-                                className="w-full bg-zinc-900 border border-zinc-700 text-white rounded-lg px-3 py-2 text-sm"
-                              >
-                                <option value="xiaomi/mimo-v2-flash:free">Xiaomi MIMO v2 Flash (FREE)</option>
-                                <option value="openai/gpt-4o-mini">GPT-4O Mini (Fast & Cheap)</option>
-                                <option value="openai/gpt-4o">GPT-4O (Best Quality)</option>
-                                <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
-                                <option value="google/gemini-pro-1.5">Gemini Pro 1.5</option>
-                                <option value="meta-llama/llama-3.1-405b-instruct">Llama 3.1 405B</option>
-                                <option value="perplexity/llama-3.1-sonar-large-128k-online">Perplexity (Online)</option>
-                              </select>
+                                placeholder="e.g., xiaomi/mimo-v2-flash:free"
+                                className="w-full bg-zinc-900 border-zinc-700 text-white mb-2"
+                              />
+                              <p className="text-xs text-gray-500">
+                                Browse models at <a href="https://openrouter.ai/models" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">openrouter.ai/models</a>
+                              </p>
                             </div>
 
                             <div className="flex gap-3">
