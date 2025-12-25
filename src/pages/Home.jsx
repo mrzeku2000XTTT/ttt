@@ -105,22 +105,70 @@ export default function HomePage() {
           </motion.div>
         </div>
 
-        {/* Alert Message Animation */}
-        <div className="absolute top-20 left-0 right-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 3 }}>
+        {/* Alert Message Animation - Electric Sign */}
+        <div className="absolute top-32 md:top-40 left-0 right-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 100 }}>
           <AnimatePresence mode="wait">
             <motion.div
               key={currentWordIndex}
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              transition={{ duration: 1 }}
-              className="text-4xl md:text-6xl font-black text-cyan-400"
-              style={{
-                textShadow: '0 0 20px rgba(6, 182, 212, 0.8), 0 0 40px rgba(6, 182, 212, 0.5)',
-                fontFamily: '"Orbitron", "Rajdhani", sans-serif',
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ 
+                opacity: 1, 
+                scale: 1,
               }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.8 }}
+              className="relative"
             >
-              {alertWords[currentWordIndex]}
+              {/* Electric Glow Background */}
+              <motion.div
+                animate={{
+                  opacity: [0.5, 1, 0.5],
+                  scale: [1, 1.1, 1],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+                className="absolute inset-0 bg-cyan-400 blur-3xl"
+                style={{ zIndex: -1 }}
+              />
+
+              {/* Main Text with Electric Effect */}
+              <div className="text-5xl md:text-7xl lg:text-8xl font-black text-white px-8 py-4 bg-black/40 backdrop-blur-sm border-2 border-cyan-400 rounded-lg"
+                style={{
+                  textShadow: `
+                    0 0 10px rgba(6, 182, 212, 1),
+                    0 0 20px rgba(6, 182, 212, 1),
+                    0 0 30px rgba(6, 182, 212, 0.8),
+                    0 0 40px rgba(6, 182, 212, 0.6),
+                    0 0 50px rgba(6, 182, 212, 0.4),
+                    0 0 60px rgba(139, 92, 246, 0.3),
+                    2px 2px 4px rgba(0, 0, 0, 0.8)
+                  `,
+                  fontFamily: '"Orbitron", "Rajdhani", sans-serif',
+                  letterSpacing: '0.1em',
+                  boxShadow: '0 0 30px rgba(6, 182, 212, 0.5), inset 0 0 20px rgba(6, 182, 212, 0.1)'
+                }}
+              >
+                {alertWords[currentWordIndex]}
+              </div>
+
+              {/* Flickering Border Effect */}
+              <motion.div
+                animate={{
+                  opacity: [0, 1, 0, 1, 0],
+                }}
+                transition={{
+                  duration: 0.15,
+                  repeat: Infinity,
+                  repeatDelay: 3
+                }}
+                className="absolute inset-0 border-2 border-cyan-300 rounded-lg pointer-events-none"
+                style={{
+                  filter: 'drop-shadow(0 0 10px rgba(6, 182, 212, 1))'
+                }}
+              />
             </motion.div>
           </AnimatePresence>
         </div>
