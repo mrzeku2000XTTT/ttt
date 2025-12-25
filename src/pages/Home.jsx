@@ -19,7 +19,7 @@ export default function HomePage() {
   const [chatMessages, setChatMessages] = useState([]);
   const [showApiSettings, setShowApiSettings] = useState(false);
   const [openRouterKey, setOpenRouterKey] = useState("");
-  const [selectedModel, setSelectedModel] = useState("openai/gpt-4o-mini");
+  const [selectedModel, setSelectedModel] = useState("xiaomi/mimo-v2-flash:free");
   const messagesEndRef = React.useRef(null);
 
   useEffect(() => {
@@ -627,6 +627,7 @@ Format your response in a clear, engaging way that helps the user understand thi
                                 onChange={(e) => setSelectedModel(e.target.value)}
                                 className="w-full bg-zinc-900 border border-zinc-700 text-white rounded-lg px-3 py-2 text-sm"
                               >
+                                <option value="xiaomi/mimo-v2-flash:free">Xiaomi MIMO v2 Flash (FREE)</option>
                                 <option value="openai/gpt-4o-mini">GPT-4O Mini (Fast & Cheap)</option>
                                 <option value="openai/gpt-4o">GPT-4O (Best Quality)</option>
                                 <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
