@@ -708,6 +708,30 @@ export default function HomePage() {
                                 }}
                               />
                               
+                              {/* Second Hand - Fast Rotation */}
+                              <motion.line
+                                x1="150"
+                                y1="150"
+                                x2="150"
+                                y2="70"
+                                stroke="#ec4899"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                initial={{ opacity: 0, rotate: 0 }}
+                                animate={{ 
+                                  opacity: 1,
+                                  rotate: 360
+                                }}
+                                transition={{
+                                  opacity: { delay: 2.8, duration: 0.3 },
+                                  rotate: { delay: 2.8, duration: 3, repeat: Infinity, ease: "linear" }
+                                }}
+                                style={{
+                                  transformOrigin: '150px 150px',
+                                  filter: 'drop-shadow(0 0 8px rgba(236, 72, 153, 1))'
+                                }}
+                              />
+
                               {/* Center Dot */}
                               <motion.circle
                                 cx="150"
