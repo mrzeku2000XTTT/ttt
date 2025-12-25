@@ -440,10 +440,10 @@ export default function HomePage() {
                   </div>
                   )}
 
-                  <div className="mt-6 pt-4 border-t border-white/10">
+                  <div className="mt-6 pt-4 border-t border-white/10 flex justify-center">
                     <Link to={createPageUrl("B44Prompts")}>
                       <Button
-                        className="w-full bg-black/60 hover:bg-black/40 border border-white/20 text-white flex items-center justify-center gap-2 h-10 text-sm"
+                        className="bg-black/60 hover:bg-black/40 border border-white/20 text-white flex items-center justify-center gap-2 h-10 text-sm px-6"
                       >
                         <img 
                           src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/bc56007fd_image.png"
