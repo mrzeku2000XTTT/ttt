@@ -109,7 +109,11 @@ export default function HomePage() {
           onClick={handleKaspaClick}
           className="bg-transparent hover:bg-white/5 border border-white/20 text-white backdrop-blur-sm h-8 px-3 text-xs md:h-10 md:px-4 md:text-sm font-semibold"
         >
-          <ChevronRight className="w-3 h-3 md:w-4 md:h-4 mr-1" />
+          <img 
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/13e8ec094_image.png"
+            alt="Kaspa"
+            className="w-4 h-4 md:w-5 md:h-5 mr-2"
+          />
           KASPA
         </Button>
       </motion.div>
@@ -166,7 +170,7 @@ export default function HomePage() {
         </motion.p>
 
         {/* Buttons - Vertical Stack Centered - Moved Lower */}
-        <div className="flex flex-col items-center gap-4 mb-16 mt-32 md:mt-40 lg:mt-48">
+        <div className="flex flex-col items-center gap-4 mb-16 mt-48 md:mt-56 lg:mt-64">
           {/* Claim Agent ZK Button - Centered */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
