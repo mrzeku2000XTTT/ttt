@@ -16,8 +16,7 @@ export default function HomePage() {
   const [showPortal, setShowPortal] = useState(false);
   const [userIdentity, setUserIdentity] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState(null);
-  const [showAnalysis, setShowAnalysis] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
 
   useEffect(() => {
     loadUser();
@@ -50,14 +49,16 @@ export default function HomePage() {
   };
 
   const handleAnalyzeIdentity = async () => {
-    if (!userIdentity.trim()) return;
+    if (!userIdentity.trim() || isAnalyzing) return;
     
+    const userMessage = userIdentity;
+    setChatMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setUserIdentity("");
     setIsAnalyzing(true);
-    setShowPortal(false);
     
     try {
       const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `Deep research and analysis about: "${userIdentity}"
+        prompt: `Deep research and analysis about: "${userMessage}"
         
 Search across multiple philosophical, spiritual, scientific, and cultural sources.
 Analyze different perspectives and interpretations.
@@ -73,19 +74,18 @@ Format your response in a clear, engaging way that helps the user understand thi
         add_context_from_internet: true
       });
 
-      setAnalysisResult(response);
-      setShowAnalysis(true);
+      setChatMessages(prev => [...prev, { role: 'assistant', content: response }]);
       
       if (user?.email) {
         await base44.auth.updateMe({ 
-          user_identity: userIdentity,
+          user_identity: userMessage,
           last_identity_analysis: response,
           last_analysis_date: new Date().toISOString()
         });
       }
     } catch (err) {
       console.error('Analysis failed:', err);
-      alert('Failed to analyze. Please try again.');
+      setChatMessages(prev => [...prev, { role: 'error', content: 'Failed to analyze. Please try again.' }]);
     } finally {
       setIsAnalyzing(false);
     }
@@ -524,66 +524,6 @@ Format your response in a clear, engaging way that helps the user understand thi
                   )}
                   </AnimatePresence>
 
-                  {/* Analysis Results Modal */}
-                  <AnimatePresence>
-                    {showAnalysis && analysisResult && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-center justify-center p-4 overflow-y-auto"
-                        onClick={() => setShowAnalysis(false)}
-                      >
-                        <motion.div
-                          initial={{ scale: 0.9, y: 20 }}
-                          animate={{ scale: 1, y: 0 }}
-                          exit={{ scale: 0.9, y: 20 }}
-                          onClick={(e) => e.stopPropagation()}
-                          className="relative bg-gradient-to-br from-zinc-900 to-black border-2 border-cyan-500/50 rounded-3xl w-full max-w-4xl p-8 shadow-2xl shadow-cyan-500/20 max-h-[90vh] overflow-y-auto"
-                        >
-                          <button
-                            onClick={() => setShowAnalysis(false)}
-                            className="absolute top-4 right-4 w-10 h-10 bg-white/5 hover:bg-white/10 border border-white/20 rounded-full flex items-center justify-center transition-all"
-                          >
-                            <X className="w-5 h-5 text-white" />
-                          </button>
-
-                          <div className="mb-6">
-                            <div className="flex items-center gap-3 mb-4">
-                              <motion.div
-                                animate={{ rotate: 360 }}
-                                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                                className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full flex items-center justify-center"
-                              >
-                                <Sparkles className="w-6 h-6 text-white" />
-                              </motion.div>
-                              <div>
-                                <h2 className="text-2xl font-bold text-white">Deep Analysis: {userIdentity}</h2>
-                                <p className="text-sm text-cyan-400">Truth filtered from multiple sources</p>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="prose prose-invert prose-cyan max-w-none">
-                            <div className="text-gray-300 whitespace-pre-wrap leading-relaxed">
-                              {analysisResult}
-                            </div>
-                          </div>
-
-                          <div className="mt-8 pt-6 border-t border-white/10 flex justify-between items-center">
-                            <p className="text-xs text-gray-500">Analysis saved to your AI memory</p>
-                            <Button
-                              onClick={() => setShowAnalysis(false)}
-                              className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white"
-                            >
-                              Close
-                            </Button>
-                          </div>
-                        </motion.div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
                   {/* Portal Modal */}
                   <AnimatePresence>
                     {showPortal && (
@@ -599,131 +539,150 @@ Format your response in a clear, engaging way that helps the user understand thi
                           animate={{ scale: 1, y: 0 }}
                           exit={{ scale: 0.9, y: 20 }}
                           onClick={(e) => e.stopPropagation()}
-                          className="relative bg-gradient-to-br from-zinc-900 to-black border-2 border-cyan-500/50 rounded-3xl w-full max-w-2xl p-8 shadow-2xl shadow-cyan-500/20"
+                          className="relative bg-gradient-to-br from-zinc-900 to-black border-2 border-cyan-500/50 rounded-3xl w-full max-w-2xl shadow-2xl shadow-cyan-500/20 flex flex-col"
+                          style={{ height: '80vh' }}
                         >
                           {/* Close Button */}
                           <button
                             onClick={() => setShowPortal(false)}
-                            className="absolute top-4 right-4 w-10 h-10 bg-white/5 hover:bg-white/10 border border-white/20 rounded-full flex items-center justify-center transition-all"
+                            className="absolute top-4 right-4 w-10 h-10 bg-white/5 hover:bg-white/10 border border-white/20 rounded-full flex items-center justify-center transition-all z-10"
                           >
                             <X className="w-5 h-5 text-white" />
                           </button>
 
-                          <div className="text-center mb-12">
+                          {/* Header with Icon */}
+                          <div className="flex-shrink-0 text-center pt-8 pb-4">
                             <motion.div
                               animate={{
                                 rotate: [0, 180, 360],
-                                scale: [1, 1.15, 1],
+                                scale: [1, 1.1, 1],
                               }}
                               transition={{
                                 duration: 4,
                                 repeat: Infinity,
                                 ease: "easeInOut",
                               }}
-                              className="w-24 h-24 mx-auto mb-8 relative"
+                              className="w-16 h-16 mx-auto mb-4 relative"
                             >
-                              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 rounded-full blur-2xl opacity-70" />
+                              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 rounded-full blur-xl opacity-70" />
                               <Link2 className="w-full h-full text-cyan-400 relative drop-shadow-[0_0_20px_rgba(34,211,238,0.8)]" strokeWidth={2.5} />
                             </motion.div>
+                          </div>
 
-                            {/* User Identity Input */}
-                            <div className="mb-10">
-                              <div className="relative">
-                                <Input
-                                  value={isAnalyzing ? "" : userIdentity}
-                                  onChange={handleIdentityChange}
-                                  onKeyPress={handleKeyPress}
-                                  placeholder={isAnalyzing ? "" : "I am..."}
-                                  disabled={isAnalyzing}
-                                  className="w-full max-w-md mx-auto bg-black/60 border-2 border-cyan-500/40 text-white text-center text-lg h-14 placeholder:text-gray-500 focus:border-cyan-400 transition-all"
-                                />
+                          {/* Chat Messages Area */}
+                          <div className="flex-1 overflow-y-auto px-8 py-4 space-y-4">
+                            {chatMessages.length === 0 ? (
+                              <div className="flex flex-col items-center justify-center h-full text-center">
+                                <p className="text-gray-400 mb-8">Ask anything. Discover truth filtered from multiple sources.</p>
 
+                                {/* Floating Icon Buttons */}
+                                <div className="flex items-center justify-center gap-8">
+                                  <Link to={createPageUrl("Bridge")}>
+                                    <motion.div whileHover={{ scale: 1.15, y: -8 }} whileTap={{ scale: 0.95 }} className="relative group">
+                                      <div className="absolute inset-0 bg-cyan-500/20 rounded-full blur-xl group-hover:bg-cyan-500/40 transition-all" />
+                                      <ArrowUpDown className="w-10 h-10 text-cyan-400 relative drop-shadow-[0_0_12px_rgba(34,211,238,0.8)] group-hover:drop-shadow-[0_0_20px_rgba(34,211,238,1)]" strokeWidth={2.5} />
+                                      <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                        <span className="text-xs text-cyan-400 font-semibold">Send KAS</span>
+                                      </div>
+                                    </motion.div>
+                                  </Link>
+
+                                  <Link to={createPageUrl("DAGKnightWallet")}>
+                                    <motion.div whileHover={{ scale: 1.15, y: -8 }} whileTap={{ scale: 0.95 }} className="relative group">
+                                      <div className="absolute inset-0 bg-purple-500/20 rounded-full blur-xl group-hover:bg-purple-500/40 transition-all" />
+                                      <Shield className="w-10 h-10 text-purple-400 relative drop-shadow-[0_0_12px_rgba(192,132,252,0.8)] group-hover:drop-shadow-[0_0_20px_rgba(192,132,252,1)]" strokeWidth={2.5} />
+                                      <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                        <span className="text-xs text-purple-400 font-semibold">DAGKnight</span>
+                                      </div>
+                                    </motion.div>
+                                  </Link>
+
+                                  <Link to={createPageUrl("Wallet")}>
+                                    <motion.div whileHover={{ scale: 1.15, y: -8 }} whileTap={{ scale: 0.95 }} className="relative group">
+                                      <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-xl group-hover:bg-emerald-500/40 transition-all" />
+                                      <Wallet className="w-10 h-10 text-emerald-400 relative drop-shadow-[0_0_12px_rgba(52,211,153,0.8)] group-hover:drop-shadow-[0_0_20px_rgba(52,211,153,1)]" strokeWidth={2.5} />
+                                      <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                        <span className="text-xs text-emerald-400 font-semibold">Wallet</span>
+                                      </div>
+                                    </motion.div>
+                                  </Link>
+
+                                  <Link to={createPageUrl("GlobalHistory")}>
+                                    <motion.div whileHover={{ scale: 1.15, y: -8 }} whileTap={{ scale: 0.95 }} className="relative group">
+                                      <div className="absolute inset-0 bg-orange-500/20 rounded-full blur-xl group-hover:bg-orange-500/40 transition-all" />
+                                      <TrendingUp className="w-10 h-10 text-orange-400 relative drop-shadow-[0_0_12px_rgba(251,146,60,0.8)] group-hover:drop-shadow-[0_0_20px_rgba(251,146,60,1)]" strokeWidth={2.5} />
+                                      <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 whitespace-nowrap">
+                                        <span className="text-xs text-orange-400 font-semibold">Analytics</span>
+                                      </div>
+                                    </motion.div>
+                                  </Link>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                {chatMessages.map((msg, idx) => (
+                                  <motion.div
+                                    key={idx}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                                  >
+                                    <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                                      msg.role === 'user' 
+                                        ? 'bg-cyan-500/20 border border-cyan-500/40 text-white' 
+                                        : msg.role === 'error'
+                                        ? 'bg-red-500/20 border border-red-500/40 text-red-300'
+                                        : 'bg-white/5 border border-white/20 text-gray-300'
+                                    }`}>
+                                      <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
+                                    </div>
+                                  </motion.div>
+                                ))}
                                 {isAnalyzing && (
                                   <motion.div
-                                    initial={{ scale: 0, opacity: 0 }}
-                                    animate={{ 
-                                      scale: [0, 1.5, 0],
-                                      opacity: [0, 1, 0],
-                                    }}
-                                    transition={{ duration: 2, repeat: Infinity }}
-                                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="flex justify-start"
                                   >
-                                    <div className="text-cyan-400 text-xl font-bold animate-pulse">
-                                      Analyzing across sources...
+                                    <div className="bg-white/5 border border-white/20 rounded-2xl px-4 py-3">
+                                      <div className="flex items-center gap-2">
+                                        <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
+                                        <span className="text-sm text-gray-400">Analyzing across sources...</span>
+                                      </div>
                                     </div>
                                   </motion.div>
                                 )}
-                              </div>
-                              <p className="text-xs text-gray-500 mt-2">
-                                {isAnalyzing ? "Filtering truth from multiple dimensions..." : "Press Enter to analyze • Your AI will remember this"}
-                              </p>
-                            </div>
-
-                            {/* Floating Icon Buttons with Tooltips */}
-                            <div className="flex items-center justify-center gap-8">
-                              <Link to={createPageUrl("Bridge")}>
-                                <motion.div
-                                  whileHover={{ scale: 1.15, y: -8 }}
-                                  whileTap={{ scale: 0.95 }}
-                                  className="relative group"
-                                >
-                                  <div className="absolute inset-0 bg-cyan-500/20 rounded-full blur-xl group-hover:bg-cyan-500/40 transition-all" />
-                                  <ArrowUpDown className="w-10 h-10 text-cyan-400 relative drop-shadow-[0_0_12px_rgba(34,211,238,0.8)] group-hover:drop-shadow-[0_0_20px_rgba(34,211,238,1)]" strokeWidth={2.5} />
-                                  <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                    <span className="text-xs text-cyan-400 font-semibold">Send KAS</span>
-                                  </div>
-                                </motion.div>
-                              </Link>
-
-                              <Link to={createPageUrl("DAGKnightWallet")}>
-                                <motion.div
-                                  whileHover={{ scale: 1.15, y: -8 }}
-                                  whileTap={{ scale: 0.95 }}
-                                  className="relative group"
-                                >
-                                  <div className="absolute inset-0 bg-purple-500/20 rounded-full blur-xl group-hover:bg-purple-500/40 transition-all" />
-                                  <Shield className="w-10 h-10 text-purple-400 relative drop-shadow-[0_0_12px_rgba(192,132,252,0.8)] group-hover:drop-shadow-[0_0_20px_rgba(192,132,252,1)]" strokeWidth={2.5} />
-                                  <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                    <span className="text-xs text-purple-400 font-semibold">DAGKnight</span>
-                                  </div>
-                                </motion.div>
-                              </Link>
-
-                              <Link to={createPageUrl("Wallet")}>
-                                <motion.div
-                                  whileHover={{ scale: 1.15, y: -8 }}
-                                  whileTap={{ scale: 0.95 }}
-                                  className="relative group"
-                                >
-                                  <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-xl group-hover:bg-emerald-500/40 transition-all" />
-                                  <Wallet className="w-10 h-10 text-emerald-400 relative drop-shadow-[0_0_12px_rgba(52,211,153,0.8)] group-hover:drop-shadow-[0_0_20px_rgba(52,211,153,1)]" strokeWidth={2.5} />
-                                  <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                    <span className="text-xs text-emerald-400 font-semibold">Wallet</span>
-                                  </div>
-                                </motion.div>
-                              </Link>
-
-                              <Link to={createPageUrl("GlobalHistory")}>
-                                <motion.div
-                                  whileHover={{ scale: 1.15, y: -8 }}
-                                  whileTap={{ scale: 0.95 }}
-                                  className="relative group"
-                                >
-                                  <div className="absolute inset-0 bg-orange-500/20 rounded-full blur-xl group-hover:bg-orange-500/40 transition-all" />
-                                  <TrendingUp className="w-10 h-10 text-orange-400 relative drop-shadow-[0_0_12px_rgba(251,146,60,0.8)] group-hover:drop-shadow-[0_0_20px_rgba(251,146,60,1)]" strokeWidth={2.5} />
-                                  <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 whitespace-nowrap">
-                                    <span className="text-xs text-orange-400 font-semibold">Analytics</span>
-                                  </div>
-                                </motion.div>
-                              </Link>
-                            </div>
+                              </>
+                            )}
                           </div>
 
-                          {/* Portal Footer */}
-                          <div className="mt-8 pt-6 border-t border-white/10 text-center">
-                            <p className="text-gray-500 text-xs">
-                              Secured by TTT Chain Protocol
+                          {/* Input Area */}
+                          <div className="flex-shrink-0 p-6 border-t border-white/10">
+                            <div className="flex gap-2">
+                              <Input
+                                value={userIdentity}
+                                onChange={handleIdentityChange}
+                                onKeyPress={handleKeyPress}
+                                placeholder="I am..."
+                                disabled={isAnalyzing}
+                                className="flex-1 bg-black/60 border-2 border-cyan-500/40 text-white placeholder:text-gray-500 focus:border-cyan-400 h-12"
+                              />
+                              <Button
+                                onClick={handleAnalyzeIdentity}
+                                disabled={!userIdentity.trim() || isAnalyzing}
+                                className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white px-6"
+                              >
+                                {isAnalyzing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+                              </Button>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-2 text-center">
+                              Press Enter • Your AI will remember this
                             </p>
+                          </div>
+
+                          {/* Footer */}
+                          <div className="flex-shrink-0 py-3 text-center border-t border-white/10">
+                            <p className="text-gray-500 text-xs">Secured by TTT Chain Protocol</p>
                           </div>
                         </motion.div>
                       </motion.div>
