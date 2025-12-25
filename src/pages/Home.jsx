@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Loader2, Wand2, Shield, LogIn, ArrowRight, Zap, LogOut, Link as LinkIcon, Hand, ChevronRight, X, TrendingUp } from "lucide-react";
+import { Sparkles, Loader2, Wand2, Shield, LogIn, ArrowRight, Zap, LogOut, Link as LinkIcon, Hand, ChevronRight, X, TrendingUp, Link2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -159,18 +159,75 @@ export default function HomePage() {
         </motion.div>
 
         {/* Subtitle */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 0.8 }}
-          className="text-white/70 text-base md:text-xl mb-8 tracking-[0.3em] font-light"
-          style={{
-            textShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
-            fontFamily: '"Orbitron", "Rajdhani", sans-serif',
-          }}
-        >
-          KASPA L1 🔗🔗🔗 KASPLEX L2
-        </motion.p>
+        <div className="flex items-center gap-3 mb-8">
+          <motion.span
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 0.8 }}
+            className="text-white/70 text-base md:text-xl tracking-[0.3em] font-light"
+            style={{
+              textShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
+              fontFamily: '"Orbitron", "Rajdhani", sans-serif',
+            }}
+          >
+            KASPA L1
+          </motion.span>
+          
+          <div className="flex items-center gap-1">
+            <motion.div
+              animate={{
+                x: [0, 6, 0],
+                opacity: [0.3, 0.6, 0.3],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            >
+              <Link2 className="w-4 h-4 md:w-5 md:h-5 text-black/80" strokeWidth={2.5} />
+            </motion.div>
+            <motion.div
+              animate={{
+                scale: [1, 0.5, 1],
+                opacity: [0.3, 0.8, 0.3],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            >
+              <Link2 className="w-4 h-4 md:w-5 md:h-5 text-black/80" strokeWidth={2.5} />
+            </motion.div>
+            <motion.div
+              animate={{
+                x: [0, -6, 0],
+                opacity: [0.3, 0.6, 0.3],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            >
+              <Link2 className="w-4 h-4 md:w-5 md:h-5 text-black/80" strokeWidth={2.5} />
+            </motion.div>
+          </div>
+
+          <motion.span
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 0.8 }}
+            className="text-white/70 text-base md:text-xl tracking-[0.3em] font-light"
+            style={{
+              textShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
+              fontFamily: '"Orbitron", "Rajdhani", sans-serif',
+            }}
+          >
+            KASPLEX L2
+          </motion.span>
+        </div>
 
         {/* Buttons - Vertical Stack Centered - Moved Lower and Smaller */}
         <div className="flex flex-col items-center gap-3 mb-16 mt-80 md:mt-96 lg:mt-[28rem]">
