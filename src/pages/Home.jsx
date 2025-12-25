@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Loader2, Wand2, Shield, LogIn, ArrowRight, Zap, LogOut, Link as LinkIcon, Hand, ChevronRight, X, TrendingUp, Link2, ArrowUpDown, Wallet } from "lucide-react";
+import { Sparkles, Loader2, Wand2, Shield, LogIn, ArrowRight, Zap, LogOut, Link as LinkIcon, Hand, ChevronRight, X, TrendingUp, Link2, ArrowUpDown, Wallet, Key, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -17,21 +17,45 @@ export default function HomePage() {
   const [userIdentity, setUserIdentity] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
+  const [showApiSettings, setShowApiSettings] = useState(false);
+  const [openRouterKey, setOpenRouterKey] = useState("");
+  const messagesEndRef = React.useRef(null);
 
   useEffect(() => {
     loadUser();
   }, []);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages, isAnalyzing]);
 
   const loadUser = async () => {
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
       setUserIdentity(currentUser.user_identity || "");
+      setOpenRouterKey(currentUser.openrouter_api_key || "");
     } catch (err) {
       console.log("User not logged in");
       setUser(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveApiKey = async () => {
+    if (!user?.email) {
+      alert('Please login to save API key');
+      return;
+    }
+    
+    try {
+      await base44.auth.updateMe({ openrouter_api_key: openRouterKey });
+      setShowApiSettings(false);
+      alert('✅ API key saved successfully!');
+    } catch (err) {
+      console.error('Failed to save API key:', err);
+      alert('Failed to save API key');
     }
   };
 
@@ -57,9 +81,38 @@ export default function HomePage() {
     setIsAnalyzing(true);
     
     try {
-      const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `Deep research and analysis about: "${userMessage}"
+      let response;
+      
+      // Use OpenRouter if key is provided, otherwise use built-in free AI
+      if (openRouterKey) {
+        const openRouterResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openRouterKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'openai/gpt-4o-mini',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are a deep research assistant. Search across multiple philosophical, spiritual, scientific, and cultural sources. Analyze different perspectives and filter truth from various viewpoints.'
+              },
+              {
+                role: 'user',
+                content: userMessage
+              }
+            ]
+          })
+        });
         
+        const data = await openRouterResponse.json();
+        response = data.choices[0].message.content;
+      } else {
+        // Default: Free built-in AI
+        response = await base44.integrations.Core.InvokeLLM({
+          prompt: `Deep research and analysis about: "${userMessage}"
+          
 Search across multiple philosophical, spiritual, scientific, and cultural sources.
 Analyze different perspectives and interpretations.
 Filter through various viewpoints to identify core truths and common threads.
@@ -71,8 +124,9 @@ Provide a comprehensive, balanced analysis that considers:
 - Common misconceptions vs verified truths
 
 Format your response in a clear, engaging way that helps the user understand this concept deeply.`,
-        add_context_from_internet: true
-      });
+          add_context_from_internet: true
+        });
+      }
 
       setChatMessages(prev => [...prev, { role: 'assistant', content: response }]);
       
@@ -524,6 +578,76 @@ Format your response in a clear, engaging way that helps the user understand thi
                   )}
                   </AnimatePresence>
 
+                  {/* API Settings Modal */}
+                  <AnimatePresence>
+                    {showApiSettings && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[110] flex items-center justify-center p-4"
+                        onClick={() => setShowApiSettings(false)}
+                      >
+                        <motion.div
+                          initial={{ scale: 0.9, y: 20 }}
+                          animate={{ scale: 1, y: 0 }}
+                          exit={{ scale: 0.9, y: 20 }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="bg-gradient-to-br from-zinc-900 to-black border-2 border-cyan-500/50 rounded-2xl p-6 max-w-md w-full shadow-2xl"
+                        >
+                          <div className="flex items-center gap-3 mb-6">
+                            <div className="w-12 h-12 bg-cyan-500/20 rounded-full flex items-center justify-center">
+                              <Key className="w-6 h-6 text-cyan-400" />
+                            </div>
+                            <div>
+                              <h3 className="text-xl font-bold text-white">AI Settings</h3>
+                              <p className="text-xs text-gray-400">Optional: Add OpenRouter API key</p>
+                            </div>
+                          </div>
+
+                          <div className="mb-4 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                            <p className="text-sm text-green-400 flex items-center gap-2">
+                              <CheckCircle2 className="w-4 h-4" />
+                              Free built-in AI is enabled by default
+                            </p>
+                          </div>
+
+                          <div className="space-y-4">
+                            <div>
+                              <label className="text-sm text-gray-300 mb-2 block">OpenRouter API Key (Optional)</label>
+                              <Input
+                                type="password"
+                                value={openRouterKey}
+                                onChange={(e) => setOpenRouterKey(e.target.value)}
+                                placeholder="sk-or-v1-..."
+                                className="w-full bg-zinc-900 border-zinc-700 text-white"
+                              />
+                              <p className="text-xs text-gray-500 mt-2">
+                                Get your key from <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">openrouter.ai/keys</a>
+                              </p>
+                            </div>
+
+                            <div className="flex gap-3">
+                              <Button
+                                onClick={handleSaveApiKey}
+                                className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
+                              >
+                                Save
+                              </Button>
+                              <Button
+                                onClick={() => setShowApiSettings(false)}
+                                variant="outline"
+                                className="border-zinc-700 text-white"
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   {/* Portal Modal */}
                   <AnimatePresence>
                     {showPortal && (
@@ -542,13 +666,22 @@ Format your response in a clear, engaging way that helps the user understand thi
                           className="relative bg-gradient-to-br from-zinc-900 to-black border-2 border-cyan-500/50 rounded-3xl w-full max-w-2xl shadow-2xl shadow-cyan-500/20 flex flex-col"
                           style={{ height: '80vh' }}
                         >
-                          {/* Close Button */}
-                          <button
-                            onClick={() => setShowPortal(false)}
-                            className="absolute top-4 right-4 w-10 h-10 bg-white/5 hover:bg-white/10 border border-white/20 rounded-full flex items-center justify-center transition-all z-10"
-                          >
-                            <X className="w-5 h-5 text-white" />
-                          </button>
+                          {/* Close and Settings Buttons */}
+                          <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                            <button
+                              onClick={() => setShowApiSettings(true)}
+                              className="w-10 h-10 bg-white/5 hover:bg-white/10 border border-white/20 rounded-full flex items-center justify-center transition-all"
+                              title="API Settings"
+                            >
+                              <Key className="w-5 h-5 text-cyan-400" />
+                            </button>
+                            <button
+                              onClick={() => setShowPortal(false)}
+                              className="w-10 h-10 bg-white/5 hover:bg-white/10 border border-white/20 rounded-full flex items-center justify-center transition-all"
+                            >
+                              <X className="w-5 h-5 text-white" />
+                            </button>
+                          </div>
 
                           {/* Header with Icon */}
                           <div className="flex-shrink-0 text-center pt-8 pb-4">
@@ -637,25 +770,26 @@ Format your response in a clear, engaging way that helps the user understand thi
                                     }`}>
                                       <p className="whitespace-pre-wrap text-sm leading-relaxed break-words overflow-wrap-anywhere">{msg.content}</p>
                                     </div>
-                                  </motion.div>
-                                ))}
-                                {isAnalyzing && (
-                                  <motion.div
+                                    </motion.div>
+                                    ))}
+                                    {isAnalyzing && (
+                                    <motion.div
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     className="flex justify-start"
-                                  >
+                                    >
                                     <div className="bg-zinc-900/80 border border-cyan-500/30 rounded-3xl px-6 py-4 backdrop-blur-sm shadow-lg">
                                       <div className="flex items-center gap-3">
                                         <Loader2 className="w-5 h-5 text-cyan-400 animate-spin" />
                                         <span className="text-base text-cyan-300">Analyzing across sources...</span>
                                       </div>
                                     </div>
-                                  </motion.div>
-                                )}
-                              </>
-                            )}
-                          </div>
+                                    </motion.div>
+                                    )}
+                                    <div ref={messagesEndRef} />
+                                    </>
+                                    )}
+                                    </div>
 
                           {/* Input Area */}
                           <div className="flex-shrink-0 p-6 border-t border-white/10 bg-black/40 backdrop-blur-sm">
