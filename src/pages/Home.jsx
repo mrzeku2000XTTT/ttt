@@ -303,8 +303,8 @@ export default function HomePage() {
           </motion.span>
         </div>
 
-        {/* Buttons - Vertical Stack Centered - Moved Lower and Smaller */}
-        <div className="flex flex-col items-center gap-3 mb-16 mt-80 md:mt-96 lg:mt-[28rem]">
+        {/* Buttons - Vertical Stack Centered - Higher Position */}
+        <div className="flex flex-col items-center gap-4 mb-16 mt-40 md:mt-60 lg:mt-80">
           {/* Claim Agent ZK Button - Centered */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -321,19 +321,17 @@ export default function HomePage() {
             </Link>
           </motion.div>
 
-          {/* Enter TTT Button - Below */}
+          {/* Enter TTT Button - No Background */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 1.4 }}
           >
             <Link to={createPageUrl("Feed")}>
-              <Button
-                className="h-10 px-7 text-xs md:text-sm font-semibold bg-black/60 hover:bg-black/40 text-white border border-white/20 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                <Hand className="w-4 h-4 mr-2" />
+              <button className="text-white/90 hover:text-white text-sm md:text-base font-semibold transition-all duration-300 flex items-center gap-2">
+                <Hand className="w-4 h-4" />
                 Enter TTT
-              </Button>
+              </button>
             </Link>
           </motion.div>
         </div>
