@@ -137,13 +137,13 @@ export default function HomePage() {
       )}
 
       {/* Main Content - Centered but Lower */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center pt-16 md:pt-20" style={{ zIndex: 10 }}>
+      <div className="absolute inset-0 flex flex-col items-center justify-center pt-32 md:pt-20" style={{ zIndex: 10 }}>
         {/* Top UNCHAIN HUMANITY - Darker */}
         <motion.div
           initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.2, delay: 0.5 }}
-          className="mb-8 px-4 text-center"
+          className="mb-4 px-4 text-center"
         >
           <h1 
             className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-2 tracking-tight leading-tight"
@@ -161,7 +161,7 @@ export default function HomePage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 0.8 }}
-          className="text-white/70 text-lg md:text-xl mb-12 tracking-[0.3em] font-light"
+          className="text-white/70 text-base md:text-xl mb-8 tracking-[0.3em] font-light"
           style={{
             textShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
           }}
