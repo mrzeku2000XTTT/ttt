@@ -164,7 +164,7 @@ export default function HomePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1, delay: 0.8 }}
-            className="text-white/70 text-base md:text-xl tracking-[0.3em] font-light"
+            className="text-white/70 text-xs md:text-sm tracking-[0.3em] font-light"
             style={{
               textShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
               fontFamily: '"Orbitron", "Rajdhani", sans-serif',
@@ -293,7 +293,7 @@ export default function HomePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1, delay: 0.8 }}
-            className="text-white/70 text-base md:text-xl tracking-[0.3em] font-light"
+            className="text-white/70 text-xs md:text-sm tracking-[0.3em] font-light"
             style={{
               textShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
               fontFamily: '"Orbitron", "Rajdhani", sans-serif',
