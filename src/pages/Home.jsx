@@ -498,18 +498,19 @@ export default function HomePage() {
                                 x2="150"
                                 y2="250"
                                 stroke="url(#lineGradient)"
-                                strokeWidth="4"
-                                initial={{ pathLength: 1 }}
+                                strokeWidth="6"
+                                initial={{ pathLength: 1, opacity: 1 }}
                                 animate={{ 
-                                  pathLength: [1, 0],
-                                  opacity: [1, 0]
+                                  pathLength: [1, 1, 0],
+                                  opacity: [1, 1, 0]
                                 }}
                                 transition={{
-                                  duration: 1,
-                                  ease: "easeOut"
+                                  duration: 1.5,
+                                  ease: "easeOut",
+                                  times: [0, 0.4, 1]
                                 }}
                                 style={{
-                                  filter: 'drop-shadow(0 0 8px rgba(6, 182, 212, 1)) drop-shadow(0 0 16px rgba(6, 182, 212, 0.8))'
+                                  filter: 'drop-shadow(0 0 15px rgba(6, 182, 212, 1)) drop-shadow(0 0 30px rgba(6, 182, 212, 1)) drop-shadow(0 0 45px rgba(255, 255, 255, 0.8))'
                                 }}
                               />
                               <motion.circle
