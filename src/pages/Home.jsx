@@ -483,7 +483,6 @@ export default function HomePage() {
                             <X className="w-5 h-5 text-white" />
                           </button>
 
-                          {/* Portal Title */}
                           <div className="text-center mb-12">
                             <motion.div
                               animate={{
@@ -495,24 +494,18 @@ export default function HomePage() {
                                 repeat: Infinity,
                                 ease: "easeInOut",
                               }}
-                              className="w-24 h-24 mx-auto mb-6 relative"
+                              className="w-24 h-24 mx-auto mb-8 relative"
                             >
                               <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 rounded-full blur-2xl opacity-70" />
                               <Link2 className="w-full h-full text-cyan-400 relative drop-shadow-[0_0_20px_rgba(34,211,238,0.8)]" strokeWidth={2.5} />
                             </motion.div>
 
-                            <h2 className="text-4xl md:text-5xl font-black text-white mb-3 tracking-tight" style={{ fontFamily: '"Orbitron", sans-serif' }}>
-                              CHAIN PORTAL
-                            </h2>
-                            <p className="text-cyan-400 text-base font-medium mb-8">
-                              Bridging Kaspa L1 ↔ Kasplex L2
-                            </p>
-
-                            {/* Divider Line */}
-                            <div className="relative mb-10">
-                              <div className="absolute inset-0 flex items-center">
-                                <div className="w-full border-t border-cyan-500/30"></div>
-                              </div>
+                            {/* User Identity Input */}
+                            <div className="mb-10">
+                              <Input
+                                placeholder="I am..."
+                                className="w-full max-w-md mx-auto bg-black/60 border-2 border-cyan-500/40 text-white text-center text-lg h-14 placeholder:text-gray-500 focus:border-cyan-400"
+                              />
                             </div>
 
                             {/* Floating Icon Buttons with Tooltips */}
