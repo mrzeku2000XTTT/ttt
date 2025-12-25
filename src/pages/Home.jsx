@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Loader2, Wand2, Shield, LogIn, ArrowRight, Zap, LogOut, Link as LinkIcon, Hand, ChevronRight, X, TrendingUp, Link2 } from "lucide-react";
+import { Sparkles, Loader2, Wand2, Shield, LogIn, ArrowRight, Zap, LogOut, Link as LinkIcon, Hand, ChevronRight, X, TrendingUp, Link2, ArrowUpDown, Wallet } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -13,6 +13,7 @@ export default function HomePage() {
   const [showKaspaModal, setShowKaspaModal] = useState(false);
   const [kaspaPrice, setKaspaPrice] = useState(null);
   const [loadingPrice, setLoadingPrice] = useState(false);
+  const [showPortal, setShowPortal] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -173,7 +174,10 @@ export default function HomePage() {
             KASPA L1
           </motion.span>
 
-          <div className="relative w-12 h-12 md:w-16 md:h-16 flex items-center justify-center flex-shrink-0">
+          <button 
+            onClick={() => setShowPortal(true)}
+            className="relative w-12 h-12 md:w-16 md:h-16 flex items-center justify-center flex-shrink-0 cursor-pointer hover:scale-110 transition-transform duration-300"
+          >
             {/* Glow effect */}
             <motion.div
               className="absolute inset-0 blur-xl"
@@ -284,10 +288,10 @@ export default function HomePage() {
                   repeat: Infinity,
                   ease: "easeInOut",
                   delay: i * 0.2,
-                }}
-              />
-            ))}
-          </div>
+                  }}
+                  />
+                  ))}
+                  </button>
 
           <motion.span
             initial={{ opacity: 0 }}
@@ -453,6 +457,111 @@ export default function HomePage() {
                   </motion.div>
                   )}
                   </AnimatePresence>
-    </div>
-  );
-}
+
+                  {/* Portal Modal */}
+                  <AnimatePresence>
+                    {showPortal && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setShowPortal(false)}
+                        className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-center justify-center p-4"
+                      >
+                        <motion.div
+                          initial={{ scale: 0.9, y: 20 }}
+                          animate={{ scale: 1, y: 0 }}
+                          exit={{ scale: 0.9, y: 20 }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="relative bg-gradient-to-br from-zinc-900 to-black border-2 border-cyan-500/50 rounded-3xl w-full max-w-2xl p-8 shadow-2xl shadow-cyan-500/20"
+                        >
+                          {/* Close Button */}
+                          <button
+                            onClick={() => setShowPortal(false)}
+                            className="absolute top-4 right-4 w-10 h-10 bg-white/5 hover:bg-white/10 border border-white/20 rounded-full flex items-center justify-center transition-all"
+                          >
+                            <X className="w-5 h-5 text-white" />
+                          </button>
+
+                          {/* Portal Title */}
+                          <div className="text-center mb-8">
+                            <motion.div
+                              animate={{
+                                rotate: [0, 180, 360],
+                                scale: [1, 1.2, 1],
+                              }}
+                              transition={{
+                                duration: 3,
+                                repeat: Infinity,
+                                ease: "easeInOut",
+                              }}
+                              className="w-20 h-20 mx-auto mb-4 relative"
+                            >
+                              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 rounded-full blur-xl opacity-60" />
+                              <Link2 className="w-full h-full text-cyan-400 relative" strokeWidth={2} />
+                            </motion.div>
+
+                            <h2 className="text-3xl md:text-4xl font-black text-white mb-2">
+                              CHAIN PORTAL
+                            </h2>
+                            <p className="text-cyan-400 text-sm">
+                              Bridging Kaspa L1 ↔ Kasplex L2
+                            </p>
+                          </div>
+
+                          {/* Portal Options */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Link to={createPageUrl("Bridge")}>
+                              <button className="w-full bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border-2 border-cyan-500/50 hover:border-cyan-400 rounded-2xl p-6 transition-all hover:scale-105 group">
+                                <ArrowUpDown className="w-8 h-8 text-cyan-400 mb-3 mx-auto group-hover:rotate-180 transition-transform duration-500" />
+                                <h3 className="text-white font-bold text-lg mb-2">Send KAS</h3>
+                                <p className="text-gray-400 text-xs">
+                                  Transfer KAS between networks
+                                </p>
+                              </button>
+                            </Link>
+
+                            <Link to={createPageUrl("DAGKnightWallet")}>
+                              <button className="w-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-2 border-purple-500/50 hover:border-purple-400 rounded-2xl p-6 transition-all hover:scale-105 group">
+                                <Shield className="w-8 h-8 text-purple-400 mb-3 mx-auto group-hover:scale-110 transition-transform duration-300" />
+                                <h3 className="text-white font-bold text-lg mb-2">DAGKnight</h3>
+                                <p className="text-gray-400 text-xs">
+                                  Advanced wallet verification
+                                </p>
+                              </button>
+                            </Link>
+
+                            <Link to={createPageUrl("Wallet")}>
+                              <button className="w-full bg-gradient-to-br from-emerald-500/20 to-green-500/20 border-2 border-emerald-500/50 hover:border-emerald-400 rounded-2xl p-6 transition-all hover:scale-105 group">
+                                <Wallet className="w-8 h-8 text-emerald-400 mb-3 mx-auto group-hover:scale-110 transition-transform duration-300" />
+                                <h3 className="text-white font-bold text-lg mb-2">Wallet</h3>
+                                <p className="text-gray-400 text-xs">
+                                  View your TTT wallet
+                                </p>
+                              </button>
+                            </Link>
+
+                            <Link to={createPageUrl("GlobalHistory")}>
+                              <button className="w-full bg-gradient-to-br from-orange-500/20 to-yellow-500/20 border-2 border-orange-500/50 hover:border-orange-400 rounded-2xl p-6 transition-all hover:scale-105 group">
+                                <TrendingUp className="w-8 h-8 text-orange-400 mb-3 mx-auto group-hover:scale-110 transition-transform duration-300" />
+                                <h3 className="text-white font-bold text-lg mb-2">Analytics</h3>
+                                <p className="text-gray-400 text-xs">
+                                  Network statistics & insights
+                                </p>
+                              </button>
+                            </Link>
+                          </div>
+
+                          {/* Portal Footer */}
+                          <div className="mt-8 pt-6 border-t border-white/10 text-center">
+                            <p className="text-gray-500 text-xs">
+                              Secured by TTT Chain Protocol
+                            </p>
+                          </div>
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  </div>
+                  );
+                  }
