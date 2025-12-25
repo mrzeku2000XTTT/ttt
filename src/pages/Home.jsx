@@ -36,7 +36,7 @@ export default function HomePage() {
       setUser(currentUser);
       setUserIdentity(currentUser.user_identity || "");
       setOpenRouterKey(currentUser.openrouter_api_key || "");
-      setSelectedModel(currentUser.openrouter_model || "openai/gpt-4o-mini");
+      setSelectedModel(currentUser.openrouter_model || "xiaomi/mimo-v2-flash:free");
     } catch (err) {
       console.log("User not logged in");
       setUser(null);
