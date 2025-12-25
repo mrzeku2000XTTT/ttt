@@ -104,16 +104,13 @@ export default function HomePage() {
         response = result.data.content;
       } else {
         // Default: Free built-in AI
-        const conversationContext = updatedMessages
+        const lastFewMessages = updatedMessages.slice(-4); // Only use last 4 messages for context
+        const conversationContext = lastFewMessages
           .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
           .join('\n\n');
         
         response = await base44.integrations.Core.InvokeLLM({
-          prompt: `You are a helpful, conversational AI assistant. Continue this conversation naturally:
-
-${conversationContext}
-
-Respond in a friendly, conversational manner. Remember the context of our conversation.`,
+          prompt: `${conversationContext}\n\nRespond naturally and concisely.`,
           add_context_from_internet: false
         });
       }

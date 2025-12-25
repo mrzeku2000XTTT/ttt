@@ -15,13 +15,14 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'No API key provided' }, { status: 400 });
     }
 
-    // Convert chat history to OpenRouter format
+    // Convert chat history to OpenRouter format (keep last 10 messages max for efficiency)
+    const recentMessages = messages.slice(-10);
     const formattedMessages = [
       {
         role: 'system',
-        content: 'You are a helpful, friendly AI assistant. Be conversational and remember the context of the conversation.'
+        content: 'Be helpful and concise. Answer directly without unnecessary elaboration unless asked for details.'
       },
-      ...messages.map(msg => ({
+      ...recentMessages.map(msg => ({
         role: msg.role === 'assistant' ? 'assistant' : 'user',
         content: msg.content
       }))
