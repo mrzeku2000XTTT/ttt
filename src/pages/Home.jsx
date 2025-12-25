@@ -103,7 +103,7 @@ export default function HomePage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1 }}
-        className="absolute top-4 left-4 md:top-6 md:left-6 z-50 flex flex-col gap-2"
+        className="absolute top-4 left-4 md:top-6 md:left-6 z-50"
       >
         <Button
           onClick={handleKaspaClick}
@@ -116,13 +116,6 @@ export default function HomePage() {
           />
           KASPA
         </Button>
-        <Link to={createPageUrl("B44Prompts")}>
-          <Button
-            className="bg-transparent hover:bg-white/5 border border-white/20 text-white backdrop-blur-sm h-8 px-3 text-xs md:h-10 md:px-4 md:text-sm font-semibold w-full"
-          >
-            b44
-          </Button>
-        </Link>
       </motion.div>
 
       {/* Logout Button */}
@@ -444,12 +437,22 @@ export default function HomePage() {
                   >
                     Retry
                   </Button>
-                </div>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                  </div>
+                  )}
+
+                  <div className="mt-6 pt-4 border-t border-white/10">
+                  <Link to={createPageUrl("B44Prompts")}>
+                  <Button
+                    className="w-full bg-black/60 hover:bg-black/40 border border-white/20 text-white"
+                  >
+                    b44
+                  </Button>
+                  </Link>
+                  </div>
+                  </motion.div>
+                  </motion.div>
+                  )}
+                  </AnimatePresence>
     </div>
   );
 }
