@@ -19,6 +19,7 @@ export default function HomePage() {
   const [chatMessages, setChatMessages] = useState([]);
   const [showApiSettings, setShowApiSettings] = useState(false);
   const [openRouterKey, setOpenRouterKey] = useState("");
+  const [selectedModel, setSelectedModel] = useState("openai/gpt-4o-mini");
   const messagesEndRef = React.useRef(null);
 
   useEffect(() => {
@@ -35,6 +36,7 @@ export default function HomePage() {
       setUser(currentUser);
       setUserIdentity(currentUser.user_identity || "");
       setOpenRouterKey(currentUser.openrouter_api_key || "");
+      setSelectedModel(currentUser.openrouter_model || "openai/gpt-4o-mini");
     } catch (err) {
       console.log("User not logged in");
       setUser(null);
@@ -50,12 +52,15 @@ export default function HomePage() {
     }
     
     try {
-      await base44.auth.updateMe({ openrouter_api_key: openRouterKey });
+      await base44.auth.updateMe({ 
+        openrouter_api_key: openRouterKey,
+        openrouter_model: selectedModel 
+      });
       setShowApiSettings(false);
-      alert('✅ API key saved successfully!');
+      alert('✅ API settings saved successfully!');
     } catch (err) {
-      console.error('Failed to save API key:', err);
-      alert('Failed to save API key');
+      console.error('Failed to save API settings:', err);
+      alert('Failed to save API settings');
     }
   };
 
@@ -85,29 +90,17 @@ export default function HomePage() {
       
       // Use OpenRouter if key is provided, otherwise use built-in free AI
       if (openRouterKey) {
-        const openRouterResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${openRouterKey}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            model: 'openai/gpt-4o-mini',
-            messages: [
-              {
-                role: 'system',
-                content: 'You are a deep research assistant. Search across multiple philosophical, spiritual, scientific, and cultural sources. Analyze different perspectives and filter truth from various viewpoints.'
-              },
-              {
-                role: 'user',
-                content: userMessage
-              }
-            ]
-          })
+        const result = await base44.functions.invoke('openRouterChat', {
+          message: userMessage,
+          model: selectedModel,
+          apiKey: openRouterKey
         });
         
-        const data = await openRouterResponse.json();
-        response = data.choices[0].message.content;
+        if (result.data.error) {
+          throw new Error(result.data.error);
+        }
+        
+        response = result.data.content;
       } else {
         // Default: Free built-in AI
         response = await base44.integrations.Core.InvokeLLM({
@@ -625,6 +618,22 @@ Format your response in a clear, engaging way that helps the user understand thi
                               <p className="text-xs text-gray-500 mt-2">
                                 Get your key from <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">openrouter.ai/keys</a>
                               </p>
+                            </div>
+
+                            <div>
+                              <label className="text-sm text-gray-300 mb-2 block">Model</label>
+                              <select
+                                value={selectedModel}
+                                onChange={(e) => setSelectedModel(e.target.value)}
+                                className="w-full bg-zinc-900 border border-zinc-700 text-white rounded-lg px-3 py-2 text-sm"
+                              >
+                                <option value="openai/gpt-4o-mini">GPT-4O Mini (Fast & Cheap)</option>
+                                <option value="openai/gpt-4o">GPT-4O (Best Quality)</option>
+                                <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+                                <option value="google/gemini-pro-1.5">Gemini Pro 1.5</option>
+                                <option value="meta-llama/llama-3.1-405b-instruct">Llama 3.1 405B</option>
+                                <option value="perplexity/llama-3.1-sonar-large-128k-online">Perplexity (Online)</option>
+                              </select>
                             </div>
 
                             <div className="flex gap-3">
