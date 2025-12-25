@@ -292,7 +292,7 @@ export default function HomePage() {
                 }}
               />
             ))}
-          </div>
+          </button>
 
           <motion.span
             initial={{ opacity: 0 }}
