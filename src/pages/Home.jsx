@@ -173,7 +173,37 @@ export default function HomePage() {
             KASPA L1
           </motion.span>
           
-          <div className="flex items-center gap-1">
+          <div className="relative flex items-center gap-1">
+            {/* Glow effect behind chains */}
+            <motion.div
+              className="absolute inset-0 blur-xl"
+              animate={{
+                opacity: [0.1, 0.3, 0.1],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            >
+              <div className="w-full h-full bg-cyan-500/20" />
+            </motion.div>
+
+            {/* Connecting beam */}
+            <motion.div
+              className="absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-black/40 to-transparent"
+              animate={{
+                opacity: [0, 0.6, 0],
+                scaleX: [0.5, 1, 0.5],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+
+            {/* Chain links */}
             <motion.div
               animate={{
                 x: [0, 10, 0],
@@ -184,6 +214,9 @@ export default function HomePage() {
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
+              style={{
+                filter: 'drop-shadow(0 0 8px rgba(0, 0, 0, 0.5))',
+              }}
             >
               <Link2 className="w-4 h-4 md:w-5 md:h-5 text-black/80" strokeWidth={2.5} />
             </motion.div>
@@ -191,11 +224,15 @@ export default function HomePage() {
               animate={{
                 scale: [1, 1.2, 1],
                 opacity: [0.3, 0.8, 0.3],
+                rotate: [0, 15, 0],
               }}
               transition={{
                 duration: 2,
                 repeat: Infinity,
                 ease: "easeInOut",
+              }}
+              style={{
+                filter: 'drop-shadow(0 0 12px rgba(0, 0, 0, 0.6))',
               }}
             >
               <Link2 className="w-4 h-4 md:w-5 md:h-5 text-black/80" strokeWidth={2.5} />
@@ -210,9 +247,31 @@ export default function HomePage() {
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
+              style={{
+                filter: 'drop-shadow(0 0 8px rgba(0, 0, 0, 0.5))',
+              }}
             >
               <Link2 className="w-4 h-4 md:w-5 md:h-5 text-black/80" strokeWidth={2.5} />
             </motion.div>
+
+            {/* Energy particles */}
+            {[...Array(3)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-1 h-1 bg-black/40 rounded-full"
+                animate={{
+                  x: [0, 20, 0],
+                  y: [-10, 10, -10],
+                  opacity: [0, 0.5, 0],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: i * 0.3,
+                }}
+              />
+            ))}
           </div>
 
           <motion.span
