@@ -13,39 +13,9 @@ export default function HomePage() {
   const [showKaspaModal, setShowKaspaModal] = useState(false);
   const [kaspaPrice, setKaspaPrice] = useState(null);
   const [loadingPrice, setLoadingPrice] = useState(false);
-  const [showPortal, setShowPortal] = useState(false);
-  const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [clockSound, setClockSound] = useState(null);
-  
-  const alertWords = ["YOU", "ARE", "ABOUT", "TO", "ENTER", "THE", "ASTRAL", "REALM"];
 
   useEffect(() => {
     loadUser();
-    
-    // Initialize clock sound
-    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
-    audio.loop = true;
-    audio.volume = 0.3;
-    setClockSound(audio);
-
-    // Try to play (may be blocked by autoplay policy)
-    const playAudio = () => {
-      audio.play().catch(() => {});
-      document.removeEventListener('click', playAudio);
-    };
-    document.addEventListener('click', playAudio);
-
-    return () => {
-      audio.pause();
-      document.removeEventListener('click', playAudio);
-    };
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentWordIndex((prev) => (prev + 1) % alertWords.length);
-    }, 10000);
-    return () => clearInterval(interval);
   }, []);
 
   const loadUser = async () => {
@@ -122,74 +92,6 @@ export default function HomePage() {
           >
             TTT
           </motion.div>
-        </div>
-
-        {/* Alert Message Animation - Electric Sign */}
-        <div className="absolute top-32 md:top-40 left-0 right-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 100 }}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentWordIndex}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ 
-                opacity: 1, 
-                scale: 1,
-              }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.8 }}
-              className="relative"
-            >
-              {/* Electric Glow Background */}
-              <motion.div
-                animate={{
-                  opacity: [0.5, 1, 0.5],
-                  scale: [1, 1.1, 1],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-                className="absolute inset-0 bg-cyan-400 blur-3xl"
-                style={{ zIndex: -1 }}
-              />
-
-              {/* Main Text with Electric Effect */}
-              <div className="text-5xl md:text-7xl lg:text-8xl font-black text-white px-8 py-4 bg-black/40 backdrop-blur-sm border-2 border-cyan-400 rounded-lg"
-                style={{
-                  textShadow: `
-                    0 0 10px rgba(6, 182, 212, 1),
-                    0 0 20px rgba(6, 182, 212, 1),
-                    0 0 30px rgba(6, 182, 212, 0.8),
-                    0 0 40px rgba(6, 182, 212, 0.6),
-                    0 0 50px rgba(6, 182, 212, 0.4),
-                    0 0 60px rgba(139, 92, 246, 0.3),
-                    2px 2px 4px rgba(0, 0, 0, 0.8)
-                  `,
-                  fontFamily: '"Orbitron", "Rajdhani", sans-serif',
-                  letterSpacing: '0.1em',
-                  boxShadow: '0 0 30px rgba(6, 182, 212, 0.5), inset 0 0 20px rgba(6, 182, 212, 0.1)'
-                }}
-              >
-                {alertWords[currentWordIndex]}
-              </div>
-
-              {/* Flickering Border Effect */}
-              <motion.div
-                animate={{
-                  opacity: [0, 1, 0, 1, 0],
-                }}
-                transition={{
-                  duration: 0.15,
-                  repeat: Infinity,
-                  repeatDelay: 3
-                }}
-                className="absolute inset-0 border-2 border-cyan-300 rounded-lg pointer-events-none"
-                style={{
-                  filter: 'drop-shadow(0 0 10px rgba(6, 182, 212, 1))'
-                }}
-              />
-            </motion.div>
-          </AnimatePresence>
         </div>
 
         {/* Dark Gradient Overlay */}
@@ -271,11 +173,7 @@ export default function HomePage() {
             KASPA L1
           </motion.span>
 
-          <button
-            onClick={() => setShowPortal(true)}
-            className="relative w-12 h-12 md:w-16 md:h-16 flex items-center justify-center flex-shrink-0 cursor-pointer hover:scale-110 transition-transform duration-300"
-            title="Open Portal"
-          >
+          <div className="relative w-12 h-12 md:w-16 md:h-16 flex items-center justify-center flex-shrink-0">
             {/* Glow effect */}
             <motion.div
               className="absolute inset-0 blur-xl"
@@ -389,7 +287,7 @@ export default function HomePage() {
                 }}
               />
             ))}
-          </button>
+          </div>
 
           <motion.span
             initial={{ opacity: 0 }}
@@ -555,42 +453,6 @@ export default function HomePage() {
                   </motion.div>
                   )}
                   </AnimatePresence>
-
-                  {/* Portal Modal */}
-                  <AnimatePresence>
-                  {showPortal && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      onClick={() => setShowPortal(false)}
-                      className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[200] flex items-center justify-center overflow-hidden"
-                    >
-                      <Button
-                        onClick={() => setShowPortal(false)}
-                        className="absolute top-8 left-8 z-[201] bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 text-cyan-400 backdrop-blur-xl"
-                      >
-                        <X className="w-5 h-5 mr-2" />
-                        Back to Home
-                      </Button>
-
-                      <motion.div
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.8, opacity: 0 }}
-                        transition={{ duration: 0.5, ease: "easeOut" }}
-                        className="relative w-full max-w-4xl h-auto flex items-center justify-center"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <img
-                          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/0f0599e36_image.png"
-                          alt="Portal"
-                          className="w-full h-auto rounded-2xl shadow-2xl shadow-cyan-500/50"
-                        />
-                      </motion.div>
-                    </motion.div>
-                  )}
-                  </AnimatePresence>
-                  </div>
-                  );
-                  }
+    </div>
+  );
+}
