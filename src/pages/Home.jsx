@@ -441,13 +441,18 @@ export default function HomePage() {
                   )}
 
                   <div className="mt-6 pt-4 border-t border-white/10">
-                  <Link to={createPageUrl("B44Prompts")}>
-                  <Button
-                    className="w-full bg-black/60 hover:bg-black/40 border border-white/20 text-white"
-                  >
-                    b44
-                  </Button>
-                  </Link>
+                    <Link to={createPageUrl("B44Prompts")}>
+                      <Button
+                        className="w-full bg-black/60 hover:bg-black/40 border border-white/20 text-white flex items-center justify-center gap-2"
+                      >
+                        <img 
+                          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/bc56007fd_image.png"
+                          alt="b44"
+                          className="w-5 h-5 rounded-full"
+                        />
+                        b44
+                      </Button>
+                    </Link>
                   </div>
                   </motion.div>
                   </motion.div>
