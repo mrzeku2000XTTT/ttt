@@ -475,6 +475,45 @@ export default function HomePage() {
                           onClick={(e) => e.stopPropagation()}
                           className="relative bg-gradient-to-br from-zinc-900 to-black border-2 border-cyan-500/50 rounded-3xl w-full max-w-2xl p-8 shadow-2xl shadow-cyan-500/20"
                         >
+                          {/* Floating Icon Buttons */}
+                          <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-3">
+                            <Link to={createPageUrl("Bridge")}>
+                              <motion.button
+                                whileHover={{ scale: 1.1, y: -5 }}
+                                className="w-14 h-14 bg-gradient-to-br from-cyan-500/30 to-blue-500/30 border-2 border-cyan-500/60 hover:border-cyan-400 rounded-xl backdrop-blur-xl flex items-center justify-center shadow-lg shadow-cyan-500/30 transition-all"
+                              >
+                                <ArrowUpDown className="w-6 h-6 text-cyan-400" />
+                              </motion.button>
+                            </Link>
+
+                            <Link to={createPageUrl("DAGKnightWallet")}>
+                              <motion.button
+                                whileHover={{ scale: 1.1, y: -5 }}
+                                className="w-14 h-14 bg-gradient-to-br from-purple-500/30 to-pink-500/30 border-2 border-purple-500/60 hover:border-purple-400 rounded-xl backdrop-blur-xl flex items-center justify-center shadow-lg shadow-purple-500/30 transition-all"
+                              >
+                                <Shield className="w-6 h-6 text-purple-400" />
+                              </motion.button>
+                            </Link>
+
+                            <Link to={createPageUrl("Wallet")}>
+                              <motion.button
+                                whileHover={{ scale: 1.1, y: -5 }}
+                                className="w-14 h-14 bg-gradient-to-br from-emerald-500/30 to-green-500/30 border-2 border-emerald-500/60 hover:border-emerald-400 rounded-xl backdrop-blur-xl flex items-center justify-center shadow-lg shadow-emerald-500/30 transition-all"
+                              >
+                                <Wallet className="w-6 h-6 text-emerald-400" />
+                              </motion.button>
+                            </Link>
+
+                            <Link to={createPageUrl("GlobalHistory")}>
+                              <motion.button
+                                whileHover={{ scale: 1.1, y: -5 }}
+                                className="w-14 h-14 bg-gradient-to-br from-orange-500/30 to-yellow-500/30 border-2 border-orange-500/60 hover:border-orange-400 rounded-xl backdrop-blur-xl flex items-center justify-center shadow-lg shadow-orange-500/30 transition-all"
+                              >
+                                <TrendingUp className="w-6 h-6 text-orange-400" />
+                              </motion.button>
+                            </Link>
+                          </div>
+
                           {/* Close Button */}
                           <button
                             onClick={() => setShowPortal(false)}
@@ -507,49 +546,6 @@ export default function HomePage() {
                             <p className="text-cyan-400 text-sm">
                               Bridging Kaspa L1 ↔ Kasplex L2
                             </p>
-                          </div>
-
-                          {/* Portal Options */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Link to={createPageUrl("Bridge")}>
-                              <button className="w-full bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border-2 border-cyan-500/50 hover:border-cyan-400 rounded-2xl p-6 transition-all hover:scale-105 group">
-                                <ArrowUpDown className="w-8 h-8 text-cyan-400 mb-3 mx-auto group-hover:rotate-180 transition-transform duration-500" />
-                                <h3 className="text-white font-bold text-lg mb-2">Send KAS</h3>
-                                <p className="text-gray-400 text-xs">
-                                  Transfer KAS between networks
-                                </p>
-                              </button>
-                            </Link>
-
-                            <Link to={createPageUrl("DAGKnightWallet")}>
-                              <button className="w-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-2 border-purple-500/50 hover:border-purple-400 rounded-2xl p-6 transition-all hover:scale-105 group">
-                                <Shield className="w-8 h-8 text-purple-400 mb-3 mx-auto group-hover:scale-110 transition-transform duration-300" />
-                                <h3 className="text-white font-bold text-lg mb-2">DAGKnight</h3>
-                                <p className="text-gray-400 text-xs">
-                                  Advanced wallet verification
-                                </p>
-                              </button>
-                            </Link>
-
-                            <Link to={createPageUrl("Wallet")}>
-                              <button className="w-full bg-gradient-to-br from-emerald-500/20 to-green-500/20 border-2 border-emerald-500/50 hover:border-emerald-400 rounded-2xl p-6 transition-all hover:scale-105 group">
-                                <Wallet className="w-8 h-8 text-emerald-400 mb-3 mx-auto group-hover:scale-110 transition-transform duration-300" />
-                                <h3 className="text-white font-bold text-lg mb-2">Wallet</h3>
-                                <p className="text-gray-400 text-xs">
-                                  View your TTT wallet
-                                </p>
-                              </button>
-                            </Link>
-
-                            <Link to={createPageUrl("GlobalHistory")}>
-                              <button className="w-full bg-gradient-to-br from-orange-500/20 to-yellow-500/20 border-2 border-orange-500/50 hover:border-orange-400 rounded-2xl p-6 transition-all hover:scale-105 group">
-                                <TrendingUp className="w-8 h-8 text-orange-400 mb-3 mx-auto group-hover:scale-110 transition-transform duration-300" />
-                                <h3 className="text-white font-bold text-lg mb-2">Analytics</h3>
-                                <p className="text-gray-400 text-xs">
-                                  Network statistics & insights
-                                </p>
-                              </button>
-                            </Link>
                           </div>
 
                           {/* Portal Footer */}
