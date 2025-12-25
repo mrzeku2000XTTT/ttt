@@ -137,7 +137,7 @@ export default function HomePage() {
       )}
 
       {/* Main Content - Centered but Lower */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center pt-32 md:pt-20" style={{ zIndex: 10 }}>
+      <div className="absolute inset-0 flex flex-col items-center justify-center pt-48 md:pt-20" style={{ zIndex: 10 }}>
         {/* Top UNCHAIN HUMANITY - Darker */}
         <motion.div
           initial={{ opacity: 0, y: -50 }}
@@ -150,6 +150,8 @@ export default function HomePage() {
             style={{
               color: '#d1d5db',
               textShadow: '0 4px 20px rgba(0, 0, 0, 0.8), 0 0 40px rgba(255, 255, 255, 0.1)',
+              fontFamily: '"Orbitron", "Rajdhani", sans-serif',
+              fontWeight: 900
             }}
           >
             UNCHAIN HUMANITY
@@ -164,6 +166,7 @@ export default function HomePage() {
           className="text-white/70 text-base md:text-xl mb-8 tracking-[0.3em] font-light"
           style={{
             textShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
+            fontFamily: '"Orbitron", "Rajdhani", sans-serif',
           }}
         >
           KASPA L1 ←→ KASPLEX L2
