@@ -421,12 +421,7 @@ export default function HomePage() {
                     </div>
                   )}
 
-                  <Button
-                    onClick={() => setShowKaspaModal(false)}
-                    className="w-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/30 text-cyan-400"
-                  >
-                    Close
-                  </Button>
+
                 </div>
               ) : (
                 <div className="text-center py-12">
