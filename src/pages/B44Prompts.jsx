@@ -6,9 +6,9 @@ import { createPageUrl } from "@/utils";
 export default function B44PromptsPage() {
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
-      <div className="flex-shrink-0 bg-black/90 backdrop-blur-sm border-b border-white/10 p-3 md:p-4 flex items-center justify-between">
-        <Link to={createPageUrl("Home")}>
-          <button className="flex items-center gap-2 text-white/80 hover:text-white transition-colors">
+      <div className="relative z-10 flex-shrink-0 bg-black backdrop-blur-sm border-b border-white/10 p-3 md:p-4 flex items-center justify-between">
+        <Link to={createPageUrl("Home")} className="cursor-pointer">
+          <button className="flex items-center gap-2 text-white/80 hover:text-white transition-colors active:scale-95">
             <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
             <span className="text-xs md:text-sm font-medium">Back</span>
           </button>
@@ -17,7 +17,7 @@ export default function B44PromptsPage() {
           href="https://b44-prompts.base44.app"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors"
+          className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer active:scale-95"
         >
           <span className="text-xs md:text-sm font-medium">Open in New Tab</span>
           <ExternalLink className="w-3 h-3 md:w-4 md:h-4" />
