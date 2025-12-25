@@ -484,66 +484,93 @@ export default function HomePage() {
                           </button>
 
                           {/* Portal Title */}
-                          <div className="text-center mb-8">
+                          <div className="text-center mb-12">
                             <motion.div
                               animate={{
                                 rotate: [0, 180, 360],
-                                scale: [1, 1.2, 1],
+                                scale: [1, 1.15, 1],
                               }}
                               transition={{
-                                duration: 3,
+                                duration: 4,
                                 repeat: Infinity,
                                 ease: "easeInOut",
                               }}
-                              className="w-20 h-20 mx-auto mb-4 relative"
+                              className="w-24 h-24 mx-auto mb-6 relative"
                             >
-                              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 rounded-full blur-xl opacity-60" />
-                              <Link2 className="w-full h-full text-cyan-400 relative" strokeWidth={2} />
+                              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 rounded-full blur-2xl opacity-70" />
+                              <Link2 className="w-full h-full text-cyan-400 relative drop-shadow-[0_0_20px_rgba(34,211,238,0.8)]" strokeWidth={2.5} />
                             </motion.div>
 
-                            <h2 className="text-3xl md:text-4xl font-black text-white mb-2">
+                            <h2 className="text-4xl md:text-5xl font-black text-white mb-3 tracking-tight" style={{ fontFamily: '"Orbitron", sans-serif' }}>
                               CHAIN PORTAL
                             </h2>
-                            <p className="text-cyan-400 text-sm mb-6">
+                            <p className="text-cyan-400 text-base font-medium mb-8">
                               Bridging Kaspa L1 ↔ Kasplex L2
                             </p>
 
-                            {/* Floating Icon Buttons Inside Modal */}
-                            <div className="flex items-center justify-center gap-6 mt-6">
+                            {/* Divider Line */}
+                            <div className="relative mb-10">
+                              <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-cyan-500/30"></div>
+                              </div>
+                            </div>
+
+                            {/* Floating Icon Buttons with Tooltips */}
+                            <div className="flex items-center justify-center gap-8">
                               <Link to={createPageUrl("Bridge")}>
-                                <motion.button
-                                  whileHover={{ scale: 1.2, y: -5 }}
-                                  className="transition-all"
+                                <motion.div
+                                  whileHover={{ scale: 1.15, y: -8 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  className="relative group"
                                 >
-                                  <ArrowUpDown className="w-8 h-8 text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]" strokeWidth={2.5} />
-                                </motion.button>
+                                  <div className="absolute inset-0 bg-cyan-500/20 rounded-full blur-xl group-hover:bg-cyan-500/40 transition-all" />
+                                  <ArrowUpDown className="w-10 h-10 text-cyan-400 relative drop-shadow-[0_0_12px_rgba(34,211,238,0.8)] group-hover:drop-shadow-[0_0_20px_rgba(34,211,238,1)]" strokeWidth={2.5} />
+                                  <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                    <span className="text-xs text-cyan-400 font-semibold">Send KAS</span>
+                                  </div>
+                                </motion.div>
                               </Link>
 
                               <Link to={createPageUrl("DAGKnightWallet")}>
-                                <motion.button
-                                  whileHover={{ scale: 1.2, y: -5 }}
-                                  className="transition-all"
+                                <motion.div
+                                  whileHover={{ scale: 1.15, y: -8 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  className="relative group"
                                 >
-                                  <Shield className="w-8 h-8 text-purple-400 drop-shadow-[0_0_8px_rgba(192,132,252,0.6)]" strokeWidth={2.5} />
-                                </motion.button>
+                                  <div className="absolute inset-0 bg-purple-500/20 rounded-full blur-xl group-hover:bg-purple-500/40 transition-all" />
+                                  <Shield className="w-10 h-10 text-purple-400 relative drop-shadow-[0_0_12px_rgba(192,132,252,0.8)] group-hover:drop-shadow-[0_0_20px_rgba(192,132,252,1)]" strokeWidth={2.5} />
+                                  <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                    <span className="text-xs text-purple-400 font-semibold">DAGKnight</span>
+                                  </div>
+                                </motion.div>
                               </Link>
 
                               <Link to={createPageUrl("Wallet")}>
-                                <motion.button
-                                  whileHover={{ scale: 1.2, y: -5 }}
-                                  className="transition-all"
+                                <motion.div
+                                  whileHover={{ scale: 1.15, y: -8 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  className="relative group"
                                 >
-                                  <Wallet className="w-8 h-8 text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.6)]" strokeWidth={2.5} />
-                                </motion.button>
+                                  <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-xl group-hover:bg-emerald-500/40 transition-all" />
+                                  <Wallet className="w-10 h-10 text-emerald-400 relative drop-shadow-[0_0_12px_rgba(52,211,153,0.8)] group-hover:drop-shadow-[0_0_20px_rgba(52,211,153,1)]" strokeWidth={2.5} />
+                                  <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                    <span className="text-xs text-emerald-400 font-semibold">Wallet</span>
+                                  </div>
+                                </motion.div>
                               </Link>
 
                               <Link to={createPageUrl("GlobalHistory")}>
-                                <motion.button
-                                  whileHover={{ scale: 1.2, y: -5 }}
-                                  className="transition-all"
+                                <motion.div
+                                  whileHover={{ scale: 1.15, y: -8 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  className="relative group"
                                 >
-                                  <TrendingUp className="w-8 h-8 text-orange-400 drop-shadow-[0_0_8px_rgba(251,146,60,0.6)]" strokeWidth={2.5} />
-                                </motion.button>
+                                  <div className="absolute inset-0 bg-orange-500/20 rounded-full blur-xl group-hover:bg-orange-500/40 transition-all" />
+                                  <TrendingUp className="w-10 h-10 text-orange-400 relative drop-shadow-[0_0_12px_rgba(251,146,60,0.8)] group-hover:drop-shadow-[0_0_20px_rgba(251,146,60,1)]" strokeWidth={2.5} />
+                                  <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 whitespace-nowrap">
+                                    <span className="text-xs text-orange-400 font-semibold">Analytics</span>
+                                  </div>
+                                </motion.div>
                               </Link>
                             </div>
                           </div>
