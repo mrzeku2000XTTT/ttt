@@ -159,12 +159,12 @@ export default function HomePage() {
         </motion.div>
 
         {/* Subtitle */}
-        <div className="flex items-center gap-3 mb-8">
+        <div className="flex items-center justify-center gap-3 mb-8">
           <motion.span
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1, delay: 0.8 }}
-            className="text-white/70 text-xs md:text-sm tracking-[0.3em] font-light"
+            className="text-white/70 text-xs md:text-sm tracking-[0.2em] font-light"
             style={{
               textShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
               fontFamily: '"Orbitron", "Rajdhani", sans-serif',
@@ -172,8 +172,8 @@ export default function HomePage() {
           >
             KASPA L1
           </motion.span>
-          
-          <div className="relative w-16 h-16 flex items-center justify-center">
+
+          <div className="relative w-12 h-12 md:w-16 md:h-16 flex items-center justify-center flex-shrink-0">
             {/* Glow effect */}
             <motion.div
               className="absolute inset-0 blur-xl"
@@ -293,7 +293,7 @@ export default function HomePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1, delay: 0.8 }}
-            className="text-white/70 text-xs md:text-sm tracking-[0.3em] font-light"
+            className="text-white/70 text-xs md:text-sm tracking-[0.2em] font-light"
             style={{
               textShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
               fontFamily: '"Orbitron", "Rajdhani", sans-serif',
@@ -301,7 +301,7 @@ export default function HomePage() {
           >
             KASPLEX L2
           </motion.span>
-        </div>
+          </div>
 
         {/* Buttons - Vertical Stack Centered - Higher Position */}
         <div className="flex flex-col items-center gap-4 mb-16 mt-40 md:mt-60 lg:mt-80">
