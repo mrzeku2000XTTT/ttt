@@ -15,11 +15,30 @@ export default function HomePage() {
   const [loadingPrice, setLoadingPrice] = useState(false);
   const [showPortal, setShowPortal] = useState(false);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const [clockSound, setClockSound] = useState(null);
   
   const alertWords = ["YOU", "ARE", "ABOUT", "TO", "ENTER", "THE", "ASTRAL", "REALM"];
 
   useEffect(() => {
     loadUser();
+    
+    // Initialize clock sound
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+    audio.loop = true;
+    audio.volume = 0.3;
+    setClockSound(audio);
+
+    // Try to play (may be blocked by autoplay policy)
+    const playAudio = () => {
+      audio.play().catch(() => {});
+      document.removeEventListener('click', playAudio);
+    };
+    document.addEventListener('click', playAudio);
+
+    return () => {
+      audio.pause();
+      document.removeEventListener('click', playAudio);
+    };
   }, []);
 
   useEffect(() => {
