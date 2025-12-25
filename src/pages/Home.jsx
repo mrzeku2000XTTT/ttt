@@ -566,6 +566,14 @@ export default function HomePage() {
                       onClick={() => setShowPortal(false)}
                       className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[200] flex items-center justify-center overflow-hidden"
                     >
+                      <Button
+                        onClick={() => setShowPortal(false)}
+                        className="absolute top-8 left-8 z-[201] bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 text-cyan-400 backdrop-blur-xl"
+                      >
+                        <X className="w-5 h-5 mr-2" />
+                        Back to Home
+                      </Button>
+
                       <motion.div
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
