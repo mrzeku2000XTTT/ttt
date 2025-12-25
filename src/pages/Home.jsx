@@ -14,6 +14,7 @@ export default function HomePage() {
   const [kaspaPrice, setKaspaPrice] = useState(null);
   const [loadingPrice, setLoadingPrice] = useState(false);
   const [showPortal, setShowPortal] = useState(false);
+  const [userIdentity, setUserIdentity] = useState("");
 
   useEffect(() => {
     loadUser();
@@ -23,11 +24,25 @@ export default function HomePage() {
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
+      setUserIdentity(currentUser.user_identity || "");
     } catch (err) {
       console.log("User not logged in");
       setUser(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleIdentityChange = async (e) => {
+    const value = e.target.value;
+    setUserIdentity(value);
+    
+    if (user?.email) {
+      try {
+        await base44.auth.updateMe({ user_identity: value });
+      } catch (err) {
+        console.error('Failed to save identity:', err);
+      }
     }
   };
 
@@ -503,9 +518,12 @@ export default function HomePage() {
                             {/* User Identity Input */}
                             <div className="mb-10">
                               <Input
+                                value={userIdentity}
+                                onChange={handleIdentityChange}
                                 placeholder="I am..."
                                 className="w-full max-w-md mx-auto bg-black/60 border-2 border-cyan-500/40 text-white text-center text-lg h-14 placeholder:text-gray-500 focus:border-cyan-400"
                               />
+                              <p className="text-xs text-gray-500 mt-2">Your personal AI will remember this</p>
                             </div>
 
                             {/* Floating Icon Buttons with Tooltips */}
