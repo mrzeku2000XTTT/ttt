@@ -570,10 +570,10 @@ Format your response in a clear, engaging way that helps the user understand thi
                           </div>
 
                           {/* Chat Messages Area */}
-                          <div className="flex-1 overflow-y-auto px-8 py-4 space-y-4">
+                          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6" style={{ scrollBehavior: 'smooth' }}>
                             {chatMessages.length === 0 ? (
-                              <div className="flex flex-col items-center justify-center h-full text-center">
-                                <p className="text-gray-400 mb-8">Ask anything. Discover truth filtered from multiple sources.</p>
+                              <div className="flex flex-col items-center justify-center h-full text-center px-4">
+                                <p className="text-gray-400 text-lg mb-12 max-w-md">Ask anything. Discover truth filtered from multiple sources.</p>
 
                                 {/* Floating Icon Buttons */}
                                 <div className="flex items-center justify-center gap-8">
@@ -625,16 +625,17 @@ Format your response in a clear, engaging way that helps the user understand thi
                                     key={idx}
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: idx * 0.1 }}
                                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                                   >
-                                    <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                                    <div className={`max-w-[85%] rounded-3xl px-6 py-4 shadow-lg ${
                                       msg.role === 'user' 
-                                        ? 'bg-cyan-500/20 border border-cyan-500/40 text-white' 
+                                        ? 'bg-gradient-to-r from-cyan-500/30 to-blue-500/30 border border-cyan-400/50 text-white backdrop-blur-sm' 
                                         : msg.role === 'error'
-                                        ? 'bg-red-500/20 border border-red-500/40 text-red-300'
-                                        : 'bg-white/5 border border-white/20 text-gray-300'
+                                        ? 'bg-red-500/20 border border-red-500/40 text-red-300 backdrop-blur-sm'
+                                        : 'bg-zinc-900/80 border border-white/10 text-gray-200 backdrop-blur-sm'
                                     }`}>
-                                      <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
+                                      <p className="whitespace-pre-wrap text-base leading-relaxed">{msg.content}</p>
                                     </div>
                                   </motion.div>
                                 ))}
@@ -644,10 +645,10 @@ Format your response in a clear, engaging way that helps the user understand thi
                                     animate={{ opacity: 1 }}
                                     className="flex justify-start"
                                   >
-                                    <div className="bg-white/5 border border-white/20 rounded-2xl px-4 py-3">
-                                      <div className="flex items-center gap-2">
-                                        <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
-                                        <span className="text-sm text-gray-400">Analyzing across sources...</span>
+                                    <div className="bg-zinc-900/80 border border-cyan-500/30 rounded-3xl px-6 py-4 backdrop-blur-sm shadow-lg">
+                                      <div className="flex items-center gap-3">
+                                        <Loader2 className="w-5 h-5 text-cyan-400 animate-spin" />
+                                        <span className="text-base text-cyan-300">Analyzing across sources...</span>
                                       </div>
                                     </div>
                                   </motion.div>
@@ -657,25 +658,25 @@ Format your response in a clear, engaging way that helps the user understand thi
                           </div>
 
                           {/* Input Area */}
-                          <div className="flex-shrink-0 p-6 border-t border-white/10">
-                            <div className="flex gap-2">
+                          <div className="flex-shrink-0 p-6 border-t border-white/10 bg-black/40 backdrop-blur-sm">
+                            <div className="flex gap-3">
                               <Input
                                 value={userIdentity}
                                 onChange={handleIdentityChange}
                                 onKeyPress={handleKeyPress}
                                 placeholder="I am..."
                                 disabled={isAnalyzing}
-                                className="flex-1 bg-black/60 border-2 border-cyan-500/40 text-white placeholder:text-gray-500 focus:border-cyan-400 h-12"
+                                className="flex-1 bg-zinc-900/80 border-2 border-cyan-500/40 text-white text-base placeholder:text-gray-500 focus:border-cyan-400 h-14 rounded-2xl px-5 shadow-inner"
                               />
                               <Button
                                 onClick={handleAnalyzeIdentity}
                                 disabled={!userIdentity.trim() || isAnalyzing}
-                                className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white px-6"
+                                className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white px-8 h-14 rounded-2xl shadow-lg shadow-cyan-500/30"
                               >
-                                {isAnalyzing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+                                {isAnalyzing ? <Loader2 className="w-6 h-6 animate-spin" /> : <Sparkles className="w-6 h-6" />}
                               </Button>
                             </div>
-                            <p className="text-xs text-gray-500 mt-2 text-center">
+                            <p className="text-xs text-gray-400 mt-3 text-center">
                               Press Enter • Your AI will remember this
                             </p>
                           </div>
