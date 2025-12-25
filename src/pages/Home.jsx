@@ -19,7 +19,7 @@ export default function HomePage() {
   const [chatMessages, setChatMessages] = useState([]);
   const [showApiSettings, setShowApiSettings] = useState(false);
   const [openRouterKey, setOpenRouterKey] = useState("");
-  const [selectedModel, setSelectedModel] = useState("xiaomi/mimo-v2-flash:free");
+  const [selectedModel, setSelectedModel] = useState("xiaomi/MiMo-v2-flash:free");
   const messagesEndRef = React.useRef(null);
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function HomePage() {
       setUser(currentUser);
       setUserIdentity(currentUser.user_identity || "");
       setOpenRouterKey(currentUser.openrouter_api_key || "");
-      setSelectedModel(currentUser.openrouter_model || "xiaomi/mimo-v2-flash:free");
+      setSelectedModel(currentUser.openrouter_model || "xiaomi/MiMo-v2-flash:free");
     } catch (err) {
       console.log("User not logged in");
       setUser(null);
