@@ -9,11 +9,23 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { message, model, apiKey } = await req.json();
+    const { messages, model, apiKey } = await req.json();
 
     if (!apiKey) {
       return Response.json({ error: 'No API key provided' }, { status: 400 });
     }
+
+    // Convert chat history to OpenRouter format
+    const formattedMessages = [
+      {
+        role: 'system',
+        content: 'You are a helpful, friendly AI assistant. Be conversational and remember the context of the conversation.'
+      },
+      ...messages.map(msg => ({
+        role: msg.role === 'assistant' ? 'assistant' : 'user',
+        content: msg.content
+      }))
+    ];
 
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -24,17 +36,8 @@ Deno.serve(async (req) => {
         'X-Title': 'TTT Chain Portal'
       },
       body: JSON.stringify({
-        model: model || 'openai/gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a deep research assistant. Search across multiple philosophical, spiritual, scientific, and cultural sources. Analyze different perspectives and filter truth from various viewpoints.'
-          },
-          {
-            role: 'user',
-            content: message
-          }
-        ]
+        model: model || 'xiaomi/MiMo-v2-flash:free',
+        messages: formattedMessages
       })
     });
 

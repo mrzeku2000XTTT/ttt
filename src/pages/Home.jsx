@@ -81,7 +81,8 @@ export default function HomePage() {
     if (!userIdentity.trim() || isAnalyzing) return;
     
     const userMessage = userIdentity;
-    setChatMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    const updatedMessages = [...chatMessages, { role: 'user', content: userMessage }];
+    setChatMessages(updatedMessages);
     setUserIdentity("");
     setIsAnalyzing(true);
     
@@ -91,7 +92,7 @@ export default function HomePage() {
       // Use OpenRouter if key is provided, otherwise use built-in free AI
       if (openRouterKey) {
         const result = await base44.functions.invoke('openRouterChat', {
-          message: userMessage,
+          messages: updatedMessages,
           model: selectedModel,
           apiKey: openRouterKey
         });
@@ -103,21 +104,17 @@ export default function HomePage() {
         response = result.data.content;
       } else {
         // Default: Free built-in AI
+        const conversationContext = updatedMessages
+          .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+          .join('\n\n');
+        
         response = await base44.integrations.Core.InvokeLLM({
-          prompt: `Deep research and analysis about: "${userMessage}"
-          
-Search across multiple philosophical, spiritual, scientific, and cultural sources.
-Analyze different perspectives and interpretations.
-Filter through various viewpoints to identify core truths and common threads.
-Provide a comprehensive, balanced analysis that considers:
-- Historical context and origins
-- Different cultural interpretations
-- Scientific or logical perspectives
-- Spiritual or metaphysical dimensions
-- Common misconceptions vs verified truths
+          prompt: `You are a helpful, conversational AI assistant. Continue this conversation naturally:
 
-Format your response in a clear, engaging way that helps the user understand this concept deeply.`,
-          add_context_from_internet: true
+${conversationContext}
+
+Respond in a friendly, conversational manner. Remember the context of our conversation.`,
+          add_context_from_internet: false
         });
       }
 
