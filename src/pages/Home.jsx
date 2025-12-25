@@ -635,7 +635,7 @@ Format your response in a clear, engaging way that helps the user understand thi
                                         ? 'bg-red-500/20 border border-red-500/40 text-red-300 backdrop-blur-sm'
                                         : 'bg-zinc-900/80 border border-white/10 text-gray-200 backdrop-blur-sm'
                                     }`}>
-                                      <p className="whitespace-pre-wrap text-base leading-relaxed">{msg.content}</p>
+                                      <p className="whitespace-pre-wrap text-sm leading-relaxed break-words overflow-wrap-anywhere">{msg.content}</p>
                                     </div>
                                   </motion.div>
                                 ))}
