@@ -15,6 +15,9 @@ export default function HomePage() {
   const [loadingPrice, setLoadingPrice] = useState(false);
   const [showPortal, setShowPortal] = useState(false);
   const [userIdentity, setUserIdentity] = useState("");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const [showAnalysis, setShowAnalysis] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -43,6 +46,54 @@ export default function HomePage() {
       } catch (err) {
         console.error('Failed to save identity:', err);
       }
+    }
+  };
+
+  const handleAnalyzeIdentity = async () => {
+    if (!userIdentity.trim()) return;
+    
+    setIsAnalyzing(true);
+    setShowPortal(false);
+    
+    try {
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: `Deep research and analysis about: "${userIdentity}"
+        
+Search across multiple philosophical, spiritual, scientific, and cultural sources.
+Analyze different perspectives and interpretations.
+Filter through various viewpoints to identify core truths and common threads.
+Provide a comprehensive, balanced analysis that considers:
+- Historical context and origins
+- Different cultural interpretations
+- Scientific or logical perspectives
+- Spiritual or metaphysical dimensions
+- Common misconceptions vs verified truths
+
+Format your response in a clear, engaging way that helps the user understand this concept deeply.`,
+        add_context_from_internet: true
+      });
+
+      setAnalysisResult(response);
+      setShowAnalysis(true);
+      
+      if (user?.email) {
+        await base44.auth.updateMe({ 
+          user_identity: userIdentity,
+          last_identity_analysis: response,
+          last_analysis_date: new Date().toISOString()
+        });
+      }
+    } catch (err) {
+      console.error('Analysis failed:', err);
+      alert('Failed to analyze. Please try again.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleAnalyzeIdentity();
     }
   };
 
@@ -473,6 +524,66 @@ export default function HomePage() {
                   )}
                   </AnimatePresence>
 
+                  {/* Analysis Results Modal */}
+                  <AnimatePresence>
+                    {showAnalysis && analysisResult && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-center justify-center p-4 overflow-y-auto"
+                        onClick={() => setShowAnalysis(false)}
+                      >
+                        <motion.div
+                          initial={{ scale: 0.9, y: 20 }}
+                          animate={{ scale: 1, y: 0 }}
+                          exit={{ scale: 0.9, y: 20 }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="relative bg-gradient-to-br from-zinc-900 to-black border-2 border-cyan-500/50 rounded-3xl w-full max-w-4xl p-8 shadow-2xl shadow-cyan-500/20 max-h-[90vh] overflow-y-auto"
+                        >
+                          <button
+                            onClick={() => setShowAnalysis(false)}
+                            className="absolute top-4 right-4 w-10 h-10 bg-white/5 hover:bg-white/10 border border-white/20 rounded-full flex items-center justify-center transition-all"
+                          >
+                            <X className="w-5 h-5 text-white" />
+                          </button>
+
+                          <div className="mb-6">
+                            <div className="flex items-center gap-3 mb-4">
+                              <motion.div
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full flex items-center justify-center"
+                              >
+                                <Sparkles className="w-6 h-6 text-white" />
+                              </motion.div>
+                              <div>
+                                <h2 className="text-2xl font-bold text-white">Deep Analysis: {userIdentity}</h2>
+                                <p className="text-sm text-cyan-400">Truth filtered from multiple sources</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="prose prose-invert prose-cyan max-w-none">
+                            <div className="text-gray-300 whitespace-pre-wrap leading-relaxed">
+                              {analysisResult}
+                            </div>
+                          </div>
+
+                          <div className="mt-8 pt-6 border-t border-white/10 flex justify-between items-center">
+                            <p className="text-xs text-gray-500">Analysis saved to your AI memory</p>
+                            <Button
+                              onClick={() => setShowAnalysis(false)}
+                              className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white"
+                            >
+                              Close
+                            </Button>
+                          </div>
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   {/* Portal Modal */}
                   <AnimatePresence>
                     {showPortal && (
@@ -517,13 +628,35 @@ export default function HomePage() {
 
                             {/* User Identity Input */}
                             <div className="mb-10">
-                              <Input
-                                value={userIdentity}
-                                onChange={handleIdentityChange}
-                                placeholder="I am..."
-                                className="w-full max-w-md mx-auto bg-black/60 border-2 border-cyan-500/40 text-white text-center text-lg h-14 placeholder:text-gray-500 focus:border-cyan-400"
-                              />
-                              <p className="text-xs text-gray-500 mt-2">Your personal AI will remember this</p>
+                              <div className="relative">
+                                <Input
+                                  value={isAnalyzing ? "" : userIdentity}
+                                  onChange={handleIdentityChange}
+                                  onKeyPress={handleKeyPress}
+                                  placeholder={isAnalyzing ? "" : "I am..."}
+                                  disabled={isAnalyzing}
+                                  className="w-full max-w-md mx-auto bg-black/60 border-2 border-cyan-500/40 text-white text-center text-lg h-14 placeholder:text-gray-500 focus:border-cyan-400 transition-all"
+                                />
+
+                                {isAnalyzing && (
+                                  <motion.div
+                                    initial={{ scale: 0, opacity: 0 }}
+                                    animate={{ 
+                                      scale: [0, 1.5, 0],
+                                      opacity: [0, 1, 0],
+                                    }}
+                                    transition={{ duration: 2, repeat: Infinity }}
+                                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                                  >
+                                    <div className="text-cyan-400 text-xl font-bold animate-pulse">
+                                      Analyzing across sources...
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-500 mt-2">
+                                {isAnalyzing ? "Filtering truth from multiple dimensions..." : "Press Enter to analyze • Your AI will remember this"}
+                              </p>
                             </div>
 
                             {/* Floating Icon Buttons with Tooltips */}
