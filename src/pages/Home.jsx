@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Loader2, Wand2, Shield, LogIn, ArrowRight, Zap, LogOut, Link as LinkIcon, Hand } from "lucide-react";
+import { Sparkles, Loader2, Wand2, Shield, LogIn, ArrowRight, Zap, LogOut, Link as LinkIcon, Hand, ChevronRight, X, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -10,6 +10,9 @@ import { Input } from "@/components/ui/input";
 export default function HomePage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showKaspaModal, setShowKaspaModal] = useState(false);
+  const [kaspaPrice, setKaspaPrice] = useState(null);
+  const [loadingPrice, setLoadingPrice] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -30,6 +33,25 @@ export default function HomePage() {
   const handleLogout = async () => {
     await base44.auth.logout();
     setUser(null);
+  };
+
+  const loadKaspaPrice = async () => {
+    setLoadingPrice(true);
+    try {
+      const response = await base44.functions.invoke('getKaspaPrice');
+      if (response.data?.price) {
+        setKaspaPrice(response.data.price);
+      }
+    } catch (err) {
+      console.error('Failed to load Kaspa price:', err);
+    } finally {
+      setLoadingPrice(false);
+    }
+  };
+
+  const handleKaspaClick = () => {
+    setShowKaspaModal(true);
+    loadKaspaPrice();
   };
 
   if (loading) {
@@ -76,6 +98,22 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" style={{ zIndex: 2 }} />
       </div>
       
+      {/* KASPA Button - Top Left */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1 }}
+        className="absolute top-4 left-4 md:top-6 md:left-6 z-50"
+      >
+        <Button
+          onClick={handleKaspaClick}
+          className="bg-transparent hover:bg-white/5 border border-white/20 text-white backdrop-blur-sm h-8 px-3 text-xs md:h-10 md:px-4 md:text-sm font-semibold"
+        >
+          <ChevronRight className="w-3 h-3 md:w-4 md:h-4 mr-1" />
+          KASPA
+        </Button>
+      </motion.div>
+
       {/* Logout Button */}
       {user && (
         <motion.div
@@ -95,7 +133,7 @@ export default function HomePage() {
       )}
 
       {/* Main Content - Centered but Lower */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center pt-32" style={{ zIndex: 10 }}>
+      <div className="absolute inset-0 flex flex-col items-center justify-center pt-16 md:pt-20" style={{ zIndex: 10 }}>
         {/* Top UNCHAIN HUMANITY - Darker */}
         <motion.div
           initial={{ opacity: 0, y: -50 }}
@@ -127,8 +165,8 @@ export default function HomePage() {
           KASPA L1 ←→ KASPLEX L2
         </motion.p>
 
-        {/* Buttons - Vertical Stack Centered */}
-        <div className="flex flex-col items-center gap-4 mb-16 mt-20">
+        {/* Buttons - Vertical Stack Centered - Moved Lower */}
+        <div className="flex flex-col items-center gap-4 mb-16 mt-32 md:mt-40 lg:mt-48">
           {/* Claim Agent ZK Button - Centered */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -187,6 +225,88 @@ export default function HomePage() {
           </h1>
         </motion.div>
       </div>
+
+      {/* Kaspa Price Modal */}
+      <AnimatePresence>
+        {showKaspaModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowKaspaModal(false)}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-black/90 border border-white/20 rounded-2xl w-full max-w-md p-6 backdrop-blur-xl"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-cyan-500/20 border border-cyan-500/30 rounded-full flex items-center justify-center">
+                    <TrendingUp className="w-5 h-5 text-cyan-400" />
+                  </div>
+                  <h3 className="text-white font-bold text-xl">Kaspa Price</h3>
+                </div>
+                <Button
+                  onClick={() => setShowKaspaModal(false)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-white/60 hover:text-white h-8 w-8 p-0"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+
+              {loadingPrice ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+                </div>
+              ) : kaspaPrice ? (
+                <div className="space-y-4">
+                  <div className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-xl p-6">
+                    <div className="text-center">
+                      <p className="text-white/60 text-sm mb-2">Current Price</p>
+                      <p className="text-white text-4xl font-black mb-1">
+                        ${kaspaPrice.toFixed(4)}
+                      </p>
+                      <p className="text-white/40 text-xs">USD per KAS</p>
+                    </div>
+                  </div>
+
+                  {kaspaPrice?.change24h !== undefined && (
+                    <div className="flex items-center justify-center gap-2">
+                      <span className={`text-sm font-semibold ${kaspaPrice.change24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        {kaspaPrice.change24h >= 0 ? '+' : ''}{kaspaPrice.change24h?.toFixed(2)}%
+                      </span>
+                      <span className="text-white/40 text-xs">24h</span>
+                    </div>
+                  )}
+
+                  <Button
+                    onClick={() => setShowKaspaModal(false)}
+                    className="w-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/30 text-cyan-400"
+                  >
+                    Close
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-white/60">Unable to load price</p>
+                  <Button
+                    onClick={loadKaspaPrice}
+                    className="mt-4 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/30 text-cyan-400"
+                  >
+                    Retry
+                  </Button>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
