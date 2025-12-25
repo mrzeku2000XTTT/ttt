@@ -194,6 +194,7 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
+import B44Prompts from './pages/B44Prompts';
 import __Layout from './Layout.jsx';
 
 
@@ -394,6 +395,7 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
+    "B44Prompts": B44Prompts,
 }
 
 export const pagesConfig = {
