@@ -112,7 +112,7 @@ export default function HomePage() {
           <img 
             src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/13e8ec094_image.png"
             alt="Kaspa"
-            className="w-4 h-4 md:w-5 md:h-5 mr-2"
+            className="w-4 h-4 md:w-5 md:h-5 mr-2 rounded-full"
           />
           KASPA
         </Button>
@@ -169,8 +169,8 @@ export default function HomePage() {
           KASPA L1 ←→ KASPLEX L2
         </motion.p>
 
-        {/* Buttons - Vertical Stack Centered - Moved Lower */}
-        <div className="flex flex-col items-center gap-4 mb-16 mt-48 md:mt-56 lg:mt-64">
+        {/* Buttons - Vertical Stack Centered - Moved Lower and Smaller */}
+        <div className="flex flex-col items-center gap-3 mb-16 mt-64 md:mt-72 lg:mt-80">
           {/* Claim Agent ZK Button - Centered */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -179,9 +179,9 @@ export default function HomePage() {
           >
             <Link to={createPageUrl("AgentZK")}>
               <Button
-                className="h-16 px-12 text-lg font-bold bg-black/60 hover:bg-black/40 text-white border border-white/20 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                className="h-12 px-8 text-sm md:text-base font-bold bg-black/60 hover:bg-black/40 text-white border border-white/20 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                <LinkIcon className="w-5 h-5 mr-2" />
+                <LinkIcon className="w-4 h-4 mr-2" />
                 Claim Agent ZK Identity
               </Button>
             </Link>
@@ -195,9 +195,9 @@ export default function HomePage() {
           >
             <Link to={createPageUrl("Feed")}>
               <Button
-                className="h-14 px-10 text-base font-semibold bg-black/60 hover:bg-black/40 text-white border border-white/20 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                className="h-10 px-7 text-xs md:text-sm font-semibold bg-black/60 hover:bg-black/40 text-white border border-white/20 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                <Hand className="w-5 h-5 mr-2" />
+                <Hand className="w-4 h-4 mr-2" />
                 Enter TTT
               </Button>
             </Link>
