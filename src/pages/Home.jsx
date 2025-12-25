@@ -14,9 +14,19 @@ export default function HomePage() {
   const [kaspaPrice, setKaspaPrice] = useState(null);
   const [loadingPrice, setLoadingPrice] = useState(false);
   const [showPortal, setShowPortal] = useState(false);
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  
+  const alertWords = ["YOU", "ARE", "ABOUT", "TO", "ENTER", "THE", "ASTRAL", "REALM"];
 
   useEffect(() => {
     loadUser();
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentWordIndex((prev) => (prev + 1) % alertWords.length);
+    }, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   const loadUser = async () => {
@@ -93,6 +103,26 @@ export default function HomePage() {
           >
             TTT
           </motion.div>
+        </div>
+
+        {/* Alert Message Animation */}
+        <div className="absolute top-20 left-0 right-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 3 }}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentWordIndex}
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ duration: 1 }}
+              className="text-4xl md:text-6xl font-black text-cyan-400"
+              style={{
+                textShadow: '0 0 20px rgba(6, 182, 212, 0.8), 0 0 40px rgba(6, 182, 212, 0.5)',
+                fontFamily: '"Orbitron", "Rajdhani", sans-serif',
+              }}
+            >
+              {alertWords[currentWordIndex]}
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         {/* Dark Gradient Overlay */}
