@@ -1117,6 +1117,24 @@ export default function HomePage() {
                                     {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
                                   </span>
                                 </div>
+
+                                {/* AI Model Switcher - Show when configs exist */}
+                                {savedConfigs.length > 0 && (
+                                  <button
+                                    onClick={() => setUseOpenRouter(!useOpenRouter)}
+                                    className={`flex items-center gap-2 px-3 py-2 rounded-full border transition-all ${
+                                      useOpenRouter 
+                                        ? 'bg-purple-500/20 border-purple-500/40 text-purple-300' 
+                                        : 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300'
+                                    }`}
+                                    title={useOpenRouter ? 'Switch to TTT LLM' : 'Switch to OpenRouter'}
+                                  >
+                                    <span className="text-xs font-medium">
+                                      {useOpenRouter ? savedConfigs[0].model_name.split('/').pop().split(':')[0] : 'TTT LLM'}
+                                    </span>
+                                  </button>
+                                )}
+
                                 <button
                                   onClick={() => {
                                     setWalletAddress("");
