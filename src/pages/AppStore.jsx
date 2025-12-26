@@ -69,6 +69,7 @@ export default function AppStorePage() {
     { name: "KasCompute", icon: "Link2", path: "KasCompute", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/1b55211d7_image.png" },
     { name: "Kurncy", icon: "Link2", path: "Kurncy", category: "Finance", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/009f28f08_image.png" },
     { name: "K gigZ", icon: "Link2", path: "KGigZ", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/6ff6d06b2_image.png" },
+    { name: "Poki", icon: "Link2", path: "Poki", category: "Games", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/cd5bb49da_image.png", circular: true },
     ];
 
   const getIconComponent = (iconName) => {
