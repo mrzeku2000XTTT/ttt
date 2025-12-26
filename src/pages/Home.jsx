@@ -91,13 +91,16 @@ export default function HomePage() {
     }
   };
 
-  const connectIOSSelfSend = () => {
-    alert('Please send a small transaction to yourself from your iOS wallet, then paste your address here');
-    const address = prompt('Enter your Kaspa wallet address:');
-    if (address && address.trim()) {
-      setWalletAddress(address.trim());
-      loadConversationHistory(address.trim());
+  const [manualAddress, setManualAddress] = useState("");
+  const [showManualInput, setShowManualInput] = useState(false);
+
+  const handleManualConnect = () => {
+    if (manualAddress.trim()) {
+      setWalletAddress(manualAddress.trim());
+      loadConversationHistory(manualAddress.trim());
       setShowWalletModal(false);
+      setShowManualInput(false);
+      setManualAddress("");
     }
   };
 
@@ -764,7 +767,7 @@ export default function HomePage() {
                           </div>
 
                           <div className="space-y-3">
-                            {/* ZK Wallet Option */}
+                            {/* Agent ZK Wallet Option */}
                             <button
                               onClick={connectZKWallet}
                               disabled={isConnectingWallet}
@@ -781,22 +784,58 @@ export default function HomePage() {
                               </div>
                             </button>
 
-                            {/* iOS Self Send Option */}
-                            <button
-                              onClick={connectIOSSelfSend}
-                              disabled={isConnectingWallet}
-                              className="w-full p-4 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/40 rounded-xl hover:from-blue-500/30 hover:to-cyan-500/30 transition-all text-left"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center">
-                                  <ArrowUpDown className="w-6 h-6 text-blue-400" />
+                            {/* ZK Manual Entry Option */}
+                            {!showManualInput ? (
+                              <button
+                                onClick={() => setShowManualInput(true)}
+                                disabled={isConnectingWallet}
+                                className="w-full p-4 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/40 rounded-xl hover:from-blue-500/30 hover:to-cyan-500/30 transition-all text-left"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center">
+                                    <Key className="w-6 h-6 text-blue-400" />
+                                  </div>
+                                  <div>
+                                    <p className="text-white font-semibold">ZK</p>
+                                    <p className="text-xs text-gray-400">Manually enter your address</p>
+                                  </div>
                                 </div>
-                                <div>
-                                  <p className="text-white font-semibold">iOS Self Send</p>
-                                  <p className="text-xs text-gray-400">Manually enter your address</p>
+                              </button>
+                            ) : (
+                              <div className="w-full p-4 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/40 rounded-xl space-y-3">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
+                                    <Key className="w-4 h-4 text-blue-400" />
+                                  </div>
+                                  <p className="text-white font-semibold text-sm">Enter Kaspa Address</p>
+                                </div>
+                                <Input
+                                  value={manualAddress}
+                                  onChange={(e) => setManualAddress(e.target.value)}
+                                  placeholder="kaspa:..."
+                                  className="w-full bg-black/40 border-blue-500/40 text-white"
+                                />
+                                <div className="flex gap-2">
+                                  <Button
+                                    onClick={handleManualConnect}
+                                    disabled={!manualAddress.trim()}
+                                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
+                                  >
+                                    Connect
+                                  </Button>
+                                  <Button
+                                    onClick={() => {
+                                      setShowManualInput(false);
+                                      setManualAddress("");
+                                    }}
+                                    variant="outline"
+                                    className="border-blue-500/40 text-white"
+                                  >
+                                    Cancel
+                                  </Button>
                                 </div>
                               </div>
-                            </button>
+                            )}
 
                             {/* Kasware Option */}
                             <button
