@@ -47,12 +47,12 @@ export default function HomePage() {
       const response = await base44.functions.invoke('getKaspaBalance', { address });
       console.log('Balance response:', response);
       
-      if (response.data?.balance !== undefined) {
+      if (response.data?.balanceKAS !== undefined) {
+        setWalletBalance(response.data.balanceKAS);
+      } else if (response.data?.balance !== undefined) {
         setWalletBalance(response.data.balance);
-      } else if (response.data?.error) {
-        console.error('Balance API error:', response.data.error);
-        setWalletBalance(0);
       } else {
+        console.warn('No balance found in response:', response.data);
         setWalletBalance(0);
       }
     } catch (err) {
