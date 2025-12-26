@@ -21,6 +21,8 @@ export default function HomePage() {
   const [openRouterKey, setOpenRouterKey] = useState("");
   const [selectedModel, setSelectedModel] = useState("xiaomi/MiMo-v2-flash:free");
   const [useOpenRouter, setUseOpenRouter] = useState(false);
+  const [savedConfigs, setSavedConfigs] = useState([]);
+  const [isAddingNew, setIsAddingNew] = useState(false);
   const [walletAddress, setWalletAddress] = useState("");
   const [walletBalance, setWalletBalance] = useState(null);
   const [isConnectingWallet, setIsConnectingWallet] = useState(false);
@@ -47,6 +49,12 @@ export default function HomePage() {
       console.error('Failed to fetch balance:', err);
     }
   };
+
+  useEffect(() => {
+    if (walletAddress) {
+      loadWalletAIConfig(walletAddress);
+    }
+  }, [walletAddress]);
 
   const checkWalletConnection = async () => {
     try {
@@ -166,11 +174,6 @@ export default function HomePage() {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
       setUserIdentity(currentUser.user_identity || "");
-      const savedKey = currentUser.openrouter_api_key || "";
-      const savedModel = currentUser.openrouter_model || "xiaomi/MiMo-v2-flash:free";
-      setOpenRouterKey(savedKey);
-      setSelectedModel(savedModel);
-      setUseOpenRouter(!!savedKey);
     } catch (err) {
       console.log("User not logged in");
       setUser(null);
@@ -179,23 +182,65 @@ export default function HomePage() {
     }
   };
 
+  const loadWalletAIConfig = async (address) => {
+    try {
+      const configs = await base44.entities.WalletAIConfig.filter({
+        wallet_address: address,
+        is_active: true
+      });
+      setSavedConfigs(configs);
+      if (configs.length > 0) {
+        setUseOpenRouter(true);
+        setSelectedModel(configs[0].model_name);
+      } else {
+        setUseOpenRouter(false);
+      }
+    } catch (err) {
+      console.error('Failed to load AI config:', err);
+    }
+  };
+
   const handleSaveApiKey = async () => {
-    if (!user?.email) {
-      alert('Please login to save API key');
+    if (!walletAddress) {
+      alert('Please connect wallet first');
+      return;
+    }
+    
+    if (!openRouterKey.trim() || !selectedModel.trim()) {
+      alert('Please fill in all fields');
       return;
     }
     
     try {
-      await base44.auth.updateMe({ 
-        openrouter_api_key: openRouterKey,
-        openrouter_model: selectedModel 
+      await base44.entities.WalletAIConfig.create({
+        wallet_address: walletAddress,
+        api_key_encrypted: openRouterKey,
+        model_name: selectedModel,
+        is_active: true
       });
-      setUseOpenRouter(!!openRouterKey);
+      
+      await loadWalletAIConfig(walletAddress);
+      setOpenRouterKey("");
+      setSelectedModel("xiaomi/MiMo-v2-flash:free");
+      setIsAddingNew(false);
       setShowApiSettings(false);
-      alert('✅ API settings saved successfully!');
+      alert('✅ AI configuration saved!');
     } catch (err) {
-      console.error('Failed to save API settings:', err);
-      alert('Failed to save API settings');
+      console.error('Failed to save AI config:', err);
+      alert('Failed to save configuration');
+    }
+  };
+
+  const handleDeleteConfig = async (configId) => {
+    if (!confirm('Delete this AI configuration?')) return;
+    
+    try {
+      await base44.entities.WalletAIConfig.delete(configId);
+      await loadWalletAIConfig(walletAddress);
+      alert('Configuration deleted');
+    } catch (err) {
+      console.error('Failed to delete config:', err);
+      alert('Failed to delete configuration');
     }
   };
 
@@ -233,27 +278,28 @@ export default function HomePage() {
         personalizedContext = `\n\nYour conversation history with this user (${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}):\n${fullHistory}\n\nUse this history to provide personalized responses. Remember their preferences, previous questions, and context.\n\n`;
       }
       
-      // Use OpenRouter if key is provided AND user wants to use it
-      if (openRouterKey && useOpenRouter) {
-        const messagesWithContext = [
-          {
-            role: 'system',
-            content: `You are ${selectedModel}, a personalized AI companion. ${personalizedContext}Learn from each interaction and adapt your responses based on the user's history. Be their intelligent, learning assistant.`
-          },
-          ...updatedMessages
-        ];
-        
-        const result = await base44.functions.invoke('openRouterChat', {
-          messages: messagesWithContext,
-          model: selectedModel,
-          apiKey: openRouterKey
-        });
-        
-        if (result.data.error) {
-          throw new Error(result.data.error);
-        }
-        
-        response = result.data.content;
+      // Use OpenRouter if wallet has saved config
+      if (useOpenRouter && savedConfigs.length > 0) {
+      const config = savedConfigs[0];
+      const messagesWithContext = [
+      {
+      role: 'system',
+      content: `You are ${config.model_name}, a personalized AI companion. ${personalizedContext}Learn from each interaction and adapt your responses based on the user's history. Be their intelligent, learning assistant.`
+      },
+      ...updatedMessages
+      ];
+
+      const result = await base44.functions.invoke('openRouterChat', {
+      messages: messagesWithContext,
+      model: config.model_name,
+      apiKey: config.api_key_encrypted
+      });
+
+      if (result.data.error) {
+      throw new Error(result.data.error);
+      }
+
+      response = result.data.content;
       } else {
         // TTT LLM with full personalized learning
         const conversationContext = updatedMessages.slice(-8)
@@ -909,13 +955,13 @@ export default function HomePage() {
                             </div>
                           </div>
 
-                          <div className={`mb-4 p-4 rounded-lg border ${useOpenRouter && openRouterKey ? 'bg-purple-500/10 border-purple-500/30' : 'bg-green-500/10 border-green-500/30'}`}>
+                          <div className={`mb-4 p-4 rounded-lg border ${useOpenRouter && savedConfigs.length > 0 ? 'bg-purple-500/10 border-purple-500/30' : 'bg-green-500/10 border-green-500/30'}`}>
                             <div className="flex items-center justify-between">
-                              <p className={`text-sm flex items-center gap-2 ${useOpenRouter && openRouterKey ? 'text-purple-400' : 'text-green-400'}`}>
+                              <p className={`text-sm flex items-center gap-2 ${useOpenRouter && savedConfigs.length > 0 ? 'text-purple-400' : 'text-green-400'}`}>
                                 <CheckCircle2 className="w-4 h-4" />
-                                {useOpenRouter && openRouterKey ? `Using: ${selectedModel}` : 'Using: TTT LLM'}
+                                {useOpenRouter && savedConfigs.length > 0 ? `Using: ${savedConfigs[0].model_name}` : 'Using: TTT LLM'}
                               </p>
-                              {openRouterKey && (
+                              {savedConfigs.length > 0 && (
                                 <Button
                                   onClick={() => setUseOpenRouter(!useOpenRouter)}
                                   size="sm"
@@ -928,51 +974,98 @@ export default function HomePage() {
                             </div>
                           </div>
 
-                          <div className="space-y-4">
-                            <div>
-                              <label className="text-sm text-gray-300 mb-2 block">OpenRouter API Key (Optional)</label>
-                              <Input
-                                type="password"
-                                value={openRouterKey}
-                                onChange={(e) => setOpenRouterKey(e.target.value)}
-                                placeholder="sk-or-v1-..."
-                                className="w-full bg-zinc-900 border-zinc-700 text-white"
-                              />
-                              <p className="text-xs text-gray-500 mt-2">
-                                Get your key from <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">openrouter.ai/keys</a>
-                              </p>
+                          {savedConfigs.length > 0 && (
+                            <div className="mb-4 space-y-2">
+                              <label className="text-sm text-gray-300">Saved Configurations</label>
+                              {savedConfigs.map((config) => (
+                                <div key={config.id} className="flex items-center justify-between p-3 bg-zinc-900 border border-zinc-700 rounded-lg">
+                                  <div>
+                                    <p className="text-white text-sm font-medium">{config.model_name}</p>
+                                    <p className="text-xs text-gray-500">API Key: •••••••••</p>
+                                  </div>
+                                  <Button
+                                    onClick={() => handleDeleteConfig(config.id)}
+                                    size="sm"
+                                    variant="ghost"
+                                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                                  >
+                                    Delete
+                                  </Button>
+                                </div>
+                              ))}
                             </div>
+                          )}
 
-                            <div>
-                              <label className="text-sm text-gray-300 mb-2 block">Model Name</label>
-                              <Input
-                                type="text"
-                                value={selectedModel}
-                                onChange={(e) => setSelectedModel(e.target.value)}
-                                placeholder="e.g., xiaomi/mimo-v2-flash:free"
-                                className="w-full bg-zinc-900 border-zinc-700 text-white mb-2"
-                              />
-                              <p className="text-xs text-gray-500">
-                                Browse models at <a href="https://openrouter.ai/models" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">openrouter.ai/models</a>
-                              </p>
-                            </div>
+                          {!isAddingNew && savedConfigs.length === 0 && (
+                            <Button
+                              onClick={() => setIsAddingNew(true)}
+                              className="w-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/30 text-cyan-400 mb-4"
+                            >
+                              + Add OpenRouter Configuration
+                            </Button>
+                          )}
 
-                            <div className="flex gap-3">
-                              <Button
-                                onClick={handleSaveApiKey}
-                                className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
-                              >
-                                Save
-                              </Button>
-                              <Button
-                                onClick={() => setShowApiSettings(false)}
-                                variant="outline"
-                                className="border-zinc-700 text-white"
-                              >
-                                Cancel
-                              </Button>
+                          {isAddingNew && (
+                            <div className="space-y-4">
+                              <div>
+                                <label className="text-sm text-gray-300 mb-2 block">OpenRouter API Key</label>
+                                <Input
+                                  type="password"
+                                  value={openRouterKey}
+                                  onChange={(e) => setOpenRouterKey(e.target.value)}
+                                  placeholder="sk-or-v1-..."
+                                  className="w-full bg-zinc-900 border-zinc-700 text-white"
+                                />
+                                <p className="text-xs text-gray-500 mt-2">
+                                  Get your key from <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">openrouter.ai/keys</a>
+                                </p>
+                              </div>
+
+                              <div>
+                                <label className="text-sm text-gray-300 mb-2 block">Model Name</label>
+                                <Input
+                                  type="text"
+                                  value={selectedModel}
+                                  onChange={(e) => setSelectedModel(e.target.value)}
+                                  placeholder="e.g., xiaomi/mimo-v2-flash:free"
+                                  className="w-full bg-zinc-900 border-zinc-700 text-white mb-2"
+                                />
+                                <p className="text-xs text-gray-500">
+                                  Browse models at <a href="https://openrouter.ai/models" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">openrouter.ai/models</a>
+                                </p>
+                              </div>
+
+                              <div className="flex gap-3">
+                                <Button
+                                  onClick={handleSaveApiKey}
+                                  className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
+                                >
+                                  Save
+                                </Button>
+                                <Button
+                                  onClick={() => {
+                                    setIsAddingNew(false);
+                                    setOpenRouterKey("");
+                                    setSelectedModel("xiaomi/MiMo-v2-flash:free");
+                                  }}
+                                  variant="outline"
+                                  className="border-zinc-700 text-white"
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
                             </div>
-                          </div>
+                          )}
+
+                          {!isAddingNew && savedConfigs.length === 0 && (
+                            <Button
+                              onClick={() => setShowApiSettings(false)}
+                              variant="outline"
+                              className="w-full border-zinc-700 text-white"
+                            >
+                              Close
+                            </Button>
+                          )}
                         </motion.div>
                       </motion.div>
                     )}
