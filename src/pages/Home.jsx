@@ -23,6 +23,7 @@ export default function HomePage() {
   const [useOpenRouter, setUseOpenRouter] = useState(false);
   const [walletAddress, setWalletAddress] = useState("");
   const [isConnectingWallet, setIsConnectingWallet] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
   const messagesEndRef = React.useRef(null);
 
   useEffect(() => {
@@ -48,7 +49,7 @@ export default function HomePage() {
     }
   };
 
-  const connectWallet = async () => {
+  const connectKasware = async () => {
     setIsConnectingWallet(true);
     try {
       if (typeof window.kasware === 'undefined') {
@@ -60,12 +61,42 @@ export default function HomePage() {
       if (accounts && accounts.length > 0) {
         setWalletAddress(accounts[0]);
         await loadConversationHistory(accounts[0]);
+        setShowWalletModal(false);
       }
     } catch (err) {
       console.error('Wallet connection failed:', err);
       alert('Failed to connect wallet');
     } finally {
       setIsConnectingWallet(false);
+    }
+  };
+
+  const connectZKWallet = async () => {
+    setIsConnectingWallet(true);
+    try {
+      const zkAddress = user?.created_wallet_address;
+      if (!zkAddress) {
+        alert('Please create a ZK wallet first');
+        return;
+      }
+      setWalletAddress(zkAddress);
+      await loadConversationHistory(zkAddress);
+      setShowWalletModal(false);
+    } catch (err) {
+      console.error('ZK wallet connection failed:', err);
+      alert('Failed to connect ZK wallet');
+    } finally {
+      setIsConnectingWallet(false);
+    }
+  };
+
+  const connectIOSSelfSend = () => {
+    alert('Please send a small transaction to yourself from your iOS wallet, then paste your address here');
+    const address = prompt('Enter your Kaspa wallet address:');
+    if (address && address.trim()) {
+      setWalletAddress(address.trim());
+      loadConversationHistory(address.trim());
+      setShowWalletModal(false);
     }
   };
 
@@ -664,6 +695,97 @@ export default function HomePage() {
                   )}
                   </AnimatePresence>
 
+                  {/* Wallet Connection Modal */}
+                  <AnimatePresence>
+                    {showWalletModal && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[120] flex items-center justify-center p-4"
+                        onClick={() => setShowWalletModal(false)}
+                      >
+                        <motion.div
+                          initial={{ scale: 0.9, y: 20 }}
+                          animate={{ scale: 1, y: 0 }}
+                          exit={{ scale: 0.9, y: 20 }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="bg-gradient-to-br from-zinc-900 to-black border-2 border-cyan-500/50 rounded-2xl p-6 max-w-md w-full shadow-2xl"
+                        >
+                          <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-xl font-bold text-white">Connect Wallet</h3>
+                            <button
+                              onClick={() => setShowWalletModal(false)}
+                              className="text-white/60 hover:text-white"
+                            >
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
+
+                          <div className="space-y-3">
+                            {/* ZK Wallet Option */}
+                            <button
+                              onClick={connectZKWallet}
+                              disabled={isConnectingWallet}
+                              className="w-full p-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/40 rounded-xl hover:from-purple-500/30 hover:to-pink-500/30 transition-all text-left"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center">
+                                  <Shield className="w-6 h-6 text-purple-400" />
+                                </div>
+                                <div>
+                                  <p className="text-white font-semibold">Agent ZK Wallet</p>
+                                  <p className="text-xs text-gray-400">Use your ZK identity wallet</p>
+                                </div>
+                              </div>
+                            </button>
+
+                            {/* iOS Self Send Option */}
+                            <button
+                              onClick={connectIOSSelfSend}
+                              disabled={isConnectingWallet}
+                              className="w-full p-4 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/40 rounded-xl hover:from-blue-500/30 hover:to-cyan-500/30 transition-all text-left"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center">
+                                  <ArrowUpDown className="w-6 h-6 text-blue-400" />
+                                </div>
+                                <div>
+                                  <p className="text-white font-semibold">iOS Self Send</p>
+                                  <p className="text-xs text-gray-400">Manually enter your address</p>
+                                </div>
+                              </div>
+                            </button>
+
+                            {/* Kasware Option */}
+                            <button
+                              onClick={connectKasware}
+                              disabled={isConnectingWallet}
+                              className="w-full p-4 bg-gradient-to-r from-cyan-500/20 to-emerald-500/20 border border-cyan-500/40 rounded-xl hover:from-cyan-500/30 hover:to-emerald-500/30 transition-all text-left"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-cyan-500/20 rounded-full flex items-center justify-center">
+                                  <Wallet className="w-6 h-6 text-cyan-400" />
+                                </div>
+                                <div>
+                                  <p className="text-white font-semibold">Kasware</p>
+                                  <p className="text-xs text-gray-400">Connect browser extension</p>
+                                </div>
+                              </div>
+                            </button>
+                          </div>
+
+                          {isConnectingWallet && (
+                            <div className="mt-4 flex items-center justify-center gap-2 text-cyan-400">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <span className="text-sm">Connecting...</span>
+                            </div>
+                          )}
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   {/* API Settings Modal */}
                   <AnimatePresence>
                     {showApiSettings && (
@@ -783,17 +905,12 @@ export default function HomePage() {
                             {/* Connect Wallet Button - Left */}
                             {!walletAddress ? (
                               <button
-                                onClick={connectWallet}
-                                disabled={isConnectingWallet}
+                                onClick={() => setShowWalletModal(true)}
                                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/40 rounded-full hover:from-cyan-500/30 hover:to-blue-500/30 transition-all"
                               >
-                                {isConnectingWallet ? (
-                                  <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
-                                ) : (
-                                  <Wallet className="w-4 h-4 text-cyan-400" />
-                                )}
+                                <Wallet className="w-4 h-4 text-cyan-400" />
                                 <span className="text-sm text-cyan-300 font-medium">
-                                  {isConnectingWallet ? 'Connecting...' : 'Connect Wallet'}
+                                  Connect Wallet
                                 </span>
                               </button>
                             ) : (
