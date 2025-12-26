@@ -921,11 +921,23 @@ export default function HomePage() {
                                 </span>
                               </button>
                             ) : (
-                              <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/40 rounded-full">
-                                <CheckCircle2 className="w-4 h-4 text-green-400" />
-                                <span className="text-sm text-green-300 font-medium">
-                                  {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
-                                </span>
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/40 rounded-full">
+                                  <CheckCircle2 className="w-4 h-4 text-green-400" />
+                                  <span className="text-sm text-green-300 font-medium">
+                                    {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    setWalletAddress("");
+                                    setChatMessages([]);
+                                  }}
+                                  className="w-8 h-8 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 rounded-full flex items-center justify-center transition-all"
+                                  title="Disconnect Wallet"
+                                >
+                                  <X className="w-4 h-4 text-red-400" />
+                                </button>
                               </div>
                             )}
 
