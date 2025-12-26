@@ -22,6 +22,7 @@ export default function HomePage() {
   const [selectedModel, setSelectedModel] = useState("xiaomi/MiMo-v2-flash:free");
   const [useOpenRouter, setUseOpenRouter] = useState(false);
   const [walletAddress, setWalletAddress] = useState("");
+  const [walletBalance, setWalletBalance] = useState(null);
   const [isConnectingWallet, setIsConnectingWallet] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -36,6 +37,17 @@ export default function HomePage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages, isAnalyzing]);
 
+  const fetchWalletBalance = async (address) => {
+    try {
+      const response = await base44.functions.invoke('getKaspaBalance', { address });
+      if (response.data?.balance !== undefined) {
+        setWalletBalance(response.data.balance);
+      }
+    } catch (err) {
+      console.error('Failed to fetch balance:', err);
+    }
+  };
+
   const checkWalletConnection = async () => {
     try {
       if (typeof window.kasware !== 'undefined') {
@@ -43,6 +55,7 @@ export default function HomePage() {
         if (accounts && accounts.length > 0) {
           setWalletAddress(accounts[0]);
           await loadConversationHistory(accounts[0]);
+          await fetchWalletBalance(accounts[0]);
         }
       }
     } catch (err) {
@@ -62,6 +75,7 @@ export default function HomePage() {
       if (accounts && accounts.length > 0) {
         setWalletAddress(accounts[0]);
         await loadConversationHistory(accounts[0]);
+        await fetchWalletBalance(accounts[0]);
         setShowWalletModal(false);
       }
     } catch (err) {
@@ -82,6 +96,7 @@ export default function HomePage() {
       }
       setWalletAddress(zkAddress);
       await loadConversationHistory(zkAddress);
+      await fetchWalletBalance(zkAddress);
       setShowWalletModal(false);
     } catch (err) {
       console.error('ZK wallet connection failed:', err);
@@ -94,10 +109,11 @@ export default function HomePage() {
   const [manualAddress, setManualAddress] = useState("");
   const [showManualInput, setShowManualInput] = useState(false);
 
-  const handleManualConnect = () => {
+  const handleManualConnect = async () => {
     if (manualAddress.trim()) {
       setWalletAddress(manualAddress.trim());
-      loadConversationHistory(manualAddress.trim());
+      await loadConversationHistory(manualAddress.trim());
+      await fetchWalletBalance(manualAddress.trim());
       setShowWalletModal(false);
       setShowManualInput(false);
       setManualAddress("");
@@ -995,15 +1011,23 @@ export default function HomePage() {
                               </button>
                             ) : (
                               <div className="flex items-center gap-2">
-                                <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/40 rounded-full">
-                                  <CheckCircle2 className="w-4 h-4 text-green-400" />
-                                  <span className="text-sm text-green-300 font-medium">
-                                    {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
-                                  </span>
+                                <div className="flex flex-col gap-1">
+                                  <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/40 rounded-full">
+                                    <CheckCircle2 className="w-4 h-4 text-green-400" />
+                                    <span className="text-sm text-green-300 font-medium">
+                                      {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                                    </span>
+                                  </div>
+                                  {walletBalance !== null && (
+                                    <div className="text-xs text-gray-400 text-center">
+                                      {walletBalance.toFixed(2)} KAS
+                                    </div>
+                                  )}
                                 </div>
                                 <button
                                   onClick={() => {
                                     setWalletAddress("");
+                                    setWalletBalance(null);
                                     setChatMessages([]);
                                   }}
                                   className="w-8 h-8 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 rounded-full flex items-center justify-center transition-all"
