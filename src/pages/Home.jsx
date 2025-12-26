@@ -24,7 +24,6 @@ export default function HomePage() {
   const [savedConfigs, setSavedConfigs] = useState([]);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [walletAddress, setWalletAddress] = useState("");
-  const [walletBalance, setWalletBalance] = useState(null);
   const [isConnectingWallet, setIsConnectingWallet] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -64,13 +63,6 @@ export default function HomePage() {
   useEffect(() => {
     if (walletAddress) {
       loadWalletAIConfig(walletAddress);
-      // Auto-refresh balance every 30 seconds
-      fetchWalletBalance(walletAddress);
-      const interval = setInterval(() => {
-        fetchWalletBalance(walletAddress);
-      }, 30000);
-      
-      return () => clearInterval(interval);
     }
   }, [walletAddress]);
 
@@ -101,7 +93,6 @@ export default function HomePage() {
       if (accounts && accounts.length > 0) {
         setWalletAddress(accounts[0]);
         await loadConversationHistory(accounts[0]);
-        await fetchWalletBalance(accounts[0]);
         setShowWalletModal(false);
       }
     } catch (err) {
@@ -122,7 +113,6 @@ export default function HomePage() {
       }
       setWalletAddress(zkAddress);
       await loadConversationHistory(zkAddress);
-      await fetchWalletBalance(zkAddress);
       setShowWalletModal(false);
     } catch (err) {
       console.error('ZK wallet connection failed:', err);
@@ -139,7 +129,6 @@ export default function HomePage() {
     if (manualAddress.trim()) {
       setWalletAddress(manualAddress.trim());
       await loadConversationHistory(manualAddress.trim());
-      await fetchWalletBalance(manualAddress.trim());
       setShowWalletModal(false);
       setShowManualInput(false);
       setManualAddress("");
@@ -1122,37 +1111,15 @@ export default function HomePage() {
                               </button>
                             ) : (
                               <div className="flex items-center gap-2">
-                                <div className="flex flex-col gap-1">
-                                  <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/40 rounded-full">
-                                    <CheckCircle2 className="w-4 h-4 text-green-400" />
-                                    <span className="text-sm text-green-300 font-medium">
-                                      {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
-                                    </span>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        fetchWalletBalance(walletAddress);
-                                      }}
-                                      className="text-xs text-green-400/60 hover:text-green-400 transition-colors"
-                                      title="Refresh Balance"
-                                    >
-                                      ↻
-                                    </button>
-                                  </div>
-                                  {walletBalance !== null ? (
-                                    <div className="text-xs text-gray-400 text-center font-semibold">
-                                      {walletBalance.toFixed(2)} KAS
-                                    </div>
-                                  ) : (
-                                    <div className="text-xs text-gray-500 text-center">
-                                      Loading balance...
-                                    </div>
-                                  )}
+                                <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/40 rounded-full">
+                                  <CheckCircle2 className="w-4 h-4 text-green-400" />
+                                  <span className="text-sm text-green-300 font-medium">
+                                    {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                                  </span>
                                 </div>
                                 <button
                                   onClick={() => {
                                     setWalletAddress("");
-                                    setWalletBalance(null);
                                     setChatMessages([]);
                                   }}
                                   className="w-8 h-8 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 rounded-full flex items-center justify-center transition-all"
