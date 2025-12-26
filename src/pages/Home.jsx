@@ -20,6 +20,7 @@ export default function HomePage() {
   const [showApiSettings, setShowApiSettings] = useState(false);
   const [openRouterKey, setOpenRouterKey] = useState("");
   const [selectedModel, setSelectedModel] = useState("xiaomi/MiMo-v2-flash:free");
+  const [useOpenRouter, setUseOpenRouter] = useState(false);
   const messagesEndRef = React.useRef(null);
 
   useEffect(() => {
@@ -35,8 +36,11 @@ export default function HomePage() {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
       setUserIdentity(currentUser.user_identity || "");
-      setOpenRouterKey(currentUser.openrouter_api_key || "");
-      setSelectedModel(currentUser.openrouter_model || "xiaomi/MiMo-v2-flash:free");
+      const savedKey = currentUser.openrouter_api_key || "";
+      const savedModel = currentUser.openrouter_model || "xiaomi/MiMo-v2-flash:free";
+      setOpenRouterKey(savedKey);
+      setSelectedModel(savedModel);
+      setUseOpenRouter(!!savedKey);
     } catch (err) {
       console.log("User not logged in");
       setUser(null);
@@ -56,6 +60,7 @@ export default function HomePage() {
         openrouter_api_key: openRouterKey,
         openrouter_model: selectedModel 
       });
+      setUseOpenRouter(!!openRouterKey);
       setShowApiSettings(false);
       alert('✅ API settings saved successfully!');
     } catch (err) {
@@ -89,8 +94,8 @@ export default function HomePage() {
     try {
       let response;
       
-      // Use OpenRouter if key is provided, otherwise use built-in free AI
-      if (openRouterKey) {
+      // Use OpenRouter if key is provided AND user wants to use it, otherwise use built-in free AI
+      if (openRouterKey && useOpenRouter) {
         const result = await base44.functions.invoke('openRouterChat', {
           messages: updatedMessages,
           model: selectedModel,
@@ -592,23 +597,20 @@ export default function HomePage() {
                             </div>
                           </div>
 
-                          <div className={`mb-4 p-4 rounded-lg border ${openRouterKey ? 'bg-purple-500/10 border-purple-500/30' : 'bg-green-500/10 border-green-500/30'}`}>
+                          <div className={`mb-4 p-4 rounded-lg border ${useOpenRouter && openRouterKey ? 'bg-purple-500/10 border-purple-500/30' : 'bg-green-500/10 border-green-500/30'}`}>
                             <div className="flex items-center justify-between">
-                              <p className={`text-sm flex items-center gap-2 ${openRouterKey ? 'text-purple-400' : 'text-green-400'}`}>
+                              <p className={`text-sm flex items-center gap-2 ${useOpenRouter && openRouterKey ? 'text-purple-400' : 'text-green-400'}`}>
                                 <CheckCircle2 className="w-4 h-4" />
-                                {openRouterKey ? `Using: ${selectedModel}` : 'Free built-in AI is enabled'}
+                                {useOpenRouter && openRouterKey ? `Using: ${selectedModel}` : 'Free built-in AI is enabled'}
                               </p>
                               {openRouterKey && (
                                 <Button
-                                  onClick={() => {
-                                    setOpenRouterKey("");
-                                    setSelectedModel("xiaomi/MiMo-v2-flash:free");
-                                  }}
+                                  onClick={() => setUseOpenRouter(!useOpenRouter)}
                                   size="sm"
                                   variant="outline"
-                                  className="border-purple-500/50 text-purple-400 hover:bg-purple-500/20 text-xs"
+                                  className={`text-xs ${useOpenRouter ? 'border-purple-500/50 text-purple-400 hover:bg-purple-500/20' : 'border-green-500/50 text-green-400 hover:bg-green-500/20'}`}
                                 >
-                                  Switch to Free
+                                  {useOpenRouter ? 'Switch to Free' : 'Use OpenRouter'}
                                 </Button>
                               )}
                             </div>
