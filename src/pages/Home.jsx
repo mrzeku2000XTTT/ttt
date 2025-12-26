@@ -115,7 +115,7 @@ export default function HomePage() {
           .join('\n\n');
         
         response = await base44.integrations.Core.InvokeLLM({
-          prompt: `${conversationContext}\n\nRespond naturally and concisely.`,
+          prompt: `You are using the free built-in AI model. ${conversationContext}\n\nRespond naturally and concisely. If asked about which model you are, say you're using the free built-in AI.`,
           add_context_from_internet: false
         });
       }

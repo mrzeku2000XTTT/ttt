@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
     const formattedMessages = [
       {
         role: 'system',
-        content: 'Be helpful and concise. Answer directly without unnecessary elaboration unless asked for details.'
+        content: `You are using the ${model} model via OpenRouter. Be helpful and concise. Answer directly without unnecessary elaboration unless asked for details. If the user asks what model you are, tell them you're running on ${model}.`
       },
       ...recentMessages.map(msg => ({
         role: msg.role === 'assistant' ? 'assistant' : 'user',
