@@ -592,11 +592,26 @@ export default function HomePage() {
                             </div>
                           </div>
 
-                          <div className="mb-4 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
-                            <p className="text-sm text-green-400 flex items-center gap-2">
-                              <CheckCircle2 className="w-4 h-4" />
-                              Free built-in AI is enabled by default
-                            </p>
+                          <div className={`mb-4 p-4 rounded-lg border ${openRouterKey ? 'bg-purple-500/10 border-purple-500/30' : 'bg-green-500/10 border-green-500/30'}`}>
+                            <div className="flex items-center justify-between">
+                              <p className={`text-sm flex items-center gap-2 ${openRouterKey ? 'text-purple-400' : 'text-green-400'}`}>
+                                <CheckCircle2 className="w-4 h-4" />
+                                {openRouterKey ? `Using: ${selectedModel}` : 'Free built-in AI is enabled'}
+                              </p>
+                              {openRouterKey && (
+                                <Button
+                                  onClick={() => {
+                                    setOpenRouterKey("");
+                                    setSelectedModel("xiaomi/MiMo-v2-flash:free");
+                                  }}
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-purple-500/50 text-purple-400 hover:bg-purple-500/20 text-xs"
+                                >
+                                  Switch to Free
+                                </Button>
+                              )}
+                            </div>
                           </div>
 
                           <div className="space-y-4">
