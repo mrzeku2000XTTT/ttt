@@ -204,19 +204,27 @@ export default function HomePage() {
     try {
       let response;
       
-      // Build context with conversation history for machine learning
-      let contextPrompt = '';
+      // Build personalized context from user's full conversation history
+      let personalizedContext = '';
       if (walletAddress && chatMessages.length > 0) {
-        const recentHistory = chatMessages.slice(-6).map(msg => 
-          `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
-        ).join('\n\n');
-        contextPrompt = `Previous conversation history:\n${recentHistory}\n\n`;
+        const fullHistory = chatMessages.map(msg => 
+          `${msg.role === 'user' ? 'User' : 'You'}: ${msg.content}`
+        ).join('\n');
+        personalizedContext = `\n\nYour conversation history with this user (${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}):\n${fullHistory}\n\nUse this history to provide personalized responses. Remember their preferences, previous questions, and context.\n\n`;
       }
       
-      // Use OpenRouter if key is provided AND user wants to use it, otherwise use built-in free AI
+      // Use OpenRouter if key is provided AND user wants to use it
       if (openRouterKey && useOpenRouter) {
+        const messagesWithContext = [
+          {
+            role: 'system',
+            content: `You are ${selectedModel}, a personalized AI companion. ${personalizedContext}Learn from each interaction and adapt your responses based on the user's history. Be their intelligent, learning assistant.`
+          },
+          ...updatedMessages
+        ];
+        
         const result = await base44.functions.invoke('openRouterChat', {
-          messages: updatedMessages,
+          messages: messagesWithContext,
           model: selectedModel,
           apiKey: openRouterKey
         });
@@ -227,14 +235,13 @@ export default function HomePage() {
         
         response = result.data.content;
       } else {
-        // Default: TTT LLM with conversation history
-        const lastFewMessages = updatedMessages.slice(-4);
-        const conversationContext = lastFewMessages
-          .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+        // TTT LLM with full personalized learning
+        const conversationContext = updatedMessages.slice(-8)
+          .map(msg => `${msg.role === 'user' ? 'User' : 'You'}: ${msg.content}`)
           .join('\n\n');
         
         response = await base44.integrations.Core.InvokeLLM({
-          prompt: `You are TTT LLM, the AI model for TTT Chain. ${contextPrompt}${conversationContext}\n\nRespond naturally and concisely. If asked about which model you are, say you're TTT LLM.`,
+          prompt: `You are TTT LLM, a personalized AI companion for TTT Chain. ${personalizedContext}Current conversation:\n${conversationContext}\n\nRespond naturally and personally. Learn from this user's history and adapt your responses to their style and needs. If asked which model you are, say you're TTT LLM.`,
           add_context_from_internet: false
         });
       }
@@ -242,7 +249,7 @@ export default function HomePage() {
       const finalMessages = [...updatedMessages, { role: 'assistant', content: response }];
       setChatMessages(finalMessages);
       
-      // Save conversation to database for machine learning
+      // Save conversation to database for continuous learning
       if (walletAddress) {
         await saveConversationToDatabase(finalMessages, walletAddress);
       }
@@ -963,7 +970,13 @@ export default function HomePage() {
                           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6" style={{ scrollBehavior: 'smooth' }}>
                             {chatMessages.length === 0 ? (
                               <div className="flex flex-col items-center justify-center h-full text-center px-4">
-                                <p className="text-gray-400 text-lg mb-12 max-w-md">Ask anything. Discover truth filtered from multiple sources.</p>
+                                <p className="text-gray-400 text-lg mb-4 max-w-md">Ask anything. Discover truth filtered from multiple sources.</p>
+                                {walletAddress && (
+                                  <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-full mb-8">
+                                    <Shield className="w-4 h-4 text-purple-400" />
+                                    <span className="text-xs text-purple-300">Personal AI • Learning from your history</span>
+                                  </div>
+                                )}
 
                                 {/* Floating Icon Buttons */}
                                 <div className="flex items-center justify-center gap-8">

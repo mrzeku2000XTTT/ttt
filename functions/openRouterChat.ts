@@ -15,18 +15,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'No API key provided' }, { status: 400 });
     }
 
-    // Convert chat history to OpenRouter format (keep last 10 messages max for efficiency)
-    const recentMessages = messages.slice(-10);
-    const formattedMessages = [
-      {
-        role: 'system',
-        content: `You are using the ${model} model via OpenRouter. Be helpful and concise. Answer directly without unnecessary elaboration unless asked for details. If the user asks what model you are, tell them you're running on ${model}.`
-      },
-      ...recentMessages.map(msg => ({
-        role: msg.role === 'assistant' ? 'assistant' : 'user',
-        content: msg.content
-      }))
-    ];
+    // Use all messages sent from frontend (already includes system message with learning context)
+    const formattedMessages = messages.map(msg => ({
+      role: msg.role === 'system' ? 'system' : msg.role === 'assistant' ? 'assistant' : 'user',
+      content: msg.content
+    }));
 
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
