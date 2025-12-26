@@ -1110,10 +1110,24 @@ export default function HomePage() {
                                     <span className="text-sm text-green-300 font-medium">
                                       {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
                                     </span>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        fetchWalletBalance(walletAddress);
+                                      }}
+                                      className="text-xs text-green-400/60 hover:text-green-400 transition-colors"
+                                      title="Refresh Balance"
+                                    >
+                                      ↻
+                                    </button>
                                   </div>
-                                  {walletBalance !== null && (
-                                    <div className="text-xs text-gray-400 text-center">
+                                  {walletBalance !== null ? (
+                                    <div className="text-xs text-gray-400 text-center font-semibold">
                                       {walletBalance.toFixed(2)} KAS
+                                    </div>
+                                  ) : (
+                                    <div className="text-xs text-gray-500 text-center">
+                                      Loading balance...
                                     </div>
                                   )}
                                 </div>
