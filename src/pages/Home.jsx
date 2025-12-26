@@ -40,19 +40,37 @@ export default function HomePage() {
   }, [chatMessages, isAnalyzing]);
 
   const fetchWalletBalance = async (address) => {
+    if (!address) return;
+    
     try {
+      console.log('Fetching balance for:', address);
       const response = await base44.functions.invoke('getKaspaBalance', { address });
+      console.log('Balance response:', response);
+      
       if (response.data?.balance !== undefined) {
         setWalletBalance(response.data.balance);
+      } else if (response.data?.error) {
+        console.error('Balance API error:', response.data.error);
+        setWalletBalance(0);
+      } else {
+        setWalletBalance(0);
       }
     } catch (err) {
       console.error('Failed to fetch balance:', err);
+      setWalletBalance(0);
     }
   };
 
   useEffect(() => {
     if (walletAddress) {
       loadWalletAIConfig(walletAddress);
+      // Auto-refresh balance every 30 seconds
+      fetchWalletBalance(walletAddress);
+      const interval = setInterval(() => {
+        fetchWalletBalance(walletAddress);
+      }, 30000);
+      
+      return () => clearInterval(interval);
     }
   }, [walletAddress]);
 
