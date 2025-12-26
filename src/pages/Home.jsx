@@ -115,7 +115,7 @@ export default function HomePage() {
           .join('\n\n');
         
         response = await base44.integrations.Core.InvokeLLM({
-          prompt: `You are using the free built-in AI model. ${conversationContext}\n\nRespond naturally and concisely. If asked about which model you are, say you're using the free built-in AI.`,
+          prompt: `You are TTT LLM, the AI model for TTT Chain. ${conversationContext}\n\nRespond naturally and concisely. If asked about which model you are, say you're TTT LLM.`,
           add_context_from_internet: false
         });
       }
@@ -601,7 +601,7 @@ export default function HomePage() {
                             <div className="flex items-center justify-between">
                               <p className={`text-sm flex items-center gap-2 ${useOpenRouter && openRouterKey ? 'text-purple-400' : 'text-green-400'}`}>
                                 <CheckCircle2 className="w-4 h-4" />
-                                {useOpenRouter && openRouterKey ? `Using: ${selectedModel}` : 'Free built-in AI is enabled'}
+                                {useOpenRouter && openRouterKey ? `Using: ${selectedModel}` : 'Using: TTT LLM'}
                               </p>
                               {openRouterKey && (
                                 <Button
@@ -610,7 +610,7 @@ export default function HomePage() {
                                   variant="outline"
                                   className={`text-xs ${useOpenRouter ? 'border-purple-500/50 text-purple-400 hover:bg-purple-500/20' : 'border-green-500/50 text-green-400 hover:bg-green-500/20'}`}
                                 >
-                                  {useOpenRouter ? 'Switch to Free' : 'Use OpenRouter'}
+                                  {useOpenRouter ? 'Switch to TTT LLM' : 'Use OpenRouter'}
                                 </Button>
                               )}
                             </div>
