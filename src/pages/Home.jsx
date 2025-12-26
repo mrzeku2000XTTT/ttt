@@ -21,15 +21,94 @@ export default function HomePage() {
   const [openRouterKey, setOpenRouterKey] = useState("");
   const [selectedModel, setSelectedModel] = useState("xiaomi/MiMo-v2-flash:free");
   const [useOpenRouter, setUseOpenRouter] = useState(false);
+  const [walletAddress, setWalletAddress] = useState("");
+  const [isConnectingWallet, setIsConnectingWallet] = useState(false);
   const messagesEndRef = React.useRef(null);
 
   useEffect(() => {
     loadUser();
+    checkWalletConnection();
   }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages, isAnalyzing]);
+
+  const checkWalletConnection = async () => {
+    try {
+      if (typeof window.kasware !== 'undefined') {
+        const accounts = await window.kasware.requestAccounts();
+        if (accounts && accounts.length > 0) {
+          setWalletAddress(accounts[0]);
+          await loadConversationHistory(accounts[0]);
+        }
+      }
+    } catch (err) {
+      console.log("Wallet not connected");
+    }
+  };
+
+  const connectWallet = async () => {
+    setIsConnectingWallet(true);
+    try {
+      if (typeof window.kasware === 'undefined') {
+        alert('Please install Kasware wallet extension');
+        return;
+      }
+      
+      const accounts = await window.kasware.requestAccounts();
+      if (accounts && accounts.length > 0) {
+        setWalletAddress(accounts[0]);
+        await loadConversationHistory(accounts[0]);
+      }
+    } catch (err) {
+      console.error('Wallet connection failed:', err);
+      alert('Failed to connect wallet');
+    } finally {
+      setIsConnectingWallet(false);
+    }
+  };
+
+  const loadConversationHistory = async (address) => {
+    try {
+      const history = await base44.entities.AIConversation.filter({
+        user_wallet_address: address
+      }, '-created_date', 1);
+      
+      if (history.length > 0 && history[0].messages) {
+        setChatMessages(history[0].messages);
+      }
+    } catch (err) {
+      console.error('Failed to load conversation history:', err);
+    }
+  };
+
+  const saveConversationToDatabase = async (messages, address) => {
+    if (!address) return;
+    
+    try {
+      const existing = await base44.entities.AIConversation.filter({
+        user_wallet_address: address
+      }, '-created_date', 1);
+      
+      if (existing.length > 0) {
+        await base44.entities.AIConversation.update(existing[0].id, {
+          messages: messages,
+          last_interaction: new Date().toISOString()
+        });
+      } else {
+        await base44.entities.AIConversation.create({
+          user_wallet_address: address,
+          user_email: user?.email || 'anonymous',
+          messages: messages,
+          conversation_type: 'general_question',
+          last_interaction: new Date().toISOString()
+        });
+      }
+    } catch (err) {
+      console.error('Failed to save conversation:', err);
+    }
+  };
 
   const loadUser = async () => {
     try {
@@ -94,6 +173,15 @@ export default function HomePage() {
     try {
       let response;
       
+      // Build context with conversation history for machine learning
+      let contextPrompt = '';
+      if (walletAddress && chatMessages.length > 0) {
+        const recentHistory = chatMessages.slice(-6).map(msg => 
+          `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
+        ).join('\n\n');
+        contextPrompt = `Previous conversation history:\n${recentHistory}\n\n`;
+      }
+      
       // Use OpenRouter if key is provided AND user wants to use it, otherwise use built-in free AI
       if (openRouterKey && useOpenRouter) {
         const result = await base44.functions.invoke('openRouterChat', {
@@ -108,19 +196,25 @@ export default function HomePage() {
         
         response = result.data.content;
       } else {
-        // Default: Free built-in AI
-        const lastFewMessages = updatedMessages.slice(-4); // Only use last 4 messages for context
+        // Default: TTT LLM with conversation history
+        const lastFewMessages = updatedMessages.slice(-4);
         const conversationContext = lastFewMessages
           .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
           .join('\n\n');
         
         response = await base44.integrations.Core.InvokeLLM({
-          prompt: `You are TTT LLM, the AI model for TTT Chain. ${conversationContext}\n\nRespond naturally and concisely. If asked about which model you are, say you're TTT LLM.`,
+          prompt: `You are TTT LLM, the AI model for TTT Chain. ${contextPrompt}${conversationContext}\n\nRespond naturally and concisely. If asked about which model you are, say you're TTT LLM.`,
           add_context_from_internet: false
         });
       }
 
-      setChatMessages(prev => [...prev, { role: 'assistant', content: response }]);
+      const finalMessages = [...updatedMessages, { role: 'assistant', content: response }];
+      setChatMessages(finalMessages);
+      
+      // Save conversation to database for machine learning
+      if (walletAddress) {
+        await saveConversationToDatabase(finalMessages, walletAddress);
+      }
       
       if (user?.email) {
         await base44.auth.updateMe({ 
@@ -684,21 +778,49 @@ export default function HomePage() {
                           className="relative bg-gradient-to-br from-zinc-900 to-black border-2 border-cyan-500/50 rounded-3xl w-full max-w-2xl shadow-2xl shadow-cyan-500/20 flex flex-col"
                           style={{ height: '80vh' }}
                         >
-                          {/* Close and Settings Buttons */}
-                          <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
-                            <button
-                              onClick={() => setShowApiSettings(true)}
-                              className="w-10 h-10 bg-white/5 hover:bg-white/10 border border-white/20 rounded-full flex items-center justify-center transition-all"
-                              title="API Settings"
-                            >
-                              <Key className="w-5 h-5 text-cyan-400" />
-                            </button>
-                            <button
-                              onClick={() => setShowPortal(false)}
-                              className="w-10 h-10 bg-white/5 hover:bg-white/10 border border-white/20 rounded-full flex items-center justify-center transition-all"
-                            >
-                              <X className="w-5 h-5 text-white" />
-                            </button>
+                          {/* Top Bar with Wallet, Settings, and Close */}
+                          <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
+                            {/* Connect Wallet Button - Left */}
+                            {!walletAddress ? (
+                              <button
+                                onClick={connectWallet}
+                                disabled={isConnectingWallet}
+                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/40 rounded-full hover:from-cyan-500/30 hover:to-blue-500/30 transition-all"
+                              >
+                                {isConnectingWallet ? (
+                                  <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
+                                ) : (
+                                  <Wallet className="w-4 h-4 text-cyan-400" />
+                                )}
+                                <span className="text-sm text-cyan-300 font-medium">
+                                  {isConnectingWallet ? 'Connecting...' : 'Connect Wallet'}
+                                </span>
+                              </button>
+                            ) : (
+                              <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/40 rounded-full">
+                                <CheckCircle2 className="w-4 h-4 text-green-400" />
+                                <span className="text-sm text-green-300 font-medium">
+                                  {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Settings and Close - Right */}
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => setShowApiSettings(true)}
+                                className="w-10 h-10 bg-white/5 hover:bg-white/10 border border-white/20 rounded-full flex items-center justify-center transition-all"
+                                title="API Settings"
+                              >
+                                <Key className="w-5 h-5 text-cyan-400" />
+                              </button>
+                              <button
+                                onClick={() => setShowPortal(false)}
+                                className="w-10 h-10 bg-white/5 hover:bg-white/10 border border-white/20 rounded-full flex items-center justify-center transition-all"
+                              >
+                                <X className="w-5 h-5 text-white" />
+                              </button>
+                            </div>
                           </div>
 
                           {/* Header with Icon */}
