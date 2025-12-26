@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Loader2, Wand2, Shield, LogIn, ArrowRight, Zap, LogOut, Link as LinkIcon, Hand, ChevronRight, X, TrendingUp, Link2, ArrowUpDown, Wallet, Key, CheckCircle2 } from "lucide-react";
+import { Sparkles, Loader2, Wand2, Shield, LogIn, ArrowRight, Zap, LogOut, Link as LinkIcon, Hand, ChevronRight, X, TrendingUp, Link2, ArrowUpDown, Wallet, Key, CheckCircle2, Menu } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -24,6 +24,7 @@ export default function HomePage() {
   const [walletAddress, setWalletAddress] = useState("");
   const [isConnectingWallet, setIsConnectingWallet] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const messagesEndRef = React.useRef(null);
 
   useEffect(() => {
@@ -363,23 +364,56 @@ export default function HomePage() {
         </Button>
       </motion.div>
 
-      {/* Logout Button */}
-      {user && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
-          className="absolute top-4 right-4 md:top-6 md:right-6 z-50"
+      {/* Hamburger Menu Button */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1 }}
+        className="absolute top-4 right-4 md:top-6 md:right-6 z-50"
+      >
+        <button
+          onClick={() => setShowMenu(!showMenu)}
+          className="bg-white/5 hover:bg-white/10 border border-white/20 text-white backdrop-blur-xl h-10 w-10 rounded-lg flex items-center justify-center transition-all"
         >
-          <Button
-            onClick={handleLogout}
-            className="bg-cyan-900/80 hover:bg-cyan-800/90 border border-cyan-400/30 text-white backdrop-blur-xl h-8 px-3 text-xs md:h-10 md:px-4 md:text-sm"
+          <Menu className="w-5 h-5" />
+        </button>
+      </motion.div>
+
+      {/* Hamburger Menu Dropdown */}
+      <AnimatePresence>
+        {showMenu && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="absolute top-16 right-4 md:top-20 md:right-6 z-50 bg-black/90 backdrop-blur-xl border border-white/20 rounded-xl p-2 min-w-[160px]"
           >
-            <LogOut className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
-            <span className="hidden md:inline">Logout</span>
-          </Button>
-        </motion.div>
-      )}
+            {user ? (
+              <button
+                onClick={() => {
+                  handleLogout();
+                  setShowMenu(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-white/10 transition-all"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="text-sm">Logout</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  base44.auth.redirectToLogin();
+                  setShowMenu(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-white/10 transition-all"
+              >
+                <LogIn className="w-4 h-4" />
+                <span className="text-sm">Login</span>
+              </button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Main Content - Centered but Lower */}
       <div className="absolute inset-0 flex flex-col items-center justify-center pt-48 md:pt-20" style={{ zIndex: 10 }}>
