@@ -134,10 +134,11 @@ import OriginStory from './pages/OriginStory';
 import POLFeed from './pages/POLFeed';
 import Peculiar from './pages/Peculiar';
 import Pera from './pages/Pera';
+import Poki from './pages/Poki';
 import Profile from './pages/Profile';
+import Receive from './pages/Receive';
 import ProofOfBullish from './pages/ProofOfBullish';
 import QRScanner from './pages/QRScanner';
-import Receive from './pages/Receive';
 import RegisterBusiness from './pages/RegisterBusiness';
 import RegisterTTTID from './pages/RegisterTTTID';
 import Resonance from './pages/Resonance';
@@ -195,7 +196,7 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import Poki from './pages/Poki';
+import Ksocial from './pages/Ksocial';
 import __Layout from './Layout.jsx';
 
 
@@ -336,10 +337,11 @@ export const PAGES = {
     "POLFeed": POLFeed,
     "Peculiar": Peculiar,
     "Pera": Pera,
+    "Poki": Poki,
     "Profile": Profile,
+    "Receive": Receive,
     "ProofOfBullish": ProofOfBullish,
     "QRScanner": QRScanner,
-    "Receive": Receive,
     "RegisterBusiness": RegisterBusiness,
     "RegisterTTTID": RegisterTTTID,
     "Resonance": Resonance,
@@ -397,7 +399,7 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "Poki": Poki,
+    "Ksocial": Ksocial,
 }
 
 export const pagesConfig = {
