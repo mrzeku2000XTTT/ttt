@@ -106,6 +106,7 @@ import Kehinde from './pages/Kehinde';
 import KnowledgeBase from './pages/KnowledgeBase';
 import Kolade from './pages/Kolade';
 import Konekt from './pages/Konekt';
+import Ksocial from './pages/Ksocial';
 import Kurncy from './pages/Kurncy';
 import Kurve from './pages/Kurve';
 import LLMScraper from './pages/LLMScraper';
@@ -136,9 +137,9 @@ import Peculiar from './pages/Peculiar';
 import Pera from './pages/Pera';
 import Poki from './pages/Poki';
 import Profile from './pages/Profile';
-import Receive from './pages/Receive';
 import ProofOfBullish from './pages/ProofOfBullish';
 import QRScanner from './pages/QRScanner';
+import Receive from './pages/Receive';
 import RegisterBusiness from './pages/RegisterBusiness';
 import RegisterTTTID from './pages/RegisterTTTID';
 import Resonance from './pages/Resonance';
@@ -196,7 +197,7 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import Ksocial from './pages/Ksocial';
+import DateNight from './pages/DateNight';
 import __Layout from './Layout.jsx';
 
 
@@ -309,6 +310,7 @@ export const PAGES = {
     "KnowledgeBase": KnowledgeBase,
     "Kolade": Kolade,
     "Konekt": Konekt,
+    "Ksocial": Ksocial,
     "Kurncy": Kurncy,
     "Kurve": Kurve,
     "LLMScraper": LLMScraper,
@@ -339,9 +341,9 @@ export const PAGES = {
     "Pera": Pera,
     "Poki": Poki,
     "Profile": Profile,
-    "Receive": Receive,
     "ProofOfBullish": ProofOfBullish,
     "QRScanner": QRScanner,
+    "Receive": Receive,
     "RegisterBusiness": RegisterBusiness,
     "RegisterTTTID": RegisterTTTID,
     "Resonance": Resonance,
@@ -399,7 +401,7 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "Ksocial": Ksocial,
+    "DateNight": DateNight,
 }
 
 export const pagesConfig = {
