@@ -195,31 +195,16 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
   };
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-black via-black to-black flex flex-col overflow-hidden">
+    <div className="fixed inset-0 bg-gradient-to-br from-white via-red-50 to-red-100 flex flex-col overflow-hidden">
       {/* Red Edges */}
       <div className="absolute inset-0 pointer-events-none border-4 border-red-600 z-50" />
-      
-      {/* No Fear Logo */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="absolute top-8 left-0 right-0 z-40 flex items-center justify-center"
-      >
-        <img 
-          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/15f6a753b_image.png"
-          alt="No Fear"
-          className="h-16 md:h-20 w-auto object-contain drop-shadow-[0_0_30px_rgba(220,38,38,0.9)]"
-          style={{ display: 'block', margin: '0 auto' }}
-        />
-      </motion.div>
 
       {/* Messages Area - Scrollable */}
       <div className="flex-1 overflow-y-auto px-4 py-6" style={{ paddingBottom: '180px', paddingTop: '120px' }}>
         <div className="max-w-2xl mx-auto space-y-3">
           {messages.length === 0 ? (
             <div className="text-center py-20">
-              <h2 className="text-2xl font-bold text-white mb-2">NO FEAR AI</h2>
-              <p className="text-sm text-white/40">Ask me anything about TTTZ.xyz</p>
+              <h2 className="text-2xl font-bold text-red-600 mb-2">NO FEAR AI</h2>
             </div>
           ) : (
             messages.map((msg, idx) => (
@@ -231,10 +216,10 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
               >
                 <div className={`max-w-[80%] rounded-lg px-3 py-2 relative ${
                   msg.role === 'user'
-                    ? 'bg-black/70 backdrop-blur-sm border-2 border-red-600 text-white shadow-[0_0_20px_rgba(220,38,38,0.4)]'
+                    ? 'bg-red-600 backdrop-blur-sm border-2 border-red-700 text-white shadow-[0_0_20px_rgba(220,38,38,0.4)]'
                     : msg.role === 'error'
-                    ? 'bg-black/70 backdrop-blur-sm border-2 border-red-500 text-red-200 shadow-[0_0_20px_rgba(239,68,68,0.4)]'
-                    : 'bg-black/70 backdrop-blur-sm border-2 border-red-600 text-white shadow-[0_0_20px_rgba(220,38,38,0.4)]'
+                    ? 'bg-red-500/20 backdrop-blur-sm border-2 border-red-500 text-red-800 shadow-[0_0_20px_rgba(239,68,68,0.4)]'
+                    : 'bg-white backdrop-blur-sm border-2 border-red-600 text-black shadow-[0_0_20px_rgba(220,38,38,0.4)]'
                 }`}>
                   <p className="whitespace-pre-wrap text-sm leading-relaxed" style={{ lineHeight: '1.6' }}>{msg.content}</p>
                 </div>
@@ -247,7 +232,7 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
               animate={{ opacity: 1, y: 0 }}
               className="flex justify-start"
             >
-              <div className="max-w-[80%] rounded-lg px-3 py-2 bg-black/70 backdrop-blur-sm border-2 border-red-600 text-white shadow-[0_0_20px_rgba(220,38,38,0.4)]">
+              <div className="max-w-[80%] rounded-lg px-3 py-2 bg-white backdrop-blur-sm border-2 border-red-600 text-black shadow-[0_0_20px_rgba(220,38,38,0.4)]">
                 <p className="whitespace-pre-wrap text-sm leading-relaxed" style={{ lineHeight: '1.6' }}>
                   {streamingMessage}
                   <span className="inline-block w-1 h-4 bg-red-600 ml-0.5 animate-pulse" />
@@ -261,10 +246,10 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
               animate={{ opacity: 1 }}
               className="flex justify-start"
             >
-              <div className="bg-black/60 backdrop-blur-sm border border-purple-500/40 rounded-xl px-4 py-2 shadow-lg">
+              <div className="bg-white/80 backdrop-blur-sm border border-red-500/40 rounded-xl px-4 py-2 shadow-lg">
                 <div className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 text-purple-400 animate-spin" />
-                  <span className="text-sm text-purple-300">Thinking...</span>
+                  <Loader2 className="w-4 h-4 text-red-600 animate-spin" />
+                  <span className="text-sm text-red-600">Thinking...</span>
                 </div>
               </div>
             </motion.div>
@@ -274,8 +259,8 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
       </div>
 
       {/* Input - Fixed at Bottom */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black/95 to-transparent pointer-events-none">
-        <div className="max-w-2xl mx-auto bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl p-3 pointer-events-auto">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-red-50/95 to-transparent pointer-events-none">
+        <div className="max-w-2xl mx-auto bg-white/90 backdrop-blur-xl border border-red-600 rounded-xl p-3 pointer-events-auto">
         <div className="flex gap-2 sm:gap-3">
           <Textarea
             value={input}
@@ -286,14 +271,14 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
                 handleSend();
               }
             }}
-            placeholder="Ask me anything about TTTZ... (type /clear to reset)"
+            placeholder="Ask me anything... (type /clear to reset)"
             disabled={isLoading}
-            className="flex-1 bg-transparent border-none text-white placeholder:text-white/40 resize-none min-h-[44px] max-h-[120px] text-sm focus:outline-none"
+            className="flex-1 bg-transparent border-none text-black placeholder:text-black/40 resize-none min-h-[44px] max-h-[120px] text-sm focus:outline-none"
           />
           <Button
             onClick={handleClearChat}
             variant="outline"
-            className="bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10 h-[44px] px-3"
+            className="bg-red-500/10 border-red-600 text-red-600 hover:text-red-700 hover:bg-red-500/20 h-[44px] px-3"
             title="New Chat"
           >
             <Trash2 className="w-4 h-4" />
@@ -301,7 +286,7 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
           <Button
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
-            className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 h-[44px] px-4"
+            className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white h-[44px] px-4"
           >
             {isLoading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -310,7 +295,7 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
             )}
           </Button>
         </div>
-        <p className="text-[10px] text-white/40 text-center mt-2">
+        <p className="text-[10px] text-black/40 text-center mt-2">
           Shift + Enter for new line • Enter to send
         </p>
         </div>
