@@ -214,10 +214,10 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
               >
                 <div className={`max-w-[80%] rounded-xl px-3 py-2 ${
                   msg.role === 'user'
-                    ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-400/30 text-white'
+                    ? 'bg-gradient-to-r from-cyan-500/30 to-blue-500/30 border border-cyan-400/50 text-white shadow-lg'
                     : msg.role === 'error'
-                    ? 'bg-red-500/20 border border-red-500/40 text-red-300'
-                    : 'bg-white/5 border border-white/10 text-white'
+                    ? 'bg-red-500/30 border border-red-500/50 text-red-200 shadow-lg'
+                    : 'bg-black/60 backdrop-blur-sm border border-white/20 text-white shadow-lg'
                 }`}>
                   <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
                 </div>
@@ -230,7 +230,7 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
               animate={{ opacity: 1, y: 0 }}
               className="flex justify-start"
             >
-              <div className="max-w-[80%] rounded-xl px-3 py-2 bg-white/5 border border-white/10 text-white">
+              <div className="max-w-[80%] rounded-xl px-3 py-2 bg-black/60 backdrop-blur-sm border border-white/20 text-white shadow-lg">
                 <p className="whitespace-pre-wrap text-sm leading-relaxed">
                   {streamingMessage}
                   <span className="inline-block w-1 h-4 bg-white/60 ml-0.5 animate-pulse" />
@@ -244,7 +244,7 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
               animate={{ opacity: 1 }}
               className="flex justify-start"
             >
-              <div className="bg-white/5 border border-purple-500/30 rounded-xl px-4 py-2">
+              <div className="bg-black/60 backdrop-blur-sm border border-purple-500/40 rounded-xl px-4 py-2 shadow-lg">
                 <div className="flex items-center gap-2">
                   <Loader2 className="w-4 h-4 text-purple-400 animate-spin" />
                   <span className="text-sm text-purple-300">Thinking...</span>
