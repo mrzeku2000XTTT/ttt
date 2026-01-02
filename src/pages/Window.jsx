@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Loader2, Sparkles, Brain, ArrowLeft } from "lucide-react";
+import { Send, Loader2, Sparkles, Brain, ArrowLeft, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -68,6 +68,21 @@ export default function WindowPage() {
       }
     } catch (err) {
       console.error('Failed to save conversation:', err);
+    }
+  };
+
+  const handleClearChat = async () => {
+    setMessages([]);
+    try {
+      const existing = await base44.entities.AIConversation.filter({
+        conversation_type: 'window_ai'
+      }, '-created_date', 1);
+      
+      if (existing.length > 0) {
+        await base44.entities.AIConversation.delete(existing[0].id);
+      }
+    } catch (err) {
+      console.error('Failed to clear conversation:', err);
     }
   };
 
@@ -149,9 +164,22 @@ export default function WindowPage() {
               <h1 className="text-lg sm:text-xl font-bold text-white">TTTZ</h1>
             </div>
           </div>
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 rounded-full">
-            <Sparkles className="w-3 h-3 text-purple-400" />
-            <span className="text-xs text-purple-300 font-medium">Smartest AI</span>
+          <div className="flex items-center gap-2">
+            {messages.length > 0 && (
+              <Button
+                onClick={handleClearChat}
+                variant="ghost"
+                size="sm"
+                className="text-white/60 hover:text-white h-8 px-2 sm:px-3"
+                title="Clear chat"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            )}
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 rounded-full">
+              <Sparkles className="w-3 h-3 text-purple-400" />
+              <span className="text-xs text-purple-300 font-medium">Smartest AI</span>
+            </div>
           </div>
         </div>
       </div>
