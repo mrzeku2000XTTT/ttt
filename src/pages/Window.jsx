@@ -13,6 +13,7 @@ export default function WindowPage() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState("");
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -199,20 +200,57 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
       {/* Red Edges */}
       <div className="absolute inset-0 pointer-events-none border-4 border-red-600 z-50" />
       
-      {/* Back Button with Eyes Logo */}
+      {/* Back Button - Arrow */}
       <Link to={createPageUrl("Feed")}>
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="absolute top-8 left-8 z-40 cursor-pointer hover:scale-110 transition-transform"
         >
+          <div className="w-10 h-10 md:w-12 md:h-12 bg-red-600/20 backdrop-blur-sm border border-red-600/40 rounded-full flex items-center justify-center hover:bg-red-600/30 transition-all">
+            <ArrowLeft className="w-5 h-5 md:w-6 md:h-6 text-red-600" />
+          </div>
+        </motion.div>
+      </Link>
+
+      {/* Eyes Logo - Opens Full Screen */}
+      {!isFullScreen && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          onClick={() => setIsFullScreen(true)}
+          className="absolute top-8 right-8 z-40 cursor-pointer hover:scale-110 transition-transform"
+        >
           <img 
             src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/c1bbdc871_image.png"
-            alt="Back to Feed"
+            alt="Open Full Screen"
             className="h-12 md:h-16 w-auto object-contain drop-shadow-[0_0_20px_rgba(220,38,38,0.7)] opacity-80 hover:opacity-100"
           />
         </motion.div>
-      </Link>
+      )}
+
+      {/* Full Screen Iframe Mode */}
+      {isFullScreen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-50 bg-black"
+        >
+          <button
+            onClick={() => setIsFullScreen(false)}
+            className="absolute top-4 right-4 z-50 w-10 h-10 bg-red-600/20 backdrop-blur-sm border border-red-600/40 rounded-full flex items-center justify-center hover:bg-red-600/30 transition-all"
+          >
+            <X className="w-5 h-5 text-red-600" />
+          </button>
+          <iframe
+            src="https://nofear.base44.app"
+            className="w-full h-full border-none"
+            title="No Fear App Full Screen"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </motion.div>
+      )}
 
       {/* Messages Area - Scrollable */}
       <div className="flex-1 overflow-y-auto px-4 py-6" style={{ paddingBottom: '180px', paddingTop: '120px' }}>
