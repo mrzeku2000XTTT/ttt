@@ -152,100 +152,26 @@ export default function WindowPage() {
   };
 
   return (
-    <div className="fixed inset-0 bg-black flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex-shrink-0 bg-black/90 backdrop-blur-xl border-b border-white/10 px-3 sm:px-4 py-3 sm:py-4 z-10">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link to={createPageUrl("Feed")}>
-              <Button variant="ghost" size="sm" className="text-white/60 hover:text-white h-8 w-8 p-0 sm:h-auto sm:w-auto sm:px-3">
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-            </Link>
-            <div className="flex items-center gap-2 sm:gap-3">
-              <img 
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a8ee75db6_image.png"
-                alt="TTTZ"
-                className="w-8 h-8 sm:w-10 sm:h-10 object-cover rounded-full"
-              />
-              <h1 className="text-lg sm:text-xl font-bold text-white">TTTZ</h1>
+    <div className="fixed inset-0 bg-black flex items-end justify-center p-4 sm:p-6">
+      {/* Loading Indicator */}
+      {isLoading && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="absolute top-8 left-1/2 -translate-x-1/2"
+        >
+          <div className="bg-white/5 border border-purple-500/30 rounded-2xl px-5 py-3 backdrop-blur-xl">
+            <div className="flex items-center gap-3">
+              <Loader2 className="w-4 h-4 text-purple-400 animate-spin" />
+              <span className="text-sm text-purple-300">Analyzing across TTT data...</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {messages.length > 0 && (
-              <Button
-                onClick={handleClearChat}
-                variant="ghost"
-                size="sm"
-                className="text-white/60 hover:text-white h-8 px-2 sm:px-3"
-                title="Clear chat"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            )}
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 rounded-full">
-              <Sparkles className="w-3 h-3 text-purple-400" />
-              <span className="text-xs text-purple-300 font-medium">Smartest AI</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-6 sm:py-8">
-        <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 pb-4">
-          {messages.length === 0 ? (
-            <div className="text-center py-16 sm:py-24">
-              <img 
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a8ee75db6_image.png"
-                alt="TTTZ"
-                className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-full mx-auto mb-3 sm:mb-4"
-              />
-              <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">TTTZ AI</h2>
-              <p className="text-sm text-white/60">Ask me anything about TTTZ.xyz</p>
-              <p className="text-xs text-white/40 mt-2">Type /clear to start a new chat</p>
-            </div>
-          ) : (
-            messages.map((msg, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div className={`max-w-[85%] sm:max-w-[80%] rounded-2xl px-4 sm:px-5 py-3 ${
-                  msg.role === 'user'
-                    ? 'bg-gradient-to-r from-cyan-500/30 to-blue-500/30 border border-cyan-400/50 text-white'
-                    : msg.role === 'error'
-                    ? 'bg-red-500/20 border border-red-500/40 text-red-300'
-                    : 'bg-white/5 border border-white/10 text-gray-200'
-                }`}>
-                  <p className="whitespace-pre-wrap text-sm sm:text-base leading-relaxed break-words">{msg.content}</p>
-                </div>
-              </motion.div>
-            ))
-          )}
-          {isLoading && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex justify-start"
-            >
-              <div className="bg-white/5 border border-purple-500/30 rounded-2xl px-5 py-3">
-                <div className="flex items-center gap-3">
-                  <Loader2 className="w-4 h-4 text-purple-400 animate-spin" />
-                  <span className="text-sm text-purple-300">Analyzing across TTT data...</span>
-                </div>
-              </div>
-            </motion.div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-      </div>
+        </motion.div>
+      )}
 
       {/* Input */}
-      <div className="flex-shrink-0 bg-black/90 backdrop-blur-xl border-t border-white/10 px-3 sm:px-4 py-3 sm:py-4 z-10">
-        <div className="max-w-4xl mx-auto flex gap-2 sm:gap-3">
+      <div className="w-full max-w-4xl bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-3 sm:p-4">
+        <div className="flex gap-2 sm:gap-3">
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -257,18 +183,16 @@ export default function WindowPage() {
             }}
             placeholder="Ask me anything about TTTZ... (type /clear to reset)"
             disabled={isLoading}
-            className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40 resize-none min-h-[50px] sm:min-h-[60px] max-h-[150px] sm:max-h-[200px] text-sm sm:text-base"
+            className="flex-1 bg-transparent border-none text-white placeholder:text-white/40 resize-none min-h-[50px] sm:min-h-[60px] max-h-[150px] sm:max-h-[200px] text-sm sm:text-base focus:outline-none"
           />
-          {messages.length > 0 && (
-            <Button
-              onClick={handleClearChat}
-              variant="outline"
-              className="bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10 h-[50px] sm:h-[60px] px-3 sm:px-4"
-              title="New Chat"
-            >
-              <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
-            </Button>
-          )}
+          <Button
+            onClick={handleClearChat}
+            variant="outline"
+            className="bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10 h-[50px] sm:h-[60px] px-3 sm:px-4"
+            title="New Chat"
+          >
+            <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+          </Button>
           <Button
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
