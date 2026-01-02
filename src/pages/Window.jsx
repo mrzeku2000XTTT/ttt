@@ -206,7 +206,7 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
         className="absolute top-8 left-1/2 -translate-x-1/2 z-40"
       >
         <img 
-          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/52e08a8e5_image.png"
+          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/107a0ad3d_image.png"
           alt="No Fear"
           className="h-16 md:h-20 w-auto drop-shadow-[0_0_20px_rgba(220,38,38,0.8)]"
         />
