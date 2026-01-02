@@ -238,9 +238,9 @@ export default function WindowPage() {
         >
           <button
             onClick={() => setIsFullScreen(false)}
-            className="absolute top-2 left-2 z-50 w-8 h-8 bg-black/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-black/40 transition-all"
+            className="absolute top-0 left-0 z-50 w-8 h-8 bg-black/20 backdrop-blur-sm rounded-br-lg flex items-center justify-center hover:bg-black/40 transition-all"
           >
-            <X className="w-4 h-4 text-white/60" />
+            <ArrowLeft className="w-4 h-4 text-white/60" />
           </button>
           <iframe
             src="https://nofear.base44.app"
