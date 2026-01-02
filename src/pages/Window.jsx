@@ -158,11 +158,6 @@ export default function WindowPage() {
         <div className="max-w-4xl mx-auto space-y-4">
           {messages.length === 0 ? (
             <div className="text-center py-20">
-              <img 
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a8ee75db6_image.png"
-                alt="TTTZ"
-                className="w-20 h-20 object-contain mx-auto mb-4 opacity-60"
-              />
               <h2 className="text-2xl font-bold text-white mb-2">TTTZ AI</h2>
               <p className="text-sm text-white/40">Ask me anything about TTTZ.xyz</p>
             </div>
