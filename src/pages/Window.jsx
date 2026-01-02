@@ -152,36 +152,36 @@ export default function WindowPage() {
   };
 
   return (
-    <div className="fixed inset-0 bg-black flex flex-col">
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto px-4 pt-20 pb-6">
-        <div className="max-w-4xl mx-auto space-y-4 pb-32">
+    <div className="fixed inset-0 bg-black flex flex-col overflow-hidden">
+      {/* Messages Area - Scrollable */}
+      <div className="flex-1 overflow-y-auto px-4 py-6" style={{ paddingBottom: '180px' }}>
+        <div className="max-w-4xl mx-auto space-y-4">
           {messages.length === 0 ? (
             <div className="text-center py-20">
               <img 
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a8ee75db6_image.png"
                 alt="TTTZ"
-                className="w-20 h-20 object-contain rounded-full mx-auto mb-4 opacity-60"
+                className="w-20 h-20 object-contain mx-auto mb-4 opacity-60"
               />
-              <h2 className="text-2xl font-bold text-white/80 mb-2">TTTZ AI</h2>
+              <h2 className="text-2xl font-bold text-white mb-2">TTTZ AI</h2>
               <p className="text-sm text-white/40">Ask me anything about TTTZ.xyz</p>
             </div>
           ) : (
             messages.map((msg, idx) => (
               <motion.div
                 key={idx}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div className={`max-w-[85%] rounded-2xl px-5 py-3 ${
+                <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${
                   msg.role === 'user'
-                    ? 'bg-gradient-to-r from-cyan-500/30 to-blue-500/30 border border-cyan-400/50 text-white'
+                    ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-400/30 text-white'
                     : msg.role === 'error'
                     ? 'bg-red-500/20 border border-red-500/40 text-red-300'
-                    : 'bg-white/5 border border-white/10 text-gray-200'
+                    : 'bg-white/5 border border-white/10 text-white'
                 }`}>
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed break-words">{msg.content}</p>
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
                 </div>
               </motion.div>
             ))
@@ -192,8 +192,8 @@ export default function WindowPage() {
               animate={{ opacity: 1 }}
               className="flex justify-start"
             >
-              <div className="bg-white/5 border border-purple-500/30 rounded-2xl px-5 py-3">
-                <div className="flex items-center gap-3">
+              <div className="bg-white/5 border border-purple-500/30 rounded-2xl px-4 py-3">
+                <div className="flex items-center gap-2">
                   <Loader2 className="w-4 h-4 text-purple-400 animate-spin" />
                   <span className="text-sm text-purple-300">Analyzing across TTT data...</span>
                 </div>
@@ -205,8 +205,8 @@ export default function WindowPage() {
       </div>
 
       {/* Input - Fixed at Bottom */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black to-transparent z-50">
-        <div className="max-w-4xl mx-auto bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-3 sm:p-4">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black/95 to-transparent pointer-events-none">
+        <div className="max-w-4xl mx-auto bg-black/90 backdrop-blur-xl border border-white/10 rounded-2xl p-3 pointer-events-auto">
         <div className="flex gap-2 sm:gap-3">
           <Textarea
             value={input}
