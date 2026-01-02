@@ -12,6 +12,7 @@ export default function WindowPage() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [streamingMessage, setStreamingMessage] = useState("");
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -86,6 +87,23 @@ export default function WindowPage() {
     }
   };
 
+  const typewriterEffect = (text, callback) => {
+    let index = 0;
+    setStreamingMessage("");
+    
+    const interval = setInterval(() => {
+      if (index < text.length) {
+        setStreamingMessage(prev => prev + text[index]);
+        index++;
+      } else {
+        clearInterval(interval);
+        callback();
+      }
+    }, 20);
+    
+    return interval;
+  };
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -99,8 +117,10 @@ export default function WindowPage() {
     const userMessage = { role: 'user', content: input, timestamp: new Date().toISOString() };
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
+    const userInput = input;
     setInput("");
     setIsLoading(true);
+    setStreamingMessage("");
 
     try {
       // Build context from conversation history
@@ -108,36 +128,59 @@ export default function WindowPage() {
         .map(msg => `${msg.role === 'user' ? 'User' : 'Window AI'}: ${msg.content}`)
         .join('\n\n');
 
+      // Analyze user input to determine response length
+      const inputLength = userInput.split(' ').length;
+      const isQuestion = userInput.includes('?');
+      const isGreeting = /^(hi|hey|hello|yo|sup)/i.test(userInput.trim());
+      
+      let lengthInstruction = "";
+      if (isGreeting || inputLength <= 3) {
+        lengthInstruction = "Keep response very brief (1-2 sentences max).";
+      } else if (inputLength <= 10 && isQuestion) {
+        lengthInstruction = "Provide a concise answer (2-3 sentences).";
+      } else if (inputLength > 20 || userInput.includes('explain') || userInput.includes('tell me about')) {
+        lengthInstruction = "Provide a detailed response with examples and explanations.";
+      } else {
+        lengthInstruction = "Keep response moderate length (3-5 sentences).";
+      }
+
       // Call LLM with comprehensive context
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: `You are TTTZ AI, the official AI assistant for TTTZ.xyz (TTT ecosystem). 
 
-      ABOUT TTTZ.XYZ:
-      TTTZ is a comprehensive Web3 platform built on Kaspa blockchain featuring:
-      - TTT Feed: Social platform with encrypted posts and KAS tipping
-      - Agent ZK: AI agent directory and profiles with ZK verification
-      - Bridge: L1/L2 Kaspa transfers and crypto bridging
-      - TTTV: Video streaming and content platform
-      - DAGKnight: Multi-wallet verification system (Kasware, TTT Wallet, MetaMask)
-      - Marketplace: P2P trading, services, and digital goods
-      - Over 50+ integrated apps and tools in the ecosystem
-      - Built-in AI features: Zeku AI, Window AI (you), and various AI agents
+ABOUT TTTZ.XYZ:
+TTTZ is a comprehensive Web3 platform built on Kaspa blockchain featuring:
+- TTT Feed: Social platform with encrypted posts and KAS tipping
+- Agent ZK: AI agent directory and profiles with ZK verification
+- Bridge: L1/L2 Kaspa transfers and crypto bridging
+- TTTV: Video streaming and content platform
+- DAGKnight: Multi-wallet verification system (Kasware, TTT Wallet, MetaMask)
+- Marketplace: P2P trading, services, and digital goods
+- Over 50+ integrated apps and tools in the ecosystem
+- Built-in AI features: Zeku AI, Window AI (you), and various AI agents
 
-      You have access to all TTTZ platform data including user profiles, posts, transactions, wallet data, and app integrations.
+You have access to all TTTZ platform data including user profiles, posts, transactions, wallet data, and app integrations.
 
-      Current conversation:
-      ${conversationContext}
+RESPONSE LENGTH GUIDANCE: ${lengthInstruction}
 
-      User's message: ${input}
+Current conversation:
+${conversationContext}
 
-      Provide helpful, accurate responses about TTTZ features and data. Be concise and format responses with proper spacing and line breaks for readability.`,
+User's message: ${userInput}
+
+Provide helpful, accurate responses about TTTZ features and data. Format responses with proper spacing and line breaks for readability.`,
         add_context_from_internet: true
       });
 
-      const aiMessage = { role: 'assistant', content: response, timestamp: new Date().toISOString() };
-      const finalMessages = [...updatedMessages, aiMessage];
-      setMessages(finalMessages);
-      await saveConversation(finalMessages);
+      // Typewriter effect
+      typewriterEffect(response, () => {
+        const aiMessage = { role: 'assistant', content: response, timestamp: new Date().toISOString() };
+        const finalMessages = [...updatedMessages, aiMessage];
+        setMessages(finalMessages);
+        setStreamingMessage("");
+        saveConversation(finalMessages);
+        setIsLoading(false);
+      });
     } catch (err) {
       console.error('Failed to get AI response:', err);
       const errorMessage = { 
@@ -146,8 +189,8 @@ export default function WindowPage() {
         timestamp: new Date().toISOString() 
       };
       setMessages([...updatedMessages, errorMessage]);
-    } finally {
       setIsLoading(false);
+      setStreamingMessage("");
     }
   };
 
@@ -181,16 +224,30 @@ export default function WindowPage() {
               </motion.div>
             ))
           )}
-          {isLoading && (
+          {streamingMessage && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex justify-start"
+            >
+              <div className="max-w-[80%] rounded-xl px-3 py-2 bg-white/5 border border-white/10 text-white">
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                  {streamingMessage}
+                  <span className="inline-block w-1 h-4 bg-white/60 ml-0.5 animate-pulse" />
+                </p>
+              </div>
+            </motion.div>
+          )}
+          {isLoading && !streamingMessage && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="flex justify-start"
             >
-              <div className="bg-white/5 border border-purple-500/30 rounded-2xl px-4 py-3">
+              <div className="bg-white/5 border border-purple-500/30 rounded-xl px-4 py-2">
                 <div className="flex items-center gap-2">
                   <Loader2 className="w-4 h-4 text-purple-400 animate-spin" />
-                  <span className="text-sm text-purple-300">Analyzing across TTT data...</span>
+                  <span className="text-sm text-purple-300">Thinking...</span>
                 </div>
               </div>
             </motion.div>
