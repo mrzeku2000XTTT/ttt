@@ -89,6 +89,13 @@ export default function WindowPage() {
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
+    // Check for /clear command
+    if (input.trim() === '/clear') {
+      handleClearChat();
+      setInput("");
+      return;
+    }
+
     const userMessage = { role: 'user', content: input, timestamp: new Date().toISOString() };
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
@@ -188,13 +195,15 @@ export default function WindowPage() {
       <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6">
         <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
           {messages.length === 0 ? (
-            <div className="text-center py-20">
+            <div className="text-center py-12 sm:py-20">
               <img 
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a8ee75db6_image.png"
                 alt="TTTZ"
-                className="w-20 h-20 object-cover rounded-full mx-auto mb-4"
+                className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-full mx-auto mb-3 sm:mb-4"
               />
-              <h2 className="text-2xl font-bold text-white">TTTZ</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">TTTZ AI</h2>
+              <p className="text-sm text-white/60">Ask me anything about TTTZ.xyz</p>
+              <p className="text-xs text-white/40 mt-2">Type /clear to start a new chat</p>
             </div>
           ) : (
             messages.map((msg, idx) => (
@@ -246,7 +255,7 @@ export default function WindowPage() {
                 handleSend();
               }
             }}
-            placeholder="Ask me anything about TTTZ..."
+            placeholder="Ask me anything about TTTZ... (type /clear to reset)"
             disabled={isLoading}
             className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40 resize-none min-h-[50px] sm:min-h-[60px] max-h-[150px] sm:max-h-[200px] text-sm sm:text-base"
           />
