@@ -52,6 +52,7 @@ import Creator from './pages/Creator';
 import CryptoHire from './pages/CryptoHire';
 import DAGFeed from './pages/DAGFeed';
 import DAGKnightWallet from './pages/DAGKnightWallet';
+import DateNight from './pages/DateNight';
 import DeployContract from './pages/DeployContract';
 import DevProfile from './pages/DevProfile';
 import Docs from './pages/Docs';
@@ -197,7 +198,7 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import DateNight from './pages/DateNight';
+import Window from './pages/Window';
 import __Layout from './Layout.jsx';
 
 
@@ -256,6 +257,7 @@ export const PAGES = {
     "CryptoHire": CryptoHire,
     "DAGFeed": DAGFeed,
     "DAGKnightWallet": DAGKnightWallet,
+    "DateNight": DateNight,
     "DeployContract": DeployContract,
     "DevProfile": DevProfile,
     "Docs": Docs,
@@ -401,7 +403,7 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "DateNight": DateNight,
+    "Window": Window,
 }
 
 export const pagesConfig = {
