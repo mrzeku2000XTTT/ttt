@@ -203,7 +203,7 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="absolute top-8 left-0 right-0 z-40 flex justify-center"
+        className="absolute top-8 left-1/2 -translate-x-1/2 z-40"
       >
         <img 
           src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/7ec59c521_image.png"
