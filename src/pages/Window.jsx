@@ -195,7 +195,7 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
   };
 
   return (
-    <div className="fixed inset-0 bg-black flex flex-col overflow-hidden">
+    <div className="fixed inset-0 bg-gradient-to-br from-black via-purple-950/20 to-black flex flex-col overflow-hidden">
       {/* Messages Area - Scrollable */}
       <div className="flex-1 overflow-y-auto px-4 py-6" style={{ paddingBottom: '180px' }}>
         <div className="max-w-2xl mx-auto space-y-3">
