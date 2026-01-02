@@ -198,13 +198,32 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
     <div className="fixed inset-0 bg-gradient-to-br from-white via-red-50 to-red-100 flex flex-col overflow-hidden">
       {/* Red Edges */}
       <div className="absolute inset-0 pointer-events-none border-4 border-red-600 z-50" />
+      
+      {/* Eyes Logo */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="absolute top-8 left-0 right-0 z-40 flex items-center justify-center"
+      >
+        <img 
+          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/c1bbdc871_image.png"
+          alt="No Fear Eyes"
+          className="h-20 md:h-24 w-auto object-contain drop-shadow-[0_0_30px_rgba(220,38,38,0.9)]"
+        />
+      </motion.div>
 
       {/* Messages Area - Scrollable */}
       <div className="flex-1 overflow-y-auto px-4 py-6" style={{ paddingBottom: '180px', paddingTop: '120px' }}>
         <div className="max-w-2xl mx-auto space-y-3">
           {messages.length === 0 ? (
             <div className="text-center py-20">
-              <h2 className="text-2xl font-bold text-red-600 mb-2">NO FEAR AI</h2>
+              <h2 className="text-4xl md:text-5xl font-black text-red-600 mb-2" style={{ 
+                fontFamily: 'Impact, "Arial Black", sans-serif',
+                fontStyle: 'italic',
+                letterSpacing: '0.05em',
+                textShadow: '3px 3px 0px rgba(0,0,0,0.3), -1px -1px 0px rgba(0,0,0,0.2)',
+                transform: 'skew(-5deg)'
+              }}>NO FEAR AI</h2>
             </div>
           ) : (
             messages.map((msg, idx) => (
