@@ -155,7 +155,7 @@ export default function WindowPage() {
     <div className="fixed inset-0 bg-black flex flex-col overflow-hidden">
       {/* Messages Area - Scrollable */}
       <div className="flex-1 overflow-y-auto px-4 py-6" style={{ paddingBottom: '180px' }}>
-        <div className="max-w-4xl mx-auto space-y-4">
+        <div className="max-w-2xl mx-auto space-y-3">
           {messages.length === 0 ? (
             <div className="text-center py-20">
               <h2 className="text-2xl font-bold text-white mb-2">TTTZ AI</h2>
@@ -169,7 +169,7 @@ export default function WindowPage() {
                 animate={{ opacity: 1, y: 0 }}
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                <div className={`max-w-[80%] rounded-xl px-3 py-2 ${
                   msg.role === 'user'
                     ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-400/30 text-white'
                     : msg.role === 'error'
@@ -201,7 +201,7 @@ export default function WindowPage() {
 
       {/* Input - Fixed at Bottom */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black/95 to-transparent pointer-events-none">
-        <div className="max-w-4xl mx-auto bg-black/90 backdrop-blur-xl border border-white/10 rounded-2xl p-3 pointer-events-auto">
+        <div className="max-w-2xl mx-auto bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl p-3 pointer-events-auto">
         <div className="flex gap-2 sm:gap-3">
           <Textarea
             value={input}
@@ -214,29 +214,29 @@ export default function WindowPage() {
             }}
             placeholder="Ask me anything about TTTZ... (type /clear to reset)"
             disabled={isLoading}
-            className="flex-1 bg-transparent border-none text-white placeholder:text-white/40 resize-none min-h-[50px] sm:min-h-[60px] max-h-[150px] sm:max-h-[200px] text-sm sm:text-base focus:outline-none"
+            className="flex-1 bg-transparent border-none text-white placeholder:text-white/40 resize-none min-h-[44px] max-h-[120px] text-sm focus:outline-none"
           />
           <Button
             onClick={handleClearChat}
             variant="outline"
-            className="bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10 h-[50px] sm:h-[60px] px-3 sm:px-4"
+            className="bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10 h-[44px] px-3"
             title="New Chat"
           >
-            <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+            <Trash2 className="w-4 h-4" />
           </Button>
           <Button
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
-            className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 h-[50px] sm:h-[60px] px-4 sm:px-6"
+            className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 h-[44px] px-4"
           >
             {isLoading ? (
-              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <Send className="w-4 h-4 sm:w-5 sm:h-5" />
+              <Send className="w-4 h-4" />
             )}
           </Button>
         </div>
-        <p className="text-[10px] sm:text-xs text-white/40 text-center mt-2">
+        <p className="text-[10px] text-white/40 text-center mt-2">
           Shift + Enter for new line • Enter to send
         </p>
         </div>
