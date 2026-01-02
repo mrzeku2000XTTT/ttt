@@ -196,12 +196,28 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-black via-black to-black flex flex-col overflow-hidden">
+      {/* Red Edges */}
+      <div className="absolute inset-0 pointer-events-none border-4 border-red-600 z-50" />
+      
+      {/* No Fear Logo */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="absolute top-8 left-1/2 -translate-x-1/2 z-40"
+      >
+        <img 
+          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/52e08a8e5_image.png"
+          alt="No Fear"
+          className="h-16 md:h-20 w-auto drop-shadow-[0_0_20px_rgba(220,38,38,0.8)]"
+        />
+      </motion.div>
+
       {/* Messages Area - Scrollable */}
-      <div className="flex-1 overflow-y-auto px-4 py-6" style={{ paddingBottom: '180px' }}>
+      <div className="flex-1 overflow-y-auto px-4 py-6" style={{ paddingBottom: '180px', paddingTop: '120px' }}>
         <div className="max-w-2xl mx-auto space-y-3">
           {messages.length === 0 ? (
             <div className="text-center py-20">
-              <h2 className="text-2xl font-bold text-white mb-2">TTTZ AI</h2>
+              <h2 className="text-2xl font-bold text-white mb-2">NO FEAR AI</h2>
               <p className="text-sm text-white/40">Ask me anything about TTTZ.xyz</p>
             </div>
           ) : (
