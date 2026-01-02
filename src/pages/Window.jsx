@@ -154,14 +154,14 @@ export default function WindowPage() {
   return (
     <div className="fixed inset-0 bg-black flex flex-col">
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto px-4 py-6">
+      <div className="flex-1 overflow-y-auto px-4 pt-20 pb-6">
         <div className="max-w-4xl mx-auto space-y-4 pb-32">
           {messages.length === 0 ? (
             <div className="text-center py-20">
               <img 
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a8ee75db6_image.png"
                 alt="TTTZ"
-                className="w-20 h-20 object-cover rounded-full mx-auto mb-4 opacity-60"
+                className="w-20 h-20 object-contain rounded-full mx-auto mb-4 opacity-60"
               />
               <h2 className="text-2xl font-bold text-white/80 mb-2">TTTZ AI</h2>
               <p className="text-sm text-white/40">Ask me anything about TTTZ.xyz</p>
