@@ -139,7 +139,7 @@ Provide intelligent, context-aware responses that leverage your comprehensive kn
               <img 
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a8ee75db6_image.png"
                 alt="TTTZ"
-                className="w-10 h-10 object-contain"
+                className="w-10 h-10 object-cover rounded-full"
               />
               <h1 className="text-xl font-bold text-white">TTTZ</h1>
             </div>
@@ -159,7 +159,7 @@ Provide intelligent, context-aware responses that leverage your comprehensive kn
               <img 
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a8ee75db6_image.png"
                 alt="TTTZ"
-                className="w-20 h-20 object-contain mx-auto mb-4"
+                className="w-20 h-20 object-cover rounded-full mx-auto mb-4"
               />
               <h2 className="text-2xl font-bold text-white">TTTZ</h2>
             </div>
