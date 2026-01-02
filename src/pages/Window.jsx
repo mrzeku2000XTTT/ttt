@@ -217,12 +217,18 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
         <div className="max-w-2xl mx-auto space-y-3">
           {messages.length === 0 ? (
             <div className="text-center py-20">
-              <h2 className="text-4xl md:text-5xl font-black text-red-600 mb-2" style={{ 
+              <h2 className="text-5xl md:text-6xl font-black mb-2" style={{ 
                 fontFamily: 'Impact, "Arial Black", sans-serif',
                 fontStyle: 'italic',
-                letterSpacing: '0.05em',
-                textShadow: '3px 3px 0px rgba(0,0,0,0.3), -1px -1px 0px rgba(0,0,0,0.2)',
-                transform: 'skew(-5deg)'
+                fontWeight: 900,
+                letterSpacing: '-0.02em',
+                color: '#dc2626',
+                WebkitTextStroke: '3px black',
+                textStroke: '3px black',
+                paintOrder: 'stroke fill',
+                textShadow: '4px 4px 0px rgba(0,0,0,0.5), -2px -2px 0px rgba(0,0,0,0.3)',
+                transform: 'skewX(-8deg)',
+                textTransform: 'uppercase'
               }}>NO FEAR AI</h2>
             </div>
           ) : (
