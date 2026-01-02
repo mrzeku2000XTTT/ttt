@@ -217,9 +217,9 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
                     ? 'bg-gradient-to-r from-cyan-500/30 to-blue-500/30 border border-cyan-400/50 text-white shadow-lg'
                     : msg.role === 'error'
                     ? 'bg-red-500/30 border border-red-500/50 text-red-200 shadow-lg'
-                    : 'bg-black/60 backdrop-blur-sm border border-white/20 text-white shadow-lg'
+                    : 'bg-black/70 backdrop-blur-sm border border-white/30 text-white shadow-lg'
                 }`}>
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed" style={{ lineHeight: '1.6' }}>{msg.content}</p>
                 </div>
               </motion.div>
             ))
@@ -230,8 +230,8 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
               animate={{ opacity: 1, y: 0 }}
               className="flex justify-start"
             >
-              <div className="max-w-[80%] rounded-xl px-3 py-2 bg-black/60 backdrop-blur-sm border border-white/20 text-white shadow-lg">
-                <p className="whitespace-pre-wrap text-sm leading-relaxed">
+              <div className="max-w-[80%] rounded-xl px-3 py-2 bg-black/70 backdrop-blur-sm border border-white/30 text-white shadow-lg">
+                <p className="whitespace-pre-wrap text-sm leading-relaxed" style={{ lineHeight: '1.6' }}>
                   {streamingMessage}
                   <span className="inline-block w-1 h-4 bg-white/60 ml-0.5 animate-pulse" />
                 </p>
