@@ -203,12 +203,13 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="absolute top-8 left-1/2 -translate-x-1/2 z-40 flex items-center justify-center"
+        className="absolute top-8 left-0 right-0 z-40 flex items-center justify-center"
       >
         <img 
           src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/15f6a753b_image.png"
           alt="No Fear"
           className="h-16 md:h-20 w-auto object-contain drop-shadow-[0_0_30px_rgba(220,38,38,0.9)]"
+          style={{ display: 'block', margin: '0 auto' }}
         />
       </motion.div>
 
