@@ -198,30 +198,34 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
     <div className="fixed inset-0 bg-gradient-to-br from-black via-purple-950/20 to-black flex flex-col overflow-hidden">
       {/* Meteor Shower Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(15)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-20 bg-gradient-to-b from-white via-purple-300 to-transparent rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `-10%`,
-              transform: 'rotate(45deg)',
-              boxShadow: '0 0 10px rgba(255, 255, 255, 0.5)',
-            }}
-            animate={{
-              x: [0, Math.random() * 300 + 200],
-              y: [0, Math.random() * 800 + 600],
-              opacity: [0, 1, 1, 0],
-            }}
-            transition={{
-              duration: Math.random() * 2 + 1,
-              delay: Math.random() * 10,
-              repeat: Infinity,
-              repeatDelay: Math.random() * 20 + 10,
-              ease: "linear",
-            }}
-          />
-        ))}
+        {[...Array(15)].map((_, i) => {
+          const startX = Math.random() * 120 - 10;
+          const startY = Math.random() * 50 - 20;
+          return (
+            <motion.div
+              key={i}
+              className="absolute w-1 h-24 bg-gradient-to-b from-white via-purple-300 to-transparent rounded-full"
+              style={{
+                left: `${startX}%`,
+                top: `${startY}%`,
+                transform: 'rotate(-45deg)',
+                boxShadow: '0 0 10px rgba(255, 255, 255, 0.6), 0 0 20px rgba(147, 51, 234, 0.3)',
+              }}
+              animate={{
+                x: [0, 400],
+                y: [0, 400],
+                opacity: [0, 1, 1, 0],
+              }}
+              transition={{
+                duration: Math.random() * 1.5 + 0.8,
+                delay: Math.random() * 10,
+                repeat: Infinity,
+                repeatDelay: Math.random() * 15 + 8,
+                ease: "linear",
+              }}
+            />
+          );
+        })}
       </div>
 
       {/* Messages Area - Scrollable */}
