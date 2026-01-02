@@ -136,13 +136,12 @@ Provide intelligent, context-aware responses that leverage your comprehensive kn
               </Button>
             </Link>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
-                <Brain className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-white">Window AI</h1>
-                <p className="text-xs text-white/60">All-knowing TTT Assistant</p>
-              </div>
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a8ee75db6_image.png"
+                alt="TTTZ"
+                className="w-10 h-10 object-contain"
+              />
+              <h1 className="text-xl font-bold text-white">TTTZ</h1>
             </div>
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 rounded-full">
@@ -157,13 +156,12 @@ Provide intelligent, context-aware responses that leverage your comprehensive kn
         <div className="max-w-4xl mx-auto space-y-6">
           {messages.length === 0 ? (
             <div className="text-center py-20">
-              <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Brain className="w-10 h-10 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold text-white mb-2">Welcome to Window AI</h2>
-              <p className="text-white/60 max-w-md mx-auto">
-                I have access to all TTT data and can help you with anything across the ecosystem.
-              </p>
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a8ee75db6_image.png"
+                alt="TTTZ"
+                className="w-20 h-20 object-contain mx-auto mb-4"
+              />
+              <h2 className="text-2xl font-bold text-white">TTTZ</h2>
             </div>
           ) : (
             messages.map((msg, idx) => (
