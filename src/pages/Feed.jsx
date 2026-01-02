@@ -3812,6 +3812,17 @@ export default function FeedPage() {
                       >
                         01
                       </Button>
+                      <Link to={createPageUrl("Window")}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-5 px-1.5 text-[10px] font-mono tracking-widest text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 border border-purple-500/30"
+                          title="Window AI - Smartest Assistant"
+                        >
+                          <Brain className="w-3 h-3 mr-1" />
+                          WINDOW
+                        </Button>
+                      </Link>
                       
                       <AnimatePresence>
                         {showLayer01 && (
