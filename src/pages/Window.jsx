@@ -238,7 +238,7 @@ export default function WindowPage() {
         >
           <button
             onClick={() => setIsFullScreen(false)}
-            className="absolute top-0 left-0 z-50 w-16 h-16 flex items-center justify-center group"
+            className="absolute top-0 left-0 z-50 w-16 h-16 cursor-pointer"
             style={{
               background: 'linear-gradient(135deg, rgba(0,0,0,0.3) 0%, transparent 100%)',
               borderTop: '2px solid rgba(255,255,255,0.3)',
@@ -256,9 +256,8 @@ export default function WindowPage() {
               e.currentTarget.style.borderLeftColor = 'rgba(255,255,255,0.3)';
               e.currentTarget.style.boxShadow = 'none';
             }}
-          >
-            <ArrowLeft className="w-5 h-5 text-white/70 group-hover:text-white transition-all" />
-          </button>
+          />
+
           <iframe
             src="https://nofear.base44.app"
             className="w-full h-full border-none"
