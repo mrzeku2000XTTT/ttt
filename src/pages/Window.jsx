@@ -199,25 +199,27 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
       {/* Red Edges */}
       <div className="absolute inset-0 pointer-events-none border-4 border-red-600 z-50" />
       
-      {/* Eyes Logo */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="absolute top-8 left-0 right-0 z-40 flex items-center justify-center"
-      >
-        <img 
-          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/c1bbdc871_image.png"
-          alt="No Fear Eyes"
-          className="h-20 md:h-24 w-auto object-contain drop-shadow-[0_0_30px_rgba(220,38,38,0.9)]"
-        />
-      </motion.div>
+      {/* Back Button with Eyes Logo */}
+      <Link to={createPageUrl("Feed")}>
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="absolute top-8 left-8 z-40 cursor-pointer hover:scale-110 transition-transform"
+        >
+          <img 
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/c1bbdc871_image.png"
+            alt="Back to Feed"
+            className="h-12 md:h-16 w-auto object-contain drop-shadow-[0_0_20px_rgba(220,38,38,0.7)] opacity-80 hover:opacity-100"
+          />
+        </motion.div>
+      </Link>
 
       {/* Messages Area - Scrollable */}
       <div className="flex-1 overflow-y-auto px-4 py-6" style={{ paddingBottom: '180px', paddingTop: '120px' }}>
         <div className="max-w-2xl mx-auto space-y-3">
           {messages.length === 0 ? (
-            <div className="text-center py-20">
-              <h2 className="text-5xl md:text-6xl font-black mb-2" style={{ 
+            <div className="text-center py-8">
+              <h2 className="text-5xl md:text-6xl font-black mb-6" style={{ 
                 fontFamily: 'Impact, "Arial Black", sans-serif',
                 fontStyle: 'italic',
                 fontWeight: 900,
@@ -230,6 +232,18 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
                 transform: 'skewX(-8deg)',
                 textTransform: 'uppercase'
               }}>NO FEAR AI</h2>
+              
+              {/* No Fear App iframe */}
+              <div className="mt-8 w-full">
+                <iframe
+                  src="https://nofear.base44.app"
+                  className="w-full rounded-xl border-2 border-red-600 shadow-[0_0_30px_rgba(220,38,38,0.5)]"
+                  style={{ height: 'calc(100vh - 400px)', minHeight: '400px' }}
+                  title="No Fear App"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
             </div>
           ) : (
             messages.map((msg, idx) => (
