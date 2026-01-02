@@ -88,22 +88,27 @@ export default function WindowPage() {
 
       // Call LLM with comprehensive context
       const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are Window AI, the most advanced AI assistant in the TTT ecosystem. You have access to all TTT data and knowledge across all platforms including:
-- Agent ZK profiles and connections
-- TTT Feed posts and interactions
-- Bridge transactions and crypto data
-- User preferences and behaviors
-- All community apps and tools
-- DAGKnight wallet verifications
-- Sealed wallets and security data
-- News, analytics, and market data
+        prompt: `You are TTTZ AI, the official AI assistant for TTTZ.xyz (TTT ecosystem). 
 
-Current conversation:
-${conversationContext}
+      ABOUT TTTZ.XYZ:
+      TTTZ is a comprehensive Web3 platform built on Kaspa blockchain featuring:
+      - TTT Feed: Social platform with encrypted posts and KAS tipping
+      - Agent ZK: AI agent directory and profiles with ZK verification
+      - Bridge: L1/L2 Kaspa transfers and crypto bridging
+      - TTTV: Video streaming and content platform
+      - DAGKnight: Multi-wallet verification system (Kasware, TTT Wallet, MetaMask)
+      - Marketplace: P2P trading, services, and digital goods
+      - Over 50+ integrated apps and tools in the ecosystem
+      - Built-in AI features: Zeku AI, Window AI (you), and various AI agents
 
-User's latest message: ${input}
+      You have access to all TTTZ platform data including user profiles, posts, transactions, wallet data, and app integrations.
 
-Provide intelligent, context-aware responses that leverage your comprehensive knowledge of the TTT ecosystem. Be helpful, accurate, and insightful.`,
+      Current conversation:
+      ${conversationContext}
+
+      User's message: ${input}
+
+      Provide helpful, accurate responses about TTTZ features and data. Be concise and format responses with proper spacing and line breaks for readability.`,
         add_context_from_internet: true
       });
 
@@ -127,24 +132,24 @@ Provide intelligent, context-aware responses that leverage your comprehensive kn
   return (
     <div className="fixed inset-0 bg-black flex flex-col">
       {/* Header */}
-      <div className="flex-shrink-0 bg-black/90 backdrop-blur-xl border-b border-white/10 px-4 py-4">
+      <div className="flex-shrink-0 bg-black/90 backdrop-blur-xl border-b border-white/10 px-3 sm:px-4 py-3 sm:py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Link to={createPageUrl("Feed")}>
-              <Button variant="ghost" size="sm" className="text-white/60 hover:text-white">
+              <Button variant="ghost" size="sm" className="text-white/60 hover:text-white h-8 w-8 p-0 sm:h-auto sm:w-auto sm:px-3">
                 <ArrowLeft className="w-4 h-4" />
               </Button>
             </Link>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <img 
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a8ee75db6_image.png"
                 alt="TTTZ"
-                className="w-10 h-10 object-cover rounded-full"
+                className="w-8 h-8 sm:w-10 sm:h-10 object-cover rounded-full"
               />
-              <h1 className="text-xl font-bold text-white">TTTZ</h1>
+              <h1 className="text-lg sm:text-xl font-bold text-white">TTTZ</h1>
             </div>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 rounded-full">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 rounded-full">
             <Sparkles className="w-3 h-3 text-purple-400" />
             <span className="text-xs text-purple-300 font-medium">Smartest AI</span>
           </div>
@@ -152,8 +157,8 @@ Provide intelligent, context-aware responses that leverage your comprehensive kn
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-6">
-        <div className="max-w-4xl mx-auto space-y-6">
+      <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6">
+        <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
           {messages.length === 0 ? (
             <div className="text-center py-20">
               <img 
@@ -171,14 +176,14 @@ Provide intelligent, context-aware responses that leverage your comprehensive kn
                 animate={{ opacity: 1, y: 0 }}
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div className={`max-w-[80%] rounded-2xl px-5 py-3 ${
+                <div className={`max-w-[85%] sm:max-w-[80%] rounded-2xl px-4 sm:px-5 py-3 ${
                   msg.role === 'user'
                     ? 'bg-gradient-to-r from-cyan-500/30 to-blue-500/30 border border-cyan-400/50 text-white'
                     : msg.role === 'error'
                     ? 'bg-red-500/20 border border-red-500/40 text-red-300'
                     : 'bg-white/5 border border-white/10 text-gray-200'
                 }`}>
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
+                  <p className="whitespace-pre-wrap text-sm sm:text-base leading-relaxed break-words">{msg.content}</p>
                 </div>
               </motion.div>
             ))
@@ -202,8 +207,8 @@ Provide intelligent, context-aware responses that leverage your comprehensive kn
       </div>
 
       {/* Input */}
-      <div className="flex-shrink-0 bg-black/90 backdrop-blur-xl border-t border-white/10 px-4 py-4">
-        <div className="max-w-4xl mx-auto flex gap-3">
+      <div className="flex-shrink-0 bg-black/90 backdrop-blur-xl border-t border-white/10 px-3 sm:px-4 py-3 sm:py-4">
+        <div className="max-w-4xl mx-auto flex gap-2 sm:gap-3">
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -213,23 +218,23 @@ Provide intelligent, context-aware responses that leverage your comprehensive kn
                 handleSend();
               }
             }}
-            placeholder="Ask me anything about TTT..."
+            placeholder="Ask me anything about TTTZ..."
             disabled={isLoading}
-            className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40 resize-none min-h-[60px] max-h-[200px]"
+            className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40 resize-none min-h-[50px] sm:min-h-[60px] max-h-[150px] sm:max-h-[200px] text-sm sm:text-base"
           />
           <Button
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
-            className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 h-[60px] px-6"
+            className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 h-[50px] sm:h-[60px] px-4 sm:px-6"
           >
             {isLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
             ) : (
-              <Send className="w-5 h-5" />
+              <Send className="w-4 h-4 sm:w-5 sm:h-5" />
             )}
           </Button>
         </div>
-        <p className="text-xs text-white/40 text-center mt-2">
+        <p className="text-[10px] sm:text-xs text-white/40 text-center mt-2">
           Shift + Enter for new line • Enter to send
         </p>
       </div>
