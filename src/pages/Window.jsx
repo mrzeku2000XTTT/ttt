@@ -196,6 +196,34 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-black via-purple-950/20 to-black flex flex-col overflow-hidden">
+      {/* Meteor Shower Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(15)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-1 h-20 bg-gradient-to-b from-white via-purple-300 to-transparent rounded-full"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `-10%`,
+              transform: 'rotate(45deg)',
+              boxShadow: '0 0 10px rgba(255, 255, 255, 0.5)',
+            }}
+            animate={{
+              x: [0, Math.random() * 300 + 200],
+              y: [0, Math.random() * 800 + 600],
+              opacity: [0, 1, 1, 0],
+            }}
+            transition={{
+              duration: Math.random() * 2 + 1,
+              delay: Math.random() * 10,
+              repeat: Infinity,
+              repeatDelay: Math.random() * 20 + 10,
+              ease: "linear",
+            }}
+          />
+        ))}
+      </div>
+
       {/* Messages Area - Scrollable */}
       <div className="flex-1 overflow-y-auto px-4 py-6" style={{ paddingBottom: '180px' }}>
         <div className="max-w-2xl mx-auto space-y-3">
