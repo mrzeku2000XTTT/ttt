@@ -125,9 +125,9 @@ Provide intelligent, context-aware responses that leverage your comprehensive kn
   };
 
   return (
-    <div className="min-h-screen bg-black flex flex-col">
+    <div className="fixed inset-0 bg-black flex flex-col">
       {/* Header */}
-      <div className="bg-black/90 backdrop-blur-xl border-b border-white/10 px-4 py-4">
+      <div className="flex-shrink-0 bg-black/90 backdrop-blur-xl border-b border-white/10 px-4 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link to={createPageUrl("Feed")}>
@@ -204,7 +204,7 @@ Provide intelligent, context-aware responses that leverage your comprehensive kn
       </div>
 
       {/* Input */}
-      <div className="bg-black/90 backdrop-blur-xl border-t border-white/10 px-4 py-4">
+      <div className="flex-shrink-0 bg-black/90 backdrop-blur-xl border-t border-white/10 px-4 py-4">
         <div className="max-w-4xl mx-auto flex gap-3">
           <Textarea
             value={input}
