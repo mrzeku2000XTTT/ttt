@@ -191,6 +191,7 @@ import VibeSession from './pages/VibeSession';
 import VibeSetup from './pages/VibeSetup';
 import Waitlist from './pages/Waitlist';
 import Wallet from './pages/Wallet';
+import Window from './pages/Window';
 import WorkerTask from './pages/WorkerTask';
 import X from './pages/X';
 import XYZ from './pages/XYZ';
@@ -198,7 +199,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import Window from './pages/Window';
 import __Layout from './Layout.jsx';
 
 
@@ -396,6 +396,7 @@ export const PAGES = {
     "VibeSetup": VibeSetup,
     "Waitlist": Waitlist,
     "Wallet": Wallet,
+    "Window": Window,
     "WorkerTask": WorkerTask,
     "X": X,
     "XYZ": XYZ,
@@ -403,7 +404,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "Window": Window,
 }
 
 export const pagesConfig = {
