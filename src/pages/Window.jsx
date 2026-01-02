@@ -152,9 +152,9 @@ export default function WindowPage() {
   };
 
   return (
-    <div className="fixed inset-0 bg-black flex flex-col">
+    <div className="fixed inset-0 bg-black flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex-shrink-0 bg-black/90 backdrop-blur-xl border-b border-white/10 px-3 sm:px-4 py-3 sm:py-4">
+      <div className="flex-shrink-0 bg-black/90 backdrop-blur-xl border-b border-white/10 px-3 sm:px-4 py-3 sm:py-4 z-10">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
             <Link to={createPageUrl("Feed")}>
@@ -192,10 +192,10 @@ export default function WindowPage() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6">
-        <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
+      <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-6 sm:py-8">
+        <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 pb-4">
           {messages.length === 0 ? (
-            <div className="text-center py-12 sm:py-20">
+            <div className="text-center py-16 sm:py-24">
               <img 
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a8ee75db6_image.png"
                 alt="TTTZ"
@@ -244,7 +244,7 @@ export default function WindowPage() {
       </div>
 
       {/* Input */}
-      <div className="flex-shrink-0 bg-black/90 backdrop-blur-xl border-t border-white/10 px-3 sm:px-4 py-3 sm:py-4">
+      <div className="flex-shrink-0 bg-black/90 backdrop-blur-xl border-t border-white/10 px-3 sm:px-4 py-3 sm:py-4 z-10">
         <div className="max-w-4xl mx-auto flex gap-2 sm:gap-3">
           <Textarea
             value={input}
