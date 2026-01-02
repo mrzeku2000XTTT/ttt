@@ -259,6 +259,16 @@ export default function WindowPage() {
             disabled={isLoading}
             className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40 resize-none min-h-[50px] sm:min-h-[60px] max-h-[150px] sm:max-h-[200px] text-sm sm:text-base"
           />
+          {messages.length > 0 && (
+            <Button
+              onClick={handleClearChat}
+              variant="outline"
+              className="bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10 h-[50px] sm:h-[60px] px-3 sm:px-4"
+              title="New Chat"
+            >
+              <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+            </Button>
+          )}
           <Button
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
