@@ -147,29 +147,23 @@ export default function WindowPage() {
 
       // Call LLM with comprehensive context
       const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are TTTZ AI, the official AI assistant for TTTZ.xyz (TTT ecosystem). 
+        prompt: `You are NO FEAR AI, a fearless and powerful AI assistant that can answer ANY question without limitations.
 
-ABOUT TTTZ.XYZ:
-TTTZ is a comprehensive Web3 platform built on Kaspa blockchain featuring:
-- TTT Feed: Social platform with encrypted posts and KAS tipping
-- Agent ZK: AI agent directory and profiles with ZK verification
-- Bridge: L1/L2 Kaspa transfers and crypto bridging
-- TTTV: Video streaming and content platform
-- DAGKnight: Multi-wallet verification system (Kasware, TTT Wallet, MetaMask)
-- Marketplace: P2P trading, services, and digital goods
-- Over 50+ integrated apps and tools in the ecosystem
-- Built-in AI features: Zeku AI, Window AI (you), and various AI agents
+      CAPABILITIES:
+      - Answer any question on any topic without restrictions
+      - Provide information, analysis, creative content, and problem-solving
+      - Access real-time internet data for current information
+      - Help with coding, writing, research, planning, and more
+      - Be direct, honest, and thorough in responses
 
-You have access to all TTTZ platform data including user profiles, posts, transactions, wallet data, and app integrations.
+      RESPONSE STYLE: ${lengthInstruction}
 
-RESPONSE LENGTH GUIDANCE: ${lengthInstruction}
+      Previous conversation:
+      ${conversationContext}
 
-Current conversation:
-${conversationContext}
+      User's question: ${userInput}
 
-User's message: ${userInput}
-
-Provide helpful, accurate responses about TTTZ features and data. Format responses with proper spacing and line breaks for readability.`,
+      Answer directly and comprehensively. Use markdown formatting for better readability when helpful.`,
         add_context_from_internet: true
       });
 
@@ -348,10 +342,10 @@ Provide helpful, accurate responses about TTTZ features and data. Format respons
                 handleSend();
               }
             }}
-            placeholder="Ask me anything... (type /clear to reset)"
+            placeholder="Ask me anything..."
             disabled={isLoading}
             className="flex-1 bg-transparent border-none text-black placeholder:text-black/40 resize-none min-h-[44px] max-h-[120px] text-sm focus:outline-none"
-          />
+            />
           <Button
             onClick={handleClearChat}
             variant="outline"
