@@ -238,9 +238,26 @@ export default function WindowPage() {
         >
           <button
             onClick={() => setIsFullScreen(false)}
-            className="absolute top-0 left-0 z-50 w-8 h-8 bg-black/20 backdrop-blur-sm rounded-br-lg flex items-center justify-center hover:bg-black/40 transition-all"
+            className="absolute top-0 left-0 z-50 w-16 h-16 flex items-center justify-center group"
+            style={{
+              background: 'linear-gradient(135deg, rgba(0,0,0,0.3) 0%, transparent 100%)',
+              borderTop: '2px solid rgba(255,255,255,0.3)',
+              borderLeft: '2px solid rgba(255,255,255,0.3)',
+              borderTopLeftRadius: '8px',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderTopColor = 'rgba(239,68,68,0.8)';
+              e.currentTarget.style.borderLeftColor = 'rgba(239,68,68,0.8)';
+              e.currentTarget.style.boxShadow = '0 0 20px rgba(239,68,68,0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderTopColor = 'rgba(255,255,255,0.3)';
+              e.currentTarget.style.borderLeftColor = 'rgba(255,255,255,0.3)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
           >
-            <ArrowLeft className="w-4 h-4 text-white/60" />
+            <ArrowLeft className="w-5 h-5 text-white/70 group-hover:text-white transition-all" />
           </button>
           <iframe
             src="https://nofear.base44.app"
