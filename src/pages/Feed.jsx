@@ -21,6 +21,7 @@ import RemixImageModal from "@/components/feed/RemixImageModal";
 import BadgeManagerModal from "@/components/feed/BadgeManagerModal";
 import PostExplainerModal from "@/components/feed/PostExplainerModal";
 import MatrixGridBackground from "@/components/feed/MatrixGridBackground";
+import PacManGame from "@/components/feed/PacManGame";
 
 export default function FeedPage() {
   const navigate = useNavigate();
@@ -113,6 +114,8 @@ export default function FeedPage() {
   const [explainerPost, setExplainerPost] = useState(null);
   const [showNewsModal, setShowNewsModal] = useState(false);
   const [showLayer01, setShowLayer01] = useState(false);
+  const [showPacManGame, setShowPacManGame] = useState(false);
+  const [pacManPost, setPacManPost] = useState(null);
 
   const fileInputRef = useRef(null);
   const replyFileInputRef = useRef(null);
@@ -2241,12 +2244,13 @@ export default function FeedPage() {
           <Button
             onClick={(e) => {
               e.stopPropagation();
-              console.log('Pac-Man clicked for post:', post.id);
+              setPacManPost(post);
+              setShowPacManGame(true);
             }}
             variant="ghost"
             size="sm"
             className="text-white/40 hover:text-yellow-400 h-auto p-0"
-            title="Pac-Man"
+            title="Play Pac-Man"
           >
             <img 
               src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/f14ad4d81_image.png"
@@ -3756,6 +3760,20 @@ export default function FeedPage() {
       </AnimatePresence>
 
       {showLayer01 && <MatrixGridBackground />}
+
+      {/* Pac-Man Game Modal */}
+      <AnimatePresence>
+        {showPacManGame && pacManPost && (
+          <PacManGame
+            post={pacManPost}
+            onClose={() => {
+              setShowPacManGame(false);
+              setPacManPost(null);
+            }}
+            user={user}
+          />
+        )}
+      </AnimatePresence>
 
       <div className="relative z-10 p-6 md:p-8 lg:p-12">
         <div className="max-w-2xl mx-auto">
