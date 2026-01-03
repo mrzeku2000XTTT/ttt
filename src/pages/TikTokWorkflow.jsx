@@ -153,12 +153,12 @@ Format as JSON.`,
                   </div>
                   <div 
                     onClick={() => window.open(imageUrl, '_blank')}
-                    className="relative cursor-pointer overflow-hidden group/img"
+                    className="relative cursor-pointer overflow-hidden group/img bg-black/20"
                   >
                     <img
                       src={imageUrl}
                       alt="Reference"
-                      className="w-full h-24 object-cover hover:scale-105 transition-transform duration-300"
+                      className="w-full h-48 object-contain hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity flex items-end justify-center pb-2">
                       <span className="text-white text-xs font-semibold">Click to view full</span>
