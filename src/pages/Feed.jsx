@@ -1079,7 +1079,7 @@ export default function FeedPage() {
       );
 
       // Get unique Bull Reels by reel_id
-      const uniqueReelIds = new Set(bullReelsPosts.map(tx => tx.reel_id).filter(Boolean));
+      const uniqueReelIds = new Set(bullReelsPosts.filter(tx => tx != null).map(tx => tx.reel_id).filter(Boolean));
       
       // Count tips received (all sources)
       const tipsReceived = [...allReelTransactions, ...allFeedTransactions]
@@ -1126,7 +1126,7 @@ export default function FeedPage() {
         recipient_name: username
       }) || []).filter(tx => tx != null);
       
-      const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx?.amount || 0), 0);
+      const totalFeedTips = feedTransactions.filter(tx => tx != null).reduce((sum, tx) => sum + (tx?.amount || 0), 0);
 
       setArchitectContributions({
         feedPosts: mainPosts.length,
