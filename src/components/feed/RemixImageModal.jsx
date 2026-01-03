@@ -21,32 +21,34 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
     setIsGenerating(true);
     
     try {
-      // Build the AI prompt
-      const systemPrompt = `Transform this image based on the user's request.
-${faceLocked ? "IMPORTANT: PRESERVE THE PERSON'S FACE - keep facial features identical." : ""}
-${clothingEditable ? "You can change clothing/outfit." : "Keep clothing the same."}
-${postureEditable ? "You can change pose/posture." : "Keep the same pose."}
+      // Build detailed prompt for image generation
+      const detailedPrompt = `Create a photorealistic image transformation: ${remixPrompt}.
+${faceLocked ? "CRITICAL: Keep the person's face, facial features, and identity exactly the same as the reference image." : ""}
+${clothingEditable ? "Change the clothing/outfit as described." : "Keep the same clothing."}
+${postureEditable ? "Adjust the pose/posture as described." : "Keep the same pose."}
+Professional quality, realistic lighting, high detail, natural look.`;
 
-User's request: ${remixPrompt}
-
-Generate a realistic, high-quality image with the requested changes.`;
-
+      console.log('🎨 Generating remix with prompt:', detailedPrompt);
+      
       const response = await base44.integrations.Core.GenerateImage({
-        prompt: systemPrompt,
+        prompt: detailedPrompt,
         existing_image_urls: [imageUrl]
       });
 
-      // Return the new image
-      if (response.url) {
+      console.log('✅ Generated image:', response);
+
+      if (response?.url) {
         // Convert URL to blob for saving
         const imageResponse = await fetch(response.url);
         const blob = await imageResponse.blob();
         onSave(blob);
         onClose();
+      } else {
+        throw new Error('No image URL in response');
       }
     } catch (err) {
-      console.error("Failed to generate remix:", err);
-      alert("Failed to generate remix. Please try again.");
+      console.error("❌ Remix generation error:", err);
+      alert(`Failed to generate remix: ${err.message || 'Unknown error'}. Please try again with a different description.`);
     } finally {
       setIsGenerating(false);
     }
