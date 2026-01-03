@@ -272,8 +272,8 @@ export default function WindowPage() {
       <div className="flex-1 overflow-y-auto px-4 py-6" style={{ paddingBottom: '180px', paddingTop: '120px' }}>
         <div className="max-w-2xl mx-auto space-y-3">
           {messages.length === 0 ? (
-            <div className="text-center py-8">
-              <h2 className="text-5xl md:text-6xl font-black mb-6" style={{ 
+            <div className="text-center py-12">
+              <h2 className="text-5xl md:text-6xl font-black mb-4" style={{ 
                 fontFamily: 'Impact, "Arial Black", sans-serif',
                 fontStyle: 'italic',
                 fontWeight: 900,
@@ -286,18 +286,10 @@ export default function WindowPage() {
                 transform: 'skewX(-8deg)',
                 textTransform: 'uppercase'
               }}>NO FEAR AI</h2>
-              
-              {/* No Fear App iframe */}
-              <div className="mt-8 w-full">
-                <iframe
-                  src="https://nofear.base44.app"
-                  className="w-full rounded-xl border-2 border-red-600 shadow-[0_0_30px_rgba(220,38,38,0.5)]"
-                  style={{ height: 'calc(100vh - 400px)', minHeight: '400px' }}
-                  title="No Fear App"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
+
+              <p className="text-black/60 text-lg max-w-md mx-auto">
+                The smartest AI assistant that answers any question without limitations
+              </p>
             </div>
           ) : (
             messages.map((msg, idx) => (
