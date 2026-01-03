@@ -4,8 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { base44 } from "@/api/base44Client";
 import { X, Sparkles, Loader2, Lock, Shirt, User, Upload, Image as ImageIcon } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function RemixImageModal({ imageUrl, onClose, onSave }) {
+  const navigate = useNavigate();
   const [remixPrompt, setRemixPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [faceLocked, setFaceLocked] = useState(true);
@@ -119,23 +122,20 @@ Professional quality, realistic lighting, high detail, natural look, digital art
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={async () => {
-                if (!uploadedImage) {
-                  alert('Generate or upload an image first to share to TikTok');
-                  return;
-                }
-                // TikTok sharing functionality
-                alert('🎵 TikTok Share\n\nYour image is ready to share! Download and post to TikTok.');
+              onClick={() => {
+                const imageParam = uploadedImage ? `?image=${encodeURIComponent(uploadedImage)}` : '';
+                navigate(createPageUrl('TikTokWorkflow') + imageParam);
+                onClose();
               }}
               className="relative w-9 h-9 rounded-lg flex items-center justify-center overflow-hidden hover:scale-105 transition-transform group"
-              title="Share to TikTok"
+              title="TikTok Workflow Generator"
             >
               <div className="absolute inset-0 bg-black" />
               <svg className="w-5 h-5 relative z-10" viewBox="0 0 24 24" fill="none">
                 <defs>
                   <linearGradient id="tiktok-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#00f2ea" />
-                    <stop offset="100%" stopColor="#ff0050" />
+                    <stop offset="0%" stopColor="#25F4EE" />
+                    <stop offset="100%" stopColor="#FE2C55" />
                   </linearGradient>
                 </defs>
                 <path 
