@@ -1302,7 +1302,7 @@ export default function FeedPage() {
 
       if (userEmail) {
         try {
-          const tipStats = await base44.entities.UserTipStats.filter({ user_email: userEmail });
+          const tipStats = await base44.entities.UserTipStats.filter({ user_email: userEmail }) || [];
           if (tipStats.length > 0) {
             totalFeedTips = tipStats[0].feed_tips_received || 0;
           }
@@ -1311,7 +1311,7 @@ export default function FeedPage() {
           const feedTransactions = await base44.entities.TipTransaction.filter({ 
             recipient_email: userEmail,
             source: 'feed'
-          });
+          }) || [];
           totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
         }
       }
