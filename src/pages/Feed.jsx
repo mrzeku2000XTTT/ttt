@@ -21,7 +21,7 @@ import RemixImageModal from "@/components/feed/RemixImageModal";
 import BadgeManagerModal from "@/components/feed/BadgeManagerModal";
 import PostExplainerModal from "@/components/feed/PostExplainerModal";
 import MatrixGridBackground from "@/components/feed/MatrixGridBackground";
-import PacManGame from "@/components/feed/PacManGame";
+import BoxingGame from "@/components/feed/BoxingGame";
 
 export default function FeedPage() {
   const navigate = useNavigate();
@@ -114,8 +114,8 @@ export default function FeedPage() {
   const [explainerPost, setExplainerPost] = useState(null);
   const [showNewsModal, setShowNewsModal] = useState(false);
   const [showLayer01, setShowLayer01] = useState(false);
-  const [showPacManGame, setShowPacManGame] = useState(false);
-  const [pacManPost, setPacManPost] = useState(null);
+  const [showBoxingGame, setShowBoxingGame] = useState(false);
+  const [boxingPost, setBoxingPost] = useState(null);
 
   const fileInputRef = useRef(null);
   const replyFileInputRef = useRef(null);
@@ -2250,6 +2250,24 @@ export default function FeedPage() {
             )}
           </Button>
 
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              setBoxingPost(post);
+              setShowBoxingGame(true);
+            }}
+            variant="ghost"
+            size="sm"
+            className="text-white/40 hover:text-yellow-400 h-auto p-0"
+            title="Boxing Game"
+          >
+            <img 
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/f14ad4d81_image.png"
+              alt="Boxing"
+              className="w-5 h-5 mr-2 object-contain"
+            />
+          </Button>
+
           {!post.is_stamped && (
             <Button
               onClick={() => handleStampPost(post)}
@@ -3752,14 +3770,14 @@ export default function FeedPage() {
 
       {showLayer01 && <MatrixGridBackground />}
 
-      {/* Pac-Man Game Modal */}
+      {/* Boxing Game Modal */}
       <AnimatePresence>
-        {showPacManGame && pacManPost && (
-          <PacManGame
-            post={pacManPost}
+        {showBoxingGame && boxingPost && (
+          <BoxingGame
+            post={boxingPost}
             onClose={() => {
-              setShowPacManGame(false);
-              setPacManPost(null);
+              setShowBoxingGame(false);
+              setBoxingPost(null);
             }}
             user={user}
           />
