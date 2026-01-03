@@ -2248,7 +2248,11 @@ export default function FeedPage() {
             className="text-white/40 hover:text-yellow-400 h-auto p-0"
             title="Pac-Man"
           >
-            <span className="text-xl mr-2">🟡</span>
+            <img 
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/f14ad4d81_image.png"
+              alt="Pac-Man"
+              className="w-5 h-5 mr-2 object-contain"
+            />
           </Button>
 
           {!post.is_stamped && (
