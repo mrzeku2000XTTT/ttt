@@ -1280,11 +1280,11 @@ export default function FeedPage() {
           }
         } catch (err) {
           console.log('Failed to fetch UserTipStats, falling back to TipTransaction:', err);
-          const feedTransactions = await base44.entities.TipTransaction.filter({ 
+          const feedTransactions = (await base44.entities.TipTransaction.filter({ 
             recipient_email: userEmail,
             source: 'feed'
-          }) || [];
-          totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+          }) || []).filter(tx => tx != null);
+          totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx?.amount || 0), 0);
         }
       }
 
