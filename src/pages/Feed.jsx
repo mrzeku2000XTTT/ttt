@@ -1274,7 +1274,7 @@ export default function FeedPage() {
           const feedTransactions = await base44.entities.TipTransaction.filter({ 
             recipient_email: userEmail,
             source: 'feed'
-          });
+          }) || [];
           totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
         }
       }
@@ -2408,9 +2408,9 @@ export default function FeedPage() {
 
       {/* Remix Image Modal */}
       <AnimatePresence>
-        {showRemixModal && uploadedFiles.find(f => f.type === 'image') && (
+        {showRemixModal && (
           <RemixImageModal
-            imageUrl={uploadedFiles.find(f => f.type === 'image').url}
+            imageUrl={uploadedFiles.find(f => f.type === 'image')?.url || null}
             onClose={() => setShowRemixModal(false)}
             onSave={handleSaveEditedImage}
           />
@@ -4442,16 +4442,10 @@ export default function FeedPage() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              const imageFile = uploadedFiles.find(f => f.type === 'image');
-                              if (!imageFile) {
-                                setError('Please upload an image first');
-                                return;
-                              }
                               setShowMediaMenu(false);
                               setShowRemixModal(true);
                             }}
-                            disabled={uploadedFiles.length === 0 || !uploadedFiles.some(f => f.type === 'image')}
-                            className="flex items-center gap-2 px-3 h-9 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 text-purple-300 hover:from-purple-500/30 hover:to-pink-500/30 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative z-[1]"
+                            className="flex items-center gap-2 px-3 h-9 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 text-purple-300 hover:from-purple-500/30 hover:to-pink-500/30 rounded-md transition-colors relative z-[1]"
                             title="Remix: Change Clothing & Posture"
                           >
                             <Sparkles className="w-4 h-4" />
