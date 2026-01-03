@@ -141,18 +141,30 @@ Format as JSON.`,
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-3"
+                className="relative group"
               >
-                <h3 className="text-white font-semibold text-sm mb-2 flex items-center gap-2">
-                  <Video className="w-3 h-3 text-[#25F4EE]" />
-                  Reference
-                </h3>
-                <img
-                  src={imageUrl}
-                  alt="Reference"
-                  onClick={() => window.open(imageUrl, '_blank')}
-                  className="w-full max-h-32 object-cover rounded-lg border border-white/10 cursor-pointer hover:opacity-80 transition-opacity"
-                />
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-[#25F4EE]/20 to-[#FE2C55]/20 rounded-xl blur opacity-75 group-hover:opacity-100 transition-opacity" />
+                <div className="relative bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden">
+                  <div className="px-3 py-2 border-b border-white/10 bg-black/40">
+                    <h3 className="text-white font-semibold text-xs flex items-center gap-2">
+                      <Video className="w-3 h-3 text-[#25F4EE]" />
+                      Reference
+                    </h3>
+                  </div>
+                  <div 
+                    onClick={() => window.open(imageUrl, '_blank')}
+                    className="relative cursor-pointer overflow-hidden group/img"
+                  >
+                    <img
+                      src={imageUrl}
+                      alt="Reference"
+                      className="w-full h-24 object-cover hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity flex items-end justify-center pb-2">
+                      <span className="text-white text-xs font-semibold">Click to view full</span>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             )}
 
