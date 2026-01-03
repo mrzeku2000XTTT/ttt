@@ -2248,14 +2248,7 @@ export default function FeedPage() {
             className="text-white/40 hover:text-yellow-400 h-auto p-0"
             title="Pac-Man"
           >
-            <div className="w-5 h-5 mr-2 relative flex items-center justify-center">
-              <div 
-                className="w-4 h-4 bg-yellow-400 rounded-full relative"
-                style={{
-                  clipPath: 'polygon(100% 50%, 50% 0, 0 0, 0 100%, 50% 100%)'
-                }}
-              />
-            </div>
+            <span className="text-xl mr-2">🟡</span>
           </Button>
 
           {!post.is_stamped && (
