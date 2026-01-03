@@ -174,6 +174,7 @@ import TestKaspaAPI from './pages/TestKaspaAPI';
 import TestZelcore from './pages/TestZelcore';
 import TetrisBattle from './pages/TetrisBattle';
 import TheRealm from './pages/TheRealm';
+import TikTokWorkflow from './pages/TikTokWorkflow';
 import Timer from './pages/Timer';
 import Tools from './pages/Tools';
 import TradeView from './pages/TradeView';
@@ -200,7 +201,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import TikTokWorkflow from './pages/TikTokWorkflow';
 import __Layout from './Layout.jsx';
 
 
@@ -381,6 +381,7 @@ export const PAGES = {
     "TestZelcore": TestZelcore,
     "TetrisBattle": TetrisBattle,
     "TheRealm": TheRealm,
+    "TikTokWorkflow": TikTokWorkflow,
     "Timer": Timer,
     "Tools": Tools,
     "TradeView": TradeView,
@@ -407,7 +408,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "TikTokWorkflow": TikTokWorkflow,
 }
 
 export const pagesConfig = {
