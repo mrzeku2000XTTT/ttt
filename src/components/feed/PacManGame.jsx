@@ -84,66 +84,7 @@ function Ghost({ position, color, scared }) {
   );
 }
 
-function GameScene({ 
-  pacManPos, 
-  pellets, 
-  powerPellets, 
-  ghosts, 
-  onPelletCollect, 
-  onPowerPelletCollect, 
-  scared 
-}) {
-  return (
-    <>
-      <ambientLight intensity={0.5} />
-      <pointLight position={[10, 10, 10]} intensity={1} />
-      <pointLight position={[-10, -10, -10]} intensity={0.5} color="#00FFFF" />
-      
-      <PacMan position={pacManPos} rotation={[0, 0, 0]} scale={1} />
-      
-      {pellets.map((pellet, i) => (
-        <Pellet 
-          key={`pellet-${i}`} 
-          position={pellet.position} 
-          collected={pellet.collected}
-          onCollect={() => onPelletCollect(i)}
-        />
-      ))}
-      
-      {powerPellets.map((pellet, i) => (
-        <PowerPellet 
-          key={`power-${i}`} 
-          position={pellet.position} 
-          collected={pellet.collected}
-          onCollect={() => onPowerPelletCollect(i)}
-        />
-      ))}
-      
-      {ghosts.map((ghost, i) => (
-        <Ghost 
-          key={`ghost-${i}`} 
-          position={ghost.position} 
-          color={ghost.color}
-          scared={scared}
-        />
-      ))}
-      
-      <Box position={[0, -1, 0]} args={[20, 0.2, 20]}>
-        <meshStandardMaterial 
-          color="#1a1a2e" 
-          transparent 
-          opacity={0.3}
-          roughness={0.1}
-          metalness={0.8}
-        />
-      </Box>
-      
-      <gridHelper args={[20, 20, '#00FFFF', '#0a0a0a']} position={[0, -0.9, 0]} />
-      
-      <OrbitControls enableZoom={true} enablePan={true} />
-    </>
-  );
-}
+
 
 export default function PacManGame({ post, onClose, user }) {
   const [score, setScore] = useState(0);
@@ -395,15 +336,52 @@ export default function PacManGame({ post, onClose, user }) {
               className="w-full h-full"
               style={{ background: 'radial-gradient(circle at center, #0a0a1e 0%, #000000 100%)' }}
             >
-              <GameScene
-                pacManPos={pacManPos}
-                pellets={pellets}
-                powerPellets={powerPellets}
-                ghosts={ghosts}
-                onPelletCollect={collectPellet}
-                onPowerPelletCollect={collectPowerPellet}
-                scared={scared}
-              />
+              <ambientLight intensity={0.5} />
+              <pointLight position={[10, 10, 10]} intensity={1} />
+              <pointLight position={[-10, -10, -10]} intensity={0.5} color="#00FFFF" />
+              
+              <PacMan position={pacManPos} rotation={[0, 0, 0]} scale={1} />
+              
+              {pellets.map((pellet, i) => (
+                <Pellet 
+                  key={`pellet-${i}`} 
+                  position={pellet.position} 
+                  collected={pellet.collected}
+                  onCollect={() => collectPellet(i)}
+                />
+              ))}
+              
+              {powerPellets.map((pellet, i) => (
+                <PowerPellet 
+                  key={`power-${i}`} 
+                  position={pellet.position} 
+                  collected={pellet.collected}
+                  onCollect={() => collectPowerPellet(i)}
+                />
+              ))}
+              
+              {ghosts.map((ghost, i) => (
+                <Ghost 
+                  key={`ghost-${i}`} 
+                  position={ghost.position} 
+                  color={ghost.color}
+                  scared={scared}
+                />
+              ))}
+              
+              <Box position={[0, -1, 0]} args={[20, 0.2, 20]}>
+                <meshStandardMaterial 
+                  color="#1a1a2e" 
+                  transparent 
+                  opacity={0.3}
+                  roughness={0.1}
+                  metalness={0.8}
+                />
+              </Box>
+              
+              <gridHelper args={[20, 20, '#00FFFF', '#0a0a0a']} position={[0, -0.9, 0]} />
+              
+              <OrbitControls enableZoom={true} enablePan={true} />
             </Canvas>
           </div>
 
