@@ -141,16 +141,17 @@ Format as JSON.`,
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4"
+                className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-3"
               >
-                <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-                  <Video className="w-4 h-4 text-[#25F4EE]" />
-                  Reference Image
+                <h3 className="text-white font-semibold text-sm mb-2 flex items-center gap-2">
+                  <Video className="w-3 h-3 text-[#25F4EE]" />
+                  Reference
                 </h3>
                 <img
                   src={imageUrl}
                   alt="Reference"
-                  className="w-full rounded-lg border border-white/10"
+                  onClick={() => window.open(imageUrl, '_blank')}
+                  className="w-full max-h-32 object-cover rounded-lg border border-white/10 cursor-pointer hover:opacity-80 transition-opacity"
                 />
               </motion.div>
             )}
