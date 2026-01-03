@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { base44 } from "@/api/base44Client";
-import { X, Sparkles, Loader2, Lock, Shirt, User } from "lucide-react";
+import { X, Sparkles, Loader2, Lock, Shirt, User, Upload, Image as ImageIcon } from "lucide-react";
 
 export default function RemixImageModal({ imageUrl, onClose, onSave }) {
   const [remixPrompt, setRemixPrompt] = useState("");
@@ -11,28 +11,54 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
   const [faceLocked, setFaceLocked] = useState(true);
   const [clothingEditable, setClothingEditable] = useState(true);
   const [postureEditable, setPostureEditable] = useState(true);
+  const [uploadedImage, setUploadedImage] = useState(imageUrl);
+  const [uploadingFile, setUploadingFile] = useState(false);
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingFile(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setUploadedImage(file_url);
+    } catch (err) {
+      console.error("Upload failed:", err);
+      alert("Failed to upload image");
+    } finally {
+      setUploadingFile(false);
+    }
+  };
 
   const handleGenerateRemix = async () => {
     if (!remixPrompt.trim()) {
-      alert("Please describe the changes you want (clothing, posture, background, etc.)");
+      alert("Please describe what you want to create");
       return;
     }
 
     setIsGenerating(true);
     
     try {
-      // Build detailed prompt for image generation
-      const detailedPrompt = `Create a photorealistic image transformation: ${remixPrompt}.
+      let detailedPrompt = "";
+      
+      if (uploadedImage) {
+        // Remix existing image
+        detailedPrompt = `Create a photorealistic image transformation: ${remixPrompt}.
 ${faceLocked ? "CRITICAL: Keep the person's face, facial features, and identity exactly the same as the reference image." : ""}
 ${clothingEditable ? "Change the clothing/outfit as described." : "Keep the same clothing."}
 ${postureEditable ? "Adjust the pose/posture as described." : "Keep the same pose."}
 Professional quality, realistic lighting, high detail, natural look.`;
+      } else {
+        // Generate brand new image
+        detailedPrompt = `Create a photorealistic image: ${remixPrompt}.
+Professional quality, realistic lighting, high detail, natural look, digital art masterpiece.`;
+      }
 
-      console.log('🎨 Generating remix with prompt:', detailedPrompt);
+      console.log('🎨 Generating image with prompt:', detailedPrompt);
       
       const response = await base44.integrations.Core.GenerateImage({
         prompt: detailedPrompt,
-        existing_image_urls: [imageUrl]
+        ...(uploadedImage && { existing_image_urls: [uploadedImage] })
       });
 
       console.log('✅ Generated image:', response);
@@ -83,8 +109,12 @@ Professional quality, realistic lighting, high detail, natural look.`;
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="text-white font-bold text-lg">Remix Image - Change Clothing & Posture</h3>
-              <p className="text-white/60 text-sm">AI-powered image transformation</p>
+              <h3 className="text-white font-bold text-lg">
+                {uploadedImage ? "Remix Image" : "Generate Image"}
+              </h3>
+              <p className="text-white/60 text-sm">
+                {uploadedImage ? "AI-powered image transformation" : "Create brand new AI art"}
+              </p>
             </div>
           </div>
           <Button
@@ -100,23 +130,58 @@ Professional quality, realistic lighting, high detail, natural look.`;
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           <div className="grid md:grid-cols-2 gap-6">
-            {/* Original Image */}
+            {/* Image Upload/Display */}
             <div>
-              <div className="text-white/60 text-sm mb-3 font-semibold">Original Image</div>
-              <div className="relative bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-                <img
-                  src={imageUrl}
-                  alt="Original"
-                  className="w-full h-auto object-contain max-h-[400px]"
-                />
+              <div className="text-white/60 text-sm mb-3 font-semibold">
+                {uploadedImage ? "Reference Image" : "Upload Image"}
               </div>
+              {uploadedImage ? (
+                <div className="relative bg-white/5 border border-white/10 rounded-xl overflow-hidden group">
+                  <img
+                    src={uploadedImage}
+                    alt="Reference"
+                    className="w-full h-auto object-contain max-h-[400px]"
+                  />
+                  <button
+                    onClick={() => setUploadedImage(null)}
+                    className="absolute top-2 right-2 w-8 h-8 bg-red-500/80 hover:bg-red-500 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-4 h-4 text-white" />
+                  </button>
+                </div>
+              ) : (
+                <label className="relative bg-white/5 border-2 border-dashed border-white/20 rounded-xl overflow-hidden flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-all h-[400px]">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    disabled={uploadingFile}
+                  />
+                  {uploadingFile ? (
+                    <>
+                      <Loader2 className="w-12 h-12 text-purple-400 animate-spin mb-4" />
+                      <p className="text-white/60 text-sm">Uploading...</p>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-12 h-12 text-white/40 mb-4" />
+                      <p className="text-white/80 font-semibold mb-2">Upload Image</p>
+                      <p className="text-white/40 text-sm">Click to select or drag & drop</p>
+                    </>
+                  )}
+                </label>
+              )}
             </div>
 
             {/* Controls */}
             <div className="space-y-4">
-              <div className="text-white/60 text-sm mb-3 font-semibold">Options</div>
-              
-              {/* Lock Toggles */}
+              <div className="text-white/60 text-sm mb-3 font-semibold">
+                {uploadedImage ? "Remix Options" : "Generation Options"}
+              </div>
+
+              {/* Lock Toggles - Only show if image exists */}
+              {uploadedImage && (
               <div className="space-y-3">
                 <button
                   onClick={() => setFaceLocked(!faceLocked)}
@@ -188,22 +253,32 @@ Professional quality, realistic lighting, high detail, natural look.`;
                   }`}>
                     {postureEditable ? "Editable" : "Locked"}
                   </div>
-                </button>
-              </div>
+                  </button>
+                  </div>
+                  )}
 
               {/* Prompt Input */}
               <div>
                 <label className="text-white/60 text-sm mb-2 block">
-                  Describe Changes (clothing, posture, background, etc.)
+                  {uploadedImage 
+                    ? "Describe Changes (clothing, posture, background, etc.)"
+                    : "Describe What You Want to Create"
+                  }
                 </label>
                 <Textarea
                   value={remixPrompt}
                   onChange={(e) => setRemixPrompt(e.target.value)}
-                  placeholder="e.g., wearing a red leather jacket, arms crossed, city background..."
+                  placeholder={uploadedImage 
+                    ? "e.g., wearing a red leather jacket, arms crossed, city background..."
+                    : "e.g., a futuristic cyberpunk warrior in neon city, digital art masterpiece..."
+                  }
                   className="bg-white/5 border-white/20 text-white placeholder:text-white/30 h-32 resize-none"
                 />
                 <p className="text-white/40 text-xs mt-2">
-                  The face appearance will remain the same. Describe the clothing, pose, and environment you want.
+                  {uploadedImage 
+                    ? "The face appearance will remain the same. Describe the clothing, pose, and environment you want."
+                    : "Describe in detail what you want to create. Be specific about style, mood, and details."
+                  }
                 </p>
               </div>
 
@@ -211,7 +286,12 @@ Professional quality, realistic lighting, high detail, natural look.`;
               <div>
                 <div className="text-white/40 text-xs mb-2">Example prompts:</div>
                 <div className="grid grid-cols-2 gap-2">
-                  {examplePrompts.map((prompt, idx) => (
+                  {(uploadedImage ? examplePrompts : [
+                    "cyberpunk warrior in neon city",
+                    "elegant fantasy princess portrait",
+                    "futuristic sci-fi landscape",
+                    "abstract colorful digital art"
+                  ]).map((prompt, idx) => (
                     <button
                       key={idx}
                       onClick={() => setRemixPrompt(prompt)}
@@ -249,10 +329,10 @@ Professional quality, realistic lighting, high detail, natural look.`;
               ) : (
                 <>
                   <Sparkles className="w-4 h-4 mr-2" />
-                  Generate Remix
+                  {uploadedImage ? "Generate Remix" : "Generate Image"}
                 </>
               )}
-            </Button>
+              </Button>
           </div>
         </div>
       </motion.div>
