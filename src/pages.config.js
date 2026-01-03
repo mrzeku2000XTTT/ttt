@@ -184,6 +184,7 @@ import UNI from './pages/UNI';
 import UserProfile from './pages/UserProfile';
 import VPImport from './pages/VPImport';
 import VProgs from './pages/VProgs';
+import Valorant from './pages/Valorant';
 import Vault from './pages/Vault';
 import Veritas from './pages/Veritas';
 import Vibe from './pages/Vibe';
@@ -199,7 +200,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import Valorant from './pages/Valorant';
 import __Layout from './Layout.jsx';
 
 
@@ -390,6 +390,7 @@ export const PAGES = {
     "UserProfile": UserProfile,
     "VPImport": VPImport,
     "VProgs": VProgs,
+    "Valorant": Valorant,
     "Vault": Vault,
     "Veritas": Veritas,
     "Vibe": Vibe,
@@ -405,7 +406,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "Valorant": Valorant,
 }
 
 export const pagesConfig = {

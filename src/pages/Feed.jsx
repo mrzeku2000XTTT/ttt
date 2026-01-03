@@ -1053,8 +1053,8 @@ export default function FeedPage() {
       const mainPosts = userPosts.filter(p => !p.parent_post_id);
       
       // Get all tip transactions
-      const allReelTransactions = await base44.entities.TipTransaction.filter({ source: 'reel' });
-      const allFeedTransactions = await base44.entities.TipTransaction.filter({ source: 'feed' });
+      const allReelTransactions = await base44.entities.TipTransaction.filter({ source: 'reel' }) || [];
+      const allFeedTransactions = await base44.entities.TipTransaction.filter({ source: 'feed' }) || [];
       
       // Find user's wallet address from their transactions
       const userTransaction = [...allReelTransactions, ...allFeedTransactions].find(tx => 
@@ -1115,7 +1115,7 @@ export default function FeedPage() {
       const feedTransactions = await base44.entities.TipTransaction.filter({ 
         source: 'feed',
         recipient_name: username
-      });
+      }) || [];
       
       const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
 
@@ -1158,13 +1158,13 @@ export default function FeedPage() {
           const feedTransactions = await base44.entities.TipTransaction.filter({ 
             recipient_email: userEmail,
             source: 'feed'
-          });
+          }) || [];
           totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
 
           const bullTransactions = await base44.entities.TipTransaction.filter({ 
             recipient_email: userEmail,
             source: 'reel'
-          });
+          }) || [];
           totalBullTips = bullTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
         }
       }
