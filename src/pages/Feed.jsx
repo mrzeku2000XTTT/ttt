@@ -1197,11 +1197,11 @@ export default function FeedPage() {
       const userPosts = await base44.entities.Post.filter({ author_name: username });
       const mainPosts = userPosts.filter(p => !p.parent_post_id);
       
-      const feedTransactions = await base44.entities.TipTransaction.filter({ 
+      const feedTransactions = (await base44.entities.TipTransaction.filter({ 
         source: 'feed',
         recipient_name: username
-      }) || [];
-      const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+      }) || []).filter(tx => tx != null);
+      const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx?.amount || 0), 0);
 
       setShillerContributions({
         feedPosts: mainPosts.length,
@@ -1221,11 +1221,11 @@ export default function FeedPage() {
       const userPosts = await base44.entities.Post.filter({ author_name: username });
       const mainPosts = userPosts.filter(p => !p.parent_post_id);
       
-      const feedTransactions = await base44.entities.TipTransaction.filter({ 
+      const feedTransactions = (await base44.entities.TipTransaction.filter({ 
         source: 'feed',
         recipient_name: username
-      }) || [];
-      const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+      }) || []).filter(tx => tx != null);
+      const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx?.amount || 0), 0);
 
       setMarkContributions({
         feedPosts: mainPosts.length,
@@ -1245,11 +1245,11 @@ export default function FeedPage() {
       const userPosts = await base44.entities.Post.filter({ author_name: username });
       const mainPosts = userPosts.filter(p => !p.parent_post_id);
       
-      const feedTransactions = await base44.entities.TipTransaction.filter({ 
+      const feedTransactions = (await base44.entities.TipTransaction.filter({ 
         source: 'feed',
         recipient_name: username
-      }) || [];
-      const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+      }) || []).filter(tx => tx != null);
+      const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx?.amount || 0), 0);
 
       setDevContributions({
         feedPosts: mainPosts.length,
@@ -1317,11 +1317,11 @@ export default function FeedPage() {
           }
         } catch (err) {
           console.log('Failed to fetch UserTipStats, falling back to TipTransaction:', err);
-          const feedTransactions = await base44.entities.TipTransaction.filter({ 
+          const feedTransactions = (await base44.entities.TipTransaction.filter({ 
             recipient_email: userEmail,
             source: 'feed'
-          }) || [];
-          totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+          }) || []).filter(tx => tx != null);
+          totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx?.amount || 0), 0);
         }
       }
 
