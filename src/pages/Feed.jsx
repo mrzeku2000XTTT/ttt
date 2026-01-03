@@ -17,6 +17,7 @@ import EncryptedNotepad from "@/components/feed/EncryptedNotepad";
 import CommentSection from "@/components/feed/CommentSection";
 import AgentYingChat from "@/components/AgentYingChat";
 import ImageEditor from "@/components/feed/ImageEditor";
+import RemixImageModal from "@/components/feed/RemixImageModal";
 import BadgeManagerModal from "@/components/feed/BadgeManagerModal";
 import PostExplainerModal from "@/components/feed/PostExplainerModal";
 import MatrixGridBackground from "@/components/feed/MatrixGridBackground";
@@ -49,6 +50,7 @@ export default function FeedPage() {
   const [showMediaMenu, setShowMediaMenu] = useState(false);
   const [showGrokModal, setShowGrokModal] = useState(false);
   const [showImageEditor, setShowImageEditor] = useState(false);
+  const [showRemixModal, setShowRemixModal] = useState(false);
   const [grokPrompt, setGrokPrompt] = useState('');
   const [copiedPostId, setCopiedPostId] = useState(null);
   const [fullscreenImage, setFullscreenImage] = useState(null);
@@ -2383,6 +2385,17 @@ export default function FeedPage() {
         )}
       </AnimatePresence>
 
+      {/* Remix Image Modal */}
+      <AnimatePresence>
+        {showRemixModal && uploadedFiles.find(f => f.type === 'image') && (
+          <RemixImageModal
+            imageUrl={uploadedFiles.find(f => f.type === 'image').url}
+            onClose={() => setShowRemixModal(false)}
+            onSave={handleSaveEditedImage}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Profile Modal */}
       <AnimatePresence>
         {showProfileModal && (
@@ -4388,6 +4401,26 @@ export default function FeedPage() {
                           >
                             <Pencil className="w-4 h-4" />
                             <span className="hidden sm:inline text-sm">Edit</span>
+                          </button>
+
+                          {/* Remix Button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const imageFile = uploadedFiles.find(f => f.type === 'image');
+                              if (!imageFile) {
+                                setError('Please upload an image first');
+                                return;
+                              }
+                              setShowMediaMenu(false);
+                              setShowRemixModal(true);
+                            }}
+                            disabled={uploadedFiles.length === 0 || !uploadedFiles.some(f => f.type === 'image')}
+                            className="flex items-center gap-2 px-3 h-9 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 text-purple-300 hover:from-purple-500/30 hover:to-pink-500/30 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative z-[1]"
+                            title="Remix: Change Clothing & Posture"
+                          >
+                            <Sparkles className="w-4 h-4" />
+                            <span className="hidden sm:inline text-sm">Remix</span>
                           </button>
                         </div>
 
