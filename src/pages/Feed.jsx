@@ -1191,7 +1191,7 @@ export default function FeedPage() {
       const feedTransactions = await base44.entities.TipTransaction.filter({ 
         source: 'feed',
         recipient_name: username
-      });
+      }) || [];
       const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
 
       setShillerContributions({
@@ -1215,7 +1215,7 @@ export default function FeedPage() {
       const feedTransactions = await base44.entities.TipTransaction.filter({ 
         source: 'feed',
         recipient_name: username
-      });
+      }) || [];
       const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
 
       setMarkContributions({
@@ -1239,7 +1239,7 @@ export default function FeedPage() {
       const feedTransactions = await base44.entities.TipTransaction.filter({ 
         source: 'feed',
         recipient_name: username
-      });
+      }) || [];
       const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
 
       setDevContributions({
@@ -1508,7 +1508,7 @@ export default function FeedPage() {
       
       if (targetEmail) {
         try {
-          const tipStats = await base44.entities.UserTipStats.filter({ user_email: targetEmail });
+          const tipStats = await base44.entities.UserTipStats.filter({ user_email: targetEmail }) || [];
           if (tipStats.length > 0) {
             feedTipsSent = tipStats[0].feed_tips_sent || 0;
             feedTipsReceived = tipStats[0].feed_tips_received || 0;
