@@ -253,7 +253,7 @@ export default function FeedPage() {
       const file = new File([blob], 'edited-image.png', { type: 'image/png' });
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-      // Replace the original image with the edited one
+      // Replace the original image with the edited one, or add new image
       const imageIndex = uploadedFiles.findIndex(f => f.type === 'image');
       if (imageIndex !== -1) {
         const newFiles = [...uploadedFiles];
@@ -264,9 +264,18 @@ export default function FeedPage() {
           size: blob.size
         };
         setUploadedFiles(newFiles);
+      } else {
+        // No existing image - add new one
+        setUploadedFiles([...uploadedFiles, {
+          url: file_url,
+          type: 'image',
+          name: 'edited-image.png',
+          size: blob.size
+        }]);
       }
 
       setShowImageEditor(false);
+      setShowRemixModal(false);
       setError(null);
     } catch (err) {
       console.error('Failed to save edited image:', err);
