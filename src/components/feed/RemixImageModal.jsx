@@ -117,15 +117,43 @@ Professional quality, realistic lighting, high detail, natural look, digital art
               </p>
             </div>
           </div>
-          <Button
-            onClick={onClose}
-            variant="ghost"
-            size="sm"
-            className="text-white/60 hover:text-white"
-          >
-            <X className="w-5 h-5" />
-          </Button>
-        </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={async () => {
+                if (!uploadedImage) {
+                  alert('Generate or upload an image first to share to TikTok');
+                  return;
+                }
+                // TikTok sharing functionality
+                alert('🎵 TikTok Share\n\nYour image is ready to share! Download and post to TikTok.');
+              }}
+              className="relative w-9 h-9 rounded-lg flex items-center justify-center overflow-hidden hover:scale-105 transition-transform group"
+              title="Share to TikTok"
+            >
+              <div className="absolute inset-0 bg-black" />
+              <svg className="w-5 h-5 relative z-10" viewBox="0 0 24 24" fill="none">
+                <defs>
+                  <linearGradient id="tiktok-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#00f2ea" />
+                    <stop offset="100%" stopColor="#ff0050" />
+                  </linearGradient>
+                </defs>
+                <path 
+                  d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z" 
+                  fill="url(#tiktok-gradient)"
+                />
+              </svg>
+            </button>
+            <Button
+              onClick={onClose}
+              variant="ghost"
+              size="sm"
+              className="text-white/60 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
+          </div>
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
