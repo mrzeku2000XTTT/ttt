@@ -1061,19 +1061,19 @@ export default function FeedPage() {
       const userPosts = await base44.entities.Post.filter({ author_name: username });
       const mainPosts = userPosts.filter(p => !p.parent_post_id);
       
-      // Get all tip transactions
-      const allReelTransactions = await base44.entities.TipTransaction.filter({ source: 'reel' }) || [];
-      const allFeedTransactions = await base44.entities.TipTransaction.filter({ source: 'feed' }) || [];
+      // Get all tip transactions with null safety
+      const allReelTransactions = (await base44.entities.TipTransaction.filter({ source: 'reel' }) || []).filter(tx => tx != null);
+      const allFeedTransactions = (await base44.entities.TipTransaction.filter({ source: 'feed' }) || []).filter(tx => tx != null);
       
       // Find user's wallet address from their transactions
       const userTransaction = [...allReelTransactions, ...allFeedTransactions].find(tx => 
-        tx.sender_name === username || tx.recipient_name === username
+        tx && (tx.sender_name === username || tx.recipient_name === username)
       );
       const userWallet = userTransaction?.sender_wallet || userTransaction?.recipient_wallet;
 
       // Count Bull Reels posts (self-transactions where sender = recipient)
       const bullReelsPosts = allReelTransactions.filter(tx => 
-        tx.sender_wallet === userWallet && 
+        tx && tx.sender_wallet === userWallet && 
         tx.recipient_wallet === userWallet &&
         tx.sender_wallet === tx.recipient_wallet
       );
@@ -1084,18 +1084,18 @@ export default function FeedPage() {
       // Count tips received (all sources)
       const tipsReceived = [...allReelTransactions, ...allFeedTransactions]
         .filter(tx => 
-          tx.recipient_name === username &&
+          tx && tx.recipient_name === username &&
           tx.sender_wallet !== tx.recipient_wallet
         )
-        .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+        .reduce((sum, tx) => sum + (tx?.amount || 0), 0);
 
       // Count tips sent (all sources)
       const tipsSent = [...allReelTransactions, ...allFeedTransactions]
         .filter(tx => 
-          tx.sender_name === username &&
+          tx && tx.sender_name === username &&
           tx.sender_wallet !== tx.recipient_wallet
         )
-        .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+        .reduce((sum, tx) => sum + (tx?.amount || 0), 0);
 
       setBadgeContributions({
         bullReelsCount: uniqueReelIds.size || bullReelsPosts.length,
@@ -1121,12 +1121,12 @@ export default function FeedPage() {
       const mainPosts = userPosts.filter(p => !p.parent_post_id);
       
       // Get all tips received on Feed posts
-      const feedTransactions = await base44.entities.TipTransaction.filter({ 
+      const feedTransactions = (await base44.entities.TipTransaction.filter({ 
         source: 'feed',
         recipient_name: username
-      }) || [];
+      }) || []).filter(tx => tx != null);
       
-      const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+      const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx?.amount || 0), 0);
 
       setArchitectContributions({
         feedPosts: mainPosts.length,
@@ -1164,17 +1164,17 @@ export default function FeedPage() {
           console.log('Failed to fetch UserTipStats, falling back to TipTransaction:', err);
           
           // Fallback to TipTransaction if UserTipStats is not accessible
-          const feedTransactions = await base44.entities.TipTransaction.filter({ 
+          const feedTransactions = (await base44.entities.TipTransaction.filter({ 
             recipient_email: userEmail,
             source: 'feed'
-          }) || [];
-          totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+          }) || []).filter(tx => tx != null);
+          totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx?.amount || 0), 0);
 
-          const bullTransactions = await base44.entities.TipTransaction.filter({ 
+          const bullTransactions = (await base44.entities.TipTransaction.filter({ 
             recipient_email: userEmail,
             source: 'reel'
-          }) || [];
-          totalBullTips = bullTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+          }) || []).filter(tx => tx != null);
+          totalBullTips = bullTransactions.reduce((sum, tx) => sum + (tx?.amount || 0), 0);
         }
       }
 
