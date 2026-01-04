@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { base44 } from "@/api/base44Client";
-import { X, Sparkles, Loader2, Lock, Shirt, User, Upload, Image as ImageIcon } from "lucide-react";
+import { X, Sparkles, Loader2, Lock, Shirt, User, Upload, Image as ImageIcon, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -22,6 +22,7 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
   const [uploadingEnd, setUploadingEnd] = useState(false);
   const [generatingStart, setGeneratingStart] = useState(false);
   const [generatingEnd, setGeneratingEnd] = useState(false);
+  const [pushingToFeed, setPushingToFeed] = useState(false);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -117,6 +118,27 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
     } finally {
       setGeneratingEnd(false);
     }
+  };
+
+  const handlePushToFeed = () => {
+    // Collect all available images
+    const images = [];
+    if (uploadedImage) images.push(uploadedImage);
+    if (startImage) images.push(startImage);
+    if (endImage) images.push(endImage);
+
+    if (images.length === 0) {
+      alert("Please upload or generate at least one image first");
+      return;
+    }
+
+    // Store images in sessionStorage for Feed page to pick up
+    sessionStorage.setItem('remix_feed_images', JSON.stringify(images));
+    sessionStorage.setItem('remix_feed_caption', remixPrompt || 'AI Remix Transformation');
+    
+    // Navigate to Feed page
+    navigate(createPageUrl('Feed'));
+    onClose();
   };
 
   const handleGenerateRemix = async () => {
@@ -277,6 +299,15 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={handlePushToFeed}
+              disabled={pushingToFeed || (!uploadedImage && !startImage && !endImage)}
+              className="relative w-9 h-9 rounded-lg flex items-center justify-center overflow-hidden hover:scale-105 transition-transform bg-gradient-to-br from-cyan-500 to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Push to Feed"
+            >
+              <Send className="w-5 h-5 text-white" />
+            </button>
+            
+            <button
               onClick={() => {
                 const imageParam = uploadedImage ? `?image=${encodeURIComponent(uploadedImage)}` : '';
                 navigate(createPageUrl('TikTokWorkflow') + imageParam);
@@ -299,6 +330,7 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
                 />
               </svg>
             </button>
+            
             <Button
               onClick={onClose}
               variant="ghost"
