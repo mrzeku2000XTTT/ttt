@@ -55,7 +55,9 @@ export default function FeedPage() {
   const [grokPrompt, setGrokPrompt] = useState('');
   const [copiedPostId, setCopiedPostId] = useState(null);
   const [fullscreenImage, setFullscreenImage] = useState(null);
+  const [fullscreenPost, setFullscreenPost] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [isPushingToShop, setIsPushingToShop] = useState(false);
   const [profileUsername, setProfileUsername] = useState(null);
   const [profileData, setProfileData] = useState({ posts: [], followers: 0, following: 0, trustScore: 0, isFollowing: false, zekuBalance: 0, feedTipsSent: 0, feedTipsReceived: 0, bullTipsSent: 0, bullTipsReceived: 0, commentTipsSent: 0, commentTipsReceived: 0, shillProfile: null });
   const [loadingProfile, setLoadingProfile] = useState(false);
@@ -1051,6 +1053,43 @@ export default function FeedPage() {
       setTimeout(() => setCopiedPostId(null), 2000);
     } catch (err) {
       console.error('Failed to copy link:', err);
+    }
+  };
+
+  const handlePushToShop = async () => {
+    if (!fullscreenPost) return;
+
+    setIsPushingToShop(true);
+    try {
+      const imageUrl = fullscreenPost.media_files?.find(f => f.type === 'image')?.url || fullscreenPost.image_url;
+      
+      if (!imageUrl) {
+        setError('No image found to push to shop');
+        return;
+      }
+
+      await base44.entities.ShopItem.create({
+        title: fullscreenPost.content.substring(0, 100) || 'Post Image',
+        description: fullscreenPost.content,
+        price: 10,
+        image_url: imageUrl,
+        category: 'Digital Art',
+        seller_email: user?.email || fullscreenPost.created_by,
+        seller_name: fullscreenPost.author_name,
+        seller_wallet: fullscreenPost.author_wallet_address,
+        stock: 1,
+        status: 'active',
+        post_id: fullscreenPost.id
+      });
+
+      alert('✅ Post pushed to Shop!\n\nVisit the Shop to manage your listing.');
+      setFullscreenImage(null);
+      setFullscreenPost(null);
+    } catch (err) {
+      console.error('Failed to push to shop:', err);
+      setError('Failed to push to shop: ' + err.message);
+    } finally {
+      setIsPushingToShop(false);
     }
   };
 
@@ -2188,7 +2227,10 @@ export default function FeedPage() {
                       alt="Post media"
                       loading={idx === 0 ? "eager" : "lazy"}
                       decoding="async"
-                      onClick={() => setFullscreenImage(media.url)}
+                      onClick={() => {
+                        setFullscreenImage(media.url);
+                        setFullscreenPost(post);
+                      }}
                       className="w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                       style={{ maxHeight: '600px', display: 'block', backgroundColor: 'transparent' }}
                     />
@@ -2238,16 +2280,19 @@ export default function FeedPage() {
 
         {post.image_url && !post.media_files && (
           <div 
-            onClick={() => setFullscreenImage(post.image_url)}
+            onClick={() => {
+              setFullscreenImage(post.image_url);
+              setFullscreenPost(post);
+            }}
             className="w-full bg-transparent rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity mb-4"
-          >
+            >
             <img
               src={post.image_url}
               alt="Post"
               className="w-full h-auto object-contain rounded-lg"
               style={{ display: 'block', maxHeight: '600px', backgroundColor: 'transparent' }}
             />
-          </div>
+            </div>
         )}
 
         <div className="flex items-center gap-6 pt-4 border-t border-white/10">
@@ -2762,17 +2807,44 @@ export default function FeedPage() {
                 className="max-w-full max-h-full object-contain rounded-lg"
               />
               <div className="absolute top-4 right-4 flex items-center gap-2">
+                {fullscreenPost && (
+                  fullscreenPost.created_by === user?.email || 
+                  fullscreenPost.author_wallet_address === kaswareWallet.address ||
+                  fullscreenPost.author_wallet_address === user?.created_wallet_address
+                ) && (
+                  <Button
+                    onClick={handlePushToShop}
+                    disabled={isPushingToShop}
+                    className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white border border-green-400/30 shadow-lg"
+                    size="sm"
+                  >
+                    {isPushingToShop ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Pushing...
+                      </>
+                    ) : (
+                      <>
+                        <Box className="w-4 h-4 mr-2" />
+                        Push to Shop
+                      </>
+                    )}
+                  </Button>
+                )}
                 <Link to={createPageUrl("Shop")}>
                   <Button
                     className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border border-purple-400/30 shadow-lg"
                     size="sm"
                   >
                     <Box className="w-4 h-4 mr-2" />
-                    Shop
+                    View Shop
                   </Button>
                 </Link>
                 <Button
-                  onClick={() => setFullscreenImage(null)}
+                  onClick={() => {
+                    setFullscreenImage(null);
+                    setFullscreenPost(null);
+                  }}
                   className="bg-black/80 hover:bg-black border border-white/20 text-white"
                   size="sm"
                 >
