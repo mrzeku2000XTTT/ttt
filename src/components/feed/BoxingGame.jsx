@@ -10,6 +10,7 @@ export default function BoxingGame({ post, onClose, user }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [aiResponding, setAiResponding] = useState(false);
 
   const messagesEndRef = useRef(null);
 
@@ -19,21 +20,104 @@ export default function BoxingGame({ post, onClose, user }) {
     }
   }, [messages]);
 
+  useEffect(() => {
+    if (chatStarted && messages.length === 0) {
+      generateAIIntro();
+    }
+  }, [chatStarted]);
+
+  const generateAIIntro = async () => {
+    setAiResponding(true);
+    try {
+      const postImages = post.media_files?.filter(f => f.type === 'image').map(f => f.url) || 
+                        (post.image_url ? [post.image_url] : []);
+
+      const aiResponse = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are an AI defender representing the author "${post.author_name}" of this post. 
+
+Post content: "${post.content}"
+
+Your role:
+1. Introduce yourself as the AI advocate for this post
+2. Explain the perspective and reasoning behind this post
+3. Present strong arguments supporting the post's viewpoint
+4. Be ready to debate and defend this position
+
+Keep your intro concise (2-3 sentences) but impactful. Be confident and ready to engage in debate.`,
+        add_context_from_internet: true,
+        ...(postImages.length > 0 && { file_urls: postImages })
+      });
+
+      const aiMsg = {
+        id: Date.now(),
+        sender: `🤖 ${post.author_name}'s AI`,
+        text: aiResponse,
+        timestamp: new Date().toISOString(),
+        isAI: true
+      };
+
+      setMessages([aiMsg]);
+    } catch (err) {
+      console.error('AI intro failed:', err);
+      const fallbackMsg = {
+        id: Date.now(),
+        sender: `🤖 ${post.author_name}'s AI`,
+        text: `I'm representing ${post.author_name}'s perspective on this post. While they're away, I'll defend and explain their viewpoint. What would you like to discuss?`,
+        timestamp: new Date().toISOString(),
+        isAI: true
+      };
+      setMessages([fallbackMsg]);
+    } finally {
+      setAiResponding(false);
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
 
     const userName = user?.username || user?.email || 'Anonymous';
     
-    const newMsg = {
+    const userMsg = {
       id: Date.now(),
       sender: userName,
       text: newMessage,
       timestamp: new Date().toISOString()
     };
 
-    setMessages(prev => [...prev, newMsg]);
+    setMessages(prev => [...prev, userMsg]);
     setNewMessage("");
-    setIsSending(false);
+
+    // Generate AI response
+    setAiResponding(true);
+    try {
+      const conversationHistory = messages.map(m => 
+        `${m.sender}: ${m.text}`
+      ).join('\n') + `\n${userName}: ${newMessage}`;
+
+      const aiResponse = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are an AI defender representing "${post.author_name}" and their post: "${post.content}"
+
+Conversation so far:
+${conversationHistory}
+
+Continue defending and explaining the post's perspective. Engage in thoughtful debate. Be concise (2-3 sentences max).`,
+        add_context_from_internet: true
+      });
+
+      const aiMsg = {
+        id: Date.now() + 1,
+        sender: `🤖 ${post.author_name}'s AI`,
+        text: aiResponse,
+        timestamp: new Date().toISOString(),
+        isAI: true
+      };
+
+      setMessages(prev => [...prev, aiMsg]);
+    } catch (err) {
+      console.error('AI response failed:', err);
+    } finally {
+      setAiResponding(false);
+    }
   };
 
   return (
@@ -130,7 +214,17 @@ export default function BoxingGame({ post, onClose, user }) {
               <>
                 {/* Messages Area */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                  {messages.length === 0 ? (
+                  {messages.length === 0 && aiResponding ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center space-y-3">
+                        <div className="w-16 h-16 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-full flex items-center justify-center mx-auto animate-pulse">
+                          <span className="text-3xl">🤖</span>
+                        </div>
+                        <p className="text-purple-400">AI is analyzing the post...</p>
+                        <p className="text-white/20 text-sm">Getting ready to defend their perspective</p>
+                      </div>
+                    </div>
+                  ) : messages.length === 0 ? (
                     <div className="flex items-center justify-center h-full">
                       <div className="text-center space-y-3">
                         <MessageCircle className="w-16 h-16 text-white/20 mx-auto" />
@@ -139,31 +233,55 @@ export default function BoxingGame({ post, onClose, user }) {
                       </div>
                     </div>
                   ) : (
-                    messages.map((msg) => {
-                      const isCurrentUser = msg.sender === (user?.username || user?.email);
-                      return (
-                        <motion.div
-                          key={msg.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
-                        >
-                          <div className={`max-w-[75%] ${isCurrentUser ? 'bg-gradient-to-r from-red-500 to-orange-500' : 'bg-white/10 border border-white/20'} rounded-xl p-4`}>
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className={`text-xs font-semibold ${isCurrentUser ? 'text-white/80' : 'text-white/60'}`}>
-                                {msg.sender}
-                              </span>
-                              <span className={`text-[10px] ${isCurrentUser ? 'text-white/60' : 'text-white/40'}`}>
-                                {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </span>
+                    <>
+                      {messages.map((msg) => {
+                        const isCurrentUser = msg.sender === (user?.username || user?.email);
+                        const isAI = msg.isAI === true;
+                        return (
+                          <motion.div
+                            key={msg.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
+                          >
+                            <div className={`max-w-[75%] ${
+                              isCurrentUser 
+                                ? 'bg-gradient-to-r from-red-500 to-orange-500' 
+                                : isAI 
+                                  ? 'bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30' 
+                                  : 'bg-white/10 border border-white/20'
+                            } rounded-xl p-4`}>
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className={`text-xs font-semibold ${isCurrentUser ? 'text-white/80' : isAI ? 'text-purple-300' : 'text-white/60'}`}>
+                                  {msg.sender}
+                                </span>
+                                <span className={`text-[10px] ${isCurrentUser ? 'text-white/60' : 'text-white/40'}`}>
+                                  {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </div>
+                              <p className={`text-sm ${isCurrentUser ? 'text-white' : 'text-white/90'} leading-relaxed whitespace-pre-wrap break-words`}>
+                                {msg.text}
+                              </p>
                             </div>
-                            <p className={`text-sm ${isCurrentUser ? 'text-white' : 'text-white/90'} leading-relaxed whitespace-pre-wrap break-words`}>
-                              {msg.text}
-                            </p>
+                          </motion.div>
+                        );
+                      })}
+                      {aiResponding && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="flex justify-start"
+                        >
+                          <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-xl p-4">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                              <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                              <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                            </div>
                           </div>
                         </motion.div>
-                      );
-                    })
+                      )}
+                    </>
                   )}
                   <div ref={messagesEndRef} />
                 </div>
@@ -182,13 +300,14 @@ export default function BoxingGame({ post, onClose, user }) {
                       }}
                       placeholder="Type your message..."
                       className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40 resize-none h-16"
+                      disabled={aiResponding}
                     />
                     <Button
                       onClick={handleSendMessage}
-                      disabled={isSending || !newMessage.trim()}
+                      disabled={isSending || !newMessage.trim() || aiResponding}
                       className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white px-6 h-16"
                     >
-                      {isSending ? (
+                      {isSending || aiResponding ? (
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       ) : (
                         <Send className="w-5 h-5" />
@@ -196,7 +315,7 @@ export default function BoxingGame({ post, onClose, user }) {
                     </Button>
                   </div>
                   <p className="text-white/40 text-xs mt-2">
-                    Press Enter to send • Shift+Enter for new line
+                    {aiResponding ? 'AI is typing...' : 'Press Enter to send • Shift+Enter for new line'}
                   </p>
                 </div>
               </>
