@@ -256,36 +256,34 @@ Continue defending and explaining the post's perspective. Engage in thoughtful d
                 <p className="text-red-400 text-sm">Connect & Debate!</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              {chatStarted && (
-                <>
-                  <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2">
-                    <div className="text-white/60 text-xs mb-1">Post Author</div>
-                    <div className="flex items-center gap-2">
-                      <Wallet className="w-3 h-3 text-cyan-400" />
-                      <div className="text-white font-mono text-xs">
-                        {post.author_wallet_address ? 
-                          `${post.author_wallet_address.slice(0, 8)}...${post.author_wallet_address.slice(-6)}` : 
-                          'No wallet'}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {post.author_wallet_address && (
-                    <Button
-                      onClick={() => setShowTipModal(true)}
-                      className="bg-yellow-500/20 border border-yellow-500/40 hover:bg-yellow-500/30 text-yellow-300 px-4 py-2 h-auto"
-                      title="Tip with PacManKas"
-                    >
-                      <img 
-                        src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/f14ad4d81_image.png"
-                        alt="PacManKas"
-                        className="w-5 h-5"
-                      />
-                    </Button>
-                  )}
-                </>
+            <div className="flex items-center gap-3">
+              {/* PacManKas Balance & Tip */}
+              {!loadingBalance && pacmanBalance > 0 && (
+                <div className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-lg px-3 py-2 flex items-center gap-2">
+                  <img 
+                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/f14ad4d81_image.png"
+                    alt="PacManKas"
+                    className="w-5 h-5"
+                  />
+                  <span className="text-white font-bold text-sm">{pacmanBalance.toLocaleString()}</span>
+                </div>
               )}
+
+              {post.author_wallet_address && (
+                <Button
+                  onClick={() => setShowTipModal(true)}
+                  className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white px-4 py-2 h-auto font-bold flex items-center gap-2"
+                  title="Tip with PacManKas"
+                >
+                  <span className="text-lg">$</span>
+                  <img 
+                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/f14ad4d81_image.png"
+                    alt="PacManKas"
+                    className="w-5 h-5"
+                  />
+                </Button>
+              )}
+
               <Button
                 onClick={onClose}
                 variant="ghost"
