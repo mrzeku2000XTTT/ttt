@@ -538,7 +538,7 @@ Continue defending and explaining the post's perspective. Engage in thoughtful d
                 <div className="space-y-4">
                   {/* Balance Display */}
                   <div className="bg-black/40 border border-yellow-500/20 rounded-xl p-4">
-                    <div className="text-yellow-400 text-xs mb-2">Your PacManKas Balance</div>
+                    <div className="text-yellow-400 text-xs mb-2">Your PACMAN Balance</div>
                     {loadingBalance ? (
                       <div className="text-white font-bold text-xl">Loading...</div>
                     ) : (
@@ -623,7 +623,7 @@ Continue defending and explaining the post's perspective. Engage in thoughtful d
                         className="w-4 h-4 flex-shrink-0 mt-0.5"
                       />
                       <p className="text-xs text-white/60">
-                        PacManKas is a KRC-20 token on Kaspa. Tips are sent directly to the author's wallet.
+                        PACMAN is a KRC-20 token on Kaspa. Tips are sent directly to the author's wallet.
                       </p>
                     </div>
                   </div>
