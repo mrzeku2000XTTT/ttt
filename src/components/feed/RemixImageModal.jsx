@@ -16,6 +16,10 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
   const [postureEditable, setPostureEditable] = useState(true);
   const [uploadedImage, setUploadedImage] = useState(imageUrl);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [startImage, setStartImage] = useState(null);
+  const [endImage, setEndImage] = useState(null);
+  const [uploadingStart, setUploadingStart] = useState(false);
+  const [uploadingEnd, setUploadingEnd] = useState(false);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -30,6 +34,38 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
       alert("Failed to upload image");
     } finally {
       setUploadingFile(false);
+    }
+  };
+
+  const handleStartImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingStart(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setStartImage(file_url);
+    } catch (err) {
+      console.error("Upload failed:", err);
+      alert("Failed to upload start image");
+    } finally {
+      setUploadingStart(false);
+    }
+  };
+
+  const handleEndImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingEnd(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setEndImage(file_url);
+    } catch (err) {
+      console.error("Upload failed:", err);
+      alert("Failed to upload end image");
+    } finally {
+      setUploadingEnd(false);
     }
   };
 
@@ -83,6 +119,15 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
           } else {
             detailedPrompt = `Transform the subject into ${remixPrompt}. CRITICAL: Preserve the person's identity, face structure, pose, and proportions. Only change the artistic style and visual aesthetic. High quality professional result.`;
           }
+
+          // Add start/end image guidance
+          if (startImage && endImage) {
+            detailedPrompt += ` Use the start image as the initial visual state and the end image as the target final state. Create a transformation that progresses from start to end while maintaining identity.`;
+          } else if (startImage) {
+            detailedPrompt += ` Use the start image as the base visual state to begin the transformation.`;
+          } else if (endImage) {
+            detailedPrompt += ` Use the end image as the target visual state for the transformation.`;
+          }
         } else {
           // Standard remix mode - edit specific elements
           const basePrompt = `Transform the reference image: ${remixPrompt}.`;
@@ -109,9 +154,15 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
 
       console.log('🎨 Generating image with prompt:', detailedPrompt);
       
+      // Collect all image references
+      const imageUrls = [];
+      if (uploadedImage) imageUrls.push(uploadedImage);
+      if (startImage) imageUrls.push(startImage);
+      if (endImage) imageUrls.push(endImage);
+      
       const response = await base44.integrations.Core.GenerateImage({
         prompt: detailedPrompt,
-        ...(uploadedImage && { existing_image_urls: [uploadedImage] })
+        ...(imageUrls.length > 0 && { existing_image_urls: imageUrls })
       });
 
       console.log('✅ Generated image:', response);
@@ -212,54 +263,152 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           <div className="grid md:grid-cols-2 gap-6">
-            {/* Image Upload/Display */}
-            <div>
-              <div className="text-white/60 text-sm mb-3 font-semibold">
-                {uploadedImage ? "Reference Image" : "Upload Image"}
-              </div>
-              {uploadedImage ? (
-                <div className="relative bg-white/5 border border-white/10 rounded-xl overflow-hidden group">
-                  <img
-                    src={uploadedImage}
-                    alt="Reference"
-                    className="w-full h-auto object-contain max-h-[400px]"
-                  />
-                  <button
-                    onClick={() => setUploadedImage(null)}
-                    className="absolute top-2 right-2 w-8 h-8 bg-red-500/80 hover:bg-red-500 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="w-4 h-4 text-white" />
-                  </button>
+            {/* Left Column: Image Uploads */}
+            <div className="space-y-4">
+              {/* Reference Image */}
+              <div>
+                <div className="text-white/60 text-sm mb-3 font-semibold">
+                  {uploadedImage ? "Reference Image" : "Upload Reference Image"}
                 </div>
-              ) : (
-                <label className="relative bg-white/5 border-2 border-dashed border-white/20 rounded-xl overflow-hidden flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-all h-[400px]">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    disabled={uploadingFile}
-                  />
-                  {uploadingFile ? (
-                    <>
-                      <Loader2 className="w-12 h-12 text-purple-400 animate-spin mb-4" />
-                      <p className="text-white/60 text-sm">Uploading...</p>
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-12 h-12 text-white/40 mb-4" />
-                      <p className="text-white/80 font-semibold mb-2">Upload Image</p>
-                      <p className="text-white/40 text-sm">Click to select or drag & drop</p>
-                    </>
-                  )}
-                </label>
-              )}
+                {uploadedImage ? (
+                  <div className="relative bg-white/5 border border-white/10 rounded-xl overflow-hidden group">
+                    <img
+                      src={uploadedImage}
+                      alt="Reference"
+                      className="w-full h-auto object-contain max-h-[200px]"
+                    />
+                    <button
+                      onClick={() => setUploadedImage(null)}
+                      className="absolute top-2 right-2 w-8 h-8 bg-red-500/80 hover:bg-red-500 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-4 h-4 text-white" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="relative bg-white/5 border-2 border-dashed border-white/20 rounded-xl overflow-hidden flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-all h-[200px]">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      disabled={uploadingFile}
+                    />
+                    {uploadingFile ? (
+                      <>
+                        <Loader2 className="w-8 h-8 text-purple-400 animate-spin mb-2" />
+                        <p className="text-white/60 text-xs">Uploading...</p>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-8 h-8 text-white/40 mb-2" />
+                        <p className="text-white/80 text-sm font-semibold mb-1">Upload</p>
+                        <p className="text-white/40 text-xs">Main reference</p>
+                      </>
+                    )}
+                  </label>
+                )}
+              </div>
+
+              {/* Start Image Endpoint */}
+              <div>
+                <div className="text-white/60 text-sm mb-3 font-semibold flex items-center gap-2">
+                  <span>Start Image</span>
+                  <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">Optional</span>
+                </div>
+                {startImage ? (
+                  <div className="relative bg-white/5 border border-green-500/30 rounded-xl overflow-hidden group">
+                    <img
+                      src={startImage}
+                      alt="Start"
+                      className="w-full h-auto object-contain max-h-[160px]"
+                    />
+                    <button
+                      onClick={() => setStartImage(null)}
+                      className="absolute top-2 right-2 w-8 h-8 bg-red-500/80 hover:bg-red-500 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-4 h-4 text-white" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="relative bg-white/5 border-2 border-dashed border-green-500/30 rounded-xl overflow-hidden flex flex-col items-center justify-center cursor-pointer hover:bg-green-500/5 transition-all h-[160px]">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleStartImageUpload}
+                      className="hidden"
+                      disabled={uploadingStart}
+                    />
+                    {uploadingStart ? (
+                      <>
+                        <Loader2 className="w-6 h-6 text-green-400 animate-spin mb-2" />
+                        <p className="text-white/60 text-xs">Uploading...</p>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-6 h-6 text-green-400/60 mb-2" />
+                        <p className="text-white/80 text-xs font-semibold mb-1">Upload Start</p>
+                        <p className="text-white/40 text-[10px] text-center px-4">Initial visual state</p>
+                      </>
+                    )}
+                  </label>
+                )}
+              </div>
+
+              {/* End Image Endpoint */}
+              <div>
+                <div className="text-white/60 text-sm mb-3 font-semibold flex items-center gap-2">
+                  <span>End Image</span>
+                  <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">Optional</span>
+                </div>
+                {endImage ? (
+                  <div className="relative bg-white/5 border border-blue-500/30 rounded-xl overflow-hidden group">
+                    <img
+                      src={endImage}
+                      alt="End"
+                      className="w-full h-auto object-contain max-h-[160px]"
+                    />
+                    <button
+                      onClick={() => setEndImage(null)}
+                      className="absolute top-2 right-2 w-8 h-8 bg-red-500/80 hover:bg-red-500 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-4 h-4 text-white" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="relative bg-white/5 border-2 border-dashed border-blue-500/30 rounded-xl overflow-hidden flex flex-col items-center justify-center cursor-pointer hover:bg-blue-500/5 transition-all h-[160px]">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleEndImageUpload}
+                      className="hidden"
+                      disabled={uploadingEnd}
+                    />
+                    {uploadingEnd ? (
+                      <>
+                        <Loader2 className="w-6 h-6 text-blue-400 animate-spin mb-2" />
+                        <p className="text-white/60 text-xs">Uploading...</p>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-6 h-6 text-blue-400/60 mb-2" />
+                        <p className="text-white/80 text-xs font-semibold mb-1">Upload End</p>
+                        <p className="text-white/40 text-[10px] text-center px-4">Target visual state</p>
+                      </>
+                    )}
+                  </label>
+                )}
+              </div>
             </div>
 
-            {/* Controls */}
+            {/* Right Column: Controls */}
             <div className="space-y-4">
-              <div className="text-white/60 text-sm mb-3 font-semibold">
-                {uploadedImage ? "Remix Options" : "Generation Options"}
+              <div className="text-white/60 text-sm mb-3 font-semibold flex items-center justify-between">
+                <span>{uploadedImage ? "Remix Options" : "Generation Options"}</span>
+                {(startImage || endImage) && (
+                  <span className="text-[10px] bg-cyan-500/20 text-cyan-400 px-2 py-1 rounded-full">
+                    Transformation Mode Active
+                  </span>
+                )}
               </div>
 
               {/* Lock Toggles - Only show if image exists */}
