@@ -166,6 +166,69 @@ Continue defending and explaining the post's perspective. Engage in thoughtful d
     }
   };
 
+  const handleSendTokenTip = async () => {
+    if (!tipAmount || isNaN(parseFloat(tipAmount)) || parseFloat(tipAmount) <= 0) {
+      alert('Enter a valid tip amount');
+      return;
+    }
+
+    if (parseFloat(tipAmount) > pacmanBalance) {
+      alert('Insufficient PacManKas balance');
+      return;
+    }
+
+    if (!post.author_wallet_address) {
+      alert('Post author has no wallet address');
+      return;
+    }
+
+    setIsSendingTip(true);
+    try {
+      // Send KRC-20 token using Kasware
+      const txId = await window.kasware.sendKRC20Token(
+        'PACMANKAS',
+        post.author_wallet_address,
+        parseFloat(tipAmount)
+      );
+
+      // Record tip
+      const senderName = user?.username || 'Anonymous';
+      await base44.entities.TipTransaction.create({
+        sender_wallet: (await window.kasware.getAccounts())[0],
+        sender_email: user?.email || null,
+        sender_name: senderName,
+        recipient_wallet: post.author_wallet_address,
+        recipient_email: post.created_by || null,
+        recipient_name: post.author_name,
+        amount: parseFloat(tipAmount),
+        tx_hash: txId,
+        post_id: post.id,
+        source: 'pacmankas_tip'
+      });
+
+      // Add system message to chat
+      const tipMsg = {
+        id: Date.now(),
+        sender: 'System',
+        text: `🎮 ${senderName} sent ${tipAmount} PacManKas to ${post.author_name}!`,
+        timestamp: new Date().toISOString(),
+        isSystem: true
+      };
+      setMessages(prev => [...prev, tipMsg]);
+
+      setShowTipModal(false);
+      setTipAmount("");
+      await fetchPacmanBalance();
+
+      alert(`✅ Sent ${tipAmount} PacManKas!\nTx: ${txId.substring(0, 12)}...`);
+    } catch (err) {
+      console.error('Failed to send tip:', err);
+      alert('Failed to send tip: ' + err.message);
+    } finally {
+      setIsSendingTip(false);
+    }
+  };
+
   return (
     <AnimatePresence>
       <motion.div
