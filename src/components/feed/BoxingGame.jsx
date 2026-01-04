@@ -271,15 +271,13 @@ Continue defending and explaining the post's perspective. Engage in thoughtful d
               </div>
             </div>
             <div className="flex items-center gap-3">
-              {post.author_wallet_address && pacmanBalance > 0 && (
-                <Button
-                  onClick={() => setShowTipModal(true)}
-                  className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white h-10 w-10 p-0 font-bold text-xl"
-                  title="Tip with PACMAN"
-                >
-                  $
-                </Button>
-              )}
+              <Button
+                onClick={() => setShowTipModal(true)}
+                className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white h-10 w-10 p-0 font-bold text-xl"
+                title="Check PACMAN Balance & Tip"
+              >
+                $
+              </Button>
 
               <Button
                 onClick={onClose}
