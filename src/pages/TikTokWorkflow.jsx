@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Sparkles, Loader2, Lightbulb, TrendingUp, Music, Hash, Video } from "lucide-react";
+import { ArrowLeft, Sparkles, Loader2, Lightbulb, TrendingUp, Music, Hash, Video, Copy, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -13,6 +13,7 @@ export default function TikTokWorkflowPage() {
   const [userInput, setUserInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [ideas, setIdeas] = useState(null);
+  const [copiedField, setCopiedField] = useState(null);
 
   useEffect(() => {
     // Get image URL from URL params
@@ -22,6 +23,12 @@ export default function TikTokWorkflowPage() {
       setImageUrl(decodeURIComponent(img));
     }
   }, []);
+
+  const copyToClipboard = (text, field) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
 
   const generateIdeas = async () => {
     if (!userInput.trim()) {
@@ -215,31 +222,79 @@ Format as JSON.`,
               >
                 {/* Hook */}
                 <div className="bg-white/5 backdrop-blur-xl border border-[#25F4EE]/30 rounded-2xl p-5">
-                  <h4 className="text-[#25F4EE] font-bold mb-2 flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4" />
-                    Hook (First 3 Seconds)
-                  </h4>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-[#25F4EE] font-bold flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4" />
+                      Hook (First 3 Seconds)
+                    </h4>
+                    <button
+                      onClick={() => copyToClipboard(ideas.hook, 'hook')}
+                      className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                    >
+                      {copiedField === 'hook' ? (
+                        <Check className="w-4 h-4 text-green-400" />
+                      ) : (
+                        <Copy className="w-4 h-4 text-white/60" />
+                      )}
+                    </button>
+                  </div>
                   <p className="text-white/80 text-sm leading-relaxed">{ideas.hook}</p>
                 </div>
 
                 {/* Main Content */}
                 <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5">
-                  <h4 className="text-white font-bold mb-2">Main Content</h4>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-white font-bold">Main Content</h4>
+                    <button
+                      onClick={() => copyToClipboard(ideas.main_content, 'content')}
+                      className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                    >
+                      {copiedField === 'content' ? (
+                        <Check className="w-4 h-4 text-green-400" />
+                      ) : (
+                        <Copy className="w-4 h-4 text-white/60" />
+                      )}
+                    </button>
+                  </div>
                   <p className="text-white/80 text-sm leading-relaxed">{ideas.main_content}</p>
                 </div>
 
                 {/* Call to Action */}
                 <div className="bg-white/5 backdrop-blur-xl border border-[#FE2C55]/30 rounded-2xl p-5">
-                  <h4 className="text-[#FE2C55] font-bold mb-2">Call to Action</h4>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-[#FE2C55] font-bold">Call to Action</h4>
+                    <button
+                      onClick={() => copyToClipboard(ideas.call_to_action, 'cta')}
+                      className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                    >
+                      {copiedField === 'cta' ? (
+                        <Check className="w-4 h-4 text-green-400" />
+                      ) : (
+                        <Copy className="w-4 h-4 text-white/60" />
+                      )}
+                    </button>
+                  </div>
                   <p className="text-white/80 text-sm leading-relaxed">{ideas.call_to_action}</p>
                 </div>
 
                 {/* Hashtags */}
                 <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5">
-                  <h4 className="text-white font-bold mb-3 flex items-center gap-2">
-                    <Hash className="w-4 h-4" />
-                    Hashtags
-                  </h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-white font-bold flex items-center gap-2">
+                      <Hash className="w-4 h-4" />
+                      Hashtags
+                    </h4>
+                    <button
+                      onClick={() => copyToClipboard(ideas.hashtags?.map(t => `#${t}`).join(' '), 'hashtags')}
+                      className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                    >
+                      {copiedField === 'hashtags' ? (
+                        <Check className="w-4 h-4 text-green-400" />
+                      ) : (
+                        <Copy className="w-4 h-4 text-white/60" />
+                      )}
+                    </button>
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {ideas.hashtags?.map((tag, idx) => (
                       <span
@@ -254,21 +309,57 @@ Format as JSON.`,
 
                 {/* Sound Suggestion */}
                 <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5">
-                  <h4 className="text-white font-bold mb-2 flex items-center gap-2">
-                    <Music className="w-4 h-4" />
-                    Sound Suggestion
-                  </h4>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-white font-bold flex items-center gap-2">
+                      <Music className="w-4 h-4" />
+                      Sound Suggestion
+                    </h4>
+                    <button
+                      onClick={() => copyToClipboard(ideas.sound_suggestion, 'sound')}
+                      className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                    >
+                      {copiedField === 'sound' ? (
+                        <Check className="w-4 h-4 text-green-400" />
+                      ) : (
+                        <Copy className="w-4 h-4 text-white/60" />
+                      )}
+                    </button>
+                  </div>
                   <p className="text-white/80 text-sm leading-relaxed">{ideas.sound_suggestion}</p>
                 </div>
 
                 {/* Best Time & Caption */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5">
-                    <h4 className="text-white font-bold mb-2 text-sm">Best Time</h4>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-white font-bold text-sm">Best Time</h4>
+                      <button
+                        onClick={() => copyToClipboard(ideas.best_time, 'time')}
+                        className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+                      >
+                        {copiedField === 'time' ? (
+                          <Check className="w-3 h-3 text-green-400" />
+                        ) : (
+                          <Copy className="w-3 h-3 text-white/60" />
+                        )}
+                      </button>
+                    </div>
                     <p className="text-white/80 text-sm">{ideas.best_time}</p>
                   </div>
                   <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5">
-                    <h4 className="text-white font-bold mb-2 text-sm">Caption</h4>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-white font-bold text-sm">Caption</h4>
+                      <button
+                        onClick={() => copyToClipboard(ideas.caption, 'caption')}
+                        className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+                      >
+                        {copiedField === 'caption' ? (
+                          <Check className="w-3 h-3 text-green-400" />
+                        ) : (
+                          <Copy className="w-3 h-3 text-white/60" />
+                        )}
+                      </button>
+                    </div>
                     <p className="text-white/80 text-sm line-clamp-3">{ideas.caption}</p>
                   </div>
                 </div>
