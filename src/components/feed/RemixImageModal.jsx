@@ -45,16 +45,26 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
       let detailedPrompt = "";
       
       if (uploadedImage) {
-        // Remix existing image
-        detailedPrompt = `Create a photorealistic image transformation: ${remixPrompt}.
-${faceLocked ? "CRITICAL: Keep the person's face, facial features, and identity exactly the same as the reference image." : ""}
-${clothingEditable ? "Change the clothing/outfit as described." : "Keep the same clothing."}
-${postureEditable ? "Adjust the pose/posture as described." : "Keep the same pose."}
-Professional quality, realistic lighting, high detail, natural look.`;
+        // Remix existing image - flexible approach
+        const basePrompt = `Transform the reference image: ${remixPrompt}.`;
+        
+        // Build constraint instructions based on toggles
+        const constraints = [];
+        if (faceLocked) {
+          constraints.push("Preserve any faces, facial features, and identity from the reference");
+        }
+        if (!clothingEditable) {
+          constraints.push("Keep clothing/outfit unchanged");
+        }
+        if (!postureEditable) {
+          constraints.push("Maintain the same pose/posture");
+        }
+        
+        const constraintText = constraints.length > 0 ? constraints.join(". ") + "." : "";
+        detailedPrompt = `${basePrompt} ${constraintText} High quality, professional, detailed result.`;
       } else {
         // Generate brand new image
-        detailedPrompt = `Create a photorealistic image: ${remixPrompt}.
-Professional quality, realistic lighting, high detail, natural look, digital art masterpiece.`;
+        detailedPrompt = `Create an image: ${remixPrompt}. High quality, professional, detailed digital art.`;
       }
 
       console.log('🎨 Generating image with prompt:', detailedPrompt);
