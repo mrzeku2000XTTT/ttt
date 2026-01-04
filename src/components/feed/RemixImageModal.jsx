@@ -20,6 +20,8 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
   const [endImage, setEndImage] = useState(null);
   const [uploadingStart, setUploadingStart] = useState(false);
   const [uploadingEnd, setUploadingEnd] = useState(false);
+  const [generatingStart, setGeneratingStart] = useState(false);
+  const [generatingEnd, setGeneratingEnd] = useState(false);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -66,6 +68,54 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
       alert("Failed to upload end image");
     } finally {
       setUploadingEnd(false);
+    }
+  };
+
+  const handleGenerateStartImage = async () => {
+    if (!uploadedImage) {
+      alert("Please upload a reference image first");
+      return;
+    }
+
+    setGeneratingStart(true);
+    try {
+      const response = await base44.integrations.Core.GenerateImage({
+        prompt: "Create a simplified, base version of this image. Reduce detail and styling while keeping the core structure, pose, and composition. Make it more neutral and unadorned as a starting point for transformation.",
+        existing_image_urls: [uploadedImage]
+      });
+
+      if (response?.url) {
+        setStartImage(response.url);
+      }
+    } catch (err) {
+      console.error("Failed to generate start image:", err);
+      alert("Failed to generate start image: " + err.message);
+    } finally {
+      setGeneratingStart(false);
+    }
+  };
+
+  const handleGenerateEndImage = async () => {
+    if (!uploadedImage) {
+      alert("Please upload a reference image first");
+      return;
+    }
+
+    setGeneratingEnd(true);
+    try {
+      const response = await base44.integrations.Core.GenerateImage({
+        prompt: "Create an enhanced, stylized version of this image. Add more artistic details, dramatic effects, and refined aesthetics while keeping the core identity and structure. Make it more polished and visually striking.",
+        existing_image_urls: [uploadedImage]
+      });
+
+      if (response?.url) {
+        setEndImage(response.url);
+      }
+    } catch (err) {
+      console.error("Failed to generate end image:", err);
+      alert("Failed to generate end image: " + err.message);
+    } finally {
+      setGeneratingEnd(false);
     }
   };
 
@@ -330,27 +380,46 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
                     </button>
                   </div>
                 ) : (
-                  <label className="relative bg-white/5 border-2 border-dashed border-green-500/30 rounded-xl overflow-hidden flex flex-col items-center justify-center cursor-pointer hover:bg-green-500/5 transition-all h-[160px]">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleStartImageUpload}
-                      className="hidden"
-                      disabled={uploadingStart}
-                    />
-                    {uploadingStart ? (
-                      <>
-                        <Loader2 className="w-6 h-6 text-green-400 animate-spin mb-2" />
-                        <p className="text-white/60 text-xs">Uploading...</p>
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="w-6 h-6 text-green-400/60 mb-2" />
-                        <p className="text-white/80 text-xs font-semibold mb-1">Upload Start</p>
-                        <p className="text-white/40 text-[10px] text-center px-4">Initial visual state</p>
-                      </>
-                    )}
-                  </label>
+                  <div className="space-y-2">
+                    <label className="relative bg-white/5 border-2 border-dashed border-green-500/30 rounded-xl overflow-hidden flex flex-col items-center justify-center cursor-pointer hover:bg-green-500/5 transition-all h-[120px]">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleStartImageUpload}
+                        className="hidden"
+                        disabled={uploadingStart}
+                      />
+                      {uploadingStart ? (
+                        <>
+                          <Loader2 className="w-6 h-6 text-green-400 animate-spin mb-2" />
+                          <p className="text-white/60 text-xs">Uploading...</p>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-6 h-6 text-green-400/60 mb-2" />
+                          <p className="text-white/80 text-xs font-semibold mb-1">Upload Start</p>
+                          <p className="text-white/40 text-[10px] text-center px-4">Initial visual state</p>
+                        </>
+                      )}
+                    </label>
+                    <Button
+                      onClick={handleGenerateStartImage}
+                      disabled={generatingStart || !uploadedImage}
+                      className="w-full bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20 h-8 text-xs"
+                    >
+                      {generatingStart ? (
+                        <>
+                          <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-3 h-3 mr-2" />
+                          Generate with AI
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 )}
               </div>
 
@@ -375,27 +444,46 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
                     </button>
                   </div>
                 ) : (
-                  <label className="relative bg-white/5 border-2 border-dashed border-blue-500/30 rounded-xl overflow-hidden flex flex-col items-center justify-center cursor-pointer hover:bg-blue-500/5 transition-all h-[160px]">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleEndImageUpload}
-                      className="hidden"
-                      disabled={uploadingEnd}
-                    />
-                    {uploadingEnd ? (
-                      <>
-                        <Loader2 className="w-6 h-6 text-blue-400 animate-spin mb-2" />
-                        <p className="text-white/60 text-xs">Uploading...</p>
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="w-6 h-6 text-blue-400/60 mb-2" />
-                        <p className="text-white/80 text-xs font-semibold mb-1">Upload End</p>
-                        <p className="text-white/40 text-[10px] text-center px-4">Target visual state</p>
-                      </>
-                    )}
-                  </label>
+                  <div className="space-y-2">
+                    <label className="relative bg-white/5 border-2 border-dashed border-blue-500/30 rounded-xl overflow-hidden flex flex-col items-center justify-center cursor-pointer hover:bg-blue-500/5 transition-all h-[120px]">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleEndImageUpload}
+                        className="hidden"
+                        disabled={uploadingEnd}
+                      />
+                      {uploadingEnd ? (
+                        <>
+                          <Loader2 className="w-6 h-6 text-blue-400 animate-spin mb-2" />
+                          <p className="text-white/60 text-xs">Uploading...</p>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-6 h-6 text-blue-400/60 mb-2" />
+                          <p className="text-white/80 text-xs font-semibold mb-1">Upload End</p>
+                          <p className="text-white/40 text-[10px] text-center px-4">Target visual state</p>
+                        </>
+                      )}
+                    </label>
+                    <Button
+                      onClick={handleGenerateEndImage}
+                      disabled={generatingEnd || !uploadedImage}
+                      className="w-full bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500/20 h-8 text-xs"
+                    >
+                      {generatingEnd ? (
+                        <>
+                          <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-3 h-3 mr-2" />
+                          Generate with AI
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>
