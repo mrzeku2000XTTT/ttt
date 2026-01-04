@@ -140,6 +140,37 @@ export default function FeedPage() {
 
 
   const loadDraftFromStorage = () => {
+    // Check for Remix feed images first
+    const remixImages = sessionStorage.getItem('remix_feed_images');
+    const remixCaption = sessionStorage.getItem('remix_feed_caption');
+    
+    if (remixImages) {
+      try {
+        const imageUrls = JSON.parse(remixImages);
+        const mediaFiles = imageUrls.map((url, idx) => ({
+          url,
+          type: 'image',
+          name: `remix-image-${idx + 1}.png`,
+          size: 0
+        }));
+        
+        setUploadedFiles(mediaFiles);
+        setNewPost(remixCaption || '');
+        sessionStorage.removeItem('remix_feed_images');
+        sessionStorage.removeItem('remix_feed_caption');
+        
+        // Scroll to post creation area
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 100);
+        
+        return;
+      } catch (err) {
+        console.error('Failed to load remix images:', err);
+      }
+    }
+    
+    // Check for regular draft
     const draft = localStorage.getItem('feed_draft');
     if (draft) {
       try {
@@ -147,7 +178,6 @@ export default function FeedPage() {
         setNewPost(parsed.content || '');
         setUploadedFiles(parsed.mediaFiles || []);
         localStorage.removeItem('feed_draft');
-        setShowChatBox(true);
       } catch (err) {
         console.error('Failed to load draft:', err);
       }
