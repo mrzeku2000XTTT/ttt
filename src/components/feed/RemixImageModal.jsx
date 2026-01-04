@@ -45,23 +45,37 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
       let detailedPrompt = "";
       
       if (uploadedImage) {
-        // Remix existing image - flexible approach
-        const basePrompt = `Transform the reference image: ${remixPrompt}.`;
+        // Check if user wants a style transformation (anime, pixel art, etc.)
+        const lowerPrompt = remixPrompt.toLowerCase();
+        const isStyleTransformation = lowerPrompt.includes('anime') || lowerPrompt.includes('cartoon') || 
+                                      lowerPrompt.includes('pixel') || lowerPrompt.includes('3d') || 
+                                      lowerPrompt.includes('version') || lowerPrompt.includes('style') ||
+                                      lowerPrompt.includes('painting') || lowerPrompt.includes('sketch') ||
+                                      lowerPrompt.includes('ghibli') || lowerPrompt.includes('cyberpunk') ||
+                                      lowerPrompt.includes('manga') || lowerPrompt.includes('comic');
         
-        // Build constraint instructions based on toggles
-        const constraints = [];
-        if (faceLocked) {
-          constraints.push("Preserve any faces, facial features, and identity from the reference");
+        if (isStyleTransformation) {
+          // Style transformation mode - preserve identity but change artistic style
+          detailedPrompt = `Transform the subject from the reference image into ${remixPrompt}. CRITICAL: Keep the same person's identity, face structure, and facial features recognizable. Preserve their pose and proportions. Only change the artistic style, rendering technique, and visual aesthetic. High quality, professional result.`;
+        } else {
+          // Standard remix mode - edit specific elements
+          const basePrompt = `Transform the reference image: ${remixPrompt}.`;
+          
+          // Build constraint instructions based on toggles
+          const constraints = [];
+          if (faceLocked) {
+            constraints.push("Preserve any faces, facial features, and identity from the reference");
+          }
+          if (!clothingEditable) {
+            constraints.push("Keep clothing/outfit unchanged");
+          }
+          if (!postureEditable) {
+            constraints.push("Maintain the same pose/posture");
+          }
+          
+          const constraintText = constraints.length > 0 ? constraints.join(". ") + "." : "";
+          detailedPrompt = `${basePrompt} ${constraintText} High quality, professional, detailed result.`;
         }
-        if (!clothingEditable) {
-          constraints.push("Keep clothing/outfit unchanged");
-        }
-        if (!postureEditable) {
-          constraints.push("Maintain the same pose/posture");
-        }
-        
-        const constraintText = constraints.length > 0 ? constraints.join(". ") + "." : "";
-        detailedPrompt = `${basePrompt} ${constraintText} High quality, professional, detailed result.`;
       } else {
         // Generate brand new image
         detailedPrompt = `Create an image: ${remixPrompt}. High quality, professional, detailed digital art.`;
@@ -94,10 +108,14 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
   };
 
   const examplePrompts = [
-    "wearing a red leather jacket, arms crossed",
-    "in a business suit, confident pose",
-    "casual jeans and t-shirt, relaxed stance",
-    "evening gown, elegant pose"
+    "anime version",
+    "Studio Ghibli style",
+    "pixel art version",
+    "cyberpunk anime style",
+    "manga ink drawing",
+    "3D Pixar character",
+    "oil painting portrait",
+    "comic book style"
   ];
 
   return (
@@ -307,14 +325,14 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
                   value={remixPrompt}
                   onChange={(e) => setRemixPrompt(e.target.value)}
                   placeholder={uploadedImage 
-                    ? "e.g., wearing a red leather jacket, arms crossed, city background..."
+                    ? "e.g., anime version, Studio Ghibli style, pixel art, wearing red jacket..."
                     : "e.g., a futuristic cyberpunk warrior in neon city, digital art masterpiece..."
                   }
                   className="bg-white/5 border-white/20 text-white placeholder:text-white/30 h-32 resize-none"
                 />
                 <p className="text-white/40 text-xs mt-2">
                   {uploadedImage 
-                    ? "The face appearance will remain the same. Describe the clothing, pose, and environment you want."
+                    ? "Transform into any style (anime, cartoon, painting, etc.) or change clothing, pose, background."
                     : "Describe in detail what you want to create. Be specific about style, mood, and details."
                   }
                 </p>
