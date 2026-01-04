@@ -55,8 +55,34 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
                                       lowerPrompt.includes('manga') || lowerPrompt.includes('comic');
         
         if (isStyleTransformation) {
-          // Style transformation mode - preserve identity but change artistic style
-          detailedPrompt = `Transform the subject from the reference image into ${remixPrompt}. CRITICAL: Keep the same person's identity, face structure, and facial features recognizable. Preserve their pose and proportions. Only change the artistic style, rendering technique, and visual aesthetic. High quality, professional result.`;
+          // Style transformation mode with enhanced keywords
+          const styleMap = {
+            'anime': 'Japanese anime art style with large expressive eyes, clean cell-shaded coloring, smooth vibrant colors, and anime facial proportions',
+            'ghibli': 'Studio Ghibli animation style with soft watercolor textures, gentle lighting, whimsical atmosphere, and characteristic hand-drawn charm',
+            'pixel': 'retro pixel art style with 16-bit or 32-bit game graphics, limited color palette, and blocky pixelated aesthetic',
+            'manga': 'black and white manga illustration with dynamic ink linework, dramatic screentone shading, and expressive Japanese comic style',
+            'comic': 'American comic book art with bold ink outlines, vibrant flat colors, halftone shading, and superhero comic aesthetic',
+            'cyberpunk': 'dark cyberpunk anime with neon accents, futuristic tech elements, noir atmosphere, and edgy sci-fi style',
+            'pixar': '3D Pixar animation style with smooth 3D rendering, exaggerated friendly features, warm lighting, and cinematic quality',
+            'painting': 'classical oil painting with visible brush strokes, rich layered colors, soft lighting, and fine art portrait aesthetic',
+            'cartoon': 'Western cartoon style with simplified bold features, thick outlines, bright saturated colors, and playful design',
+            'sketch': 'pencil sketch drawing with soft graphite shading, detailed linework, and traditional hand-drawn aesthetic',
+            'watercolor': 'watercolor painting with soft color bleeds, transparent layers, organic textures, and artistic brush marks'
+          };
+
+          let styleDescription = '';
+          for (const [keyword, description] of Object.entries(styleMap)) {
+            if (lowerPrompt.includes(keyword)) {
+              styleDescription = description;
+              break;
+            }
+          }
+
+          if (styleDescription) {
+            detailedPrompt = `Transform the person in the reference image into ${styleDescription}. CRITICAL IDENTITY PRESERVATION: Keep the exact same person - same face, same identity, same recognizable features. Maintain their pose, body proportions, and overall composition. ONLY change the visual art style and rendering technique. Professional high-quality result.`;
+          } else {
+            detailedPrompt = `Transform the subject into ${remixPrompt}. CRITICAL: Preserve the person's identity, face structure, pose, and proportions. Only change the artistic style and visual aesthetic. High quality professional result.`;
+          }
         } else {
           // Standard remix mode - edit specific elements
           const basePrompt = `Transform the reference image: ${remixPrompt}.`;
@@ -317,7 +343,7 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
               <div>
                 <label className="text-white/60 text-sm mb-2 block">
                   {uploadedImage 
-                    ? "Describe Changes (clothing, posture, background, etc.)"
+                    ? "Describe the style you want"
                     : "Describe What You Want to Create"
                   }
                 </label>
