@@ -7,6 +7,33 @@ import { Send, Loader2, Sparkles, Brain, ArrowLeft, Trash2, X } from "lucide-rea
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
+// Generate unique device ID
+const getDeviceId = () => {
+  let deviceId = localStorage.getItem('no_fear_device_id');
+  if (!deviceId) {
+    deviceId = 'device_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+    localStorage.setItem('no_fear_device_id', deviceId);
+  }
+  return deviceId;
+};
+
+// Simple encryption for local storage (Base64 encoding for privacy)
+const encryptData = (data) => {
+  try {
+    return btoa(JSON.stringify(data));
+  } catch {
+    return null;
+  }
+};
+
+const decryptData = (encrypted) => {
+  try {
+    return JSON.parse(atob(encrypted));
+  } catch {
+    return null;
+  }
+};
+
 export default function WindowPage() {
   const [user, setUser] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -15,6 +42,7 @@ export default function WindowPage() {
   const [streamingMessage, setStreamingMessage] = useState("");
   const [isFullScreen, setIsFullScreen] = useState(false);
   const messagesEndRef = useRef(null);
+  const deviceId = getDeviceId();
 
   useEffect(() => {
     loadUser();
@@ -34,55 +62,43 @@ export default function WindowPage() {
     }
   };
 
-  const loadConversationHistory = async () => {
+  const loadConversationHistory = () => {
     try {
-      const history = await base44.entities.AIConversation.filter({
-        conversation_type: 'window_ai'
-      }, '-created_date', 1);
+      const storageKey = `no_fear_chat_${deviceId}`;
+      const encrypted = localStorage.getItem(storageKey);
       
-      if (history.length > 0 && history[0].messages) {
-        setMessages(history[0].messages);
+      if (encrypted) {
+        const decrypted = decryptData(encrypted);
+        if (decrypted && Array.isArray(decrypted)) {
+          setMessages(decrypted);
+          console.log('✅ Loaded encrypted chat history from device storage');
+        }
       }
     } catch (err) {
       console.error('Failed to load conversation:', err);
     }
   };
 
-  const saveConversation = async (msgs) => {
+  const saveConversation = (msgs) => {
     try {
-      const existing = await base44.entities.AIConversation.filter({
-        conversation_type: 'window_ai'
-      }, '-created_date', 1);
+      const storageKey = `no_fear_chat_${deviceId}`;
+      const encrypted = encryptData(msgs);
       
-      if (existing.length > 0) {
-        await base44.entities.AIConversation.update(existing[0].id, {
-          messages: msgs,
-          last_interaction: new Date().toISOString()
-        });
-      } else {
-        await base44.entities.AIConversation.create({
-          user_wallet_address: user?.created_wallet_address || 'anonymous',
-          user_email: user?.email || 'anonymous',
-          messages: msgs,
-          conversation_type: 'window_ai',
-          last_interaction: new Date().toISOString()
-        });
+      if (encrypted) {
+        localStorage.setItem(storageKey, encrypted);
+        console.log('✅ Saved encrypted chat to device storage');
       }
     } catch (err) {
       console.error('Failed to save conversation:', err);
     }
   };
 
-  const handleClearChat = async () => {
+  const handleClearChat = () => {
     setMessages([]);
     try {
-      const existing = await base44.entities.AIConversation.filter({
-        conversation_type: 'window_ai'
-      }, '-created_date', 1);
-      
-      if (existing.length > 0) {
-        await base44.entities.AIConversation.delete(existing[0].id);
-      }
+      const storageKey = `no_fear_chat_${deviceId}`;
+      localStorage.removeItem(storageKey);
+      console.log('✅ Cleared encrypted chat from device storage');
     } catch (err) {
       console.error('Failed to clear conversation:', err);
     }
