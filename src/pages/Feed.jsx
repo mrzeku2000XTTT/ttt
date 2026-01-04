@@ -1061,41 +1061,57 @@ export default function FeedPage() {
       const userPosts = await base44.entities.Post.filter({ author_name: username });
       const mainPosts = userPosts.filter(p => !p.parent_post_id);
       
-      // Get all tip transactions
-      const allReelTransactions = await base44.entities.TipTransaction.filter({ source: 'reel' }) || [];
-      const allFeedTransactions = await base44.entities.TipTransaction.filter({ source: 'feed' }) || [];
+      // Get all tip transactions with null safety
+      let allReelTransactions = [];
+      let allFeedTransactions = [];
+      try {
+        const reelTxs = await base44.entities.TipTransaction.filter({ source: 'reel' });
+        allReelTransactions = Array.isArray(reelTxs) ? reelTxs : [];
+      } catch (err) {
+        console.log('Could not fetch reel transactions:', err);
+      }
+      try {
+        const feedTxs = await base44.entities.TipTransaction.filter({ source: 'feed' });
+        allFeedTransactions = Array.isArray(feedTxs) ? feedTxs : [];
+      } catch (err) {
+        console.log('Could not fetch feed transactions:', err);
+      }
       
       // Find user's wallet address from their transactions
-      const userTransaction = [...allReelTransactions, ...allFeedTransactions].find(tx => 
-        tx.sender_name === username || tx.recipient_name === username
+      const allTransactions = [...allReelTransactions, ...allFeedTransactions].filter(tx => tx != null);
+      const userTransaction = allTransactions.find(tx => 
+        tx?.sender_name === username || tx?.recipient_name === username
       );
       const userWallet = userTransaction?.sender_wallet || userTransaction?.recipient_wallet;
 
       // Count Bull Reels posts (self-transactions where sender = recipient)
       const bullReelsPosts = allReelTransactions.filter(tx => 
+        tx != null &&
         tx.sender_wallet === userWallet && 
         tx.recipient_wallet === userWallet &&
         tx.sender_wallet === tx.recipient_wallet
       );
 
       // Get unique Bull Reels by reel_id
-      const uniqueReelIds = new Set(bullReelsPosts.map(tx => tx.reel_id).filter(Boolean));
+      const uniqueReelIds = new Set(bullReelsPosts.map(tx => tx?.reel_id).filter(Boolean));
       
       // Count tips received (all sources)
-      const tipsReceived = [...allReelTransactions, ...allFeedTransactions]
+      const tipsReceived = allTransactions
         .filter(tx => 
+          tx != null &&
           tx.recipient_name === username &&
           tx.sender_wallet !== tx.recipient_wallet
         )
-        .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+        .reduce((sum, tx) => sum + (tx?.amount || 0), 0);
 
       // Count tips sent (all sources)
-      const tipsSent = [...allReelTransactions, ...allFeedTransactions]
+      const tipsSent = allTransactions
         .filter(tx => 
+          tx != null &&
           tx.sender_name === username &&
           tx.sender_wallet !== tx.recipient_wallet
         )
-        .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+        .reduce((sum, tx) => sum + (tx?.amount || 0), 0);
 
       setBadgeContributions({
         bullReelsCount: uniqueReelIds.size || bullReelsPosts.length,
@@ -1121,12 +1137,18 @@ export default function FeedPage() {
       const mainPosts = userPosts.filter(p => !p.parent_post_id);
       
       // Get all tips received on Feed posts
-      const feedTransactions = await base44.entities.TipTransaction.filter({ 
-        source: 'feed',
-        recipient_name: username
-      }) || [];
+      let feedTransactions = [];
+      try {
+        const txs = await base44.entities.TipTransaction.filter({ 
+          source: 'feed',
+          recipient_name: username
+        });
+        feedTransactions = Array.isArray(txs) ? txs.filter(tx => tx != null) : [];
+      } catch (err) {
+        console.log('Could not fetch feed transactions:', err);
+      }
       
-      const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+      const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx?.amount || 0), 0);
 
       setArchitectContributions({
         feedPosts: mainPosts.length,
@@ -1164,17 +1186,29 @@ export default function FeedPage() {
           console.log('Failed to fetch UserTipStats, falling back to TipTransaction:', err);
           
           // Fallback to TipTransaction if UserTipStats is not accessible
-          const feedTransactions = await base44.entities.TipTransaction.filter({ 
-            recipient_email: userEmail,
-            source: 'feed'
-          }) || [];
-          totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+          let feedTransactions = [];
+          let bullTransactions = [];
+          try {
+            const feedTxs = await base44.entities.TipTransaction.filter({ 
+              recipient_email: userEmail,
+              source: 'feed'
+            });
+            feedTransactions = Array.isArray(feedTxs) ? feedTxs.filter(tx => tx != null) : [];
+          } catch (err) {
+            console.log('Could not fetch feed transactions:', err);
+          }
+          totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx?.amount || 0), 0);
 
-          const bullTransactions = await base44.entities.TipTransaction.filter({ 
-            recipient_email: userEmail,
-            source: 'reel'
-          }) || [];
-          totalBullTips = bullTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+          try {
+            const bullTxs = await base44.entities.TipTransaction.filter({ 
+              recipient_email: userEmail,
+              source: 'reel'
+            });
+            bullTransactions = Array.isArray(bullTxs) ? bullTxs.filter(tx => tx != null) : [];
+          } catch (err) {
+            console.log('Could not fetch bull transactions:', err);
+          }
+          totalBullTips = bullTransactions.reduce((sum, tx) => sum + (tx?.amount || 0), 0);
         }
       }
 
@@ -1197,11 +1231,17 @@ export default function FeedPage() {
       const userPosts = await base44.entities.Post.filter({ author_name: username });
       const mainPosts = userPosts.filter(p => !p.parent_post_id);
       
-      const feedTransactions = await base44.entities.TipTransaction.filter({ 
-        source: 'feed',
-        recipient_name: username
-      }) || [];
-      const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+      let feedTransactions = [];
+      try {
+        const txs = await base44.entities.TipTransaction.filter({ 
+          source: 'feed',
+          recipient_name: username
+        });
+        feedTransactions = Array.isArray(txs) ? txs.filter(tx => tx != null) : [];
+      } catch (err) {
+        console.log('Could not fetch feed transactions:', err);
+      }
+      const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx?.amount || 0), 0);
 
       setShillerContributions({
         feedPosts: mainPosts.length,
@@ -1221,11 +1261,17 @@ export default function FeedPage() {
       const userPosts = await base44.entities.Post.filter({ author_name: username });
       const mainPosts = userPosts.filter(p => !p.parent_post_id);
       
-      const feedTransactions = await base44.entities.TipTransaction.filter({ 
-        source: 'feed',
-        recipient_name: username
-      }) || [];
-      const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+      let feedTransactions = [];
+      try {
+        const txs = await base44.entities.TipTransaction.filter({ 
+          source: 'feed',
+          recipient_name: username
+        });
+        feedTransactions = Array.isArray(txs) ? txs.filter(tx => tx != null) : [];
+      } catch (err) {
+        console.log('Could not fetch feed transactions:', err);
+      }
+      const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx?.amount || 0), 0);
 
       setMarkContributions({
         feedPosts: mainPosts.length,
@@ -1245,11 +1291,17 @@ export default function FeedPage() {
       const userPosts = await base44.entities.Post.filter({ author_name: username });
       const mainPosts = userPosts.filter(p => !p.parent_post_id);
       
-      const feedTransactions = await base44.entities.TipTransaction.filter({ 
-        source: 'feed',
-        recipient_name: username
-      }) || [];
-      const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+      let feedTransactions = [];
+      try {
+        const txs = await base44.entities.TipTransaction.filter({ 
+          source: 'feed',
+          recipient_name: username
+        });
+        feedTransactions = Array.isArray(txs) ? txs.filter(tx => tx != null) : [];
+      } catch (err) {
+        console.log('Could not fetch feed transactions:', err);
+      }
+      const totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx?.amount || 0), 0);
 
       setDevContributions({
         feedPosts: mainPosts.length,
@@ -1280,11 +1332,17 @@ export default function FeedPage() {
           }
         } catch (err) {
           console.log('Failed to fetch UserTipStats, falling back to TipTransaction:', err);
-          const feedTransactions = await base44.entities.TipTransaction.filter({ 
-            recipient_email: userEmail,
-            source: 'feed'
-          }) || [];
-          totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+          let feedTransactions = [];
+          try {
+            const txs = await base44.entities.TipTransaction.filter({ 
+              recipient_email: userEmail,
+              source: 'feed'
+            });
+            feedTransactions = Array.isArray(txs) ? txs.filter(tx => tx != null) : [];
+          } catch (err) {
+            console.log('Could not fetch feed transactions:', err);
+          }
+          totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx?.amount || 0), 0);
         }
       }
 
@@ -1317,11 +1375,17 @@ export default function FeedPage() {
           }
         } catch (err) {
           console.log('Failed to fetch UserTipStats, falling back to TipTransaction:', err);
-          const feedTransactions = await base44.entities.TipTransaction.filter({ 
-            recipient_email: userEmail,
-            source: 'feed'
-          }) || [];
-          totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+          let feedTransactions = [];
+          try {
+            const txs = await base44.entities.TipTransaction.filter({ 
+              recipient_email: userEmail,
+              source: 'feed'
+            });
+            feedTransactions = Array.isArray(txs) ? txs.filter(tx => tx != null) : [];
+          } catch (err) {
+            console.log('Could not fetch feed transactions:', err);
+          }
+          totalFeedTips = feedTransactions.reduce((sum, tx) => sum + (tx?.amount || 0), 0);
         }
       }
 
