@@ -2761,13 +2761,24 @@ export default function FeedPage() {
                 alt="Fullscreen"
                 className="max-w-full max-h-full object-contain rounded-lg"
               />
-              <Button
-                onClick={() => setFullscreenImage(null)}
-                className="absolute top-4 right-4 bg-black/80 hover:bg-black border border-white/20 text-white"
-                size="sm"
-              >
-                <X className="w-5 h-5" />
-              </Button>
+              <div className="absolute top-4 right-4 flex items-center gap-2">
+                <Link to={createPageUrl("Shop")}>
+                  <Button
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border border-purple-400/30 shadow-lg"
+                    size="sm"
+                  >
+                    <Box className="w-4 h-4 mr-2" />
+                    Shop
+                  </Button>
+                </Link>
+                <Button
+                  onClick={() => setFullscreenImage(null)}
+                  className="bg-black/80 hover:bg-black border border-white/20 text-white"
+                  size="sm"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
             </motion.div>
           </motion.div>
         )}
