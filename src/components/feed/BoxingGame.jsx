@@ -33,10 +33,8 @@ export default function BoxingGame({ post, onClose, user }) {
   }, [chatStarted]);
 
   useEffect(() => {
-    if (chatStarted) {
-      fetchPacmanBalance();
-    }
-  }, [chatStarted]);
+    fetchPacmanBalance();
+  }, []);
 
   const fetchPacmanBalance = async () => {
     setLoadingBalance(true);
@@ -307,6 +305,27 @@ Continue defending and explaining the post's perspective. Engage in thoughtful d
                   <h2 className="text-4xl font-black text-white mb-4">
                     Ready to Connect?
                   </h2>
+                  
+                  {/* PacManKas Balance Card */}
+                  {!loadingBalance && pacmanBalance > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl p-4 mb-4 mx-auto max-w-xs"
+                    >
+                      <div className="text-yellow-400 text-xs mb-2">Your Balance</div>
+                      <div className="flex items-center justify-center gap-2">
+                        <img 
+                          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/f14ad4d81_image.png"
+                          alt="PacManKas"
+                          className="w-8 h-8"
+                        />
+                        <span className="text-white font-bold text-2xl">{pacmanBalance.toLocaleString()}</span>
+                        <span className="text-white/60 text-sm">PACMANKAS</span>
+                      </div>
+                    </motion.div>
+                  )}
+
                   <div className="bg-white/5 border border-white/10 rounded-xl p-6 mb-6">
                     <div className="text-white/60 text-sm mb-3">You're connecting with:</div>
                     <div className="flex items-center justify-center gap-2 mb-2">
@@ -327,12 +346,29 @@ Continue defending and explaining the post's perspective. Engage in thoughtful d
                   <p className="text-red-400 mb-6">
                     Start a live conversation and debate!
                   </p>
-                  <Button
-                    onClick={() => setChatStarted(true)}
-                    className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white px-8 py-6 text-xl font-bold"
-                  >
-                    START FIGHT
-                  </Button>
+                  
+                  <div className="flex items-center justify-center gap-3">
+                    <Button
+                      onClick={() => setChatStarted(true)}
+                      className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white px-8 py-6 text-xl font-bold"
+                    >
+                      START FIGHT
+                    </Button>
+                    
+                    {post.author_wallet_address && pacmanBalance > 0 && (
+                      <Button
+                        onClick={() => setShowTipModal(true)}
+                        className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white px-6 py-6 text-xl font-bold"
+                        title="Tip with PacManKas"
+                      >
+                        <img 
+                          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/f14ad4d81_image.png"
+                          alt="PacManKas"
+                          className="w-6 h-6"
+                        />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             ) : (
