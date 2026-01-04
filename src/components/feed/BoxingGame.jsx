@@ -52,12 +52,21 @@ export default function BoxingGame({ post, onClose, user }) {
       }
 
       // Fetch KRC-20 token balance for PacManKas
-      // Note: This uses Kasware's KRC-20 API
-      const tokenTicker = 'PACMANKAS';
+      const tokenTicker = 'PACMAN';
       
       try {
-        const balance = await window.kasware.getKRC20Balance(tokenTicker);
-        setPacmanBalance(balance || 0);
+        const balanceResponse = await window.kasware.getKRC20Balance(tokenTicker);
+        
+        // Handle different response formats
+        let balanceValue = 0;
+        if (typeof balanceResponse === 'number') {
+          balanceValue = balanceResponse;
+        } else if (typeof balanceResponse === 'object' && balanceResponse !== null) {
+          // Try common property names
+          balanceValue = balanceResponse.confirmed || balanceResponse.balance || balanceResponse.total || 0;
+        }
+        
+        setPacmanBalance(Number(balanceValue) || 0);
       } catch (err) {
         console.log('PacManKas balance not available:', err);
         setPacmanBalance(0);
@@ -184,7 +193,7 @@ Continue defending and explaining the post's perspective. Engage in thoughtful d
     try {
       // Send KRC-20 token using Kasware
       const txId = await window.kasware.sendKRC20Token(
-        'PACMANKAS',
+        'PACMAN',
         post.author_wallet_address,
         parseFloat(tipAmount)
       );
