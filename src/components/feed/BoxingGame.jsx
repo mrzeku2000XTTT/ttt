@@ -1,140 +1,39 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { X, Trophy } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { X, Send, MessageCircle, Wallet } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 export default function BoxingGame({ post, onClose, user }) {
-  const [score, setScore] = useState(0);
-  const [health, setHealth] = useState(100);
-  const [opponentHealth, setOpponentHealth] = useState(100);
-  const [gameStarted, setGameStarted] = useState(false);
-  const [gameWon, setGameWon] = useState(false);
-  const [gameLost, setGameLost] = useState(false);
-  const [playerAction, setPlayerAction] = useState(null);
-  const [opponentAction, setOpponentAction] = useState(null);
-  const [combo, setCombo] = useState(0);
+  const [chatStarted, setChatStarted] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
-  const canvasRef = useRef(null);
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    if (!gameStarted || gameWon || gameLost) return;
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  const handleSendMessage = async () => {
+    if (!newMessage.trim()) return;
 
-    const ctx = canvas.getContext('2d');
-    canvas.width = 800;
-    canvas.height = 400;
-
-    const animate = () => {
-      // Clear canvas
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Ring
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(50, 50, 700, 300);
-
-      // Player (left)
-      ctx.fillStyle = '#FFD700';
-      ctx.fillRect(150, 200, 60, 100);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(160, 210, 15, 15); // eye
-      if (playerAction === 'punch') {
-        ctx.fillStyle = '#FF0000';
-        ctx.fillRect(210, 240, 40, 10); // punch
-      }
-
-      // Opponent (right)
-      ctx.fillStyle = '#FF0000';
-      ctx.fillRect(590, 200, 60, 100);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(620, 210, 15, 15); // eye
-      if (opponentAction === 'punch') {
-        ctx.fillStyle = '#FFD700';
-        ctx.fillRect(550, 240, 40, 10); // punch
-      }
-
-      // Health bars
-      ctx.fillStyle = '#00FF00';
-      ctx.fillRect(50, 20, health * 3, 20);
-      ctx.fillStyle = '#FF0000';
-      ctx.fillRect(500, 20, opponentHealth * 3, 20);
-
-      requestAnimationFrame(animate);
+    const userName = user?.username || user?.email || 'Anonymous';
+    
+    const newMsg = {
+      id: Date.now(),
+      sender: userName,
+      text: newMessage,
+      timestamp: new Date().toISOString()
     };
 
-    animate();
-  }, [gameStarted, gameWon, gameLost, playerAction, opponentAction, health, opponentHealth]);
-
-  const performAction = (action) => {
-    if (gameLost || gameWon) return;
-
-    setPlayerAction(action);
-    setTimeout(() => setPlayerAction(null), 300);
-
-    // Opponent AI
-    const opponentMoves = ['punch', 'block', 'dodge'];
-    const opponentMove = opponentMoves[Math.floor(Math.random() * opponentMoves.length)];
-    setOpponentAction(opponentMove);
-    setTimeout(() => setOpponentAction(null), 300);
-
-    // Combat logic
-    if (action === 'punch' && opponentMove !== 'block' && opponentMove !== 'dodge') {
-      const damage = 10 + Math.floor(Math.random() * 10);
-      setOpponentHealth(prev => Math.max(0, prev - damage));
-      setScore(prev => prev + damage);
-      setCombo(prev => prev + 1);
-    } else if (action === 'punch' && opponentMove === 'block') {
-      setCombo(0);
-    }
-
-    if (opponentMove === 'punch' && action !== 'block' && action !== 'dodge') {
-      const damage = 8 + Math.floor(Math.random() * 8);
-      setHealth(prev => Math.max(0, prev - damage));
-      setCombo(0);
-    }
-  };
-
-  useEffect(() => {
-    if (opponentHealth <= 0 && !gameWon) {
-      handleWin();
-    } else if (health <= 0 && !gameLost) {
-      setGameLost(true);
-    }
-  }, [health, opponentHealth]);
-
-  const handleWin = async () => {
-    setGameWon(true);
-    const finalScore = score + (health * 2);
-    setScore(finalScore);
-    
-    try {
-      await base44.entities.Post.update(post.id, {
-        tips_received: (post.tips_received || 0) + 0.5
-      });
-      
-      if (user) {
-        const existingBadges = await base44.entities.UserBadge.filter({
-          user_email: user.email,
-          badge_name: 'Boxing Champion'
-        });
-        
-        if (existingBadges.length === 0) {
-          await base44.entities.UserBadge.create({
-            user_email: user.email,
-            badge_name: 'Boxing Champion',
-            badge_emoji: '🥊',
-            badge_color: '#FFD700',
-            is_active: true
-          });
-        }
-      }
-    } catch (err) {
-      console.error('Failed to save win:', err);
-    }
+    setMessages(prev => [...prev, newMsg]);
+    setNewMessage("");
+    setIsSending(false);
   };
 
   return (
@@ -158,23 +57,28 @@ export default function BoxingGame({ post, onClose, user }) {
             <div className="flex items-center gap-4">
               <img 
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/f14ad4d81_image.png"
-                alt="Boxing"
+                alt="Banter"
                 className="w-12 h-12 object-contain"
               />
               <div>
-                <h3 className="text-white font-black text-2xl">BOXING ARENA</h3>
-                <p className="text-red-400 text-sm">Fight to Win!</p>
+                <h3 className="text-white font-black text-2xl">LIVE BANTER</h3>
+                <p className="text-red-400 text-sm">Connect & Debate!</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-2">
-                <div className="text-red-400 text-xs">SCORE</div>
-                <div className="text-white font-black text-2xl">{score}</div>
-              </div>
-              <div className="bg-green-500/10 border border-green-500/30 rounded-lg px-4 py-2">
-                <div className="text-green-400 text-xs">COMBO</div>
-                <div className="text-white font-black text-2xl">x{combo}</div>
-              </div>
+              {chatStarted && (
+                <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2">
+                  <div className="text-white/60 text-xs mb-1">Post Author</div>
+                  <div className="flex items-center gap-2">
+                    <Wallet className="w-3 h-3 text-cyan-400" />
+                    <div className="text-white font-mono text-xs">
+                      {post.author_wallet_address ? 
+                        `${post.author_wallet_address.slice(0, 8)}...${post.author_wallet_address.slice(-6)}` : 
+                        'No wallet'}
+                    </div>
+                  </div>
+                </div>
+              )}
               <Button
                 onClick={onClose}
                 variant="ghost"
@@ -186,107 +90,118 @@ export default function BoxingGame({ post, onClose, user }) {
             </div>
           </div>
 
-          {/* Game Area */}
-          <div className="flex-1 relative flex items-center justify-center">
-            {!gameStarted ? (
-              <div className="text-center space-y-6">
-                <h2 className="text-4xl font-black text-white mb-4">
-                  Ready to Fight?
-                </h2>
-                <p className="text-red-400 mb-6">
-                  Knock out your opponent to win Boxing Champion badge!
-                </p>
-                <Button
-                  onClick={() => setGameStarted(true)}
-                  className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white px-8 py-6 text-xl font-bold"
-                >
-                  START FIGHT
-                </Button>
-              </div>
-            ) : gameWon ? (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="text-center space-y-6"
-              >
-                <Trophy className="w-24 h-24 text-yellow-400 mx-auto animate-bounce" />
-                <h2 className="text-5xl font-black text-white mb-4">
-                  KNOCKOUT!
-                </h2>
-                <div className="bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/30 rounded-xl p-6">
-                  <div className="text-red-400 text-lg mb-2">Final Score</div>
-                  <div className="text-white font-black text-4xl">{score}</div>
+          {/* Chat Area */}
+          <div className="flex-1 relative flex flex-col overflow-hidden">
+            {!chatStarted ? (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center space-y-6 px-6">
+                  <h2 className="text-4xl font-black text-white mb-4">
+                    Ready to Connect?
+                  </h2>
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-6 mb-6">
+                    <div className="text-white/60 text-sm mb-3">You're connecting with:</div>
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <div className="w-10 h-10 bg-white/10 border border-white/20 rounded-full flex items-center justify-center text-lg font-bold text-white">
+                        {post.author_name?.[0]?.toUpperCase()}
+                      </div>
+                      <span className="text-white font-bold text-xl">{post.author_name}</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-2 bg-black/40 rounded-lg px-3 py-2">
+                      <Wallet className="w-4 h-4 text-cyan-400" />
+                      <span className="text-cyan-400 font-mono text-sm">
+                        {post.author_wallet_address ? 
+                          `${post.author_wallet_address.slice(0, 10)}...${post.author_wallet_address.slice(-8)}` : 
+                          'No wallet'}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-red-400 mb-6">
+                    Start a live conversation and debate!
+                  </p>
+                  <Button
+                    onClick={() => setChatStarted(true)}
+                    className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white px-8 py-6 text-xl font-bold"
+                  >
+                    START FIGHT
+                  </Button>
                 </div>
-                <div className="flex items-center justify-center gap-2 text-yellow-400">
-                  <span className="text-4xl">🥊</span>
-                  <span className="text-lg font-bold">Boxing Champion Badge Earned!</span>
-                </div>
-                <Button
-                  onClick={onClose}
-                  className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white px-8 py-4 text-lg font-bold"
-                >
-                  Close
-                </Button>
-              </motion.div>
-            ) : gameLost ? (
-              <div className="text-center space-y-6">
-                <h2 className="text-4xl font-black text-red-400 mb-4">
-                  KNOCKED OUT!
-                </h2>
-                <p className="text-white/60">Better luck next time!</p>
-                <Button
-                  onClick={() => {
-                    setHealth(100);
-                    setOpponentHealth(100);
-                    setScore(0);
-                    setCombo(0);
-                    setGameLost(false);
-                    setGameStarted(false);
-                  }}
-                  className="bg-white/10 border border-white/20 text-white hover:bg-white/20"
-                >
-                  Try Again
-                </Button>
               </div>
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center">
-                <canvas
-                  ref={canvasRef}
-                  className="border-2 border-red-500/30 rounded-lg shadow-2xl"
-                />
-              </div>
+              <>
+                {/* Messages Area */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                  {messages.length === 0 ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center space-y-3">
+                        <MessageCircle className="w-16 h-16 text-white/20 mx-auto" />
+                        <p className="text-white/40">No messages yet</p>
+                        <p className="text-white/20 text-sm">Be the first to say something!</p>
+                      </div>
+                    </div>
+                  ) : (
+                    messages.map((msg) => {
+                      const isCurrentUser = msg.sender === (user?.username || user?.email);
+                      return (
+                        <motion.div
+                          key={msg.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div className={`max-w-[75%] ${isCurrentUser ? 'bg-gradient-to-r from-red-500 to-orange-500' : 'bg-white/10 border border-white/20'} rounded-xl p-4`}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className={`text-xs font-semibold ${isCurrentUser ? 'text-white/80' : 'text-white/60'}`}>
+                                {msg.sender}
+                              </span>
+                              <span className={`text-[10px] ${isCurrentUser ? 'text-white/60' : 'text-white/40'}`}>
+                                {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            <p className={`text-sm ${isCurrentUser ? 'text-white' : 'text-white/90'} leading-relaxed whitespace-pre-wrap break-words`}>
+                              {msg.text}
+                            </p>
+                          </div>
+                        </motion.div>
+                      );
+                    })
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Input Area */}
+                <div className="p-6 border-t border-red-500/20 bg-black/40">
+                  <div className="flex gap-3">
+                    <Textarea
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      placeholder="Type your message..."
+                      className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40 resize-none h-16"
+                    />
+                    <Button
+                      onClick={handleSendMessage}
+                      disabled={isSending || !newMessage.trim()}
+                      className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white px-6 h-16"
+                    >
+                      {isSending ? (
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <Send className="w-5 h-5" />
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-white/40 text-xs mt-2">
+                    Press Enter to send • Shift+Enter for new line
+                  </p>
+                </div>
+              </>
             )}
           </div>
-
-          {/* Controls */}
-          {gameStarted && !gameWon && !gameLost && (
-            <div className="p-6 border-t border-red-500/20 bg-black/40">
-              <div className="flex items-center justify-center gap-4">
-                <Button
-                  onClick={() => performAction('punch')}
-                  className="bg-red-500 hover:bg-red-600 text-white px-8 py-6 text-lg font-bold"
-                >
-                  🥊 PUNCH
-                </Button>
-                <Button
-                  onClick={() => performAction('block')}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-6 text-lg font-bold"
-                >
-                  🛡️ BLOCK
-                </Button>
-                <Button
-                  onClick={() => performAction('dodge')}
-                  className="bg-green-500 hover:bg-green-600 text-white px-8 py-6 text-lg font-bold"
-                >
-                  💨 DODGE
-                </Button>
-              </div>
-              <div className="mt-4 flex items-center justify-between text-sm text-white/60">
-                <div>Your Health: {health}%</div>
-                <div>Opponent: {opponentHealth}%</div>
-              </div>
-            </div>
-          )}
         </motion.div>
       </motion.div>
     </AnimatePresence>
