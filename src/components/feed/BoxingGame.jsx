@@ -50,49 +50,28 @@ export default function BoxingGame({ post, onClose, user }) {
         setPacmanBalance(0);
         return;
       }
+      const currentKaswareAddress = accounts[0];
 
-      // Fetch KRC-20 token balance for PacManKas
+      // Fetch KRC-20 token balance for PACMAN
       const tokenTicker = 'PACMAN';
       
       try {
-        const balanceResponse = await window.kasware.getKRC20Balance(tokenTicker);
-        console.log('Raw balance response:', balanceResponse);
-        
-        // Handle different response formats
-        let balanceValue = 0;
-        
-        if (typeof balanceResponse === 'string') {
-          balanceValue = parseFloat(balanceResponse);
-        } else if (typeof balanceResponse === 'number') {
-          balanceValue = balanceResponse;
-        } else if (typeof balanceResponse === 'object' && balanceResponse !== null) {
-          // Try multiple common property patterns
-          balanceValue = balanceResponse.confirmed || 
-                        balanceResponse.balance || 
-                        balanceResponse.total || 
-                        balanceResponse.amount ||
-                        balanceResponse.value ||
-                        balanceResponse.available ||
-                        0;
-          
-          // If still an object, try to extract first numeric value
-          if (typeof balanceValue === 'object') {
-            const values = Object.values(balanceResponse);
-            for (const val of values) {
-              if (typeof val === 'number' || typeof val === 'string') {
-                const numVal = parseFloat(val);
-                if (!isNaN(numVal)) {
-                  balanceValue = numVal;
-                  break;
-                }
-              }
-            }
-          }
+        const balanceResult = await window.kasware.getKRC20Balance(currentKaswareAddress, tokenTicker);
+        console.log('Raw PACMAN balance result:', balanceResult);
+
+        let finalBalance = 0;
+        if (Array.isArray(balanceResult) && balanceResult.length > 0) {
+          const tokenData = balanceResult[0];
+          const decimals = tokenData.dec || 8;
+          const balanceRaw = parseFloat(tokenData.balance || '0');
+          finalBalance = balanceRaw / Math.pow(10, decimals);
+          console.log('PACMAN Balance:', finalBalance);
+        } else {
+          console.warn('No PACMAN balance found');
+          finalBalance = 0;
         }
-        
-        const finalBalance = Number(balanceValue) || 0;
-        console.log('Parsed balance:', finalBalance);
-        setPacmanBalance(finalBalance);
+
+        setPacmanBalance(Number(finalBalance) || 0);
       } catch (err) {
         console.log('PacManKas balance error:', err);
         setPacmanBalance(0);
