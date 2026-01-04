@@ -222,7 +222,7 @@ Continue defending and explaining the post's perspective. Engage in thoughtful d
       const tipMsg = {
         id: Date.now(),
         sender: 'System',
-        text: `🎮 ${senderName} sent ${tipAmount} PacManKas to ${post.author_name}!`,
+        text: `🎮 ${senderName} sent ${tipAmount} PACMAN to ${post.author_name}!`,
         timestamp: new Date().toISOString(),
         isSystem: true
       };
@@ -232,7 +232,7 @@ Continue defending and explaining the post's perspective. Engage in thoughtful d
       setTipAmount("");
       await fetchPacmanBalance();
 
-      alert(`✅ Sent ${tipAmount} PacManKas!\nTx: ${txId.substring(0, 12)}...`);
+      alert(`✅ Sent ${tipAmount} PACMAN!\nTx: ${txId.substring(0, 12)}...`);
     } catch (err) {
       console.error('Failed to send tip:', err);
       alert('Failed to send tip: ' + err.message);
@@ -478,11 +478,11 @@ Continue defending and explaining the post's perspective. Engage in thoughtful d
                   <div className="flex items-center gap-3">
                     <img 
                       src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/f14ad4d81_image.png"
-                      alt="PacManKas"
+                      alt="PACMAN"
                       className="w-12 h-12"
                     />
                     <div>
-                      <h3 className="text-white font-bold text-lg">Send PacManKas</h3>
+                      <h3 className="text-white font-bold text-lg">Send PACMAN</h3>
                       <p className="text-yellow-400 text-sm">to {post.author_name}</p>
                     </div>
                   </div>
@@ -506,11 +506,11 @@ Continue defending and explaining the post's perspective. Engage in thoughtful d
                       <div className="flex items-center gap-2">
                         <img 
                           src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/f14ad4d81_image.png"
-                          alt="PacManKas"
+                          alt="PACMAN"
                           className="w-6 h-6"
                         />
                         <span className="text-white font-bold text-2xl">{pacmanBalance.toLocaleString()}</span>
-                        <span className="text-white/60 text-sm">PACMANKAS</span>
+                        <span className="text-white/60 text-sm">PACMAN</span>
                       </div>
                     )}
                   </div>
@@ -525,7 +525,7 @@ Continue defending and explaining the post's perspective. Engage in thoughtful d
 
                   {/* Amount Input */}
                   <div>
-                    <label className="text-sm text-white/60 mb-2 block">Tip Amount (PacManKas)</label>
+                    <label className="text-sm text-white/60 mb-2 block">Tip Amount (PACMAN)</label>
                     <div className="relative">
                       <input
                         type="number"
@@ -568,10 +568,10 @@ Continue defending and explaining the post's perspective. Engage in thoughtful d
                       <>
                         <img 
                           src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/f14ad4d81_image.png"
-                          alt="PacManKas"
+                          alt="PACMAN"
                           className="w-5 h-5 mr-2"
                         />
-                        Send {tipAmount} PacManKas
+                        Send {tipAmount} PACMAN
                       </>
                     )}
                   </Button>
