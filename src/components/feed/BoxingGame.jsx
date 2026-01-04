@@ -56,19 +56,45 @@ export default function BoxingGame({ post, onClose, user }) {
       
       try {
         const balanceResponse = await window.kasware.getKRC20Balance(tokenTicker);
+        console.log('Raw balance response:', balanceResponse);
         
         // Handle different response formats
         let balanceValue = 0;
-        if (typeof balanceResponse === 'number') {
+        
+        if (typeof balanceResponse === 'string') {
+          balanceValue = parseFloat(balanceResponse);
+        } else if (typeof balanceResponse === 'number') {
           balanceValue = balanceResponse;
         } else if (typeof balanceResponse === 'object' && balanceResponse !== null) {
-          // Try common property names
-          balanceValue = balanceResponse.confirmed || balanceResponse.balance || balanceResponse.total || 0;
+          // Try multiple common property patterns
+          balanceValue = balanceResponse.confirmed || 
+                        balanceResponse.balance || 
+                        balanceResponse.total || 
+                        balanceResponse.amount ||
+                        balanceResponse.value ||
+                        balanceResponse.available ||
+                        0;
+          
+          // If still an object, try to extract first numeric value
+          if (typeof balanceValue === 'object') {
+            const values = Object.values(balanceResponse);
+            for (const val of values) {
+              if (typeof val === 'number' || typeof val === 'string') {
+                const numVal = parseFloat(val);
+                if (!isNaN(numVal)) {
+                  balanceValue = numVal;
+                  break;
+                }
+              }
+            }
+          }
         }
         
-        setPacmanBalance(Number(balanceValue) || 0);
+        const finalBalance = Number(balanceValue) || 0;
+        console.log('Parsed balance:', finalBalance);
+        setPacmanBalance(finalBalance);
       } catch (err) {
-        console.log('PacManKas balance not available:', err);
+        console.log('PacManKas balance error:', err);
         setPacmanBalance(0);
       }
     } catch (err) {
