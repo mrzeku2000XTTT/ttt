@@ -392,7 +392,7 @@ export default function ZekuAIPage() {
       top: 'calc(var(--sat, 0px) + 7.5rem)',
       left: 0,
       right: 0,
-      bottom: 0
+      bottom: 'calc(env(safe-area-inset-bottom, 0px) + 4rem)'
     }}>
       {/* Epic Cosmic Background Image */}
       <div className="fixed inset-0 z-0">
