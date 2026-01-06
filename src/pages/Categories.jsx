@@ -144,15 +144,20 @@ export default function CategoriesPage() {
       { id: "llmscraper", name: "LLM Miner", icon: "Terminal", path: "LLMScraper" },
       ];
 
+    // Public apps available to everyone
+    defaultApps.push(
+      { id: "calculator", name: "Calculator", icon: "Activity", path: "Calculator" }
+    );
+
+    // Admin-only apps
     if (isAdmin) {
       defaultApps.push(
         { id: "arcade", name: "Arcade", icon: "Gamepad2", path: "Arcade" },
         { id: "hub", name: "Hub", icon: "Activity", path: "Hub" },
         { id: "ssh", name: "SSH", icon: "Terminal", path: "SSHManager" },
-        { id: "gift", name: "GIFT", icon: "Gift", path: "Gift" },
-        { id: "calculator", name: "Calculator", icon: "Activity", path: "Calculator" }
-        );
-        }
+        { id: "gift", name: "GIFT", icon: "Gift", path: "Gift" }
+      );
+    }
 
         const saved = localStorage.getItem('categories_apps_order');
     if (saved) {
