@@ -40,7 +40,6 @@ export default function ProfilePage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      // Try to get logged-in user, but don't require it
       let currentUser = null;
       let connectedWalletAddress = null;
       
@@ -65,22 +64,99 @@ export default function ProfilePage() {
         }
         
         setUser(currentUser);
-        setEditData({
-          username: currentUser.username || "",
-          bio: currentUser.bio || "",
-          profile_photo: currentUser.profile_photo || "",
-          current_job: currentUser.current_job || ""
-        });
+        
+        // Load from WalletProfile if wallet exists
+        if (currentUser.created_wallet_address || connectedWalletAddress) {
+          const walletAddr = currentUser.created_wallet_address || connectedWalletAddress;
+          try {
+            const profiles = await base44.entities.WalletProfile.filter({
+              wallet_address: walletAddr
+            });
+            
+            if (profiles.length > 0) {
+              const walletProfile = profiles[0];
+              setEditData({
+                username: walletProfile.username || currentUser.username || "",
+                bio: walletProfile.bio || currentUser.bio || "",
+                profile_photo: walletProfile.profile_photo || currentUser.profile_photo || "",
+                current_job: walletProfile.current_job || currentUser.current_job || ""
+              });
+            } else {
+              // Fallback to User entity data
+              setEditData({
+                username: currentUser.username || "",
+                bio: currentUser.bio || "",
+                profile_photo: currentUser.profile_photo || "",
+                current_job: currentUser.current_job || ""
+              });
+            }
+          } catch (err) {
+            console.log('No WalletProfile found, using User data:', err);
+            setEditData({
+              username: currentUser.username || "",
+              bio: currentUser.bio || "",
+              profile_photo: currentUser.profile_photo || "",
+              current_job: currentUser.current_job || ""
+            });
+          }
+        } else {
+          setEditData({
+            username: currentUser.username || "",
+            bio: currentUser.bio || "",
+            profile_photo: currentUser.profile_photo || "",
+            current_job: currentUser.current_job || ""
+          });
+        }
         
         // Load created wallets
         if (currentUser.created_wallets && currentUser.created_wallets.length > 0) {
           setCreatedWallets(currentUser.created_wallets);
         }
       } catch (err) {
-        // User not logged in - use connected Kasware wallet or fallback to localStorage
+        // User not logged in - try wallet-only mode
         const walletAddress = connectedWalletAddress || localStorage.getItem('ttt_wallet_address');
         if (walletAddress) {
-          setUser({ created_wallet_address: walletAddress });
+          // Load from WalletProfile
+          try {
+            const profiles = await base44.entities.WalletProfile.filter({
+              wallet_address: walletAddress
+            });
+            
+            if (profiles.length > 0) {
+              const walletProfile = profiles[0];
+              setUser({ 
+                created_wallet_address: walletAddress,
+                username: walletProfile.username,
+                bio: walletProfile.bio,
+                profile_photo: walletProfile.profile_photo,
+                current_job: walletProfile.current_job
+              });
+              setEditData({
+                username: walletProfile.username || "",
+                bio: walletProfile.bio || "",
+                profile_photo: walletProfile.profile_photo || "",
+                current_job: walletProfile.current_job || ""
+              });
+            } else {
+              setUser({ created_wallet_address: walletAddress });
+              setEditData({
+                username: "",
+                bio: "",
+                profile_photo: "",
+                current_job: ""
+              });
+            }
+          } catch (err) {
+            console.log('Failed to load WalletProfile:', err);
+            setUser({ created_wallet_address: walletAddress });
+            setEditData({
+              username: "",
+              bio: "",
+              profile_photo: "",
+              current_job: ""
+            });
+          }
+          
           setCreatedWallets([{ address: walletAddress, balance: 0 }]);
         }
       }
@@ -211,17 +287,37 @@ export default function ProfilePage() {
   const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
-    if (!user?.email) {
-      alert('Please login to upload photos');
-      return;
-    }
 
     setIsUploadingPhoto(true);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       setEditData({ ...editData, profile_photo: file_url });
-      await base44.auth.updateMe({ profile_photo: file_url });
+      
+      // Save to both User (if logged in) and WalletProfile
+      if (user?.email) {
+        await base44.auth.updateMe({ profile_photo: file_url });
+      }
+      
+      if (user?.created_wallet_address) {
+        const profiles = await base44.entities.WalletProfile.filter({
+          wallet_address: user.created_wallet_address
+        });
+        
+        if (profiles.length > 0) {
+          await base44.entities.WalletProfile.update(profiles[0].id, {
+            profile_photo: file_url,
+            last_updated: new Date().toISOString()
+          });
+        } else {
+          await base44.entities.WalletProfile.create({
+            wallet_address: user.created_wallet_address,
+            profile_photo: file_url,
+            email: user.email || null,
+            last_updated: new Date().toISOString()
+          });
+        }
+      }
+      
       setUser({ ...user, profile_photo: file_url });
     } catch (err) {
       console.error('Failed to upload photo:', err);
@@ -231,18 +327,41 @@ export default function ProfilePage() {
   };
 
   const handleSave = async () => {
-    if (!user?.email) {
-      setError('Please login to save profile changes');
+    if (!user?.created_wallet_address) {
+      setError('Please connect wallet to save profile');
       return;
     }
     
     setIsSaving(true);
     setError(null);
     try {
-      await base44.auth.updateMe(editData);
+      // Save to User entity if logged in
+      if (user?.email) {
+        await base44.auth.updateMe(editData);
+      }
+      
+      // Save to WalletProfile (for both logged in and wallet-only)
+      const profiles = await base44.entities.WalletProfile.filter({
+        wallet_address: user.created_wallet_address
+      });
+      
+      const walletProfileData = {
+        ...editData,
+        wallet_address: user.created_wallet_address,
+        email: user.email || null,
+        last_updated: new Date().toISOString()
+      };
+      
+      if (profiles.length > 0) {
+        await base44.entities.WalletProfile.update(profiles[0].id, walletProfileData);
+      } else {
+        await base44.entities.WalletProfile.create(walletProfileData);
+      }
+      
       setUser({ ...user, ...editData });
       setIsEditing(false);
     } catch (err) {
+      console.error('Save error:', err);
       setError('Failed to save profile');
     } finally {
       setIsSaving(false);
@@ -678,7 +797,7 @@ Return ONLY the post text, no quotes or extra formatting.`,
                 <Card className="backdrop-blur-xl bg-white/5 border-white/10">
                   <CardHeader className="border-b border-white/10 flex flex-row items-center justify-between">
                     <h2 className="text-xl font-bold text-white">Profile Information</h2>
-                    {!isEditing && (
+                    {!isEditing && user?.created_wallet_address && (
                       <Button
                         onClick={() => setIsEditing(true)}
                         variant="ghost"
