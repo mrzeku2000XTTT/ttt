@@ -267,7 +267,7 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
         }
       } else {
         // Generate brand new image
-        detailedPrompt = `Create an image: ${remixPrompt}. Ensure there are no UI elements, buttons, or interface controls in the final image. High quality, professional, detailed digital art.`;
+        detailedPrompt = `Create an image: ${remixPrompt}. LOCALIZED EDITING: When user specifies changing a particular area, region, or element (e.g., "change the logo", "edit the text", "modify the background"), focus changes ONLY on that specified part while preserving everything else. Understand text and typography instructions including special characters like backwards/reversed letters (e.g., backwards K should be К or mirrored K). Ensure there are no UI elements, buttons, or interface controls in the final image. High quality, professional, detailed digital art.`;
       }
 
       console.log('🎨 Generating image with prompt:', detailedPrompt);
