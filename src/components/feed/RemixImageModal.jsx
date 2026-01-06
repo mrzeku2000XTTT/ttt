@@ -603,12 +603,16 @@ Keep the user's core intent but make it technically precise and comprehensive. R
                         <a
                           href={startImage}
                           download="start-image.png"
+                          onClick={(e) => e.stopPropagation()}
                           className="w-8 h-8 bg-green-500/80 hover:bg-green-500 rounded-lg flex items-center justify-center"
                         >
                           <Download className="w-4 h-4 text-white" />
                         </a>
                         <button
-                          onClick={() => setStartImage(null)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setStartImage(null);
+                          }}
                           className="w-8 h-8 bg-red-500/80 hover:bg-red-500 rounded-lg flex items-center justify-center"
                         >
                           <X className="w-4 h-4 text-white" />
@@ -676,12 +680,16 @@ Keep the user's core intent but make it technically precise and comprehensive. R
                         <a
                           href={endImage}
                           download="end-image.png"
+                          onClick={(e) => e.stopPropagation()}
                           className="w-8 h-8 bg-blue-500/80 hover:bg-blue-500 rounded-lg flex items-center justify-center"
                         >
                           <Download className="w-4 h-4 text-white" />
                         </a>
                         <button
-                          onClick={() => setEndImage(null)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEndImage(null);
+                          }}
                           className="w-8 h-8 bg-red-500/80 hover:bg-red-500 rounded-lg flex items-center justify-center"
                         >
                           <X className="w-4 h-4 text-white" />
