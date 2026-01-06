@@ -216,7 +216,7 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
             'pixel': 'retro pixel art style with 16-bit or 32-bit game graphics, limited color palette, and blocky pixelated aesthetic',
             'manga': 'black and white manga illustration with dynamic ink linework, dramatic screentone shading, and expressive Japanese comic style',
             'comic': 'American comic book art with bold ink outlines, vibrant flat colors, halftone shading, and superhero comic aesthetic',
-            'cyberpunk': 'dark cyberpunk anime with neon accents, futuristic tech elements, noir atmosphere, and edgy sci-fi style',
+            'cyberpunk': 'dark cyberpunk anime with neon accets, futuristic tech elements, noir atmosphere, and edgy sci-fi style',
             'pixar': '3D Pixar animation style with smooth 3D rendering, exaggerated friendly features, warm lighting, and cinematic quality',
             'painting': 'classical oil painting with visible brush strokes, rich layered colors, soft lighting, and fine art portrait aesthetic',
             'cartoon': 'Western cartoon style with simplified bold features, thick outlines, bright saturated colors, and playful design',
@@ -233,9 +233,9 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
           }
 
           if (styleDescription) {
-            detailedPrompt = `Transform the person in the reference image into ${styleDescription}. CRITICAL IDENTITY PRESERVATION: Keep the exact same person - same face, same identity, same recognizable features. Maintain their pose, body proportions, and overall composition. ONLY change the visual art style and rendering technique. CAMERA ANGLE & ANATOMY: Understand and respect camera angles (front-facing, 3/4 view, profile, etc.). When merging facial features from reference images, place them anatomically correct - eyes must sit properly in eye sockets, features must match the head's 3D perspective and angle. If user requests specific camera angle (face camera, front view, etc.), adjust the subject's head position and orientation accordingly while maintaining natural neck and body alignment. LOCALIZED EDITING & TYPOGRAPHY: When user specifies editing a specific area (logo, text, background), ONLY change that part. Understand special characters - backwards K means mirrored/reversed K (К), backwards letters should be properly rendered as requested. IMPORTANT: Carefully remove any UI elements, buttons, controls, icons, or interface overlays from the image - clean them out completely while preserving the main subject. Professional high-quality result.`;
+            detailedPrompt = `Transform the subject in the reference image into ${styleDescription}. CRITICAL PRESERVATION: Maintain the core identity, structure, composition, and key elements from the reference. If it's a person, preserve their face and features. If it's a UI/logo/object, preserve its shape and design elements. ONLY change the visual art style and rendering technique. CAMERA ANGLE & SPATIAL UNDERSTANDING: Respect the perspective, angle, and 3D orientation of the subject. If merging features from multiple references, place them correctly in 3D space. LOCALIZED EDITING & TYPOGRAPHY: When user specifies editing a specific area (logo, text, background), focus ONLY on that part. Understand special characters - backwards K means horizontally mirrored K (К), reversed letters should be properly rendered. For UI/interface images, preserve the layout and structure while applying style changes. Professional high-quality result.`;
           } else {
-            detailedPrompt = `Transform the subject into ${remixPrompt}. CRITICAL: Preserve the person's identity, face structure, pose, and proportions. Only change the artistic style and visual aesthetic. CAMERA ANGLE & ANATOMY: Understand and respect camera angles (front-facing, 3/4 view, profile, etc.). When merging facial features from reference images, place them anatomically correct - eyes must sit properly in eye sockets, features must match the head's 3D perspective and angle. If user requests specific camera angle (face camera, front view, etc.), adjust the subject's head position and orientation accordingly while maintaining natural neck and body alignment. LOCALIZED EDITING & TYPOGRAPHY: When user specifies editing a specific area (logo, text, background), ONLY change that part. Understand special characters - backwards K means mirrored/reversed K (К), backwards letters should be properly rendered as requested. IMPORTANT: Carefully remove any UI elements, buttons, controls, icons, or interface overlays from the image - clean them out completely while preserving the main subject. High quality professional result.`;
+            detailedPrompt = `Transform the subject into ${remixPrompt}. CRITICAL PRESERVATION: Maintain the core structure, composition, and identity of the subject from the reference. Whether it's a person, UI design, logo, or object - preserve the essential elements while applying changes. SPATIAL UNDERSTANDING: Respect the perspective, camera angle, and 3D orientation. When merging features from references, place them correctly in 3D space matching the subject's orientation. LOCALIZED EDITING & TYPOGRAPHY: When user specifies editing a specific area (logo, text, background), focus changes ONLY on that part. Understand special characters - backwards K means horizontally mirrored K (К), reversed letters should be properly rendered as requested. High quality professional result.`;
           }
 
           // Add start/end image guidance
@@ -250,20 +250,20 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
           // Standard remix mode - edit specific elements
           const basePrompt = `Transform the reference image: ${remixPrompt}.`;
           
-          // Build constraint instructions based on toggles
+          // Build constraint instructions based on toggles (only for people-focused edits)
           const constraints = [];
           if (faceLocked) {
-            constraints.push("Preserve any faces, facial features, and identity from the reference");
+            constraints.push("If the image contains people, preserve their faces, facial features, and identity");
           }
           if (!clothingEditable) {
-            constraints.push("Keep clothing/outfit unchanged");
+            constraints.push("If the image contains people, keep their clothing/outfit unchanged");
           }
           if (!postureEditable) {
-            constraints.push("Maintain the same pose/posture");
+            constraints.push("If the image contains people, maintain their pose/posture");
           }
           
           const constraintText = constraints.length > 0 ? constraints.join(". ") + "." : "";
-          detailedPrompt = `${basePrompt} ${constraintText} CAMERA ANGLE & ANATOMY: Understand and respect camera angles (front-facing, 3/4 view, profile, etc.). When merging facial features from reference images, place them anatomically correct - eyes must sit properly in eye sockets matching the head's 3D perspective, features must align with the face's angle and depth. If user requests specific camera angle (face camera, turn to front, etc.), rotate the head naturally with proper neck alignment and body positioning. LOCALIZED EDITING: When user specifies changing a particular area, region, or element (e.g., "change the logo", "edit the text", "modify the background"), focus changes ONLY on that specified part while preserving everything else. Understand text and typography instructions including special characters like backwards/reversed letters (e.g., backwards K should be К or mirrored K). IMPORTANT: Carefully remove any UI elements, buttons, controls, icons, or interface overlays from the image - clean them out completely while preserving the main subject. High quality, professional, detailed result.`;
+          detailedPrompt = `${basePrompt} ${constraintText} SPATIAL UNDERSTANDING: Respect perspective, camera angles, and 3D orientation (front-facing, 3/4 view, profile, etc.). When merging features from references, place them correctly in 3D space matching the subject's perspective. For faces, eyes should sit in eye sockets; for UI elements, maintain proper alignment and depth. LOCALIZED EDITING & TYPOGRAPHY: When user specifies a specific area (logo, text, coin, background, UI element), focus changes ONLY on that part. Backwards K means horizontally mirrored K (К). For UI/interface images, respect the layout structure. Preserve non-specified elements. High quality, professional, detailed result.`;
         }
       } else {
         // Generate brand new image
