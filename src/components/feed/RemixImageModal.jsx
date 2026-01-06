@@ -289,6 +289,20 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
       console.log('✅ Generated image:', response);
 
       if (response?.url) {
+        // Save learning data for AI improvement
+        try {
+          await base44.entities.RemixAILearning.create({
+            user_prompt: remixPrompt,
+            detailed_prompt: detailedPrompt,
+            reference_images: imageUrls,
+            result_image: response.url,
+            was_successful: true,
+            style_type: isStyleTransformation ? 'style_transformation' : (uploadedImage ? 'localized_edit' : 'new_generation')
+          });
+        } catch (err) {
+          console.log('Failed to save learning data:', err);
+        }
+
         // Convert URL to blob for saving
         const imageResponse = await fetch(response.url);
         const blob = await imageResponse.blob();
@@ -299,6 +313,20 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
       }
     } catch (err) {
       console.error("❌ Remix generation error:", err);
+      
+      // Save failure data for learning
+      try {
+        await base44.entities.RemixAILearning.create({
+          user_prompt: remixPrompt,
+          detailed_prompt: detailedPrompt,
+          reference_images: imageUrls,
+          was_successful: false,
+          error_message: err.message || 'Unknown error'
+        });
+      } catch (saveErr) {
+        console.log('Failed to save error data:', saveErr);
+      }
+      
       alert(`Failed to generate remix: ${err.message || 'Unknown error'}. Please try again with a different description.`);
     } finally {
       setIsGenerating(false);
