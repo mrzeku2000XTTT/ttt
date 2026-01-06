@@ -18,7 +18,7 @@ export default function ALPHAPage() {
           <img 
             src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a37146946_image.png"
             alt="ALPHA"
-            className="w-8 h-8 object-contain"
+            className="w-12 h-12 object-contain rounded-lg"
           />
           <span className="text-white font-bold text-lg">ALPHA</span>
         </div>
