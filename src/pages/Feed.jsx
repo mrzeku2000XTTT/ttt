@@ -974,8 +974,10 @@ export default function FeedPage() {
       walletAddress = user.created_wallet_address || walletAddress;
     }
 
+    // Allow if either wallet OR email exists
     if (!walletAddress && !userEmail) {
-      setError('Please connect wallet to like posts');
+      setError('Please connect wallet or login to like posts');
+      await connectKasware();
       return;
     }
 
