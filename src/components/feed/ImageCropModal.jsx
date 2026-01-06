@@ -1,20 +1,28 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { X, Crop, Scissors, Move, RotateCw, Check, Undo } from "lucide-react";
+import { X, Crop, Scissors, Move, RotateCw, Check, Undo, Upload, Loader2 } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 
 export default function ImageCropModal({ imageUrl, onClose, onSave }) {
   const canvasRef = useRef(null);
+  const fileInputRef = useRef(null);
   const [tool, setTool] = useState('crop'); // 'crop', 'draw', 'move'
   const [isDrawing, setIsDrawing] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [cropArea, setCropArea] = useState(null);
   const [drawPaths, setDrawPaths] = useState([]);
   const [currentPath, setCurrentPath] = useState([]);
   const [image, setImage] = useState(null);
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [currentImageUrl, setCurrentImageUrl] = useState(imageUrl);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
+    if (!currentImageUrl) return;
+    
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
@@ -37,8 +45,8 @@ export default function ImageCropModal({ imageUrl, onClose, onSave }) {
         setPosition({ x, y });
       }
     };
-    img.src = imageUrl;
-  }, [imageUrl]);
+    img.src = currentImageUrl;
+  }, [currentImageUrl]);
 
   useEffect(() => {
     if (image && canvasRef.current) {
@@ -91,6 +99,24 @@ export default function ImageCropModal({ imageUrl, onClose, onSave }) {
     });
   };
 
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setCurrentImageUrl(file_url);
+      setCropArea(null);
+      setDrawPaths([]);
+    } catch (err) {
+      console.error("Upload failed:", err);
+      alert("Failed to upload image");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleMouseDown = (e) => {
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
@@ -103,10 +129,21 @@ export default function ImageCropModal({ imageUrl, onClose, onSave }) {
     } else if (tool === 'draw') {
       setCurrentPath([{ x, y }]);
       setIsDrawing(true);
+    } else if (tool === 'move') {
+      setIsDragging(true);
+      setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
     }
   };
 
   const handleMouseMove = (e) => {
+    if (tool === 'move' && isDragging) {
+      setPosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      });
+      return;
+    }
+
     if (!isDrawing) return;
     
     const canvas = canvasRef.current;
@@ -131,6 +168,7 @@ export default function ImageCropModal({ imageUrl, onClose, onSave }) {
       setCurrentPath([]);
     }
     setIsDrawing(false);
+    setIsDragging(false);
   };
 
   const handleCrop = async () => {
@@ -191,7 +229,6 @@ export default function ImageCropModal({ imageUrl, onClose, onSave }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
-      onClick={onClose}
     >
       <motion.div
         initial={{ scale: 0.9 }}
@@ -205,6 +242,28 @@ export default function ImageCropModal({ imageUrl, onClose, onSave }) {
           <div className="flex items-center gap-3">
             <h3 className="text-white font-bold text-lg">Edit Image</h3>
             <div className="flex items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                size="sm"
+                variant="outline"
+                className="border-purple-500/30 text-purple-400"
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Upload className="w-4 h-4 mr-2" />
+                )}
+                Upload
+              </Button>
+              <div className="w-px h-6 bg-white/10" />
               <Button
                 onClick={() => setTool('crop')}
                 size="sm"
@@ -272,32 +331,37 @@ export default function ImageCropModal({ imageUrl, onClose, onSave }) {
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
-            className="border border-white/10 rounded-lg cursor-crosshair"
+            className={`border border-white/10 rounded-lg transition-all ${
+              tool === 'crop' ? 'cursor-crosshair' : 
+              tool === 'draw' ? 'cursor-crosshair' : 
+              'cursor-move'
+            }`}
+            style={{ imageRendering: 'crisp-edges' }}
           />
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-white/20 flex justify-between items-center">
+        <div className="p-4 border-t border-white/20 flex justify-between items-center bg-black/30">
           <div className="text-white/60 text-sm">
             {tool === 'crop' && "Drag to select crop area"}
             {tool === 'draw' && "Draw lines to mark areas to cut out"}
-            {tool === 'move' && "Drag to reposition image"}
+            {tool === 'move' && "Click and drag to reposition image"}
           </div>
           <div className="flex gap-3">
             <Button
               onClick={onClose}
               variant="outline"
-              className="border-white/20 text-white/80"
+              className="border-white/20 text-white/80 hover:bg-white/10"
             >
               Cancel
             </Button>
             <Button
               onClick={handleCrop}
               disabled={!cropArea}
-              className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
+              className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Check className="w-4 h-4 mr-2" />
-              Apply Crop
+              Save Crop
             </Button>
           </div>
         </div>
