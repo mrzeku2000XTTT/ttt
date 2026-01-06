@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { base44 } from "@/api/base44Client";
-import { X, Sparkles, Loader2, Lock, Shirt, User, Upload, Image as ImageIcon, Send, Edit2, Download } from "lucide-react";
+import { X, Sparkles, Loader2, Lock, Shirt, User, Upload, Image as ImageIcon, Send, Edit2, Download, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ImageCropModal from "./ImageCropModal";
@@ -29,6 +29,7 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
   const [showCropModal, setShowCropModal] = useState(false);
   const [cropImageUrl, setCropImageUrl] = useState(null);
   const [isEnhancingPrompt, setIsEnhancingPrompt] = useState(false);
+  const [viewingFullImage, setViewingFullImage] = useState(null);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -411,7 +412,35 @@ Keep the user's core intent but make it technically precise and comprehensive. R
           }}
         />
       )}
-      
+
+      {viewingFullImage && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/95 z-[1000] flex items-center justify-center p-4"
+          onClick={() => setViewingFullImage(null)}
+        >
+          <button
+            onClick={() => setViewingFullImage(null)}
+            className="absolute top-4 left-4 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors z-10"
+          >
+            <ArrowLeft className="w-5 h-5 text-white" />
+          </button>
+          <img
+            src={viewingFullImage.url}
+            alt={viewingFullImage.type === 'start' ? 'Start Image' : 'End Image'}
+            className="max-w-full max-h-full object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/60 backdrop-blur-sm px-4 py-2 rounded-lg">
+            <span className="text-white text-sm font-semibold">
+              {viewingFullImage.type === 'start' ? 'Start Image' : 'End Image'}
+            </span>
+          </div>
+        </motion.div>
+      )}
+
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -567,7 +596,8 @@ Keep the user's core intent but make it technically precise and comprehensive. R
                       <img
                         src={startImage}
                         alt="Start"
-                        className="w-full h-auto object-contain max-h-[160px]"
+                        onClick={() => setViewingFullImage({ url: startImage, type: 'start' })}
+                        className="w-full h-auto object-contain max-h-[160px] cursor-pointer hover:opacity-80 transition-opacity"
                       />
                       <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <a
