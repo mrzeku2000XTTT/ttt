@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -54,8 +53,16 @@ export default function DAGKnightWalletPage() {
   const loadDAGKnightStatus = async () => {
     try {
       console.log('🔄 Loading DAGKnight status...');
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
+      let currentUser = null;
+      let walletAddress = null;
+      
+      // Try to get logged in user
+      try {
+        currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (err) {
+        console.log('No email login - checking wallet-only mode');
+      }
 
       // Check Kasware
       if (typeof window.kasware !== 'undefined') {
@@ -63,10 +70,18 @@ export default function DAGKnightWalletPage() {
           const accounts = await window.kasware.getAccounts();
           if (accounts && accounts.length > 0) {
             console.log('✅ Kasware connected:', accounts[0]);
+            walletAddress = accounts[0];
             setWallets(prev => ({ ...prev, kasware: accounts[0] }));
             
-            if (currentUser.kasware_address !== accounts[0]) {
+            // Update user if logged in
+            if (currentUser && currentUser.kasware_address !== accounts[0]) {
               await base44.auth.updateMe({ kasware_address: accounts[0] });
+            }
+            
+            // If no user, create wallet-only user object
+            if (!currentUser) {
+              currentUser = { created_wallet_address: accounts[0] };
+              setUser(currentUser);
             }
           }
         } catch (err) {
@@ -88,10 +103,18 @@ export default function DAGKnightWalletPage() {
         setWallets(prev => ({ ...prev, zk: zkWallet.address }));
       }
 
-      // Load all verifications
-      const allVerifications = await base44.entities.WalletVerification.filter({
-        user_email: currentUser.email
-      });
+      // Load all verifications by email OR wallet
+      let allVerifications = [];
+      if (currentUser?.email) {
+        allVerifications = await base44.entities.WalletVerification.filter({
+          user_email: currentUser.email
+        });
+      } else if (walletAddress) {
+        // For wallet-only users, load by wallet address
+        allVerifications = await base44.entities.WalletVerification.filter({
+          wallet_address: walletAddress
+        });
+      }
 
       console.log('📊 Found', allVerifications.length, 'verifications');
       setVerifications(allVerifications);
@@ -169,7 +192,7 @@ DAGKnight - Quantum-Secured Multi-Wallet Verification`;
       
       await base44.entities.WalletVerification.create({
         verification_id: verificationId,
-        user_email: user.email,
+        user_email: user?.email || null,
         wallet_address: walletAddress,
         wallet_type: walletType,
         signature: signature,
@@ -185,8 +208,8 @@ DAGKnight - Quantum-Secured Multi-Wallet Verification`;
       
       console.log('✅ Genesis created!');
       
-      // Update user's wallet address
-      if (walletType === 'kasware_l1') {
+      // Update user's wallet address if logged in
+      if (walletType === 'kasware_l1' && user?.email) {
         await base44.auth.updateMe({ kasware_address: walletAddress });
       }
       
@@ -292,7 +315,7 @@ DAGKnight - Quantum-Secured Multi-Wallet Verification`;
       
       await base44.entities.WalletVerification.create({
         verification_id: verificationId,
-        user_email: user.email,
+        user_email: user?.email || null,
         wallet_address: walletAddress,
         wallet_type: 'zk_wallet',
         signature: signature,
@@ -365,7 +388,7 @@ DAGKnight - Quantum-Secured Multi-Wallet Verification`;
       
       await base44.entities.WalletVerification.create({
         verification_id: verificationId,
-        user_email: user.email,
+        user_email: user?.email || null,
         wallet_address: wallets.ttt,
         wallet_type: 'ttt_wallet',
         signature: signature,
@@ -411,7 +434,9 @@ DAGKnight - Quantum-Secured Multi-Wallet Verification`;
         return;
       }
       
-      await base44.auth.updateMe(updates);
+      if (user?.email) {
+        await base44.auth.updateMe(updates);
+      }
       await loadDAGKnightStatus();
       
       console.log('✅ Wallet disconnected:', walletType);
@@ -442,11 +467,27 @@ DAGKnight - Quantum-Secured Multi-Wallet Verification`;
       <div className="min-h-screen bg-black flex items-center justify-center p-4">
         <Card className="bg-zinc-950 border-zinc-800 max-w-md">
           <CardContent className="p-8 text-center">
-            <Lock className="w-16 h-16 text-red-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-white mb-2">Login Required</h2>
-            <p className="text-gray-400 mb-4">Please login to access DAGKnight</p>
-            <Button onClick={() => base44.auth.redirectToLogin()} className="bg-purple-500 text-white">
-              Login
+            <Lock className="w-16 h-16 text-cyan-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-white mb-2">Connect Kasware Wallet</h2>
+            <p className="text-gray-400 mb-4">Please connect your Kasware wallet to access DAGKnight</p>
+            <Button 
+              onClick={async () => {
+                if (typeof window.kasware !== 'undefined') {
+                  try {
+                    const accounts = await window.kasware.requestAccounts();
+                    if (accounts && accounts.length > 0) {
+                      await loadDAGKnightStatus();
+                    }
+                  } catch (err) {
+                    alert('Failed to connect Kasware wallet');
+                  }
+                } else {
+                  alert('Kasware wallet not found. Please install Kasware extension.');
+                }
+              }}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+            >
+              Connect Kasware
             </Button>
           </CardContent>
         </Card>
@@ -703,7 +744,7 @@ DAGKnight - Quantum-Secured Multi-Wallet Verification`;
                         <div className="flex items-center justify-between">
                           <div>
                             <div className="text-xs text-gray-500 mb-1">Certificate Owner</div>
-                            <div className="text-sm text-white font-mono">{user?.email}</div>
+                            <div className="text-sm text-white font-mono">{user?.email || wallets.kasware}</div>
                           </div>
                           <Button
                             variant="outline"
