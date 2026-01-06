@@ -255,12 +255,30 @@ export default function FeedPage() {
       const allPosts = await base44.entities.Post.list('-created_date', 200);
       setPosts(allPosts);
 
-      // Load user's likes
-      if (currentUser) {
+      // Load user's likes (by email or wallet)
+      let walletAddress = '';
+      if (window.kasware) {
         try {
-          const likes = await base44.entities.PostLike.filter({
-            user_email: currentUser.email
-          });
+          const accounts = await window.kasware.getAccounts();
+          if (accounts && accounts.length > 0) {
+            walletAddress = accounts[0];
+          }
+        } catch (err) {
+          console.log('Failed to get Kasware wallet:', err);
+        }
+      }
+
+      if (currentUser) {
+        walletAddress = currentUser.created_wallet_address || walletAddress;
+      }
+
+      if (currentUser || walletAddress) {
+        try {
+          const filter = currentUser 
+            ? { user_email: currentUser.email }
+            : { user_wallet: walletAddress };
+          
+          const likes = await base44.entities.PostLike.filter(filter);
           const likesMap = {};
           likes.forEach(like => {
             likesMap[like.post_id] = true;
@@ -937,8 +955,27 @@ export default function FeedPage() {
       e.stopPropagation();
     }
 
-    if (!user) {
-      setError('Please login to like posts');
+    // Get wallet address from Kasware or user
+    let walletAddress = '';
+    let userEmail = user?.email || null;
+    
+    if (window.kasware) {
+      try {
+        const accounts = await window.kasware.getAccounts();
+        if (accounts && accounts.length > 0) {
+          walletAddress = accounts[0];
+        }
+      } catch (err) {
+        console.log('Failed to get Kasware wallet:', err);
+      }
+    }
+    
+    if (user) {
+      walletAddress = user.created_wallet_address || walletAddress;
+    }
+
+    if (!walletAddress && !userEmail) {
+      setError('Please connect wallet to like posts');
       return;
     }
 
@@ -960,18 +997,21 @@ export default function FeedPage() {
     // Background DB operations
     try {
       if (hasLiked) {
-        const existingLikes = await base44.entities.PostLike.filter({
-          post_id: post.id,
-          user_email: user.email
-        });
+        // Unlike based on email or wallet
+        const filter = userEmail 
+          ? { post_id: post.id, user_email: userEmail }
+          : { post_id: post.id, user_wallet: walletAddress };
+        
+        const existingLikes = await base44.entities.PostLike.filter(filter);
         if (existingLikes.length > 0) {
           await base44.entities.PostLike.delete(existingLikes[0].id);
         }
       } else {
+        // Like
         await base44.entities.PostLike.create({
           post_id: post.id,
-          user_email: user.email,
-          user_wallet: user.created_wallet_address || kaswareWallet.address || ''
+          user_email: userEmail,
+          user_wallet: walletAddress
         });
       }
 
