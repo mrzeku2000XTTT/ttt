@@ -28,6 +28,7 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
   const [uploadingAdditionalImage, setUploadingAdditionalImage] = useState(false);
   const [showCropModal, setShowCropModal] = useState(false);
   const [cropImageUrl, setCropImageUrl] = useState(null);
+  const [isEnhancingPrompt, setIsEnhancingPrompt] = useState(false);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -333,6 +334,46 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
       alert(`Failed to generate remix: ${err.message || 'Unknown error'}. Please try again with a different description.`);
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleEnhancePrompt = async () => {
+    if (!remixPrompt.trim()) {
+      alert("Please enter a prompt first");
+      return;
+    }
+
+    setIsEnhancingPrompt(true);
+    try {
+      const enhancedPrompt = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are a professional prompt engineer specializing in AI image generation. Take this simple user prompt and enhance it with comprehensive technical and artistic details.
+
+User's prompt: "${remixPrompt}"
+
+Transform this into a detailed, professional prompt that includes:
+1. **Camera details**: Specific camera angle (eye-level, high-angle, low-angle, bird's eye, worm's eye, Dutch angle, over-the-shoulder, etc.)
+2. **POV & Perspective**: First-person, third-person, isometric, forced perspective, vanishing point
+3. **Shot type**: Close-up, medium shot, wide shot, extreme close-up, establishing shot, two-shot
+4. **Camera height**: Ground level, chest level, eye level, overhead, aerial
+5. **Focal length**: 24mm wide, 50mm standard, 85mm portrait, 200mm telephoto (when relevant)
+6. **Composition**: Rule of thirds, centered, symmetrical, leading lines, golden ratio, negative space
+7. **Lighting**: Golden hour, blue hour, harsh midday, soft diffused, rim lighting, dramatic shadows, volumetric lighting, studio lighting
+8. **Depth of field**: Shallow (bokeh), deep focus, selective focus
+9. **Art style specifics**: If anime - specify which studio style (Ghibli, Makoto Shinkai, trigger, etc.). If painting - specify medium and technique
+10. **Color grading**: Cinematic, warm tones, cool tones, high contrast, desaturated, vibrant
+11. **Technical quality**: 8K resolution, photorealistic, hyperdetailed, sharp focus, professional photography
+12. **Mood & atmosphere**: Specify the emotional tone and ambiance
+
+Keep the user's core intent but make it technically precise and comprehensive. Return ONLY the enhanced prompt without explanations or meta-commentary.`,
+        add_context_from_internet: false
+      });
+
+      setRemixPrompt(enhancedPrompt.trim());
+    } catch (err) {
+      console.error("Failed to enhance prompt:", err);
+      alert("Failed to enhance prompt. Please try again.");
+    } finally {
+      setIsEnhancingPrompt(false);
     }
   };
 
@@ -739,34 +780,57 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
                     ? "Describe the style you want"
                     : "Describe What You Want to Create"
                   }</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAdditionalImageUpload}
-                    className="hidden"
-                    id="additional-image-upload"
-                    disabled={uploadingAdditionalImage}
-                  />
-                  <label
-                    htmlFor="additional-image-upload"
-                    className={`cursor-pointer px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                      uploadingAdditionalImage 
-                        ? 'bg-white/5 text-white/40 cursor-not-allowed'
-                        : 'bg-white/10 text-white/80 hover:bg-white/20'
-                    }`}
-                  >
-                    {uploadingAdditionalImage ? (
-                      <>
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                        <span>Uploading...</span>
-                      </>
-                    ) : (
-                      <>
-                        <ImageIcon className="w-3 h-3" />
-                        <span>Add Image</span>
-                      </>
-                    )}
-                  </label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleEnhancePrompt}
+                      disabled={isEnhancingPrompt || !remixPrompt.trim()}
+                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                        isEnhancingPrompt || !remixPrompt.trim()
+                          ? 'bg-white/5 text-white/40 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600'
+                      }`}
+                    >
+                      {isEnhancingPrompt ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          <span>Enhancing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-3 h-3" />
+                          <span>Enhance with AI</span>
+                        </>
+                      )}
+                    </button>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAdditionalImageUpload}
+                      className="hidden"
+                      id="additional-image-upload"
+                      disabled={uploadingAdditionalImage}
+                    />
+                    <label
+                      htmlFor="additional-image-upload"
+                      className={`cursor-pointer px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                        uploadingAdditionalImage 
+                          ? 'bg-white/5 text-white/40 cursor-not-allowed'
+                          : 'bg-white/10 text-white/80 hover:bg-white/20'
+                      }`}
+                    >
+                      {uploadingAdditionalImage ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          <span>Uploading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <ImageIcon className="w-3 h-3" />
+                          <span>Add Image</span>
+                        </>
+                      )}
+                    </label>
+                  </div>
                 </label>
 
                 {/* Additional Images Preview */}
