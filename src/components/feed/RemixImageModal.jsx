@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { base44 } from "@/api/base44Client";
-import { X, Sparkles, Loader2, Lock, Shirt, User, Upload, Image as ImageIcon, Send, Edit2 } from "lucide-react";
+import { X, Sparkles, Loader2, Lock, Shirt, User, Upload, Image as ImageIcon, Send, Edit2, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ImageCropModal from "./ImageCropModal";
@@ -563,19 +563,28 @@ Keep the user's core intent but make it technically precise and comprehensive. R
                   <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">Optional</span>
                 </div>
                 {startImage ? (
-                  <div className="relative bg-white/5 border border-green-500/30 rounded-xl overflow-hidden group">
-                    <img
-                      src={startImage}
-                      alt="Start"
-                      className="w-full h-auto object-contain max-h-[160px]"
-                    />
-                    <button
-                      onClick={() => setStartImage(null)}
-                      className="absolute top-2 right-2 w-8 h-8 bg-red-500/80 hover:bg-red-500 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="w-4 h-4 text-white" />
-                    </button>
-                  </div>
+                    <div className="relative bg-white/5 border border-green-500/30 rounded-xl overflow-hidden group">
+                      <img
+                        src={startImage}
+                        alt="Start"
+                        className="w-full h-auto object-contain max-h-[160px]"
+                      />
+                      <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <a
+                          href={startImage}
+                          download="start-image.png"
+                          className="w-8 h-8 bg-green-500/80 hover:bg-green-500 rounded-lg flex items-center justify-center"
+                        >
+                          <Download className="w-4 h-4 text-white" />
+                        </a>
+                        <button
+                          onClick={() => setStartImage(null)}
+                          className="w-8 h-8 bg-red-500/80 hover:bg-red-500 rounded-lg flex items-center justify-center"
+                        >
+                          <X className="w-4 h-4 text-white" />
+                        </button>
+                      </div>
+                    </div>
                 ) : (
                   <div className="space-y-2">
                     <label className="relative bg-white/5 border-2 border-dashed border-green-500/30 rounded-xl overflow-hidden flex flex-col items-center justify-center cursor-pointer hover:bg-green-500/5 transition-all h-[120px]">
@@ -627,19 +636,28 @@ Keep the user's core intent but make it technically precise and comprehensive. R
                   <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">Optional</span>
                 </div>
                 {endImage ? (
-                  <div className="relative bg-white/5 border border-blue-500/30 rounded-xl overflow-hidden group">
-                    <img
-                      src={endImage}
-                      alt="End"
-                      className="w-full h-auto object-contain max-h-[160px]"
-                    />
-                    <button
-                      onClick={() => setEndImage(null)}
-                      className="absolute top-2 right-2 w-8 h-8 bg-red-500/80 hover:bg-red-500 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="w-4 h-4 text-white" />
-                    </button>
-                  </div>
+                    <div className="relative bg-white/5 border border-blue-500/30 rounded-xl overflow-hidden group">
+                      <img
+                        src={endImage}
+                        alt="End"
+                        className="w-full h-auto object-contain max-h-[160px]"
+                      />
+                      <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <a
+                          href={endImage}
+                          download="end-image.png"
+                          className="w-8 h-8 bg-blue-500/80 hover:bg-blue-500 rounded-lg flex items-center justify-center"
+                        >
+                          <Download className="w-4 h-4 text-white" />
+                        </a>
+                        <button
+                          onClick={() => setEndImage(null)}
+                          className="w-8 h-8 bg-red-500/80 hover:bg-red-500 rounded-lg flex items-center justify-center"
+                        >
+                          <X className="w-4 h-4 text-white" />
+                        </button>
+                      </div>
+                    </div>
                 ) : (
                   <div className="space-y-2">
                     <label className="relative bg-white/5 border-2 border-dashed border-blue-500/30 rounded-xl overflow-hidden flex flex-col items-center justify-center cursor-pointer hover:bg-blue-500/5 transition-all h-[120px]">
