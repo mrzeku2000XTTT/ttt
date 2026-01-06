@@ -23,6 +23,8 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
   const [generatingStart, setGeneratingStart] = useState(false);
   const [generatingEnd, setGeneratingEnd] = useState(false);
   const [pushingToFeed, setPushingToFeed] = useState(false);
+  const [additionalReferenceImages, setAdditionalReferenceImages] = useState([]);
+  const [uploadingAdditionalImage, setUploadingAdditionalImage] = useState(false);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -69,6 +71,22 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
       alert("Failed to upload end image");
     } finally {
       setUploadingEnd(false);
+    }
+  };
+
+  const handleAdditionalImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingAdditionalImage(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setAdditionalReferenceImages([...additionalReferenceImages, file_url]);
+    } catch (err) {
+      console.error("Upload failed:", err);
+      alert("Failed to upload additional image");
+    } finally {
+      setUploadingAdditionalImage(false);
     }
   };
 
@@ -231,6 +249,9 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
       if (uploadedImage) imageUrls.push(uploadedImage);
       if (startImage) imageUrls.push(startImage);
       if (endImage) imageUrls.push(endImage);
+      if (additionalReferenceImages.length > 0) {
+        imageUrls.push(...additionalReferenceImages);
+      }
       
       const response = await base44.integrations.Core.GenerateImage({
         prompt: detailedPrompt,
@@ -610,12 +631,62 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
 
               {/* Prompt Input */}
               <div>
-                <label className="text-white/60 text-sm mb-2 block">
-                  {uploadedImage 
+                <label className="text-white/60 text-sm mb-2 block flex items-center justify-between">
+                  <span>{uploadedImage 
                     ? "Describe the style you want"
                     : "Describe What You Want to Create"
-                  }
+                  }</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAdditionalImageUpload}
+                    className="hidden"
+                    id="additional-image-upload"
+                    disabled={uploadingAdditionalImage}
+                  />
+                  <label
+                    htmlFor="additional-image-upload"
+                    className={`cursor-pointer px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                      uploadingAdditionalImage 
+                        ? 'bg-white/5 text-white/40 cursor-not-allowed'
+                        : 'bg-white/10 text-white/80 hover:bg-white/20'
+                    }`}
+                  >
+                    {uploadingAdditionalImage ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <span>Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <ImageIcon className="w-3 h-3" />
+                        <span>Add Image</span>
+                      </>
+                    )}
+                  </label>
                 </label>
+
+                {/* Additional Images Preview */}
+                {additionalReferenceImages.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {additionalReferenceImages.map((imgUrl, idx) => (
+                      <div key={idx} className="relative w-16 h-16 rounded-lg overflow-hidden border border-white/20 group">
+                        <img
+                          src={imgUrl}
+                          alt={`Additional ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          onClick={() => setAdditionalReferenceImages(additionalReferenceImages.filter((_, i) => i !== idx))}
+                          className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500/80 hover:bg-red-500 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3 text-white" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <Textarea
                   value={remixPrompt}
                   onChange={(e) => setRemixPrompt(e.target.value)}
