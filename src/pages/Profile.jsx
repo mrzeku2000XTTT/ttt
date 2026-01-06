@@ -175,8 +175,10 @@ export default function ProfilePage() {
         }
       }
 
-      // Load user-specific data only if logged in
-      if (currentUser?.email) {
+      // Load user-specific data - by email OR wallet
+      const walletAddr = currentUser?.created_wallet_address || connectedWalletAddress;
+      
+      if (walletAddr || currentUser?.email) {
         try {
           const allTransactions = await base44.entities.BridgeTransaction.list('-created_date', 50);
           setTransactions(allTransactions);
@@ -198,23 +200,55 @@ export default function ProfilePage() {
         }
 
         try {
-          const userStamps = await base44.entities.StampedNews.filter({
-            created_by: currentUser.email
-          }, '-created_date', 100);
+          // Load stamps by email OR wallet address
+          let userStamps = [];
+          if (currentUser?.email) {
+            userStamps = await base44.entities.StampedNews.filter({
+              created_by: currentUser.email
+            }, '-created_date', 100);
+          } else if (walletAddr) {
+            userStamps = await base44.entities.StampedNews.filter({
+              stamper_address: walletAddr
+            }, '-created_date', 100);
+          }
           setStamps(userStamps);
         } catch (err) {
           console.error('Failed to load stamps:', err);
         }
 
         try {
-          const userSeals = await base44.entities.TTTID.filter({
-            created_by: currentUser.email
-          }, '-created_date', 100);
+          // Load TTTID and SealedWallet by email OR wallet address
+          let userSeals = [];
+          let sealedWallets = [];
           
-          const sealedWallets = await base44.entities.SealedWallet.filter({
-            created_by: currentUser.email,
-            is_active: true
-          }, '-sealed_date', 100);
+          if (currentUser?.email) {
+            userSeals = await base44.entities.TTTID.filter({
+              created_by: currentUser.email
+            }, '-created_date', 100);
+            
+            sealedWallets = await base44.entities.SealedWallet.filter({
+              created_by: currentUser.email,
+              is_active: true
+            }, '-sealed_date', 100);
+          } else if (walletAddr) {
+            // For wallet-only users, query by kaspa_address
+            try {
+              userSeals = await base44.entities.TTTID.filter({
+                kaspa_address: walletAddr
+              }, '-verified_date', 100);
+            } catch (e) {
+              console.log('No TTTID found for wallet');
+            }
+            
+            try {
+              sealedWallets = await base44.entities.SealedWallet.filter({
+                wallet_address: walletAddr,
+                is_active: true
+              }, '-sealed_date', 100);
+            } catch (e) {
+              console.log('No sealed wallets found');
+            }
+          }
           
           const walletSeals = sealedWallets.map(wallet => ({
             ...wallet,
@@ -232,18 +266,50 @@ export default function ProfilePage() {
           console.error('Failed to load seals:', err);
         }
 
-        // Load DAGKnight verifications
+        // Load DAGKnight verifications by email OR wallet
         try {
-          const verifications = await base44.entities.WalletVerification.filter({
-            user_email: currentUser.email
-          });
+          let verifications = [];
+          let certificates = [];
+          
+          if (currentUser?.email) {
+            verifications = await base44.entities.WalletVerification.filter({
+              user_email: currentUser.email
+            });
+            
+            certificates = await base44.entities.DAGKnightCertificate.filter({
+              user_email: currentUser.email,
+              is_public: true
+            }, '-issued_date', 1);
+          } else if (walletAddr) {
+            // For wallet-only users, find verifications by wallet address
+            verifications = await base44.entities.WalletVerification.filter({
+              wallet_address: walletAddr
+            });
+            
+            // Find certificate by any wallet address field
+            try {
+              const kaswareCerts = await base44.entities.DAGKnightCertificate.filter({
+                kasware_address: walletAddr,
+                is_public: true
+              }, '-issued_date', 1);
+              
+              const tttCerts = await base44.entities.DAGKnightCertificate.filter({
+                ttt_wallet_address: walletAddr,
+                is_public: true
+              }, '-issued_date', 1);
+              
+              const metamaskCerts = await base44.entities.DAGKnightCertificate.filter({
+                metamask_address: walletAddr,
+                is_public: true
+              }, '-issued_date', 1);
+              
+              certificates = [...kaswareCerts, ...tttCerts, ...metamaskCerts];
+            } catch (e) {
+              console.log('No certificates found for wallet');
+            }
+          }
+          
           setDagKnightVerifications(verifications);
-
-          // Try to load existing certificate
-          const certificates = await base44.entities.DAGKnightCertificate.filter({
-            user_email: currentUser.email,
-            is_public: true
-          }, '-issued_date', 1);
           
           if (certificates.length > 0) {
             setDagKnightCertificate(certificates[0]);
