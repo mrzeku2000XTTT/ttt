@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { X, Crop, Scissors, Move, RotateCw, Check, Undo, Upload, Loader2 } from "lucide-react";
+import { X, Crop, Scissors, Move, RotateCw, Check, Undo, Upload, Loader2, Trash2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 export default function ImageCropModal({ imageUrl, onClose, onSave }) {
@@ -10,8 +10,12 @@ export default function ImageCropModal({ imageUrl, onClose, onSave }) {
   const [tool, setTool] = useState('crop'); // 'crop', 'draw', 'move'
   const [isDrawing, setIsDrawing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isDraggingCrop, setIsDraggingCrop] = useState(false);
+  const [isResizingCrop, setIsResizingCrop] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [resizeHandle, setResizeHandle] = useState(null);
   const [cropArea, setCropArea] = useState(null);
+  const [cropHistory, setCropHistory] = useState([]);
   const [drawPaths, setDrawPaths] = useState([]);
   const [currentPath, setCurrentPath] = useState([]);
   const [image, setImage] = useState(null);
@@ -117,6 +121,33 @@ export default function ImageCropModal({ imageUrl, onClose, onSave }) {
     }
   };
 
+  const isPointInCropArea = (x, y) => {
+    if (!cropArea) return false;
+    const left = Math.min(cropArea.x, cropArea.x + cropArea.width);
+    const right = Math.max(cropArea.x, cropArea.x + cropArea.width);
+    const top = Math.min(cropArea.y, cropArea.y + cropArea.height);
+    const bottom = Math.max(cropArea.y, cropArea.y + cropArea.height);
+    return x >= left && x <= right && y >= top && y <= bottom;
+  };
+
+  const getResizeHandle = (x, y) => {
+    if (!cropArea) return null;
+    const handleSize = 12;
+    const corners = [
+      { type: 'tl', x: cropArea.x, y: cropArea.y },
+      { type: 'tr', x: cropArea.x + cropArea.width, y: cropArea.y },
+      { type: 'bl', x: cropArea.x, y: cropArea.y + cropArea.height },
+      { type: 'br', x: cropArea.x + cropArea.width, y: cropArea.y + cropArea.height }
+    ];
+    
+    for (const corner of corners) {
+      if (Math.abs(x - corner.x) < handleSize && Math.abs(y - corner.y) < handleSize) {
+        return corner.type;
+      }
+    }
+    return null;
+  };
+
   const handleMouseDown = (e) => {
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
@@ -124,8 +155,18 @@ export default function ImageCropModal({ imageUrl, onClose, onSave }) {
     const y = e.clientY - rect.top;
 
     if (tool === 'crop') {
-      setCropArea({ x, y, width: 0, height: 0 });
-      setIsDrawing(true);
+      const handle = getResizeHandle(x, y);
+      if (handle) {
+        setIsResizingCrop(true);
+        setResizeHandle(handle);
+        setDragStart({ x, y });
+      } else if (isPointInCropArea(x, y)) {
+        setIsDraggingCrop(true);
+        setDragStart({ x: x - cropArea.x, y: y - cropArea.y });
+      } else {
+        setCropArea({ x, y, width: 0, height: 0 });
+        setIsDrawing(true);
+      }
     } else if (tool === 'draw') {
       setCurrentPath([{ x, y }]);
       setIsDrawing(true);
@@ -136,6 +177,11 @@ export default function ImageCropModal({ imageUrl, onClose, onSave }) {
   };
 
   const handleMouseMove = (e) => {
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
     if (tool === 'move' && isDragging) {
       setPosition({
         x: e.clientX - dragStart.x,
@@ -144,12 +190,48 @@ export default function ImageCropModal({ imageUrl, onClose, onSave }) {
       return;
     }
 
+    if (tool === 'crop') {
+      if (isDraggingCrop) {
+        setCropArea({
+          ...cropArea,
+          x: x - dragStart.x,
+          y: y - dragStart.y
+        });
+        return;
+      }
+
+      if (isResizingCrop && resizeHandle) {
+        const newArea = { ...cropArea };
+        
+        if (resizeHandle === 'tl') {
+          const deltaX = x - dragStart.x;
+          const deltaY = y - dragStart.y;
+          newArea.x = cropArea.x + deltaX;
+          newArea.y = cropArea.y + deltaY;
+          newArea.width = cropArea.width - deltaX;
+          newArea.height = cropArea.height - deltaY;
+        } else if (resizeHandle === 'tr') {
+          const deltaY = y - dragStart.y;
+          newArea.y = cropArea.y + deltaY;
+          newArea.width = x - cropArea.x;
+          newArea.height = cropArea.height - deltaY;
+        } else if (resizeHandle === 'bl') {
+          const deltaX = x - dragStart.x;
+          newArea.x = cropArea.x + deltaX;
+          newArea.width = cropArea.width - deltaX;
+          newArea.height = y - cropArea.y;
+        } else if (resizeHandle === 'br') {
+          newArea.width = x - cropArea.x;
+          newArea.height = y - cropArea.y;
+        }
+        
+        setCropArea(newArea);
+        setDragStart({ x, y });
+        return;
+      }
+    }
+
     if (!isDrawing) return;
-    
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
 
     if (tool === 'crop' && cropArea) {
       setCropArea({
@@ -169,6 +251,48 @@ export default function ImageCropModal({ imageUrl, onClose, onSave }) {
     }
     setIsDrawing(false);
     setIsDragging(false);
+    setIsDraggingCrop(false);
+    setIsResizingCrop(false);
+    setResizeHandle(null);
+  };
+
+  const saveCropToHistory = async () => {
+    if (!cropArea || !image) return;
+    
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Normalize crop area
+    const x = Math.max(0, Math.min(cropArea.x, cropArea.x + cropArea.width));
+    const y = Math.max(0, Math.min(cropArea.y, cropArea.y + cropArea.height));
+    const width = Math.abs(cropArea.width);
+    const height = Math.abs(cropArea.height);
+    
+    // Convert to image coordinates
+    const imgX = (x - position.x) / scale;
+    const imgY = (y - position.y) / scale;
+    const imgWidth = width / scale;
+    const imgHeight = height / scale;
+    
+    canvas.width = imgWidth;
+    canvas.height = imgHeight;
+    
+    ctx.drawImage(
+      image,
+      imgX, imgY, imgWidth, imgHeight,
+      0, 0, imgWidth, imgHeight
+    );
+    
+    const dataUrl = canvas.toDataURL('image/png');
+    const newCrop = {
+      id: Date.now(),
+      dataUrl,
+      area: { x, y, width, height },
+      timestamp: new Date().toISOString()
+    };
+    
+    setCropHistory([...cropHistory, newCrop]);
+    setCropArea(null);
   };
 
   const handleCrop = async () => {
@@ -202,6 +326,17 @@ export default function ImageCropModal({ imageUrl, onClose, onSave }) {
       onSave(blob);
       onClose();
     }, 'image/png');
+  };
+
+  const deleteCropFromHistory = (id) => {
+    setCropHistory(cropHistory.filter(c => c.id !== id));
+  };
+
+  const useCropFromHistory = async (crop) => {
+    const response = await fetch(crop.dataUrl);
+    const blob = await response.blob();
+    onSave(blob);
+    onClose();
   };
 
   const handleAutoStraighten = () => {
@@ -323,31 +458,72 @@ export default function ImageCropModal({ imageUrl, onClose, onSave }) {
           </div>
         </div>
 
-        {/* Canvas */}
-        <div className="flex-1 flex items-center justify-center p-4 bg-black/50">
-          <canvas
-            ref={canvasRef}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            className={`border border-white/10 rounded-lg transition-all ${
-              tool === 'crop' ? 'cursor-crosshair' : 
-              tool === 'draw' ? 'cursor-crosshair' : 
-              'cursor-move'
-            }`}
-            style={{ imageRendering: 'crisp-edges' }}
-          />
+        {/* Main Content */}
+        <div className="flex-1 flex gap-4 p-4 bg-black/50">
+          {/* Canvas */}
+          <div className="flex-1 flex items-center justify-center">
+            <canvas
+              ref={canvasRef}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onContextMenu={(e) => e.preventDefault()}
+              className={`border border-white/10 rounded-lg transition-all ${
+                tool === 'crop' ? (isDraggingCrop ? 'cursor-grabbing' : 'cursor-crosshair') : 
+                tool === 'draw' ? 'cursor-crosshair' : 
+                'cursor-move'
+              }`}
+              style={{ imageRendering: 'crisp-edges' }}
+            />
+          </div>
+
+          {/* Crop History Sidebar */}
+          {cropHistory.length > 0 && (
+            <div className="w-48 bg-black/30 border border-white/10 rounded-lg p-3 overflow-y-auto">
+              <h4 className="text-white text-sm font-semibold mb-3">Saved Crops</h4>
+              <div className="space-y-2">
+                {cropHistory.map((crop) => (
+                  <div
+                    key={crop.id}
+                    className="relative group bg-white/5 border border-white/10 rounded-lg overflow-hidden cursor-pointer hover:border-cyan-500/50 transition-all"
+                  >
+                    <img
+                      src={crop.dataUrl}
+                      alt="Crop"
+                      onClick={() => useCropFromHistory(crop)}
+                      className="w-full h-24 object-cover"
+                    />
+                    <button
+                      onClick={() => deleteCropFromHistory(crop.id)}
+                      className="absolute top-1 right-1 w-6 h-6 bg-red-500/80 hover:bg-red-500 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-3 h-3 text-white" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
         <div className="p-4 border-t border-white/20 flex justify-between items-center bg-black/30">
           <div className="text-white/60 text-sm">
-            {tool === 'crop' && "Drag to select crop area"}
+            {tool === 'crop' && "Drag corners to resize • Click inside to move • Save to history"}
             {tool === 'draw' && "Draw lines to mark areas to cut out"}
             {tool === 'move' && "Click and drag to reposition image"}
           </div>
           <div className="flex gap-3">
+            {cropArea && tool === 'crop' && (
+              <Button
+                onClick={saveCropToHistory}
+                variant="outline"
+                className="border-green-500/30 text-green-400 hover:bg-green-500/10"
+              >
+                Save to History
+              </Button>
+            )}
             <Button
               onClick={onClose}
               variant="outline"
@@ -361,7 +537,7 @@ export default function ImageCropModal({ imageUrl, onClose, onSave }) {
               className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Check className="w-4 h-4 mr-2" />
-              Save Crop
+              Use This Crop
             </Button>
           </div>
         </div>
