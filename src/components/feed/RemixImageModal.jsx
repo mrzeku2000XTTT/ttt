@@ -861,7 +861,8 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
               </Button>
           </div>
         </div>
-      </motion.div>
-    </>
-  );
-}
+        </motion.div>
+        </motion.div>
+        </>
+        );
+        }
