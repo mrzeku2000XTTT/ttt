@@ -431,11 +431,19 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
                 </div>
                 {uploadedImage ? (
                   <div className="relative bg-white/5 border border-white/10 rounded-xl overflow-hidden group">
-                    <img
-                      src={uploadedImage}
-                      alt="Reference"
-                      className="w-full h-auto object-contain max-h-[200px]"
-                    />
+                    <div 
+                      onClick={() => window.open(uploadedImage, '_blank')}
+                      className="relative cursor-pointer overflow-hidden group/img"
+                    >
+                      <img
+                        src={uploadedImage}
+                        alt="Reference"
+                        className="w-full h-auto object-contain max-h-[200px] hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity flex items-end justify-center pb-2">
+                        <span className="text-white text-xs font-semibold">Click to view full</span>
+                      </div>
+                    </div>
                     <button
                       onClick={() => setUploadedImage(null)}
                       className="absolute top-2 right-2 w-8 h-8 bg-red-500/80 hover:bg-red-500 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
