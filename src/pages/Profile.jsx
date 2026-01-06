@@ -35,6 +35,20 @@ export default function ProfilePage() {
 
   useEffect(() => {
     loadData();
+    
+    // Listen for Kasware wallet changes
+    if (window.kasware) {
+      const handleAccountsChanged = (accounts) => {
+        console.log('Kasware wallet changed:', accounts);
+        loadData(); // Reload profile with new wallet
+      };
+      
+      window.kasware.on('accountsChanged', handleAccountsChanged);
+      
+      return () => {
+        window.kasware.removeListener('accountsChanged', handleAccountsChanged);
+      };
+    }
   }, []);
 
   const loadData = async () => {
