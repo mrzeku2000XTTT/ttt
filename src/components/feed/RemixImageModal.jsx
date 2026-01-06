@@ -205,9 +205,9 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
           }
 
           if (styleDescription) {
-            detailedPrompt = `Transform the person in the reference image into ${styleDescription}. CRITICAL IDENTITY PRESERVATION: Keep the exact same person - same face, same identity, same recognizable features. Maintain their pose, body proportions, and overall composition. ONLY change the visual art style and rendering technique. Professional high-quality result.`;
+            detailedPrompt = `Transform the person in the reference image into ${styleDescription}. CRITICAL IDENTITY PRESERVATION: Keep the exact same person - same face, same identity, same recognizable features. Maintain their pose, body proportions, and overall composition. ONLY change the visual art style and rendering technique. IMPORTANT: Carefully remove any UI elements, buttons, controls, icons, or interface overlays from the image - clean them out completely while preserving the main subject. Professional high-quality result.`;
           } else {
-            detailedPrompt = `Transform the subject into ${remixPrompt}. CRITICAL: Preserve the person's identity, face structure, pose, and proportions. Only change the artistic style and visual aesthetic. High quality professional result.`;
+            detailedPrompt = `Transform the subject into ${remixPrompt}. CRITICAL: Preserve the person's identity, face structure, pose, and proportions. Only change the artistic style and visual aesthetic. IMPORTANT: Carefully remove any UI elements, buttons, controls, icons, or interface overlays from the image - clean them out completely while preserving the main subject. High quality professional result.`;
           }
 
           // Add start/end image guidance
@@ -235,11 +235,11 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
           }
           
           const constraintText = constraints.length > 0 ? constraints.join(". ") + "." : "";
-          detailedPrompt = `${basePrompt} ${constraintText} High quality, professional, detailed result.`;
+          detailedPrompt = `${basePrompt} ${constraintText} IMPORTANT: Carefully remove any UI elements, buttons, controls, icons, or interface overlays from the image - clean them out completely while preserving the main subject. High quality, professional, detailed result.`;
         }
       } else {
         // Generate brand new image
-        detailedPrompt = `Create an image: ${remixPrompt}. High quality, professional, detailed digital art.`;
+        detailedPrompt = `Create an image: ${remixPrompt}. Ensure there are no UI elements, buttons, or interface controls in the final image. High quality, professional, detailed digital art.`;
       }
 
       console.log('🎨 Generating image with prompt:', detailedPrompt);
