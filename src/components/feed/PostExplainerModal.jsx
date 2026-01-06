@@ -49,22 +49,41 @@ export default function PostExplainerModal({ post, onClose, currentUser }) {
         });
         setQueriesUsed(prev => prev + 1);
       }
-      // Gather post context
+      // Gather post context and media
       const postContent = post.content || "";
-      const hasMedia = post.media_files?.length > 0 || post.image_url;
-      const mediaContext = hasMedia ? "\n\nPost includes media attachments." : "";
+      const mediaUrls = [];
       
-      const prompt = `You are an expert post analyzer on TTT Feed. Explain this post in TWO detailed, specific sentences.
+      if (post.image_url) {
+        mediaUrls.push(post.image_url);
+      }
+      if (post.media_files?.length > 0) {
+        post.media_files.forEach(file => {
+          if (file.url && file.type?.startsWith('image/')) {
+            mediaUrls.push(file.url);
+          }
+        });
+      }
+      
+      const prompt = postContent 
+        ? `You are an expert post analyzer on TTT Feed. Explain this post in TWO detailed, specific sentences.
 
 Post by ${post.author_name}:
-"${postContent}"${mediaContext}
+"${postContent}"
 
-Provide TWO informative sentences that give context, meaning, and key insights. Be specific and detailed. Use 1-2 emojis.`;
+${mediaUrls.length > 0 ? 'The post includes images - analyze the visual content in detail.' : ''}
+
+Provide TWO informative sentences that give context, meaning, and key insights. Be specific and detailed. Use 1-2 emojis.`
+        : `You are an expert post analyzer on TTT Feed. This post contains only images with no text.
+
+Post by ${post.author_name} - IMAGE ONLY
+
+Analyze the images in detail and provide TWO informative sentences explaining what is shown, the context, and key insights. Be specific about what you see. Use 1-2 emojis.`;
 
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: prompt,
         add_context_from_internet: true,
-        response_json_schema: null
+        response_json_schema: null,
+        ...(mediaUrls.length > 0 && { file_urls: mediaUrls })
       });
 
       setExplanation(response || "Unable to generate explanation.");
