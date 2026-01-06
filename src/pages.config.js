@@ -1,5 +1,6 @@
 import AIAnalytics from './pages/AIAnalytics';
 import AK from './pages/AK';
+import ALPHA from './pages/ALPHA';
 import APIDocumentation from './pages/APIDocumentation';
 import AYOMUIZ from './pages/AYOMUIZ';
 import AYOMUIZ2 from './pages/AYOMUIZ2';
@@ -202,13 +203,13 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import ALPHA from './pages/ALPHA';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "AIAnalytics": AIAnalytics,
     "AK": AK,
+    "ALPHA": ALPHA,
     "APIDocumentation": APIDocumentation,
     "AYOMUIZ": AYOMUIZ,
     "AYOMUIZ2": AYOMUIZ2,
@@ -411,7 +412,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "ALPHA": ALPHA,
 }
 
 export const pagesConfig = {

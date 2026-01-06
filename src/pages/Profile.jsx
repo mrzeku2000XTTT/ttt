@@ -42,9 +42,28 @@ export default function ProfilePage() {
     try {
       // Try to get logged-in user, but don't require it
       let currentUser = null;
+      let connectedWalletAddress = null;
+      
+      // First, try to get connected Kasware wallet
+      if (window.kasware) {
+        try {
+          const accounts = await window.kasware.getAccounts();
+          if (accounts && accounts.length > 0) {
+            connectedWalletAddress = accounts[0];
+          }
+        } catch (err) {
+          console.log('No Kasware wallet connected');
+        }
+      }
       
       try {
         currentUser = await base44.auth.me();
+        
+        // If user is logged in, prioritize connected wallet over stored wallet
+        if (connectedWalletAddress) {
+          currentUser.created_wallet_address = connectedWalletAddress;
+        }
+        
         setUser(currentUser);
         setEditData({
           username: currentUser.username || "",
@@ -58,11 +77,11 @@ export default function ProfilePage() {
           setCreatedWallets(currentUser.created_wallets);
         }
       } catch (err) {
-        // User not logged in - check for TTT wallet in localStorage
-        const localWallet = localStorage.getItem('ttt_wallet_address');
-        if (localWallet) {
-          setUser({ created_wallet_address: localWallet });
-          setCreatedWallets([{ address: localWallet, balance: 0 }]);
+        // User not logged in - use connected Kasware wallet or fallback to localStorage
+        const walletAddress = connectedWalletAddress || localStorage.getItem('ttt_wallet_address');
+        if (walletAddress) {
+          setUser({ created_wallet_address: walletAddress });
+          setCreatedWallets([{ address: walletAddress, balance: 0 }]);
         }
       }
 
