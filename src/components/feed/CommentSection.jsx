@@ -114,29 +114,55 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
 
     setIsCommenting(true);
     try {
-      // Prioritize TTT username, fallback to AgentZK profile
-      let authorName = currentUser.username || '';
-      let authorWalletAddress = currentUser.created_wallet_address || '';
+      let authorName = '';
+      let authorWalletAddress = '';
 
-      // Only use AgentZK username if no TTT username exists
-      if (!authorName && currentUser.created_wallet_address) {
+      // Try to get wallet address first
+      if (window.kasware) {
         try {
-          const profiles = await base44.entities.AgentZKProfile.filter({
-            wallet_address: currentUser.created_wallet_address
-          });
-          if (profiles.length > 0 && profiles[0].username) {
-            authorName = profiles[0].username;
+          const accounts = await window.kasware.getAccounts();
+          if (accounts && accounts.length > 0) {
+            authorWalletAddress = accounts[0];
           }
         } catch (err) {
-          console.log('No AgentZK profile found');
+          console.log('Failed to get Kasware wallet:', err);
         }
       }
 
-      // Fallback names
-      if (!authorName) {
-        authorName = currentUser.created_wallet_address 
-          ? `${currentUser.created_wallet_address.slice(0, 6)}...${currentUser.created_wallet_address.slice(-4)}`
-          : currentUser.email.split('@')[0];
+      // If user is logged in, use their details
+      if (currentUser) {
+        authorName = currentUser.username || '';
+        authorWalletAddress = currentUser.created_wallet_address || authorWalletAddress;
+
+        // Only use AgentZK username if no TTT username exists
+        if (!authorName && authorWalletAddress) {
+          try {
+            const profiles = await base44.entities.AgentZKProfile.filter({
+              wallet_address: authorWalletAddress
+            });
+            if (profiles.length > 0 && profiles[0].username) {
+              authorName = profiles[0].username;
+            }
+          } catch (err) {
+            console.log('No AgentZK profile found');
+          }
+        }
+
+        // Fallback for logged in users
+        if (!authorName) {
+          authorName = authorWalletAddress 
+            ? `${authorWalletAddress.slice(0, 6)}...${authorWalletAddress.slice(-4)}`
+            : currentUser.email.split('@')[0];
+        }
+      } else {
+        // Not logged in - use wallet address
+        if (authorWalletAddress) {
+          authorName = `${authorWalletAddress.slice(0, 6)}...${authorWalletAddress.slice(-4)}`;
+        } else {
+          alert('Please connect Kasware wallet to comment');
+          setIsCommenting(false);
+          return;
+        }
       }
 
       const createdComment = await base44.entities.PostComment.create({
@@ -192,31 +218,58 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
         };
 
         const handleReplyToComment = async (parentComment) => {
-        if (!replyText.trim()) return;
+          if (!replyText.trim()) return;
 
-        setIsCommenting(true);
-        try {
-        let authorName = currentUser.username || '';
-        let authorWalletAddress = currentUser.created_wallet_address || '';
+          setIsCommenting(true);
+          try {
+            let authorName = '';
+            let authorWalletAddress = '';
 
-        if (!authorName && currentUser.created_wallet_address) {
-        try {
-          const profiles = await base44.entities.AgentZKProfile.filter({
-            wallet_address: currentUser.created_wallet_address
-          });
-          if (profiles.length > 0 && profiles[0].username) {
-            authorName = profiles[0].username;
-          }
-        } catch (err) {
-          console.log('No AgentZK profile found');
-        }
-        }
+            // Try to get wallet address first
+            if (window.kasware) {
+              try {
+                const accounts = await window.kasware.getAccounts();
+                if (accounts && accounts.length > 0) {
+                  authorWalletAddress = accounts[0];
+                }
+              } catch (err) {
+                console.log('Failed to get Kasware wallet:', err);
+              }
+            }
 
-        if (!authorName) {
-        authorName = currentUser.created_wallet_address 
-          ? `${currentUser.created_wallet_address.slice(0, 6)}...${currentUser.created_wallet_address.slice(-4)}`
-          : currentUser.email.split('@')[0];
-        }
+            // If user is logged in, use their details
+            if (currentUser) {
+              authorName = currentUser.username || '';
+              authorWalletAddress = currentUser.created_wallet_address || authorWalletAddress;
+
+              if (!authorName && authorWalletAddress) {
+                try {
+                  const profiles = await base44.entities.AgentZKProfile.filter({
+                    wallet_address: authorWalletAddress
+                  });
+                  if (profiles.length > 0 && profiles[0].username) {
+                    authorName = profiles[0].username;
+                  }
+                } catch (err) {
+                  console.log('No AgentZK profile found');
+                }
+              }
+
+              if (!authorName) {
+                authorName = authorWalletAddress 
+                  ? `${authorWalletAddress.slice(0, 6)}...${authorWalletAddress.slice(-4)}`
+                  : currentUser.email.split('@')[0];
+              }
+            } else {
+              // Not logged in - use wallet address
+              if (authorWalletAddress) {
+                authorName = `${authorWalletAddress.slice(0, 6)}...${authorWalletAddress.slice(-4)}`;
+              } else {
+                alert('Please connect Kasware wallet to reply');
+                setIsCommenting(false);
+                return;
+              }
+            }
 
         await base44.entities.PostComment.create({
         post_id: postId,
@@ -467,13 +520,13 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
         <div className="w-8 h-8 bg-white/10 border border-white/20 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
           {currentUser?.username ? currentUser.username[0].toUpperCase() : 
            currentUser?.created_wallet_address ? currentUser.created_wallet_address.slice(-1).toUpperCase() :
-           currentUser?.email[0].toUpperCase()}
+           currentUser?.email ? currentUser.email[0].toUpperCase() : 'W'}
         </div>
         <Input
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && handleComment()}
-          placeholder="Write a comment... (@zk to call ZK bot)"
+          placeholder={currentUser ? "Write a comment... (@zk to call ZK bot)" : "Connect wallet to comment..."}
           className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/30 h-9"
           disabled={isCommenting}
         />
