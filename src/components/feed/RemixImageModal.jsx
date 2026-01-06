@@ -3,9 +3,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { base44 } from "@/api/base44Client";
-import { X, Sparkles, Loader2, Lock, Shirt, User, Upload, Image as ImageIcon, Send } from "lucide-react";
+import { X, Sparkles, Loader2, Lock, Shirt, User, Upload, Image as ImageIcon, Send, Edit2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import ImageCropModal from "./ImageCropModal";
 
 export default function RemixImageModal({ imageUrl, onClose, onSave }) {
   const navigate = useNavigate();
@@ -25,6 +26,8 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
   const [pushingToFeed, setPushingToFeed] = useState(false);
   const [additionalReferenceImages, setAdditionalReferenceImages] = useState([]);
   const [uploadingAdditionalImage, setUploadingAdditionalImage] = useState(false);
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [cropImageUrl, setCropImageUrl] = useState(null);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -345,13 +348,36 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
   ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
-      onClick={onClose}
-    >
+    <>
+      {showCropModal && cropImageUrl && (
+        <ImageCropModal
+          imageUrl={cropImageUrl}
+          onClose={() => {
+            setShowCropModal(false);
+            setCropImageUrl(null);
+          }}
+          onSave={async (blob) => {
+            const file = new File([blob], 'cropped.png', { type: 'image/png' });
+            try {
+              const { file_url } = await base44.integrations.Core.UploadFile({ file });
+              setUploadedImage(file_url);
+              setShowCropModal(false);
+              setCropImageUrl(null);
+            } catch (err) {
+              console.error('Failed to upload cropped image:', err);
+              alert('Failed to save cropped image');
+            }
+          }}
+        />
+      )}
+      
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
+        onClick={onClose}
+      >
       <motion.div
         initial={{ scale: 0.9, y: 20 }}
         animate={{ scale: 1, y: 0 }}
@@ -432,7 +458,10 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
                 {uploadedImage ? (
                   <div className="relative bg-white/5 border border-white/10 rounded-xl overflow-hidden group">
                     <div 
-                      onClick={() => window.open(uploadedImage, '_blank')}
+                      onClick={() => {
+                        setCropImageUrl(uploadedImage);
+                        setShowCropModal(true);
+                      }}
                       className="relative cursor-pointer overflow-hidden group/img"
                     >
                       <img
@@ -441,9 +470,19 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
                         className="w-full h-auto object-contain max-h-[200px] hover:scale-105 transition-transform duration-300"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity flex items-end justify-center pb-2">
-                        <span className="text-white text-xs font-semibold">Click to view full</span>
+                        <span className="text-white text-xs font-semibold">Click to edit</span>
                       </div>
                     </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCropImageUrl(uploadedImage);
+                        setShowCropModal(true);
+                      }}
+                      className="absolute top-2 left-2 w-8 h-8 bg-cyan-500/80 hover:bg-cyan-500 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Edit2 className="w-4 h-4 text-white" />
+                    </button>
                     <button
                       onClick={() => setUploadedImage(null)}
                       className="absolute top-2 right-2 w-8 h-8 bg-red-500/80 hover:bg-red-500 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -823,6 +862,6 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
           </div>
         </div>
       </motion.div>
-    </motion.div>
+    </>
   );
 }
