@@ -90,6 +90,34 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
     }
   };
 
+  const handlePaste = async (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      
+      // Check if the pasted item is an image
+      if (item.type.indexOf('image') !== -1) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (!file) continue;
+
+        setUploadingAdditionalImage(true);
+        try {
+          const { file_url } = await base44.integrations.Core.UploadFile({ file });
+          setAdditionalReferenceImages([...additionalReferenceImages, file_url]);
+        } catch (err) {
+          console.error("Upload failed:", err);
+          alert("Failed to upload pasted image");
+        } finally {
+          setUploadingAdditionalImage(false);
+        }
+        break;
+      }
+    }
+  };
+
   const handleGenerateStartImage = async () => {
     if (!uploadedImage) {
       alert("Please upload a reference image first");
@@ -690,6 +718,7 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
                 <Textarea
                   value={remixPrompt}
                   onChange={(e) => setRemixPrompt(e.target.value)}
+                  onPaste={handlePaste}
                   placeholder={uploadedImage 
                     ? "e.g., anime version, Studio Ghibli style, pixel art, wearing red jacket..."
                     : "e.g., a futuristic cyberpunk warrior in neon city, digital art masterpiece..."
