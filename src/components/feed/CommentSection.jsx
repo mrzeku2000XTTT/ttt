@@ -407,17 +407,25 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
         source: 'feed_comment'
       });
 
-      // Track comment tip stats by EMAIL - SENDER
-      if (currentUser?.email) {
-        const senderStats = await base44.entities.UserTipStats.filter({ user_email: currentUser.email });
+      // Track comment tip stats - SENDER (by email OR wallet)
+      const senderWallet = currentUser?.created_wallet_address || '';
+      const senderIdentifier = currentUser?.email || senderWallet;
+
+      if (senderIdentifier) {
+        const senderStats = currentUser?.email 
+          ? await base44.entities.UserTipStats.filter({ user_email: currentUser.email })
+          : await base44.entities.UserTipStats.filter({ wallet_address: senderWallet });
+
         if (senderStats.length > 0) {
           await base44.entities.UserTipStats.update(senderStats[0].id, {
             comment_tips_sent: (senderStats[0].comment_tips_sent || 0) + tipAmountKAS,
-            username: currentUser?.username || 'Anonymous'
+            username: currentUser?.username || 'Anonymous',
+            wallet_address: senderWallet
           });
         } else {
           await base44.entities.UserTipStats.create({
-            user_email: currentUser.email,
+            user_email: currentUser?.email || null,
+            wallet_address: senderWallet,
             username: currentUser?.username || 'Anonymous',
             feed_tips_sent: 0,
             feed_tips_received: 0,
@@ -429,17 +437,24 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
         }
       }
 
-      // Track comment tip stats by EMAIL - RECIPIENT
-      if (tipModal.created_by) {
-        const recipientStats = await base44.entities.UserTipStats.filter({ user_email: tipModal.created_by });
+      // Track comment tip stats - RECIPIENT (by email OR wallet)
+      const recipientIdentifier = tipModal.created_by || tipModal.author_wallet_address;
+
+      if (recipientIdentifier) {
+        const recipientStats = tipModal.created_by
+          ? await base44.entities.UserTipStats.filter({ user_email: tipModal.created_by })
+          : await base44.entities.UserTipStats.filter({ wallet_address: tipModal.author_wallet_address });
+
         if (recipientStats.length > 0) {
           await base44.entities.UserTipStats.update(recipientStats[0].id, {
             comment_tips_received: (recipientStats[0].comment_tips_received || 0) + tipAmountKAS,
-            username: tipModal.author_name || tipModal.commenter_name
+            username: tipModal.author_name || tipModal.commenter_name,
+            wallet_address: tipModal.author_wallet_address
           });
         } else {
           await base44.entities.UserTipStats.create({
-            user_email: tipModal.created_by,
+            user_email: tipModal.created_by || null,
+            wallet_address: tipModal.author_wallet_address,
             username: tipModal.author_name || tipModal.commenter_name,
             feed_tips_sent: 0,
             feed_tips_received: 0,
