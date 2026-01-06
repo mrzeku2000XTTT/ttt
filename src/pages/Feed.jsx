@@ -625,17 +625,23 @@ export default function FeedPage() {
         tips_received: (tippingPost.tips_received || 0) + tipAmountKAS
       });
 
-      // Track tip stats by EMAIL - SENDER
-      if (user?.email) {
-        const senderStats = await base44.entities.UserTipStats.filter({ user_email: user.email });
+      // Track tip stats - SENDER (by email OR wallet)
+      const senderIdentifier = user?.email || senderWallet;
+      if (senderIdentifier) {
+        const senderStats = user?.email 
+          ? await base44.entities.UserTipStats.filter({ user_email: user.email })
+          : await base44.entities.UserTipStats.filter({ wallet_address: senderWallet });
+        
         if (senderStats.length > 0) {
           await base44.entities.UserTipStats.update(senderStats[0].id, {
             feed_tips_sent: (senderStats[0].feed_tips_sent || 0) + tipAmountKAS,
-            username: user?.username || senderName
+            username: user?.username || senderName,
+            wallet_address: senderWallet
           });
         } else {
           await base44.entities.UserTipStats.create({
-            user_email: user.email,
+            user_email: user?.email || null,
+            wallet_address: senderWallet,
             username: user?.username || senderName,
             feed_tips_sent: tipAmountKAS,
             feed_tips_received: 0,
@@ -645,17 +651,23 @@ export default function FeedPage() {
         }
       }
 
-      // Track tip stats by EMAIL - RECIPIENT
-      if (tippingPost.created_by) {
-        const recipientStats = await base44.entities.UserTipStats.filter({ user_email: tippingPost.created_by });
+      // Track tip stats - RECIPIENT (by email OR wallet)
+      const recipientIdentifier = tippingPost.created_by || tippingPost.author_wallet_address;
+      if (recipientIdentifier) {
+        const recipientStats = tippingPost.created_by
+          ? await base44.entities.UserTipStats.filter({ user_email: tippingPost.created_by })
+          : await base44.entities.UserTipStats.filter({ wallet_address: tippingPost.author_wallet_address });
+        
         if (recipientStats.length > 0) {
           await base44.entities.UserTipStats.update(recipientStats[0].id, {
             feed_tips_received: (recipientStats[0].feed_tips_received || 0) + tipAmountKAS,
-            username: tippingPost.author_name
+            username: tippingPost.author_name,
+            wallet_address: tippingPost.author_wallet_address
           });
         } else {
           await base44.entities.UserTipStats.create({
-            user_email: tippingPost.created_by,
+            user_email: tippingPost.created_by || null,
+            wallet_address: tippingPost.author_wallet_address,
             username: tippingPost.author_name,
             feed_tips_sent: 0,
             feed_tips_received: tipAmountKAS,
@@ -1681,7 +1693,7 @@ export default function FeedPage() {
         }
       }
 
-      // Get tip stats by EMAIL (more reliable than username)
+      // Get tip stats by EMAIL or WALLET
       let feedTipsSent = 0;
       let feedTipsReceived = 0;
       let bullTipsSent = 0;
@@ -1690,9 +1702,21 @@ export default function FeedPage() {
       let commentTipsReceived = 0;
       let shillProfile = null;
       
-      if (targetEmail) {
+      const targetWallet = mainPosts.length > 0 ? mainPosts[0].author_wallet_address : null;
+      
+      // Try by email first, then by wallet
+      if (targetEmail || targetWallet) {
         try {
-          const tipStats = await base44.entities.UserTipStats.filter({ user_email: targetEmail }) || [];
+          let tipStats = [];
+          if (targetEmail) {
+            tipStats = await base44.entities.UserTipStats.filter({ user_email: targetEmail }) || [];
+          }
+          
+          // Fallback to wallet if no email stats found
+          if (tipStats.length === 0 && targetWallet) {
+            tipStats = await base44.entities.UserTipStats.filter({ wallet_address: targetWallet }) || [];
+          }
+          
           if (tipStats.length > 0) {
             feedTipsSent = tipStats[0].feed_tips_sent || 0;
             feedTipsReceived = tipStats[0].feed_tips_received || 0;
