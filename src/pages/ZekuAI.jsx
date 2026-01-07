@@ -162,7 +162,7 @@ export default function ZekuAIPage() {
   }, []);
 
   useEffect(() => {
-    if (conversation?.id) {
+    if (conversation?.id && !conversation?.wallet_only) {
       let speakTimeout = null;
       const unsubscribe = base44.agents.subscribeToConversation(conversation.id, (data) => {
         if (data?.messages) {
@@ -199,7 +199,7 @@ export default function ZekuAIPage() {
         if (speakTimeout) clearTimeout(speakTimeout);
       };
     }
-  }, [conversation?.id, alienVoiceEnabled]);
+  }, [conversation?.id, conversation?.wallet_only, alienVoiceEnabled]);
 
   useEffect(() => {
     scrollToBottom();
@@ -221,6 +221,7 @@ export default function ZekuAIPage() {
     setIsLoading(true);
     try {
       let currentUser = null;
+      let walletMode = false;
       
       // Try to get logged in user
       try {
@@ -228,17 +229,19 @@ export default function ZekuAIPage() {
         setUser(currentUser);
       } catch (err) {
         console.log('No email login - checking wallet-only mode');
+        walletMode = true;
       }
 
       // Check Kasware wallet if no email user
-      if (!currentUser && typeof window.kasware !== 'undefined') {
+      if (walletMode && typeof window.kasware !== 'undefined') {
         try {
           const accounts = await window.kasware.getAccounts();
           if (accounts && accounts.length > 0) {
             console.log('✅ Kasware connected for wallet-only mode:', accounts[0]);
             currentUser = { 
               wallet_address: accounts[0],
-              email: null
+              email: null,
+              wallet_only: true
             };
             setUser(currentUser);
           }
@@ -254,7 +257,13 @@ export default function ZekuAIPage() {
         return;
       }
       
-      await loadConversation(currentUser);
+      // Only load agent conversation if authenticated, otherwise use local storage
+      if (!currentUser.wallet_only) {
+        await loadConversation(currentUser);
+      } else {
+        await loadLocalConversation(currentUser);
+      }
+      
       checkWallets();
     } catch (err) {
       console.error('Initialization error:', err);
@@ -296,6 +305,30 @@ export default function ZekuAIPage() {
       localStorage.setItem('zeku_conversation_id', conv.id);
     } catch (err) {
       throw new Error('Failed to initialize conversation: ' + err.message);
+    }
+  };
+
+  const loadLocalConversation = async (currentUser) => {
+    try {
+      // Load conversation from localStorage for wallet-only mode
+      const savedMessages = localStorage.getItem('zeku_local_messages');
+      if (savedMessages) {
+        setMessages(JSON.parse(savedMessages));
+      }
+      
+      // Create a fake conversation object for wallet mode
+      setConversation({
+        id: 'wallet_' + currentUser.wallet_address,
+        wallet_only: true,
+        messages: savedMessages ? JSON.parse(savedMessages) : []
+      });
+    } catch (err) {
+      console.error('Failed to load local conversation:', err);
+      setConversation({
+        id: 'wallet_' + currentUser.wallet_address,
+        wallet_only: true,
+        messages: []
+      });
     }
   };
 
@@ -364,26 +397,65 @@ export default function ZekuAIPage() {
     setError(null);
 
     try {
-      const messageData = { role: "user", content: messageContent };
-      if (files.length) messageData.file_urls = files;
+      if (conversation.wallet_only) {
+        // Wallet-only mode - use direct LLM call
+        const userMessage = { role: "user", content: messageContent };
+        if (files.length) userMessage.file_urls = files;
+        
+        const updatedMessages = [...messages, userMessage];
+        setMessages(updatedMessages);
+        
+        // Call LLM directly
+        const response = await base44.integrations.Core.InvokeLLM({
+          prompt: messageContent,
+          add_context_from_internet: true,
+          ...(files.length && { file_urls: files })
+        });
+        
+        const assistantMessage = { role: "assistant", content: response };
+        const finalMessages = [...updatedMessages, assistantMessage];
+        setMessages(finalMessages);
+        localStorage.setItem('zeku_local_messages', JSON.stringify(finalMessages));
+        
+        // Speak if enabled
+        if (alienVoiceEnabled) {
+          speakAlienVoice(response);
+        }
+        
+        setIsSending(false);
+      } else {
+        // Authenticated mode - use agent system
+        const messageData = { role: "user", content: messageContent };
+        if (files.length) messageData.file_urls = files;
 
-      await base44.agents.addMessage(conversation, messageData);
+        await base44.agents.addMessage(conversation, messageData);
+      }
+      
       scrollToBottom();
     } catch (err) {
       setError('Failed to send message: ' + err.message);
       setIsSending(false);
     }
-    };
+  };
 
   const handleNewChat = async () => {
     if (!confirm('Start new conversation?')) return;
     
-    localStorage.removeItem('zeku_conversation_id');
-    setConversation(null);
-    setMessages([]);
-    setError(null);
-    
-    await loadConversation(user);
+    if (conversation?.wallet_only) {
+      localStorage.removeItem('zeku_local_messages');
+      setMessages([]);
+      setConversation({
+        id: 'wallet_' + user.wallet_address,
+        wallet_only: true,
+        messages: []
+      });
+    } else {
+      localStorage.removeItem('zeku_conversation_id');
+      setConversation(null);
+      setMessages([]);
+      setError(null);
+      await loadConversation(user);
+    }
   };
 
   if (isLoading) {
