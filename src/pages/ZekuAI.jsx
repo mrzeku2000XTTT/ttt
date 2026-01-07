@@ -220,8 +220,39 @@ export default function ZekuAIPage() {
   const initialize = async () => {
     setIsLoading(true);
     try {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
+      let currentUser = null;
+      
+      // Try to get logged in user
+      try {
+        currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (err) {
+        console.log('No email login - checking wallet-only mode');
+      }
+
+      // Check Kasware wallet if no email user
+      if (!currentUser && typeof window.kasware !== 'undefined') {
+        try {
+          const accounts = await window.kasware.getAccounts();
+          if (accounts && accounts.length > 0) {
+            console.log('✅ Kasware connected for wallet-only mode:', accounts[0]);
+            currentUser = { 
+              wallet_address: accounts[0],
+              email: null
+            };
+            setUser(currentUser);
+          }
+        } catch (err) {
+          console.error('Failed to check Kasware:', err);
+        }
+      }
+
+      // If still no user, prompt to connect wallet
+      if (!currentUser) {
+        setError('Please connect your Kasware wallet to continue');
+        setIsLoading(false);
+        return;
+      }
       
       await loadConversation(currentUser);
       checkWallets();
@@ -254,8 +285,9 @@ export default function ZekuAIPage() {
         agent_name: "zeku_ai",
         metadata: {
           name: "Zeku AI Chat",
-          user_id: currentUser.id,
-          user_email: currentUser.email,
+          user_id: currentUser.id || currentUser.wallet_address,
+          user_email: currentUser.email || null,
+          wallet_address: currentUser.wallet_address || null,
           created_at: new Date().toISOString()
         }
       });
@@ -373,6 +405,25 @@ export default function ZekuAIPage() {
             <h2 className="text-2xl font-bold text-white mb-4">Connection Error</h2>
             <p className="text-red-200 mb-6 text-sm">{error}</p>
             <div className="flex flex-col gap-3">
+              {error.includes('connect your Kasware') && (
+                <Button 
+                  onClick={async () => {
+                    if (typeof window.kasware !== 'undefined') {
+                      try {
+                        await window.kasware.requestAccounts();
+                        window.location.reload();
+                      } catch (err) {
+                        alert('Failed to connect Kasware wallet');
+                      }
+                    } else {
+                      alert('Kasware wallet not found. Please install Kasware extension.');
+                    }
+                  }} 
+                  className="bg-orange-500 hover:bg-orange-600"
+                >
+                  Connect Kasware
+                </Button>
+              )}
               <Button onClick={() => window.location.reload()} className="bg-cyan-500">
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Retry
