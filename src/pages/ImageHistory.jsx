@@ -87,56 +87,89 @@ export default function ImageHistoryPage() {
     try {
       const imageUrls = referenceImages.filter(img => img !== null);
       
-      // Generate 10 images one by one
-      for (let i = 0; i < 10; i++) {
-        // Check if user clicked stop
-        if (shouldStop) {
-          console.log('Generation stopped by user');
-          break;
-        }
-
-        // Handle pause
-        while (isPaused && !shouldStop) {
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-
-        if (shouldStop) break;
-
-        setProgress(Math.round(((i + 1) / 10) * 100));
-        
-        try {
-          console.log(`Generating image ${i + 1}/10...`);
-          const response = await base44.integrations.Core.GenerateImage({
-            prompt: prompt,
-            ...(imageUrls.length > 0 && { existing_image_urls: imageUrls })
-          });
-
-          console.log(`Image ${i + 1} response:`, response);
-
-          if (response?.url) {
-            console.log(`✅ Got image URL: ${response.url}`);
-            setGeneratedImages(prev => {
-              const updated = [...prev];
-              updated[i] = response.url;
-              console.log(`Updated images array, slot ${i}:`, updated[i]);
-              return updated;
-            });
-            
-            await base44.entities.RemixAILearning.create({
-              user_prompt: prompt,
-              detailed_prompt: prompt,
-              reference_images: imageUrls,
-              result_image: response.url,
-              was_successful: true,
-              style_type: 'rmx_workflow'
-            });
+      // Run two RMX ULTRA agents in parallel
+      const agent1 = async () => {
+        // Agent 1: Generate images 1-5
+        for (let i = 0; i < 5; i++) {
+          if (shouldStop) break;
+          while (isPaused && !shouldStop) {
+            await new Promise(resolve => setTimeout(resolve, 500));
           }
-        } catch (err) {
-          console.error(`❌ Failed to generate image ${i + 1}:`, err);
-          alert(`Failed to generate image ${i + 1}: ${err.message}`);
-        }
-      }
+          if (shouldStop) break;
 
+          try {
+            console.log(`Agent 1: Generating image ${i + 1}/10...`);
+            const response = await base44.integrations.Core.GenerateImage({
+              prompt: prompt,
+              ...(imageUrls.length > 0 && { existing_image_urls: imageUrls })
+            });
+
+            if (response?.url) {
+              console.log(`✅ Agent 1: Got image ${i + 1}`);
+              setGeneratedImages(prev => {
+                const updated = [...prev];
+                updated[i] = response.url;
+                return updated;
+              });
+              
+              await base44.entities.RemixAILearning.create({
+                user_prompt: prompt,
+                detailed_prompt: prompt,
+                reference_images: imageUrls,
+                result_image: response.url,
+                was_successful: true,
+                style_type: 'rmx_workflow'
+              });
+            }
+          } catch (err) {
+            console.error(`❌ Agent 1 failed image ${i + 1}:`, err);
+          }
+        }
+      };
+
+      const agent2 = async () => {
+        // Agent 2: Generate images 6-10
+        for (let i = 5; i < 10; i++) {
+          if (shouldStop) break;
+          while (isPaused && !shouldStop) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+          if (shouldStop) break;
+
+          try {
+            console.log(`Agent 2: Generating image ${i + 1}/10...`);
+            const response = await base44.integrations.Core.GenerateImage({
+              prompt: prompt,
+              ...(imageUrls.length > 0 && { existing_image_urls: imageUrls })
+            });
+
+            if (response?.url) {
+              console.log(`✅ Agent 2: Got image ${i + 1}`);
+              setGeneratedImages(prev => {
+                const updated = [...prev];
+                updated[i] = response.url;
+                return updated;
+              });
+              
+              await base44.entities.RemixAILearning.create({
+                user_prompt: prompt,
+                detailed_prompt: prompt,
+                reference_images: imageUrls,
+                result_image: response.url,
+                was_successful: true,
+                style_type: 'rmx_workflow'
+              });
+            }
+          } catch (err) {
+            console.error(`❌ Agent 2 failed image ${i + 1}:`, err);
+          }
+        }
+      };
+
+      // Run both agents simultaneously
+      await Promise.all([agent1(), agent2()]);
+
+      setProgress(100);
       await loadHistory();
     } catch (err) {
       console.error('Generation failed:', err);
