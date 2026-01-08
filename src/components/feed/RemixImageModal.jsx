@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { base44 } from "@/api/base44Client";
-import { X, Sparkles, Loader2, Lock, Shirt, User, Upload, Image as ImageIcon, Send, Edit2, Download, ArrowLeft } from "lucide-react";
+import { X, Sparkles, Loader2, Lock, Shirt, User, Upload, Image as ImageIcon, Send, Edit2, Download, ArrowLeft, History } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ImageCropModal from "./ImageCropModal";
@@ -502,6 +502,17 @@ Keep the user's core intent but make it technically precise and comprehensive. R
                   fill="url(#tiktok-gradient)"
                 />
               </svg>
+            </button>
+
+            <button
+              onClick={() => {
+                navigate(createPageUrl('ImageHistory'));
+                onClose();
+              }}
+              className="relative w-9 h-9 rounded-lg flex items-center justify-center overflow-hidden hover:scale-105 transition-transform bg-gradient-to-br from-orange-500 to-yellow-500"
+              title="Image History"
+            >
+              <History className="w-5 h-5 text-white" />
             </button>
             
             <Button

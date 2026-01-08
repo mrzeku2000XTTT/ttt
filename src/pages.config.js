@@ -203,6 +203,7 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
+import ImageHistory from './pages/ImageHistory';
 import __Layout from './Layout.jsx';
 
 
@@ -412,6 +413,7 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
+    "ImageHistory": ImageHistory,
 }
 
 export const pagesConfig = {
