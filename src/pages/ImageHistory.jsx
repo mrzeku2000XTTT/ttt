@@ -255,50 +255,7 @@ Return as JSON array of 10 prompts.`,
           </div>
         </div>
 
-        {/* Floating Prompt Bar */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-3xl px-8">
-          <div className="bg-zinc-950 border border-zinc-800 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden">
-            <div className="flex items-end gap-3 p-4">
-              <Textarea
-                value={prompt}
-                onChange={(e) => {
-                  setPrompt(e.target.value);
-                  setPromptReady(false);
-                  setShowProjectOptions(false);
-                }}
-                placeholder="Describe your vision... RMX ULTRA will generate 10 high-quality images with different angles and perspectives."
-                className="flex-1 bg-transparent border-none text-white placeholder:text-zinc-600 resize-none min-h-[60px] max-h-[120px] focus:ring-0"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handlePromptEnter();
-                  }
-                }}
-              />
-              <div className="flex gap-2 pb-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-zinc-500 hover:text-zinc-400"
-                  title="Add reference images"
-                >
-                  <Upload className="w-5 h-5" />
-                </Button>
-                <Button
-                  onClick={handlePromptEnter}
-                  disabled={isGenerating || !prompt.trim()}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold px-6"
-                >
-                  {isGenerating ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    'Analyze'
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+
       </div>
 
       {/* RIGHT CONTROL PANEL - Dark Theme */}
@@ -352,6 +309,41 @@ Return as JSON array of 10 prompts.`,
           {/* Tab Content */}
           {activeTab === 'control' && (
             <>
+              {/* Prompt Input */}
+              <div className="space-y-2">
+                <label className="text-zinc-400 text-sm font-semibold">Enter your prompt for RMX ULTRA</label>
+                <Textarea
+                  value={prompt}
+                  onChange={(e) => {
+                    setPrompt(e.target.value);
+                    setPromptReady(false);
+                    setShowProjectOptions(false);
+                  }}
+                  placeholder="Describe your vision... RMX ULTRA will generate 10 high-quality images with different angles and perspectives."
+                  className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 min-h-[100px]"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handlePromptEnter();
+                    }
+                  }}
+                />
+                <Button
+                  onClick={handlePromptEnter}
+                  disabled={isGenerating || !prompt.trim()}
+                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold"
+                >
+                  {isGenerating ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Analyze Prompt
+                    </>
+                  )}
+                </Button>
+              </div>
+
               {/* Prompt Display */}
               {prompt && promptReady && (
                 <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
