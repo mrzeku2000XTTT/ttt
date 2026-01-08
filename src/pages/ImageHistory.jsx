@@ -20,6 +20,9 @@ export default function ImageHistoryPage() {
   const [activeTab, setActiveTab] = useState('control');
   const [chatMessage, setChatMessage] = useState("");
   const [viewingImage, setViewingImage] = useState(null);
+  const [rmxActivated, setRmxActivated] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [shouldStop, setShouldStop] = useState(false);
 
   useEffect(() => {
     loadHistory();
@@ -54,16 +57,30 @@ export default function ImageHistoryPage() {
     }
   };
 
-  const handleStartGeneration = () => {
+  const handleRMXClick = () => {
     if (!prompt.trim()) {
       alert('Please enter a prompt');
       return;
     }
+    setRmxActivated(true);
+  };
+
+  const handleStartGeneration = () => {
+    setIsGenerating(true);
+    setShouldStop(false);
+    setIsPaused(false);
     generateImages();
   };
 
+  const handlePause = () => {
+    setIsPaused(true);
+  };
+
+  const handleResume = () => {
+    setIsPaused(false);
+  };
+
   const generateImages = async () => {
-    setIsGenerating(true);
     setProgress(0);
     setGeneratedImages([null, null, null, null, null, null, null, null, null, null]);
     
@@ -101,6 +118,19 @@ Return as JSON array of 10 prompts.`,
       const generatedUrls = [];
 
       for (let i = 0; i < Math.min(10, prompts.length); i++) {
+        // Check if user clicked stop
+        if (shouldStop) {
+          console.log('Generation stopped by user');
+          break;
+        }
+
+        // Handle pause
+        while (isPaused && !shouldStop) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        if (shouldStop) break;
+
         setProgress(Math.round(((i + 1) / 10) * 100));
         
         try {
@@ -127,29 +157,22 @@ Return as JSON array of 10 prompts.`,
         }
       }
 
-      if (currentProject) {
-        const updatedProjects = projects.map(p => 
-          p.id === currentProject.id 
-            ? { ...p, images: [...p.images, ...generatedUrls.filter(Boolean)] }
-            : p
-        );
-        setProjects(updatedProjects);
-      }
-
       await loadHistory();
-      setPromptReady(false);
-      setPrompt("");
     } catch (err) {
       console.error('Generation failed:', err);
       alert('Failed to generate images: ' + err.message);
     } finally {
       setIsGenerating(false);
+      setRmxActivated(false);
+      setShouldStop(false);
+      setIsPaused(false);
     }
   };
 
   const handleStop = () => {
+    setShouldStop(true);
     setIsGenerating(false);
-    setProgress(0);
+    setIsPaused(false);
   };
 
   return (
@@ -332,39 +355,47 @@ Return as JSON array of 10 prompts.`,
                 <label className="text-zinc-400 text-sm font-semibold">Enter your prompt for RMX ULTRA</label>
                 <Textarea
                   value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
+                  onChange={(e) => {
+                    setPrompt(e.target.value);
+                    setRmxActivated(false);
+                  }}
                   placeholder="Describe your vision... RMX ULTRA will generate 10 high-quality images with different angles and perspectives."
                   className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 min-h-[100px]"
+                  disabled={isGenerating}
                 />
-                <Button
-                  onClick={handleStartGeneration}
-                  disabled={isGenerating || !prompt.trim()}
-                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold"
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Start Generation
-                    </>
-                  )}
-                </Button>
+                
+                {!rmxActivated && !isGenerating && (
+                  <Button
+                    onClick={handleRMXClick}
+                    disabled={!prompt.trim()}
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold text-lg h-12"
+                  >
+                    <Sparkles className="w-5 h-5 mr-2" />
+                    RMX
+                  </Button>
+                )}
+
+                {rmxActivated && !isGenerating && (
+                  <Button
+                    onClick={handleStartGeneration}
+                    className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold h-12"
+                  >
+                    <Sparkles className="w-5 h-5 mr-2" />
+                    Start Generation
+                  </Button>
+                )}
               </div>
 
               {/* Progress Bar */}
               {isGenerating && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-cyan-400">Processing prompt 2/10</span>
+                    <span className="text-cyan-400">Generating image {Math.floor((progress / 100) * 10) + 1}/10</span>
                     <span className="text-zinc-500">{progress}%</span>
                   </div>
                   <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-300"
+                      className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
                       style={{ width: `${progress}%` }}
                     />
                   </div>
@@ -372,24 +403,34 @@ Return as JSON array of 10 prompts.`,
               )}
 
               {/* Control Buttons */}
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  onClick={() => setIsGenerating(false)}
-                  disabled={!isGenerating}
-                  className="bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/50"
-                >
-                  <Pause className="w-4 h-4 mr-2" />
-                  Pause
-                </Button>
-                <Button
-                  onClick={handleStop}
-                  disabled={!isGenerating}
-                  className="bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50"
-                >
-                  <StopCircle className="w-4 h-4 mr-2" />
-                  Stop
-                </Button>
-              </div>
+              {isGenerating && (
+                <div className="grid grid-cols-3 gap-2">
+                  {!isPaused ? (
+                    <Button
+                      onClick={handlePause}
+                      className="bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/50"
+                    >
+                      <Pause className="w-4 h-4 mr-1" />
+                      Pause
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleResume}
+                      className="bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/50"
+                    >
+                      <Sparkles className="w-4 h-4 mr-1" />
+                      Resume
+                    </Button>
+                  )}
+                  <Button
+                    onClick={handleStop}
+                    className="col-span-2 bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50"
+                  >
+                    <StopCircle className="w-4 h-4 mr-2" />
+                    Stop Generation
+                  </Button>
+                </div>
+              )}
 
               {/* Important Notes */}
               <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
