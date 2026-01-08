@@ -87,37 +87,8 @@ export default function ImageHistoryPage() {
     try {
       const imageUrls = referenceImages.filter(img => img !== null);
       
-      // Generate detailed prompt with RMX ULTRA understanding
-      const detailedPrompt = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are RMX ULTRA, an advanced AI prompt engineer for image generation. Analyze this user request and create 10 diverse, high-quality image generation prompts with different angles, compositions, and perspectives.
-
-User Request: "${prompt}"
-
-Generate 10 distinct prompts that capture the essence of the request. Each prompt should specify:
-- Camera angle (eye-level, high-angle, low-angle, bird's eye, worm's eye, Dutch angle, over-the-shoulder)
-- Shot type (close-up, medium shot, wide shot, extreme close-up, establishing shot)
-- Composition (rule of thirds, centered, symmetrical, leading lines, golden ratio)
-- Lighting (golden hour, blue hour, soft diffused, dramatic shadows, rim lighting)
-- Perspective and depth
-- Mood and atmosphere
-
-Return as JSON array of 10 prompts.`,
-        add_context_from_internet: false,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            prompts: {
-              type: "array",
-              items: { type: "string" }
-            }
-          }
-        }
-      });
-
-      const prompts = detailedPrompt.prompts || [];
-      const generatedUrls = [];
-
-      for (let i = 0; i < Math.min(10, prompts.length); i++) {
+      // Generate 10 images one by one
+      for (let i = 0; i < 10; i++) {
         // Check if user clicked stop
         if (shouldStop) {
           console.log('Generation stopped by user');
@@ -134,22 +105,26 @@ Return as JSON array of 10 prompts.`,
         setProgress(Math.round(((i + 1) / 10) * 100));
         
         try {
+          console.log(`Generating image ${i + 1}/10...`);
           const response = await base44.integrations.Core.GenerateImage({
-            prompt: prompts[i],
+            prompt: prompt,
             ...(imageUrls.length > 0 && { existing_image_urls: imageUrls })
           });
 
+          console.log(`Image ${i + 1} response:`, response);
+
           if (response?.url) {
-            generatedUrls[i] = response.url;
+            console.log(`✅ Got image URL: ${response.url}`);
             setGeneratedImages(prev => {
               const updated = [...prev];
               updated[i] = response.url;
+              console.log(`Updated images array, slot ${i}:`, updated[i]);
               return updated;
             });
             
             await base44.entities.RemixAILearning.create({
               user_prompt: prompt,
-              detailed_prompt: prompts[i],
+              detailed_prompt: prompt,
               reference_images: imageUrls,
               result_image: response.url,
               was_successful: true,
@@ -157,7 +132,8 @@ Return as JSON array of 10 prompts.`,
             });
           }
         } catch (err) {
-          console.error(`Failed to generate image ${i + 1}:`, err);
+          console.error(`❌ Failed to generate image ${i + 1}:`, err);
+          alert(`Failed to generate image ${i + 1}: ${err.message}`);
         }
       }
 
