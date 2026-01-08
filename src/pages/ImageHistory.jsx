@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, Sparkles, Loader2, Image as ImageIcon, Upload, History, Settings, Pause, StopCircle, Info } from "lucide-react";
+import { Home, Sparkles, Loader2, Image as ImageIcon, Upload, History, Settings, Pause, StopCircle, Info, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -17,11 +17,9 @@ export default function ImageHistoryPage() {
   const [referenceImages, setReferenceImages] = useState([null, null]);
   const [generatedImages, setGeneratedImages] = useState([null, null, null, null, null, null, null, null, null, null]);
   const [progress, setProgress] = useState(0);
-  const [promptReady, setPromptReady] = useState(false);
-  const [showProjectOptions, setShowProjectOptions] = useState(false);
-  const [currentProject, setCurrentProject] = useState(null);
-  const [projects, setProjects] = useState([]);
   const [activeTab, setActiveTab] = useState('control');
+  const [chatMessage, setChatMessage] = useState("");
+  const [viewingImage, setViewingImage] = useState(null);
 
   useEffect(() => {
     loadHistory();
@@ -56,35 +54,11 @@ export default function ImageHistoryPage() {
     }
   };
 
-  const handlePromptEnter = () => {
+  const handleStartGeneration = () => {
     if (!prompt.trim()) {
       alert('Please enter a prompt');
       return;
     }
-    setPromptReady(true);
-    setShowProjectOptions(true);
-  };
-
-  const handleCreateNewProject = () => {
-    const newProject = {
-      id: Date.now(),
-      prompt: prompt,
-      images: [],
-      created_at: new Date().toISOString()
-    };
-    setProjects([newProject, ...projects]);
-    setCurrentProject(newProject);
-    setShowProjectOptions(false);
-    generateImages();
-  };
-
-  const handleRunOnProject = () => {
-    if (!currentProject) {
-      alert('No active project. Creating new project.');
-      handleCreateNewProject();
-      return;
-    }
-    setShowProjectOptions(false);
     generateImages();
   };
 
@@ -206,9 +180,14 @@ Return as JSON array of 10 prompts.`,
           {/* 5x2 Grid for 10 images */}
           <div className="grid grid-cols-5 gap-4">
             {generatedImages.map((img, idx) => (
-              <div key={`gen-${idx}`} className="relative bg-zinc-900/50 rounded-xl overflow-hidden border-2 border-zinc-700/50 aspect-square">
+              <div key={`gen-${idx}`} className="relative bg-zinc-900/50 rounded-xl overflow-hidden border-2 border-zinc-700/50 aspect-square group cursor-pointer" onClick={() => img && setViewingImage(img)}>
                 {img ? (
-                  <img src={img} alt={`Generated ${idx + 1}`} className="w-full h-full object-cover" />
+                  <>
+                    <img src={img} alt={`Generated ${idx + 1}`} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <span className="text-white text-xs font-semibold">Click to view</span>
+                    </div>
+                  </>
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center">
                     {isGenerating && idx <= Math.floor((progress / 100) * 10) ? (
@@ -224,6 +203,22 @@ Return as JSON array of 10 prompts.`,
               </div>
             ))}
           </div>
+
+          {/* Image Viewer Modal */}
+          {viewingImage && (
+            <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-8" onClick={() => setViewingImage(null)}>
+              <div className="relative max-w-5xl max-h-full" onClick={(e) => e.stopPropagation()}>
+                <img src={viewingImage} alt="Full view" className="w-full h-full object-contain rounded-lg" />
+                <Button
+                  onClick={() => setViewingImage(null)}
+                  className="absolute top-4 right-4 bg-black/50 hover:bg-black/70"
+                  size="icon"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Reference Images Row */}
           <div className="grid grid-cols-2 gap-4 mt-6">
@@ -252,6 +247,29 @@ Return as JSON array of 10 prompts.`,
                 )}
               </div>
             ))}
+          </div>
+
+          {/* Chat Input Below References */}
+          <div className="mt-4 bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+            <Textarea
+              value={chatMessage}
+              onChange={(e) => setChatMessage(e.target.value)}
+              placeholder="Add additional instructions or modifications..."
+              className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 min-h-[80px] resize-none"
+            />
+            <Button
+              onClick={() => {
+                if (chatMessage.trim()) {
+                  setPrompt(prev => prev + '\n\nAdditional: ' + chatMessage);
+                  setChatMessage("");
+                }
+              }}
+              disabled={!chatMessage.trim()}
+              className="mt-2 w-full bg-zinc-800 hover:bg-zinc-700 text-white"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              Apply Instructions
+            </Button>
           </div>
         </div>
 
@@ -314,55 +332,28 @@ Return as JSON array of 10 prompts.`,
                 <label className="text-zinc-400 text-sm font-semibold">Enter your prompt for RMX ULTRA</label>
                 <Textarea
                   value={prompt}
-                  onChange={(e) => {
-                    setPrompt(e.target.value);
-                    setPromptReady(false);
-                    setShowProjectOptions(false);
-                  }}
+                  onChange={(e) => setPrompt(e.target.value)}
                   placeholder="Describe your vision... RMX ULTRA will generate 10 high-quality images with different angles and perspectives."
                   className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 min-h-[100px]"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handlePromptEnter();
-                    }
-                  }}
                 />
                 <Button
-                  onClick={handlePromptEnter}
+                  onClick={handleStartGeneration}
                   disabled={isGenerating || !prompt.trim()}
                   className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold"
                 >
                   {isGenerating ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4 mr-2" />
-                      Analyze Prompt
+                      Start Generation
                     </>
                   )}
                 </Button>
               </div>
-
-              {/* Prompt Display */}
-              {prompt && promptReady && (
-                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
-                  <div className="flex items-start gap-2">
-                    <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <p className="text-green-400 text-sm leading-relaxed">{prompt}</p>
-                  </div>
-                </div>
-              )}
-              
-              {prompt && !promptReady && (
-                <div className="bg-zinc-900 rounded-lg p-4">
-                  <p className="text-zinc-400 text-sm leading-relaxed">{prompt}</p>
-                </div>
-              )}
 
               {/* Progress Bar */}
               {isGenerating && (
@@ -380,49 +371,25 @@ Return as JSON array of 10 prompts.`,
                 </div>
               )}
 
-              {/* Project Options */}
-              {showProjectOptions && (
-                <div className="space-y-3">
-                  <p className="text-zinc-400 text-sm">Ready to generate 10 high-quality images</p>
-                  <Button
-                    onClick={handleCreateNewProject}
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold"
-                  >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Create New Project
-                  </Button>
-                  {currentProject && (
-                    <Button
-                      onClick={handleRunOnProject}
-                      className="w-full bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/50"
-                    >
-                      Run on Current Project
-                    </Button>
-                  )}
-                </div>
-              )}
-
               {/* Control Buttons */}
-              {!showProjectOptions && (
-                <div className="grid grid-cols-2 gap-3">
-                  <Button
-                    onClick={() => setIsGenerating(false)}
-                    disabled={!isGenerating}
-                    className="bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/50"
-                  >
-                    <Pause className="w-4 h-4 mr-2" />
-                    Pause
-                  </Button>
-                  <Button
-                    onClick={handleStop}
-                    disabled={!isGenerating}
-                    className="bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50"
-                  >
-                    <StopCircle className="w-4 h-4 mr-2" />
-                    Stop
-                  </Button>
-                </div>
-              )}
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  onClick={() => setIsGenerating(false)}
+                  disabled={!isGenerating}
+                  className="bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/50"
+                >
+                  <Pause className="w-4 h-4 mr-2" />
+                  Pause
+                </Button>
+                <Button
+                  onClick={handleStop}
+                  disabled={!isGenerating}
+                  className="bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50"
+                >
+                  <StopCircle className="w-4 h-4 mr-2" />
+                  Stop
+                </Button>
+              </div>
 
               {/* Important Notes */}
               <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
@@ -440,14 +407,7 @@ Return as JSON array of 10 prompts.`,
                 </div>
               </div>
 
-              {/* Current Project */}
-              {currentProject && (
-                <div className="bg-zinc-900 rounded-lg p-4">
-                  <h4 className="text-zinc-400 text-sm mb-2">Active Project</h4>
-                  <p className="text-white text-sm font-semibold mb-1">{currentProject.prompt}</p>
-                  <p className="text-zinc-500 text-xs">{currentProject.images.length} images generated</p>
-                </div>
-              )}
+
             </>
           )}
 
@@ -460,16 +420,18 @@ Return as JSON array of 10 prompts.`,
 
           {activeTab === 'projects' && (
             <div className="space-y-3">
-              <h4 className="text-zinc-400 text-sm mb-2">Your Projects</h4>
-              {projects.length === 0 ? (
+              <h4 className="text-zinc-400 text-sm mb-2">Generation History</h4>
+              {history.length === 0 ? (
                 <div className="bg-zinc-900 rounded-lg p-4 text-center">
-                  <p className="text-zinc-500 text-xs">No projects yet</p>
+                  <p className="text-zinc-500 text-xs">No generations yet</p>
                 </div>
               ) : (
-                projects.map(project => (
-                  <div key={project.id} className="bg-zinc-900 rounded-lg p-4">
-                    <p className="text-white text-sm font-semibold mb-1">{project.prompt}</p>
-                    <p className="text-zinc-500 text-xs">{project.images.length} images</p>
+                history.slice(0, 10).map(entry => (
+                  <div key={entry.id} className="bg-zinc-900 rounded-lg p-3">
+                    <p className="text-white text-xs font-semibold mb-1 line-clamp-2">{entry.user_prompt}</p>
+                    {entry.result_image && (
+                      <img src={entry.result_image} alt="Result" className="w-full h-20 object-cover rounded mt-2" />
+                    )}
                   </div>
                 ))
               )}
