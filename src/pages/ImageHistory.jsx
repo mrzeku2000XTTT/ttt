@@ -82,7 +82,8 @@ export default function ImageHistoryPage() {
 
   const generateImages = async () => {
     setProgress(0);
-    setGeneratedImages([null, null, null, null, null, null, null, null, null, null]);
+    const newGeneratedImages = [null, null, null, null, null, null, null, null, null, null];
+    setGeneratedImages([...newGeneratedImages]);
     
     try {
       const imageUrls = referenceImages.filter(img => img !== null);
@@ -115,7 +116,6 @@ Return as JSON array of 10 prompts.`,
       });
 
       const prompts = detailedPrompt.prompts || [];
-      const generatedUrls = [];
 
       for (let i = 0; i < Math.min(10, prompts.length); i++) {
         // Check if user clicked stop
@@ -140,8 +140,8 @@ Return as JSON array of 10 prompts.`,
           });
 
           if (response?.url) {
-            generatedUrls[i] = response.url;
-            setGeneratedImages([...generatedUrls, ...Array(10 - generatedUrls.length).fill(null)]);
+            newGeneratedImages[i] = response.url;
+            setGeneratedImages([...newGeneratedImages]);
             
             await base44.entities.RemixAILearning.create({
               user_prompt: prompt,
