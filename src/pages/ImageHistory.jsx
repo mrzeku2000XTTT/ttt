@@ -23,6 +23,8 @@ export default function ImageHistoryPage() {
   const [rmxActivated, setRmxActivated] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [shouldStop, setShouldStop] = useState(false);
+  const [currentProject, setCurrentProject] = useState(null);
+  const [showProjectOptions, setShowProjectOptions] = useState(false);
 
   useEffect(() => {
     loadHistory();
@@ -63,6 +65,20 @@ export default function ImageHistoryPage() {
       return;
     }
     setRmxActivated(true);
+    setShowProjectOptions(true);
+  };
+
+  const handleCreateNewProject = () => {
+    setCurrentProject({
+      name: `Project ${Date.now()}`,
+      prompt: prompt,
+      createdAt: new Date().toISOString()
+    });
+    setShowProjectOptions(false);
+  };
+
+  const handleRunCurrentProject = () => {
+    setShowProjectOptions(false);
   };
 
   const handleStartGeneration = () => {
@@ -388,7 +404,26 @@ export default function ImageHistoryPage() {
                   </Button>
                 )}
 
-                {rmxActivated && !isGenerating && (
+                {rmxActivated && !isGenerating && showProjectOptions && (
+                  <div className="space-y-2">
+                    <Button
+                      onClick={handleCreateNewProject}
+                      className="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-semibold h-10"
+                    >
+                      Create New Project
+                    </Button>
+                    {currentProject && (
+                      <Button
+                        onClick={handleRunCurrentProject}
+                        className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold h-10"
+                      >
+                        Run Current Project
+                      </Button>
+                    )}
+                  </div>
+                )}
+
+                {rmxActivated && !isGenerating && !showProjectOptions && (
                   <Button
                     onClick={handleStartGeneration}
                     className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold h-12"
