@@ -901,7 +901,7 @@ export default function ImageHistoryPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowControlPanel(false)}
-              className="lg:hidden fixed inset-0 bg-black/60 z-[99]"
+              className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[98]"
             />
             
             {/* Control Panel */}
@@ -920,7 +920,7 @@ export default function ImageHistoryPage() {
                   setPanelY(0);
                 }
               }}
-              className="lg:hidden fixed inset-x-0 bottom-0 z-[100] bg-[#121212] border-t-2 border-cyan-500/30 rounded-t-2xl shadow-2xl"
+              className="lg:hidden fixed inset-x-0 bottom-0 z-[200] bg-[#121212] border-t-2 border-cyan-500/30 rounded-t-2xl shadow-2xl overflow-hidden"
               style={{ 
                 touchAction: 'none',
                 maxHeight: 'calc(100vh - 60px)',
