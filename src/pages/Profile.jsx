@@ -452,34 +452,60 @@ export default function ProfilePage() {
     setIsSaving(true);
     setError(null);
     try {
+      console.log('💾 Saving profile for wallet:', walletAddr);
+      console.log('📝 Profile data:', editData);
+      
       // Save to User entity if logged in
       if (user?.email) {
         await base44.auth.updateMe(editData);
+        console.log('✅ User entity updated');
       }
       
-      // Save to WalletProfile (for both logged in and wallet-only)
+      // CRITICAL: Save to WalletProfile (for both logged in and wallet-only users)
       const profiles = await base44.entities.WalletProfile.filter({
         wallet_address: walletAddr
       });
       
       const walletProfileData = {
-        ...editData,
+        username: editData.username,
+        bio: editData.bio,
+        profile_photo: editData.profile_photo,
+        current_job: editData.current_job,
         wallet_address: walletAddr,
-        email: user.email || null,
+        email: user?.email || null,
         last_updated: new Date().toISOString()
       };
       
+      console.log('💼 WalletProfile data to save:', walletProfileData);
+      
       if (profiles.length > 0) {
+        console.log('🔄 Updating existing WalletProfile:', profiles[0].id);
         await base44.entities.WalletProfile.update(profiles[0].id, walletProfileData);
       } else {
+        console.log('✨ Creating new WalletProfile');
         await base44.entities.WalletProfile.create(walletProfileData);
       }
       
+      console.log('✅ WalletProfile saved successfully');
+      
       setUser({ ...user, ...editData });
       setIsEditing(false);
+      
+      // Show success notification
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-20 right-4 bg-green-500/20 border border-green-500/40 text-green-300 px-4 py-3 rounded-lg shadow-lg z-[1000]';
+      notification.innerHTML = `
+        <div class="flex items-center gap-2">
+          <span class="text-lg">✓</span>
+          <span class="font-semibold">Profile saved! Username will show on Feed posts.</span>
+        </div>
+      `;
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 3000);
+      
     } catch (err) {
-      console.error('Save error:', err);
-      setError('Failed to save profile');
+      console.error('❌ Save error:', err);
+      setError('Failed to save profile: ' + err.message);
     } finally {
       setIsSaving(false);
     }
