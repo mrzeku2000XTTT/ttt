@@ -333,9 +333,11 @@ export default function ImageHistoryPage() {
         <div className="p-6 space-y-6">
           {/* Header */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
+            <img 
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/b768ec610_image.png" 
+              alt="RMX ULTRA"
+              className="w-10 h-10 rounded-lg object-cover"
+            />
             <div className="flex-1">
               <h3 className="text-white font-bold">RMX Workflow</h3>
               <p className="text-xs text-zinc-500">by RMX ULTRA AI</p>

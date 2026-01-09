@@ -82,6 +82,7 @@ import Home from './pages/Home';
 import Hub from './pages/Hub';
 import IOS from './pages/IOS';
 import IWork from './pages/IWork';
+import ImageHistory from './pages/ImageHistory';
 import Jobs from './pages/Jobs';
 import JustDance from './pages/JustDance';
 import KASBOOKS from './pages/KASBOOKS';
@@ -203,7 +204,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import ImageHistory from './pages/ImageHistory';
 import __Layout from './Layout.jsx';
 
 
@@ -292,6 +292,7 @@ export const PAGES = {
     "Hub": Hub,
     "IOS": IOS,
     "IWork": IWork,
+    "ImageHistory": ImageHistory,
     "Jobs": Jobs,
     "JustDance": JustDance,
     "KASBOOKS": KASBOOKS,
@@ -413,7 +414,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "ImageHistory": ImageHistory,
 }
 
 export const pagesConfig = {
