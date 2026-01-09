@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { Home, Sparkles, Loader2, Image as ImageIcon, Upload, History, Settings, Pause, StopCircle, Info, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -37,6 +37,8 @@ export default function ImageHistoryPage() {
   const [user, setUser] = useState(null);
   const [showUploadPanel, setShowUploadPanel] = useState(false);
   const [showControlPanel, setShowControlPanel] = useState(false);
+  const [panelY, setPanelY] = useState(0);
+  const dragControls = useDragControls();
 
   useEffect(() => {
     loadHistory();
@@ -476,17 +478,17 @@ export default function ImageHistoryPage() {
   return (
     <div className="h-screen bg-[#0a0a0a] overflow-hidden flex flex-col lg:grid lg:grid-cols-[120px_1fr_400px]">
       {/* Mobile Top Bar */}
-      <div className="lg:hidden bg-zinc-950 border-b border-zinc-800 px-3 py-2 flex items-center justify-between sticky top-0 z-50">
+      <div className="lg:hidden bg-zinc-950 border-b border-zinc-800 px-3 py-2 flex items-center justify-between sticky top-0 z-[200]">
         <button
           onClick={() => navigate(createPageUrl('Feed'))}
-          className="w-9 h-9 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors"
+          className="w-9 h-9 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors relative z-[201]"
         >
           <Home className="w-4 h-4 text-white" />
         </button>
         
         <button
           onClick={() => setShowControlPanel(!showControlPanel)}
-          className={`w-9 h-9 rounded-lg transition-all flex items-center justify-center ${
+          className={`w-9 h-9 rounded-lg transition-all flex items-center justify-center relative z-[201] ${
             showControlPanel ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50' : 'bg-white/10 text-white'
           }`}
         >
@@ -893,13 +895,31 @@ export default function ImageHistoryPage() {
       <AnimatePresence>
         {showControlPanel && (
           <motion.div
+            drag="y"
+            dragControls={dragControls}
+            dragConstraints={{ top: -200, bottom: 0 }}
+            dragElastic={0.1}
             initial={{ y: '100%' }}
-            animate={{ y: 0 }}
+            animate={{ y: panelY }}
             exit={{ y: '100%' }}
-            className="lg:hidden fixed inset-x-0 bottom-0 z-[100] bg-[#121212] border-t-2 border-cyan-500/30 rounded-t-2xl shadow-2xl max-h-[70vh] overflow-y-auto"
+            onDragEnd={(e, info) => {
+              if (info.offset.y > 150) {
+                setShowControlPanel(false);
+              } else {
+                setPanelY(0);
+              }
+            }}
+            className="lg:hidden fixed inset-x-0 bottom-0 z-[100] bg-[#121212] border-t-2 border-cyan-500/30 rounded-t-2xl shadow-2xl max-h-[70vh]"
+            style={{ touchAction: 'none' }}
           >
-            <div className="sticky top-0 bg-[#121212] border-b border-zinc-800 px-4 py-3 flex items-center justify-between z-10">
-              <h3 className="text-white font-bold text-sm">RMX Control</h3>
+            <div 
+              className="sticky top-0 bg-[#121212] border-b border-zinc-800 px-4 py-3 flex items-center justify-between z-10 cursor-grab active:cursor-grabbing"
+              onPointerDown={(e) => dragControls.start(e)}
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-1 bg-white/20 rounded-full" />
+                <h3 className="text-white font-bold text-sm">RMX Control</h3>
+              </div>
               <button
                 onClick={() => setShowControlPanel(false)}
                 className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors"
@@ -908,6 +928,7 @@ export default function ImageHistoryPage() {
               </button>
             </div>
             
+            <div className="overflow-y-auto" style={{ maxHeight: 'calc(70vh - 60px)' }}>
             <div className="p-3 space-y-3 pb-6">
               {/* Upload Section */}
               <div className="grid grid-cols-3 gap-1.5 mb-4">
@@ -1125,6 +1146,7 @@ export default function ImageHistoryPage() {
                   )}
                 </div>
               )}
+            </div>
             </div>
           </motion.div>
         )}
