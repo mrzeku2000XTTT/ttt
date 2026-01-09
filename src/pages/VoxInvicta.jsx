@@ -3,33 +3,74 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Play, Pause, Download, Volume2, Search, Home, Mic, Wand2, Sparkles } from "lucide-react";
+import { Play, Pause, Download, Volume2, Search, Home, Mic, Wand2, Sparkles, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import { base44 } from "@/api/base44Client";
 
 export default function VoxInvictaPage() {
   const [text, setText] = useState("");
   const [selectedVoice, setSelectedVoice] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [searchVoice, setSearchVoice] = useState("");
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [error, setError] = useState(null);
+  const audioRef = React.useRef(null);
 
   const voices = [
-    { id: 1, name: "Kaspa - Genesis Voice", category: "Professional", description: "Deep, authoritative, commanding presence", icon: "👑" },
-    { id: 2, name: "Satoshi - Mysterious Oracle", category: "Professional", description: "Calm, wise, philosophical tone", icon: "🧙" },
-    { id: 3, name: "Vitalik - Tech Visionary", category: "Professional", description: "Intellectual, analytical, forward-thinking", icon: "🤖" },
-    { id: 4, name: "Nakamoto - Shadow Architect", category: "Professional", description: "Enigmatic, calculated, strategic", icon: "🕵️" },
-    { id: 5, name: "Luna - Crypto Queen", category: "Professional", description: "Confident, dynamic, charismatic", icon: "👸" },
-    { id: 6, name: "Echo - Digital Spirit", category: "Creative", description: "Ethereal, haunting, mysterious", icon: "👻" },
-    { id: 7, name: "Cipher - Code Whisperer", category: "Creative", description: "Technical, precise, methodical", icon: "🔐" },
-    { id: 8, name: "Nova - Star Trader", category: "Creative", description: "Energetic, optimistic, inspiring", icon: "⭐" },
+    { id: 1, name: "Kaspa - Genesis Voice", category: "Professional", description: "Deep, authoritative, commanding presence", icon: "👑", elevenLabsId: "EXAVITQu4vr4xnSDxMaL" },
+    { id: 2, name: "Satoshi - Mysterious Oracle", category: "Professional", description: "Calm, wise, philosophical tone", icon: "🧙", elevenLabsId: "pNInz6obpgDQGcFmaJgB" },
+    { id: 3, name: "Vitalik - Tech Visionary", category: "Professional", description: "Intellectual, analytical, forward-thinking", icon: "🤖", elevenLabsId: "TxGEqnHWrfWFTfGW9XjX" },
+    { id: 4, name: "Nakamoto - Shadow Architect", category: "Professional", description: "Enigmatic, calculated, strategic", icon: "🕵️", elevenLabsId: "21m00Tcm4TlvDq8ikWAM" },
+    { id: 5, name: "Luna - Crypto Queen", category: "Professional", description: "Confident, dynamic, charismatic", icon: "👸", elevenLabsId: "XB0fDUnXU5powFXDhCwa" },
+    { id: 6, name: "Echo - Digital Spirit", category: "Creative", description: "Ethereal, haunting, mysterious", icon: "👻", elevenLabsId: "jBpfuIE2acCO8z3wKNLl" },
+    { id: 7, name: "Cipher - Code Whisperer", category: "Creative", description: "Technical, precise, methodical", icon: "🔐", elevenLabsId: "Zlb1dXrM653N07WRdFW3" },
+    { id: 8, name: "Nova - Star Trader", category: "Creative", description: "Energetic, optimistic, inspiring", icon: "⭐", elevenLabsId: "pqHfZKP75CvOlQylNhV4" },
   ];
 
   const filteredVoices = searchVoice
     ? voices.filter(v => v.name.toLowerCase().includes(searchVoice.toLowerCase()))
     : voices;
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
+    if (!text || !selectedVoice) return;
+    
     setIsGenerating(true);
-    setTimeout(() => setIsGenerating(false), 3000);
+    setError(null);
+    
+    try {
+      const { data } = await base44.functions.invoke('generateVoice', {
+        text: text,
+        voice_id: selectedVoice.elevenLabsId
+      });
+      
+      setAudioUrl(data.audio_url);
+    } catch (err) {
+      setError(err.message || 'Failed to generate speech');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handlePlayPause = () => {
+    if (!audioRef.current) return;
+    
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const handleDownload = () => {
+    if (!audioUrl) return;
+    const a = document.createElement('a');
+    a.href = audioUrl;
+    a.download = 'vox_invicta_speech.mp3';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   return (
@@ -120,6 +161,21 @@ export default function VoxInvictaPage() {
               </CardContent>
             </Card>
 
+            {/* Error Message */}
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <Card className="bg-red-500/10 border-red-500/30 mb-6">
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <AlertCircle className="w-5 h-5 text-red-400" />
+                    <div className="text-red-400 text-sm">{error}</div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
             {/* Audio Player Preview */}
             {isGenerating && (
               <motion.div
@@ -130,15 +186,58 @@ export default function VoxInvictaPage() {
                   <CardContent className="p-6">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-cyan-500/20 rounded-full flex items-center justify-center">
-                        <Volume2 className="w-6 h-6 text-cyan-400" />
+                        <Volume2 className="w-6 h-6 text-cyan-400 animate-pulse" />
                       </div>
                       <div className="flex-1">
                         <div className="text-white font-medium mb-2">Generating audio...</div>
                         <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-cyan-500 animate-pulse" style={{ width: '40%' }} />
+                          <div className="h-full bg-cyan-500 animate-pulse" style={{ width: '60%' }} />
                         </div>
                       </div>
                     </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* Audio Player */}
+            {audioUrl && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <Card className="bg-zinc-900 border-zinc-800 mb-6">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-4">
+                      <Button
+                        onClick={handlePlayPause}
+                        size="icon"
+                        className="w-12 h-12 bg-cyan-500 hover:bg-cyan-600 rounded-full"
+                      >
+                        {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+                      </Button>
+                      <div className="flex-1">
+                        <div className="text-white font-medium mb-2">{selectedVoice?.name}</div>
+                        <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-cyan-500" style={{ width: '100%' }} />
+                        </div>
+                      </div>
+                      <Button
+                        onClick={handleDownload}
+                        variant="outline"
+                        size="icon"
+                        className="border-zinc-700 hover:bg-zinc-800"
+                      >
+                        <Download className="w-5 h-5" />
+                      </Button>
+                    </div>
+                    <audio
+                      ref={audioRef}
+                      src={audioUrl}
+                      onPlay={() => setIsPlaying(true)}
+                      onPause={() => setIsPlaying(false)}
+                      onEnded={() => setIsPlaying(false)}
+                    />
                   </CardContent>
                 </Card>
               </motion.div>
