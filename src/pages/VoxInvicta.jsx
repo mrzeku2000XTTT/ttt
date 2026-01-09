@@ -34,20 +34,51 @@ export default function VoxInvictaPage() {
     : voices;
 
   const handleGenerate = async () => {
-    if (!text || !selectedVoice) return;
+    if (!text.trim()) {
+      setError('Please enter some text to convert to speech');
+      return;
+    }
+
+    if (!selectedVoice) {
+      setError('Please select a voice');
+      return;
+    }
+
+    if (text.length > 5000) {
+      setError('Text is too long. Maximum 5000 characters allowed.');
+      return;
+    }
     
     setIsGenerating(true);
     setError(null);
+    setAudioUrl(null);
     
     try {
       const { data } = await base44.functions.invoke('generateVoice', {
-        text: text,
+        text: text.trim(),
         voice_id: selectedVoice.elevenLabsId
       });
       
-      setAudioUrl(data.audio_url);
+      if (data?.audio_url) {
+        setAudioUrl(data.audio_url);
+        setError(null);
+      } else if (data?.error) {
+        setError(data.error);
+      } else {
+        setError('Failed to generate speech. Please try again.');
+      }
     } catch (err) {
-      setError(err.message || 'Failed to generate speech');
+      console.error('Generation failed:', err);
+      
+      if (err.response?.status === 429) {
+        setError('Rate limit exceeded. Please wait a moment and try again.');
+      } else if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else if (err.message) {
+        setError(err.message);
+      } else {
+        setError('Failed to generate speech. Please check your connection and try again.');
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -178,11 +209,20 @@ export default function VoxInvictaPage() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
               >
                 <Card className="bg-red-500/10 border-red-500/30 mb-6">
                   <CardContent className="p-4 flex items-center gap-3">
-                    <AlertCircle className="w-5 h-5 text-red-400" />
-                    <div className="text-red-400 text-sm">{error}</div>
+                    <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                    <div className="flex-1 text-red-400 text-sm">{error}</div>
+                    <button
+                      onClick={() => setError(null)}
+                      className="text-red-400 hover:text-red-300 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </CardContent>
                 </Card>
               </motion.div>
