@@ -49,7 +49,25 @@ export default function ProfilePage() {
         window.kasware.removeListener('accountsChanged', handleAccountsChanged);
       };
     }
-  }, []);
+    
+    // Listen for manual address changes
+    const checkManualAddress = setInterval(() => {
+      const manualAddr = localStorage.getItem('manual_kaspa_address');
+      const currentManualWallet = createdWallets.find(w => w.type === 'manual');
+      
+      if (manualAddr && (!currentManualWallet || currentManualWallet.address !== manualAddr)) {
+        console.log('Manual address changed or added, reloading profile...');
+        loadData();
+      } else if (!manualAddr && currentManualWallet) {
+        console.log('Manual address removed, reloading profile...');
+        loadData();
+      }
+    }, 1000);
+    
+    return () => {
+      clearInterval(checkManualAddress);
+    };
+  }, [createdWallets]);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -129,9 +147,20 @@ export default function ProfilePage() {
         }
         
         // Load created wallets
-        if (currentUser.created_wallets && currentUser.created_wallets.length > 0) {
-          setCreatedWallets(currentUser.created_wallets);
+        const allWallets = currentUser.created_wallets || [];
+        
+        // Add manual Kaspa address if it exists and not already in list
+        const manualAddr = localStorage.getItem('manual_kaspa_address');
+        if (manualAddr && !allWallets.find(w => w.address === manualAddr)) {
+          allWallets.push({ address: manualAddr, balance: 0, type: 'manual' });
         }
+        
+        // Add connected Kasware if not already in list
+        if (connectedWalletAddress && !allWallets.find(w => w.address === connectedWalletAddress)) {
+          allWallets.unshift({ address: connectedWalletAddress, balance: 0, type: 'kasware' });
+        }
+        
+        setCreatedWallets(allWallets);
       } catch (err) {
         // User not logged in - try wallet-only mode
         const walletAddress = connectedWalletAddress || localStorage.getItem('ttt_wallet_address') || localStorage.getItem('manual_kaspa_address');
@@ -177,7 +206,9 @@ export default function ProfilePage() {
             });
           }
           
-          setCreatedWallets([{ address: walletAddress, balance: 0 }]);
+          // For wallet-only users, add wallet to created wallets
+          const allWallets = [{ address: walletAddress, balance: 0, type: walletAddress === localStorage.getItem('manual_kaspa_address') ? 'manual' : 'connected' }];
+          setCreatedWallets(allWallets);
         }
       }
 
@@ -1130,52 +1161,80 @@ Return ONLY the post text, no quotes or extra formatting.`,
                   </CardHeader>
                   <CardContent className="pt-6">
                     {createdWallets.length === 0 ? (
-                      <div className="text-center py-12 text-gray-500">
-                        <Wallet className="w-16 h-16 mx-auto mb-4 text-gray-700" />
-                        <p>No wallets created yet</p>
-                      </div>
+                    <div className="text-center py-12 text-gray-500">
+                      <Wallet className="w-16 h-16 mx-auto mb-4 text-gray-700" />
+                      <p>No wallets connected yet</p>
+                      <p className="text-xs mt-2">Add your Kaspa address manually on the Feed page</p>
+                    </div>
                     ) : (
-                      <div className="space-y-4">
-                        {createdWallets.map((wallet, index) => (
-                          <div key={wallet.address} className="bg-white/5 border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-colors">
-                            <div className="flex items-start justify-between mb-3">
-                              <div className="flex-1">
-                                <div className="text-xs text-gray-500 mb-1">Wallet #{index + 1}</div>
-                                <div className="text-white font-mono text-sm break-all mb-2">{wallet.address}</div>
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="outline" className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
-                                    {wallet.balance?.toFixed(8) || '0.00000000'} KAS
+                    <div className="space-y-4">
+                      {createdWallets.map((wallet, index) => (
+                        <div key={wallet.address} className="bg-white/5 border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-colors">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <div className="text-xs text-gray-500">Wallet #{index + 1}</div>
+                                {wallet.type === 'manual' && (
+                                  <Badge variant="outline" className="bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs">
+                                    Manual
                                   </Badge>
-                                </div>
+                                )}
+                                {wallet.type === 'kasware' && (
+                                  <Badge variant="outline" className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-xs">
+                                    Kasware
+                                  </Badge>
+                                )}
                               </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  onClick={() => handleCopy(wallet.address)}
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-gray-400"
-                                >
-                                  <Copy className="w-4 h-4" />
-                                </Button>
-                                <a
-                                  href={`https://kas.fyi/address/${wallet.address}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  <Button variant="ghost" size="sm" className="text-gray-400">
-                                    <ExternalLink className="w-4 h-4" />
-                                  </Button>
-                                </a>
+                              <div className="text-white font-mono text-sm break-all mb-2">{wallet.address}</div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
+                                  {wallet.balance?.toFixed(8) || '0.00000000'} KAS
+                                </Badge>
                               </div>
                             </div>
-                            {wallet.createdAt && (
-                              <div className="text-xs text-gray-600">
-                                Created: {new Date(wallet.createdAt).toLocaleDateString()}
-                              </div>
-                            )}
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={() => handleCopy(wallet.address)}
+                                variant="ghost"
+                                size="sm"
+                                className="text-gray-400"
+                              >
+                                <Copy className="w-4 h-4" />
+                              </Button>
+                              <a
+                                href={`https://kas.fyi/address/${wallet.address}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <Button variant="ghost" size="sm" className="text-gray-400">
+                                  <ExternalLink className="w-4 h-4" />
+                                </Button>
+                              </a>
+                              {wallet.type === 'manual' && (
+                                <Button
+                                  onClick={() => {
+                                    if (confirm('Remove this manual address? You will need to re-enter it to post and receive tips.')) {
+                                      localStorage.removeItem('manual_kaspa_address');
+                                      loadData();
+                                    }
+                                  }}
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-red-400/60 hover:text-red-400"
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              )}
+                            </div>
                           </div>
-                        ))}
-                      </div>
+                          {wallet.createdAt && (
+                            <div className="text-xs text-gray-600">
+                              Created: {new Date(wallet.createdAt).toLocaleDateString()}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                     )}
                   </CardContent>
                 </Card>
