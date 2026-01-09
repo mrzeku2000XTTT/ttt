@@ -695,9 +695,11 @@ export default function ImageHistoryPage() {
                 <label className="text-zinc-400 text-sm font-semibold flex items-center justify-between">
                   <span>Enter your prompt for RMX ULTRA</span>
                   {projectId && (
-                    <span className="text-[10px] bg-zinc-800 px-2 py-1 rounded text-zinc-500 font-mono">
-                      {projectId}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full font-mono border border-purple-500/50">
+                        {projectId}
+                      </span>
+                    </div>
                   )}
                 </label>
                 <Textarea
