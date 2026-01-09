@@ -199,19 +199,26 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
     }
 
     setIsGenerating(true);
-    
-    try {
-      let detailedPrompt = "";
-      
-      if (uploadedImage) {
-        // Check if user wants a style transformation (anime, pixel art, etc.)
-        const lowerPrompt = remixPrompt.toLowerCase();
-        const isStyleTransformation = lowerPrompt.includes('anime') || lowerPrompt.includes('cartoon') || 
-                                      lowerPrompt.includes('pixel') || lowerPrompt.includes('3d') || 
-                                      lowerPrompt.includes('version') || lowerPrompt.includes('style') ||
-                                      lowerPrompt.includes('painting') || lowerPrompt.includes('sketch') ||
-                                      lowerPrompt.includes('ghibli') || lowerPrompt.includes('cyberpunk') ||
-                                      lowerPrompt.includes('manga') || lowerPrompt.includes('comic');
+
+    let attempts = 0;
+    const maxAttempts = 3;
+
+    while (attempts < maxAttempts) {
+      try {
+        attempts++;
+        console.log(`🎨 Generation attempt ${attempts}/${maxAttempts}`);
+
+        let detailedPrompt = "";
+
+        if (uploadedImage) {
+          // Check if user wants a style transformation (anime, pixel art, etc.)
+          const lowerPrompt = remixPrompt.toLowerCase();
+          const isStyleTransformation = lowerPrompt.includes('anime') || lowerPrompt.includes('cartoon') || 
+                                        lowerPrompt.includes('pixel') || lowerPrompt.includes('3d') || 
+                                        lowerPrompt.includes('version') || lowerPrompt.includes('style') ||
+                                        lowerPrompt.includes('painting') || lowerPrompt.includes('sketch') ||
+                                        lowerPrompt.includes('ghibli') || lowerPrompt.includes('cyberpunk') ||
+                                        lowerPrompt.includes('manga') || lowerPrompt.includes('comic');
         
         if (isStyleTransformation) {
           // Style transformation mode with enhanced keywords
@@ -276,7 +283,7 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
       }
 
       console.log('🎨 Generating image with prompt:', detailedPrompt);
-      
+
       // Collect all image references
       const imageUrls = [];
       if (uploadedImage) imageUrls.push(uploadedImage);
@@ -285,7 +292,7 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
       if (additionalReferenceImages.length > 0) {
         imageUrls.push(...additionalReferenceImages);
       }
-      
+
       const response = await base44.integrations.Core.GenerateImage({
         prompt: detailedPrompt,
         ...(imageUrls.length > 0 && { existing_image_urls: imageUrls })
@@ -313,12 +320,13 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
         const blob = await imageResponse.blob();
         onSave(blob);
         onClose();
+        return; // Success - exit the retry loop
       } else {
         throw new Error('No image URL in response');
       }
-    } catch (err) {
-      console.error("❌ Remix generation error:", err);
-      
+      } catch (err) {
+      console.error(`❌ Remix generation error (attempt ${attempts}/${maxAttempts}):`, err);
+
       // Save failure data for learning
       try {
         await base44.entities.RemixAILearning.create({
@@ -331,12 +339,30 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
       } catch (saveErr) {
         console.log('Failed to save error data:', saveErr);
       }
-      
-      alert(`Failed to generate remix: ${err.message || 'Unknown error'}. Please try again with a different description.`);
-    } finally {
+
+      // If this was the last attempt, show error
+      if (attempts >= maxAttempts) {
+        alert(`Generation failed after ${maxAttempts} attempts. The AI service may have content restrictions. Try:\n\n• Simplifying your prompt\n• Using more general descriptions\n• Removing specific text requests\n• Focusing on visual style changes`);
+        setIsGenerating(false);
+        return;
+      }
+
+      // For next attempt, simplify the prompt
+      console.log('Retrying with simplified prompt...');
+
+      // Remove potentially problematic elements and make more general
+      remixPrompt = remixPrompt
+        .replace(/\b(add|put|write|text|words?|letters?|logo)\b/gi, '')
+        .replace(/["'][^"']*["']/g, '') // Remove quoted text
+        .trim() || 'professional high quality image';
+
+      // Wait 2 seconds before retry
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+      }
+
       setIsGenerating(false);
-    }
-  };
+      };
 
   const handleEnhancePrompt = async () => {
     if (!remixPrompt.trim()) {
