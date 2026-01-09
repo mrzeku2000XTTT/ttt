@@ -106,6 +106,7 @@ import KaspaNode from './pages/KaspaNode';
 import KaspaNodeMap from './pages/KaspaNodeMap';
 import KaspaSTORE from './pages/KaspaSTORE';
 import KaspaTTT from './pages/KaspaTTT';
+import Kasplore from './pages/Kasplore';
 import Kehinde from './pages/Kehinde';
 import KnowledgeBase from './pages/KnowledgeBase';
 import Kolade from './pages/Kolade';
@@ -136,6 +137,7 @@ import OlatomiwaHub from './pages/OlatomiwaHub';
 import OliviaApps from './pages/OliviaApps';
 import Oracle from './pages/Oracle';
 import OriginStory from './pages/OriginStory';
+import OuTKasTT from './pages/OuTKasTT';
 import POLFeed from './pages/POLFeed';
 import Peculiar from './pages/Peculiar';
 import Pera from './pages/Pera';
@@ -204,8 +206,7 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import Kasplore from './pages/Kasplore';
-import OuTKasTT from './pages/OuTKasTT';
+import OnChainPOS from './pages/OnChainPOS';
 import __Layout from './Layout.jsx';
 
 
@@ -318,6 +319,7 @@ export const PAGES = {
     "KaspaNodeMap": KaspaNodeMap,
     "KaspaSTORE": KaspaSTORE,
     "KaspaTTT": KaspaTTT,
+    "Kasplore": Kasplore,
     "Kehinde": Kehinde,
     "KnowledgeBase": KnowledgeBase,
     "Kolade": Kolade,
@@ -348,6 +350,7 @@ export const PAGES = {
     "OliviaApps": OliviaApps,
     "Oracle": Oracle,
     "OriginStory": OriginStory,
+    "OuTKasTT": OuTKasTT,
     "POLFeed": POLFeed,
     "Peculiar": Peculiar,
     "Pera": Pera,
@@ -416,8 +419,7 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "Kasplore": Kasplore,
-    "OuTKasTT": OuTKasTT,
+    "OnChainPOS": OnChainPOS,
 }
 
 export const pagesConfig = {
