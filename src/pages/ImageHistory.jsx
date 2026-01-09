@@ -35,6 +35,7 @@ export default function ImageHistoryPage() {
   const [projectId, setProjectId] = useState(null);
   const [expandedProjects, setExpandedProjects] = useState({});
   const [user, setUser] = useState(null);
+  const [showFeatures, setShowFeatures] = useState(false);
 
   useEffect(() => {
     loadHistory();
@@ -871,19 +872,32 @@ export default function ImageHistoryPage() {
                 </div>
               )}
 
-              {/* Important Notes */}
-              <div className="bg-black border border-zinc-800 rounded-lg p-4">
-                <div className="flex gap-2">
-                  <Info className="w-5 h-5 text-zinc-400 flex-shrink-0 mt-0.5" />
-                  <div className="space-y-2">
+              {/* Important Notes - Collapsible on Mobile */}
+              <div className="bg-black border border-zinc-800 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setShowFeatures(!showFeatures)}
+                  className="w-full flex items-center justify-between p-4 hover:bg-zinc-900 transition-colors lg:cursor-default lg:pointer-events-none"
+                >
+                  <div className="flex items-center gap-2">
+                    <Info className="w-5 h-5 text-zinc-400 flex-shrink-0" />
                     <h4 className="text-zinc-300 font-semibold text-sm">RMX ULTRA Features:</h4>
-                    <ul className="text-zinc-400 text-xs space-y-1 list-disc pl-4">
-                      <li>Generates 10 high-quality images per request</li>
-                      <li>Automatic angle and composition variations</li>
-                      <li>Professional photography perspectives</li>
-                      <li>Project-based workflow management</li>
-                    </ul>
                   </div>
+                  <svg
+                    className={`w-4 h-4 text-zinc-500 transition-transform lg:hidden ${showFeatures ? 'rotate-180' : ''}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                <div className={`${showFeatures ? 'block' : 'hidden'} lg:block px-4 pb-4`}>
+                  <ul className="text-zinc-400 text-xs space-y-1 list-disc pl-4">
+                    <li>Generates 10 high-quality images per request</li>
+                    <li>Automatic angle and composition variations</li>
+                    <li>Professional photography perspectives</li>
+                    <li>Project-based workflow management</li>
+                  </ul>
                 </div>
               </div>
 
@@ -892,9 +906,92 @@ export default function ImageHistoryPage() {
           )}
 
           {activeTab === 'settings' && (
-            <div className="bg-zinc-900 rounded-lg p-4">
-              <h4 className="text-zinc-400 text-sm mb-4">Settings</h4>
-              <p className="text-zinc-500 text-xs">Settings coming soon...</p>
+            <div className="space-y-4">
+              {/* Mobile Upload Sections */}
+              <div className="lg:hidden space-y-4">
+                {/* SUBJECT Section */}
+                <div className="space-y-2">
+                  <div className="text-white text-xs font-bold tracking-wider">SUBJECT</div>
+                  <label className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden cursor-pointer hover:border-zinc-600 transition-colors block aspect-square">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleSubjectUpload}
+                      className="hidden"
+                      disabled={uploadingSubject}
+                    />
+                    {subjectImage ? (
+                      <img src={subjectImage} alt="Subject" className="w-full h-full object-cover" />
+                    ) : uploadingSubject ? (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 text-zinc-600 animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <Upload className="w-5 h-5 text-zinc-700" />
+                        <span className="text-zinc-700 text-xs mt-1">Character</span>
+                      </div>
+                    )}
+                  </label>
+                </div>
+
+                {/* STYLE Section */}
+                <div className="space-y-2">
+                  <div className="text-white text-xs font-bold tracking-wider">STYLE</div>
+                  <label className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden cursor-pointer hover:border-zinc-600 transition-colors block aspect-square">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleStyleUpload}
+                      className="hidden"
+                      disabled={uploadingStyle}
+                    />
+                    {styleImage ? (
+                      <img src={styleImage} alt="Style" className="w-full h-full object-cover" />
+                    ) : uploadingStyle ? (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 text-zinc-600 animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <Upload className="w-5 h-5 text-zinc-700" />
+                        <span className="text-zinc-700 text-xs mt-1">UI/Style</span>
+                      </div>
+                    )}
+                  </label>
+                </div>
+
+                {/* SCENE Section */}
+                <div className="space-y-2">
+                  <div className="text-white text-xs font-bold tracking-wider">SCENE</div>
+                  <label className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden cursor-pointer hover:border-zinc-600 transition-colors block aspect-square">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleSceneUpload}
+                      className="hidden"
+                      disabled={uploadingScene}
+                    />
+                    {sceneImage ? (
+                      <img src={sceneImage} alt="Scene" className="w-full h-full object-cover" />
+                    ) : uploadingScene ? (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 text-zinc-600 animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <Upload className="w-5 h-5 text-zinc-700" />
+                        <span className="text-zinc-700 text-xs mt-1">Background</span>
+                      </div>
+                    )}
+                  </label>
+                </div>
+              </div>
+
+              <div className="bg-zinc-900 rounded-lg p-4">
+                <h4 className="text-zinc-400 text-sm mb-4">Settings</h4>
+                <p className="text-zinc-500 text-xs">Settings coming soon...</p>
+              </div>
             </div>
           )}
 
