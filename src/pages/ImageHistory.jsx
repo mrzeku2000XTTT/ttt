@@ -477,9 +477,9 @@ export default function ImageHistoryPage() {
   }, {});
 
   return (
-    <div className="h-screen bg-[#0a0a0a] overflow-hidden grid grid-cols-1 lg:grid-cols-[120px_1fr_400px]">
-      {/* LEFT SIDEBAR - Dark with Upload Sections */}
-      <div className="bg-zinc-950 border-r border-zinc-800 flex flex-col py-6 px-3 gap-4 overflow-y-auto hidden lg:flex">
+    <div className="min-h-screen lg:h-screen bg-[#0a0a0a] overflow-auto lg:overflow-hidden flex flex-col lg:grid lg:grid-cols-[120px_1fr_400px]">
+      {/* LEFT SIDEBAR - Dark with Upload Sections - Desktop Only */}
+      <div className="bg-zinc-950 border-r border-zinc-800 hidden lg:flex flex-col py-6 px-3 gap-4 overflow-y-auto">
         <button
           onClick={() => navigate(createPageUrl('Feed'))}
           className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors mx-auto touch-manipulation"
@@ -582,11 +582,11 @@ export default function ImageHistoryPage() {
         </button>
       </div>
 
-      {/* CENTER CANVAS - 2x2 Grid */}
-      <div className="flex flex-col items-center justify-center p-8 relative">
+      {/* CENTER CANVAS - Grid */}
+      <div className="flex flex-col items-center justify-center p-4 lg:p-8 relative order-2 lg:order-none">
         <div className="w-full max-w-6xl">
-          {/* 5x2 Grid for 10 images */}
-          <div className="grid grid-cols-5 gap-4">
+          {/* 5x2 Grid for 10 images - Responsive */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 lg:gap-4">
             {generatedImages.map((img, idx) => (
               <div key={`gen-${idx}`} className="relative bg-zinc-900/50 rounded-xl overflow-hidden border-2 border-zinc-700/50 aspect-square group cursor-pointer" onClick={() => img && setViewingImage(img)}>
                 {img ? (
@@ -628,8 +628,8 @@ export default function ImageHistoryPage() {
             </div>
           )}
 
-          {/* Reference Images Row */}
-          <div className="grid grid-cols-2 gap-4 mt-6">
+          {/* Reference Images Row - Responsive */}
+          <div className="grid grid-cols-2 gap-2 lg:gap-4 mt-4 lg:mt-6">
             {referenceImages.map((img, idx) => (
               <div key={`ref-${idx}`} className="relative bg-zinc-900/50 rounded-xl overflow-hidden border-2 border-dashed border-zinc-700/50 hover:border-zinc-600/50 transition-colors h-32">
                 {img ? (
@@ -657,8 +657,8 @@ export default function ImageHistoryPage() {
             ))}
           </div>
 
-          {/* Chat Input Below References */}
-          <div className="mt-4 bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+          {/* Chat Input Below References - Hidden on mobile */}
+          <div className="mt-4 bg-zinc-950 border border-zinc-800 rounded-xl p-4 hidden lg:block">
             <Textarea
               value={chatMessage}
               onChange={(e) => setChatMessage(e.target.value)}
@@ -708,31 +708,8 @@ export default function ImageHistoryPage() {
 
       </div>
 
-      {/* Floating Action Buttons - Mobile Only */}
-      <div className="lg:hidden fixed z-50 flex flex-col gap-2" style={{ top: 'calc(var(--sat, 0px) + 7.5rem)', right: '1rem' }}>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => navigate(createPageUrl('Window'))}
-          className="w-11 h-11 bg-black/90 backdrop-blur-xl border border-white/20 rounded-xl flex items-center justify-center hover:bg-black transition-colors shadow-lg touch-manipulation"
-          title="Open RMX Window"
-        >
-          <History className="w-5 h-5 text-white" />
-        </motion.button>
-
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setActiveTab('settings')}
-          className="w-11 h-11 bg-black/90 backdrop-blur-xl border border-white/20 rounded-xl flex items-center justify-center hover:bg-black transition-colors shadow-lg touch-manipulation"
-          title="Settings"
-        >
-          <Settings className="w-5 h-5 text-white" />
-        </motion.button>
-      </div>
-
-      {/* RIGHT CONTROL PANEL - Dark Theme */}
-      <div className="bg-[#121212] border-l border-zinc-800 overflow-y-auto col-span-full lg:col-span-1">
+      {/* RIGHT CONTROL PANEL - Dark Theme - Mobile First, Desktop Sidebar */}
+      <div className="bg-[#121212] border-t lg:border-t-0 lg:border-l border-zinc-800 overflow-y-auto order-1 lg:order-none">
         <div className="p-6 space-y-6">
           {/* Header */}
           <div className="flex items-center gap-3">
