@@ -64,14 +64,25 @@ export default function VoxInvictaPage() {
     setIsPlaying(!isPlaying);
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!audioUrl) return;
-    const a = document.createElement('a');
-    a.href = audioUrl;
-    a.download = 'vox_invicta_speech.mp3';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    
+    try {
+      // Convert data URL to blob
+      const response = await fetch(audioUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `vox_invicta_${Date.now()}.mp3`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Download failed:', err);
+    }
   };
 
   return (
@@ -238,6 +249,7 @@ export default function VoxInvictaPage() {
                       onPlay={() => setIsPlaying(true)}
                       onPause={() => setIsPlaying(false)}
                       onEnded={() => setIsPlaying(false)}
+                      preload="auto"
                     />
                   </CardContent>
                 </Card>

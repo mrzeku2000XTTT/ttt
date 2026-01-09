@@ -3,13 +3,16 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
     
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    // Try to authenticate, but allow wallet-only mode
+    let user = null;
+    try {
+      user = await base44.auth.me();
+    } catch (err) {
+      console.log('No user auth, allowing public access');
     }
 
-    const { text, voice_id = 'EXAVITQu4vr4xnSDxMaL' } = await req.json();
+    const { text, voice_id = '21m00Tcm4TlvDq8ikWAM' } = await req.json();
 
     if (!text) {
       return Response.json({ error: 'Text is required' }, { status: 400 });
@@ -45,13 +48,15 @@ Deno.serve(async (req) => {
 
     // Get audio data as array buffer
     const audioData = await response.arrayBuffer();
-
-    // Upload to storage
-    const audioFile = new File([audioData], 'speech.mp3', { type: 'audio/mpeg' });
-    const { file_url } = await base44.integrations.Core.UploadFile({ file: audioFile });
+    
+    // Convert to base64 for direct playback
+    const base64Audio = btoa(
+      new Uint8Array(audioData).reduce((data, byte) => data + String.fromCharCode(byte), '')
+    );
+    const audioDataUrl = `data:audio/mpeg;base64,${base64Audio}`;
 
     return Response.json({
-      audio_url: file_url,
+      audio_url: audioDataUrl,
       text: text,
       voice_id: voice_id,
       characters: text.length
