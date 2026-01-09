@@ -1046,7 +1046,7 @@ export default function ImageHistoryPage() {
                       setPrompt(e.target.value);
                       setRmxActivated(false);
                     }}
-                    placeholder="Describe your vision..."
+                    placeholder="Describe your vision... RMX ULTRA will generate 10 high-quality images with different angles and perspectives."
                     className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 min-h-[80px] text-xs resize-none"
                     disabled={isGenerating}
                   />
@@ -1055,11 +1055,30 @@ export default function ImageHistoryPage() {
                     <Button
                       onClick={handleRMXClick}
                       disabled={!prompt.trim()}
-                      className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-white font-semibold h-10 active:scale-95 transition-all text-xs"
+                      className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold h-10 active:scale-95 transition-all text-xs"
                     >
                       <Sparkles className="w-4 h-4 mr-2" />
                       RMX
                     </Button>
+                  )}
+
+                  {rmxActivated && !isGenerating && showProjectOptions && (
+                    <div className="space-y-2">
+                      <Button
+                        onClick={handleCreateNewProject}
+                        className="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-semibold h-10 active:scale-95 transition-all text-xs"
+                      >
+                        Create New Project
+                      </Button>
+                      {currentProject && (
+                        <Button
+                          onClick={handleRunCurrentProject}
+                          className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold h-10 active:scale-95 transition-all text-xs"
+                        >
+                          Run Current Project
+                        </Button>
+                      )}
+                    </div>
                   )}
 
                   {rmxActivated && !isGenerating && !showProjectOptions && (
@@ -1068,7 +1087,7 @@ export default function ImageHistoryPage() {
                       className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold h-10 active:scale-95 transition-all text-xs"
                     >
                       <Sparkles className="w-4 h-4 mr-2" />
-                      Start
+                      Start Generation
                     </Button>
                   )}
 
@@ -1093,6 +1112,22 @@ export default function ImageHistoryPage() {
                       </Button>
                     </div>
                   )}
+
+                  {/* RMX ULTRA Features Info */}
+                  <div className="bg-black border border-zinc-800 rounded-lg p-3">
+                    <div className="flex gap-2">
+                      <Info className="w-4 h-4 text-zinc-400 flex-shrink-0 mt-0.5" />
+                      <div className="space-y-2">
+                        <h4 className="text-zinc-300 font-semibold text-xs">RMX ULTRA Features:</h4>
+                        <ul className="text-zinc-400 text-[10px] space-y-1 list-disc pl-3">
+                          <li>Generates 10 high-quality images per request</li>
+                          <li>Automatic angle and composition variations</li>
+                          <li>Professional photography perspectives</li>
+                          <li>Project-based workflow management</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
                 </>
               )}
 
