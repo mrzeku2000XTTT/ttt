@@ -601,19 +601,19 @@ export default function ImageHistoryPage() {
       {/* CENTER CANVAS */}
       <div className="flex flex-col items-center justify-start p-2 lg:p-8 relative overflow-y-auto flex-1">
         <div className="w-full max-w-6xl">
-          {/* Desktop: Clean 2x5 grid (10 images) | Mobile: 3x3 grid + bottom row (9 images + refs + image 10) */}
+          {/* Tile Grid - Numbered 1-10 */}
           <div className="grid gap-1.5 lg:gap-4">
-            {/* Desktop: All 10 images in 2x5 grid */}
+            {/* Desktop: 2 rows x 5 cols = 10 numbered tiles */}
             <div className="hidden lg:grid lg:grid-cols-5 gap-4">
-              {generatedImages.map((img, idx) => (
+              {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((idx) => (
                 <div 
-                  key={`desktop-gen-${idx}`} 
+                  key={`tile-${idx}`} 
                   className="relative bg-zinc-900/50 rounded-lg overflow-hidden border border-zinc-700/50 aspect-square group cursor-pointer"
-                  onClick={() => img && setViewingImage(img)}
+                  onClick={() => generatedImages[idx] && setViewingImage(generatedImages[idx])}
                 >
-                  {img ? (
+                  {generatedImages[idx] ? (
                     <>
-                      <img src={img} alt={`Generated ${idx + 1}`} className="w-full h-full object-cover" />
+                      <img src={generatedImages[idx]} alt={`Image ${idx + 1}`} className="w-full h-full object-cover" />
                       <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1">
                         <span className="text-white text-[8px] font-semibold">{idx + 1}</span>
                       </div>
