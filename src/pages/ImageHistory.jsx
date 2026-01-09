@@ -32,6 +32,7 @@ export default function ImageHistoryPage() {
   const [uploadingStyle, setUploadingStyle] = useState(false);
   const [uploadingScene, setUploadingScene] = useState(false);
   const [projectId, setProjectId] = useState(null);
+  const [expandedProjects, setExpandedProjects] = useState({});
 
   useEffect(() => {
     loadHistory();
@@ -161,6 +162,20 @@ export default function ImageHistoryPage() {
         ...referenceImages
       ].filter(img => img !== null);
       
+      // Camera angles for variation
+      const cameraAngles = [
+        "front view, eye level, centered composition",
+        "3/4 angle view, slightly off-center, dynamic perspective",
+        "side profile view, dramatic lighting, rule of thirds",
+        "low angle shot, looking up, heroic perspective",
+        "high angle shot, bird's eye view, aerial perspective",
+        "close-up shot, intimate framing, shallow depth of field",
+        "wide shot, full scene, environmental context",
+        "over the shoulder perspective, cinematic framing",
+        "Dutch angle, tilted perspective, dynamic composition",
+        "extreme close-up, detailed focus, macro perspective"
+      ];
+      
       // Run two RMX ULTRA agents in parallel
       const agent1 = async () => {
         // Agent 1: Generate images 1-5
@@ -173,8 +188,9 @@ export default function ImageHistoryPage() {
 
           try {
             console.log(`Agent 1: Generating image ${i + 1}/10...`);
+            const enhancedPrompt = `${prompt}\n\nCamera Angle: ${cameraAngles[i]}`;
             const response = await base44.integrations.Core.GenerateImage({
-              prompt: prompt,
+              prompt: enhancedPrompt,
               ...(imageUrls.length > 0 && { existing_image_urls: imageUrls })
             });
 
@@ -212,8 +228,9 @@ export default function ImageHistoryPage() {
 
           try {
             console.log(`Agent 2: Generating image ${i + 1}/10...`);
+            const enhancedPrompt = `${prompt}\n\nCamera Angle: ${cameraAngles[i]}`;
             const response = await base44.integrations.Core.GenerateImage({
-              prompt: prompt,
+              prompt: enhancedPrompt,
               ...(imageUrls.length > 0 && { existing_image_urls: imageUrls })
             });
 
@@ -261,6 +278,48 @@ export default function ImageHistoryPage() {
     setIsGenerating(false);
     setIsPaused(false);
   };
+
+  const handleDownloadAll = async (projectImages) => {
+    for (let i = 0; i < projectImages.length; i++) {
+      const img = projectImages[i];
+      if (!img) continue;
+      
+      try {
+        const response = await fetch(img);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `rmx-image-${i + 1}.png`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        // Small delay between downloads
+        await new Promise(resolve => setTimeout(resolve, 300));
+      } catch (err) {
+        console.error(`Failed to download image ${i + 1}:`, err);
+      }
+    }
+  };
+
+  const toggleProject = (projectId) => {
+    setExpandedProjects(prev => ({
+      ...prev,
+      [projectId]: !prev[projectId]
+    }));
+  };
+
+  // Group history by project ID
+  const projectGroups = history.reduce((acc, entry) => {
+    const id = entry.user_prompt?.match(/\[Project ID: ([^\]]+)\]/)?.[1] || 'Unknown';
+    if (!acc[id]) {
+      acc[id] = [];
+    }
+    acc[id].push(entry);
+    return acc;
+  }, {});
 
   return (
     <div className="h-screen bg-[#0a0a0a] overflow-hidden grid" style={{ gridTemplateColumns: '120px 1fr 400px' }}>
@@ -677,16 +736,56 @@ export default function ImageHistoryPage() {
           {activeTab === 'projects' && (
             <div className="space-y-3">
               <h4 className="text-zinc-400 text-sm mb-2">Generation History</h4>
-              {history.length === 0 ? (
+              {Object.keys(projectGroups).length === 0 ? (
                 <div className="bg-zinc-900 rounded-lg p-4 text-center">
-                  <p className="text-zinc-500 text-xs">No generations yet</p>
+                  <p className="text-zinc-500 text-xs">No projects yet</p>
                 </div>
               ) : (
-                history.slice(0, 10).map(entry => (
-                  <div key={entry.id} className="bg-zinc-900 rounded-lg p-3">
-                    <p className="text-white text-xs font-semibold mb-1 line-clamp-2">{entry.user_prompt}</p>
-                    {entry.result_image && (
-                      <img src={entry.result_image} alt="Result" className="w-full h-20 object-cover rounded mt-2" />
+                Object.entries(projectGroups).map(([projId, entries]) => (
+                  <div key={projId} className="bg-zinc-900 rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => toggleProject(projId)}
+                      className="w-full px-4 py-3 flex items-center justify-between hover:bg-zinc-800 transition-colors"
+                    >
+                      <div className="text-left">
+                        <p className="text-white text-xs font-semibold">Project {projId}</p>
+                        <p className="text-zinc-500 text-[10px]">{entries.length} images</p>
+                      </div>
+                      <svg
+                        className={`w-4 h-4 text-zinc-500 transition-transform ${expandedProjects[projId] ? 'rotate-180' : ''}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    
+                    {expandedProjects[projId] && (
+                      <div className="p-3 border-t border-zinc-800 space-y-2">
+                        <Button
+                          onClick={() => handleDownloadAll(entries.map(e => e.result_image))}
+                          className="w-full bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/50 h-8 text-xs"
+                        >
+                          <svg className="w-3 h-3 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                          Download All ({entries.length})
+                        </Button>
+                        <div className="grid grid-cols-2 gap-2">
+                          {entries.map((entry, idx) => (
+                            entry.result_image && (
+                              <img
+                                key={entry.id}
+                                src={entry.result_image}
+                                alt={`Result ${idx + 1}`}
+                                className="w-full h-24 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={() => setViewingImage(entry.result_image)}
+                              />
+                            )
+                          ))}
+                        </div>
+                      </div>
                     )}
                   </div>
                 ))
