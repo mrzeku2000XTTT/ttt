@@ -723,6 +723,13 @@ export default function ImageHistoryPage() {
               <h3 className="text-white font-bold">RMX Workflow</h3>
               <p className="text-xs text-zinc-500">by RMX ULTRA AI</p>
             </div>
+            <button
+              onClick={() => navigate(createPageUrl('Feed'))}
+              className="w-8 h-8 flex items-center justify-center rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors"
+              title="Back to Feed"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
           {/* Control Tabs */}
