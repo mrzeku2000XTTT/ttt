@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { motion, AnimatePresence, useDragControls } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Home, Sparkles, Loader2, Image as ImageIcon, Upload, History, Settings, Pause, StopCircle, Info, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -35,10 +35,6 @@ export default function ImageHistoryPage() {
   const [projectId, setProjectId] = useState(null);
   const [expandedProjects, setExpandedProjects] = useState({});
   const [user, setUser] = useState(null);
-  const [showUploadPanel, setShowUploadPanel] = useState(false);
-  const [showControlPanel, setShowControlPanel] = useState(false);
-  const [panelY, setPanelY] = useState(0);
-  const dragControls = useDragControls();
 
   useEffect(() => {
     loadHistory();
@@ -271,7 +267,7 @@ export default function ImageHistoryPage() {
           if (shouldStop) break;
 
           try {
-            console.log(`🎨 Agent 1: Starting image ${i + 1}/10...`);
+            console.log(`Agent 1: Generating image ${i + 1}/10...`);
             const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\nSTORYBOARD SHOT ${i + 1}/10 - Camera Angle: ${cameraAngles[i]}\nProfessional cinematography, consistent subject and style, high quality output`;
             const response = await base44.integrations.Core.GenerateImage({
               prompt: enhancedPrompt,
@@ -279,19 +275,19 @@ export default function ImageHistoryPage() {
             });
 
             if (response?.url) {
-              console.log(`✅ Agent 1: Completed image ${i + 1}/10`);
+              console.log(`✅ Agent 1: Got image ${i + 1}`);
               setGeneratedImages(prev => {
                 const updated = [...prev];
                 updated[i] = response.url;
                 return updated;
               });
-
+              
               setCompletedImages(prev => {
                 const newCount = prev + 1;
-                console.log(`📊 Progress: ${newCount}/10 images completed`);
+                console.log(`Progress: ${newCount}/10 images completed`);
                 return newCount;
               });
-
+              
               // Get wallet address for ownership tracking
               let walletAddress = 'guest';
               try {
@@ -327,15 +323,12 @@ export default function ImageHistoryPage() {
                 localHistory.unshift({ ...entryData, id: Date.now() + i });
                 localStorage.setItem('rmx_local_history', JSON.stringify(localHistory.slice(0, 100)));
               }
-            } else {
-              console.error(`❌ Agent 1: No URL returned for image ${i + 1}`);
             }
           } catch (err) {
-            console.error(`❌ Agent 1 failed image ${i + 1}:`, err.message || err);
+            console.error(`❌ Agent 1 failed image ${i + 1}:`, err);
             // Don't stop on error, continue to next image
           }
         }
-        console.log('✅ Agent 1: Completed all 5 images');
       };
 
       const agent2 = async () => {
@@ -348,7 +341,7 @@ export default function ImageHistoryPage() {
           if (shouldStop) break;
 
           try {
-            console.log(`🎨 Agent 2: Starting image ${i + 1}/10...`);
+            console.log(`Agent 2: Generating image ${i + 1}/10...`);
             const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\nSTORYBOARD SHOT ${i + 1}/10 - Camera Angle: ${cameraAngles[i]}\nProfessional cinematography, consistent subject and style, high quality output`;
             const response = await base44.integrations.Core.GenerateImage({
               prompt: enhancedPrompt,
@@ -356,19 +349,19 @@ export default function ImageHistoryPage() {
             });
 
             if (response?.url) {
-              console.log(`✅ Agent 2: Completed image ${i + 1}/10`);
+              console.log(`✅ Agent 2: Got image ${i + 1}`);
               setGeneratedImages(prev => {
                 const updated = [...prev];
                 updated[i] = response.url;
                 return updated;
               });
-
+              
               setCompletedImages(prev => {
                 const newCount = prev + 1;
-                console.log(`📊 Progress: ${newCount}/10 images completed`);
+                console.log(`Progress: ${newCount}/10 images completed`);
                 return newCount;
               });
-
+              
               // Get wallet address for ownership tracking
               let walletAddress = 'guest';
               try {
@@ -404,15 +397,12 @@ export default function ImageHistoryPage() {
                 localHistory.unshift({ ...entryData, id: Date.now() + i });
                 localStorage.setItem('rmx_local_history', JSON.stringify(localHistory.slice(0, 100)));
               }
-            } else {
-              console.error(`❌ Agent 2: No URL returned for image ${i + 1}`);
             }
           } catch (err) {
-            console.error(`❌ Agent 2 failed image ${i + 1}:`, err.message || err);
+            console.error(`❌ Agent 2 failed image ${i + 1}:`, err);
             // Don't stop on error, continue to next image
           }
         }
-        console.log('✅ Agent 2: Completed all 5 images');
       };
 
       // Run both agents simultaneously and wait for completion
@@ -482,28 +472,9 @@ export default function ImageHistoryPage() {
   }, {});
 
   return (
-    <div className="h-screen bg-[#0a0a0a] overflow-hidden flex flex-col lg:grid lg:grid-cols-[120px_1fr_400px]">
-      {/* Mobile Top Bar */}
-      <div className="lg:hidden bg-zinc-950 border-b border-zinc-800 px-3 py-2 flex items-center justify-between sticky top-0 z-[200]">
-        <button
-          onClick={() => navigate(createPageUrl('Feed'))}
-          className="w-9 h-9 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors relative z-[201]"
-        >
-          <Home className="w-4 h-4 text-white" />
-        </button>
-        
-        <button
-          onClick={() => setShowControlPanel(!showControlPanel)}
-          className={`w-9 h-9 rounded-lg transition-all flex items-center justify-center relative z-[201] ${
-            showControlPanel ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50' : 'bg-white/10 text-white'
-          }`}
-        >
-          <Settings className="w-4 h-4" />
-        </button>
-      </div>
-
-      {/* LEFT SIDEBAR - Desktop Only */}
-      <div className="hidden lg:flex bg-zinc-950 border-r border-zinc-800 flex-col py-6 px-3 gap-4 overflow-y-auto">
+    <div className="h-screen bg-[#0a0a0a] overflow-hidden grid" style={{ gridTemplateColumns: '120px 1fr 400px' }}>
+      {/* LEFT SIDEBAR - Dark with Upload Sections */}
+      <div className="bg-zinc-950 border-r border-zinc-800 flex flex-col py-6 px-3 gap-4 overflow-y-auto">
         <button
           onClick={() => navigate(createPageUrl('Feed'))}
           className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors mx-auto"
@@ -598,249 +569,34 @@ export default function ImageHistoryPage() {
         </button>
       </div>
 
-      {/* CENTER CANVAS */}
-      <div className="flex flex-col items-center justify-start p-2 lg:p-8 relative overflow-y-auto flex-1">
+      {/* CENTER CANVAS - 2x2 Grid */}
+      <div className="flex flex-col items-center justify-center p-8 relative">
         <div className="w-full max-w-6xl">
-          {/* Tile Grid - Numbered 1-10 */}
-          <div className="grid gap-1.5 lg:gap-4">
-            {/* Desktop: 2 rows x 5 cols = 10 numbered tiles */}
-            <div className="hidden lg:grid lg:grid-cols-5 gap-4">
-              {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((idx) => (
-                <div 
-                  key={`tile-${idx}`} 
-                  className="relative bg-zinc-900/50 rounded-lg overflow-hidden border border-zinc-700/50 aspect-square group cursor-pointer"
-                  onClick={() => generatedImages[idx] && setViewingImage(generatedImages[idx])}
-                >
-                  {generatedImages[idx] ? (
-                    <>
-                      <img src={generatedImages[idx]} alt={`Image ${idx + 1}`} className="w-full h-full object-cover" />
-                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1">
-                        <span className="text-white text-[8px] font-semibold">{idx + 1}</span>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center">
-                      {isGenerating ? (
-                        <>
-                          <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
-                          <p className="text-zinc-600 text-xs mt-1">{idx + 1}</p>
-                        </>
-                      ) : (
-                        <div className="w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20 flex items-center justify-center">
-                          <span className="text-zinc-700 text-[10px] font-mono">{idx + 1}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Mobile: 3x3 grid + bottom row with refs */}
-            <div className="lg:hidden grid grid-cols-3 gap-1.5">
-              {/* First 9 images */}
-              {generatedImages.slice(0, 9).map((img, idx) => (
-                <div 
-                  key={`mobile-gen-${idx}`} 
-                  className="relative bg-zinc-900/50 rounded-lg overflow-hidden border border-zinc-700/50 aspect-square group cursor-pointer"
-                  onClick={() => img && setViewingImage(img)}
-                >
-                  {img ? (
-                    <>
-                      <img src={img} alt={`Generated ${idx + 1}`} className="w-full h-full object-cover" />
-                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1">
-                        <span className="text-white text-[8px] font-semibold">{idx + 1}</span>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center">
-                      {isGenerating ? (
-                        <>
-                          <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />
-                          <p className="text-zinc-600 text-[8px] mt-1">{idx + 1}</p>
-                        </>
-                      ) : (
-                        <div className="w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20 flex items-center justify-center">
-                          <span className="text-zinc-700 text-[10px] font-mono">{idx + 1}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {/* Bottom Row: Ref1, Image10, Ref2 */}
-              {/* Ref 1 */}
-              <div key="ref-0" className="relative bg-zinc-900/50 rounded-lg overflow-hidden border border-dashed border-zinc-700/50 aspect-square cursor-pointer">
-                {referenceImages[0] ? (
+          {/* 5x2 Grid for 10 images */}
+          <div className="grid grid-cols-5 gap-4">
+            {generatedImages.map((img, idx) => (
+              <div key={`gen-${idx}`} className="relative bg-zinc-900/50 rounded-xl overflow-hidden border-2 border-zinc-700/50 aspect-square group cursor-pointer" onClick={() => img && setViewingImage(img)}>
+                {img ? (
                   <>
-                    <img src={referenceImages[0]} alt="Reference 1" className="w-full h-full object-cover" />
-                    <button
-                      onClick={() => {
-                        const newImages = [...referenceImages];
-                        newImages[0] = null;
-                        setReferenceImages(newImages);
-                      }}
-                      className="absolute top-1 right-1 w-5 h-5 bg-black/90 rounded flex items-center justify-center"
-                    >
-                      <X className="w-3 h-3 text-white" />
-                    </button>
-                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1">
-                      <span className="text-white text-[8px] font-semibold">Ref 1</span>
-                    </div>
-                  </>
-                ) : (
-                  <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer group">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(e, 0)}
-                      className="hidden"
-                      disabled={uploadingReference}
-                    />
-                    {uploadingReference ? (
-                      <Loader2 className="w-5 h-5 text-zinc-600 animate-spin" />
-                    ) : (
-                      <>
-                        <ImageIcon className="w-5 h-5 text-zinc-700" />
-                        <p className="text-zinc-700 text-[8px] mt-1">Ref 1</p>
-                      </>
-                    )}
-                  </label>
-                )}
-              </div>
-
-              {/* Image 10 - Mobile center */}
-              <div 
-                key="mobile-gen-9" 
-                className="relative bg-zinc-900/50 rounded-lg overflow-hidden border border-zinc-700/50 aspect-square group cursor-pointer" 
-                onClick={() => generatedImages[9] && setViewingImage(generatedImages[9])}
-              >
-                {generatedImages[9] ? (
-                  <>
-                    <img src={generatedImages[9]} alt="Generated 10" className="w-full h-full object-cover" />
-                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1">
-                      <span className="text-white text-[8px] font-semibold">10</span>
+                    <img src={img} alt={`Generated ${idx + 1}`} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <span className="text-white text-xs font-semibold">Click to view</span>
                     </div>
                   </>
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center">
-                    {isGenerating ? (
+                    {isGenerating && idx <= Math.floor((progress / 100) * 10) ? (
                       <>
-                        <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />
-                        <p className="text-zinc-600 text-[8px] mt-1">10</p>
+                        <Loader2 className="w-8 h-8 text-purple-500 animate-spin mb-2" />
+                        <p className="text-zinc-600 text-xs">Gen {idx + 1}</p>
                       </>
                     ) : (
-                      <div className="w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20 flex items-center justify-center">
-                        <span className="text-zinc-700 text-[10px] font-mono">10</span>
-                      </div>
+                      <div className="w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-30" />
                     )}
                   </div>
                 )}
               </div>
-
-              {/* Ref 2 */}
-              <div key="ref-1" className="relative bg-zinc-900/50 rounded-lg overflow-hidden border border-dashed border-zinc-700/50 aspect-square cursor-pointer">
-                {referenceImages[1] ? (
-                  <>
-                    <img src={referenceImages[1]} alt="Reference 2" className="w-full h-full object-cover" />
-                    <button
-                      onClick={() => {
-                        const newImages = [...referenceImages];
-                        newImages[1] = null;
-                        setReferenceImages(newImages);
-                      }}
-                      className="absolute top-1 right-1 w-5 h-5 bg-black/90 rounded flex items-center justify-center"
-                    >
-                      <X className="w-3 h-3 text-white" />
-                    </button>
-                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1">
-                      <span className="text-white text-[8px] font-semibold">Ref 2</span>
-                    </div>
-                  </>
-                ) : (
-                  <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer group">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(e, 1)}
-                      className="hidden"
-                      disabled={uploadingReference}
-                    />
-                    {uploadingReference ? (
-                      <Loader2 className="w-5 h-5 text-zinc-600 animate-spin" />
-                    ) : (
-                      <>
-                        <ImageIcon className="w-5 h-5 text-zinc-700" />
-                        <p className="text-zinc-700 text-[8px] mt-1">Ref 2</p>
-                      </>
-                    )}
-                  </label>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Instruction Input - Mobile (Always visible) */}
-          <div className="lg:hidden mt-2 bg-zinc-900 border border-zinc-700 rounded-lg p-2">
-            <Textarea
-              value={prompt}
-              onChange={(e) => {
-                setPrompt(e.target.value);
-                setRmxActivated(false);
-              }}
-              placeholder="Describe your vision..."
-              className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 min-h-[50px] text-xs resize-none"
-              disabled={isGenerating}
-            />
-            
-            <div className="mt-2 flex gap-2">
-              {!rmxActivated && !isGenerating && (
-                <Button
-                  onClick={handleRMXClick}
-                  disabled={!prompt.trim()}
-                  className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold h-9 active:scale-95 transition-all text-xs"
-                >
-                  <Sparkles className="w-3 h-3 mr-1" />
-                  RMX
-                </Button>
-              )}
-
-              {rmxActivated && !isGenerating && !showProjectOptions && (
-                <Button
-                  onClick={handleStartGeneration}
-                  className="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold h-9 active:scale-95 transition-all text-xs"
-                >
-                  <Sparkles className="w-3 h-3 mr-1" />
-                  Start
-                </Button>
-              )}
-
-              {isGenerating && (
-                <Button
-                  onClick={handleStop}
-                  className="flex-1 bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50 h-9 active:scale-95 transition-all text-xs"
-                >
-                  <StopCircle className="w-3 h-3 mr-1" />
-                  Stop
-                </Button>
-              )}
-            </div>
-
-            {isGenerating && (
-              <div className="mt-2">
-                <div className="flex items-center justify-between text-[10px] mb-1">
-                  <span className="text-cyan-400 font-semibold">Gen {completedImages + 1}/10</span>
-                  <span className="text-zinc-500">{completedImages}/10</span>
-                </div>
-                <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
-                    style={{ width: `${(completedImages / 10) * 100}%` }}
-                  />
-                </div>
-              </div>
-            )}
+            ))}
           </div>
 
           {/* Image Viewer Modal */}
@@ -859,8 +615,8 @@ export default function ImageHistoryPage() {
             </div>
           )}
 
-          {/* Reference Images Row - Hidden on mobile, shown in upload panel */}
-          <div className="hidden lg:grid grid-cols-2 gap-4 mt-6">
+          {/* Reference Images Row */}
+          <div className="grid grid-cols-2 gap-4 mt-6">
             {referenceImages.map((img, idx) => (
               <div key={`ref-${idx}`} className="relative bg-zinc-900/50 rounded-xl overflow-hidden border-2 border-dashed border-zinc-700/50 hover:border-zinc-600/50 transition-colors h-32">
                 {img ? (
@@ -888,8 +644,8 @@ export default function ImageHistoryPage() {
             ))}
           </div>
 
-          {/* Chat Input - Adjusted for mobile */}
-          <div className="hidden lg:block mt-4 bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+          {/* Chat Input Below References */}
+          <div className="mt-4 bg-zinc-950 border border-zinc-800 rounded-xl p-4">
             <Textarea
               value={chatMessage}
               onChange={(e) => setChatMessage(e.target.value)}
@@ -939,322 +695,8 @@ export default function ImageHistoryPage() {
 
       </div>
 
-
-
-      {/* Mobile Control Panel */}
-      <AnimatePresence>
-        {showControlPanel && (
-          <>
-            {/* Backdrop Overlay */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowControlPanel(false)}
-              className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[98]"
-            />
-            
-            {/* Control Panel */}
-            <motion.div
-              drag="y"
-              dragControls={dragControls}
-              dragConstraints={{ top: 0, bottom: 0 }}
-              dragElastic={0.2}
-              initial={{ y: '100%' }}
-              animate={{ y: panelY }}
-              exit={{ y: '100%' }}
-              onDragEnd={(e, info) => {
-                if (info.offset.y > 150) {
-                  setShowControlPanel(false);
-                } else {
-                  setPanelY(0);
-                }
-              }}
-              className="lg:hidden fixed inset-x-0 bottom-0 z-[200] bg-[#121212] border-t-2 border-cyan-500/30 rounded-t-2xl shadow-2xl overflow-hidden"
-              style={{ 
-                touchAction: 'none',
-                maxHeight: 'calc(100vh - 60px)',
-                top: '60px'
-              }}
-            >
-            <div 
-              className="sticky top-0 bg-[#121212] border-b border-zinc-800 px-4 py-3 flex items-center justify-between z-10 cursor-grab active:cursor-grabbing"
-              onPointerDown={(e) => dragControls.start(e)}
-            >
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-1 bg-white/20 rounded-full" />
-                <h3 className="text-white font-bold text-sm">RMX Control</h3>
-              </div>
-              <button
-                onClick={() => setShowControlPanel(false)}
-                className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors"
-              >
-                <X className="w-4 h-4 text-white" />
-              </button>
-            </div>
-            
-            <div className="overflow-y-auto" style={{ maxHeight: 'calc(70vh - 60px)' }}>
-            <div className="p-3 space-y-3 pb-6">
-              {/* Upload Section */}
-              <div className="grid grid-cols-3 gap-1.5 mb-4">
-                <div>
-                  <div className="text-white text-[9px] font-bold tracking-wider mb-1 uppercase">Subject</div>
-                  <label className="relative bg-zinc-900 border border-dashed border-zinc-700 rounded overflow-hidden cursor-pointer active:scale-95 transition-all block aspect-square">
-                    <input type="file" accept="image/*" onChange={handleSubjectUpload} className="hidden" disabled={uploadingSubject} />
-                    {subjectImage ? (
-                      <>
-                        <img src={subjectImage} alt="Subject" className="w-full h-full object-cover" />
-                        <button
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSubjectImage(null); }}
-                          className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/90 rounded flex items-center justify-center"
-                        >
-                          <X className="w-2.5 h-2.5 text-white" />
-                        </button>
-                      </>
-                    ) : uploadingSubject ? (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />
-                      </div>
-                    ) : (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <Upload className="w-4 h-4 text-zinc-600" />
-                        <span className="text-zinc-600 text-[7px] mt-0.5">Char</span>
-                      </div>
-                    )}
-                  </label>
-                </div>
-
-                <div>
-                  <div className="text-white text-[9px] font-bold tracking-wider mb-1 uppercase">Style</div>
-                  <label className="relative bg-zinc-900 border border-dashed border-zinc-700 rounded overflow-hidden cursor-pointer active:scale-95 transition-all block aspect-square">
-                    <input type="file" accept="image/*" onChange={handleStyleUpload} className="hidden" disabled={uploadingStyle} />
-                    {styleImage ? (
-                      <>
-                        <img src={styleImage} alt="Style" className="w-full h-full object-cover" />
-                        <button
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setStyleImage(null); }}
-                          className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/90 rounded flex items-center justify-center"
-                        >
-                          <X className="w-2.5 h-2.5 text-white" />
-                        </button>
-                      </>
-                    ) : uploadingStyle ? (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />
-                      </div>
-                    ) : (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <Upload className="w-4 h-4 text-zinc-600" />
-                        <span className="text-zinc-600 text-[7px] mt-0.5">UI</span>
-                      </div>
-                    )}
-                  </label>
-                </div>
-
-                <div>
-                  <div className="text-white text-[9px] font-bold tracking-wider mb-1 uppercase">Scene</div>
-                  <label className="relative bg-zinc-900 border border-dashed border-zinc-700 rounded overflow-hidden cursor-pointer active:scale-95 transition-all block aspect-square">
-                    <input type="file" accept="image/*" onChange={handleSceneUpload} className="hidden" disabled={uploadingScene} />
-                    {sceneImage ? (
-                      <>
-                        <img src={sceneImage} alt="Scene" className="w-full h-full object-cover" />
-                        <button
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSceneImage(null); }}
-                          className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/90 rounded flex items-center justify-center"
-                        >
-                          <X className="w-2.5 h-2.5 text-white" />
-                        </button>
-                      </>
-                    ) : uploadingScene ? (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />
-                      </div>
-                    ) : (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <Upload className="w-4 h-4 text-zinc-600" />
-                        <span className="text-zinc-600 text-[7px] mt-0.5">BG</span>
-                      </div>
-                    )}
-                  </label>
-                </div>
-              </div>
-
-              {/* Tabs */}
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => setActiveTab('control')}
-                  className={`flex-1 px-3 py-2 rounded-lg font-semibold text-xs transition-all ${
-                    activeTab === 'control'
-                      ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50'
-                      : 'bg-zinc-800 text-zinc-500'
-                  }`}
-                >
-                  Control
-                </button>
-                <button 
-                  onClick={() => setActiveTab('projects')}
-                  className={`flex-1 px-3 py-2 rounded-lg font-semibold text-xs transition-all ${
-                    activeTab === 'projects'
-                      ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50'
-                      : 'bg-zinc-800 text-zinc-500'
-                  }`}
-                >
-                  Projects
-                </button>
-              </div>
-
-              {activeTab === 'control' && (
-                <>
-                  <Textarea
-                    value={prompt}
-                    onChange={(e) => {
-                      setPrompt(e.target.value);
-                      setRmxActivated(false);
-                    }}
-                    placeholder="Describe your vision... RMX ULTRA will generate 10 high-quality images with different angles and perspectives."
-                    className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 min-h-[80px] text-xs resize-none"
-                    disabled={isGenerating}
-                  />
-                  
-                  {!rmxActivated && !isGenerating && (
-                    <Button
-                      onClick={handleRMXClick}
-                      disabled={!prompt.trim()}
-                      className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold h-10 active:scale-95 transition-all text-xs"
-                    >
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      RMX
-                    </Button>
-                  )}
-
-                  {rmxActivated && !isGenerating && showProjectOptions && (
-                    <div className="space-y-2">
-                      <Button
-                        onClick={handleCreateNewProject}
-                        className="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-semibold h-10 active:scale-95 transition-all text-xs"
-                      >
-                        Create New Project
-                      </Button>
-                      {currentProject && (
-                        <Button
-                          onClick={handleRunCurrentProject}
-                          className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold h-10 active:scale-95 transition-all text-xs"
-                        >
-                          Run Current Project
-                        </Button>
-                      )}
-                    </div>
-                  )}
-
-                  {rmxActivated && !isGenerating && !showProjectOptions && (
-                    <Button
-                      onClick={handleStartGeneration}
-                      className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold h-10 active:scale-95 transition-all text-xs"
-                    >
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Start Generation
-                    </Button>
-                  )}
-
-                  {isGenerating && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-cyan-400 font-semibold">Gen {completedImages + 1}/10</span>
-                        <span className="text-zinc-500">{completedImages}/10</span>
-                      </div>
-                      <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
-                          style={{ width: `${(completedImages / 10) * 100}%` }}
-                        />
-                      </div>
-                      <Button
-                        onClick={handleStop}
-                        className="w-full bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50 h-9 active:scale-95 transition-all text-xs"
-                      >
-                        <StopCircle className="w-4 h-4 mr-2" />
-                        Stop
-                      </Button>
-                    </div>
-                  )}
-
-                  {/* RMX ULTRA Features Info */}
-                  <div className="bg-black border border-zinc-800 rounded-lg p-3">
-                    <div className="flex gap-2">
-                      <Info className="w-4 h-4 text-zinc-400 flex-shrink-0 mt-0.5" />
-                      <div className="space-y-2">
-                        <h4 className="text-zinc-300 font-semibold text-xs">RMX ULTRA Features:</h4>
-                        <ul className="text-zinc-400 text-[10px] space-y-1 list-disc pl-3">
-                          <li>Generates 10 high-quality images per request</li>
-                          <li>Automatic angle and composition variations</li>
-                          <li>Professional photography perspectives</li>
-                          <li>Project-based workflow management</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {activeTab === 'projects' && (
-                <div className="space-y-2">
-                  {Object.keys(projectGroups).length === 0 ? (
-                    <div className="text-center py-8">
-                      <History className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
-                      <p className="text-zinc-500 text-xs">No projects</p>
-                    </div>
-                  ) : (
-                    Object.entries(projectGroups).map(([projId, entries]) => (
-                      <div key={projId} className="bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800">
-                        <button
-                          onClick={() => toggleProject(projId)}
-                          className="w-full px-3 py-2 flex items-center justify-between hover:bg-zinc-800 active:bg-zinc-700 transition-colors"
-                        >
-                          <div className="text-left">
-                            <p className="text-white text-xs font-semibold">{projId.substring(0, 12)}...</p>
-                            <p className="text-zinc-500 text-[10px]">{entries.length} imgs</p>
-                          </div>
-                          <svg
-                            className={`w-4 h-4 text-zinc-500 transition-transform ${expandedProjects[projId] ? 'rotate-180' : ''}`}
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </button>
-                        
-                        {expandedProjects[projId] && (
-                          <div className="p-2 border-t border-zinc-800">
-                            <div className="grid grid-cols-4 gap-1">
-                              {entries.map((entry, idx) => (
-                                entry.result_image && (
-                                  <img
-                                    key={entry.id}
-                                    src={entry.result_image}
-                                    alt={`${idx + 1}`}
-                                    className="w-full aspect-square object-cover rounded cursor-pointer hover:opacity-80 active:scale-95 transition-all"
-                                    onClick={() => setViewingImage(entry.result_image)}
-                                  />
-                                )
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-            </div>
-          </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* RIGHT CONTROL PANEL - Desktop Only */}
-      <div className="hidden lg:block bg-[#121212] border-l border-zinc-800 overflow-y-auto">
+      {/* RIGHT CONTROL PANEL - Dark Theme */}
+      <div className="bg-[#121212] border-l border-zinc-800 overflow-y-auto">
         <div className="p-6 space-y-6">
           {/* Header */}
           <div className="flex items-center gap-3">
