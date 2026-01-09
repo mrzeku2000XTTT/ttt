@@ -476,18 +476,18 @@ export default function ImageHistoryPage() {
   return (
     <div className="h-screen bg-[#0a0a0a] overflow-hidden flex flex-col lg:grid lg:grid-cols-[120px_1fr_400px]">
       {/* Mobile Top Bar */}
-      <div className="lg:hidden bg-zinc-950 border-b border-zinc-800 p-3 flex items-center justify-between sticky top-0 z-50">
+      <div className="lg:hidden bg-zinc-950 border-b border-zinc-800 px-3 py-2 flex items-center justify-between sticky top-0 z-50">
         <button
           onClick={() => navigate(createPageUrl('Feed'))}
-          className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors"
+          className="w-9 h-9 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors"
         >
-          <Home className="w-5 h-5 text-white" />
+          <Home className="w-4 h-4 text-white" />
         </button>
         
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowUploadPanel(!showUploadPanel)}
-            className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
+            className={`w-9 h-9 rounded-lg transition-all flex items-center justify-center ${
               showUploadPanel ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50' : 'bg-white/10 text-white'
             }`}
           >
@@ -495,7 +495,7 @@ export default function ImageHistoryPage() {
           </button>
           <button
             onClick={() => setShowControlPanel(!showControlPanel)}
-            className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
+            className={`w-9 h-9 rounded-lg transition-all flex items-center justify-center ${
               showControlPanel ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50' : 'bg-white/10 text-white'
             }`}
           >
@@ -601,28 +601,30 @@ export default function ImageHistoryPage() {
       </div>
 
       {/* CENTER CANVAS */}
-      <div className="flex flex-col items-center justify-center p-4 lg:p-8 relative overflow-y-auto">
+      <div className="flex flex-col items-center justify-start p-2 lg:p-8 relative overflow-y-auto flex-1">
         <div className="w-full max-w-6xl">
-          {/* Responsive Grid: 2 cols on mobile, 5 on desktop */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 lg:gap-4">
+          {/* Responsive Grid: 3 cols on mobile, 5 on desktop */}
+          <div className="grid grid-cols-3 lg:grid-cols-5 gap-1.5 lg:gap-4">
             {generatedImages.map((img, idx) => (
-              <div key={`gen-${idx}`} className="relative bg-zinc-900/50 rounded-xl overflow-hidden border-2 border-zinc-700/50 aspect-square group cursor-pointer" onClick={() => img && setViewingImage(img)}>
+              <div key={`gen-${idx}`} className="relative bg-zinc-900/50 rounded-lg overflow-hidden border border-zinc-700/50 aspect-square group cursor-pointer" onClick={() => img && setViewingImage(img)}>
                 {img ? (
                   <>
-                    <img src={img} alt={`Generated ${idx + 1}`} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
-                      <span className="text-white text-xs font-semibold">Click to view</span>
+                    <img src={img} alt={`Generated ${idx + 1}`} className="w-full h-full object-cover" />
+                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1">
+                      <span className="text-white text-[8px] font-semibold">{idx + 1}</span>
                     </div>
                   </>
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center">
                     {isGenerating && idx <= Math.floor((progress / 100) * 10) ? (
                       <>
-                        <Loader2 className="w-8 h-8 text-purple-500 animate-spin mb-2" />
-                        <p className="text-zinc-600 text-xs">Gen {idx + 1}</p>
+                        <Loader2 className="w-5 h-5 lg:w-8 lg:h-8 text-purple-500 animate-spin" />
+                        <p className="text-zinc-600 text-[8px] lg:text-xs mt-1">{idx + 1}</p>
                       </>
                     ) : (
-                      <div className="w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-30" />
+                      <div className="w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20 flex items-center justify-center">
+                        <span className="text-zinc-700 text-[10px] font-mono">{idx + 1}</span>
+                      </div>
                     )}
                   </div>
                 )}
@@ -733,98 +735,100 @@ export default function ImageHistoryPage() {
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            className="lg:hidden fixed inset-x-0 bottom-0 z-[100] bg-zinc-950 border-t-2 border-zinc-700 rounded-t-3xl shadow-2xl max-h-[85vh] overflow-y-auto"
+            className="lg:hidden fixed inset-x-0 bottom-0 z-[100] bg-zinc-950 border-t-2 border-purple-500/30 rounded-t-2xl shadow-2xl max-h-[70vh] overflow-y-auto"
           >
-            <div className="sticky top-0 bg-zinc-950 border-b border-zinc-800 p-4 flex items-center justify-between z-10">
-              <h3 className="text-white font-bold">Upload Images</h3>
+            <div className="sticky top-0 bg-zinc-950 border-b border-zinc-800 px-4 py-3 flex items-center justify-between z-10">
+              <h3 className="text-white font-bold text-sm">Upload Images</h3>
               <button
                 onClick={() => setShowUploadPanel(false)}
-                className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors"
+                className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors"
               >
-                <X className="w-5 h-5 text-white" />
+                <X className="w-4 h-4 text-white" />
               </button>
             </div>
             
-            <div className="p-4 space-y-6 pb-8">
-              <div>
-                <div className="text-white text-sm font-bold tracking-wider mb-3">SUBJECT</div>
-                <label className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-xl overflow-hidden cursor-pointer hover:border-zinc-600 active:scale-95 transition-all block aspect-square">
-                  <input type="file" accept="image/*" onChange={handleSubjectUpload} className="hidden" disabled={uploadingSubject} />
-                  {subjectImage ? (
-                    <>
-                      <img src={subjectImage} alt="Subject" className="w-full h-full object-cover" />
-                      <button
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSubjectImage(null); }}
-                        className="absolute top-2 right-2 w-8 h-8 bg-black/80 rounded-lg flex items-center justify-center"
-                      >
-                        <X className="w-4 h-4 text-white" />
-                      </button>
-                    </>
-                  ) : uploadingSubject ? (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Loader2 className="w-10 h-10 text-purple-500 animate-spin" />
-                    </div>
-                  ) : (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                      <Upload className="w-10 h-10 text-zinc-600" />
-                      <span className="text-zinc-500 text-sm font-medium">Tap to add Character</span>
-                    </div>
-                  )}
-                </label>
-              </div>
+            <div className="p-3 space-y-3 pb-6">
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <div className="text-white text-[10px] font-bold tracking-wider mb-2 uppercase">Subject</div>
+                  <label className="relative bg-zinc-900 border border-dashed border-zinc-700 rounded-lg overflow-hidden cursor-pointer active:scale-95 transition-all block aspect-square">
+                    <input type="file" accept="image/*" onChange={handleSubjectUpload} className="hidden" disabled={uploadingSubject} />
+                    {subjectImage ? (
+                      <>
+                        <img src={subjectImage} alt="Subject" className="w-full h-full object-cover" />
+                        <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSubjectImage(null); }}
+                          className="absolute top-1 right-1 w-5 h-5 bg-black/90 rounded flex items-center justify-center"
+                        >
+                          <X className="w-3 h-3 text-white" />
+                        </button>
+                      </>
+                    ) : uploadingSubject ? (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 text-purple-500 animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+                        <Upload className="w-5 h-5 text-zinc-600" />
+                        <span className="text-zinc-600 text-[8px]">Char</span>
+                      </div>
+                    )}
+                  </label>
+                </div>
 
-              <div>
-                <div className="text-white text-sm font-bold tracking-wider mb-3">STYLE</div>
-                <label className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-xl overflow-hidden cursor-pointer hover:border-zinc-600 active:scale-95 transition-all block aspect-square">
-                  <input type="file" accept="image/*" onChange={handleStyleUpload} className="hidden" disabled={uploadingStyle} />
-                  {styleImage ? (
-                    <>
-                      <img src={styleImage} alt="Style" className="w-full h-full object-cover" />
-                      <button
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setStyleImage(null); }}
-                        className="absolute top-2 right-2 w-8 h-8 bg-black/80 rounded-lg flex items-center justify-center"
-                      >
-                        <X className="w-4 h-4 text-white" />
-                      </button>
-                    </>
-                  ) : uploadingStyle ? (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Loader2 className="w-10 h-10 text-purple-500 animate-spin" />
-                    </div>
-                  ) : (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                      <Upload className="w-10 h-10 text-zinc-600" />
-                      <span className="text-zinc-500 text-sm font-medium">Tap to add UI/Style</span>
-                    </div>
-                  )}
-                </label>
-              </div>
+                <div>
+                  <div className="text-white text-[10px] font-bold tracking-wider mb-2 uppercase">Style</div>
+                  <label className="relative bg-zinc-900 border border-dashed border-zinc-700 rounded-lg overflow-hidden cursor-pointer active:scale-95 transition-all block aspect-square">
+                    <input type="file" accept="image/*" onChange={handleStyleUpload} className="hidden" disabled={uploadingStyle} />
+                    {styleImage ? (
+                      <>
+                        <img src={styleImage} alt="Style" className="w-full h-full object-cover" />
+                        <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setStyleImage(null); }}
+                          className="absolute top-1 right-1 w-5 h-5 bg-black/90 rounded flex items-center justify-center"
+                        >
+                          <X className="w-3 h-3 text-white" />
+                        </button>
+                      </>
+                    ) : uploadingStyle ? (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 text-purple-500 animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+                        <Upload className="w-5 h-5 text-zinc-600" />
+                        <span className="text-zinc-600 text-[8px]">UI</span>
+                      </div>
+                    )}
+                  </label>
+                </div>
 
-              <div>
-                <div className="text-white text-sm font-bold tracking-wider mb-3">SCENE</div>
-                <label className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-xl overflow-hidden cursor-pointer hover:border-zinc-600 active:scale-95 transition-all block aspect-square">
-                  <input type="file" accept="image/*" onChange={handleSceneUpload} className="hidden" disabled={uploadingScene} />
-                  {sceneImage ? (
-                    <>
-                      <img src={sceneImage} alt="Scene" className="w-full h-full object-cover" />
-                      <button
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSceneImage(null); }}
-                        className="absolute top-2 right-2 w-8 h-8 bg-black/80 rounded-lg flex items-center justify-center"
-                      >
-                        <X className="w-4 h-4 text-white" />
-                      </button>
-                    </>
-                  ) : uploadingScene ? (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Loader2 className="w-10 h-10 text-purple-500 animate-spin" />
-                    </div>
-                  ) : (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                      <Upload className="w-10 h-10 text-zinc-600" />
-                      <span className="text-zinc-500 text-sm font-medium">Tap to add Background</span>
-                    </div>
-                  )}
-                </label>
+                <div>
+                  <div className="text-white text-[10px] font-bold tracking-wider mb-2 uppercase">Scene</div>
+                  <label className="relative bg-zinc-900 border border-dashed border-zinc-700 rounded-lg overflow-hidden cursor-pointer active:scale-95 transition-all block aspect-square">
+                    <input type="file" accept="image/*" onChange={handleSceneUpload} className="hidden" disabled={uploadingScene} />
+                    {sceneImage ? (
+                      <>
+                        <img src={sceneImage} alt="Scene" className="w-full h-full object-cover" />
+                        <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSceneImage(null); }}
+                          className="absolute top-1 right-1 w-5 h-5 bg-black/90 rounded flex items-center justify-center"
+                        >
+                          <X className="w-3 h-3 text-white" />
+                        </button>
+                      </>
+                    ) : uploadingScene ? (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 text-purple-500 animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+                        <Upload className="w-5 h-5 text-zinc-600" />
+                        <span className="text-zinc-600 text-[8px]">BG</span>
+                      </div>
+                    )}
+                  </label>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -838,19 +842,19 @@ export default function ImageHistoryPage() {
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            className="lg:hidden fixed inset-x-0 bottom-0 z-[100] bg-[#121212] border-t-2 border-zinc-700 rounded-t-3xl shadow-2xl max-h-[85vh] overflow-y-auto"
+            className="lg:hidden fixed inset-x-0 bottom-0 z-[100] bg-[#121212] border-t-2 border-cyan-500/30 rounded-t-2xl shadow-2xl max-h-[70vh] overflow-y-auto"
           >
-            <div className="sticky top-0 bg-[#121212] border-b border-zinc-800 p-4 flex items-center justify-between z-10">
-              <h3 className="text-white font-bold">RMX Control</h3>
+            <div className="sticky top-0 bg-[#121212] border-b border-zinc-800 px-4 py-3 flex items-center justify-between z-10">
+              <h3 className="text-white font-bold text-sm">RMX Control</h3>
               <button
                 onClick={() => setShowControlPanel(false)}
-                className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors"
+                className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors"
               >
-                <X className="w-5 h-5 text-white" />
+                <X className="w-4 h-4 text-white" />
               </button>
             </div>
             
-            <div className="p-4 space-y-4 pb-8">
+            <div className="p-3 space-y-3 pb-6">
               <div className="flex gap-2">
                 <button 
                   onClick={() => setActiveTab('control')}
@@ -882,8 +886,8 @@ export default function ImageHistoryPage() {
                       setPrompt(e.target.value);
                       setRmxActivated(false);
                     }}
-                    placeholder="Describe your vision... RMX generates 10 angles"
-                    className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 min-h-[120px] text-sm"
+                    placeholder="Describe your vision..."
+                    className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 min-h-[80px] text-xs resize-none"
                     disabled={isGenerating}
                   />
                   
@@ -891,9 +895,9 @@ export default function ImageHistoryPage() {
                     <Button
                       onClick={handleRMXClick}
                       disabled={!prompt.trim()}
-                      className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-white font-semibold h-12 active:scale-95 transition-all"
+                      className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-white font-semibold h-10 active:scale-95 transition-all text-xs"
                     >
-                      <Sparkles className="w-5 h-5 mr-2" />
+                      <Sparkles className="w-4 h-4 mr-2" />
                       RMX
                     </Button>
                   )}
@@ -901,20 +905,20 @@ export default function ImageHistoryPage() {
                   {rmxActivated && !isGenerating && !showProjectOptions && (
                     <Button
                       onClick={handleStartGeneration}
-                      className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold h-12 active:scale-95 transition-all"
+                      className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold h-10 active:scale-95 transition-all text-xs"
                     >
-                      <Sparkles className="w-5 h-5 mr-2" />
-                      Start Generation
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Start
                     </Button>
                   )}
 
                   {isGenerating && (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-cyan-400 font-semibold">Generating {completedImages + 1}/10</span>
-                        <span className="text-zinc-400">{completedImages}/10</span>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-cyan-400 font-semibold">Gen {completedImages + 1}/10</span>
+                        <span className="text-zinc-500">{completedImages}/10</span>
                       </div>
-                      <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
+                      <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
                           style={{ width: `${(completedImages / 10) * 100}%` }}
@@ -922,10 +926,10 @@ export default function ImageHistoryPage() {
                       </div>
                       <Button
                         onClick={handleStop}
-                        className="w-full bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50 h-11 active:scale-95 transition-all"
+                        className="w-full bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50 h-9 active:scale-95 transition-all text-xs"
                       >
-                        <StopCircle className="w-5 h-5 mr-2" />
-                        Stop Generation
+                        <StopCircle className="w-4 h-4 mr-2" />
+                        Stop
                       </Button>
                     </div>
                   )}
@@ -935,23 +939,23 @@ export default function ImageHistoryPage() {
               {activeTab === 'projects' && (
                 <div className="space-y-2">
                   {Object.keys(projectGroups).length === 0 ? (
-                    <div className="text-center py-12">
-                      <History className="w-12 h-12 text-zinc-700 mx-auto mb-3" />
-                      <p className="text-zinc-500 text-sm">No projects yet</p>
+                    <div className="text-center py-8">
+                      <History className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
+                      <p className="text-zinc-500 text-xs">No projects</p>
                     </div>
                   ) : (
                     Object.entries(projectGroups).map(([projId, entries]) => (
                       <div key={projId} className="bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800">
                         <button
                           onClick={() => toggleProject(projId)}
-                          className="w-full px-4 py-3 flex items-center justify-between hover:bg-zinc-800 active:bg-zinc-700 transition-colors"
+                          className="w-full px-3 py-2 flex items-center justify-between hover:bg-zinc-800 active:bg-zinc-700 transition-colors"
                         >
                           <div className="text-left">
-                            <p className="text-white text-sm font-semibold">Project {projId.substring(0, 16)}...</p>
-                            <p className="text-zinc-400 text-xs">{entries.length} images generated</p>
+                            <p className="text-white text-xs font-semibold">{projId.substring(0, 12)}...</p>
+                            <p className="text-zinc-500 text-[10px]">{entries.length} imgs</p>
                           </div>
                           <svg
-                            className={`w-5 h-5 text-zinc-500 transition-transform ${expandedProjects[projId] ? 'rotate-180' : ''}`}
+                            className={`w-4 h-4 text-zinc-500 transition-transform ${expandedProjects[projId] ? 'rotate-180' : ''}`}
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -961,15 +965,15 @@ export default function ImageHistoryPage() {
                         </button>
                         
                         {expandedProjects[projId] && (
-                          <div className="p-3 border-t border-zinc-800 space-y-3">
-                            <div className="grid grid-cols-3 gap-2">
+                          <div className="p-2 border-t border-zinc-800">
+                            <div className="grid grid-cols-4 gap-1">
                               {entries.map((entry, idx) => (
                                 entry.result_image && (
                                   <img
                                     key={entry.id}
                                     src={entry.result_image}
-                                    alt={`Result ${idx + 1}`}
-                                    className="w-full aspect-square object-cover rounded-lg cursor-pointer hover:opacity-80 active:scale-95 transition-all"
+                                    alt={`${idx + 1}`}
+                                    className="w-full aspect-square object-cover rounded cursor-pointer hover:opacity-80 active:scale-95 transition-all"
                                     onClick={() => setViewingImage(entry.result_image)}
                                   />
                                 )
