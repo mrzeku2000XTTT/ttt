@@ -729,6 +729,63 @@ export default function ImageHistoryPage() {
             </div>
           </div>
 
+          {/* Instruction Input - Mobile */}
+          <div className="lg:hidden mt-3 space-y-2">
+            <Textarea
+              value={prompt}
+              onChange={(e) => {
+                setPrompt(e.target.value);
+                setRmxActivated(false);
+              }}
+              placeholder="Describe your vision..."
+              className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 min-h-[60px] text-xs resize-none"
+              disabled={isGenerating}
+            />
+            
+            {!rmxActivated && !isGenerating && (
+              <Button
+                onClick={handleRMXClick}
+                disabled={!prompt.trim()}
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold h-10 active:scale-95 transition-all text-xs"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                RMX
+              </Button>
+            )}
+
+            {rmxActivated && !isGenerating && !showProjectOptions && (
+              <Button
+                onClick={handleStartGeneration}
+                className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold h-10 active:scale-95 transition-all text-xs"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Start Generation
+              </Button>
+            )}
+
+            {isGenerating && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-cyan-400 font-semibold">Gen {completedImages + 1}/10</span>
+                  <span className="text-zinc-500">{completedImages}/10</span>
+                </div>
+                <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
+                    style={{ width: `${(completedImages / 10) * 100}%` }}
+                  />
+                </div>
+                <Button
+                  onClick={handleStop}
+                  className="w-full bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50 h-9 active:scale-95 transition-all text-xs"
+                >
+                  <StopCircle className="w-4 h-4 mr-2" />
+                  Stop
+                </Button>
+              </div>
+            )}
+          </div>
+
           {/* Image Viewer Modal */}
           {viewingImage && (
             <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-8" onClick={() => setViewingImage(null)}>
