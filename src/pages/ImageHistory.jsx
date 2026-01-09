@@ -908,8 +908,8 @@ export default function ImageHistoryPage() {
             <motion.div
               drag="y"
               dragControls={dragControls}
-              dragConstraints={{ top: -200, bottom: 0 }}
-              dragElastic={0.1}
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={0.2}
               initial={{ y: '100%' }}
               animate={{ y: panelY }}
               exit={{ y: '100%' }}
@@ -920,8 +920,12 @@ export default function ImageHistoryPage() {
                   setPanelY(0);
                 }
               }}
-              className="lg:hidden fixed inset-x-0 bottom-0 z-[100] bg-[#121212] border-t-2 border-cyan-500/30 rounded-t-2xl shadow-2xl max-h-[70vh]"
-              style={{ touchAction: 'none' }}
+              className="lg:hidden fixed inset-x-0 bottom-0 z-[100] bg-[#121212] border-t-2 border-cyan-500/30 rounded-t-2xl shadow-2xl"
+              style={{ 
+                touchAction: 'none',
+                maxHeight: 'calc(100vh - 60px)',
+                top: '60px'
+              }}
             >
             <div 
               className="sticky top-0 bg-[#121212] border-b border-zinc-800 px-4 py-3 flex items-center justify-between z-10 cursor-grab active:cursor-grabbing"
