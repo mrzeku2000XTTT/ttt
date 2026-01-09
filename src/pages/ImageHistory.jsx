@@ -206,8 +206,8 @@ export default function ImageHistoryPage() {
 
   return (
     <div className="h-screen bg-[#0a0a0a] overflow-hidden grid" style={{ gridTemplateColumns: '64px 1fr 400px' }}>
-      {/* LEFT SIDEBAR - Yellow Icon-Only */}
-      <div className="bg-gradient-to-b from-yellow-500 to-orange-500 flex flex-col items-center py-6 gap-6">
+      {/* LEFT SIDEBAR - Dark Icon-Only */}
+      <div className="bg-zinc-950 border-r border-zinc-800 flex flex-col items-center py-6 gap-6">
         <button
           onClick={() => navigate(createPageUrl('Feed'))}
           className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors"
@@ -399,9 +399,9 @@ export default function ImageHistoryPage() {
                   <Button
                     onClick={handleRMXClick}
                     disabled={!prompt.trim()}
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold text-lg h-12"
+                    className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-white font-semibold h-12"
                   >
-                    <Sparkles className="w-5 h-5 mr-2" />
+                    <Sparkles className="w-4 h-4 mr-2" />
                     RMX
                   </Button>
                 )}
@@ -483,12 +483,12 @@ export default function ImageHistoryPage() {
               )}
 
               {/* Important Notes */}
-              <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
+              <div className="bg-black border border-zinc-800 rounded-lg p-4">
                 <div className="flex gap-2">
-                  <Info className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
+                  <Info className="w-5 h-5 text-zinc-400 flex-shrink-0 mt-0.5" />
                   <div className="space-y-2">
-                    <h4 className="text-purple-400 font-semibold text-sm">RMX ULTRA Features:</h4>
-                    <ul className="text-purple-200/80 text-xs space-y-1 list-disc pl-4">
+                    <h4 className="text-zinc-300 font-semibold text-sm">RMX ULTRA Features:</h4>
+                    <ul className="text-zinc-400 text-xs space-y-1 list-disc pl-4">
                       <li>Generates 10 high-quality images per request</li>
                       <li>Automatic angle and composition variations</li>
                       <li>Professional photography perspectives</li>
