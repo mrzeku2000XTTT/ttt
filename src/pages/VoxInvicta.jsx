@@ -18,14 +18,15 @@ export default function VoxInvictaPage() {
   const audioRef = React.useRef(null);
 
   const voices = [
-    { id: 1, name: "Kaspa - Genesis Voice", category: "Professional", description: "Deep, authoritative, commanding presence", icon: "👑", elevenLabsId: "EXAVITQu4vr4xnSDxMaL" },
-    { id: 2, name: "Satoshi - Mysterious Oracle", category: "Professional", description: "Calm, wise, philosophical tone", icon: "🧙", elevenLabsId: "pNInz6obpgDQGcFmaJgB" },
-    { id: 3, name: "Vitalik - Tech Visionary", category: "Professional", description: "Intellectual, analytical, forward-thinking", icon: "🤖", elevenLabsId: "TxGEqnHWrfWFTfGW9XjX" },
-    { id: 4, name: "Nakamoto - Shadow Architect", category: "Professional", description: "Enigmatic, calculated, strategic", icon: "🕵️", elevenLabsId: "21m00Tcm4TlvDq8ikWAM" },
-    { id: 5, name: "Luna - Crypto Queen", category: "Professional", description: "Confident, dynamic, charismatic", icon: "👸", elevenLabsId: "XB0fDUnXU5powFXDhCwa" },
-    { id: 6, name: "Echo - Digital Spirit", category: "Creative", description: "Ethereal, haunting, mysterious", icon: "👻", elevenLabsId: "jBpfuIE2acCO8z3wKNLl" },
-    { id: 7, name: "Cipher - Code Whisperer", category: "Creative", description: "Technical, precise, methodical", icon: "🔐", elevenLabsId: "Zlb1dXrM653N07WRdFW3" },
-    { id: 8, name: "Nova - Star Trader", category: "Creative", description: "Energetic, optimistic, inspiring", icon: "⭐", elevenLabsId: "pqHfZKP75CvOlQylNhV4" },
+    { id: 1, name: "Rachel - Professional", category: "Professional", description: "Clear, warm, and engaging narrator", icon: "👩", elevenLabsId: "21m00Tcm4TlvDq8ikWAM" },
+    { id: 2, name: "Adam - Deep Voice", category: "Professional", description: "Deep, authoritative, commanding presence", icon: "👑", elevenLabsId: "pNInz6obpgDQGcFmaJgB" },
+    { id: 3, name: "Josh - Young Male", category: "Professional", description: "Intellectual, analytical, forward-thinking", icon: "🤖", elevenLabsId: "TxGEqnHWrfWFTfGW9XjX" },
+    { id: 4, name: "Antoni - Calm Narrator", category: "Professional", description: "Calm, wise, philosophical tone", icon: "🧙", elevenLabsId: "ErXwobaYiN019PkySvjV" },
+    { id: 5, name: "Bella - Soft Female", category: "Professional", description: "Confident, dynamic, charismatic", icon: "👸", elevenLabsId: "EXAVITQu4vr4xnSDxMaL" },
+    { id: 6, name: "Elli - Energetic", category: "Creative", description: "Energetic, optimistic, inspiring", icon: "⭐", elevenLabsId: "MF3mGyEYCl7XYWbV9V6O" },
+    { id: 7, name: "Arnold - Strong", category: "Creative", description: "Technical, precise, methodical", icon: "🔐", elevenLabsId: "VR6AewLTigWG4xSOukaG" },
+    { id: 8, name: "Sam - Raspy Male", category: "Creative", description: "Ethereal, haunting, mysterious", icon: "👻", elevenLabsId: "yoZ06aMxZJJ28mfd3POQ" },
+    { id: 9, name: "Domi - Commanding", category: "Creative", description: "Bold, assertive, powerful delivery", icon: "💪", elevenLabsId: "AZnzlk1XvdvUeBnXmlld" },
   ];
 
   const filteredVoices = searchVoice
