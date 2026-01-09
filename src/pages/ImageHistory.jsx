@@ -472,9 +472,46 @@ export default function ImageHistoryPage() {
   }, {});
 
   return (
-    <div className="h-screen bg-[#0a0a0a] overflow-hidden grid" style={{ gridTemplateColumns: '120px 1fr 400px' }}>
-      {/* LEFT SIDEBAR - Dark with Upload Sections */}
-      <div className="bg-zinc-950 border-r border-zinc-800 flex flex-col py-6 px-3 gap-4 overflow-y-auto">
+    <div className="h-screen bg-[#0a0a0a] overflow-hidden flex flex-col lg:grid" style={{ gridTemplateColumns: 'auto' }}>
+      <style jsx>{`
+        @media (min-width: 1024px) {
+          .main-container {
+            grid-template-columns: 120px 1fr 400px !important;
+          }
+        }
+      `}</style>
+
+      {/* Mobile Top Bar */}
+      <div className="lg:hidden bg-zinc-950 border-b border-zinc-800 p-3 flex items-center justify-between sticky top-0 z-50">
+        <button
+          onClick={() => navigate(createPageUrl('Feed'))}
+          className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors"
+        >
+          <Home className="w-5 h-5 text-white" />
+        </button>
+        
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowUploadPanel(!showUploadPanel)}
+            className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
+              showUploadPanel ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50' : 'bg-white/10 text-white'
+            }`}
+          >
+            <Upload className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setShowControlPanel(!showControlPanel)}
+            className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
+              showControlPanel ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50' : 'bg-white/10 text-white'
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* LEFT SIDEBAR - Desktop Only */}
+      <div className="hidden lg:flex bg-zinc-950 border-r border-zinc-800 flex-col py-6 px-3 gap-4 overflow-y-auto">
         <button
           onClick={() => navigate(createPageUrl('Feed'))}
           className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors mx-auto"
@@ -569,11 +606,11 @@ export default function ImageHistoryPage() {
         </button>
       </div>
 
-      {/* CENTER CANVAS - 2x2 Grid */}
-      <div className="flex flex-col items-center justify-center p-8 relative">
+      {/* CENTER CANVAS */}
+      <div className="flex flex-col items-center justify-center p-4 lg:p-8 relative overflow-y-auto">
         <div className="w-full max-w-6xl">
-          {/* 5x2 Grid for 10 images */}
-          <div className="grid grid-cols-5 gap-4">
+          {/* Responsive Grid: 2 cols on mobile, 5 on desktop */}
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 lg:gap-4">
             {generatedImages.map((img, idx) => (
               <div key={`gen-${idx}`} className="relative bg-zinc-900/50 rounded-xl overflow-hidden border-2 border-zinc-700/50 aspect-square group cursor-pointer" onClick={() => img && setViewingImage(img)}>
                 {img ? (
@@ -615,8 +652,8 @@ export default function ImageHistoryPage() {
             </div>
           )}
 
-          {/* Reference Images Row */}
-          <div className="grid grid-cols-2 gap-4 mt-6">
+          {/* Reference Images Row - Hidden on mobile, shown in upload panel */}
+          <div className="hidden lg:grid grid-cols-2 gap-4 mt-6">
             {referenceImages.map((img, idx) => (
               <div key={`ref-${idx}`} className="relative bg-zinc-900/50 rounded-xl overflow-hidden border-2 border-dashed border-zinc-700/50 hover:border-zinc-600/50 transition-colors h-32">
                 {img ? (
@@ -644,8 +681,8 @@ export default function ImageHistoryPage() {
             ))}
           </div>
 
-          {/* Chat Input Below References */}
-          <div className="mt-4 bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+          {/* Chat Input - Adjusted for mobile */}
+          <div className="hidden lg:block mt-4 bg-zinc-950 border border-zinc-800 rounded-xl p-4">
             <Textarea
               value={chatMessage}
               onChange={(e) => setChatMessage(e.target.value)}
@@ -695,8 +732,122 @@ export default function ImageHistoryPage() {
 
       </div>
 
-      {/* RIGHT CONTROL PANEL - Dark Theme */}
-      <div className="bg-[#121212] border-l border-zinc-800 overflow-y-auto">
+      {/* Mobile Control Panel */}
+      {showControlPanel && (
+        <motion.div
+          initial={{ y: '100%' }}
+          animate={{ y: 0 }}
+          exit={{ y: '100%' }}
+          className="lg:hidden fixed inset-x-0 bottom-0 z-[100] bg-[#121212] border-t border-zinc-800 rounded-t-3xl shadow-2xl max-h-[80vh] overflow-y-auto"
+        >
+          <div className="sticky top-0 bg-[#121212] border-b border-zinc-800 p-4 flex items-center justify-between">
+            <h3 className="text-white font-bold">RMX Control</h3>
+            <button
+              onClick={() => setShowControlPanel(false)}
+              className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center"
+            >
+              <X className="w-5 h-5 text-white" />
+            </button>
+          </div>
+          
+          <div className="p-4 space-y-4">
+            {/* Tabs */}
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setActiveTab('control')}
+                className={`flex-1 px-3 py-2 rounded-lg font-semibold text-xs transition-all ${
+                  activeTab === 'control'
+                    ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50'
+                    : 'bg-zinc-800 text-zinc-500'
+                }`}
+              >
+                Control
+              </button>
+              <button 
+                onClick={() => setActiveTab('projects')}
+                className={`flex-1 px-3 py-2 rounded-lg font-semibold text-xs transition-all ${
+                  activeTab === 'projects'
+                    ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50'
+                    : 'bg-zinc-800 text-zinc-500'
+                }`}
+              >
+                Projects
+              </button>
+            </div>
+
+            {/* Prompt Input */}
+            {activeTab === 'control' && (
+              <>
+                <Textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Describe your vision..."
+                  className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 min-h-[100px]"
+                  disabled={isGenerating}
+                />
+                
+                {!rmxActivated && !isGenerating && (
+                  <Button
+                    onClick={handleRMXClick}
+                    disabled={!prompt.trim()}
+                    className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-white font-semibold h-12"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    RMX
+                  </Button>
+                )}
+
+                {isGenerating && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-cyan-400">Gen {completedImages + 1}/10</span>
+                      <span className="text-zinc-500">{completedImages}/10</span>
+                    </div>
+                    <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
+                        style={{ width: `${(completedImages / 10) * 100}%` }}
+                      />
+                    </div>
+                    <Button
+                      onClick={handleStop}
+                      className="w-full bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50"
+                    >
+                      <StopCircle className="w-4 h-4 mr-2" />
+                      Stop
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+
+            {activeTab === 'projects' && (
+              <div className="space-y-2">
+                {Object.keys(projectGroups).length === 0 ? (
+                  <p className="text-zinc-500 text-xs text-center py-8">No projects yet</p>
+                ) : (
+                  Object.entries(projectGroups).map(([projId, entries]) => (
+                    <div key={projId} className="bg-zinc-900 rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => toggleProject(projId)}
+                        className="w-full px-3 py-2 flex items-center justify-between hover:bg-zinc-800 transition-colors"
+                      >
+                        <div className="text-left">
+                          <p className="text-white text-xs font-semibold">Project {projId}</p>
+                          <p className="text-zinc-500 text-[10px]">{entries.length} images</p>
+                        </div>
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
+
+      {/* RIGHT CONTROL PANEL - Desktop Only */}
+      <div className="hidden lg:block bg-[#121212] border-l border-zinc-800 overflow-y-auto">
         <div className="p-6 space-y-6">
           {/* Header */}
           <div className="flex items-center gap-3">
