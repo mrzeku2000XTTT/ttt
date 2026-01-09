@@ -894,24 +894,35 @@ export default function ImageHistoryPage() {
       {/* Mobile Control Panel */}
       <AnimatePresence>
         {showControlPanel && (
-          <motion.div
-            drag="y"
-            dragControls={dragControls}
-            dragConstraints={{ top: -200, bottom: 0 }}
-            dragElastic={0.1}
-            initial={{ y: '100%' }}
-            animate={{ y: panelY }}
-            exit={{ y: '100%' }}
-            onDragEnd={(e, info) => {
-              if (info.offset.y > 150) {
-                setShowControlPanel(false);
-              } else {
-                setPanelY(0);
-              }
-            }}
-            className="lg:hidden fixed inset-x-0 bottom-0 z-[100] bg-[#121212] border-t-2 border-cyan-500/30 rounded-t-2xl shadow-2xl max-h-[70vh]"
-            style={{ touchAction: 'none' }}
-          >
+          <>
+            {/* Backdrop Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowControlPanel(false)}
+              className="lg:hidden fixed inset-0 bg-black/60 z-[99]"
+            />
+            
+            {/* Control Panel */}
+            <motion.div
+              drag="y"
+              dragControls={dragControls}
+              dragConstraints={{ top: -200, bottom: 0 }}
+              dragElastic={0.1}
+              initial={{ y: '100%' }}
+              animate={{ y: panelY }}
+              exit={{ y: '100%' }}
+              onDragEnd={(e, info) => {
+                if (info.offset.y > 150) {
+                  setShowControlPanel(false);
+                } else {
+                  setPanelY(0);
+                }
+              }}
+              className="lg:hidden fixed inset-x-0 bottom-0 z-[100] bg-[#121212] border-t-2 border-cyan-500/30 rounded-t-2xl shadow-2xl max-h-[70vh]"
+              style={{ touchAction: 'none' }}
+            >
             <div 
               className="sticky top-0 bg-[#121212] border-b border-zinc-800 px-4 py-3 flex items-center justify-between z-10 cursor-grab active:cursor-grabbing"
               onPointerDown={(e) => dragControls.start(e)}
@@ -1184,6 +1195,7 @@ export default function ImageHistoryPage() {
             </div>
             </div>
           </motion.div>
+          </>
         )}
       </AnimatePresence>
 
