@@ -116,6 +116,12 @@ export default function DAGFeedPage() {
           console.log('Kasware not connected');
         }
       }
+      
+      // Check for manual L0 address
+      const manualL0Address = localStorage.getItem('manual_kaspa_address');
+      if (manualL0Address && !currentWalletAddress) {
+        currentWalletAddress = manualL0Address;
+      }
 
       const allPosts = await base44.entities.DAGPost.list('-created_date', 200);
 
@@ -279,12 +285,16 @@ export default function DAGFeedPage() {
     }
 
     let walletAddress = '';
+    const manualL0 = localStorage.getItem('manual_kaspa_address');
+    
     if (kaswareWallet.connected) {
       walletAddress = kaswareWallet.address;
     } else if (user?.created_wallet_address) {
       walletAddress = user.created_wallet_address;
+    } else if (manualL0) {
+      walletAddress = manualL0;
     } else {
-      setError('Please connect Kasware wallet to post');
+      setError('Please connect Kasware wallet or add L0 Kaspa address in Profile');
       return;
     }
 
@@ -557,10 +567,12 @@ export default function DAGFeedPage() {
   };
 
   const renderPost = (post) => {
-    // Check ownership by email, wallet address
+    // Check ownership by email, wallet address, or manual L0 address
+    const manualL0 = localStorage.getItem('manual_kaspa_address');
     const isMyPost = (user && post.created_by === user.email) || 
                      (kaswareWallet.connected && post.author_wallet_address === kaswareWallet.address) ||
-                     (user?.created_wallet_address && post.author_wallet_address === user.created_wallet_address);
+                     (user?.created_wallet_address && post.author_wallet_address === user.created_wallet_address) ||
+                     (manualL0 && post.author_wallet_address === manualL0);
 
     return (
       <Card className="backdrop-blur-xl bg-black border-white/10 hover:border-white/20 transition-all">
@@ -1131,22 +1143,31 @@ export default function DAGFeedPage() {
             </div>
             <p className="text-white/40 text-sm mb-4">Pay-to-Publish Feed • 1 KAS to unlock your post</p>
 
-            {!kaswareWallet.connected && (
+            {!kaswareWallet.connected && !localStorage.getItem('manual_kaspa_address') && (
               <Button
-                onClick={connectKasware}
+                onClick={() => navigate(createPageUrl('Profile'))}
                 size="sm"
-                className="bg-white/10 border border-white/20 text-white hover:bg-white/20"
+                className="bg-purple-500/20 border border-purple-500/30 text-purple-400 hover:bg-purple-500/30"
               >
-                <Sparkles className="w-4 h-4 mr-2" />
-                Connect Kasware to Post
+                <Wallet className="w-4 h-4 mr-2" />
+                Add L0 Address in Profile
               </Button>
             )}
 
             {kaswareWallet.connected && (
               <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-white/60" />
+                <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-[10px] mr-2">L1</Badge>
                 <span className="text-sm text-white/60 font-mono">
-                  {kaswareWallet.address.substring(0, 10)}... Connected
+                  {kaswareWallet.address.substring(0, 10)}...
+                </span>
+              </div>
+            )}
+            
+            {!kaswareWallet.connected && localStorage.getItem('manual_kaspa_address') && (
+              <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg px-4 py-2 flex items-center gap-2">
+                <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50 text-[10px] mr-2">L0</Badge>
+                <span className="text-sm text-white/60 font-mono">
+                  {localStorage.getItem('manual_kaspa_address').substring(0, 10)}...
                 </span>
               </div>
             )}
