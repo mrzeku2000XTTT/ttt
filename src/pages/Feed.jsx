@@ -118,7 +118,9 @@ export default function FeedPage() {
   const [showLayer01, setShowLayer01] = useState(false);
   const [showBoxingGame, setShowBoxingGame] = useState(false);
   const [boxingPost, setBoxingPost] = useState(null);
-  const [manualKaspaAddress, setManualKaspaAddress] = useState('');
+  const [manualKaspaAddress, setManualKaspaAddress] = useState(() => {
+    return localStorage.getItem('manual_kaspa_address') || '';
+  });
   const [showManualAddressInput, setShowManualAddressInput] = useState(false);
 
   const fileInputRef = useRef(null);
@@ -4357,13 +4359,13 @@ export default function FeedPage() {
               </motion.div>
             )}
 
-            {!kaswareWallet.connected && !user?.created_wallet_address && !localStorage.getItem('ttt_wallet_address') && (
+            {!kaswareWallet.connected && !user?.created_wallet_address && !localStorage.getItem('ttt_wallet_address') && !manualKaspaAddress && (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Button
                     onClick={connectKasware}
                     size="sm"
-                    className="bg-white/10 border border-white/20 text-white hover:bg-white/20"
+                    className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold"
                   >
                     <Sparkles className="w-4 h-4 mr-2" />
                     Connect Kasware
@@ -4372,11 +4374,10 @@ export default function FeedPage() {
                   <Button
                     onClick={() => setShowManualAddressInput(!showManualAddressInput)}
                     size="sm"
-                    variant="outline"
-                    className="border-white/20 text-white/80 hover:bg-white/10"
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold"
                   >
                     <Wallet className="w-4 h-4 mr-2" />
-                    Enter Manually
+                    Enter Address
                   </Button>
                 </div>
                 
@@ -4397,10 +4398,24 @@ export default function FeedPage() {
                           className="bg-white/5 border-white/10 text-white placeholder:text-white/30 font-mono text-sm"
                         />
                       </div>
+                      <Button
+                        onClick={() => {
+                          if (manualKaspaAddress.trim()) {
+                            localStorage.setItem('manual_kaspa_address', manualKaspaAddress.trim());
+                            setShowManualAddressInput(false);
+                          } else {
+                            setError('Please enter a valid Kaspa address');
+                          }
+                        }}
+                        disabled={!manualKaspaAddress.trim()}
+                        className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold"
+                      >
+                        Save Address
+                      </Button>
                       <div className="flex items-start gap-2 bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-3">
                         <AlertCircle className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
                         <p className="text-xs text-cyan-400">
-                          Enter your Kaspa wallet address to receive tips. You can post without connecting a wallet.
+                          This address will be saved and used for all your posts to receive tips. Click X to remove it later.
                         </p>
                       </div>
                     </motion.div>
@@ -4423,24 +4438,33 @@ export default function FeedPage() {
               </div>
             )}
             
-            {manualKaspaAddress.trim() && !kaswareWallet.connected && !user?.created_wallet_address && (
-              <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg px-4 py-2 flex items-center justify-between">
-                <div className="flex items-center gap-2 min-w-0">
-                  <Wallet className="w-4 h-4 text-cyan-400 flex-shrink-0" />
-                  <span className="text-sm text-cyan-400 font-mono truncate">
-                    {manualKaspaAddress.substring(0, 12)}...
-                  </span>
+            {manualKaspaAddress.trim() && !kaswareWallet.connected && !user?.created_wallet_address && !localStorage.getItem('ttt_wallet_address') && (
+              <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/40 rounded-lg px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 bg-cyan-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Wallet className="w-4 h-4 text-cyan-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs text-cyan-400/80 font-semibold">Connected Address</div>
+                    <div className="text-sm text-white font-mono truncate">
+                      {manualKaspaAddress.substring(0, 16)}...{manualKaspaAddress.substring(manualKaspaAddress.length - 6)}
+                    </div>
+                  </div>
                 </div>
                 <Button
                   onClick={() => {
-                    setManualKaspaAddress('');
-                    setShowManualAddressInput(false);
+                    if (confirm('Remove this Kaspa address? You will need to reconnect to post and receive tips.')) {
+                      setManualKaspaAddress('');
+                      localStorage.removeItem('manual_kaspa_address');
+                      setShowManualAddressInput(false);
+                    }
                   }}
                   variant="ghost"
                   size="sm"
-                  className="h-6 w-6 p-0 text-white/40 hover:text-white flex-shrink-0"
+                  className="h-7 w-7 p-0 text-red-400/60 hover:text-red-400 hover:bg-red-500/10 flex-shrink-0"
+                  title="Remove address"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-4 h-4" />
                 </Button>
               </div>
             )}
