@@ -1,17 +1,5 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    
-    // Try to authenticate, but allow wallet-only mode
-    let user = null;
-    try {
-      user = await base44.auth.me();
-    } catch (err) {
-      console.log('No user auth, allowing public access');
-    }
-
     const { text, voice_id = '21m00Tcm4TlvDq8ikWAM' } = await req.json();
 
     if (!text) {
