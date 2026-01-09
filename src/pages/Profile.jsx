@@ -752,6 +752,11 @@ Return ONLY the post text, no quotes or extra formatting.`,
                         transition={{ delay: 0.3 }}
                         className="mb-3"
                       >
+                        {editData.username && (
+                          <div className="text-2xl md:text-3xl font-bold text-white mb-3 tracking-tight">
+                            {editData.username}
+                          </div>
+                        )}
                         <div className="text-sm text-cyan-400 font-mono mb-2 tracking-widest uppercase">
                           Agent Identity
                         </div>
@@ -761,6 +766,14 @@ Return ONLY the post text, no quotes or extra formatting.`,
                             {agentZKId}
                           </div>
                         </div>
+                        {localStorage.getItem('manual_kaspa_address') && (
+                          <div className="mt-3 flex items-center justify-center gap-2">
+                            <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50 px-3 py-1">
+                              Layer 0 (L0)
+                            </Badge>
+                            <span className="text-xs text-purple-300">Decentralized Identity</span>
+                          </div>
+                        )}
                       </motion.div>
 
                       {/* Status Indicators */}
@@ -976,39 +989,76 @@ Return ONLY the post text, no quotes or extra formatting.`,
                       )}
                     </div>
 
-                    {isEditing && (
-                      <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4">
-                        <h3 className="text-cyan-400 font-semibold mb-2 flex items-center gap-2">
-                          <Wallet className="w-4 h-4" />
-                          {user?.created_wallet_address || localStorage.getItem('manual_kaspa_address') 
-                            ? 'Update Kaspa Address' 
-                            : 'Add Your Kaspa Address'}
-                        </h3>
-                        <p className="text-sm text-gray-400 mb-3">
-                          Enter your Kaspa wallet address to save your profile and receive tips.
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-2">
-                          <Input
-                            value={manualAddress}
-                            onChange={(e) => setManualAddress(e.target.value)}
-                            placeholder="kaspa:qz..."
-                            className="bg-white/5 border-white/20 text-white flex-1"
-                          />
-                          <Button
-                            onClick={handleAddManualAddress}
-                            className="bg-cyan-500 hover:bg-cyan-600 whitespace-nowrap"
-                          >
-                            {user?.created_wallet_address || localStorage.getItem('manual_kaspa_address') 
-                              ? 'Update Address' 
-                              : 'Add Address'}
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-
                     <div className="space-y-3">
                       <h3 className="text-sm text-gray-400">Connected Wallets</h3>
                       
+                      {/* L0 - Manual Kaspa Address */}
+                      {localStorage.getItem('manual_kaspa_address') ? (
+                        <div className="bg-gradient-to-r from-purple-500/20 to-cyan-500/20 border-2 border-purple-500/40 rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <div className="text-xs font-bold text-purple-400">Layer 0 (L0)</div>
+                              <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50 text-[10px]">
+                                Decentralized ID
+                              </Badge>
+                            </div>
+                            <Button
+                              onClick={() => {
+                                if (confirm('Remove L0 address? You will need to re-enter it to post on Feed, DAG Feed, and Bull Reels.')) {
+                                  localStorage.removeItem('manual_kaspa_address');
+                                  loadData();
+                                }
+                              }}
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-400/60 hover:text-red-400 hover:bg-red-500/10"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <div className="text-white font-mono text-sm break-all mb-2">{localStorage.getItem('manual_kaspa_address')}</div>
+                          <div className="flex items-center gap-2 text-xs text-purple-300">
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>Active on TTT Feed, DAG Feed, Bull Reels</span>
+                          </div>
+                        </div>
+                      ) : isEditing ? (
+                        <div className="bg-purple-500/10 border-2 border-dashed border-purple-500/30 rounded-lg p-4">
+                          <h3 className="text-purple-400 font-semibold mb-2 flex items-center gap-2">
+                            <Wallet className="w-4 h-4" />
+                            Add Kaspa Address for TTT Feed
+                          </h3>
+                          <p className="text-sm text-gray-400 mb-3">
+                            Layer 0 (L0) - Use your manual Kaspa address for Feed, DAG Feed, and Bull Reels. Get your decentralized ID without wallet extension.
+                          </p>
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <Input
+                              value={manualAddress}
+                              onChange={(e) => setManualAddress(e.target.value)}
+                              placeholder="kaspa:qz..."
+                              className="bg-white/5 border-white/20 text-white flex-1"
+                            />
+                            <Button
+                              onClick={handleAddManualAddress}
+                              className="bg-purple-500 hover:bg-purple-600 whitespace-nowrap"
+                            >
+                              Add L0 Address
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-purple-500/10 border border-dashed border-purple-500/30 rounded-lg p-4 text-center">
+                          <p className="text-sm text-purple-300 mb-2">No Layer 0 address added</p>
+                          <Button
+                            onClick={() => setIsEditing(true)}
+                            className="bg-purple-500 hover:bg-purple-600 text-white text-xs"
+                            size="sm"
+                          >
+                            Add L0 Address
+                          </Button>
+                        </div>
+                      )}
+
                       {user?.kasware_address && (
                         <div className="bg-white/5 border border-white/10 rounded-lg p-4">
                           <div className="flex items-center justify-between">
