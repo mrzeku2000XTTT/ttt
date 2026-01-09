@@ -302,17 +302,30 @@ export default function DAGFeedPage() {
     setError(null);
 
     try {
-      // Try to get username from WalletProfile if using L0
+      // Try to get username - prioritize User entity, then WalletProfile
       let authorName = user?.username;
       
       if (!authorName && manualL0) {
+        // First try User entity
         try {
-          const profiles = await base44.entities.WalletProfile.filter({ wallet_address: manualL0 });
-          if (profiles && profiles.length > 0 && profiles[0].username) {
-            authorName = profiles[0].username;
+          const currentUser = await base44.auth.me();
+          if (currentUser?.username) {
+            authorName = currentUser.username;
           }
         } catch (err) {
-          console.log('Could not fetch username from profile');
+          console.log('User not logged in');
+        }
+        
+        // Then try WalletProfile
+        if (!authorName) {
+          try {
+            const profiles = await base44.entities.WalletProfile.filter({ wallet_address: manualL0 });
+            if (profiles && profiles.length > 0 && profiles[0].username) {
+              authorName = profiles[0].username;
+            }
+          } catch (err) {
+            console.log('Could not fetch username from WalletProfile');
+          }
         }
       }
       
