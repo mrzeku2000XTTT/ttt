@@ -388,8 +388,26 @@ export default function ZekuAIPage() {
   const handleSend = async () => {
     if (!conversation?.id || (!input.trim() && !uploadedFiles.length) || isSending) return;
 
-    const messageContent = input.trim() || "Please analyze the attached image(s).";
+    let messageContent = input.trim() || "Please analyze the attached image(s).";
     const files = uploadedFiles.map(f => f.url);
+    
+    // Detect social media content and enhance prompt
+    const hasSocialMediaPattern = messageContent.match(/(@\w+|❤️|🔁|💬|👁️|Reply|Quote|\d+h ago|\d+m ago)/g);
+    const hasMultiplePosts = (messageContent.match(/(@\w+)/g) || []).length > 3;
+    
+    if (hasSocialMediaPattern && hasMultiplePosts) {
+      messageContent = `Please analyze these social media posts and organize them clearly:
+
+${messageContent}
+
+**Instructions:**
+1. **Group by Author**: Organize all posts by who wrote them
+2. **Summarize Each Post**: Write a simple 1-2 sentence summary of each post (explain like I'm 10 years old)
+3. **Key Topics**: Identify the main topics being discussed
+4. **Format Clearly**: Use headers and bullet points for easy reading
+
+Make it easy to understand - imagine explaining to someone who's never seen these posts before.`;
+    }
     
     setInput("");
     setUploadedFiles([]);
