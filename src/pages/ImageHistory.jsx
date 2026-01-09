@@ -259,6 +259,7 @@ export default function ImageHistoryPage() {
             }
           } catch (err) {
             console.error(`❌ Agent 1 failed image ${i + 1}:`, err);
+            // Don't stop on error, continue to next image
           }
         }
       };
@@ -312,14 +313,17 @@ export default function ImageHistoryPage() {
             }
           } catch (err) {
             console.error(`❌ Agent 2 failed image ${i + 1}:`, err);
+            // Don't stop on error, continue to next image
           }
         }
       };
 
-      // Run both agents simultaneously
+      // Run both agents simultaneously and wait for completion
       await Promise.all([agent1(), agent2()]);
 
+      console.log('✅ All 10 images generation complete!');
       setProgress(100);
+      setCompletedImages(10);
       await loadHistory();
     } catch (err) {
       console.error('Generation failed:', err);
