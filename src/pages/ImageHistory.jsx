@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, Sparkles, Loader2, Image as ImageIcon, Upload, History, Settings, Pause, StopCircle, Info, X } from "lucide-react";
+import { Home, Sparkles, Loader2, Image as ImageIcon, Upload, History, Settings, Pause, StopCircle, Info, X, Share2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -40,7 +40,40 @@ export default function ImageHistoryPage() {
   useEffect(() => {
     loadHistory();
     checkAuth();
+    loadWorkflowState();
   }, []);
+
+  useEffect(() => {
+    // Save workflow state to localStorage
+    const stateToSave = {
+      prompt,
+      generatedImages,
+      referenceImages,
+      subjectImage,
+      styleImage,
+      sceneImage,
+      projectId
+    };
+    localStorage.setItem('rmx_workflow_state', JSON.stringify(stateToSave));
+  }, [prompt, generatedImages, referenceImages, subjectImage, styleImage, sceneImage, projectId]);
+
+  const loadWorkflowState = () => {
+    try {
+      const saved = localStorage.getItem('rmx_workflow_state');
+      if (saved) {
+        const state = JSON.parse(saved);
+        setPrompt(state.prompt || "");
+        setGeneratedImages(state.generatedImages || [null, null, null, null, null, null, null, null, null, null]);
+        setReferenceImages(state.referenceImages || [null, null]);
+        setSubjectImage(state.subjectImage || null);
+        setStyleImage(state.styleImage || null);
+        setSceneImage(state.sceneImage || null);
+        setProjectId(state.projectId || null);
+      }
+    } catch (err) {
+      console.log('No saved workflow state');
+    }
+  };
 
   const checkAuth = async () => {
     try {
@@ -615,16 +648,36 @@ export default function ImageHistoryPage() {
 
           {/* Image Viewer Modal */}
           {viewingImage && (
-            <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-8" onClick={() => setViewingImage(null)}>
-              <div className="relative max-w-5xl max-h-full" onClick={(e) => e.stopPropagation()}>
+            <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 lg:p-8" onClick={() => setViewingImage(null)}>
+              <div className="relative max-w-5xl max-h-full w-full" onClick={(e) => e.stopPropagation()}>
                 <img src={viewingImage} alt="Full view" className="w-full h-full object-contain rounded-lg" />
-                <Button
-                  onClick={() => setViewingImage(null)}
-                  className="absolute top-4 right-4 bg-black/50 hover:bg-black/70"
-                  size="icon"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
+                <div className="absolute top-4 right-4 flex gap-2">
+                  <Button
+                    onClick={() => {
+                      const feedDraft = {
+                        content: prompt || "Created with RMX ULTRA AI Workflow",
+                        mediaFiles: [{
+                          url: viewingImage,
+                          type: 'image',
+                          name: 'rmx-generated.png'
+                        }]
+                      };
+                      localStorage.setItem('feed_draft', JSON.stringify(feedDraft));
+                      navigate(createPageUrl('Feed'));
+                    }}
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold"
+                  >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Push to Feed
+                  </Button>
+                  <Button
+                    onClick={() => setViewingImage(null)}
+                    className="bg-black/50 hover:bg-black/70"
+                    size="icon"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
               </div>
             </div>
           )}
