@@ -77,6 +77,7 @@ export default function AppStorePage() {
     { name: "OuTKasTT", icon: "Link2", path: "OuTKasTT", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/3d7232b1d_image.png" },
     { name: "Kasplore", icon: "Link2", path: "Kasplore", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/dbb497c6e_image.png", circular: true },
     { name: "OnChain POS", icon: "Link2", path: "OnChainPOS", category: "Finance", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/cf40407bc_image.png" },
+    { name: "Vox Invicta", icon: "Link2", path: "VoxInvicta", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/42e7376e4_image.png", circular: true },
     ];
 
   const getIconComponent = (iconName) => {

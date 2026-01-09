@@ -135,6 +135,7 @@ import NFTMint from './pages/NFTMint';
 import Olatomiwa from './pages/Olatomiwa';
 import OlatomiwaHub from './pages/OlatomiwaHub';
 import OliviaApps from './pages/OliviaApps';
+import OnChainPOS from './pages/OnChainPOS';
 import Oracle from './pages/Oracle';
 import OriginStory from './pages/OriginStory';
 import OuTKasTT from './pages/OuTKasTT';
@@ -206,7 +207,7 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import OnChainPOS from './pages/OnChainPOS';
+import VoxInvicta from './pages/VoxInvicta';
 import __Layout from './Layout.jsx';
 
 
@@ -348,6 +349,7 @@ export const PAGES = {
     "Olatomiwa": Olatomiwa,
     "OlatomiwaHub": OlatomiwaHub,
     "OliviaApps": OliviaApps,
+    "OnChainPOS": OnChainPOS,
     "Oracle": Oracle,
     "OriginStory": OriginStory,
     "OuTKasTT": OuTKasTT,
@@ -419,7 +421,7 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "OnChainPOS": OnChainPOS,
+    "VoxInvicta": VoxInvicta,
 }
 
 export const pagesConfig = {
