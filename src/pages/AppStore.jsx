@@ -75,6 +75,7 @@ export default function AppStorePage() {
     { name: "KasPlay", icon: "Link2", path: "KasPlay", category: "Games", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/17dc7c8d0_image.png", circular: true },
     { name: "ALPHA", icon: "Link2", path: "ALPHA", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a37146946_image.png" },
     { name: "OuTKasTT", icon: "Link2", path: "https://outkastt.base44.app", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/3d7232b1d_image.png", isExternal: true },
+    { name: "Kasplore", icon: "Link2", path: "https://www.kasplore.com", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/dbb497c6e_image.png", isExternal: true, circular: true },
     ];
 
   const getIconComponent = (iconName) => {
