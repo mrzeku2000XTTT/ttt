@@ -235,8 +235,11 @@ export default function ImageHistoryPage() {
                 return updated;
               });
               
-              setCompletedImages(prev => prev + 1);
-              setProgress(Math.round(((i + 1) / 10) * 100));
+              setCompletedImages(prev => {
+                const newCount = prev + 1;
+                console.log(`Progress: ${newCount}/10 images completed`);
+                return newCount;
+              });
               
               const entryData = {
                 user_prompt: prompt,
@@ -289,8 +292,11 @@ export default function ImageHistoryPage() {
                 return updated;
               });
               
-              setCompletedImages(prev => prev + 1);
-              setProgress(Math.round(((i + 1) / 10) * 100));
+              setCompletedImages(prev => {
+                const newCount = prev + 1;
+                console.log(`Progress: ${newCount}/10 images completed`);
+                return newCount;
+              });
               
               const entryData = {
                 user_prompt: prompt,
