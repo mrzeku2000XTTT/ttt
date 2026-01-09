@@ -53,12 +53,36 @@ export default function ImageHistoryPage() {
 
   const loadHistory = async () => {
     try {
-      const currentUser = await base44.auth.me();
-      const entries = await base44.entities.RemixAILearning.filter({}, '-created_date', 50);
-      setHistory(entries);
+      // Get wallet address
+      let walletAddress = null;
+      try {
+        const currentUser = await base44.auth.me();
+        walletAddress = currentUser?.created_wallet_address;
+      } catch (err) {
+        // Try Kasware for non-logged in users
+        if (typeof window.kasware !== 'undefined') {
+          const accounts = await window.kasware.getAccounts();
+          if (accounts && accounts.length > 0) {
+            walletAddress = accounts[0];
+          }
+        }
+      }
+
+      if (walletAddress) {
+        // Filter by wallet address to show only user's projects
+        const entries = await base44.entities.RemixAILearning.filter(
+          { wallet_address: walletAddress },
+          '-created_date',
+          100
+        );
+        setHistory(entries);
+      } else {
+        // Load from localStorage for guests
+        const localHistory = JSON.parse(localStorage.getItem('rmx_local_history') || '[]');
+        setHistory(localHistory);
+      }
     } catch (err) {
       console.error('Failed to load history, loading from localStorage:', err);
-      // Load from localStorage for non-authenticated users
       const localHistory = JSON.parse(localStorage.getItem('rmx_local_history') || '[]');
       setHistory(localHistory);
     } finally {
@@ -264,7 +288,24 @@ export default function ImageHistoryPage() {
                 return newCount;
               });
               
+              // Get wallet address for ownership tracking
+              let walletAddress = 'guest';
+              try {
+                if (user?.created_wallet_address) {
+                  walletAddress = user.created_wallet_address;
+                } else if (typeof window.kasware !== 'undefined') {
+                  const accounts = await window.kasware.getAccounts();
+                  if (accounts && accounts.length > 0) {
+                    walletAddress = accounts[0];
+                  }
+                }
+              } catch (err) {
+                console.log('Could not get wallet');
+              }
+
               const entryData = {
+                wallet_address: walletAddress,
+                project_id: projectId,
                 user_prompt: prompt,
                 detailed_prompt: enhancedPrompt,
                 reference_images: imageUrls,
@@ -321,7 +362,24 @@ export default function ImageHistoryPage() {
                 return newCount;
               });
               
+              // Get wallet address for ownership tracking
+              let walletAddress = 'guest';
+              try {
+                if (user?.created_wallet_address) {
+                  walletAddress = user.created_wallet_address;
+                } else if (typeof window.kasware !== 'undefined') {
+                  const accounts = await window.kasware.getAccounts();
+                  if (accounts && accounts.length > 0) {
+                    walletAddress = accounts[0];
+                  }
+                }
+              } catch (err) {
+                console.log('Could not get wallet');
+              }
+
               const entryData = {
+                wallet_address: walletAddress,
+                project_id: projectId,
                 user_prompt: prompt,
                 detailed_prompt: enhancedPrompt,
                 reference_images: imageUrls,
@@ -405,7 +463,7 @@ export default function ImageHistoryPage() {
 
   // Group history by project ID
   const projectGroups = history.reduce((acc, entry) => {
-    const id = entry.user_prompt?.match(/\[Project ID: ([^\]]+)\]/)?.[1] || 'Unknown';
+    const id = entry.project_id || entry.user_prompt?.match(/\[Project ID: ([^\]]+)\]/)?.[1] || 'Unknown';
     if (!acc[id]) {
       acc[id] = [];
     }
