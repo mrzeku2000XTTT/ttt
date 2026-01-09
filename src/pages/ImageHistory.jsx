@@ -484,24 +484,14 @@ export default function ImageHistoryPage() {
           <Home className="w-4 h-4 text-white" />
         </button>
         
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowUploadPanel(!showUploadPanel)}
-            className={`w-9 h-9 rounded-lg transition-all flex items-center justify-center ${
-              showUploadPanel ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50' : 'bg-white/10 text-white'
-            }`}
-          >
-            <Upload className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setShowControlPanel(!showControlPanel)}
-            className={`w-9 h-9 rounded-lg transition-all flex items-center justify-center ${
-              showControlPanel ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50' : 'bg-white/10 text-white'
-            }`}
-          >
-            <Settings className="w-4 h-4" />
-          </button>
-        </div>
+        <button
+          onClick={() => setShowControlPanel(!showControlPanel)}
+          className={`w-9 h-9 rounded-lg transition-all flex items-center justify-center ${
+            showControlPanel ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50' : 'bg-white/10 text-white'
+          }`}
+        >
+          <Settings className="w-4 h-4" />
+        </button>
       </div>
 
       {/* LEFT SIDEBAR - Desktop Only */}
@@ -603,9 +593,10 @@ export default function ImageHistoryPage() {
       {/* CENTER CANVAS */}
       <div className="flex flex-col items-center justify-start p-2 lg:p-8 relative overflow-y-auto flex-1">
         <div className="w-full max-w-6xl">
-          {/* Main 10 generated images */}
+          {/* 4x3 Grid: 9 images + 2 refs + 10th in middle bottom */}
           <div className="grid grid-cols-3 lg:grid-cols-5 gap-1.5 lg:gap-4">
-            {generatedImages.map((img, idx) => (
+            {/* First 9 images */}
+            {generatedImages.slice(0, 9).map((img, idx) => (
               <div key={`gen-${idx}`} className="relative bg-zinc-900/50 rounded-lg overflow-hidden border border-zinc-700/50 aspect-square group cursor-pointer" onClick={() => img && setViewingImage(img)}>
                 {img ? (
                   <>
@@ -630,47 +621,112 @@ export default function ImageHistoryPage() {
                 )}
               </div>
             ))}
-          </div>
 
-          {/* Reference Images Row */}
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            {referenceImages.map((img, idx) => (
-              <div key={`ref-${idx}`} className="relative bg-zinc-900/50 rounded-lg overflow-hidden border border-dashed border-zinc-700/50 aspect-[4/3]">
-                {img ? (
-                  <>
-                    <img src={img} alt={`Reference ${idx + 1}`} className="w-full h-full object-cover" />
-                    <button
-                      onClick={() => {
-                        const newImages = [...referenceImages];
-                        newImages[idx] = null;
-                        setReferenceImages(newImages);
-                      }}
-                      className="absolute top-1 right-1 w-5 h-5 bg-black/90 rounded flex items-center justify-center"
-                    >
-                      <X className="w-3 h-3 text-white" />
-                    </button>
-                  </>
-                ) : (
-                  <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer group">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(e, idx)}
-                      className="hidden"
-                      disabled={uploadingReference}
-                    />
-                    {uploadingReference ? (
-                      <Loader2 className="w-5 h-5 text-zinc-600 animate-spin" />
-                    ) : (
-                      <>
-                        <ImageIcon className="w-5 h-5 text-zinc-700 group-hover:text-zinc-600 transition-colors" />
-                        <p className="text-zinc-700 text-[8px] mt-1">Ref {idx + 1}</p>
-                      </>
-                    )}
-                  </label>
-                )}
-              </div>
-            ))}
+            {/* Bottom Row: Ref1, Image10, Ref2 */}
+            {/* Ref 1 */}
+            <div key="ref-0" className="relative bg-zinc-900/50 rounded-lg overflow-hidden border border-dashed border-zinc-700/50 aspect-square cursor-pointer">
+              {referenceImages[0] ? (
+                <>
+                  <img src={referenceImages[0]} alt="Reference 1" className="w-full h-full object-cover" />
+                  <button
+                    onClick={() => {
+                      const newImages = [...referenceImages];
+                      newImages[0] = null;
+                      setReferenceImages(newImages);
+                    }}
+                    className="absolute top-1 right-1 w-5 h-5 bg-black/90 rounded flex items-center justify-center"
+                  >
+                    <X className="w-3 h-3 text-white" />
+                  </button>
+                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1">
+                    <span className="text-white text-[8px] font-semibold">Ref 1</span>
+                  </div>
+                </>
+              ) : (
+                <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer group">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageUpload(e, 0)}
+                    className="hidden"
+                    disabled={uploadingReference}
+                  />
+                  {uploadingReference ? (
+                    <Loader2 className="w-5 h-5 text-zinc-600 animate-spin" />
+                  ) : (
+                    <>
+                      <ImageIcon className="w-5 h-5 text-zinc-700" />
+                      <p className="text-zinc-700 text-[8px] mt-1">Ref 1</p>
+                    </>
+                  )}
+                </label>
+              )}
+            </div>
+
+            {/* Image 10 (middle) */}
+            <div key="gen-9" className="relative bg-zinc-900/50 rounded-lg overflow-hidden border border-zinc-700/50 aspect-square group cursor-pointer" onClick={() => generatedImages[9] && setViewingImage(generatedImages[9])}>
+              {generatedImages[9] ? (
+                <>
+                  <img src={generatedImages[9]} alt="Generated 10" className="w-full h-full object-cover" />
+                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1">
+                    <span className="text-white text-[8px] font-semibold">10</span>
+                  </div>
+                </>
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center">
+                  {isGenerating && 9 <= Math.floor((progress / 100) * 10) ? (
+                    <>
+                      <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />
+                      <p className="text-zinc-600 text-[8px] mt-1">10</p>
+                    </>
+                  ) : (
+                    <div className="w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20 flex items-center justify-center">
+                      <span className="text-zinc-700 text-[10px] font-mono">10</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Ref 2 */}
+            <div key="ref-1" className="relative bg-zinc-900/50 rounded-lg overflow-hidden border border-dashed border-zinc-700/50 aspect-square cursor-pointer">
+              {referenceImages[1] ? (
+                <>
+                  <img src={referenceImages[1]} alt="Reference 2" className="w-full h-full object-cover" />
+                  <button
+                    onClick={() => {
+                      const newImages = [...referenceImages];
+                      newImages[1] = null;
+                      setReferenceImages(newImages);
+                    }}
+                    className="absolute top-1 right-1 w-5 h-5 bg-black/90 rounded flex items-center justify-center"
+                  >
+                    <X className="w-3 h-3 text-white" />
+                  </button>
+                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1">
+                    <span className="text-white text-[8px] font-semibold">Ref 2</span>
+                  </div>
+                </>
+              ) : (
+                <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer group">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageUpload(e, 1)}
+                    className="hidden"
+                    disabled={uploadingReference}
+                  />
+                  {uploadingReference ? (
+                    <Loader2 className="w-5 h-5 text-zinc-600 animate-spin" />
+                  ) : (
+                    <>
+                      <ImageIcon className="w-5 h-5 text-zinc-700" />
+                      <p className="text-zinc-700 text-[8px] mt-1">Ref 2</p>
+                    </>
+                  )}
+                </label>
+              )}
+            </div>
           </div>
 
           {/* Image Viewer Modal */}
@@ -769,19 +825,21 @@ export default function ImageHistoryPage() {
 
       </div>
 
-      {/* Mobile Upload Panel */}
+
+
+      {/* Mobile Control Panel */}
       <AnimatePresence>
-        {showUploadPanel && (
+        {showControlPanel && (
           <motion.div
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            className="lg:hidden fixed inset-x-0 bottom-0 z-[100] bg-zinc-950 border-t-2 border-purple-500/30 rounded-t-2xl shadow-2xl max-h-[70vh] overflow-y-auto"
+            className="lg:hidden fixed inset-x-0 bottom-0 z-[100] bg-[#121212] border-t-2 border-cyan-500/30 rounded-t-2xl shadow-2xl max-h-[70vh] overflow-y-auto"
           >
-            <div className="sticky top-0 bg-zinc-950 border-b border-zinc-800 px-4 py-3 flex items-center justify-between z-10">
-              <h3 className="text-white font-bold text-sm">Upload Images</h3>
+            <div className="sticky top-0 bg-[#121212] border-b border-zinc-800 px-4 py-3 flex items-center justify-between z-10">
+              <h3 className="text-white font-bold text-sm">RMX Control</h3>
               <button
-                onClick={() => setShowUploadPanel(false)}
+                onClick={() => setShowControlPanel(false)}
                 className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors"
               >
                 <X className="w-4 h-4 text-white" />
@@ -789,7 +847,8 @@ export default function ImageHistoryPage() {
             </div>
             
             <div className="p-3 space-y-3 pb-6">
-              <div className="grid grid-cols-3 gap-1.5">
+              {/* Upload Section */}
+              <div className="grid grid-cols-3 gap-1.5 mb-4">
                 <div>
                   <div className="text-white text-[9px] font-bold tracking-wider mb-1 uppercase">Subject</div>
                   <label className="relative bg-zinc-900 border border-dashed border-zinc-700 rounded overflow-hidden cursor-pointer active:scale-95 transition-all block aspect-square">
@@ -871,31 +930,8 @@ export default function ImageHistoryPage() {
                   </label>
                 </div>
               </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
-      {/* Mobile Control Panel */}
-      <AnimatePresence>
-        {showControlPanel && (
-          <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            className="lg:hidden fixed inset-x-0 bottom-0 z-[100] bg-[#121212] border-t-2 border-cyan-500/30 rounded-t-2xl shadow-2xl max-h-[70vh] overflow-y-auto"
-          >
-            <div className="sticky top-0 bg-[#121212] border-b border-zinc-800 px-4 py-3 flex items-center justify-between z-10">
-              <h3 className="text-white font-bold text-sm">RMX Control</h3>
-              <button
-                onClick={() => setShowControlPanel(false)}
-                className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors"
-              >
-                <X className="w-4 h-4 text-white" />
-              </button>
-            </div>
-            
-            <div className="p-3 space-y-3 pb-6">
+              {/* Tabs */}
               <div className="flex gap-2">
                 <button 
                   onClick={() => setActiveTab('control')}
