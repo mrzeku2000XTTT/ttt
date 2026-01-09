@@ -771,8 +771,25 @@ export default function FeedPage() {
     setError(null);
 
     try {
-      const authorName = user?.username ||
-                        (walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : 'Anonymous');
+      // Try to get username - prioritize User entity, then WalletProfile
+      let authorName = user?.username;
+      
+      if (!authorName && walletAddress) {
+        // Try WalletProfile for manual L0 address
+        try {
+          const profiles = await base44.entities.WalletProfile.filter({ wallet_address: walletAddress });
+          if (profiles && profiles.length > 0 && profiles[0].username) {
+            authorName = profiles[0].username;
+          }
+        } catch (err) {
+          console.log('Could not fetch username from WalletProfile');
+        }
+      }
+      
+      // Fallback to truncated address
+      if (!authorName) {
+        authorName = walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : 'Anonymous';
+      }
 
       const postData = {
         content: newPost.trim(),
@@ -883,8 +900,25 @@ export default function FeedPage() {
     setError(null);
 
     try {
-      const authorName = user?.username ||
-                        (walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : 'Anonymous');
+      // Try to get username - prioritize User entity, then WalletProfile
+      let authorName = user?.username;
+      
+      if (!authorName && walletAddress) {
+        // Try WalletProfile for manual L0 address
+        try {
+          const profiles = await base44.entities.WalletProfile.filter({ wallet_address: walletAddress });
+          if (profiles && profiles.length > 0 && profiles[0].username) {
+            authorName = profiles[0].username;
+          }
+        } catch (err) {
+          console.log('Could not fetch username from WalletProfile');
+        }
+      }
+      
+      // Fallback to truncated address
+      if (!authorName) {
+        authorName = walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : 'Anonymous';
+      }
 
       const replyData = {
         content: replyText.trim(),
