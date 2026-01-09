@@ -915,7 +915,7 @@ Return ONLY the post text, no quotes or extra formatting.`,
                   <CardHeader className="border-b border-white/10">
                     <div className="flex items-center justify-between">
                       <h2 className="text-xl font-bold text-white">Profile Information</h2>
-                      {!isEditing && (
+                      {!isEditing ? (
                         <Button
                           onClick={() => setIsEditing(true)}
                           className="bg-cyan-500 hover:bg-cyan-600 text-white"
@@ -923,7 +923,7 @@ Return ONLY the post text, no quotes or extra formatting.`,
                         >
                           Edit Profile
                         </Button>
-                      )}
+                      ) : null}
                     </div>
                   </CardHeader>
                   <CardContent className="pt-6 space-y-6">
@@ -976,16 +976,18 @@ Return ONLY the post text, no quotes or extra formatting.`,
                       )}
                     </div>
 
-                    {!user?.created_wallet_address && !localStorage.getItem('manual_kaspa_address') && (
-                      <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
-                        <h3 className="text-yellow-400 font-semibold mb-2 flex items-center gap-2">
-                          <AlertCircle className="w-4 h-4" />
-                          Add Your Kaspa Address
+                    {isEditing && (
+                      <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4">
+                        <h3 className="text-cyan-400 font-semibold mb-2 flex items-center gap-2">
+                          <Wallet className="w-4 h-4" />
+                          {user?.created_wallet_address || localStorage.getItem('manual_kaspa_address') 
+                            ? 'Update Kaspa Address' 
+                            : 'Add Your Kaspa Address'}
                         </h3>
                         <p className="text-sm text-gray-400 mb-3">
                           Enter your Kaspa wallet address to save your profile and receive tips.
                         </p>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                           <Input
                             value={manualAddress}
                             onChange={(e) => setManualAddress(e.target.value)}
@@ -994,9 +996,11 @@ Return ONLY the post text, no quotes or extra formatting.`,
                           />
                           <Button
                             onClick={handleAddManualAddress}
-                            className="bg-cyan-500 hover:bg-cyan-600"
+                            className="bg-cyan-500 hover:bg-cyan-600 whitespace-nowrap"
                           >
-                            Add
+                            {user?.created_wallet_address || localStorage.getItem('manual_kaspa_address') 
+                              ? 'Update Address' 
+                              : 'Add Address'}
                           </Button>
                         </div>
                       </div>
