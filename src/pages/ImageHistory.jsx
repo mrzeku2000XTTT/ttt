@@ -601,145 +601,183 @@ export default function ImageHistoryPage() {
       {/* CENTER CANVAS */}
       <div className="flex flex-col items-center justify-start p-2 lg:p-8 relative overflow-y-auto flex-1">
         <div className="w-full max-w-6xl">
-          {/* Desktop: Clean 2x5 grid | Mobile: 4x3 grid with refs */}
-          <div className="grid grid-cols-3 lg:grid-cols-5 gap-1.5 lg:gap-4">
-            {/* All 10 images - Desktop shows all in 2x5, Mobile shows first 9 in 3x3 */}
-            {generatedImages.map((img, idx) => (
-              <div 
-                key={`gen-${idx}`} 
-                className={`relative bg-zinc-900/50 rounded-lg overflow-hidden border border-zinc-700/50 aspect-square group cursor-pointer ${
-                  idx === 9 ? 'lg:block hidden' : ''
-                }`}
-                onClick={() => img && setViewingImage(img)}
-              >
-                {img ? (
+          {/* Desktop: Clean 2x5 grid (10 images) | Mobile: 3x3 grid + bottom row (9 images + refs + image 10) */}
+          <div className="grid gap-1.5 lg:gap-4">
+            {/* Desktop: All 10 images in 2x5 grid */}
+            <div className="hidden lg:grid lg:grid-cols-5 gap-4">
+              {generatedImages.map((img, idx) => (
+                <div 
+                  key={`desktop-gen-${idx}`} 
+                  className="relative bg-zinc-900/50 rounded-lg overflow-hidden border border-zinc-700/50 aspect-square group cursor-pointer"
+                  onClick={() => img && setViewingImage(img)}
+                >
+                  {img ? (
+                    <>
+                      <img src={img} alt={`Generated ${idx + 1}`} className="w-full h-full object-cover" />
+                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1">
+                        <span className="text-white text-[8px] font-semibold">{idx + 1}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center">
+                      {isGenerating ? (
+                        <>
+                          <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
+                          <p className="text-zinc-600 text-xs mt-1">{idx + 1}</p>
+                        </>
+                      ) : (
+                        <div className="w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20 flex items-center justify-center">
+                          <span className="text-zinc-700 text-[10px] font-mono">{idx + 1}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Mobile: 3x3 grid + bottom row with refs */}
+            <div className="lg:hidden grid grid-cols-3 gap-1.5">
+              {/* First 9 images */}
+              {generatedImages.slice(0, 9).map((img, idx) => (
+                <div 
+                  key={`mobile-gen-${idx}`} 
+                  className="relative bg-zinc-900/50 rounded-lg overflow-hidden border border-zinc-700/50 aspect-square group cursor-pointer"
+                  onClick={() => img && setViewingImage(img)}
+                >
+                  {img ? (
+                    <>
+                      <img src={img} alt={`Generated ${idx + 1}`} className="w-full h-full object-cover" />
+                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1">
+                        <span className="text-white text-[8px] font-semibold">{idx + 1}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center">
+                      {isGenerating ? (
+                        <>
+                          <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />
+                          <p className="text-zinc-600 text-[8px] mt-1">{idx + 1}</p>
+                        </>
+                      ) : (
+                        <div className="w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20 flex items-center justify-center">
+                          <span className="text-zinc-700 text-[10px] font-mono">{idx + 1}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Bottom Row: Ref1, Image10, Ref2 */}
+              {/* Ref 1 */}
+              <div key="ref-0" className="relative bg-zinc-900/50 rounded-lg overflow-hidden border border-dashed border-zinc-700/50 aspect-square cursor-pointer">
+                {referenceImages[0] ? (
                   <>
-                    <img src={img} alt={`Generated ${idx + 1}`} className="w-full h-full object-cover" />
+                    <img src={referenceImages[0]} alt="Reference 1" className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => {
+                        const newImages = [...referenceImages];
+                        newImages[0] = null;
+                        setReferenceImages(newImages);
+                      }}
+                      className="absolute top-1 right-1 w-5 h-5 bg-black/90 rounded flex items-center justify-center"
+                    >
+                      <X className="w-3 h-3 text-white" />
+                    </button>
                     <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1">
-                      <span className="text-white text-[8px] font-semibold">{idx + 1}</span>
+                      <span className="text-white text-[8px] font-semibold">Ref 1</span>
+                    </div>
+                  </>
+                ) : (
+                  <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer group">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e, 0)}
+                      className="hidden"
+                      disabled={uploadingReference}
+                    />
+                    {uploadingReference ? (
+                      <Loader2 className="w-5 h-5 text-zinc-600 animate-spin" />
+                    ) : (
+                      <>
+                        <ImageIcon className="w-5 h-5 text-zinc-700" />
+                        <p className="text-zinc-700 text-[8px] mt-1">Ref 1</p>
+                      </>
+                    )}
+                  </label>
+                )}
+              </div>
+
+              {/* Image 10 - Mobile center */}
+              <div 
+                key="mobile-gen-9" 
+                className="relative bg-zinc-900/50 rounded-lg overflow-hidden border border-zinc-700/50 aspect-square group cursor-pointer" 
+                onClick={() => generatedImages[9] && setViewingImage(generatedImages[9])}
+              >
+                {generatedImages[9] ? (
+                  <>
+                    <img src={generatedImages[9]} alt="Generated 10" className="w-full h-full object-cover" />
+                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1">
+                      <span className="text-white text-[8px] font-semibold">10</span>
                     </div>
                   </>
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center">
                     {isGenerating ? (
                       <>
-                        <Loader2 className="w-5 h-5 lg:w-8 lg:h-8 text-purple-500 animate-spin" />
-                        <p className="text-zinc-600 text-[8px] lg:text-xs mt-1">{idx + 1}</p>
+                        <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />
+                        <p className="text-zinc-600 text-[8px] mt-1">10</p>
                       </>
                     ) : (
                       <div className="w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20 flex items-center justify-center">
-                        <span className="text-zinc-700 text-[10px] font-mono">{idx + 1}</span>
+                        <span className="text-zinc-700 text-[10px] font-mono">10</span>
                       </div>
                     )}
                   </div>
                 )}
               </div>
-            ))}
 
-            {/* Mobile Only: Bottom Row with Ref1, Image10, Ref2 */}
-            {/* Ref 1 */}
-            <div key="ref-0" className="lg:hidden relative bg-zinc-900/50 rounded-lg overflow-hidden border border-dashed border-zinc-700/50 aspect-square cursor-pointer">
-              {referenceImages[0] ? (
-                <>
-                  <img src={referenceImages[0]} alt="Reference 1" className="w-full h-full object-cover" />
-                  <button
-                    onClick={() => {
-                      const newImages = [...referenceImages];
-                      newImages[0] = null;
-                      setReferenceImages(newImages);
-                    }}
-                    className="absolute top-1 right-1 w-5 h-5 bg-black/90 rounded flex items-center justify-center"
-                  >
-                    <X className="w-3 h-3 text-white" />
-                  </button>
-                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1">
-                    <span className="text-white text-[8px] font-semibold">Ref 1</span>
-                  </div>
-                </>
-              ) : (
-                <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer group">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleImageUpload(e, 0)}
-                    className="hidden"
-                    disabled={uploadingReference}
-                  />
-                  {uploadingReference ? (
-                    <Loader2 className="w-5 h-5 text-zinc-600 animate-spin" />
-                  ) : (
-                    <>
-                      <ImageIcon className="w-5 h-5 text-zinc-700" />
-                      <p className="text-zinc-700 text-[8px] mt-1">Ref 1</p>
-                    </>
-                  )}
-                </label>
-              )}
-            </div>
-
-            {/* Image 10 - Mobile center of bottom row */}
-            <div key="mobile-gen-9" className="lg:hidden relative bg-zinc-900/50 rounded-lg overflow-hidden border border-zinc-700/50 aspect-square group cursor-pointer" onClick={() => generatedImages[9] && setViewingImage(generatedImages[9])}>
-              {generatedImages[9] ? (
-                <>
-                  <img src={generatedImages[9]} alt="Generated 10" className="w-full h-full object-cover" />
-                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1">
-                    <span className="text-white text-[8px] font-semibold">10</span>
-                  </div>
-                </>
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center">
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />
-                      <p className="text-zinc-600 text-[8px] mt-1">10</p>
-                    </>
-                  ) : (
-                    <div className="w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20 flex items-center justify-center">
-                      <span className="text-zinc-700 text-[10px] font-mono">10</span>
+              {/* Ref 2 */}
+              <div key="ref-1" className="relative bg-zinc-900/50 rounded-lg overflow-hidden border border-dashed border-zinc-700/50 aspect-square cursor-pointer">
+                {referenceImages[1] ? (
+                  <>
+                    <img src={referenceImages[1]} alt="Reference 2" className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => {
+                        const newImages = [...referenceImages];
+                        newImages[1] = null;
+                        setReferenceImages(newImages);
+                      }}
+                      className="absolute top-1 right-1 w-5 h-5 bg-black/90 rounded flex items-center justify-center"
+                    >
+                      <X className="w-3 h-3 text-white" />
+                    </button>
+                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1">
+                      <span className="text-white text-[8px] font-semibold">Ref 2</span>
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Ref 2 */}
-            <div key="ref-1" className="lg:hidden relative bg-zinc-900/50 rounded-lg overflow-hidden border border-dashed border-zinc-700/50 aspect-square cursor-pointer">
-              {referenceImages[1] ? (
-                <>
-                  <img src={referenceImages[1]} alt="Reference 2" className="w-full h-full object-cover" />
-                  <button
-                    onClick={() => {
-                      const newImages = [...referenceImages];
-                      newImages[1] = null;
-                      setReferenceImages(newImages);
-                    }}
-                    className="absolute top-1 right-1 w-5 h-5 bg-black/90 rounded flex items-center justify-center"
-                  >
-                    <X className="w-3 h-3 text-white" />
-                  </button>
-                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1">
-                    <span className="text-white text-[8px] font-semibold">Ref 2</span>
-                  </div>
-                </>
-              ) : (
-                <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer group">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleImageUpload(e, 1)}
-                    className="hidden"
-                    disabled={uploadingReference}
-                  />
-                  {uploadingReference ? (
-                    <Loader2 className="w-5 h-5 text-zinc-600 animate-spin" />
-                  ) : (
-                    <>
-                      <ImageIcon className="w-5 h-5 text-zinc-700" />
-                      <p className="text-zinc-700 text-[8px] mt-1">Ref 2</p>
-                    </>
-                  )}
-                </label>
-              )}
+                  </>
+                ) : (
+                  <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer group">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e, 1)}
+                      className="hidden"
+                      disabled={uploadingReference}
+                    />
+                    {uploadingReference ? (
+                      <Loader2 className="w-5 h-5 text-zinc-600 animate-spin" />
+                    ) : (
+                      <>
+                        <ImageIcon className="w-5 h-5 text-zinc-700" />
+                        <p className="text-zinc-700 text-[8px] mt-1">Ref 2</p>
+                      </>
+                    )}
+                  </label>
+                )}
+              </div>
             </div>
           </div>
 
