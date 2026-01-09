@@ -601,11 +601,17 @@ export default function ImageHistoryPage() {
       {/* CENTER CANVAS */}
       <div className="flex flex-col items-center justify-start p-2 lg:p-8 relative overflow-y-auto flex-1">
         <div className="w-full max-w-6xl">
-          {/* 4x3 Grid: 9 images + 2 refs + 10th in middle bottom */}
+          {/* Desktop: Clean 2x5 grid | Mobile: 4x3 grid with refs */}
           <div className="grid grid-cols-3 lg:grid-cols-5 gap-1.5 lg:gap-4">
-            {/* First 9 images */}
-            {generatedImages.slice(0, 9).map((img, idx) => (
-              <div key={`gen-${idx}`} className="relative bg-zinc-900/50 rounded-lg overflow-hidden border border-zinc-700/50 aspect-square group cursor-pointer" onClick={() => img && setViewingImage(img)}>
+            {/* All 10 images - Desktop shows all in 2x5, Mobile shows first 9 in 3x3 */}
+            {generatedImages.map((img, idx) => (
+              <div 
+                key={`gen-${idx}`} 
+                className={`relative bg-zinc-900/50 rounded-lg overflow-hidden border border-zinc-700/50 aspect-square group cursor-pointer ${
+                  idx === 9 ? 'lg:block hidden' : ''
+                }`}
+                onClick={() => img && setViewingImage(img)}
+              >
                 {img ? (
                   <>
                     <img src={img} alt={`Generated ${idx + 1}`} className="w-full h-full object-cover" />
@@ -615,7 +621,7 @@ export default function ImageHistoryPage() {
                   </>
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center">
-                    {isGenerating && idx <= Math.floor((progress / 100) * 10) ? (
+                    {isGenerating ? (
                       <>
                         <Loader2 className="w-5 h-5 lg:w-8 lg:h-8 text-purple-500 animate-spin" />
                         <p className="text-zinc-600 text-[8px] lg:text-xs mt-1">{idx + 1}</p>
@@ -630,8 +636,8 @@ export default function ImageHistoryPage() {
               </div>
             ))}
 
-            {/* Bottom Row: Ref1, Image10, Ref2 */}
-            {/* Ref 1 - Mobile Only */}
+            {/* Mobile Only: Bottom Row with Ref1, Image10, Ref2 */}
+            {/* Ref 1 */}
             <div key="ref-0" className="lg:hidden relative bg-zinc-900/50 rounded-lg overflow-hidden border border-dashed border-zinc-700/50 aspect-square cursor-pointer">
               {referenceImages[0] ? (
                 <>
@@ -671,8 +677,8 @@ export default function ImageHistoryPage() {
               )}
             </div>
 
-            {/* Image 10 (middle on mobile, part of grid on desktop) */}
-            <div key="gen-9" className="relative bg-zinc-900/50 rounded-lg overflow-hidden border border-zinc-700/50 aspect-square group cursor-pointer lg:col-start-5 lg:row-start-2" onClick={() => generatedImages[9] && setViewingImage(generatedImages[9])}>
+            {/* Image 10 - Mobile center of bottom row */}
+            <div key="mobile-gen-9" className="lg:hidden relative bg-zinc-900/50 rounded-lg overflow-hidden border border-zinc-700/50 aspect-square group cursor-pointer" onClick={() => generatedImages[9] && setViewingImage(generatedImages[9])}>
               {generatedImages[9] ? (
                 <>
                   <img src={generatedImages[9]} alt="Generated 10" className="w-full h-full object-cover" />
@@ -682,7 +688,7 @@ export default function ImageHistoryPage() {
                 </>
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center">
-                  {isGenerating && 9 <= Math.floor((progress / 100) * 10) ? (
+                  {isGenerating ? (
                     <>
                       <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />
                       <p className="text-zinc-600 text-[8px] mt-1">10</p>
@@ -696,7 +702,7 @@ export default function ImageHistoryPage() {
               )}
             </div>
 
-            {/* Ref 2 - Mobile Only */}
+            {/* Ref 2 */}
             <div key="ref-1" className="lg:hidden relative bg-zinc-900/50 rounded-lg overflow-hidden border border-dashed border-zinc-700/50 aspect-square cursor-pointer">
               {referenceImages[1] ? (
                 <>
