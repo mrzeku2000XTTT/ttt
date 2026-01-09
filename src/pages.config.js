@@ -205,6 +205,7 @@ import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
 import Kasplore from './pages/Kasplore';
+import OuTKasTT from './pages/OuTKasTT';
 import __Layout from './Layout.jsx';
 
 
@@ -416,6 +417,7 @@ export const PAGES = {
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
     "Kasplore": Kasplore,
+    "OuTKasTT": OuTKasTT,
 }
 
 export const pagesConfig = {
