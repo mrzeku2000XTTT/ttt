@@ -129,11 +129,34 @@ export default function ImageHistoryPage() {
     }
   };
 
-  const handleRMXClick = () => {
+  const handleRMXClick = async () => {
     if (!prompt.trim()) {
       alert('Please enter a prompt');
       return;
     }
+    
+    // Generate unique project ID bound to wallet
+    let walletAddress = 'guest';
+    try {
+      if (user?.created_wallet_address) {
+        walletAddress = user.created_wallet_address;
+      } else if (typeof window.kasware !== 'undefined') {
+        const accounts = await window.kasware.getAccounts();
+        if (accounts && accounts.length > 0) {
+          walletAddress = accounts[0];
+        }
+      }
+    } catch (err) {
+      console.log('Could not get wallet address');
+    }
+    
+    // Generate project ID: WALLET_PREFIX-TIMESTAMP-RANDOM
+    const walletPrefix = walletAddress.substring(0, 8);
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substr(2, 6).toUpperCase();
+    const generatedProjectId = `${walletPrefix}-${timestamp}-${random}`;
+    
+    setProjectId(generatedProjectId);
     setRmxActivated(true);
     setShowProjectOptions(true);
   };
@@ -221,7 +244,7 @@ export default function ImageHistoryPage() {
 
           try {
             console.log(`Agent 1: Generating image ${i + 1}/10...`);
-            const enhancedPrompt = `${basePrompt}\n\nSTORYBOARD SHOT ${i + 1}/10 - Camera Angle: ${cameraAngles[i]}\nProfessional cinematography, consistent subject and style, high quality output`;
+            const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\nSTORYBOARD SHOT ${i + 1}/10 - Camera Angle: ${cameraAngles[i]}\nProfessional cinematography, consistent subject and style, high quality output`;
             const response = await base44.integrations.Core.GenerateImage({
               prompt: enhancedPrompt,
               ...(imageUrls.length > 0 && { existing_image_urls: imageUrls })
@@ -278,7 +301,7 @@ export default function ImageHistoryPage() {
 
           try {
             console.log(`Agent 2: Generating image ${i + 1}/10...`);
-            const enhancedPrompt = `${basePrompt}\n\nSTORYBOARD SHOT ${i + 1}/10 - Camera Angle: ${cameraAngles[i]}\nProfessional cinematography, consistent subject and style, high quality output`;
+            const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\nSTORYBOARD SHOT ${i + 1}/10 - Camera Angle: ${cameraAngles[i]}\nProfessional cinematography, consistent subject and style, high quality output`;
             const response = await base44.integrations.Core.GenerateImage({
               prompt: enhancedPrompt,
               ...(imageUrls.length > 0 && { existing_image_urls: imageUrls })
