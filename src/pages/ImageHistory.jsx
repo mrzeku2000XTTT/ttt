@@ -17,6 +17,7 @@ export default function ImageHistoryPage() {
   const [referenceImages, setReferenceImages] = useState([null, null]);
   const [generatedImages, setGeneratedImages] = useState([null, null, null, null, null, null, null, null, null, null]);
   const [progress, setProgress] = useState(0);
+  const [completedImages, setCompletedImages] = useState(0);
   const [activeTab, setActiveTab] = useState('control');
   const [chatMessage, setChatMessage] = useState("");
   const [viewingImage, setViewingImage] = useState(null);
@@ -167,6 +168,7 @@ export default function ImageHistoryPage() {
 
   const generateImages = async () => {
     setProgress(0);
+    setCompletedImages(0);
     setGeneratedImages([null, null, null, null, null, null, null, null, null, null]);
     
     try {
@@ -178,18 +180,33 @@ export default function ImageHistoryPage() {
         ...referenceImages
       ].filter(img => img !== null);
       
-      // Camera angles for variation
+      // Build comprehensive base prompt
+      let basePrompt = prompt;
+      
+      if (subjectImage || styleImage || sceneImage || imageUrls.length > 0) {
+        basePrompt += "\n\nIMPORTANT INSTRUCTIONS:\n";
+        if (subjectImage) basePrompt += "- USE THE SUBJECT CHARACTER from reference image EXACTLY as shown, maintain their appearance, features, and identity\n";
+        if (styleImage) basePrompt += "- APPLY THE EXACT VISUAL STYLE from the style reference (art style, rendering technique, color palette, aesthetic)\n";
+        if (sceneImage) basePrompt += "- USE THE SCENE/BACKGROUND from reference as the environmental setting\n";
+        if (referenceImages.filter(img => img).length > 0) {
+          basePrompt += "- REFERENCE the additional images for composition, mood, and visual elements\n";
+        }
+        basePrompt += "- MAINTAIN CONSISTENCY across all angles while keeping the core subject, style, and scene identical\n";
+        basePrompt += "- HIGH QUALITY, professional photography, 8K resolution, sharp focus, detailed\n";
+      }
+      
+      // Storyboard camera angles for cinematic sequencing
       const cameraAngles = [
-        "front view, eye level, centered composition",
-        "3/4 angle view, slightly off-center, dynamic perspective",
-        "side profile view, dramatic lighting, rule of thirds",
-        "low angle shot, looking up, heroic perspective",
-        "high angle shot, bird's eye view, aerial perspective",
-        "close-up shot, intimate framing, shallow depth of field",
-        "wide shot, full scene, environmental context",
-        "over the shoulder perspective, cinematic framing",
-        "Dutch angle, tilted perspective, dynamic composition",
-        "extreme close-up, detailed focus, macro perspective"
+        "establishing wide shot, full scene context, cinematic framing",
+        "medium shot, main subject focus, eye level perspective",
+        "close-up on subject, emotional detail, shallow depth of field",
+        "3/4 angle view, dynamic composition, professional photography angle",
+        "side profile view, dramatic lighting, artistic perspective",
+        "over the shoulder shot, cinematic storytelling angle",
+        "low angle shot, heroic perspective, looking up at subject",
+        "high angle shot, bird's eye view, environmental context",
+        "Dutch angle, tilted dynamic perspective, tension and energy",
+        "extreme close-up, intimate detail focus, macro perspective"
       ];
       
       // Run two RMX ULTRA agents in parallel
@@ -204,7 +221,7 @@ export default function ImageHistoryPage() {
 
           try {
             console.log(`Agent 1: Generating image ${i + 1}/10...`);
-            const enhancedPrompt = `${prompt}\n\nCamera Angle: ${cameraAngles[i]}`;
+            const enhancedPrompt = `${basePrompt}\n\nSTORYBOARD SHOT ${i + 1}/10 - Camera Angle: ${cameraAngles[i]}\nProfessional cinematography, consistent subject and style, high quality output`;
             const response = await base44.integrations.Core.GenerateImage({
               prompt: enhancedPrompt,
               ...(imageUrls.length > 0 && { existing_image_urls: imageUrls })
@@ -218,9 +235,12 @@ export default function ImageHistoryPage() {
                 return updated;
               });
               
+              setCompletedImages(prev => prev + 1);
+              setProgress(Math.round(((i + 1) / 10) * 100));
+              
               const entryData = {
                 user_prompt: prompt,
-                detailed_prompt: prompt,
+                detailed_prompt: enhancedPrompt,
                 reference_images: imageUrls,
                 result_image: response.url,
                 was_successful: true,
@@ -254,7 +274,7 @@ export default function ImageHistoryPage() {
 
           try {
             console.log(`Agent 2: Generating image ${i + 1}/10...`);
-            const enhancedPrompt = `${prompt}\n\nCamera Angle: ${cameraAngles[i]}`;
+            const enhancedPrompt = `${basePrompt}\n\nSTORYBOARD SHOT ${i + 1}/10 - Camera Angle: ${cameraAngles[i]}\nProfessional cinematography, consistent subject and style, high quality output`;
             const response = await base44.integrations.Core.GenerateImage({
               prompt: enhancedPrompt,
               ...(imageUrls.length > 0 && { existing_image_urls: imageUrls })
@@ -268,9 +288,12 @@ export default function ImageHistoryPage() {
                 return updated;
               });
               
+              setCompletedImages(prev => prev + 1);
+              setProgress(Math.round(((i + 1) / 10) * 100));
+              
               const entryData = {
                 user_prompt: prompt,
-                detailed_prompt: prompt,
+                detailed_prompt: enhancedPrompt,
                 reference_images: imageUrls,
                 result_image: response.url,
                 was_successful: true,
@@ -700,13 +723,13 @@ export default function ImageHistoryPage() {
               {isGenerating && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-cyan-400">Generating image {Math.floor((progress / 100) * 10) + 1}/10</span>
-                    <span className="text-zinc-500">{progress}%</span>
+                    <span className="text-cyan-400">Generating image {completedImages + 1}/10</span>
+                    <span className="text-zinc-500">{completedImages}/10</span>
                   </div>
                   <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
-                      style={{ width: `${progress}%` }}
+                      style={{ width: `${(completedImages / 10) * 100}%` }}
                     />
                   </div>
                 </div>
