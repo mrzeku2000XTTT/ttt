@@ -32,6 +32,7 @@ export default function ProfilePage() {
   const [dagKnightVerifications, setDagKnightVerifications] = useState([]);
   const [dagKnightCertificate, setDagKnightCertificate] = useState(null);
   const [isSharingStamp, setIsSharingStamp] = useState(null);
+  const [manualAddress, setManualAddress] = useState("");
 
   useEffect(() => {
     loadData();
@@ -40,7 +41,7 @@ export default function ProfilePage() {
     if (window.kasware) {
       const handleAccountsChanged = (accounts) => {
         console.log('Kasware wallet changed:', accounts);
-        loadData(); // Reload profile with new wallet
+        loadData();
       };
       
       window.kasware.on('accountsChanged', handleAccountsChanged);
@@ -49,25 +50,7 @@ export default function ProfilePage() {
         window.kasware.removeListener('accountsChanged', handleAccountsChanged);
       };
     }
-    
-    // Listen for manual address changes
-    const checkManualAddress = setInterval(() => {
-      const manualAddr = localStorage.getItem('manual_kaspa_address');
-      const currentManualWallet = createdWallets.find(w => w.type === 'manual');
-      
-      if (manualAddr && (!currentManualWallet || currentManualWallet.address !== manualAddr)) {
-        console.log('Manual address changed or added, reloading profile...');
-        loadData();
-      } else if (!manualAddr && currentManualWallet) {
-        console.log('Manual address removed, reloading profile...');
-        loadData();
-      }
-    }, 1000);
-    
-    return () => {
-      clearInterval(checkManualAddress);
-    };
-  }, [createdWallets]);
+  }, []);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -441,6 +424,22 @@ export default function ProfilePage() {
     } finally {
       setIsUploadingPhoto(false);
     }
+  };
+
+  const handleAddManualAddress = async () => {
+    if (!manualAddress.trim()) {
+      setError('Please enter a valid Kaspa address');
+      return;
+    }
+    
+    if (!manualAddress.startsWith('kaspa:')) {
+      setError('Kaspa address must start with "kaspa:"');
+      return;
+    }
+    
+    localStorage.setItem('manual_kaspa_address', manualAddress.trim());
+    setManualAddress("");
+    await loadData();
   };
 
   const handleSave = async () => {
@@ -913,18 +912,19 @@ Return ONLY the post text, no quotes or extra formatting.`,
                 exit={{ opacity: 0, y: -20 }}
               >
                 <Card className="backdrop-blur-xl bg-white/5 border-white/10">
-                  <CardHeader className="border-b border-white/10 flex flex-row items-center justify-between">
-                    <h2 className="text-xl font-bold text-white">Profile Information</h2>
-                    {!isEditing && (user?.created_wallet_address || localStorage.getItem('manual_kaspa_address') || localStorage.getItem('ttt_wallet_address')) && (
-                      <Button
-                        onClick={() => setIsEditing(true)}
-                        variant="ghost"
-                        size="sm"
-                        className="text-cyan-400"
-                      >
-                        Edit
-                      </Button>
-                    )}
+                  <CardHeader className="border-b border-white/10">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-xl font-bold text-white">Profile Information</h2>
+                      {!isEditing && (
+                        <Button
+                          onClick={() => setIsEditing(true)}
+                          className="bg-cyan-500 hover:bg-cyan-600 text-white"
+                          size="sm"
+                        >
+                          Edit Profile
+                        </Button>
+                      )}
+                    </div>
                   </CardHeader>
                   <CardContent className="pt-6 space-y-6">
                     <div>
@@ -975,6 +975,32 @@ Return ONLY the post text, no quotes or extra formatting.`,
                         </div>
                       )}
                     </div>
+
+                    {!user?.created_wallet_address && !localStorage.getItem('manual_kaspa_address') && (
+                      <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+                        <h3 className="text-yellow-400 font-semibold mb-2 flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4" />
+                          Add Your Kaspa Address
+                        </h3>
+                        <p className="text-sm text-gray-400 mb-3">
+                          Enter your Kaspa wallet address to save your profile and receive tips.
+                        </p>
+                        <div className="flex gap-2">
+                          <Input
+                            value={manualAddress}
+                            onChange={(e) => setManualAddress(e.target.value)}
+                            placeholder="kaspa:qz..."
+                            className="bg-white/5 border-white/20 text-white flex-1"
+                          />
+                          <Button
+                            onClick={handleAddManualAddress}
+                            className="bg-cyan-500 hover:bg-cyan-600"
+                          >
+                            Add
+                          </Button>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="space-y-3">
                       <h3 className="text-sm text-gray-400">Connected Wallets</h3>
