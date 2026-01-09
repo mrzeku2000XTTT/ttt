@@ -271,7 +271,7 @@ export default function ImageHistoryPage() {
           if (shouldStop) break;
 
           try {
-            console.log(`Agent 1: Generating image ${i + 1}/10...`);
+            console.log(`🎨 Agent 1: Starting image ${i + 1}/10...`);
             const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\nSTORYBOARD SHOT ${i + 1}/10 - Camera Angle: ${cameraAngles[i]}\nProfessional cinematography, consistent subject and style, high quality output`;
             const response = await base44.integrations.Core.GenerateImage({
               prompt: enhancedPrompt,
@@ -279,19 +279,19 @@ export default function ImageHistoryPage() {
             });
 
             if (response?.url) {
-              console.log(`✅ Agent 1: Got image ${i + 1}`);
+              console.log(`✅ Agent 1: Completed image ${i + 1}/10`);
               setGeneratedImages(prev => {
                 const updated = [...prev];
                 updated[i] = response.url;
                 return updated;
               });
-              
+
               setCompletedImages(prev => {
                 const newCount = prev + 1;
-                console.log(`Progress: ${newCount}/10 images completed`);
+                console.log(`📊 Progress: ${newCount}/10 images completed`);
                 return newCount;
               });
-              
+
               // Get wallet address for ownership tracking
               let walletAddress = 'guest';
               try {
@@ -327,12 +327,15 @@ export default function ImageHistoryPage() {
                 localHistory.unshift({ ...entryData, id: Date.now() + i });
                 localStorage.setItem('rmx_local_history', JSON.stringify(localHistory.slice(0, 100)));
               }
+            } else {
+              console.error(`❌ Agent 1: No URL returned for image ${i + 1}`);
             }
           } catch (err) {
-            console.error(`❌ Agent 1 failed image ${i + 1}:`, err);
+            console.error(`❌ Agent 1 failed image ${i + 1}:`, err.message || err);
             // Don't stop on error, continue to next image
           }
         }
+        console.log('✅ Agent 1: Completed all 5 images');
       };
 
       const agent2 = async () => {
@@ -345,7 +348,7 @@ export default function ImageHistoryPage() {
           if (shouldStop) break;
 
           try {
-            console.log(`Agent 2: Generating image ${i + 1}/10...`);
+            console.log(`🎨 Agent 2: Starting image ${i + 1}/10...`);
             const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\nSTORYBOARD SHOT ${i + 1}/10 - Camera Angle: ${cameraAngles[i]}\nProfessional cinematography, consistent subject and style, high quality output`;
             const response = await base44.integrations.Core.GenerateImage({
               prompt: enhancedPrompt,
@@ -353,19 +356,19 @@ export default function ImageHistoryPage() {
             });
 
             if (response?.url) {
-              console.log(`✅ Agent 2: Got image ${i + 1}`);
+              console.log(`✅ Agent 2: Completed image ${i + 1}/10`);
               setGeneratedImages(prev => {
                 const updated = [...prev];
                 updated[i] = response.url;
                 return updated;
               });
-              
+
               setCompletedImages(prev => {
                 const newCount = prev + 1;
-                console.log(`Progress: ${newCount}/10 images completed`);
+                console.log(`📊 Progress: ${newCount}/10 images completed`);
                 return newCount;
               });
-              
+
               // Get wallet address for ownership tracking
               let walletAddress = 'guest';
               try {
@@ -401,12 +404,15 @@ export default function ImageHistoryPage() {
                 localHistory.unshift({ ...entryData, id: Date.now() + i });
                 localStorage.setItem('rmx_local_history', JSON.stringify(localHistory.slice(0, 100)));
               }
+            } else {
+              console.error(`❌ Agent 2: No URL returned for image ${i + 1}`);
             }
           } catch (err) {
-            console.error(`❌ Agent 2 failed image ${i + 1}:`, err);
+            console.error(`❌ Agent 2 failed image ${i + 1}:`, err.message || err);
             // Don't stop on error, continue to next image
           }
         }
+        console.log('✅ Agent 2: Completed all 5 images');
       };
 
       // Run both agents simultaneously and wait for completion
@@ -625,8 +631,8 @@ export default function ImageHistoryPage() {
             ))}
 
             {/* Bottom Row: Ref1, Image10, Ref2 */}
-            {/* Ref 1 */}
-            <div key="ref-0" className="relative bg-zinc-900/50 rounded-lg overflow-hidden border border-dashed border-zinc-700/50 aspect-square cursor-pointer">
+            {/* Ref 1 - Mobile Only */}
+            <div key="ref-0" className="lg:hidden relative bg-zinc-900/50 rounded-lg overflow-hidden border border-dashed border-zinc-700/50 aspect-square cursor-pointer">
               {referenceImages[0] ? (
                 <>
                   <img src={referenceImages[0]} alt="Reference 1" className="w-full h-full object-cover" />
@@ -665,8 +671,8 @@ export default function ImageHistoryPage() {
               )}
             </div>
 
-            {/* Image 10 (middle) */}
-            <div key="gen-9" className="relative bg-zinc-900/50 rounded-lg overflow-hidden border border-zinc-700/50 aspect-square group cursor-pointer" onClick={() => generatedImages[9] && setViewingImage(generatedImages[9])}>
+            {/* Image 10 (middle on mobile, part of grid on desktop) */}
+            <div key="gen-9" className="relative bg-zinc-900/50 rounded-lg overflow-hidden border border-zinc-700/50 aspect-square group cursor-pointer lg:col-start-5 lg:row-start-2" onClick={() => generatedImages[9] && setViewingImage(generatedImages[9])}>
               {generatedImages[9] ? (
                 <>
                   <img src={generatedImages[9]} alt="Generated 10" className="w-full h-full object-cover" />
@@ -690,8 +696,8 @@ export default function ImageHistoryPage() {
               )}
             </div>
 
-            {/* Ref 2 */}
-            <div key="ref-1" className="relative bg-zinc-900/50 rounded-lg overflow-hidden border border-dashed border-zinc-700/50 aspect-square cursor-pointer">
+            {/* Ref 2 - Mobile Only */}
+            <div key="ref-1" className="lg:hidden relative bg-zinc-900/50 rounded-lg overflow-hidden border border-dashed border-zinc-700/50 aspect-square cursor-pointer">
               {referenceImages[1] ? (
                 <>
                   <img src={referenceImages[1]} alt="Reference 2" className="w-full h-full object-cover" />
