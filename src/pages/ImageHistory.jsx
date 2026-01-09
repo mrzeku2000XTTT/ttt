@@ -657,8 +657,8 @@ export default function ImageHistoryPage() {
             ))}
           </div>
 
-          {/* Chat Input Below References - Hidden on mobile */}
-          <div className="mt-4 bg-zinc-950 border border-zinc-800 rounded-xl p-4 hidden lg:block">
+          {/* Chat Input Below References */}
+          <div className="mt-4 bg-zinc-950 border border-zinc-800 rounded-xl p-4">
             <Textarea
               value={chatMessage}
               onChange={(e) => setChatMessage(e.target.value)}
