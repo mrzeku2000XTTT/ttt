@@ -726,161 +726,264 @@ export default function ImageHistoryPage() {
 
       </div>
 
-      {/* Mobile Control Panel */}
-      {showControlPanel && (
-        <motion.div
-          initial={{ y: '100%' }}
-          animate={{ y: 0 }}
-          exit={{ y: '100%' }}
-          className="lg:hidden fixed inset-x-0 bottom-0 z-[100] bg-[#121212] border-t border-zinc-800 rounded-t-3xl shadow-2xl max-h-[80vh] overflow-y-auto"
-        >
-          <div className="sticky top-0 bg-[#121212] border-b border-zinc-800 p-4 flex items-center justify-between">
-            <h3 className="text-white font-bold">RMX Control</h3>
-            <button
-              onClick={() => setShowControlPanel(false)}
-              className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center"
-            >
-              <X className="w-5 h-5 text-white" />
-            </button>
-          </div>
-          
-          <div className="p-4 space-y-4">
-            {/* Tabs */}
-            <div className="flex gap-2">
-              <button 
-                onClick={() => setActiveTab('control')}
-                className={`flex-1 px-3 py-2 rounded-lg font-semibold text-xs transition-all ${
-                  activeTab === 'control'
-                    ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50'
-                    : 'bg-zinc-800 text-zinc-500'
-                }`}
+      {/* Mobile Upload Panel */}
+      <AnimatePresence>
+        {showUploadPanel && (
+          <motion.div
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            className="lg:hidden fixed inset-x-0 bottom-0 z-[100] bg-zinc-950 border-t-2 border-zinc-700 rounded-t-3xl shadow-2xl max-h-[85vh] overflow-y-auto"
+          >
+            <div className="sticky top-0 bg-zinc-950 border-b border-zinc-800 p-4 flex items-center justify-between z-10">
+              <h3 className="text-white font-bold">Upload Images</h3>
+              <button
+                onClick={() => setShowUploadPanel(false)}
+                className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors"
               >
-                Control
-              </button>
-              <button 
-                onClick={() => setActiveTab('projects')}
-                className={`flex-1 px-3 py-2 rounded-lg font-semibold text-xs transition-all ${
-                  activeTab === 'projects'
-                    ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50'
-                    : 'bg-zinc-800 text-zinc-500'
-                }`}
-              >
-                Projects
+                <X className="w-5 h-5 text-white" />
               </button>
             </div>
-
-            {/* Control Tab Content */}
-            {activeTab === 'control' && (
-              <>
-                <Textarea
-                  value={prompt}
-                  onChange={(e) => {
-                    setPrompt(e.target.value);
-                    setRmxActivated(false);
-                  }}
-                  placeholder="Describe your vision... RMX generates 10 angles"
-                  className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 min-h-[120px] text-sm"
-                  disabled={isGenerating}
-                />
-                
-                {!rmxActivated && !isGenerating && (
-                  <Button
-                    onClick={handleRMXClick}
-                    disabled={!prompt.trim()}
-                    className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-white font-semibold h-12 active:scale-95 transition-all"
-                  >
-                    <Sparkles className="w-5 h-5 mr-2" />
-                    RMX
-                  </Button>
-                )}
-
-                {rmxActivated && !isGenerating && !showProjectOptions && (
-                  <Button
-                    onClick={handleStartGeneration}
-                    className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold h-12 active:scale-95 transition-all"
-                  >
-                    <Sparkles className="w-5 h-5 mr-2" />
-                    Start Generation
-                  </Button>
-                )}
-
-                {isGenerating && (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-cyan-400 font-semibold">Generating {completedImages + 1}/10</span>
-                      <span className="text-zinc-400">{completedImages}/10</span>
-                    </div>
-                    <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
-                        style={{ width: `${(completedImages / 10) * 100}%` }}
-                      />
-                    </div>
-                    <Button
-                      onClick={handleStop}
-                      className="w-full bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50 h-11 active:scale-95 transition-all"
-                    >
-                      <StopCircle className="w-5 h-5 mr-2" />
-                      Stop Generation
-                    </Button>
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* Projects Tab Content */}
-            {activeTab === 'projects' && (
-              <div className="space-y-2">
-                {Object.keys(projectGroups).length === 0 ? (
-                  <div className="text-center py-12">
-                    <History className="w-12 h-12 text-zinc-700 mx-auto mb-3" />
-                    <p className="text-zinc-500 text-sm">No projects yet</p>
-                  </div>
-                ) : (
-                  Object.entries(projectGroups).map(([projId, entries]) => (
-                    <div key={projId} className="bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800">
+            
+            <div className="p-4 space-y-6 pb-8">
+              <div>
+                <div className="text-white text-sm font-bold tracking-wider mb-3">SUBJECT</div>
+                <label className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-xl overflow-hidden cursor-pointer hover:border-zinc-600 active:scale-95 transition-all block aspect-square">
+                  <input type="file" accept="image/*" onChange={handleSubjectUpload} className="hidden" disabled={uploadingSubject} />
+                  {subjectImage ? (
+                    <>
+                      <img src={subjectImage} alt="Subject" className="w-full h-full object-cover" />
                       <button
-                        onClick={() => toggleProject(projId)}
-                        className="w-full px-4 py-3 flex items-center justify-between hover:bg-zinc-800 active:bg-zinc-700 transition-colors"
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSubjectImage(null); }}
+                        className="absolute top-2 right-2 w-8 h-8 bg-black/80 rounded-lg flex items-center justify-center"
                       >
-                        <div className="text-left">
-                          <p className="text-white text-sm font-semibold">Project {projId.substring(0, 16)}...</p>
-                          <p className="text-zinc-400 text-xs">{entries.length} images generated</p>
-                        </div>
-                        <svg
-                          className={`w-5 h-5 text-zinc-500 transition-transform ${expandedProjects[projId] ? 'rotate-180' : ''}`}
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
+                        <X className="w-4 h-4 text-white" />
                       </button>
-                      
-                      {expandedProjects[projId] && (
-                        <div className="p-3 border-t border-zinc-800 space-y-3">
-                          <div className="grid grid-cols-3 gap-2">
-                            {entries.map((entry, idx) => (
-                              entry.result_image && (
-                                <img
-                                  key={entry.id}
-                                  src={entry.result_image}
-                                  alt={`Result ${idx + 1}`}
-                                  className="w-full aspect-square object-cover rounded-lg cursor-pointer hover:opacity-80 active:scale-95 transition-all"
-                                  onClick={() => setViewingImage(entry.result_image)}
-                                />
-                              )
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                    </>
+                  ) : uploadingSubject ? (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Loader2 className="w-10 h-10 text-purple-500 animate-spin" />
                     </div>
-                  ))
-                )}
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                      <Upload className="w-10 h-10 text-zinc-600" />
+                      <span className="text-zinc-500 text-sm font-medium">Tap to add Character</span>
+                    </div>
+                  )}
+                </label>
               </div>
-            )}
-          </div>
-        </motion.div>
+
+              <div>
+                <div className="text-white text-sm font-bold tracking-wider mb-3">STYLE</div>
+                <label className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-xl overflow-hidden cursor-pointer hover:border-zinc-600 active:scale-95 transition-all block aspect-square">
+                  <input type="file" accept="image/*" onChange={handleStyleUpload} className="hidden" disabled={uploadingStyle} />
+                  {styleImage ? (
+                    <>
+                      <img src={styleImage} alt="Style" className="w-full h-full object-cover" />
+                      <button
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setStyleImage(null); }}
+                        className="absolute top-2 right-2 w-8 h-8 bg-black/80 rounded-lg flex items-center justify-center"
+                      >
+                        <X className="w-4 h-4 text-white" />
+                      </button>
+                    </>
+                  ) : uploadingStyle ? (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Loader2 className="w-10 h-10 text-purple-500 animate-spin" />
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                      <Upload className="w-10 h-10 text-zinc-600" />
+                      <span className="text-zinc-500 text-sm font-medium">Tap to add UI/Style</span>
+                    </div>
+                  )}
+                </label>
+              </div>
+
+              <div>
+                <div className="text-white text-sm font-bold tracking-wider mb-3">SCENE</div>
+                <label className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-xl overflow-hidden cursor-pointer hover:border-zinc-600 active:scale-95 transition-all block aspect-square">
+                  <input type="file" accept="image/*" onChange={handleSceneUpload} className="hidden" disabled={uploadingScene} />
+                  {sceneImage ? (
+                    <>
+                      <img src={sceneImage} alt="Scene" className="w-full h-full object-cover" />
+                      <button
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSceneImage(null); }}
+                        className="absolute top-2 right-2 w-8 h-8 bg-black/80 rounded-lg flex items-center justify-center"
+                      >
+                        <X className="w-4 h-4 text-white" />
+                      </button>
+                    </>
+                  ) : uploadingScene ? (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Loader2 className="w-10 h-10 text-purple-500 animate-spin" />
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                      <Upload className="w-10 h-10 text-zinc-600" />
+                      <span className="text-zinc-500 text-sm font-medium">Tap to add Background</span>
+                    </div>
+                  )}
+                </label>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Mobile Control Panel */}
+      <AnimatePresence>
+        {showControlPanel && (
+          <motion.div
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            className="lg:hidden fixed inset-x-0 bottom-0 z-[100] bg-[#121212] border-t-2 border-zinc-700 rounded-t-3xl shadow-2xl max-h-[85vh] overflow-y-auto"
+          >
+            <div className="sticky top-0 bg-[#121212] border-b border-zinc-800 p-4 flex items-center justify-between z-10">
+              <h3 className="text-white font-bold">RMX Control</h3>
+              <button
+                onClick={() => setShowControlPanel(false)}
+                className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+            
+            <div className="p-4 space-y-4 pb-8">
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setActiveTab('control')}
+                  className={`flex-1 px-3 py-2 rounded-lg font-semibold text-xs transition-all ${
+                    activeTab === 'control'
+                      ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50'
+                      : 'bg-zinc-800 text-zinc-500'
+                  }`}
+                >
+                  Control
+                </button>
+                <button 
+                  onClick={() => setActiveTab('projects')}
+                  className={`flex-1 px-3 py-2 rounded-lg font-semibold text-xs transition-all ${
+                    activeTab === 'projects'
+                      ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50'
+                      : 'bg-zinc-800 text-zinc-500'
+                  }`}
+                >
+                  Projects
+                </button>
+              </div>
+
+              {activeTab === 'control' && (
+                <>
+                  <Textarea
+                    value={prompt}
+                    onChange={(e) => {
+                      setPrompt(e.target.value);
+                      setRmxActivated(false);
+                    }}
+                    placeholder="Describe your vision... RMX generates 10 angles"
+                    className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 min-h-[120px] text-sm"
+                    disabled={isGenerating}
+                  />
+                  
+                  {!rmxActivated && !isGenerating && (
+                    <Button
+                      onClick={handleRMXClick}
+                      disabled={!prompt.trim()}
+                      className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-white font-semibold h-12 active:scale-95 transition-all"
+                    >
+                      <Sparkles className="w-5 h-5 mr-2" />
+                      RMX
+                    </Button>
+                  )}
+
+                  {rmxActivated && !isGenerating && !showProjectOptions && (
+                    <Button
+                      onClick={handleStartGeneration}
+                      className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold h-12 active:scale-95 transition-all"
+                    >
+                      <Sparkles className="w-5 h-5 mr-2" />
+                      Start Generation
+                    </Button>
+                  )}
+
+                  {isGenerating && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-cyan-400 font-semibold">Generating {completedImages + 1}/10</span>
+                        <span className="text-zinc-400">{completedImages}/10</span>
+                      </div>
+                      <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
+                          style={{ width: `${(completedImages / 10) * 100}%` }}
+                        />
+                      </div>
+                      <Button
+                        onClick={handleStop}
+                        className="w-full bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50 h-11 active:scale-95 transition-all"
+                      >
+                        <StopCircle className="w-5 h-5 mr-2" />
+                        Stop Generation
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {activeTab === 'projects' && (
+                <div className="space-y-2">
+                  {Object.keys(projectGroups).length === 0 ? (
+                    <div className="text-center py-12">
+                      <History className="w-12 h-12 text-zinc-700 mx-auto mb-3" />
+                      <p className="text-zinc-500 text-sm">No projects yet</p>
+                    </div>
+                  ) : (
+                    Object.entries(projectGroups).map(([projId, entries]) => (
+                      <div key={projId} className="bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800">
+                        <button
+                          onClick={() => toggleProject(projId)}
+                          className="w-full px-4 py-3 flex items-center justify-between hover:bg-zinc-800 active:bg-zinc-700 transition-colors"
+                        >
+                          <div className="text-left">
+                            <p className="text-white text-sm font-semibold">Project {projId.substring(0, 16)}...</p>
+                            <p className="text-zinc-400 text-xs">{entries.length} images generated</p>
+                          </div>
+                          <svg
+                            className={`w-5 h-5 text-zinc-500 transition-transform ${expandedProjects[projId] ? 'rotate-180' : ''}`}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                        
+                        {expandedProjects[projId] && (
+                          <div className="p-3 border-t border-zinc-800 space-y-3">
+                            <div className="grid grid-cols-3 gap-2">
+                              {entries.map((entry, idx) => (
+                                entry.result_image && (
+                                  <img
+                                    key={entry.id}
+                                    src={entry.result_image}
+                                    alt={`Result ${idx + 1}`}
+                                    className="w-full aspect-square object-cover rounded-lg cursor-pointer hover:opacity-80 active:scale-95 transition-all"
+                                    onClick={() => setViewingImage(entry.result_image)}
+                                  />
+                                )
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
