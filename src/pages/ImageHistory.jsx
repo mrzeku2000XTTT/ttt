@@ -729,8 +729,8 @@ export default function ImageHistoryPage() {
             </div>
           </div>
 
-          {/* Instruction Input - Mobile */}
-          <div className="lg:hidden mt-3 space-y-2">
+          {/* Instruction Input - Mobile (Always visible) */}
+          <div className="lg:hidden mt-2 bg-zinc-900 border border-zinc-700 rounded-lg p-2">
             <Textarea
               value={prompt}
               onChange={(e) => {
@@ -738,50 +738,55 @@ export default function ImageHistoryPage() {
                 setRmxActivated(false);
               }}
               placeholder="Describe your vision..."
-              className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 min-h-[60px] text-xs resize-none"
+              className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 min-h-[50px] text-xs resize-none"
               disabled={isGenerating}
             />
             
-            {!rmxActivated && !isGenerating && (
-              <Button
-                onClick={handleRMXClick}
-                disabled={!prompt.trim()}
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold h-10 active:scale-95 transition-all text-xs"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                RMX
-              </Button>
-            )}
+            <div className="mt-2 flex gap-2">
+              {!rmxActivated && !isGenerating && (
+                <Button
+                  onClick={handleRMXClick}
+                  disabled={!prompt.trim()}
+                  className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold h-9 active:scale-95 transition-all text-xs"
+                >
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  RMX
+                </Button>
+              )}
 
-            {rmxActivated && !isGenerating && !showProjectOptions && (
-              <Button
-                onClick={handleStartGeneration}
-                className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold h-10 active:scale-95 transition-all text-xs"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                Start Generation
-              </Button>
-            )}
+              {rmxActivated && !isGenerating && !showProjectOptions && (
+                <Button
+                  onClick={handleStartGeneration}
+                  className="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold h-9 active:scale-95 transition-all text-xs"
+                >
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  Start
+                </Button>
+              )}
+
+              {isGenerating && (
+                <Button
+                  onClick={handleStop}
+                  className="flex-1 bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50 h-9 active:scale-95 transition-all text-xs"
+                >
+                  <StopCircle className="w-3 h-3 mr-1" />
+                  Stop
+                </Button>
+              )}
+            </div>
 
             {isGenerating && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs">
+              <div className="mt-2">
+                <div className="flex items-center justify-between text-[10px] mb-1">
                   <span className="text-cyan-400 font-semibold">Gen {completedImages + 1}/10</span>
                   <span className="text-zinc-500">{completedImages}/10</span>
                 </div>
-                <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
                     style={{ width: `${(completedImages / 10) * 100}%` }}
                   />
                 </div>
-                <Button
-                  onClick={handleStop}
-                  className="w-full bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50 h-9 active:scale-95 transition-all text-xs"
-                >
-                  <StopCircle className="w-4 h-4 mr-2" />
-                  Stop
-                </Button>
               </div>
             )}
           </div>
