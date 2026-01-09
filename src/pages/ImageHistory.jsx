@@ -25,6 +25,13 @@ export default function ImageHistoryPage() {
   const [shouldStop, setShouldStop] = useState(false);
   const [currentProject, setCurrentProject] = useState(null);
   const [showProjectOptions, setShowProjectOptions] = useState(false);
+  const [subjectImage, setSubjectImage] = useState(null);
+  const [styleImage, setStyleImage] = useState(null);
+  const [sceneImage, setSceneImage] = useState(null);
+  const [uploadingSubject, setUploadingSubject] = useState(false);
+  const [uploadingStyle, setUploadingStyle] = useState(false);
+  const [uploadingScene, setUploadingScene] = useState(false);
+  const [projectId, setProjectId] = useState(null);
 
   useEffect(() => {
     loadHistory();
@@ -56,6 +63,51 @@ export default function ImageHistoryPage() {
       alert("Failed to upload image");
     } finally {
       setUploadingReference(false);
+    }
+  };
+
+  const handleSubjectUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingSubject(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setSubjectImage(file_url);
+    } catch (err) {
+      console.error("Upload failed:", err);
+      alert("Failed to upload subject image");
+    } finally {
+      setUploadingSubject(false);
+    }
+  };
+
+  const handleStyleUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingStyle(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setStyleImage(file_url);
+    } catch (err) {
+      console.error("Upload failed:", err);
+      alert("Failed to upload style image");
+    } finally {
+      setUploadingStyle(false);
+    }
+  };
+
+  const handleSceneUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingScene(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setSceneImage(file_url);
+    } catch (err) {
+      console.error("Upload failed:", err);
+      alert("Failed to upload scene image");
+    } finally {
+      setUploadingScene(false);
     }
   };
 
@@ -101,7 +153,13 @@ export default function ImageHistoryPage() {
     setGeneratedImages([null, null, null, null, null, null, null, null, null, null]);
     
     try {
-      const imageUrls = referenceImages.filter(img => img !== null);
+      // Collect ALL images: SUBJECT, STYLE, SCENE, and references
+      const imageUrls = [
+        subjectImage,
+        styleImage,
+        sceneImage,
+        ...referenceImages
+      ].filter(img => img !== null);
       
       // Run two RMX ULTRA agents in parallel
       const agent1 = async () => {
@@ -205,23 +263,99 @@ export default function ImageHistoryPage() {
   };
 
   return (
-    <div className="h-screen bg-[#0a0a0a] overflow-hidden grid" style={{ gridTemplateColumns: '64px 1fr 400px' }}>
-      {/* LEFT SIDEBAR - Dark Icon-Only */}
-      <div className="bg-zinc-950 border-r border-zinc-800 flex flex-col items-center py-6 gap-6">
+    <div className="h-screen bg-[#0a0a0a] overflow-hidden grid" style={{ gridTemplateColumns: '120px 1fr 400px' }}>
+      {/* LEFT SIDEBAR - Dark with Upload Sections */}
+      <div className="bg-zinc-950 border-r border-zinc-800 flex flex-col py-6 px-3 gap-4 overflow-y-auto">
         <button
           onClick={() => navigate(createPageUrl('Feed'))}
-          className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors"
+          className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors mx-auto"
           title="Home"
         >
           <Home className="w-5 h-5 text-white" />
         </button>
-        <button className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors" title="Upload">
-          <Upload className="w-5 h-5 text-white" />
-        </button>
-        <button className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center" title="History">
+
+        {/* SUBJECT Section */}
+        <div className="space-y-2">
+          <div className="text-white text-[10px] font-bold tracking-wider">SUBJECT</div>
+          <label className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden cursor-pointer hover:border-zinc-600 transition-colors block aspect-square">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleSubjectUpload}
+              className="hidden"
+              disabled={uploadingSubject}
+            />
+            {subjectImage ? (
+              <img src={subjectImage} alt="Subject" className="w-full h-full object-cover" />
+            ) : uploadingSubject ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Loader2 className="w-6 h-6 text-zinc-600 animate-spin" />
+              </div>
+            ) : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <Upload className="w-5 h-5 text-zinc-700" />
+                <span className="text-zinc-700 text-[8px] mt-1">Character</span>
+              </div>
+            )}
+          </label>
+        </div>
+
+        {/* STYLE Section */}
+        <div className="space-y-2">
+          <div className="text-white text-[10px] font-bold tracking-wider">STYLE</div>
+          <label className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden cursor-pointer hover:border-zinc-600 transition-colors block aspect-square">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleStyleUpload}
+              className="hidden"
+              disabled={uploadingStyle}
+            />
+            {styleImage ? (
+              <img src={styleImage} alt="Style" className="w-full h-full object-cover" />
+            ) : uploadingStyle ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Loader2 className="w-6 h-6 text-zinc-600 animate-spin" />
+              </div>
+            ) : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <Upload className="w-5 h-5 text-zinc-700" />
+                <span className="text-zinc-700 text-[8px] mt-1">UI/Style</span>
+              </div>
+            )}
+          </label>
+        </div>
+
+        {/* SCENE Section */}
+        <div className="space-y-2">
+          <div className="text-white text-[10px] font-bold tracking-wider">SCENE</div>
+          <label className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden cursor-pointer hover:border-zinc-600 transition-colors block aspect-square">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleSceneUpload}
+              className="hidden"
+              disabled={uploadingScene}
+            />
+            {sceneImage ? (
+              <img src={sceneImage} alt="Scene" className="w-full h-full object-cover" />
+            ) : uploadingScene ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Loader2 className="w-6 h-6 text-zinc-600 animate-spin" />
+              </div>
+            ) : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <Upload className="w-5 h-5 text-zinc-700" />
+                <span className="text-zinc-700 text-[8px] mt-1">Background</span>
+              </div>
+            )}
+          </label>
+        </div>
+
+        <button className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mx-auto mt-auto" title="History">
           <History className="w-5 h-5 text-white" />
         </button>
-        <button className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors mt-auto" title="Settings">
+        <button className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors mx-auto" title="Settings">
           <Settings className="w-5 h-5 text-white" />
         </button>
       </div>
@@ -312,7 +446,31 @@ export default function ImageHistoryPage() {
             <Button
               onClick={() => {
                 if (chatMessage.trim()) {
-                  setPrompt(prev => prev + '\n\nAdditional: ' + chatMessage);
+                  // Generate project ID
+                  const id = `PRJ-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+                  setProjectId(id);
+                  
+                  // Collect all images
+                  const allImages = [
+                    subjectImage,
+                    styleImage,
+                    sceneImage,
+                    ...referenceImages
+                  ].filter(img => img !== null);
+                  
+                  // Build comprehensive prompt
+                  let enhancedPrompt = `[Project ID: ${id}]\n\n`;
+                  enhancedPrompt += `${prompt}\n\n`;
+                  enhancedPrompt += `Additional Instructions: ${chatMessage}\n\n`;
+                  
+                  if (subjectImage) enhancedPrompt += `[SUBJECT CHARACTER PROVIDED]\n`;
+                  if (styleImage) enhancedPrompt += `[STYLE REFERENCE PROVIDED]\n`;
+                  if (sceneImage) enhancedPrompt += `[SCENE BACKGROUND PROVIDED]\n`;
+                  if (referenceImages.filter(img => img).length > 0) {
+                    enhancedPrompt += `[${referenceImages.filter(img => img).length} REFERENCE IMAGE(S) PROVIDED]\n`;
+                  }
+                  
+                  setPrompt(enhancedPrompt);
                   setChatMessage("");
                 }
               }}
@@ -383,7 +541,14 @@ export default function ImageHistoryPage() {
             <>
               {/* Prompt Input */}
               <div className="space-y-2">
-                <label className="text-zinc-400 text-sm font-semibold">Enter your prompt for RMX ULTRA</label>
+                <label className="text-zinc-400 text-sm font-semibold flex items-center justify-between">
+                  <span>Enter your prompt for RMX ULTRA</span>
+                  {projectId && (
+                    <span className="text-[10px] bg-zinc-800 px-2 py-1 rounded text-zinc-500 font-mono">
+                      {projectId}
+                    </span>
+                  )}
+                </label>
                 <Textarea
                   value={prompt}
                   onChange={(e) => {
