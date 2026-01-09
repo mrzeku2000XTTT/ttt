@@ -408,9 +408,14 @@ export default function ImageHistoryPage() {
       // Run both agents simultaneously and wait for completion
       await Promise.all([agent1(), agent2()]);
 
-      console.log('✅ All 10 images generation complete!');
+      console.log('✅ All images generation complete!');
+      
+      // Count actual images generated
+      const actualCount = generatedImages.filter(img => img !== null).length;
+      console.log(`📊 Final tally: ${actualCount}/10 images generated`);
+      
       setProgress(100);
-      setCompletedImages(10);
+      setCompletedImages(actualCount);
       await loadHistory();
     } catch (err) {
       console.error('Generation failed:', err);
@@ -472,12 +477,12 @@ export default function ImageHistoryPage() {
   }, {});
 
   return (
-    <div className="h-screen bg-[#0a0a0a] overflow-hidden grid" style={{ gridTemplateColumns: '120px 1fr 400px' }}>
+    <div className="h-screen bg-[#0a0a0a] overflow-hidden grid grid-cols-1 lg:grid-cols-[120px_1fr_400px]">
       {/* LEFT SIDEBAR - Dark with Upload Sections */}
-      <div className="bg-zinc-950 border-r border-zinc-800 flex flex-col py-6 px-3 gap-4 overflow-y-auto">
+      <div className="bg-zinc-950 border-r border-zinc-800 flex flex-col py-6 px-3 gap-4 overflow-y-auto hidden lg:flex">
         <button
           onClick={() => navigate(createPageUrl('Feed'))}
-          className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors mx-auto"
+          className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors mx-auto touch-manipulation"
           title="Home"
         >
           <Home className="w-5 h-5 text-white" />
@@ -561,10 +566,18 @@ export default function ImageHistoryPage() {
           </label>
         </div>
 
-        <button className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mx-auto mt-auto" title="History">
+        <button 
+          onClick={() => setActiveTab('projects')}
+          className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mx-auto mt-auto touch-manipulation" 
+          title="History"
+        >
           <History className="w-5 h-5 text-white" />
         </button>
-        <button className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors mx-auto" title="Settings">
+        <button 
+          onClick={() => setActiveTab('settings')}
+          className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors mx-auto touch-manipulation" 
+          title="Settings"
+        >
           <Settings className="w-5 h-5 text-white" />
         </button>
       </div>
@@ -695,8 +708,31 @@ export default function ImageHistoryPage() {
 
       </div>
 
+      {/* Floating Action Buttons - Mobile Only */}
+      <div className="lg:hidden fixed z-50 flex flex-col gap-2" style={{ top: 'calc(var(--sat, 0px) + 7.5rem)', right: '1rem' }}>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => navigate(createPageUrl('Window'))}
+          className="w-11 h-11 bg-black/90 backdrop-blur-xl border border-white/20 rounded-xl flex items-center justify-center hover:bg-black transition-colors shadow-lg touch-manipulation"
+          title="Open RMX Window"
+        >
+          <History className="w-5 h-5 text-white" />
+        </motion.button>
+
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setActiveTab('settings')}
+          className="w-11 h-11 bg-black/90 backdrop-blur-xl border border-white/20 rounded-xl flex items-center justify-center hover:bg-black transition-colors shadow-lg touch-manipulation"
+          title="Settings"
+        >
+          <Settings className="w-5 h-5 text-white" />
+        </motion.button>
+      </div>
+
       {/* RIGHT CONTROL PANEL - Dark Theme */}
-      <div className="bg-[#121212] border-l border-zinc-800 overflow-y-auto">
+      <div className="bg-[#121212] border-l border-zinc-800 overflow-y-auto col-span-full lg:col-span-1">
         <div className="p-6 space-y-6">
           {/* Header */}
           <div className="flex items-center gap-3">
