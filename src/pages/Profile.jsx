@@ -69,6 +69,12 @@ export default function ProfilePage() {
         }
       }
       
+      // Check for manually entered Kaspa address
+      const manualAddress = localStorage.getItem('manual_kaspa_address');
+      if (manualAddress && !connectedWalletAddress) {
+        connectedWalletAddress = manualAddress;
+      }
+      
       try {
         currentUser = await base44.auth.me();
         
@@ -128,7 +134,7 @@ export default function ProfilePage() {
         }
       } catch (err) {
         // User not logged in - try wallet-only mode
-        const walletAddress = connectedWalletAddress || localStorage.getItem('ttt_wallet_address');
+        const walletAddress = connectedWalletAddress || localStorage.getItem('ttt_wallet_address') || localStorage.getItem('manual_kaspa_address');
         if (walletAddress) {
           // Load from WalletProfile
           try {
@@ -407,8 +413,9 @@ export default function ProfilePage() {
   };
 
   const handleSave = async () => {
-    if (!user?.created_wallet_address) {
-      setError('Please connect wallet to save profile');
+    const walletAddr = user?.created_wallet_address || localStorage.getItem('manual_kaspa_address') || localStorage.getItem('ttt_wallet_address');
+    if (!walletAddr) {
+      setError('Please connect wallet or enter Kaspa address to save profile');
       return;
     }
     
@@ -422,12 +429,12 @@ export default function ProfilePage() {
       
       // Save to WalletProfile (for both logged in and wallet-only)
       const profiles = await base44.entities.WalletProfile.filter({
-        wallet_address: user.created_wallet_address
+        wallet_address: walletAddr
       });
       
       const walletProfileData = {
         ...editData,
-        wallet_address: user.created_wallet_address,
+        wallet_address: walletAddr,
         email: user.email || null,
         last_updated: new Date().toISOString()
       };
@@ -877,7 +884,7 @@ Return ONLY the post text, no quotes or extra formatting.`,
                 <Card className="backdrop-blur-xl bg-white/5 border-white/10">
                   <CardHeader className="border-b border-white/10 flex flex-row items-center justify-between">
                     <h2 className="text-xl font-bold text-white">Profile Information</h2>
-                    {!isEditing && user?.created_wallet_address && (
+                    {!isEditing && (user?.created_wallet_address || localStorage.getItem('manual_kaspa_address') || localStorage.getItem('ttt_wallet_address')) && (
                       <Button
                         onClick={() => setIsEditing(true)}
                         variant="ghost"
