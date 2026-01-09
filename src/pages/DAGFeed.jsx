@@ -302,7 +302,24 @@ export default function DAGFeedPage() {
     setError(null);
 
     try {
-      const authorName = user?.username || `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
+      // Try to get username from WalletProfile if using L0
+      let authorName = user?.username;
+      
+      if (!authorName && manualL0) {
+        try {
+          const profiles = await base44.entities.WalletProfile.filter({ wallet_address: manualL0 });
+          if (profiles && profiles.length > 0 && profiles[0].username) {
+            authorName = profiles[0].username;
+          }
+        } catch (err) {
+          console.log('Could not fetch username from profile');
+        }
+      }
+      
+      // Fallback to truncated address
+      if (!authorName) {
+        authorName = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
+      }
 
       const postData = {
         content: newPost.trim() || "Shared media",
