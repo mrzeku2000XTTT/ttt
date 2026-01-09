@@ -33,17 +33,33 @@ export default function ImageHistoryPage() {
   const [uploadingScene, setUploadingScene] = useState(false);
   const [projectId, setProjectId] = useState(null);
   const [expandedProjects, setExpandedProjects] = useState({});
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     loadHistory();
+    checkAuth();
   }, []);
+
+  const checkAuth = async () => {
+    try {
+      const currentUser = await base44.auth.me();
+      setUser(currentUser);
+    } catch (err) {
+      console.log('User not logged in');
+      setUser(null);
+    }
+  };
 
   const loadHistory = async () => {
     try {
+      const currentUser = await base44.auth.me();
       const entries = await base44.entities.RemixAILearning.filter({}, '-created_date', 50);
       setHistory(entries);
     } catch (err) {
-      console.error('Failed to load history:', err);
+      console.error('Failed to load history, loading from localStorage:', err);
+      // Load from localStorage for non-authenticated users
+      const localHistory = JSON.parse(localStorage.getItem('rmx_local_history') || '[]');
+      setHistory(localHistory);
     } finally {
       setIsLoading(false);
     }
@@ -202,14 +218,24 @@ export default function ImageHistoryPage() {
                 return updated;
               });
               
-              await base44.entities.RemixAILearning.create({
+              const entryData = {
                 user_prompt: prompt,
                 detailed_prompt: prompt,
                 reference_images: imageUrls,
                 result_image: response.url,
                 was_successful: true,
-                style_type: 'rmx_workflow'
-              });
+                style_type: 'rmx_workflow',
+                created_date: new Date().toISOString()
+              };
+
+              try {
+                await base44.entities.RemixAILearning.create(entryData);
+              } catch (err) {
+                console.log('Not logged in, saving to localStorage');
+                const localHistory = JSON.parse(localStorage.getItem('rmx_local_history') || '[]');
+                localHistory.unshift({ ...entryData, id: Date.now() + i });
+                localStorage.setItem('rmx_local_history', JSON.stringify(localHistory.slice(0, 100)));
+              }
             }
           } catch (err) {
             console.error(`❌ Agent 1 failed image ${i + 1}:`, err);
@@ -242,14 +268,24 @@ export default function ImageHistoryPage() {
                 return updated;
               });
               
-              await base44.entities.RemixAILearning.create({
+              const entryData = {
                 user_prompt: prompt,
                 detailed_prompt: prompt,
                 reference_images: imageUrls,
                 result_image: response.url,
                 was_successful: true,
-                style_type: 'rmx_workflow'
-              });
+                style_type: 'rmx_workflow',
+                created_date: new Date().toISOString()
+              };
+
+              try {
+                await base44.entities.RemixAILearning.create(entryData);
+              } catch (err) {
+                console.log('Not logged in, saving to localStorage');
+                const localHistory = JSON.parse(localStorage.getItem('rmx_local_history') || '[]');
+                localHistory.unshift({ ...entryData, id: Date.now() + i });
+                localStorage.setItem('rmx_local_history', JSON.stringify(localHistory.slice(0, 100)));
+              }
             }
           } catch (err) {
             console.error(`❌ Agent 2 failed image ${i + 1}:`, err);
