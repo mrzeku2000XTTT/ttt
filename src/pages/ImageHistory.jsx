@@ -908,10 +908,10 @@ export default function ImageHistoryPage() {
           {activeTab === 'settings' && (
             <div className="space-y-4">
               {/* Mobile Upload Sections */}
-              <div className="lg:hidden space-y-4">
+              <div className="lg:hidden grid grid-cols-3 gap-3">
                 {/* SUBJECT Section */}
                 <div className="space-y-2">
-                  <div className="text-white text-xs font-bold tracking-wider">SUBJECT</div>
+                  <div className="text-white text-[10px] font-bold tracking-wider">SUBJECT</div>
                   <label className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden cursor-pointer hover:border-zinc-600 transition-colors block aspect-square">
                     <input
                       type="file"
@@ -928,17 +928,17 @@ export default function ImageHistoryPage() {
                       </div>
                     ) : (
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <Upload className="w-5 h-5 text-zinc-700" />
-                        <span className="text-zinc-700 text-xs mt-1">Character</span>
+                        <Upload className="w-4 h-4 text-zinc-700" />
+                        <span className="text-zinc-700 text-[8px] mt-1">Character</span>
                       </div>
                     )}
-                  </label>
-                </div>
+                    </label>
+                    </div>
 
-                {/* STYLE Section */}
-                <div className="space-y-2">
-                  <div className="text-white text-xs font-bold tracking-wider">STYLE</div>
-                  <label className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden cursor-pointer hover:border-zinc-600 transition-colors block aspect-square">
+                    {/* STYLE Section */}
+                    <div className="space-y-2">
+                    <div className="text-white text-[10px] font-bold tracking-wider">STYLE</div>
+                    <label className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden cursor-pointer hover:border-zinc-600 transition-colors block aspect-square">
                     <input
                       type="file"
                       accept="image/*"
@@ -954,17 +954,17 @@ export default function ImageHistoryPage() {
                       </div>
                     ) : (
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <Upload className="w-5 h-5 text-zinc-700" />
-                        <span className="text-zinc-700 text-xs mt-1">UI/Style</span>
+                        <Upload className="w-4 h-4 text-zinc-700" />
+                        <span className="text-zinc-700 text-[8px] mt-1">Style</span>
                       </div>
                     )}
-                  </label>
-                </div>
+                    </label>
+                    </div>
 
-                {/* SCENE Section */}
-                <div className="space-y-2">
-                  <div className="text-white text-xs font-bold tracking-wider">SCENE</div>
-                  <label className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden cursor-pointer hover:border-zinc-600 transition-colors block aspect-square">
+                    {/* SCENE Section */}
+                    <div className="space-y-2">
+                    <div className="text-white text-[10px] font-bold tracking-wider">SCENE</div>
+                    <label className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden cursor-pointer hover:border-zinc-600 transition-colors block aspect-square">
                     <input
                       type="file"
                       accept="image/*"
@@ -980,20 +980,15 @@ export default function ImageHistoryPage() {
                       </div>
                     ) : (
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <Upload className="w-5 h-5 text-zinc-700" />
-                        <span className="text-zinc-700 text-xs mt-1">Background</span>
+                        <Upload className="w-4 h-4 text-zinc-700" />
+                        <span className="text-zinc-700 text-[8px] mt-1">Scene</span>
                       </div>
                     )}
-                  </label>
-                </div>
-              </div>
-
-              <div className="bg-zinc-900 rounded-lg p-4">
-                <h4 className="text-zinc-400 text-sm mb-4">Settings</h4>
-                <p className="text-zinc-500 text-xs">Settings coming soon...</p>
-              </div>
-            </div>
-          )}
+                    </label>
+                    </div>
+                    </div>
+                    </div>
+                    )}
 
           {activeTab === 'projects' && (
             <div className="space-y-3">
