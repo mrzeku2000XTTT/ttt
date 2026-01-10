@@ -299,65 +299,77 @@ export default function ImageHistoryPage() {
           }
           if (shouldStop) break;
 
-          try {
-            console.log(`Agent 1: Generating image ${i + 1}/10...`);
-            const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\nSTORYBOARD SHOT ${i + 1}/10 - Camera Angle: ${cameraAngles[i]}\nProfessional cinematography, consistent subject and style, high quality output`;
-            const response = await base44.integrations.Core.GenerateImage({
-              prompt: enhancedPrompt,
-              ...(imageUrls.length > 0 && { existing_image_urls: imageUrls })
-            });
+          let retries = 3;
+          let success = false;
 
-            if (response?.url) {
-              console.log(`✅ Agent 1: Got image ${i + 1}`);
-              setGeneratedImages(prev => {
-                const updated = [...prev];
-                updated[i] = response.url;
-                return updated;
+          while (retries > 0 && !success && !shouldStop) {
+            try {
+              console.log(`Agent 1: Generating tile ${i + 1}/10 (attempt ${4 - retries}/3)...`);
+              const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\nSTORYBOARD SHOT ${i + 1}/10 - Camera Angle: ${cameraAngles[i]}\nProfessional cinematography, consistent subject and style, high quality output`;
+              const response = await base44.integrations.Core.GenerateImage({
+                prompt: enhancedPrompt,
+                ...(imageUrls.length > 0 && { existing_image_urls: imageUrls })
               });
 
-              setCompletedImages(prev => {
-                const newCount = prev + 1;
-                console.log(`Progress: ${newCount}/10 images completed`);
-                return newCount;
-              });
+              if (response?.url) {
+                console.log(`✅ Agent 1: Tile ${i + 1}/10 complete`);
+                success = true;
 
-              let walletAddress = 'guest';
-              try {
-                if (user?.created_wallet_address) {
-                  walletAddress = user.created_wallet_address;
-                } else if (typeof window.kasware !== 'undefined') {
-                  const accounts = await window.kasware.getAccounts();
-                  if (accounts && accounts.length > 0) {
-                    walletAddress = accounts[0];
+                setGeneratedImages(prev => {
+                  const updated = [...prev];
+                  updated[i] = response.url;
+                  return updated;
+                });
+
+                setCompletedImages(prev => prev + 1);
+
+                let walletAddress = 'guest';
+                try {
+                  if (user?.created_wallet_address) {
+                    walletAddress = user.created_wallet_address;
+                  } else if (typeof window.kasware !== 'undefined') {
+                    const accounts = await window.kasware.getAccounts();
+                    if (accounts && accounts.length > 0) {
+                      walletAddress = accounts[0];
+                    }
                   }
+                } catch (err) {
+                  console.log('Could not get wallet');
                 }
-              } catch (err) {
-                console.log('Could not get wallet');
-              }
 
-              const entryData = {
-                wallet_address: walletAddress,
-                project_id: projectId,
-                user_prompt: prompt,
-                detailed_prompt: enhancedPrompt,
-                reference_images: imageUrls,
-                result_image: response.url,
-                was_successful: true,
-                style_type: 'rmx_workflow',
-                created_date: new Date().toISOString()
-              };
+                const entryData = {
+                  wallet_address: walletAddress,
+                  project_id: projectId,
+                  user_prompt: prompt,
+                  detailed_prompt: enhancedPrompt,
+                  reference_images: imageUrls,
+                  result_image: response.url,
+                  was_successful: true,
+                  style_type: 'rmx_workflow',
+                  created_date: new Date().toISOString()
+                };
 
-              try {
-                await base44.entities.RemixAILearning.create(entryData);
-              } catch (err) {
-                console.log('Not logged in, saving to localStorage');
-                const localHistory = JSON.parse(localStorage.getItem('rmx_local_history') || '[]');
-                localHistory.unshift({ ...entryData, id: Date.now() + i });
-                localStorage.setItem('rmx_local_history', JSON.stringify(localHistory.slice(0, 100)));
+                try {
+                  await base44.entities.RemixAILearning.create(entryData);
+                } catch (err) {
+                  console.log('Not logged in, saving to localStorage');
+                  const localHistory = JSON.parse(localStorage.getItem('rmx_local_history') || '[]');
+                  localHistory.unshift({ ...entryData, id: Date.now() + i });
+                  localStorage.setItem('rmx_local_history', JSON.stringify(localHistory.slice(0, 100)));
+                }
+              } else {
+                retries--;
+                if (retries > 0) console.log(`⚠️ Agent 1: Tile ${i + 1} failed, retrying...`);
               }
+            } catch (err) {
+              console.error(`❌ Agent 1: Tile ${i + 1} error:`, err);
+              retries--;
+              if (retries > 0) console.log(`⚠️ Agent 1: Retrying tile ${i + 1}...`);
             }
-          } catch (err) {
-            console.error(`❌ Agent 1 failed image ${i + 1}:`, err);
+          }
+
+          if (!success) {
+            console.error(`❌ Agent 1: Failed to generate tile ${i + 1} after 3 attempts`);
           }
         }
       };
@@ -370,65 +382,77 @@ export default function ImageHistoryPage() {
           }
           if (shouldStop) break;
 
-          try {
-            console.log(`Agent 2: Generating image ${i + 1}/10...`);
-            const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\nSTORYBOARD SHOT ${i + 1}/10 - Camera Angle: ${cameraAngles[i]}\nProfessional cinematography, consistent subject and style, high quality output`;
-            const response = await base44.integrations.Core.GenerateImage({
-              prompt: enhancedPrompt,
-              ...(imageUrls.length > 0 && { existing_image_urls: imageUrls })
-            });
+          let retries = 3;
+          let success = false;
 
-            if (response?.url) {
-              console.log(`✅ Agent 2: Got image ${i + 1}`);
-              setGeneratedImages(prev => {
-                const updated = [...prev];
-                updated[i] = response.url;
-                return updated;
+          while (retries > 0 && !success && !shouldStop) {
+            try {
+              console.log(`Agent 2: Generating tile ${i + 1}/10 (attempt ${4 - retries}/3)...`);
+              const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\nSTORYBOARD SHOT ${i + 1}/10 - Camera Angle: ${cameraAngles[i]}\nProfessional cinematography, consistent subject and style, high quality output`;
+              const response = await base44.integrations.Core.GenerateImage({
+                prompt: enhancedPrompt,
+                ...(imageUrls.length > 0 && { existing_image_urls: imageUrls })
               });
 
-              setCompletedImages(prev => {
-                const newCount = prev + 1;
-                console.log(`Progress: ${newCount}/10 images completed`);
-                return newCount;
-              });
+              if (response?.url) {
+                console.log(`✅ Agent 2: Tile ${i + 1}/10 complete`);
+                success = true;
 
-              let walletAddress = 'guest';
-              try {
-                if (user?.created_wallet_address) {
-                  walletAddress = user.created_wallet_address;
-                } else if (typeof window.kasware !== 'undefined') {
-                  const accounts = await window.kasware.getAccounts();
-                  if (accounts && accounts.length > 0) {
-                    walletAddress = accounts[0];
+                setGeneratedImages(prev => {
+                  const updated = [...prev];
+                  updated[i] = response.url;
+                  return updated;
+                });
+
+                setCompletedImages(prev => prev + 1);
+
+                let walletAddress = 'guest';
+                try {
+                  if (user?.created_wallet_address) {
+                    walletAddress = user.created_wallet_address;
+                  } else if (typeof window.kasware !== 'undefined') {
+                    const accounts = await window.kasware.getAccounts();
+                    if (accounts && accounts.length > 0) {
+                      walletAddress = accounts[0];
+                    }
                   }
+                } catch (err) {
+                  console.log('Could not get wallet');
                 }
-              } catch (err) {
-                console.log('Could not get wallet');
-              }
 
-              const entryData = {
-                wallet_address: walletAddress,
-                project_id: projectId,
-                user_prompt: prompt,
-                detailed_prompt: enhancedPrompt,
-                reference_images: imageUrls,
-                result_image: response.url,
-                was_successful: true,
-                style_type: 'rmx_workflow',
-                created_date: new Date().toISOString()
-              };
+                const entryData = {
+                  wallet_address: walletAddress,
+                  project_id: projectId,
+                  user_prompt: prompt,
+                  detailed_prompt: enhancedPrompt,
+                  reference_images: imageUrls,
+                  result_image: response.url,
+                  was_successful: true,
+                  style_type: 'rmx_workflow',
+                  created_date: new Date().toISOString()
+                };
 
-              try {
-                await base44.entities.RemixAILearning.create(entryData);
-              } catch (err) {
-                console.log('Not logged in, saving to localStorage');
-                const localHistory = JSON.parse(localStorage.getItem('rmx_local_history') || '[]');
-                localHistory.unshift({ ...entryData, id: Date.now() + i });
-                localStorage.setItem('rmx_local_history', JSON.stringify(localHistory.slice(0, 100)));
+                try {
+                  await base44.entities.RemixAILearning.create(entryData);
+                } catch (err) {
+                  console.log('Not logged in, saving to localStorage');
+                  const localHistory = JSON.parse(localStorage.getItem('rmx_local_history') || '[]');
+                  localHistory.unshift({ ...entryData, id: Date.now() + i });
+                  localStorage.setItem('rmx_local_history', JSON.stringify(localHistory.slice(0, 100)));
+                }
+              } else {
+                retries--;
+                if (retries > 0) console.log(`⚠️ Agent 2: Tile ${i + 1} failed, retrying...`);
               }
+            } catch (err) {
+              console.error(`❌ Agent 2: Tile ${i + 1} error:`, err);
+              retries--;
+              if (retries > 0) console.log(`⚠️ Agent 2: Retrying tile ${i + 1}...`);
             }
-          } catch (err) {
-            console.error(`❌ Agent 2 failed image ${i + 1}:`, err);
+          }
+
+          if (!success) {
+            console.error(`❌ Agent 2: Failed to generate tile ${i + 1} after 3 attempts`);
           }
         }
       };
@@ -877,8 +901,8 @@ export default function ImageHistoryPage() {
               {isGenerating && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-cyan-400">Generating image {completedImages + 1}/10</span>
-                    <span className="text-zinc-500">{completedImages}/10</span>
+                    <span className="text-cyan-400">Tiles complete: {completedImages}/10</span>
+                    <span className="text-zinc-500">{Math.round((completedImages / 10) * 100)}%</span>
                   </div>
                   <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
                     <div
