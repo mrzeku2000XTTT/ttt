@@ -15,7 +15,7 @@ export default function ImageHistoryPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [uploadingReference, setUploadingReference] = useState(false);
   const [referenceImages, setReferenceImages] = useState([null, null]);
-  const [generatedImages, setGeneratedImages] = useState([null, null, null, null, null, null, null, null, null, null]);
+  const [generatedImages, setGeneratedImages] = useState(Array(20).fill(null));
   const [progress, setProgress] = useState(0);
   const [completedImages, setCompletedImages] = useState(0);
   const [activeTab, setActiveTab] = useState('control');
@@ -63,7 +63,7 @@ export default function ImageHistoryPage() {
       if (saved) {
         const state = JSON.parse(saved);
         setPrompt(state.prompt || "");
-        setGeneratedImages(state.generatedImages || [null, null, null, null, null, null, null, null, null, null]);
+        setGeneratedImages(state.generatedImages || Array(20).fill(null));
         setReferenceImages(state.referenceImages || [null, null]);
         setSubjectImage(state.subjectImage || null);
         setStyleImage(state.styleImage || null);
@@ -250,7 +250,7 @@ export default function ImageHistoryPage() {
   const generateImages = async () => {
     setProgress(0);
     setCompletedImages(0);
-    setGeneratedImages([null, null, null, null, null, null, null, null, null, null]);
+    setGeneratedImages(Array(20).fill(null));
     
     try {
       // Collect ALL images: SUBJECT, STYLE, SCENE, and references
@@ -287,13 +287,23 @@ export default function ImageHistoryPage() {
         "low angle shot, heroic perspective, looking up at subject",
         "high angle shot, bird's eye view, environmental context",
         "Dutch angle, tilted dynamic perspective, tension and energy",
-        "extreme close-up, intimate detail focus, macro perspective"
+        "extreme close-up, intimate detail focus, macro perspective",
+        "rear view, back turned, environmental storytelling",
+        "front facing, direct eye contact, engaging perspective",
+        "panoramic wide angle, epic scale, environmental grandeur",
+        "portrait shot, focused composition, character emphasis",
+        "action shot, dynamic movement, motion blur",
+        "silhouette shot, dramatic backlighting, artistic contrast",
+        "reflection shot, mirror or water reflection, creative perspective",
+        "aerial shot, top-down view, unique vantage point",
+        "candid angle, natural moment, authentic expression",
+        "cinematic master shot, final establishing frame, epic conclusion"
       ];
       
       // Run two RMX ULTRA agents in parallel
       const agent1 = async () => {
-        // Agent 1: Generate images 1-5
-        for (let i = 0; i < 5; i++) {
+        // Agent 1: Generate images 1-10
+        for (let i = 0; i < 10; i++) {
           if (shouldStop) break;
           while (isPaused && !shouldStop) {
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -301,8 +311,8 @@ export default function ImageHistoryPage() {
           if (shouldStop) break;
 
           try {
-            console.log(`Agent 1: Generating image ${i + 1}/10...`);
-            const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\nSTORYBOARD SHOT ${i + 1}/10 - Camera Angle: ${cameraAngles[i]}\nProfessional cinematography, consistent subject and style, high quality output`;
+            console.log(`Agent 1: Generating image ${i + 1}/20...`);
+            const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\nSTORYBOARD SHOT ${i + 1}/20 - Camera Angle: ${cameraAngles[i]}\nProfessional cinematography, consistent subject and style, high quality output`;
             const response = await base44.integrations.Core.GenerateImage({
               prompt: enhancedPrompt,
               ...(imageUrls.length > 0 && { existing_image_urls: imageUrls })
@@ -366,8 +376,8 @@ export default function ImageHistoryPage() {
       };
 
       const agent2 = async () => {
-        // Agent 2: Generate images 6-10
-        for (let i = 5; i < 10; i++) {
+        // Agent 2: Generate images 11-20
+        for (let i = 10; i < 20; i++) {
           if (shouldStop) break;
           while (isPaused && !shouldStop) {
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -375,8 +385,8 @@ export default function ImageHistoryPage() {
           if (shouldStop) break;
 
           try {
-            console.log(`Agent 2: Generating image ${i + 1}/10...`);
-            const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\nSTORYBOARD SHOT ${i + 1}/10 - Camera Angle: ${cameraAngles[i]}\nProfessional cinematography, consistent subject and style, high quality output`;
+            console.log(`Agent 2: Generating image ${i + 1}/20...`);
+            const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\nSTORYBOARD SHOT ${i + 1}/20 - Camera Angle: ${cameraAngles[i]}\nProfessional cinematography, consistent subject and style, high quality output`;
             const response = await base44.integrations.Core.GenerateImage({
               prompt: enhancedPrompt,
               ...(imageUrls.length > 0 && { existing_image_urls: imageUrls })
@@ -446,7 +456,7 @@ export default function ImageHistoryPage() {
       
       // Count actual images generated
       const actualCount = generatedImages.filter(img => img !== null).length;
-      console.log(`📊 Final tally: ${actualCount}/10 images generated`);
+      console.log(`📊 Final tally: ${actualCount}/20 images generated`);
       
       setProgress(100);
       setCompletedImages(actualCount);
@@ -619,8 +629,8 @@ export default function ImageHistoryPage() {
       {/* CENTER CANVAS - Grid */}
       <div className="flex flex-col items-center justify-center p-4 lg:p-8 relative order-2 lg:order-none">
         <div className="w-full max-w-6xl">
-          {/* 5x2 Grid for 10 images - Responsive */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 lg:gap-4">
+          {/* 5x4 Grid for 20 images - Responsive */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2 lg:gap-4">
             {generatedImages.map((img, idx) => (
               <div key={`gen-${idx}`} className="relative bg-zinc-900/50 rounded-xl overflow-hidden border-2 border-zinc-700/50 aspect-square group cursor-pointer" onClick={() => img && setViewingImage(img)}>
                 {img ? (
@@ -632,7 +642,7 @@ export default function ImageHistoryPage() {
                   </>
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center">
-                    {isGenerating && idx <= Math.floor((progress / 100) * 10) ? (
+                    {isGenerating && idx <= Math.floor((progress / 100) * 20) ? (
                       <>
                         <Loader2 className="w-8 h-8 text-purple-500 animate-spin mb-2" />
                         <p className="text-zinc-600 text-xs">Gen {idx + 1}</p>
@@ -840,7 +850,7 @@ export default function ImageHistoryPage() {
                     setPrompt(e.target.value);
                     setRmxActivated(false);
                   }}
-                  placeholder="Describe your vision... RMX ULTRA will generate 10 high-quality images with different angles and perspectives."
+                  placeholder="Describe your vision... RMX ULTRA will generate 20 high-quality images with different angles and perspectives."
                   className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 min-h-[100px]"
                   disabled={isGenerating}
                 />
@@ -890,13 +900,13 @@ export default function ImageHistoryPage() {
               {isGenerating && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-cyan-400">Generating image {completedImages + 1}/10</span>
-                    <span className="text-zinc-500">{completedImages}/10</span>
+                    <span className="text-cyan-400">Generating image {completedImages + 1}/20</span>
+                    <span className="text-zinc-500">{completedImages}/20</span>
                   </div>
                   <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
-                      style={{ width: `${(completedImages / 10) * 100}%` }}
+                      style={{ width: `${(completedImages / 20) * 100}%` }}
                     />
                   </div>
                 </div>
@@ -953,7 +963,7 @@ export default function ImageHistoryPage() {
                 </button>
                 <div className={`${showFeatures ? 'block' : 'hidden'} lg:block px-4 pb-4`}>
                   <ul className="text-zinc-400 text-xs space-y-1 list-disc pl-4">
-                    <li>Generates 10 high-quality images per request</li>
+                    <li>Generates 20 high-quality images per request</li>
                     <li>Automatic angle and composition variations</li>
                     <li>Professional photography perspectives</li>
                     <li>Project-based workflow management</li>
