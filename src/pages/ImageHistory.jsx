@@ -1130,7 +1130,9 @@ export default function ImageHistoryPage() {
                         </div>
                         </div>
                     </div>
-                    )}
+              </div>
+            </div>
+          )}
 
           {activeTab === 'projects' && (
             <div className="space-y-3">
