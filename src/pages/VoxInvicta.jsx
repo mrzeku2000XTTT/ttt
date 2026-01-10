@@ -11,8 +11,8 @@ export default function VoxInvictaPage() {
   const [text, setText] = useState("");
   const [selectedVoice, setSelectedVoice] = useState({ 
     id: 1, 
-    name: "Adam - Deep Voice", 
-    elevenLabsId: "pNInz6obpgDQGcFmaJgB" 
+    name: "Default Voice", 
+    elevenLabsId: "21m00Tcm4TlvDq8ikWAM" 
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const [searchVoice, setSearchVoice] = useState("");
