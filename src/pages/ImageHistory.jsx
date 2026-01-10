@@ -292,7 +292,7 @@ export default function ImageHistoryPage() {
       
       // Run two RMX ULTRA agents in parallel
       const agent1 = async () => {
-        // Agent 1: Generate images 1-5
+        // Agent 1: Generate images 1-5 (indices 0-4)
         for (let i = 0; i < 5; i++) {
           if (shouldStop) break;
           while (isPaused && !shouldStop) {
@@ -301,36 +301,28 @@ export default function ImageHistoryPage() {
           if (shouldStop) break;
 
           try {
-            console.log(`Agent 1: Generating image ${i + 1}/10...`);
+            console.log(`🎨 Agent 1: Starting generation for tile ${i + 1}/10...`);
             const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\nSTORYBOARD SHOT ${i + 1}/10 - Camera Angle: ${cameraAngles[i]}\nProfessional cinematography, consistent subject and style, high quality output`;
+
             const response = await base44.integrations.Core.GenerateImage({
               prompt: enhancedPrompt,
               ...(imageUrls.length > 0 && { existing_image_urls: imageUrls })
             });
 
             if (response?.url) {
-              console.log(`✅ Agent 1: Successfully generated image ${i + 1}/10`);
-              // Store the image first
-              await new Promise(resolve => {
-                setGeneratedImages(prev => {
-                  const updated = [...prev];
-                  updated[i] = response.url;
-                  resolve();
-                  return updated;
-                });
+              console.log(`✅ Agent 1: Successfully generated tile ${i + 1}/10`);
+
+              // Update grid immediately
+              setGeneratedImages(prev => {
+                const updated = [...prev];
+                updated[i] = response.url;
+                return updated;
               });
-              
-              // Only count as complete AFTER storing
-              await new Promise(resolve => {
-                setCompletedImages(prev => {
-                  const newCount = prev + 1;
-                  console.log(`✅ Progress: ${newCount}/10 images successfully generated and stored`);
-                  resolve();
-                  return newCount;
-                });
-              });
-              
-              // Get wallet address for ownership tracking
+
+              // Increment completion count
+              setCompletedImages(prev => prev + 1);
+
+              // Get wallet address
               let walletAddress = 'guest';
               try {
                 if (user?.created_wallet_address) {
@@ -345,6 +337,7 @@ export default function ImageHistoryPage() {
                 console.log('Could not get wallet');
               }
 
+              // Save to database
               const entryData = {
                 wallet_address: walletAddress,
                 project_id: projectId,
@@ -360,26 +353,20 @@ export default function ImageHistoryPage() {
               try {
                 await base44.entities.RemixAILearning.create(entryData);
               } catch (err) {
-                console.log('Not logged in, saving to localStorage');
+                console.log('Saving to localStorage');
                 const localHistory = JSON.parse(localStorage.getItem('rmx_local_history') || '[]');
                 localHistory.unshift({ ...entryData, id: Date.now() + i });
                 localStorage.setItem('rmx_local_history', JSON.stringify(localHistory.slice(0, 100)));
               }
             }
           } catch (err) {
-            console.error(`❌ Agent 1 failed to generate image ${i + 1}:`, err.message);
-            // Mark as failed but continue
-            setGeneratedImages(prev => {
-              const updated = [...prev];
-              updated[i] = null;
-              return updated;
-            });
+            console.error(`❌ Agent 1 failed tile ${i + 1}:`, err.message);
           }
         }
       };
 
       const agent2 = async () => {
-        // Agent 2: Generate images 6-10
+        // Agent 2: Generate images 6-10 (indices 5-9)
         for (let i = 5; i < 10; i++) {
           if (shouldStop) break;
           while (isPaused && !shouldStop) {
@@ -388,36 +375,28 @@ export default function ImageHistoryPage() {
           if (shouldStop) break;
 
           try {
-            console.log(`Agent 2: Generating image ${i + 1}/10...`);
+            console.log(`🎨 Agent 2: Starting generation for tile ${i + 1}/10...`);
             const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\nSTORYBOARD SHOT ${i + 1}/10 - Camera Angle: ${cameraAngles[i]}\nProfessional cinematography, consistent subject and style, high quality output`;
+
             const response = await base44.integrations.Core.GenerateImage({
               prompt: enhancedPrompt,
               ...(imageUrls.length > 0 && { existing_image_urls: imageUrls })
             });
 
             if (response?.url) {
-              console.log(`✅ Agent 2: Successfully generated image ${i + 1}/10`);
-              // Store the image first
-              await new Promise(resolve => {
-                setGeneratedImages(prev => {
-                  const updated = [...prev];
-                  updated[i] = response.url;
-                  resolve();
-                  return updated;
-                });
+              console.log(`✅ Agent 2: Successfully generated tile ${i + 1}/10`);
+
+              // Update grid immediately
+              setGeneratedImages(prev => {
+                const updated = [...prev];
+                updated[i] = response.url;
+                return updated;
               });
-              
-              // Only count as complete AFTER storing
-              await new Promise(resolve => {
-                setCompletedImages(prev => {
-                  const newCount = prev + 1;
-                  console.log(`✅ Progress: ${newCount}/10 images successfully generated and stored`);
-                  resolve();
-                  return newCount;
-                });
-              });
-              
-              // Get wallet address for ownership tracking
+
+              // Increment completion count
+              setCompletedImages(prev => prev + 1);
+
+              // Get wallet address
               let walletAddress = 'guest';
               try {
                 if (user?.created_wallet_address) {
@@ -432,6 +411,7 @@ export default function ImageHistoryPage() {
                 console.log('Could not get wallet');
               }
 
+              // Save to database
               const entryData = {
                 wallet_address: walletAddress,
                 project_id: projectId,
@@ -447,42 +427,23 @@ export default function ImageHistoryPage() {
               try {
                 await base44.entities.RemixAILearning.create(entryData);
               } catch (err) {
-                console.log('Not logged in, saving to localStorage');
+                console.log('Saving to localStorage');
                 const localHistory = JSON.parse(localStorage.getItem('rmx_local_history') || '[]');
                 localHistory.unshift({ ...entryData, id: Date.now() + i });
                 localStorage.setItem('rmx_local_history', JSON.stringify(localHistory.slice(0, 100)));
               }
             }
           } catch (err) {
-            console.error(`❌ Agent 2 failed to generate image ${i + 1}:`, err.message);
-            // Mark as failed but continue
-            setGeneratedImages(prev => {
-              const updated = [...prev];
-              updated[i] = null;
-              return updated;
-            });
+            console.error(`❌ Agent 2 failed tile ${i + 1}:`, err.message);
           }
         }
       };
 
-      // Run both agents simultaneously and wait for completion
+      // Run both agents simultaneously
       await Promise.all([agent1(), agent2()]);
 
-      console.log('✅ Both agents completed their work!');
-
-      // Wait a moment for state to settle
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Count actual successful generations by checking the state
-      setGeneratedImages(prev => {
-        const actualCount = prev.filter(img => img !== null).length;
-        console.log(`📊 Final count: ${actualCount}/10 images successfully generated`);
-        setCompletedImages(actualCount);
-        return prev;
-      });
-      
+      console.log('✅ Both agents completed!');
       setProgress(100);
-      setCompletedImages(actualCount);
       await loadHistory();
     } catch (err) {
       console.error('Generation failed:', err);
