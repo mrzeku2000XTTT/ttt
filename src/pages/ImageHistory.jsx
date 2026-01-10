@@ -698,7 +698,19 @@ export default function ImageHistoryPage() {
             {referenceImages.map((img, idx) => (
               <div key={`ref-${idx}`} className="relative bg-zinc-900/50 rounded-xl overflow-hidden border-2 border-dashed border-zinc-700/50 hover:border-zinc-600/50 transition-colors h-32">
                 {img ? (
-                  <img src={img} alt={`Reference ${idx + 1}`} className="w-full h-full object-cover" />
+                  <>
+                    <img src={img} alt={`Reference ${idx + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => {
+                        const newImages = [...referenceImages];
+                        newImages[idx] = null;
+                        setReferenceImages(newImages);
+                      }}
+                      className="absolute top-2 right-2 w-6 h-6 bg-black/80 hover:bg-red-500 rounded-full flex items-center justify-center transition-colors"
+                    >
+                      <X className="w-4 h-4 text-white" />
+                    </button>
+                  </>
                 ) : (
                   <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer group">
                     <input
