@@ -1127,14 +1127,13 @@ export default function ImageHistoryPage() {
                         <X className="w-3 h-3" />
                         </button>
                         )}
-                        </div>
-                        </div>
                     </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {activeTab === 'projects' && (
+            {activeTab === 'projects' && (
             <div className="space-y-3">
               <h4 className="text-zinc-400 text-sm mb-2">Generation History</h4>
               {Object.keys(projectGroups).length === 0 ? (
