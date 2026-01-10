@@ -9,7 +9,11 @@ import { base44 } from "@/api/base44Client";
 
 export default function VoxInvictaPage() {
   const [text, setText] = useState("");
-  const [selectedVoice, setSelectedVoice] = useState(null);
+  const [selectedVoice, setSelectedVoice] = useState({ 
+    id: 1, 
+    name: "Default Voice", 
+    elevenLabsId: "21m00Tcm4TlvDq8ikWAM" 
+  });
   const [isGenerating, setIsGenerating] = useState(false);
   const [searchVoice, setSearchVoice] = useState("");
   const [audioUrl, setAudioUrl] = useState(null);
@@ -17,17 +21,7 @@ export default function VoxInvictaPage() {
   const [error, setError] = useState(null);
   const audioRef = React.useRef(null);
 
-  const voices = [
-    { id: 1, name: "Rachel - Professional", category: "Professional", description: "Clear, warm, and engaging narrator", icon: "👩", elevenLabsId: "21m00Tcm4TlvDq8ikWAM" },
-    { id: 2, name: "Adam - Deep Voice", category: "Professional", description: "Deep, authoritative, commanding presence", icon: "👑", elevenLabsId: "pNInz6obpgDQGcFmaJgB" },
-    { id: 3, name: "Josh - Young Male", category: "Professional", description: "Intellectual, analytical, forward-thinking", icon: "🤖", elevenLabsId: "TxGEqnHWrfWFTfGW9XjX" },
-    { id: 4, name: "Antoni - Calm Narrator", category: "Professional", description: "Calm, wise, philosophical tone", icon: "🧙", elevenLabsId: "ErXwobaYiN019PkySvjV" },
-    { id: 5, name: "Bella - Soft Female", category: "Professional", description: "Confident, dynamic, charismatic", icon: "👸", elevenLabsId: "EXAVITQu4vr4xnSDxMaL" },
-    { id: 6, name: "Elli - Energetic", category: "Creative", description: "Energetic, optimistic, inspiring", icon: "⭐", elevenLabsId: "MF3mGyEYCl7XYWbV9V6O" },
-    { id: 7, name: "Arnold - Strong", category: "Creative", description: "Technical, precise, methodical", icon: "🔐", elevenLabsId: "VR6AewLTigWG4xSOukaG" },
-    { id: 8, name: "Sam - Raspy Male", category: "Creative", description: "Ethereal, haunting, mysterious", icon: "👻", elevenLabsId: "yoZ06aMxZJJ28mfd3POQ" },
-    { id: 9, name: "Domi - Commanding", category: "Creative", description: "Bold, assertive, powerful delivery", icon: "💪", elevenLabsId: "AZnzlk1XvdvUeBnXmlld" },
-  ];
+  const voices = [];
 
   const filteredVoices = searchVoice
     ? voices.filter(v => v.name.toLowerCase().includes(searchVoice.toLowerCase()))
@@ -299,90 +293,38 @@ export default function VoxInvictaPage() {
         </div>
       </div>
 
-      {/* Right Sidebar - Voice Selection */}
+      {/* Right Sidebar - Voice Settings */}
       <div className="w-96 bg-zinc-950 border-l border-zinc-800 p-6 overflow-y-auto">
         <div className="mb-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Select a voice</h3>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-            <Input
-              value={searchVoice}
-              onChange={(e) => setSearchVoice(e.target.value)}
-              placeholder="Search voices..."
-              className="pl-10 bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-600"
-            />
+          <h3 className="text-lg font-semibold text-white mb-4">Voice Settings</h3>
+          <p className="text-sm text-zinc-400">Using ElevenLabs Turbo v2.5 model</p>
+        </div>
+
+        <div className="space-y-4">
+          <div className="p-4 bg-zinc-900 rounded-lg border border-zinc-800">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-full flex items-center justify-center">
+                <Mic className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <div className="text-white font-medium">{selectedVoice.name}</div>
+                <div className="text-xs text-zinc-500">Professional Quality</div>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div className="mb-4">
-          <button className="text-sm font-medium text-cyan-400 hover:text-cyan-300">
-            All saved voices
-          </button>
-        </div>
-
-        <div className="space-y-2">
-          <div className="text-xs font-semibold text-zinc-500 mb-2">Recently used</div>
-          {filteredVoices.slice(0, 4).map((voice) => (
-            <motion.button
-              key={voice.id}
-              onClick={() => setSelectedVoice(voice)}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className={`w-full p-3 rounded-lg border transition-all ${
-                selectedVoice?.id === voice.id
-                  ? 'bg-cyan-500/10 border-cyan-500/30'
-                  : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-full flex items-center justify-center text-xl">
-                  {voice.icon}
-                </div>
-                <div className="flex-1 text-left">
-                  <div className="text-sm font-medium text-white">{voice.name}</div>
-                  <div className="text-xs text-zinc-500">{voice.description.substring(0, 30)}...</div>
-                </div>
-                <Button size="icon" variant="ghost" className="w-8 h-8">
-                  <Play className="w-4 h-4 text-zinc-400" />
-                </Button>
+          <div className="pt-6 border-t border-zinc-800">
+            <div className="text-sm text-zinc-400 space-y-2">
+              <div className="flex items-center justify-between">
+                <span>Model:</span>
+                <span className="text-cyan-400 font-mono text-xs">eleven_turbo_v2_5</span>
               </div>
-            </motion.button>
-          ))}
-
-          <div className="text-xs font-semibold text-zinc-500 mb-2 mt-6">Default</div>
-          {filteredVoices.slice(4).map((voice) => (
-            <motion.button
-              key={voice.id}
-              onClick={() => setSelectedVoice(voice)}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className={`w-full p-3 rounded-lg border transition-all ${
-                selectedVoice?.id === voice.id
-                  ? 'bg-cyan-500/10 border-cyan-500/30'
-                  : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-xl">
-                  {voice.icon}
-                </div>
-                <div className="flex-1 text-left">
-                  <div className="text-sm font-medium text-white">{voice.name}</div>
-                  <div className="text-xs text-zinc-500">{voice.description.substring(0, 30)}...</div>
-                </div>
-                <Button size="icon" variant="ghost" className="w-8 h-8">
-                  <Play className="w-4 h-4 text-zinc-400" />
-                </Button>
+              <div className="flex items-center justify-between">
+                <span>Voice ID:</span>
+                <span className="text-white font-mono text-xs">{selectedVoice.elevenLabsId}</span>
               </div>
-            </motion.button>
-          ))}
-        </div>
-
-        <div className="mt-6 pt-6 border-t border-zinc-800">
-          <div className="text-xs text-zinc-500 mb-2">Voice Library - Top Picks for You</div>
-          <button className="text-sm text-cyan-400 hover:text-cyan-300 font-medium">
-            View all →
-          </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
