@@ -435,7 +435,7 @@ export default function ImageHistoryPage() {
 
       await Promise.all([agent1(), agent2()]);
 
-      console.log('✅ All images generation complete!');
+      console.log('✅ Generation complete!');
       setProgress(100);
       await loadHistory();
     } catch (err) {
