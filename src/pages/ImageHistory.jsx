@@ -309,17 +309,25 @@ export default function ImageHistoryPage() {
             });
 
             if (response?.url) {
-              console.log(`✅ Agent 1: Got image ${i + 1}`);
-              setGeneratedImages(prev => {
-                const updated = [...prev];
-                updated[i] = response.url;
-                return updated;
+              console.log(`✅ Agent 1: Successfully generated image ${i + 1}/10`);
+              // Store the image first
+              await new Promise(resolve => {
+                setGeneratedImages(prev => {
+                  const updated = [...prev];
+                  updated[i] = response.url;
+                  resolve();
+                  return updated;
+                });
               });
               
-              setCompletedImages(prev => {
-                const newCount = prev + 1;
-                console.log(`Progress: ${newCount}/10 images completed`);
-                return newCount;
+              // Only count as complete AFTER storing
+              await new Promise(resolve => {
+                setCompletedImages(prev => {
+                  const newCount = prev + 1;
+                  console.log(`✅ Progress: ${newCount}/10 images successfully generated and stored`);
+                  resolve();
+                  return newCount;
+                });
               });
               
               // Get wallet address for ownership tracking
@@ -359,8 +367,13 @@ export default function ImageHistoryPage() {
               }
             }
           } catch (err) {
-            console.error(`❌ Agent 1 failed image ${i + 1}:`, err);
-            // Don't stop on error, continue to next image
+            console.error(`❌ Agent 1 failed to generate image ${i + 1}:`, err.message);
+            // Mark as failed but continue
+            setGeneratedImages(prev => {
+              const updated = [...prev];
+              updated[i] = null;
+              return updated;
+            });
           }
         }
       };
@@ -383,17 +396,25 @@ export default function ImageHistoryPage() {
             });
 
             if (response?.url) {
-              console.log(`✅ Agent 2: Got image ${i + 1}`);
-              setGeneratedImages(prev => {
-                const updated = [...prev];
-                updated[i] = response.url;
-                return updated;
+              console.log(`✅ Agent 2: Successfully generated image ${i + 1}/10`);
+              // Store the image first
+              await new Promise(resolve => {
+                setGeneratedImages(prev => {
+                  const updated = [...prev];
+                  updated[i] = response.url;
+                  resolve();
+                  return updated;
+                });
               });
               
-              setCompletedImages(prev => {
-                const newCount = prev + 1;
-                console.log(`Progress: ${newCount}/10 images completed`);
-                return newCount;
+              // Only count as complete AFTER storing
+              await new Promise(resolve => {
+                setCompletedImages(prev => {
+                  const newCount = prev + 1;
+                  console.log(`✅ Progress: ${newCount}/10 images successfully generated and stored`);
+                  resolve();
+                  return newCount;
+                });
               });
               
               // Get wallet address for ownership tracking
@@ -433,8 +454,13 @@ export default function ImageHistoryPage() {
               }
             }
           } catch (err) {
-            console.error(`❌ Agent 2 failed image ${i + 1}:`, err);
-            // Don't stop on error, continue to next image
+            console.error(`❌ Agent 2 failed to generate image ${i + 1}:`, err.message);
+            // Mark as failed but continue
+            setGeneratedImages(prev => {
+              const updated = [...prev];
+              updated[i] = null;
+              return updated;
+            });
           }
         }
       };
@@ -442,11 +468,18 @@ export default function ImageHistoryPage() {
       // Run both agents simultaneously and wait for completion
       await Promise.all([agent1(), agent2()]);
 
-      console.log('✅ All images generation complete!');
-      
-      // Count actual images generated
-      const actualCount = generatedImages.filter(img => img !== null).length;
-      console.log(`📊 Final tally: ${actualCount}/10 images generated`);
+      console.log('✅ Both agents completed their work!');
+
+      // Wait a moment for state to settle
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Count actual successful generations by checking the state
+      setGeneratedImages(prev => {
+        const actualCount = prev.filter(img => img !== null).length;
+        console.log(`📊 Final count: ${actualCount}/10 images successfully generated`);
+        setCompletedImages(actualCount);
+        return prev;
+      });
       
       setProgress(100);
       setCompletedImages(actualCount);
