@@ -536,79 +536,109 @@ export default function ImageHistoryPage() {
         {/* SUBJECT Section */}
         <div className="space-y-2">
           <div className="text-white text-[10px] font-bold tracking-wider">SUBJECT</div>
-          <label className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden cursor-pointer hover:border-zinc-600 transition-colors block aspect-square">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleSubjectUpload}
-              className="hidden"
-              disabled={uploadingSubject}
-            />
-            {subjectImage ? (
-              <img src={subjectImage} alt="Subject" className="w-full h-full object-cover" />
-            ) : uploadingSubject ? (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Loader2 className="w-6 h-6 text-zinc-600 animate-spin" />
-              </div>
-            ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <Upload className="w-5 h-5 text-zinc-700" />
-                <span className="text-zinc-700 text-[8px] mt-1">Character</span>
-              </div>
+          <div className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden hover:border-zinc-600 transition-colors block aspect-square">
+            <label className="absolute inset-0 cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleSubjectUpload}
+                className="hidden"
+                disabled={uploadingSubject}
+              />
+              {subjectImage ? (
+                <img src={subjectImage} alt="Subject" className="w-full h-full object-cover" />
+              ) : uploadingSubject ? (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Loader2 className="w-6 h-6 text-zinc-600 animate-spin" />
+                </div>
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <Upload className="w-5 h-5 text-zinc-700" />
+                  <span className="text-zinc-700 text-[8px] mt-1">Character</span>
+                </div>
+              )}
+            </label>
+            {subjectImage && (
+              <button
+                onClick={() => setSubjectImage(null)}
+                className="absolute top-2 right-2 w-6 h-6 bg-black/80 hover:bg-red-500 rounded-full flex items-center justify-center transition-colors z-10"
+              >
+                <X className="w-4 h-4 text-white" />
+              </button>
             )}
-          </label>
+          </div>
         </div>
 
         {/* STYLE Section */}
         <div className="space-y-2">
           <div className="text-white text-[10px] font-bold tracking-wider">STYLE</div>
-          <label className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden cursor-pointer hover:border-zinc-600 transition-colors block aspect-square">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleStyleUpload}
-              className="hidden"
-              disabled={uploadingStyle}
-            />
-            {styleImage ? (
-              <img src={styleImage} alt="Style" className="w-full h-full object-cover" />
-            ) : uploadingStyle ? (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Loader2 className="w-6 h-6 text-zinc-600 animate-spin" />
-              </div>
-            ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <Upload className="w-5 h-5 text-zinc-700" />
-                <span className="text-zinc-700 text-[8px] mt-1">UI/Style</span>
-              </div>
+          <div className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden hover:border-zinc-600 transition-colors block aspect-square">
+            <label className="absolute inset-0 cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleStyleUpload}
+                className="hidden"
+                disabled={uploadingStyle}
+              />
+              {styleImage ? (
+                <img src={styleImage} alt="Style" className="w-full h-full object-cover" />
+              ) : uploadingStyle ? (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Loader2 className="w-6 h-6 text-zinc-600 animate-spin" />
+                </div>
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <Upload className="w-5 h-5 text-zinc-700" />
+                  <span className="text-zinc-700 text-[8px] mt-1">UI/Style</span>
+                </div>
+              )}
+            </label>
+            {styleImage && (
+              <button
+                onClick={() => setStyleImage(null)}
+                className="absolute top-2 right-2 w-6 h-6 bg-black/80 hover:bg-red-500 rounded-full flex items-center justify-center transition-colors z-10"
+              >
+                <X className="w-4 h-4 text-white" />
+              </button>
             )}
-          </label>
+          </div>
         </div>
 
         {/* SCENE Section */}
         <div className="space-y-2">
           <div className="text-white text-[10px] font-bold tracking-wider">SCENE</div>
-          <label className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden cursor-pointer hover:border-zinc-600 transition-colors block aspect-square">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleSceneUpload}
-              className="hidden"
-              disabled={uploadingScene}
-            />
-            {sceneImage ? (
-              <img src={sceneImage} alt="Scene" className="w-full h-full object-cover" />
-            ) : uploadingScene ? (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Loader2 className="w-6 h-6 text-zinc-600 animate-spin" />
-              </div>
-            ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <Upload className="w-5 h-5 text-zinc-700" />
-                <span className="text-zinc-700 text-[8px] mt-1">Background</span>
-              </div>
+          <div className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden hover:border-zinc-600 transition-colors block aspect-square">
+            <label className="absolute inset-0 cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleSceneUpload}
+                className="hidden"
+                disabled={uploadingScene}
+              />
+              {sceneImage ? (
+                <img src={sceneImage} alt="Scene" className="w-full h-full object-cover" />
+              ) : uploadingScene ? (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Loader2 className="w-6 h-6 text-zinc-600 animate-spin" />
+                </div>
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <Upload className="w-5 h-5 text-zinc-700" />
+                  <span className="text-zinc-700 text-[8px] mt-1">Background</span>
+                </div>
+              )}
+            </label>
+            {sceneImage && (
+              <button
+                onClick={() => setSceneImage(null)}
+                className="absolute top-2 right-2 w-6 h-6 bg-black/80 hover:bg-red-500 rounded-full flex items-center justify-center transition-colors z-10"
+              >
+                <X className="w-4 h-4 text-white" />
+              </button>
             )}
-          </label>
+          </div>
         </div>
 
         <button 
