@@ -5,7 +5,8 @@ Deno.serve(async (req) => {
     // Initialize base44 client but don't require authentication
     const base44 = createClientFromRequest(req);
     
-    const { text, voice_id = '21m00Tcm4TlvDq8ikWAM' } = await req.json();
+    // Use Adam voice - known to work on free tier
+    const { text, voice_id = 'pNInz6obpgDQGcFmaJgB' } = await req.json();
 
     if (!text) {
       return Response.json({ error: 'Text is required' }, { status: 400 });
@@ -15,6 +16,8 @@ Deno.serve(async (req) => {
     if (!apiKey) {
       return Response.json({ error: 'ElevenLabs API key not configured' }, { status: 500 });
     }
+
+    console.log('Calling ElevenLabs with voice:', voice_id, 'model: eleven_turbo_v2_5');
 
     // Call ElevenLabs API
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice_id}`, {
@@ -36,7 +39,14 @@ Deno.serve(async (req) => {
 
     if (!response.ok) {
       const error = await response.text();
-      return Response.json({ error: 'ElevenLabs API error: ' + error }, { status: response.status });
+      console.error('ElevenLabs API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: error
+      });
+      return Response.json({ 
+        error: 'ElevenLabs API error: ' + error 
+      }, { status: response.status });
     }
 
     // Get audio data as array buffer
