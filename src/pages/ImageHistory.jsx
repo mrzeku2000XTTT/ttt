@@ -318,7 +318,7 @@ export default function ImageHistoryPage() {
               
               setCompletedImages(prev => {
                 const newCount = prev + 1;
-                console.log(`Progress: ${newCount}/20 images completed`);
+                console.log(`Progress: ${newCount}/10 images completed`);
                 return newCount;
               });
               
@@ -392,7 +392,7 @@ export default function ImageHistoryPage() {
               
               setCompletedImages(prev => {
                 const newCount = prev + 1;
-                console.log(`Progress: ${newCount}/20 images completed`);
+                console.log(`Progress: ${newCount}/10 images completed`);
                 return newCount;
               });
               
