@@ -1,5 +1,10 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+
 Deno.serve(async (req) => {
   try {
+    // Initialize base44 client but don't require authentication
+    const base44 = createClientFromRequest(req);
+    
     const { text, voice_id = '21m00Tcm4TlvDq8ikWAM' } = await req.json();
 
     if (!text) {
