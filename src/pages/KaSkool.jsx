@@ -94,11 +94,11 @@ export default function KaSkoolPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-slate-50 to-zinc-50 text-gray-900 relative">
+    <div className="min-h-screen bg-black text-white relative">
       {/* Background Image */}
       {backgroundUrl && (
         <div 
-          className="fixed inset-0 opacity-20 z-0"
+          className="fixed inset-0 opacity-10 z-0"
           style={{
             backgroundImage: `url(${backgroundUrl})`,
             backgroundSize: 'cover',
@@ -109,19 +109,19 @@ export default function KaSkoolPage() {
       )}
       
       {/* Overlay */}
-      <div className="fixed inset-0 bg-gradient-to-br from-white/80 via-gray-50/70 to-slate-100/80 z-0" />
+      <div className="fixed inset-0 bg-gradient-to-br from-black/90 via-zinc-900/80 to-black/90 z-0" />
       {/* Header */}
-      <div className="border-b border-gray-200 bg-white/90 backdrop-blur-xl sticky top-0 z-50 relative">
+      <div className="border-b border-white/10 bg-black/90 backdrop-blur-xl sticky top-0 z-50 relative">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link to={createPageUrl("AppStore")}>
-                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
+                <Button variant="ghost" size="sm" className="text-white/60 hover:text-white">
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
               </Link>
               <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                <div className="w-14 h-14 rounded-full overflow-hidden bg-white/10 flex items-center justify-center">
                   <img 
                     src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/82eb2ecee_image.png"
                     alt="KaSkool Logo"
@@ -129,8 +129,8 @@ export default function KaSkoolPage() {
                   />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold">KaSkool</h1>
-                  <p className="text-sm text-gray-600">Innovate. Educate. Monetize.</p>
+                  <h1 className="text-2xl font-bold text-white">KaSkool</h1>
+                  <p className="text-sm text-gray-400">Innovate. Educate. Monetize.</p>
                 </div>
               </div>
             </div>
@@ -149,24 +149,24 @@ export default function KaSkoolPage() {
 
       {/* Stats Bar */}
       {user && (
-        <div className="bg-gray-50 border-b border-gray-200">
+        <div className="bg-white/5 border-b border-white/10 relative z-10">
           <div className="max-w-7xl mx-auto px-4 py-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
-                <p className="text-2xl font-bold text-gray-700">3</p>
-                <p className="text-xs text-gray-500">Courses Enrolled</p>
+                <p className="text-2xl font-bold text-white">3</p>
+                <p className="text-xs text-gray-400">Courses Enrolled</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-gray-700">62%</p>
-                <p className="text-xs text-gray-500">Avg Progress</p>
+                <p className="text-2xl font-bold text-white">62%</p>
+                <p className="text-xs text-gray-400">Avg Progress</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-gray-700">2</p>
-                <p className="text-xs text-gray-500">Achievements</p>
+                <p className="text-2xl font-bold text-white">2</p>
+                <p className="text-xs text-gray-400">Achievements</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-gray-700">24h</p>
-                <p className="text-xs text-gray-500">Learning Time</p>
+                <p className="text-2xl font-bold text-white">24h</p>
+                <p className="text-xs text-gray-400">Learning Time</p>
               </div>
             </div>
           </div>
@@ -174,15 +174,15 @@ export default function KaSkoolPage() {
       )}
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 bg-white/70">
+      <div className="border-b border-white/10 bg-black/50 relative z-10">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex gap-6">
             <button
               onClick={() => setActiveTab("courses")}
               className={`px-4 py-3 font-medium transition-colors border-b-2 ${
                 activeTab === "courses"
-                  ? "border-gray-700 text-gray-900"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+                  ? "border-cyan-400 text-cyan-400"
+                  : "border-transparent text-gray-400 hover:text-white"
               }`}
             >
               <BookOpen className="w-4 h-4 inline-block mr-2" />
@@ -192,8 +192,8 @@ export default function KaSkoolPage() {
               onClick={() => setActiveTab("achievements")}
               className={`px-4 py-3 font-medium transition-colors border-b-2 ${
                 activeTab === "achievements"
-                  ? "border-gray-700 text-gray-900"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+                  ? "border-cyan-400 text-cyan-400"
+                  : "border-transparent text-gray-400 hover:text-white"
               }`}
             >
               <Award className="w-4 h-4 inline-block mr-2" />
@@ -203,8 +203,8 @@ export default function KaSkoolPage() {
               onClick={() => setActiveTab("community")}
               className={`px-4 py-3 font-medium transition-colors border-b-2 ${
                 activeTab === "community"
-                  ? "border-gray-700 text-gray-900"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+                  ? "border-cyan-400 text-cyan-400"
+                  : "border-transparent text-gray-400 hover:text-white"
               }`}
             >
               <Users className="w-4 h-4 inline-block mr-2" />
@@ -219,7 +219,7 @@ export default function KaSkoolPage() {
         {activeTab === "courses" && (
           <div className="space-y-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Your Learning Path</h2>
+              <h2 className="text-2xl font-bold text-white">Your Learning Path</h2>
               <Button className="bg-cyan-500 hover:bg-cyan-600">
                 <Play className="w-4 h-4 mr-2" />
                 Continue Learning
@@ -235,16 +235,16 @@ export default function KaSkoolPage() {
                   whileHover={{ scale: 1.02 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Card className="bg-white border-gray-200 hover:border-gray-300 transition-all shadow-sm">
+                  <Card className="bg-white/5 border-white/10 hover:border-cyan-500/50 transition-all backdrop-blur-sm">
                     <CardHeader>
                       <div className="flex items-start justify-between mb-2">
-                        <CardTitle className="text-gray-900">{course.title}</CardTitle>
+                        <CardTitle className="text-white">{course.title}</CardTitle>
                         {course.enrolled ? (
                           <span className="px-2 py-1 bg-cyan-500/20 text-cyan-400 text-xs rounded-full">
                             Enrolled
                           </span>
                         ) : (
-                          <Lock className="w-4 h-4 text-gray-500" />
+                          <Lock className="w-4 h-4 text-gray-400" />
                         )}
                       </div>
                       <p className="text-sm text-gray-400">{course.description}</p>
@@ -256,9 +256,9 @@ export default function KaSkoolPage() {
                             <span>Progress</span>
                             <span>{course.progress}%</span>
                           </div>
-                          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-gray-700 rounded-full"
+                              className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full"
                               style={{ width: `${course.progress}%` }}
                             />
                           </div>
@@ -280,8 +280,8 @@ export default function KaSkoolPage() {
                       <Button
                         className={`w-full ${
                           course.enrolled
-                            ? "bg-gray-800 hover:bg-gray-900 text-white"
-                            : "bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700"
+                            ? "bg-cyan-500 hover:bg-cyan-600 text-white"
+                            : "bg-white/10 hover:bg-white/20 border border-white/20 text-white"
                         }`}
                       >
                         {course.enrolled ? (
@@ -298,32 +298,32 @@ export default function KaSkoolPage() {
 
         {activeTab === "achievements" && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold mb-6">Your Achievements</h2>
+            <h2 className="text-2xl font-bold text-white mb-6">Your Achievements</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {achievements.map((achievement, idx) => (
                 <Card
                   key={idx}
                   className={`${
                     achievement.unlocked
-                      ? "bg-gray-50 border-gray-300"
-                      : "bg-white border-gray-200"
-                  }`}
+                      ? "bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-cyan-500/50"
+                      : "bg-white/5 border-white/10"
+                  } backdrop-blur-sm`}
                 >
                   <CardContent className="flex items-center gap-4 p-6">
                     <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
                       achievement.unlocked
-                        ? "bg-gray-200"
-                        : "bg-gray-100"
+                        ? "bg-cyan-500/20"
+                        : "bg-white/5"
                     }`}>
                       {achievement.unlocked ? (
-                        <CheckCircle className="w-8 h-8 text-gray-700" />
+                        <CheckCircle className="w-8 h-8 text-cyan-400" />
                       ) : (
-                        <Lock className="w-8 h-8 text-gray-400" />
+                        <Lock className="w-8 h-8 text-gray-500" />
                       )}
                     </div>
                     <div className="flex-1">
                       <h3 className={`font-bold mb-1 ${
-                        achievement.unlocked ? "text-gray-900" : "text-gray-400"
+                        achievement.unlocked ? "text-white" : "text-gray-500"
                       }`}>
                         {achievement.name}
                       </h3>
@@ -338,8 +338,8 @@ export default function KaSkoolPage() {
 
         {activeTab === "community" && (
           <div className="text-center py-16">
-            <Users className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">Community Coming Soon</h2>
+            <Users className="w-16 h-16 text-white/60 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-white mb-2">Community Coming Soon</h2>
             <p className="text-gray-400">
               Connect with fellow learners, share knowledge, and collaborate on projects.
             </p>
