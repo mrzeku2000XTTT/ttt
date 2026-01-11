@@ -165,81 +165,116 @@ export default function KaSkoolPage() {
       </div>
 
       {/* Search Content */}
-      <div className="max-w-4xl mx-auto px-4 relative z-10" style={{ paddingTop: '15vh' }}>
-        {/* Centered Search Section */}
-        <div className="text-center mb-16">
-          {/* Search Bar */}
-          <form onSubmit={handleSearch} className="mb-12">
-            <div className="relative max-w-3xl mx-auto">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search blockchain courses, AI insights..."
-                className="w-full px-8 py-5 bg-white/5 border-2 border-purple-500/50 rounded-full text-white text-lg placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:shadow-[0_0_30px_rgba(168,85,247,0.4)] transition-all backdrop-blur-sm"
-                style={{
-                  boxShadow: '0 0 20px rgba(168, 85, 247, 0.2)'
-                }}
-              />
-              <Button
-                type="submit"
-                disabled={isSearching}
-                className="absolute right-3 top-1/2 -translate-y-1/2 bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 rounded-full h-12 w-12 p-0 shadow-lg shadow-purple-500/50"
-              >
-                {isSearching ? (
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
-                  />
-                ) : (
+      {searchResults.length === 0 && !isSearching ? (
+        <div className="max-w-4xl mx-auto px-4 relative z-10" style={{ paddingTop: '15vh' }}>
+          {/* Centered Search Section */}
+          <div className="text-center mb-16">
+            {/* Search Bar */}
+            <form onSubmit={handleSearch} className="mb-12">
+              <div className="relative max-w-3xl mx-auto">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search blockchain courses, AI insights..."
+                  className="w-full px-8 py-5 bg-white/5 border-2 border-purple-500/50 rounded-full text-white text-lg placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:shadow-[0_0_30px_rgba(168,85,247,0.4)] transition-all backdrop-blur-sm"
+                  style={{
+                    boxShadow: '0 0 20px rgba(168, 85, 247, 0.2)'
+                  }}
+                />
+                <Button
+                  type="submit"
+                  disabled={isSearching}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 rounded-full h-12 w-12 p-0 shadow-lg shadow-purple-500/50"
+                >
                   <Search className="w-5 h-5" />
-                )}
-              </Button>
-            </div>
-          </form>
+                </Button>
+              </div>
+            </form>
 
-          {/* Icon and Heading */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="mb-6"
-          >
-            <div className="w-16 h-16 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-purple-500/30">
-              <BookOpen className="w-8 h-8 text-purple-400" />
-            </div>
-            <h1 className="text-4xl font-bold text-white mb-3">Decentralize Knowledge</h1>
-            <p className="text-gray-400 max-w-2xl mx-auto text-lg">
-              Enter your query above to search for blockchain information, Kaspa resources, and educational content.
-            </p>
-          </motion.div>
-        </div>
-
-        {/* Search Results */}
-        {searchResults.length > 0 && (
-          <div className="space-y-6">
-            {searchResults.map((result, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
-              >
-                <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
-                  <CardHeader>
-                    <CardTitle className="text-white text-xl mb-2">{result.title}</CardTitle>
-                    <p className="text-xs text-cyan-400">{result.url}</p>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{result.content}</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
+            {/* Icon and Heading */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="mb-6"
+            >
+              <div className="w-16 h-16 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-purple-500/30">
+                <BookOpen className="w-8 h-8 text-purple-400" />
+              </div>
+              <h1 className="text-4xl font-bold text-white mb-3">Decentralize Knowledge</h1>
+              <p className="text-gray-400 max-w-2xl mx-auto text-lg">
+                Enter your query above to search for blockchain information, Kaspa resources, and educational content.
+              </p>
+            </motion.div>
           </div>
-        )}
+        </div>
+      ) : (
+        <>
+          {/* Compact Search Bar - Google Style */}
+          <div className="border-b border-white/10 relative z-10">
+            <div className="max-w-7xl mx-auto px-4 py-4">
+              <form onSubmit={handleSearch} className="flex items-center gap-4">
+                <div className="relative flex-1 max-w-2xl">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search..."
+                    className="w-full px-6 py-3 bg-white/5 border border-white/20 rounded-full text-white text-sm placeholder-gray-400 focus:outline-none focus:border-purple-500/50 transition-all backdrop-blur-sm"
+                  />
+                  <Button
+                    type="submit"
+                    disabled={isSearching}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 rounded-full h-9 w-9 p-0"
+                  >
+                    {isSearching ? (
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
+                      />
+                    ) : (
+                      <Search className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
 
+          {/* Results Section */}
+          <div className="max-w-7xl mx-auto px-4 py-8 relative z-10">
+            {searchResults.length > 0 && (
+              <>
+                {/* Query Heading */}
+                <div className="mb-8">
+                  <h1 className="text-3xl font-bold text-white mb-1">{searchResults[0].title}</h1>
+                  <p className="text-sm text-gray-400">Search results</p>
+                </div>
+
+                {/* Results Grid */}
+                <div className="space-y-6">
+                  {searchResults.map((result, idx) => (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.1 }}
+                    >
+                      <Card className="bg-white/5 border-white/10 backdrop-blur-sm hover:border-purple-500/30 transition-all">
+                        <CardContent className="p-6">
+                          <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{result.content}</p>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </>
+      )}
       </div>
     </div>
   );
