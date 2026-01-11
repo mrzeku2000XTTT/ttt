@@ -93,8 +93,8 @@ export default function KaSkoolProfilePage() {
                   <User className="w-10 h-10 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-bold text-white mb-1">{user.full_name || user.email}</h2>
-                  <p className="text-gray-400">{user.email}</p>
+                  <h2 className="text-3xl font-bold text-white mb-1">{user.full_name || "Learner"}</h2>
+                  <p className="text-gray-400">KaSkool Student</p>
                   <div className="flex items-center gap-2 mt-2">
                     <div className="px-3 py-1 bg-purple-500/20 border border-purple-500/50 rounded-full">
                       <span className="text-xs text-purple-300 font-semibold">Learner</span>
