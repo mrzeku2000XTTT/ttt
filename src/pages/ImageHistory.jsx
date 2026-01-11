@@ -36,6 +36,7 @@ export default function ImageHistoryPage() {
   const [expandedProjects, setExpandedProjects] = useState({});
   const [user, setUser] = useState(null);
   const [showFeatures, setShowFeatures] = useState(false);
+  const [selectedProjects, setSelectedProjects] = useState([]);
 
   useEffect(() => {
     loadHistory();
@@ -509,6 +510,69 @@ export default function ImageHistoryPage() {
       ...prev,
       [projectId]: !prev[projectId]
     }));
+  };
+
+  const toggleSelectProject = (projectId) => {
+    setSelectedProjects(prev => 
+      prev.includes(projectId) 
+        ? prev.filter(id => id !== projectId)
+        : [...prev, projectId]
+    );
+  };
+
+  const handleDeleteSelected = async () => {
+    if (!confirm(`Delete ${selectedProjects.length} selected project(s)?`)) return;
+    
+    try {
+      const entriesToDelete = history.filter(entry => 
+        selectedProjects.includes(entry.project_id || entry.user_prompt?.match(/\[Project ID: ([^\]]+)\]/)?.[1] || 'Unknown')
+      );
+
+      for (const entry of entriesToDelete) {
+        try {
+          await base44.entities.RemixAILearning.delete(entry.id);
+        } catch (err) {
+          console.log('Failed to delete from DB, trying localStorage');
+          const localHistory = JSON.parse(localStorage.getItem('rmx_local_history') || '[]');
+          const filtered = localHistory.filter(item => item.id !== entry.id);
+          localStorage.setItem('rmx_local_history', JSON.stringify(filtered));
+        }
+      }
+
+      setSelectedProjects([]);
+      await loadHistory();
+      alert('Selected projects deleted successfully');
+    } catch (err) {
+      console.error('Failed to delete projects:', err);
+      alert('Failed to delete some projects');
+    }
+  };
+
+  const handleDownloadSelected = async () => {
+    const entriesToDownload = history.filter(entry => 
+      selectedProjects.includes(entry.project_id || entry.user_prompt?.match(/\[Project ID: ([^\]]+)\]/)?.[1] || 'Unknown')
+    );
+
+    for (const entry of entriesToDownload) {
+      if (!entry.result_image) continue;
+      
+      try {
+        const response = await fetch(entry.result_image);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${entry.project_id || 'rmx'}-${entry.id}.png`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        await new Promise(resolve => setTimeout(resolve, 300));
+      } catch (err) {
+        console.error(`Failed to download image:`, err);
+      }
+    }
   };
 
   // Group history by project ID
@@ -1105,7 +1169,30 @@ export default function ImageHistoryPage() {
 
           {activeTab === 'projects' && (
             <div className="space-y-3">
-              <h4 className="text-zinc-400 text-sm mb-2">Generation History</h4>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-zinc-400 text-sm">Generation History</h4>
+                {selectedProjects.length > 0 && (
+                  <span className="text-xs text-cyan-400">{selectedProjects.length} selected</span>
+                )}
+              </div>
+
+              {selectedProjects.length > 0 && (
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <Button
+                    onClick={handleDownloadSelected}
+                    className="bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/50 h-8 text-xs"
+                  >
+                    Download Selected
+                  </Button>
+                  <Button
+                    onClick={handleDeleteSelected}
+                    className="bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50 h-8 text-xs"
+                  >
+                    Delete Selected
+                  </Button>
+                </div>
+              )}
+
               {Object.keys(projectGroups).length === 0 ? (
                 <div className="bg-zinc-900 rounded-lg p-4 text-center">
                   <p className="text-zinc-500 text-xs">No projects yet</p>
@@ -1113,23 +1200,32 @@ export default function ImageHistoryPage() {
               ) : (
                 Object.entries(projectGroups).map(([projId, entries]) => (
                   <div key={projId} className="bg-zinc-900 rounded-lg overflow-hidden">
-                    <button
-                      onClick={() => toggleProject(projId)}
-                      className="w-full px-4 py-3 flex items-center justify-between hover:bg-zinc-800 transition-colors"
-                    >
-                      <div className="text-left">
-                        <p className="text-white text-xs font-semibold">Project {projId}</p>
-                        <p className="text-zinc-500 text-[10px]">{entries.length} images</p>
-                      </div>
-                      <svg
-                        className={`w-4 h-4 text-zinc-500 transition-transform ${expandedProjects[projId] ? 'rotate-180' : ''}`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
+                    <div className="w-full px-4 py-3 flex items-center gap-3 hover:bg-zinc-800 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={selectedProjects.includes(projId)}
+                        onChange={() => toggleSelectProject(projId)}
+                        className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-cyan-500 focus:ring-cyan-500 cursor-pointer"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <button
+                        onClick={() => toggleProject(projId)}
+                        className="flex-1 flex items-center justify-between"
                       >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
+                        <div className="text-left">
+                          <p className="text-white text-xs font-semibold">Project {projId}</p>
+                          <p className="text-zinc-500 text-[10px]">{entries.length} images</p>
+                        </div>
+                        <svg
+                          className={`w-4 h-4 text-zinc-500 transition-transform ${expandedProjects[projId] ? 'rotate-180' : ''}`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                    </div>
                     
                     {expandedProjects[projId] && (
                       <div className="p-3 border-t border-zinc-800 space-y-2">
