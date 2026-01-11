@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
-import { Sparkles, Shield, Zap, Network, Lock, Globe } from "lucide-react";
+import { Sparkles, Shield, Zap, Network, Lock, Globe, Users, Target } from "lucide-react";
 
 export default function AboutPage() {
   return (
@@ -26,9 +26,19 @@ export default function AboutPage() {
         <Card className="bg-black border-white/10 mb-6">
           <CardContent className="p-6 md:p-8">
             <div className="prose prose-invert max-w-none">
-              <h2 className="text-xl font-bold text-white mt-6 mb-3">Our Mission</h2>
+              <div className="bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/40 rounded-xl p-6 mb-6">
+                <h2 className="text-2xl font-bold text-white mb-3 flex items-center gap-2">
+                  <Target className="w-6 h-6 text-cyan-400" />
+                  Our Mission
+                </h2>
+                <p className="text-gray-200 text-lg leading-relaxed">
+                  TTTz.xyz (Trust Task Transact Zero entropy knowledge unified) is revolutionizing how we interact with blockchain technology by unifying trust, task management, and secure transactions through zero-knowledge cryptographic principles.
+                </p>
+              </div>
+
+              <h2 className="text-xl font-bold text-white mt-8 mb-4">What Makes Us Different</h2>
               <p className="text-gray-300 mb-4 leading-relaxed">
-                TTTz.xyz is a revolutionary platform that unifies trust, task management, and secure transactions through zero-knowledge cryptographic principles. We're building the future of decentralized identity and autonomous AI agents powered by blockchain technology.
+                We're not just another blockchain application - we're building a complete ecosystem where your identity, your data, and your transactions are secured by cutting-edge cryptography while remaining completely under your control.
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-8">
