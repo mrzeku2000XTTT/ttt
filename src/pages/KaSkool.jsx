@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, BookOpen, GraduationCap, TrendingUp, Award, Clock, Search, ShieldCheck } from "lucide-react";
+import { ArrowLeft, BookOpen, GraduationCap, TrendingUp, Award, Clock, Search, ShieldCheck, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -14,6 +14,10 @@ export default function KaSkoolPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [showExplainModal, setShowExplainModal] = useState(false);
+  const [selectedResultIndex, setSelectedResultIndex] = useState(null);
+  const [explainPrompt, setExplainPrompt] = useState("");
+  const [isExplaining, setIsExplaining] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -64,7 +68,8 @@ export default function KaSkoolPage() {
       setSearchResults([{
         title: searchQuery,
         content: cleanedResponse,
-        url: `Search results for: ${searchQuery}`
+        url: `Search results for: ${searchQuery}`,
+        originalContent: cleanedResponse
       }]);
     } catch (err) {
       console.error('Search failed:', err);
@@ -72,6 +77,50 @@ export default function KaSkoolPage() {
       setIsSearching(false);
     }
   };
+
+  const handleExplain = async (preset = null) => {
+    if (selectedResultIndex === null) return;
+    
+    const currentResult = searchResults[selectedResultIndex];
+    const prompt = preset || explainPrompt;
+    
+    if (!prompt) return;
+
+    setIsExplaining(true);
+    try {
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: `Original content: "${currentResult.originalContent || currentResult.content}"\n\nTask: ${prompt}\n\nProvide a clear, reformatted explanation without using asterisks or special formatting. Use plain text with proper paragraphs.`,
+        add_context_from_internet: false
+      });
+      
+      const cleanedResponse = typeof response === 'string' 
+        ? response.replace(/\*\*/g, '').replace(/\*/g, '').trim()
+        : response;
+      
+      const updatedResults = [...searchResults];
+      updatedResults[selectedResultIndex] = {
+        ...currentResult,
+        content: cleanedResponse
+      };
+      setSearchResults(updatedResults);
+      setShowExplainModal(false);
+      setExplainPrompt("");
+    } catch (err) {
+      console.error('Explanation failed:', err);
+    } finally {
+      setIsExplaining(false);
+    }
+  };
+
+  const presets = [
+    "Explain this like I'm 5 years old",
+    "Explain this like I'm 10 years old",
+    "Explain this in simple terms",
+    "Explain this technically",
+    "Summarize in 3 sentences",
+    "Make this more detailed",
+    "Explain with examples"
+  ];
 
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
@@ -227,12 +276,23 @@ export default function KaSkoolPage() {
                       transition={{ delay: idx * 0.1 }}
                     >
                       <Card className="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 backdrop-blur-sm hover:border-purple-500/30 transition-all shadow-lg">
-                        {/* Verified Badge */}
+                        {/* Verified Badge and AI Button */}
                         <div className="flex items-center justify-between px-8 pt-6 pb-4">
                           <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/20 border border-green-500/50 rounded-full backdrop-blur-sm">
                             <ShieldCheck className="w-4 h-4 text-green-400" />
                             <span className="text-xs text-green-400 font-semibold">Fact Checked</span>
                           </div>
+                          
+                          <Button
+                            onClick={() => {
+                              setSelectedResultIndex(idx);
+                              setShowExplainModal(true);
+                            }}
+                            className="flex items-center gap-2 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 hover:from-purple-500/30 hover:to-cyan-500/30 border border-purple-500/50 text-purple-300"
+                          >
+                            <Sparkles className="w-4 h-4" />
+                            <span className="text-sm font-semibold">AI</span>
+                          </Button>
                         </div>
                         
                         <CardContent className="px-8 pb-8 pt-0">
