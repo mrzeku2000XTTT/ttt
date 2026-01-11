@@ -5,6 +5,7 @@ import APIDocumentation from './pages/APIDocumentation';
 import AYOMUIZ from './pages/AYOMUIZ';
 import AYOMUIZ2 from './pages/AYOMUIZ2';
 import AYOMUIZHub from './pages/AYOMUIZHub';
+import About from './pages/About';
 import AgentFYE from './pages/AgentFYE';
 import AgentZK from './pages/AgentZK';
 import AgentZK2 from './pages/AgentZK2';
@@ -43,6 +44,7 @@ import Channels from './pages/Channels';
 import CivicVerify from './pages/CivicVerify';
 import CoinSpace from './pages/CoinSpace';
 import ConnectWallet from './pages/ConnectWallet';
+import Contact from './pages/Contact';
 import ContributorHistory from './pages/ContributorHistory';
 import CosmicEye from './pages/CosmicEye';
 import Countdown from './pages/Countdown';
@@ -116,6 +118,7 @@ import Kurncy from './pages/Kurncy';
 import Kurve from './pages/Kurve';
 import LLMScraper from './pages/LLMScraper';
 import Landing from './pages/Landing';
+import LearnMore from './pages/LearnMore';
 import Learning from './pages/Learning';
 import Life from './pages/Life';
 import LinkChecker from './pages/LinkChecker';
@@ -133,16 +136,17 @@ import MyChannel from './pages/MyChannel';
 import NASA from './pages/NASA';
 import NFTMint from './pages/NFTMint';
 import Olatomiwa from './pages/Olatomiwa';
+import Oracle from './pages/Oracle';
 import OlatomiwaHub from './pages/OlatomiwaHub';
 import OliviaApps from './pages/OliviaApps';
 import OnChainPOS from './pages/OnChainPOS';
-import Oracle from './pages/Oracle';
 import OriginStory from './pages/OriginStory';
 import OuTKasTT from './pages/OuTKasTT';
 import POLFeed from './pages/POLFeed';
 import Peculiar from './pages/Peculiar';
 import Pera from './pages/Pera';
 import Poki from './pages/Poki';
+import Privacy from './pages/Privacy';
 import Profile from './pages/Profile';
 import ProofOfBullish from './pages/ProofOfBullish';
 import QRScanner from './pages/QRScanner';
@@ -208,10 +212,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import Privacy from './pages/Privacy';
-import About from './pages/About';
-import Contact from './pages/Contact';
-import LearnMore from './pages/LearnMore';
 import __Layout from './Layout.jsx';
 
 
@@ -223,6 +223,7 @@ export const PAGES = {
     "AYOMUIZ": AYOMUIZ,
     "AYOMUIZ2": AYOMUIZ2,
     "AYOMUIZHub": AYOMUIZHub,
+    "About": About,
     "AgentFYE": AgentFYE,
     "AgentZK": AgentZK,
     "AgentZK2": AgentZK2,
@@ -261,6 +262,7 @@ export const PAGES = {
     "CivicVerify": CivicVerify,
     "CoinSpace": CoinSpace,
     "ConnectWallet": ConnectWallet,
+    "Contact": Contact,
     "ContributorHistory": ContributorHistory,
     "CosmicEye": CosmicEye,
     "Countdown": Countdown,
@@ -334,6 +336,7 @@ export const PAGES = {
     "Kurve": Kurve,
     "LLMScraper": LLMScraper,
     "Landing": Landing,
+    "LearnMore": LearnMore,
     "Learning": Learning,
     "Life": Life,
     "LinkChecker": LinkChecker,
@@ -351,16 +354,17 @@ export const PAGES = {
     "NASA": NASA,
     "NFTMint": NFTMint,
     "Olatomiwa": Olatomiwa,
+    "Oracle": Oracle,
     "OlatomiwaHub": OlatomiwaHub,
     "OliviaApps": OliviaApps,
     "OnChainPOS": OnChainPOS,
-    "Oracle": Oracle,
     "OriginStory": OriginStory,
     "OuTKasTT": OuTKasTT,
     "POLFeed": POLFeed,
     "Peculiar": Peculiar,
     "Pera": Pera,
     "Poki": Poki,
+    "Privacy": Privacy,
     "Profile": Profile,
     "ProofOfBullish": ProofOfBullish,
     "QRScanner": QRScanner,
@@ -426,10 +430,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "Privacy": Privacy,
-    "About": About,
-    "Contact": Contact,
-    "LearnMore": LearnMore,
 }
 
 export const pagesConfig = {

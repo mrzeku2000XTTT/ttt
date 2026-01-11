@@ -41,7 +41,7 @@ export default function LearnMorePage() {
 
       {/* Content */}
       <div className="relative z-10 h-full overflow-y-auto">
-        <div className="max-w-5xl mx-auto px-4 pt-20 pb-8 md:pt-24 md:pb-12">
+        <div className="max-w-5xl mx-auto px-4 pt-32 pb-8 md:pt-40 md:pb-12">
           {/* Back Button */}
           <Link to={createPageUrl("Home")}>
             <Button
