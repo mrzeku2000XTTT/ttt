@@ -2550,10 +2550,10 @@ Provide a clear, accurate answer based on current web information. If you find t
                 { id: 'secrets', icon: Key, label: 'Secrets' },
                 { id: 'api', icon: Code, label: 'API' },
                 { id: 'wallet', icon: Wallet, label: 'Wallet' },
-                { id: 'vp_imports', icon: Search, label: 'VP IMPORTS' }
+                { id: 'vp_imports', icon: Search, label: 'VP IMPORTS' },
+                { id: 'location', icon: Users, label: 'Location' }
               ] : []),
-              { id: 'shills', icon: Zap, label: 'Shills' },
-              { id: 'location', icon: Users, label: 'Location' }
+              { id: 'shills', icon: Zap, label: 'Shills' }
             ].map(tab => (
               <button
                 key={tab.id}
