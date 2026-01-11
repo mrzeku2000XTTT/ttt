@@ -52,13 +52,18 @@ export default function KaSkoolPage() {
     setIsSearching(true);
     try {
       const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `Search query: "${searchQuery}". Provide comprehensive information about this topic. Include key facts, explanations, and relevant details. Format as a clear, informative response.`,
+        prompt: `Search query: "${searchQuery}". Provide comprehensive, accurate information about this topic related to blockchain, Kaspa, cryptocurrency, or educational content. Include key facts, explanations, and relevant details. Format as a clear, informative response without using asterisks or special formatting characters. Use plain text with proper paragraphs.`,
         add_context_from_internet: true
       });
       
+      // Clean up response - remove asterisks and format properly
+      const cleanedResponse = typeof response === 'string' 
+        ? response.replace(/\*\*/g, '').replace(/\*/g, '').trim()
+        : response;
+      
       setSearchResults([{
         title: searchQuery,
-        content: response,
+        content: cleanedResponse,
         url: `Search results for: ${searchQuery}`
       }]);
     } catch (err) {
@@ -93,34 +98,25 @@ export default function KaSkoolPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/40 to-black/60" />
       </div>
       {/* Header */}
-      <div className="border-b border-white/10 bg-black/90 backdrop-blur-xl sticky top-0 z-50 relative">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+      <div className="border-b border-white/10 bg-gradient-to-r from-purple-900/30 via-black/90 to-cyan-900/30 backdrop-blur-xl sticky top-0 z-50 relative shadow-lg shadow-purple-500/10">
+        <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link to={createPageUrl("AppStore")}>
-                <Button variant="ghost" size="sm" className="text-white/60 hover:text-white">
+                <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-all">
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
               </Link>
-              <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-full overflow-hidden bg-white/10 flex items-center justify-center">
-                  <img 
-                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/82eb2ecee_image.png"
-                    alt="KaSkool Logo"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-white">KaSkool</h1>
-                  <p className="text-sm text-gray-400">Innovate. Educate. Monetize.</p>
-                </div>
+              <div>
+                <h1 className="text-3xl font-black text-white tracking-tight bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">KaSkool</h1>
+                <p className="text-sm text-gray-400 font-medium">Decentralized Education Platform</p>
               </div>
             </div>
 
             {!user && (
               <Button
                 onClick={() => base44.auth.redirectToLogin()}
-                className="bg-cyan-500 hover:bg-cyan-600 text-white"
+                className="bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 text-white font-semibold px-6 rounded-lg shadow-lg shadow-purple-500/30"
               >
                 Login to Learn
               </Button>
@@ -130,35 +126,35 @@ export default function KaSkoolPage() {
       </div>
 
       {/* Stats Bar */}
-      <div className="border-b border-white/10 relative z-10">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-around">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-white mb-1">5</p>
-              <p className="text-xs text-gray-400">Courses Enrolled</p>
+      <div className="border-b border-white/10 relative z-10 bg-black/40 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="grid grid-cols-5 gap-4">
+            <div className="text-center p-4 rounded-xl bg-white/5 border border-white/10 hover:border-purple-500/30 transition-all">
+              <p className="text-3xl font-bold text-white mb-2">12</p>
+              <p className="text-xs text-gray-400 uppercase tracking-wide">Courses Enrolled</p>
             </div>
-            <div className="text-center flex flex-col items-center">
-              <div className="flex items-center gap-1 mb-1">
-                <GraduationCap className="w-6 h-6 text-purple-400" />
-                <p className="text-3xl font-bold text-white">75</p>
-                <TrendingUp className="w-5 h-5 text-green-400" />
+            <div className="text-center p-4 rounded-xl bg-white/5 border border-white/10 hover:border-purple-500/30 transition-all">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <GraduationCap className="w-5 h-5 text-purple-400" />
+                <p className="text-3xl font-bold text-white">892</p>
+                <TrendingUp className="w-4 h-4 text-green-400" />
               </div>
-              <p className="text-xs text-gray-400">Knowledge Score</p>
+              <p className="text-xs text-gray-400 uppercase tracking-wide">Knowledge Score</p>
             </div>
-            <div className="text-center">
-              <p className="text-3xl font-bold text-white mb-1">75%</p>
-              <p className="text-xs text-gray-400">Avg Progress</p>
+            <div className="text-center p-4 rounded-xl bg-white/5 border border-white/10 hover:border-cyan-500/30 transition-all">
+              <p className="text-3xl font-bold text-cyan-400 mb-2">68%</p>
+              <p className="text-xs text-gray-400 uppercase tracking-wide">Avg Progress</p>
             </div>
-            <div className="text-center flex flex-col items-center">
-              <div className="flex items-center gap-1 mb-1">
+            <div className="text-center p-4 rounded-xl bg-white/5 border border-white/10 hover:border-yellow-500/30 transition-all">
+              <div className="flex items-center justify-center gap-2 mb-2">
                 <Award className="w-5 h-5 text-yellow-400" />
-                <p className="text-3xl font-bold text-white">8</p>
+                <p className="text-3xl font-bold text-white">24</p>
               </div>
-              <p className="text-xs text-gray-400">Achievements</p>
+              <p className="text-xs text-gray-400 uppercase tracking-wide">Achievements</p>
             </div>
-            <div className="text-center">
-              <p className="text-3xl font-bold text-white mb-1">50h</p>
-              <p className="text-xs text-gray-400">Learning Time</p>
+            <div className="text-center p-4 rounded-xl bg-white/5 border border-white/10 hover:border-purple-500/30 transition-all">
+              <p className="text-3xl font-bold text-white mb-2">156h</p>
+              <p className="text-xs text-gray-400 uppercase tracking-wide">Learning Time</p>
             </div>
           </div>
         </div>
@@ -244,13 +240,16 @@ export default function KaSkoolPage() {
           </div>
 
           {/* Results Section */}
-          <div className="max-w-7xl mx-auto px-4 py-8 relative z-10">
+          <div className="max-w-5xl mx-auto px-6 py-12 relative z-10">
             {searchResults.length > 0 && (
               <>
                 {/* Query Heading */}
-                <div className="mb-8">
-                  <h1 className="text-3xl font-bold text-white mb-1">{searchResults[0].title}</h1>
-                  <p className="text-sm text-gray-400">Search results</p>
+                <div className="mb-10">
+                  <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">{searchResults[0].title}</h1>
+                  <p className="text-sm text-gray-400 flex items-center gap-2">
+                    <Search className="w-4 h-4" />
+                    Educational search results
+                  </p>
                 </div>
 
                 {/* Results Grid */}
@@ -262,9 +261,11 @@ export default function KaSkoolPage() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.1 }}
                     >
-                      <Card className="bg-white/5 border-white/10 backdrop-blur-sm hover:border-purple-500/30 transition-all">
-                        <CardContent className="p-6">
-                          <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{result.content}</p>
+                      <Card className="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 backdrop-blur-sm hover:border-purple-500/30 transition-all shadow-lg">
+                        <CardContent className="p-8">
+                          <div className="prose prose-invert max-w-none">
+                            <p className="text-gray-200 leading-relaxed text-base whitespace-pre-wrap">{result.content}</p>
+                          </div>
                         </CardContent>
                       </Card>
                     </motion.div>
