@@ -226,8 +226,11 @@ export default function ToolsModal({ onClose, agentZKId }) {
       setCurrentUser(user);
     } catch (err) {
       console.error('Failed to load current user:', err);
+      setCurrentUser(null);
     }
   };
+
+  const isAdmin = currentUser?.role === 'admin';
 
   const loadSecrets = async () => {
     try {
@@ -2543,10 +2546,12 @@ Provide a clear, accurate answer based on current web information. If you find t
           <div className="flex-shrink-0 flex border-b border-white/10 bg-black overflow-x-auto">
             {[
               { id: 'chat', icon: MessageSquare, label: 'Chat' },
-              { id: 'secrets', icon: Key, label: 'Secrets' },
-              { id: 'api', icon: Code, label: 'API' },
-              { id: 'wallet', icon: Wallet, label: 'Wallet' },
-              { id: 'vp_imports', icon: Search, label: 'VP IMPORTS' },
+              ...(isAdmin ? [
+                { id: 'secrets', icon: Key, label: 'Secrets' },
+                { id: 'api', icon: Code, label: 'API' },
+                { id: 'wallet', icon: Wallet, label: 'Wallet' },
+                { id: 'vp_imports', icon: Search, label: 'VP IMPORTS' }
+              ] : []),
               { id: 'shills', icon: Zap, label: 'Shills' },
               { id: 'location', icon: Users, label: 'Location' }
             ].map(tab => (
