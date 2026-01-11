@@ -275,7 +275,6 @@ export default function KaSkoolPage() {
           </div>
         </>
       )}
-      </div>
     </div>
   );
 }
