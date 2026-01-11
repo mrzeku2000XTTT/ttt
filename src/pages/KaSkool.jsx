@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, BookOpen } from "lucide-react";
+import { ArrowLeft, BookOpen, GraduationCap, TrendingUp, Award, Clock, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -69,22 +69,29 @@ export default function KaSkoolPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white relative">
-      {/* Background Image */}
-      {backgroundUrl && (
+    <div className="min-h-screen bg-black text-white relative overflow-hidden">
+      {/* Futuristic Grid Background */}
+      <div className="fixed inset-0 z-0">
         <div 
-          className="fixed inset-0 opacity-10 z-0"
+          className="absolute inset-0"
           style={{
-            backgroundImage: `url(${backgroundUrl})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat'
+            backgroundImage: `
+              linear-gradient(rgba(139, 92, 246, 0.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(139, 92, 246, 0.1) 1px, transparent 1px),
+              linear-gradient(rgba(6, 182, 212, 0.05) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(6, 182, 212, 0.05) 1px, transparent 1px)
+            `,
+            backgroundSize: '100px 100px, 100px 100px, 20px 20px, 20px 20px',
+            backgroundPosition: '-1px -1px, -1px -1px, -1px -1px, -1px -1px',
+            transform: 'perspective(1000px) rotateX(60deg)',
+            transformOrigin: 'center center',
+            height: '200%',
+            top: '-50%'
           }}
         />
-      )}
-      
-      {/* Overlay */}
-      <div className="fixed inset-0 bg-gradient-to-br from-black/90 via-zinc-900/80 to-black/90 z-0" />
+        <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 via-transparent to-cyan-900/20" />
+        <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/40 to-black/60" />
+      </div>
       {/* Header */}
       <div className="border-b border-white/10 bg-black/90 backdrop-blur-xl sticky top-0 z-50 relative">
         <div className="max-w-7xl mx-auto px-4 py-4">
@@ -149,35 +156,55 @@ export default function KaSkoolPage() {
       )}
 
       {/* Search Content */}
-      <div className="max-w-4xl mx-auto px-4 py-16 relative z-10">
-        {/* Search Bar */}
-        <div className="mb-12">
-          <form onSubmit={handleSearch} className="relative">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search for blockchain knowledge, Kaspa info, and more..."
-              className="w-full px-6 py-4 bg-white/5 border-2 border-white/20 rounded-full text-white placeholder-gray-400 focus:outline-none focus:border-cyan-400 transition-all"
-            />
-            <Button
-              type="submit"
-              disabled={isSearching}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-cyan-500 hover:bg-cyan-600 rounded-full h-10 px-6"
-            >
-              {isSearching ? (
-                <>
+      <div className="max-w-4xl mx-auto px-4 relative z-10" style={{ paddingTop: '15vh' }}>
+        {/* Centered Search Section */}
+        <div className="text-center mb-16">
+          {/* Search Bar */}
+          <form onSubmit={handleSearch} className="mb-12">
+            <div className="relative max-w-3xl mx-auto">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search blockchain courses, AI insights..."
+                className="w-full px-8 py-5 bg-white/5 border-2 border-purple-500/50 rounded-full text-white text-lg placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:shadow-[0_0_30px_rgba(168,85,247,0.4)] transition-all backdrop-blur-sm"
+                style={{
+                  boxShadow: '0 0 20px rgba(168, 85, 247, 0.2)'
+                }}
+              />
+              <Button
+                type="submit"
+                disabled={isSearching}
+                className="absolute right-3 top-1/2 -translate-y-1/2 bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 rounded-full h-12 w-12 p-0 shadow-lg shadow-purple-500/50"
+              >
+                {isSearching ? (
                   <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
+                    className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
                   />
-                </>
-              ) : (
-                "Search"
-              )}
-            </Button>
+                ) : (
+                  <Search className="w-5 h-5" />
+                )}
+              </Button>
+            </div>
           </form>
+
+          {/* Icon and Heading */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mb-6"
+          >
+            <div className="w-16 h-16 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-purple-500/30">
+              <BookOpen className="w-8 h-8 text-purple-400" />
+            </div>
+            <h1 className="text-4xl font-bold text-white mb-3">Decentralize Knowledge</h1>
+            <p className="text-gray-400 max-w-2xl mx-auto text-lg">
+              Enter your query above to search for blockchain information, Kaspa resources, and educational content.
+            </p>
+          </motion.div>
         </div>
 
         {/* Search Results */}
@@ -204,18 +231,6 @@ export default function KaSkoolPage() {
           </div>
         )}
 
-        {/* Empty State */}
-        {searchResults.length === 0 && !isSearching && (
-          <div className="text-center py-16">
-            <div className="w-20 h-20 bg-cyan-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <BookOpen className="w-10 h-10 text-cyan-400" />
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Search for Knowledge</h2>
-            <p className="text-gray-400 max-w-md mx-auto">
-              Enter your query above to search for blockchain information, Kaspa resources, and educational content.
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );
