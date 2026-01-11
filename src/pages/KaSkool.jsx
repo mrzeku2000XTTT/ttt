@@ -140,15 +140,15 @@ export default function KaSkoolPage() {
       )}
 
       {/* Tabs */}
-      <div className="border-b border-white/10 bg-black/50">
+      <div className="border-b border-teal-200 bg-white/50">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex gap-6">
             <button
               onClick={() => setActiveTab("courses")}
               className={`px-4 py-3 font-medium transition-colors border-b-2 ${
                 activeTab === "courses"
-                  ? "border-cyan-400 text-cyan-400"
-                  : "border-transparent text-gray-400 hover:text-white"
+                  ? "border-teal-500 text-teal-600"
+                  : "border-transparent text-gray-600 hover:text-gray-900"
               }`}
             >
               <BookOpen className="w-4 h-4 inline-block mr-2" />
@@ -158,8 +158,8 @@ export default function KaSkoolPage() {
               onClick={() => setActiveTab("achievements")}
               className={`px-4 py-3 font-medium transition-colors border-b-2 ${
                 activeTab === "achievements"
-                  ? "border-cyan-400 text-cyan-400"
-                  : "border-transparent text-gray-400 hover:text-white"
+                  ? "border-teal-500 text-teal-600"
+                  : "border-transparent text-gray-600 hover:text-gray-900"
               }`}
             >
               <Award className="w-4 h-4 inline-block mr-2" />
@@ -169,8 +169,8 @@ export default function KaSkoolPage() {
               onClick={() => setActiveTab("community")}
               className={`px-4 py-3 font-medium transition-colors border-b-2 ${
                 activeTab === "community"
-                  ? "border-cyan-400 text-cyan-400"
-                  : "border-transparent text-gray-400 hover:text-white"
+                  ? "border-teal-500 text-teal-600"
+                  : "border-transparent text-gray-600 hover:text-gray-900"
               }`}
             >
               <Users className="w-4 h-4 inline-block mr-2" />
@@ -246,8 +246,8 @@ export default function KaSkoolPage() {
                       <Button
                         className={`w-full ${
                           course.enrolled
-                            ? "bg-cyan-500 hover:bg-cyan-600"
-                            : "bg-white/10 hover:bg-white/20 border border-white/20"
+                            ? "bg-teal-500 hover:bg-teal-600 text-white"
+                            : "bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700"
                         }`}
                       >
                         {course.enrolled ? (
@@ -271,8 +271,8 @@ export default function KaSkoolPage() {
                   key={idx}
                   className={`${
                     achievement.unlocked
-                      ? "bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-cyan-500/50"
-                      : "bg-white/5 border-white/10"
+                      ? "bg-gradient-to-r from-teal-100 to-cyan-100 border-teal-400"
+                      : "bg-white border-gray-200"
                   }`}
                 >
                   <CardContent className="flex items-center gap-4 p-6">
