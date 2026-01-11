@@ -198,6 +198,15 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
       return;
     }
 
+    // Check if user is authenticated
+    try {
+      await base44.auth.me();
+    } catch (err) {
+      alert("⚠️ Authentication Required\n\nYou need to be logged in to generate images with RMX ULTRA.\n\nPlease login to continue.");
+      base44.auth.redirectToLogin();
+      return;
+    }
+
     setIsGenerating(true);
 
     let attempts = 0;
