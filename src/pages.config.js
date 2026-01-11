@@ -95,6 +95,7 @@ import KFlow from './pages/KFlow';
 import KGigZ from './pages/KGigZ';
 import KP from './pages/KP';
 import KWSuccess from './pages/KWSuccess';
+import KaSkool from './pages/KaSkool';
 import KasCompute from './pages/KasCompute';
 import KasFans from './pages/KasFans';
 import KasPlay from './pages/KasPlay';
@@ -136,10 +137,10 @@ import MyChannel from './pages/MyChannel';
 import NASA from './pages/NASA';
 import NFTMint from './pages/NFTMint';
 import Olatomiwa from './pages/Olatomiwa';
-import Oracle from './pages/Oracle';
 import OlatomiwaHub from './pages/OlatomiwaHub';
 import OliviaApps from './pages/OliviaApps';
 import OnChainPOS from './pages/OnChainPOS';
+import Oracle from './pages/Oracle';
 import OriginStory from './pages/OriginStory';
 import OuTKasTT from './pages/OuTKasTT';
 import POLFeed from './pages/POLFeed';
@@ -212,7 +213,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import KaSkool from './pages/KaSkool';
 import __Layout from './Layout.jsx';
 
 
@@ -314,6 +314,7 @@ export const PAGES = {
     "KGigZ": KGigZ,
     "KP": KP,
     "KWSuccess": KWSuccess,
+    "KaSkool": KaSkool,
     "KasCompute": KasCompute,
     "KasFans": KasFans,
     "KasPlay": KasPlay,
@@ -355,10 +356,10 @@ export const PAGES = {
     "NASA": NASA,
     "NFTMint": NFTMint,
     "Olatomiwa": Olatomiwa,
-    "Oracle": Oracle,
     "OlatomiwaHub": OlatomiwaHub,
     "OliviaApps": OliviaApps,
     "OnChainPOS": OnChainPOS,
+    "Oracle": Oracle,
     "OriginStory": OriginStory,
     "OuTKasTT": OuTKasTT,
     "POLFeed": POLFeed,
@@ -431,7 +432,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "KaSkool": KaSkool,
 }
 
 export const pagesConfig = {

@@ -75,9 +75,9 @@ export default function KaSkoolPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-emerald-50 text-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-slate-50 to-zinc-50 text-gray-900">
       {/* Header */}
-      <div className="border-b border-teal-200 bg-white/80 backdrop-blur-xl sticky top-0 z-50">
+      <div className="border-b border-gray-200 bg-white/90 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -87,7 +87,7 @@ export default function KaSkoolPage() {
                 </Button>
               </Link>
               <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-full overflow-hidden bg-teal-400 flex items-center justify-center">
+                <div className="w-14 h-14 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
                   <img 
                     src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/82eb2ecee_image.png"
                     alt="KaSkool Logo"
@@ -115,24 +115,24 @@ export default function KaSkoolPage() {
 
       {/* Stats Bar */}
       {user && (
-        <div className="bg-gradient-to-r from-teal-100 to-cyan-100 border-b border-teal-200">
+        <div className="bg-gray-50 border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4 py-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
-                <p className="text-2xl font-bold text-teal-600">3</p>
-                <p className="text-xs text-gray-600">Courses Enrolled</p>
+                <p className="text-2xl font-bold text-gray-700">3</p>
+                <p className="text-xs text-gray-500">Courses Enrolled</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-cyan-600">62%</p>
-                <p className="text-xs text-gray-600">Avg Progress</p>
+                <p className="text-2xl font-bold text-gray-700">62%</p>
+                <p className="text-xs text-gray-500">Avg Progress</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-emerald-600">2</p>
-                <p className="text-xs text-gray-600">Achievements</p>
+                <p className="text-2xl font-bold text-gray-700">2</p>
+                <p className="text-xs text-gray-500">Achievements</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-teal-700">24h</p>
-                <p className="text-xs text-gray-600">Learning Time</p>
+                <p className="text-2xl font-bold text-gray-700">24h</p>
+                <p className="text-xs text-gray-500">Learning Time</p>
               </div>
             </div>
           </div>
@@ -140,15 +140,15 @@ export default function KaSkoolPage() {
       )}
 
       {/* Tabs */}
-      <div className="border-b border-teal-200 bg-white/50">
+      <div className="border-b border-gray-200 bg-white/70">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex gap-6">
             <button
               onClick={() => setActiveTab("courses")}
               className={`px-4 py-3 font-medium transition-colors border-b-2 ${
                 activeTab === "courses"
-                  ? "border-teal-500 text-teal-600"
-                  : "border-transparent text-gray-600 hover:text-gray-900"
+                  ? "border-gray-700 text-gray-900"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
               <BookOpen className="w-4 h-4 inline-block mr-2" />
@@ -158,8 +158,8 @@ export default function KaSkoolPage() {
               onClick={() => setActiveTab("achievements")}
               className={`px-4 py-3 font-medium transition-colors border-b-2 ${
                 activeTab === "achievements"
-                  ? "border-teal-500 text-teal-600"
-                  : "border-transparent text-gray-600 hover:text-gray-900"
+                  ? "border-gray-700 text-gray-900"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
               <Award className="w-4 h-4 inline-block mr-2" />
@@ -169,8 +169,8 @@ export default function KaSkoolPage() {
               onClick={() => setActiveTab("community")}
               className={`px-4 py-3 font-medium transition-colors border-b-2 ${
                 activeTab === "community"
-                  ? "border-teal-500 text-teal-600"
-                  : "border-transparent text-gray-600 hover:text-gray-900"
+                  ? "border-gray-700 text-gray-900"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
               <Users className="w-4 h-4 inline-block mr-2" />
@@ -201,7 +201,7 @@ export default function KaSkoolPage() {
                   whileHover={{ scale: 1.02 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Card className="bg-white border-teal-200 hover:border-teal-400 transition-all shadow-sm">
+                  <Card className="bg-white border-gray-200 hover:border-gray-300 transition-all shadow-sm">
                     <CardHeader>
                       <div className="flex items-start justify-between mb-2">
                         <CardTitle className="text-gray-900">{course.title}</CardTitle>
@@ -224,7 +224,7 @@ export default function KaSkoolPage() {
                           </div>
                           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full"
+                              className="h-full bg-gray-700 rounded-full"
                               style={{ width: `${course.progress}%` }}
                             />
                           </div>
@@ -246,7 +246,7 @@ export default function KaSkoolPage() {
                       <Button
                         className={`w-full ${
                           course.enrolled
-                            ? "bg-teal-500 hover:bg-teal-600 text-white"
+                            ? "bg-gray-800 hover:bg-gray-900 text-white"
                             : "bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700"
                         }`}
                       >
@@ -271,18 +271,18 @@ export default function KaSkoolPage() {
                   key={idx}
                   className={`${
                     achievement.unlocked
-                      ? "bg-gradient-to-r from-teal-100 to-cyan-100 border-teal-400"
+                      ? "bg-gray-50 border-gray-300"
                       : "bg-white border-gray-200"
                   }`}
                 >
                   <CardContent className="flex items-center gap-4 p-6">
                     <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
                       achievement.unlocked
-                        ? "bg-teal-200"
+                        ? "bg-gray-200"
                         : "bg-gray-100"
                     }`}>
                       {achievement.unlocked ? (
-                        <CheckCircle className="w-8 h-8 text-teal-600" />
+                        <CheckCircle className="w-8 h-8 text-gray-700" />
                       ) : (
                         <Lock className="w-8 h-8 text-gray-400" />
                       )}
