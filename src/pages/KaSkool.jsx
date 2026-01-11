@@ -125,41 +125,6 @@ export default function KaSkoolPage() {
         </div>
       </div>
 
-      {/* Stats Bar */}
-      <div className="border-b border-white/10 relative z-10 bg-black/40 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="grid grid-cols-5 gap-4">
-            <div className="text-center p-4 rounded-xl bg-white/5 border border-white/10 hover:border-purple-500/30 transition-all">
-              <p className="text-3xl font-bold text-white mb-2">12</p>
-              <p className="text-xs text-gray-400 uppercase tracking-wide">Courses Enrolled</p>
-            </div>
-            <div className="text-center p-4 rounded-xl bg-white/5 border border-white/10 hover:border-purple-500/30 transition-all">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <GraduationCap className="w-5 h-5 text-purple-400" />
-                <p className="text-3xl font-bold text-white">892</p>
-                <TrendingUp className="w-4 h-4 text-green-400" />
-              </div>
-              <p className="text-xs text-gray-400 uppercase tracking-wide">Knowledge Score</p>
-            </div>
-            <div className="text-center p-4 rounded-xl bg-white/5 border border-white/10 hover:border-cyan-500/30 transition-all">
-              <p className="text-3xl font-bold text-cyan-400 mb-2">68%</p>
-              <p className="text-xs text-gray-400 uppercase tracking-wide">Avg Progress</p>
-            </div>
-            <div className="text-center p-4 rounded-xl bg-white/5 border border-white/10 hover:border-yellow-500/30 transition-all">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Award className="w-5 h-5 text-yellow-400" />
-                <p className="text-3xl font-bold text-white">24</p>
-              </div>
-              <p className="text-xs text-gray-400 uppercase tracking-wide">Achievements</p>
-            </div>
-            <div className="text-center p-4 rounded-xl bg-white/5 border border-white/10 hover:border-purple-500/30 transition-all">
-              <p className="text-3xl font-bold text-white mb-2">156h</p>
-              <p className="text-xs text-gray-400 uppercase tracking-wide">Learning Time</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Search Content */}
       {searchResults.length === 0 && !isSearching ? (
         <div className="max-w-4xl mx-auto px-4 relative z-10" style={{ paddingTop: '15vh' }}>
