@@ -10,10 +10,29 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export default function KaSkoolPage() {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("courses");
+  const [backgroundUrl, setBackgroundUrl] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     loadUser();
+    generateBackground();
   }, []);
+
+  const generateBackground = async () => {
+    setIsGenerating(true);
+    try {
+      const result = await base44.integrations.Core.GenerateImage({
+        prompt: "Professional minimalist educational background with subtle geometric blockchain network patterns, abstract hexagonal Kaspa blocks floating in soft gradient space, clean modern design, muted teal and gray tones, soft lighting, professional learning environment aesthetic, high quality, 4K resolution"
+      });
+      if (result?.url) {
+        setBackgroundUrl(result.url);
+      }
+    } catch (err) {
+      console.error('Failed to generate background:', err);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const loadUser = async () => {
     try {
@@ -75,9 +94,24 @@ export default function KaSkoolPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-slate-50 to-zinc-50 text-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-slate-50 to-zinc-50 text-gray-900 relative">
+      {/* Background Image */}
+      {backgroundUrl && (
+        <div 
+          className="fixed inset-0 opacity-20 z-0"
+          style={{
+            backgroundImage: `url(${backgroundUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}
+        />
+      )}
+      
+      {/* Overlay */}
+      <div className="fixed inset-0 bg-gradient-to-br from-white/80 via-gray-50/70 to-slate-100/80 z-0" />
       {/* Header */}
-      <div className="border-b border-gray-200 bg-white/90 backdrop-blur-xl sticky top-0 z-50">
+      <div className="border-b border-gray-200 bg-white/90 backdrop-blur-xl sticky top-0 z-50 relative">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -181,7 +215,7 @@ export default function KaSkoolPage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-8 relative z-10">
         {activeTab === "courses" && (
           <div className="space-y-6">
             <div className="flex items-center justify-between mb-6">
