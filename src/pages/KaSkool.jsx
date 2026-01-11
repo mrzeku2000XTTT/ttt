@@ -309,6 +309,79 @@ export default function KaSkoolPage() {
           </div>
         </>
       )}
+
+      {/* Explain Modal */}
+      {showExplainModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-gradient-to-br from-zinc-900 to-black border border-white/10 rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+          >
+            <div className="sticky top-0 bg-gradient-to-r from-purple-900/50 to-cyan-900/50 backdrop-blur-xl border-b border-white/10 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Sparkles className="w-5 h-5 text-purple-400" />
+                <h3 className="text-xl font-bold text-white">AI Re-Explain</h3>
+              </div>
+              <button
+                onClick={() => {
+                  setShowExplainModal(false);
+                  setExplainPrompt("");
+                }}
+                className="text-white/60 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Presets */}
+              <div>
+                <h4 className="text-sm font-semibold text-white/80 mb-3">Quick Presets</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {presets.map((preset, i) => (
+                    <Button
+                      key={i}
+                      onClick={() => handleExplain(preset)}
+                      disabled={isExplaining}
+                      className="bg-white/5 hover:bg-white/10 border border-white/10 text-white justify-start"
+                    >
+                      {preset}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Custom Prompt */}
+              <div>
+                <h4 className="text-sm font-semibold text-white/80 mb-3">Or Create Your Own</h4>
+                <textarea
+                  value={explainPrompt}
+                  onChange={(e) => setExplainPrompt(e.target.value)}
+                  placeholder="E.g., 'Explain this using sports analogies' or 'Make this fun and engaging'"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500/50 resize-none"
+                  rows={3}
+                />
+                <Button
+                  onClick={() => handleExplain()}
+                  disabled={isExplaining || !explainPrompt.trim()}
+                  className="mt-3 w-full bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600"
+                >
+                  {isExplaining ? (
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
+                    />
+                  ) : (
+                    "Apply Custom Explanation"
+                  )}
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
