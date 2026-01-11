@@ -74,15 +74,11 @@ export default function LearnMorePage() {
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="relative bg-gradient-to-br from-gray-400/20 via-gray-300/10 to-gray-500/20 border-2 border-gray-300/40 rounded-xl p-4 backdrop-blur-sm overflow-hidden"
-              style={{
-                boxShadow: '0 0 30px rgba(192, 192, 192, 0.3), inset 0 0 20px rgba(255, 255, 255, 0.1)',
-              }}
+              className="bg-white/5 border border-white/20 rounded-xl p-4"
             >
-              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-50" />
-              <Shield className="w-10 h-10 text-gray-200 mb-3 relative z-10 drop-shadow-[0_0_8px_rgba(192,192,192,0.8)]" />
-              <h3 className="text-xl font-bold text-white mb-2 relative z-10 drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">Trust</h3>
-              <p className="text-sm text-gray-200 leading-relaxed relative z-10">
+              <Shield className="w-10 h-10 text-cyan-400 mb-3" />
+              <h3 className="text-xl font-bold text-white mb-2">Trust</h3>
+              <p className="text-sm text-gray-300 leading-relaxed">
                 Built on cryptographic verification and blockchain immutability. Every interaction is trustworthy, transparent, and verifiable through zero-knowledge proofs.
               </p>
             </motion.div>
@@ -91,7 +87,7 @@ export default function LearnMorePage() {
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
-              className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-xl p-4 backdrop-blur-sm"
+              className="bg-white/5 border border-white/20 rounded-xl p-4"
             >
               <Zap className="w-10 h-10 text-purple-400 mb-3" />
               <h3 className="text-xl font-bold text-white mb-2">Task</h3>
@@ -104,7 +100,7 @@ export default function LearnMorePage() {
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-xl p-4 backdrop-blur-sm"
+              className="bg-white/5 border border-white/20 rounded-xl p-4"
             >
               <Globe className="w-10 h-10 text-blue-400 mb-3" />
               <h3 className="text-xl font-bold text-white mb-2">Transact</h3>
@@ -117,7 +113,7 @@ export default function LearnMorePage() {
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.5 }}
-              className="bg-gradient-to-br from-pink-500/10 to-purple-500/10 border border-pink-500/30 rounded-xl p-4 backdrop-blur-sm"
+              className="bg-white/5 border border-white/20 rounded-xl p-4"
             >
               <Lock className="w-10 h-10 text-pink-400 mb-3" />
               <h3 className="text-xl font-bold text-white mb-2">Zero Knowledge</h3>
