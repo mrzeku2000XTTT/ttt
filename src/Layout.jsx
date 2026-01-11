@@ -210,8 +210,9 @@ export default function Layout({ children, currentPageName }) {
     const isImageHistoryPage = currentPageName === "ImageHistory";
     const isKaSkoolPage = currentPageName === "KaSkool";
     const isKaSkoolProfilePage = currentPageName === "KaSkoolProfile";
+    const isCoursesPage = currentPageName === "Courses";
 
-    if (isHomePage || isLobbyPage || isEarthPage || isCountryDetailPage || isKonektPage || isArea51Page || isTheRealmPage || isTruthLandingPage || isUNIPage || isShiLLzPage || isOliviaAppsPage || isB44PromptsPage || isWindowPage || isImageHistoryPage || isKaSkoolPage || isKaSkoolProfilePage) {
+    if (isHomePage || isLobbyPage || isEarthPage || isCountryDetailPage || isKonektPage || isArea51Page || isTheRealmPage || isTruthLandingPage || isUNIPage || isShiLLzPage || isOliviaAppsPage || isB44PromptsPage || isWindowPage || isImageHistoryPage || isKaSkoolPage || isKaSkoolProfilePage || isCoursesPage) {
     return (
       <React.Suspense fallback={<div className="min-h-screen bg-black" />}>
         <VideoPlayerProvider>
@@ -227,6 +228,7 @@ export default function Layout({ children, currentPageName }) {
     { name: "TTTV", icon: Search, path: "Browser", isTTTV: true },
     { name: "Send KAS", icon: ArrowUpDown, path: "Bridge" },
     { name: "Agent ZK", icon: Bot, path: "AgentZK", premium: true },
+    { name: "Courses", icon: BookOpen, path: "Courses" },
     { name: "Zeku AI", icon: Bot, path: "ZekuAI", premium: true },
   ];
 
