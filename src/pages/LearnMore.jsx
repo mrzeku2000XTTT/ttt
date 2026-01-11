@@ -69,16 +69,16 @@ export default function LearnMorePage() {
           </motion.div>
 
           {/* Feature Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-2xl p-6 backdrop-blur-sm"
+              className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-xl p-4 backdrop-blur-sm"
             >
-              <Shield className="w-12 h-12 text-cyan-400 mb-4" />
-              <h3 className="text-2xl font-bold text-white mb-3">Trust</h3>
-              <p className="text-gray-300 leading-relaxed">
+              <Shield className="w-10 h-10 text-cyan-400 mb-3" />
+              <h3 className="text-xl font-bold text-white mb-2">Trust</h3>
+              <p className="text-sm text-gray-300 leading-relaxed">
                 Built on cryptographic verification and blockchain immutability. Every interaction is trustworthy, transparent, and verifiable through zero-knowledge proofs.
               </p>
             </motion.div>
@@ -87,11 +87,11 @@ export default function LearnMorePage() {
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
-              className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-2xl p-6 backdrop-blur-sm"
+              className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-xl p-4 backdrop-blur-sm"
             >
-              <Zap className="w-12 h-12 text-purple-400 mb-4" />
-              <h3 className="text-2xl font-bold text-white mb-3">Task</h3>
-              <p className="text-gray-300 leading-relaxed">
+              <Zap className="w-10 h-10 text-purple-400 mb-3" />
+              <h3 className="text-xl font-bold text-white mb-2">Task</h3>
+              <p className="text-sm text-gray-300 leading-relaxed">
                 Decentralized task management powered by AI. Automate workflows, verify completions, and execute tasks with intelligent autonomous agents.
               </p>
             </motion.div>
@@ -100,11 +100,11 @@ export default function LearnMorePage() {
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-2xl p-6 backdrop-blur-sm"
+              className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-xl p-4 backdrop-blur-sm"
             >
-              <Globe className="w-12 h-12 text-blue-400 mb-4" />
-              <h3 className="text-2xl font-bold text-white mb-3">Transact</h3>
-              <p className="text-gray-300 leading-relaxed">
+              <Globe className="w-10 h-10 text-blue-400 mb-3" />
+              <h3 className="text-xl font-bold text-white mb-2">Transact</h3>
+              <p className="text-sm text-gray-300 leading-relaxed">
                 Seamless cross-chain transactions between Layer 1 and Layer 2 networks. Bridge assets securely with minimal fees and maximum speed.
               </p>
             </motion.div>
@@ -113,11 +113,11 @@ export default function LearnMorePage() {
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.5 }}
-              className="bg-gradient-to-br from-pink-500/10 to-purple-500/10 border border-pink-500/30 rounded-2xl p-6 backdrop-blur-sm"
+              className="bg-gradient-to-br from-pink-500/10 to-purple-500/10 border border-pink-500/30 rounded-xl p-4 backdrop-blur-sm"
             >
-              <Lock className="w-12 h-12 text-pink-400 mb-4" />
-              <h3 className="text-2xl font-bold text-white mb-3">Zero Knowledge</h3>
-              <p className="text-gray-300 leading-relaxed">
+              <Lock className="w-10 h-10 text-pink-400 mb-3" />
+              <h3 className="text-xl font-bold text-white mb-2">Zero Knowledge</h3>
+              <p className="text-sm text-gray-300 leading-relaxed">
                 Privacy-first architecture using zero-knowledge cryptography. Protect your data while maintaining complete verifiability and transparency.
               </p>
             </motion.div>
