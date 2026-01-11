@@ -120,28 +120,38 @@ export default function WalletCards({
           ) : (
             <div className="text-center py-4">
               <p className="text-sm text-gray-500 mb-3">Not connected</p>
-              <Button
-                onClick={async () => {
-                  if (window.kasware) {
-                    try {
-                      await window.kasware.requestAccounts();
-                      loadDAGKnightStatus();
-                    } catch (err) {
-                      console.error('Kasware connection error:', err);
-                      if (err.message?.includes('User rejected')) {
-                        alert('Connection cancelled');
-                      } else {
-                        alert('Failed to connect Kasware');
+              <div className="space-y-2">
+                <Button
+                  onClick={async () => {
+                    if (window.kasware) {
+                      try {
+                        await window.kasware.requestAccounts();
+                        loadDAGKnightStatus();
+                      } catch (err) {
+                        console.error('Kasware connection error:', err);
+                        if (err.message?.includes('User rejected')) {
+                          alert('Connection cancelled');
+                        } else {
+                          alert('Failed to connect Kasware');
+                        }
                       }
+                    } else {
+                      alert('Kasware not found. Please install Kasware extension.');
                     }
-                  } else {
-                    alert('Kasware not found. Please install Kasware extension.');
-                  }
-                }}
-                className="w-full bg-black border border-zinc-800 text-white hover:bg-zinc-900"
-              >
-                Connect Kasware
-              </Button>
+                  }}
+                  className="w-full bg-black border border-zinc-800 text-white hover:bg-zinc-900"
+                >
+                  Connect Kasware
+                </Button>
+                <div className="text-white/40 text-xs">or</div>
+                <Button
+                  onClick={() => navigate(createPageUrl("X"))}
+                  className="w-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 text-purple-300 hover:from-purple-500/30 hover:to-pink-500/30"
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  ZKU Verify
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
