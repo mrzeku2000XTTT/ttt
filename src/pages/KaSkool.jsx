@@ -226,14 +226,16 @@ export default function KaSkoolPage() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.1 }}
                     >
-                      <Card className="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 backdrop-blur-sm hover:border-purple-500/30 transition-all shadow-lg relative">
+                      <Card className="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 backdrop-blur-sm hover:border-purple-500/30 transition-all shadow-lg">
                         {/* Verified Badge */}
-                        <div className="absolute top-6 right-6 flex items-center gap-2 px-3 py-1.5 bg-green-500/20 border border-green-500/50 rounded-full backdrop-blur-sm">
-                          <ShieldCheck className="w-4 h-4 text-green-400" />
-                          <span className="text-xs text-green-400 font-semibold">Fact Checked</span>
+                        <div className="flex items-center justify-between px-8 pt-6 pb-4">
+                          <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/20 border border-green-500/50 rounded-full backdrop-blur-sm">
+                            <ShieldCheck className="w-4 h-4 text-green-400" />
+                            <span className="text-xs text-green-400 font-semibold">Fact Checked</span>
+                          </div>
                         </div>
                         
-                        <CardContent className="p-8 pr-32">
+                        <CardContent className="px-8 pb-8 pt-0">
                           <div className="prose prose-invert max-w-none">
                             <p className="text-gray-200 leading-relaxed text-base whitespace-pre-wrap">{result.content}</p>
                           </div>
