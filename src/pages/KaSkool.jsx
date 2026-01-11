@@ -75,24 +75,28 @@ export default function KaSkoolPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-emerald-50 text-gray-900">
       {/* Header */}
-      <div className="border-b border-white/10 bg-black/80 backdrop-blur-xl sticky top-0 z-50">
+      <div className="border-b border-teal-200 bg-white/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link to={createPageUrl("AppStore")}>
-                <Button variant="ghost" size="sm" className="text-white/60 hover:text-white">
+                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
               </Link>
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
-                  <GraduationCap className="w-7 h-7 text-white" />
+                <div className="w-14 h-14 rounded-full overflow-hidden bg-teal-400 flex items-center justify-center">
+                  <img 
+                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/82eb2ecee_image.png"
+                    alt="KaSkool Logo"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold">KaSkool</h1>
-                  <p className="text-sm text-gray-400">Learn Blockchain & Kaspa</p>
+                  <p className="text-sm text-gray-600">Innovate. Educate. Monetize.</p>
                 </div>
               </div>
             </div>
@@ -111,24 +115,24 @@ export default function KaSkoolPage() {
 
       {/* Stats Bar */}
       {user && (
-        <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-b border-white/10">
+        <div className="bg-gradient-to-r from-teal-100 to-cyan-100 border-b border-teal-200">
           <div className="max-w-7xl mx-auto px-4 py-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
-                <p className="text-2xl font-bold text-cyan-400">3</p>
-                <p className="text-xs text-gray-400">Courses Enrolled</p>
+                <p className="text-2xl font-bold text-teal-600">3</p>
+                <p className="text-xs text-gray-600">Courses Enrolled</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-blue-400">62%</p>
-                <p className="text-xs text-gray-400">Avg Progress</p>
+                <p className="text-2xl font-bold text-cyan-600">62%</p>
+                <p className="text-xs text-gray-600">Avg Progress</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-purple-400">2</p>
-                <p className="text-xs text-gray-400">Achievements</p>
+                <p className="text-2xl font-bold text-emerald-600">2</p>
+                <p className="text-xs text-gray-600">Achievements</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-pink-400">24h</p>
-                <p className="text-xs text-gray-400">Learning Time</p>
+                <p className="text-2xl font-bold text-teal-700">24h</p>
+                <p className="text-xs text-gray-600">Learning Time</p>
               </div>
             </div>
           </div>
@@ -197,10 +201,10 @@ export default function KaSkoolPage() {
                   whileHover={{ scale: 1.02 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Card className="bg-white/5 border-white/10 hover:border-cyan-500/50 transition-all">
+                  <Card className="bg-white border-teal-200 hover:border-teal-400 transition-all shadow-sm">
                     <CardHeader>
                       <div className="flex items-start justify-between mb-2">
-                        <CardTitle className="text-white">{course.title}</CardTitle>
+                        <CardTitle className="text-gray-900">{course.title}</CardTitle>
                         {course.enrolled ? (
                           <span className="px-2 py-1 bg-cyan-500/20 text-cyan-400 text-xs rounded-full">
                             Enrolled
@@ -218,9 +222,9 @@ export default function KaSkoolPage() {
                             <span>Progress</span>
                             <span>{course.progress}%</span>
                           </div>
-                          <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full"
+                              className="h-full bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full"
                               style={{ width: `${course.progress}%` }}
                             />
                           </div>
@@ -274,18 +278,18 @@ export default function KaSkoolPage() {
                   <CardContent className="flex items-center gap-4 p-6">
                     <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
                       achievement.unlocked
-                        ? "bg-cyan-500/20"
-                        : "bg-white/5"
+                        ? "bg-teal-200"
+                        : "bg-gray-100"
                     }`}>
                       {achievement.unlocked ? (
-                        <CheckCircle className="w-8 h-8 text-cyan-400" />
+                        <CheckCircle className="w-8 h-8 text-teal-600" />
                       ) : (
-                        <Lock className="w-8 h-8 text-gray-500" />
+                        <Lock className="w-8 h-8 text-gray-400" />
                       )}
                     </div>
                     <div className="flex-1">
                       <h3 className={`font-bold mb-1 ${
-                        achievement.unlocked ? "text-white" : "text-gray-500"
+                        achievement.unlocked ? "text-gray-900" : "text-gray-400"
                       }`}>
                         {achievement.name}
                       </h3>
