@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, BookOpen, GraduationCap, TrendingUp, Award, Clock, Search } from "lucide-react";
+import { ArrowLeft, BookOpen, GraduationCap, TrendingUp, Award, Clock, Search, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -174,9 +174,9 @@ export default function KaSkoolPage() {
         <>
           {/* Compact Search Bar - Google Style */}
           <div className="border-b border-white/10 relative z-10">
-            <div className="max-w-7xl mx-auto px-4 py-4">
-              <form onSubmit={handleSearch} className="flex items-center gap-4">
-                <div className="relative flex-1 max-w-2xl">
+            <div className="max-w-7xl mx-auto px-4 py-6">
+              <form onSubmit={handleSearch} className="flex items-center justify-center gap-4">
+                <div className="relative w-full max-w-2xl">
                   <input
                     type="text"
                     value={searchQuery}
@@ -226,8 +226,14 @@ export default function KaSkoolPage() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.1 }}
                     >
-                      <Card className="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 backdrop-blur-sm hover:border-purple-500/30 transition-all shadow-lg">
-                        <CardContent className="p-8">
+                      <Card className="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 backdrop-blur-sm hover:border-purple-500/30 transition-all shadow-lg relative">
+                        {/* Verified Badge */}
+                        <div className="absolute top-6 right-6 flex items-center gap-2 px-3 py-1.5 bg-green-500/20 border border-green-500/50 rounded-full backdrop-blur-sm">
+                          <ShieldCheck className="w-4 h-4 text-green-400" />
+                          <span className="text-xs text-green-400 font-semibold">Fact Checked</span>
+                        </div>
+                        
+                        <CardContent className="p-8 pr-32">
                           <div className="prose prose-invert max-w-none">
                             <p className="text-gray-200 leading-relaxed text-base whitespace-pre-wrap">{result.content}</p>
                           </div>
