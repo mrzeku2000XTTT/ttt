@@ -211,6 +211,7 @@ import Zelcore from './pages/Zelcore';
 import Privacy from './pages/Privacy';
 import About from './pages/About';
 import Contact from './pages/Contact';
+import LearnMore from './pages/LearnMore';
 import __Layout from './Layout.jsx';
 
 
@@ -428,6 +429,7 @@ export const PAGES = {
     "Privacy": Privacy,
     "About": About,
     "Contact": Contact,
+    "LearnMore": LearnMore,
 }
 
 export const pagesConfig = {

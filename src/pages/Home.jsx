@@ -714,31 +714,16 @@ export default function HomePage() {
             UNCHAIN HUMANITY
           </h1>
 
-          {/* Transparency Buttons */}
+          {/* Transparency Buttons - Placeholder for future buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 1.8 }}
             className="flex flex-wrap items-center justify-center gap-3 md:gap-6 mt-6 mb-4"
           >
-            <Link to={createPageUrl("Terms")}>
+            <Link to={createPageUrl("LearnMore")}>
               <button className="text-white/60 hover:text-white/90 text-xs md:text-sm font-medium transition-all duration-300 px-3 py-1.5 rounded-lg hover:bg-white/5 backdrop-blur-sm">
-                About
-              </button>
-            </Link>
-            <Link to={createPageUrl("Terms")}>
-              <button className="text-white/60 hover:text-white/90 text-xs md:text-sm font-medium transition-all duration-300 px-3 py-1.5 rounded-lg hover:bg-white/5 backdrop-blur-sm">
-                Contact
-              </button>
-            </Link>
-            <Link to={createPageUrl("Terms")}>
-              <button className="text-white/60 hover:text-white/90 text-xs md:text-sm font-medium transition-all duration-300 px-3 py-1.5 rounded-lg hover:bg-white/5 backdrop-blur-sm">
-                Terms
-              </button>
-            </Link>
-            <Link to={createPageUrl("Terms")}>
-              <button className="text-white/60 hover:text-white/90 text-xs md:text-sm font-medium transition-all duration-300 px-3 py-1.5 rounded-lg hover:bg-white/5 backdrop-blur-sm">
-                Privacy
+                Learn More
               </button>
             </Link>
           </motion.div>
