@@ -198,13 +198,20 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
       return;
     }
 
-    // Check if user is authenticated
+    // Check if user is authenticated OR has manual address
+    let isAuthed = false;
     try {
       await base44.auth.me();
+      isAuthed = true;
     } catch (err) {
-      alert("⚠️ Authentication Required\n\nYou need to be logged in to generate images with RMX ULTRA.\n\nPlease login to continue.");
-      base44.auth.redirectToLogin();
-      return;
+      // Check for manual Kaspa address as alternative auth
+      const manualAddress = localStorage.getItem('manual_kaspa_address');
+      if (!manualAddress) {
+        alert("⚠️ Authentication Required\n\nYou need to either login or set a Kaspa address to generate images.\n\nPlease login or add your address to continue.");
+        base44.auth.redirectToLogin();
+        return;
+      }
+      isAuthed = true; // Manual address is valid
     }
 
     setIsGenerating(true);
