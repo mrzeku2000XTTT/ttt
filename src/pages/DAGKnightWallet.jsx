@@ -45,6 +45,10 @@ export default function DAGKnightWalletPage() {
 
   // TTT Wallet Verification Modal state
   const [showTTTVerifyModal, setShowTTTVerifyModal] = useState(false);
+  const [manualKaspaAddress, setManualKaspaAddress] = useState(() => {
+    return localStorage.getItem('manual_kaspa_address') || '';
+  });
+  const [showManualAddressInput, setShowManualAddressInput] = useState(false);
 
   useEffect(() => {
     loadDAGKnightStatus();
@@ -86,6 +90,19 @@ export default function DAGKnightWalletPage() {
           }
         } catch (err) {
           console.error('Failed to check Kasware:', err);
+        }
+      }
+
+      // Check for manual Kaspa address (mobile users)
+      const manualAddr = localStorage.getItem('manual_kaspa_address');
+      if (manualAddr && !walletAddress) {
+        console.log('✅ Manual Kaspa address found:', manualAddr);
+        walletAddress = manualAddr;
+        setWallets(prev => ({ ...prev, kasware: manualAddr }));
+        
+        if (!currentUser) {
+          currentUser = { created_wallet_address: manualAddr };
+          setUser(currentUser);
         }
       }
 
@@ -468,27 +485,82 @@ DAGKnight - Quantum-Secured Multi-Wallet Verification`;
         <Card className="bg-zinc-950 border-zinc-800 max-w-md">
           <CardContent className="p-8 text-center">
             <Lock className="w-16 h-16 text-cyan-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-white mb-2">Connect Kasware Wallet</h2>
-            <p className="text-gray-400 mb-4">Please connect your Kasware wallet to access DAGKnight</p>
-            <Button 
-              onClick={async () => {
-                if (typeof window.kasware !== 'undefined') {
-                  try {
-                    const accounts = await window.kasware.requestAccounts();
-                    if (accounts && accounts.length > 0) {
-                      await loadDAGKnightStatus();
+            <h2 className="text-2xl font-bold text-white mb-2">Connect Wallet</h2>
+            <p className="text-gray-400 mb-6">Connect your wallet to access DAGKnight</p>
+            
+            <div className="space-y-3">
+              <Button 
+                onClick={async () => {
+                  if (typeof window.kasware !== 'undefined') {
+                    try {
+                      const accounts = await window.kasware.requestAccounts();
+                      if (accounts && accounts.length > 0) {
+                        await loadDAGKnightStatus();
+                      }
+                    } catch (err) {
+                      alert('Failed to connect Kasware wallet');
                     }
-                  } catch (err) {
-                    alert('Failed to connect Kasware wallet');
+                  } else {
+                    alert('Kasware wallet not found. Please install Kasware extension.');
                   }
-                } else {
-                  alert('Kasware wallet not found. Please install Kasware extension.');
-                }
-              }}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-            >
-              Connect Kasware
-            </Button>
+                }}
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+              >
+                Connect Kasware
+              </Button>
+
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-px bg-white/10" />
+                <span className="text-white/40 text-xs">or</span>
+                <div className="flex-1 h-px bg-white/10" />
+              </div>
+
+              <Button
+                onClick={() => setShowManualAddressInput(!showManualAddressInput)}
+                variant="outline"
+                className="w-full border-white/20 text-white hover:bg-white/10"
+              >
+                Enter Kaspa Address
+              </Button>
+
+              <AnimatePresence>
+                {showManualAddressInput && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-3"
+                  >
+                    <Input
+                      value={manualKaspaAddress}
+                      onChange={(e) => setManualKaspaAddress(e.target.value)}
+                      placeholder="kaspa:qp..."
+                      className="bg-white/5 border-white/10 text-white placeholder:text-white/30 font-mono text-sm"
+                    />
+                    <Button
+                      onClick={async () => {
+                        if (manualKaspaAddress.trim()) {
+                          localStorage.setItem('manual_kaspa_address', manualKaspaAddress.trim());
+                          setShowManualAddressInput(false);
+                          await loadDAGKnightStatus();
+                        } else {
+                          alert('Please enter a valid Kaspa address');
+                        }
+                      }}
+                      disabled={!manualKaspaAddress.trim()}
+                      className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
+                    >
+                      Connect with Address
+                    </Button>
+                    <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-3">
+                      <p className="text-xs text-cyan-400">
+                        Mobile users: Enter your Kaspa address to unlock DAGKnight verification
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </CardContent>
         </Card>
       </div>
