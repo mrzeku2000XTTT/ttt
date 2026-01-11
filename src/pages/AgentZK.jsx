@@ -99,6 +99,8 @@ export default function AgentZKPage() {
     }
   };
 
+  const isAdmin = user?.role === 'admin';
+
   const loadData = async () => {
     setIsLoading(true);
     try {
@@ -693,37 +695,41 @@ export default function AgentZKPage() {
                   <div className="flex gap-2">
                     <Button
                       onClick={() => setShowCoverModal(true)}
-                      className="flex-1 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/40 hover:from-cyan-500/30 hover:to-purple-500/30 hover:border-cyan-400 text-cyan-400 hover:text-cyan-300 backdrop-blur-xl transition-all"
+                      className={`bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/40 hover:from-cyan-500/30 hover:to-purple-500/30 hover:border-cyan-400 text-cyan-400 hover:text-cyan-300 backdrop-blur-xl transition-all ${
+                        isAdmin ? 'flex-1' : 'w-full'
+                      }`}
                     >
                       <Wrench className="w-4 h-4 mr-2" />
                       <span className="text-sm font-semibold">Cover</span>
                     </Button>
-                    <Button
-                      onClick={handleEnableLocation}
-                      disabled={isGettingLocation}
-                      className={`flex-1 bg-gradient-to-r border backdrop-blur-xl transition-all ${
-                        userLocation
-                          ? 'from-green-500/20 to-emerald-500/20 border-green-500/40 hover:from-green-500/30 hover:to-emerald-500/30 text-green-400'
-                          : 'from-purple-500/20 to-pink-500/20 border-purple-500/40 hover:from-purple-500/30 hover:to-pink-500/30 text-purple-400'
-                      }`}
-                    >
-                      {isGettingLocation ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          <span className="text-sm font-semibold">Getting...</span>
-                        </>
-                      ) : userLocation ? (
-                        <>
-                          <Lock className="w-4 h-4 mr-2" />
-                          <span className="text-sm font-semibold">Encrypted</span>
-                        </>
-                      ) : (
-                        <>
-                          <Users className="w-4 h-4 mr-2" />
-                          <span className="text-sm font-semibold">Location</span>
-                        </>
-                      )}
-                    </Button>
+                    {isAdmin && (
+                      <Button
+                        onClick={handleEnableLocation}
+                        disabled={isGettingLocation}
+                        className={`flex-1 bg-gradient-to-r border backdrop-blur-xl transition-all ${
+                          userLocation
+                            ? 'from-green-500/20 to-emerald-500/20 border-green-500/40 hover:from-green-500/30 hover:to-emerald-500/30 text-green-400'
+                            : 'from-purple-500/20 to-pink-500/20 border-purple-500/40 hover:from-purple-500/30 hover:to-pink-500/30 text-purple-400'
+                        }`}
+                      >
+                        {isGettingLocation ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            <span className="text-sm font-semibold">Getting...</span>
+                          </>
+                        ) : userLocation ? (
+                          <>
+                            <Lock className="w-4 h-4 mr-2" />
+                            <span className="text-sm font-semibold">Encrypted</span>
+                          </>
+                        ) : (
+                          <>
+                            <Users className="w-4 h-4 mr-2" />
+                            <span className="text-sm font-semibold">Location</span>
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
