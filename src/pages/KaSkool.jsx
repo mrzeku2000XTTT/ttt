@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, BookOpen, GraduationCap, TrendingUp, Award, Clock, Search, ShieldCheck, Sparkles, X } from "lucide-react";
+import { ArrowLeft, BookOpen, GraduationCap, TrendingUp, Award, Clock, Search, ShieldCheck, Sparkles, X, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -162,14 +162,24 @@ export default function KaSkoolPage() {
               </div>
             </div>
 
-            {!user && (
+            <div className="flex items-center gap-3">
+              {!user && (
+                <Button
+                  onClick={() => base44.auth.redirectToLogin()}
+                  className="bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 text-white font-semibold px-6 rounded-lg shadow-lg shadow-purple-500/30"
+                >
+                  Login to Learn
+                </Button>
+              )}
+              
               <Button
-                onClick={() => base44.auth.redirectToLogin()}
-                className="bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 text-white font-semibold px-6 rounded-lg shadow-lg shadow-purple-500/30"
+                variant="ghost"
+                size="sm"
+                className="text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-all"
               >
-                Login to Learn
+                <Menu className="w-6 h-6" />
               </Button>
-            )}
+            </div>
           </div>
         </div>
       </div>
