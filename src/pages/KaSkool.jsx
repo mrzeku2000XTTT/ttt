@@ -18,6 +18,7 @@ export default function KaSkoolPage() {
   const [selectedResultIndex, setSelectedResultIndex] = useState(null);
   const [explainPrompt, setExplainPrompt] = useState("");
   const [isExplaining, setIsExplaining] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -172,13 +173,61 @@ export default function KaSkoolPage() {
                 </Button>
               )}
               
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-all"
-              >
-                <Menu className="w-6 h-6" />
-              </Button>
+              <div className="relative">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+                >
+                  <Menu className="w-6 h-6" />
+                </Button>
+                
+                {showMenu && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setShowMenu(false)}
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="absolute right-0 top-12 w-48 bg-zinc-900 border border-white/10 rounded-lg shadow-xl z-50 overflow-hidden"
+                    >
+                      <div className="py-2">
+                        <Link to={createPageUrl("AppStore")}>
+                          <button className="w-full px-4 py-2 text-left text-sm text-white hover:bg-white/5 transition-colors">
+                            App Store
+                          </button>
+                        </Link>
+                        <Link to={createPageUrl("Home")}>
+                          <button className="w-full px-4 py-2 text-left text-sm text-white hover:bg-white/5 transition-colors">
+                            Home
+                          </button>
+                        </Link>
+                        {user && (
+                          <Link to={createPageUrl("Profile")}>
+                            <button className="w-full px-4 py-2 text-left text-sm text-white hover:bg-white/5 transition-colors">
+                              Profile
+                            </button>
+                          </Link>
+                        )}
+                        <div className="border-t border-white/10 my-2" />
+                        <Link to={createPageUrl("About")}>
+                          <button className="w-full px-4 py-2 text-left text-sm text-white/60 hover:bg-white/5 transition-colors">
+                            About
+                          </button>
+                        </Link>
+                        <Link to={createPageUrl("Contact")}>
+                          <button className="w-full px-4 py-2 text-left text-sm text-white/60 hover:bg-white/5 transition-colors">
+                            Contact
+                          </button>
+                        </Link>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
