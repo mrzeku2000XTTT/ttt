@@ -206,9 +206,9 @@ export default function KaSkoolPage() {
                           </button>
                         </Link>
                         {user && (
-                          <Link to={createPageUrl("Profile")}>
+                          <Link to={createPageUrl("KaSkoolProfile")}>
                             <button className="w-full px-4 py-2 text-left text-sm text-white hover:bg-white/5 transition-colors">
-                              Profile
+                              My Profile
                             </button>
                           </Link>
                         )}
