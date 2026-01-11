@@ -60,21 +60,6 @@ export default function LearnMorePage() {
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
-            <motion.div
-              animate={{
-                scale: [1, 1.05, 1],
-                opacity: [0.8, 1, 0.8],
-              }}
-              transition={{
-                duration: 4,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-              className="inline-block mb-6"
-            >
-              <Sparkles className="w-16 h-16 md:w-20 md:h-20 text-cyan-400 drop-shadow-[0_0_30px_rgba(34,211,238,0.8)]" />
-            </motion.div>
-            
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-4 tracking-tight">
               TTTz.xyz
             </h1>
@@ -243,11 +228,40 @@ export default function LearnMorePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 1 }}
-            className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 text-center"
+            className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 text-center mb-8"
           >
             <p className="text-sm text-yellow-300">
               <strong>Alpha Development:</strong> TTTz.xyz is in active development. Features are continuously evolving.
             </p>
+          </motion.div>
+
+          {/* Footer Links */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 1.1 }}
+            className="flex flex-wrap items-center justify-center gap-4 md:gap-6 pb-8"
+          >
+            <Link to={createPageUrl("About")}>
+              <button className="text-white/60 hover:text-white/90 text-xs md:text-sm font-medium transition-all duration-300 px-3 py-1.5 rounded-lg hover:bg-white/5">
+                About
+              </button>
+            </Link>
+            <Link to={createPageUrl("Contact")}>
+              <button className="text-white/60 hover:text-white/90 text-xs md:text-sm font-medium transition-all duration-300 px-3 py-1.5 rounded-lg hover:bg-white/5">
+                Contact
+              </button>
+            </Link>
+            <Link to={createPageUrl("Terms")}>
+              <button className="text-white/60 hover:text-white/90 text-xs md:text-sm font-medium transition-all duration-300 px-3 py-1.5 rounded-lg hover:bg-white/5">
+                Terms
+              </button>
+            </Link>
+            <Link to={createPageUrl("Privacy")}>
+              <button className="text-white/60 hover:text-white/90 text-xs md:text-sm font-medium transition-all duration-300 px-3 py-1.5 rounded-lg hover:bg-white/5">
+                Privacy
+              </button>
+            </Link>
           </motion.div>
         </div>
       </div>
