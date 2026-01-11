@@ -102,18 +102,11 @@ export default function AgentZKPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      // Admin-only check
       let currentUser = null;
       let walletAddress = null;
       
       try {
         currentUser = await base44.auth.me();
-        
-        if (!currentUser || currentUser.role !== 'admin') {
-          setIsLoading(false);
-          return;
-        }
-        
         setUser(currentUser);
         
         // Check if user has accepted terms
@@ -427,22 +420,7 @@ export default function AgentZKPage() {
     );
   }
 
-  // Admin-only access
-  if (!user || user.role !== 'admin') {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
-        <div className="backdrop-blur-xl bg-white/5 border border-red-500/30 rounded-2xl p-8 max-w-md text-center">
-          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-8 h-8 text-red-400" />
-          </div>
-          <h2 className="text-xl font-bold text-white mb-2">Admin Access Only</h2>
-          <p className="text-gray-400 text-sm">
-            Agent ZK is restricted to administrators only.
-          </p>
-        </div>
-      </div>
-    );
-  }
+
 
   // Show identity claiming modal
   if (!user?.created_wallet_address && !kaswareWallet.connected && !agentZKId) {
