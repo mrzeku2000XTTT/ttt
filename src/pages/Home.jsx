@@ -695,7 +695,7 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.2, delay: 1.5 }}
-          className="mt-auto pb-8 px-4"
+          className="mt-auto pb-4 px-4"
         >
           <h1 
             className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-black text-white/40 tracking-tight text-center"
@@ -713,6 +713,35 @@ export default function HomePage() {
           >
             UNCHAIN HUMANITY
           </h1>
+
+          {/* Transparency Buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 1.8 }}
+            className="flex flex-wrap items-center justify-center gap-3 md:gap-6 mt-6 mb-4"
+          >
+            <Link to={createPageUrl("Terms")}>
+              <button className="text-white/60 hover:text-white/90 text-xs md:text-sm font-medium transition-all duration-300 px-3 py-1.5 rounded-lg hover:bg-white/5 backdrop-blur-sm">
+                About
+              </button>
+            </Link>
+            <Link to={createPageUrl("Terms")}>
+              <button className="text-white/60 hover:text-white/90 text-xs md:text-sm font-medium transition-all duration-300 px-3 py-1.5 rounded-lg hover:bg-white/5 backdrop-blur-sm">
+                Contact
+              </button>
+            </Link>
+            <Link to={createPageUrl("Terms")}>
+              <button className="text-white/60 hover:text-white/90 text-xs md:text-sm font-medium transition-all duration-300 px-3 py-1.5 rounded-lg hover:bg-white/5 backdrop-blur-sm">
+                Terms
+              </button>
+            </Link>
+            <Link to={createPageUrl("Terms")}>
+              <button className="text-white/60 hover:text-white/90 text-xs md:text-sm font-medium transition-all duration-300 px-3 py-1.5 rounded-lg hover:bg-white/5 backdrop-blur-sm">
+                Privacy
+              </button>
+            </Link>
+          </motion.div>
         </motion.div>
       </div>
 
