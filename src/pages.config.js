@@ -209,6 +209,8 @@ import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
 import Privacy from './pages/Privacy';
+import About from './pages/About';
+import Contact from './pages/Contact';
 import __Layout from './Layout.jsx';
 
 
@@ -424,6 +426,8 @@ export const PAGES = {
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
     "Privacy": Privacy,
+    "About": About,
+    "Contact": Contact,
 }
 
 export const pagesConfig = {
