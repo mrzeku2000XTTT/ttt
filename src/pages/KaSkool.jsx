@@ -130,30 +130,39 @@ export default function KaSkoolPage() {
       </div>
 
       {/* Stats Bar */}
-      {user && (
-        <div className="bg-white/5 border-b border-white/10 relative z-10">
-          <div className="max-w-7xl mx-auto px-4 py-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-white">3</p>
-                <p className="text-xs text-gray-400">Courses Enrolled</p>
+      <div className="border-b border-white/10 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="flex items-center justify-around">
+            <div className="text-center">
+              <p className="text-3xl font-bold text-white mb-1">5</p>
+              <p className="text-xs text-gray-400">Courses Enrolled</p>
+            </div>
+            <div className="text-center flex flex-col items-center">
+              <div className="flex items-center gap-1 mb-1">
+                <GraduationCap className="w-6 h-6 text-purple-400" />
+                <p className="text-3xl font-bold text-white">75</p>
+                <TrendingUp className="w-5 h-5 text-green-400" />
               </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-white">62%</p>
-                <p className="text-xs text-gray-400">Avg Progress</p>
+              <p className="text-xs text-gray-400">Knowledge Score</p>
+            </div>
+            <div className="text-center">
+              <p className="text-3xl font-bold text-white mb-1">75%</p>
+              <p className="text-xs text-gray-400">Avg Progress</p>
+            </div>
+            <div className="text-center flex flex-col items-center">
+              <div className="flex items-center gap-1 mb-1">
+                <Award className="w-5 h-5 text-yellow-400" />
+                <p className="text-3xl font-bold text-white">8</p>
               </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-white">2</p>
-                <p className="text-xs text-gray-400">Achievements</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-white">24h</p>
-                <p className="text-xs text-gray-400">Learning Time</p>
-              </div>
+              <p className="text-xs text-gray-400">Achievements</p>
+            </div>
+            <div className="text-center">
+              <p className="text-3xl font-bold text-white mb-1">50h</p>
+              <p className="text-xs text-gray-400">Learning Time</p>
             </div>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Search Content */}
       <div className="max-w-4xl mx-auto px-4 relative z-10" style={{ paddingTop: '15vh' }}>
