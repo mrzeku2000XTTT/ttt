@@ -49,6 +49,11 @@ export default function DAGKnightWalletPage() {
     return localStorage.getItem('manual_kaspa_address') || '';
   });
   const [showManualAddressInput, setShowManualAddressInput] = useState(false);
+  
+  // ZK Self-Send Verification Modal
+  const [showZKSelfSendModal, setShowZKSelfSendModal] = useState(false);
+  const [zkTxHash, setZkTxHash] = useState('');
+  const [isZKVerifying, setIsZKVerifying] = useState(false);
 
   useEffect(() => {
     loadDAGKnightStatus();
@@ -367,6 +372,85 @@ DAGKnight - Quantum-Secured Multi-Wallet Verification`;
     setShowTTTVerifyModal(true);
   };
 
+  const handleZKSelfSendVerify = async () => {
+    if (!zkTxHash.trim()) {
+      alert('Please enter a transaction hash');
+      return;
+    }
+
+    setIsZKVerifying(true);
+    
+    try {
+      console.log('🔐 Verifying ZK self-send transaction...');
+      
+      // Verify the transaction exists on Kaspa network
+      const verifyResponse = await base44.functions.invoke('verifyKaspaSelfTransaction', {
+        txHash: zkTxHash.trim(),
+        walletAddress: wallets.kasware
+      });
+
+      if (!verifyResponse.data || !verifyResponse.data.success) {
+        throw new Error(verifyResponse.data?.error || 'Transaction verification failed');
+      }
+
+      console.log('✅ Self-send transaction verified');
+
+      // Create genesis verification
+      const message = `🛡️ DAGKnight ZK Self-Send Verification 🛡️
+
+I hereby verify ownership via self-send transaction:
+
+Wallet Address: ${wallets.kasware}
+Transaction Hash: ${zkTxHash.trim()}
+Verification Type: Self-Send KAS
+Timestamp: ${new Date().toISOString()}
+
+This self-send transaction proves ownership and control of this wallet address.
+
+DAGKnight - Mobile-Friendly Wallet Verification`;
+
+      // Create cryptographic signature using tx hash
+      const encoder = new TextEncoder();
+      const signatureData = encoder.encode(message + zkTxHash.trim() + wallets.kasware);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", signatureData);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+      const verificationId = `dagk_zk_selfsend_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      await base44.entities.WalletVerification.create({
+        verification_id: verificationId,
+        user_email: user?.email || null,
+        wallet_address: wallets.kasware,
+        wallet_type: 'kasware_l1',
+        signature: signature,
+        message: message,
+        parent_verifications: [],
+        blue_score: 0,
+        dag_depth: 0,
+        is_genesis: true,
+        verified_by: [],
+        timestamp: new Date().toISOString(),
+        dag_hash: signature.substring(0, 64)
+      });
+      
+      console.log('✅ ZK Self-Send genesis created!');
+      
+      await loadDAGKnightStatus();
+      
+      setShowZKSelfSendModal(false);
+      setZkTxHash('');
+      
+      alert('✅ ZK Self-Send verification successful!');
+      
+    } catch (error) {
+      console.error('❌ ZK verification failed:', error);
+      alert('❌ Verification failed: ' + (error.message || 'Unknown error'));
+    } finally {
+      setIsZKVerifying(false);
+    }
+  };
+
   const handleTTTVerifyComplete = async () => {
     setShowTTTVerifyModal(false);
     
@@ -663,6 +747,7 @@ DAGKnight - Quantum-Secured Multi-Wallet Verification`;
                 loadDAGKnightStatus={loadDAGKnightStatus}
                 onVerifyTTTWallet={handleVerifyTTTWallet}
                 onDisconnectWallet={handleDisconnectWallet}
+                onZKSelfSendVerify={() => setShowZKSelfSendModal(true)}
               />
 
               <TransactionHistory verifications={verifications} />
@@ -927,6 +1012,104 @@ DAGKnight - Quantum-Secured Multi-Wallet Verification`;
                         <p className="text-xs text-blue-300">
                           🔒 This is the PIN you set when creating your TTT Wallet. It's required to create genesis verification for ZK Wallet.
                         </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* ZK Self-Send Verification Modal */}
+        <AnimatePresence>
+          {showZKSelfSendModal && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => {
+                  setShowZKSelfSendModal(false);
+                  setZkTxHash('');
+                }}
+                className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
+              />
+
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="fixed inset-0 z-50 flex items-center justify-center p-4"
+              >
+                <Card className="w-full max-w-md bg-zinc-950 border-zinc-800">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-12 h-12 bg-cyan-500/20 rounded-xl flex items-center justify-center border border-cyan-500/30">
+                        <Shield className="w-6 h-6 text-cyan-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-white">ZK Self-Send Verification</h3>
+                        <p className="text-sm text-gray-400">Verify wallet ownership via self-send</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                        <p className="text-sm text-blue-300 mb-2">📱 Mobile-Friendly Verification</p>
+                        <ol className="text-xs text-blue-200 space-y-2 list-decimal list-inside">
+                          <li>Send any amount of KAS to yourself (same wallet)</li>
+                          <li>Copy the transaction hash from your wallet</li>
+                          <li>Paste it below to complete verification</li>
+                        </ol>
+                      </div>
+
+                      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3">
+                        <p className="text-xs text-gray-400 mb-1">Your Wallet Address:</p>
+                        <code className="text-xs text-white font-mono break-all">
+                          {wallets.kasware}
+                        </code>
+                      </div>
+
+                      <div>
+                        <label className="text-sm text-gray-400 mb-2 block">Transaction Hash</label>
+                        <Input
+                          value={zkTxHash}
+                          onChange={(e) => setZkTxHash(e.target.value)}
+                          placeholder="Paste transaction hash..."
+                          className="bg-black border-zinc-800 text-white font-mono text-sm"
+                        />
+                      </div>
+
+                      <div className="flex gap-3">
+                        <Button
+                          onClick={() => {
+                            setShowZKSelfSendModal(false);
+                            setZkTxHash('');
+                          }}
+                          variant="outline"
+                          className="flex-1 bg-zinc-900 border-zinc-800 text-white"
+                          disabled={isZKVerifying}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={handleZKSelfSendVerify}
+                          disabled={isZKVerifying || !zkTxHash.trim()}
+                          className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white"
+                        >
+                          {isZKVerifying ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Verifying...
+                            </>
+                          ) : (
+                            <>
+                              <Shield className="w-4 h-4 mr-2" />
+                              Verify
+                            </>
+                          )}
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
