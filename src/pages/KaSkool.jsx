@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft, BookOpen, GraduationCap, TrendingUp, Award, Clock, Search, ShieldCheck, Sparkles, X, Menu } from "lucide-react";
@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function KaSkoolPage() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [backgroundUrl, setBackgroundUrl] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -249,7 +250,7 @@ export default function KaSkoolPage() {
                 <TabsTrigger 
                   value="courses" 
                   className="data-[state=active]:bg-transparent data-[state=active]:text-purple-400 data-[state=active]:border-b-2 data-[state=active]:border-purple-400 rounded-none px-4 py-3 text-white/60 hover:text-white transition-all"
-                  onClick={() => window.location.href = createPageUrl("Courses")}
+                  onClick={() => navigate(createPageUrl("Courses"))}
                 >
                   <BookOpen className="w-4 h-4 mr-2" />
                   Courses
