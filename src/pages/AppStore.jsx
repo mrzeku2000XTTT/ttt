@@ -86,12 +86,20 @@ export default function AppStorePage() {
     return icons[iconName] || Link2;
   };
 
-  const filteredApps = searchQuery
+  const isAdmin = user && user.role === 'admin';
+  
+  const filteredApps = (searchQuery
     ? apps.filter(app =>
         app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         app.category.toLowerCase().includes(searchQuery.toLowerCase())
       )
-    : apps;
+    : apps).filter(app => {
+      // Hide KaSkool for non-admin users
+      if (app.name === "KaSkool" && !isAdmin) {
+        return false;
+      }
+      return true;
+    });
 
 
 
