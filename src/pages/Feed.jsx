@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   Send, Heart, MessageCircle, Trash2, Edit2,
-  Loader2, Image as ImageIcon, X, Sparkles, Eye, Users, Activity, Video, FileText, DollarSign, Wallet, Plus, CornerDownRight, Pencil, Share, AlertCircle, Palette, Trophy, Hammer, Search, CircleDot, Newspaper, Box, Moon, Brain
+  Loader2, Image as ImageIcon, X, Sparkles, Eye, Users, Activity, Video, FileText, DollarSign, Wallet, Plus, CornerDownRight, Pencil, Share, AlertCircle, Palette, Trophy, Hammer, Search, CircleDot, Newspaper, Box, Moon, Brain, ChevronDown, CheckCircle2
 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate, Link } from "react-router-dom";
@@ -122,6 +122,10 @@ export default function FeedPage() {
     return localStorage.getItem('manual_kaspa_address') || '';
   });
   const [showManualAddressInput, setShowManualAddressInput] = useState(false);
+  const [selectedReceivingWallet, setSelectedReceivingWallet] = useState(() => {
+    return localStorage.getItem('selected_receiving_wallet') || 'auto';
+  });
+  const [showWalletSelector, setShowWalletSelector] = useState(false);
 
   const fileInputRef = useRef(null);
   const replyFileInputRef = useRef(null);
@@ -221,6 +225,11 @@ export default function FeedPage() {
         const accounts = await window.kasware.getAccounts();
         if (accounts.length > 0) {
           setKaswareWallet({ connected: true, address: accounts[0] });
+          // If user has Kasware connected and no preference set, use Kasware as default
+          if (!localStorage.getItem('selected_receiving_wallet')) {
+            setSelectedReceivingWallet('kasware');
+            localStorage.setItem('selected_receiving_wallet', 'kasware');
+          }
         }
       } catch (err) {
         console.log('Kasware not connected');
@@ -746,25 +755,35 @@ export default function FeedPage() {
     const zkMatch = newPost.trim().match(/^@zk\s+(.+)/i);
     const isZKCall = zkMatch !== null;
 
-    // Get wallet from Kasware, TTT wallet, or manual input
+    // Get wallet based on user's selection for receiving tips
     let walletAddress = '';
-    if (kaswareWallet.connected) {
+    if (selectedReceivingWallet === 'kasware' && kaswareWallet.connected) {
       walletAddress = kaswareWallet.address;
-    } else if (user?.created_wallet_address) {
+    } else if (selectedReceivingWallet === 'ttt' && user?.created_wallet_address) {
       walletAddress = user.created_wallet_address;
-    } else {
-      // Try to get local wallet
-      const localWallet = localStorage.getItem('ttt_wallet_address');
-      if (localWallet) {
-        walletAddress = localWallet;
-      } else if (manualKaspaAddress.trim()) {
-        // Use manually entered address
-        walletAddress = manualKaspaAddress.trim();
+    } else if (selectedReceivingWallet === 'manual' && manualKaspaAddress.trim()) {
+      walletAddress = manualKaspaAddress.trim();
+    } else if (selectedReceivingWallet === 'auto') {
+      // Auto mode: priority Kasware > TTT > Manual > Local
+      if (kaswareWallet.connected) {
+        walletAddress = kaswareWallet.address;
+      } else if (user?.created_wallet_address) {
+        walletAddress = user.created_wallet_address;
       } else {
-        setError('Please connect wallet or enter your Kaspa address to post');
-        setShowManualAddressInput(true);
-        return;
+        const localWallet = localStorage.getItem('ttt_wallet_address');
+        if (localWallet) {
+          walletAddress = localWallet;
+        } else if (manualKaspaAddress.trim()) {
+          walletAddress = manualKaspaAddress.trim();
+        } else {
+          setError('Please connect wallet or enter your Kaspa address to post');
+          setShowManualAddressInput(true);
+          return;
+        }
       }
+    } else {
+      setError('Please connect the selected wallet to post');
+      return;
     }
 
     setIsPosting(true);
@@ -4458,17 +4477,175 @@ export default function FeedPage() {
               </div>
             )}
 
-            {(kaswareWallet.connected || user?.created_wallet_address || localStorage.getItem('ttt_wallet_address')) && (
-              <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-white/60" />
-                <span className="text-sm text-white/60 font-mono truncate">
-                  {kaswareWallet.connected 
-                    ? `${kaswareWallet.address.substring(0, 10)}... Connected`
-                    : user?.created_wallet_address
-                    ? `${user.created_wallet_address.substring(0, 10)}... (TTT Wallet)`
-                    : `${localStorage.getItem('ttt_wallet_address')?.substring(0, 10)}... (Local Wallet)`
-                  }
-                </span>
+            {(kaswareWallet.connected || user?.created_wallet_address || localStorage.getItem('ttt_wallet_address') || manualKaspaAddress.trim()) && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowWalletSelector(!showWalletSelector)}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 flex items-center justify-between hover:bg-white/10 transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Wallet className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs text-white/40 mb-0.5">Receiving Tips On</div>
+                      <span className="text-sm text-white font-mono truncate block">
+                        {selectedReceivingWallet === 'kasware' && kaswareWallet.connected 
+                          ? `${kaswareWallet.address.substring(0, 12)}... (Kasware)`
+                          : selectedReceivingWallet === 'ttt' && user?.created_wallet_address
+                          ? `${user.created_wallet_address.substring(0, 12)}... (TTT)`
+                          : selectedReceivingWallet === 'manual' && manualKaspaAddress.trim()
+                          ? `${manualKaspaAddress.substring(0, 12)}... (Manual)`
+                          : selectedReceivingWallet === 'auto'
+                          ? kaswareWallet.connected 
+                            ? `${kaswareWallet.address.substring(0, 12)}... (Auto: Kasware)`
+                            : user?.created_wallet_address
+                            ? `${user.created_wallet_address.substring(0, 12)}... (Auto: TTT)`
+                            : `Auto Mode`
+                          : 'Not Connected'
+                        }
+                      </span>
+                    </div>
+                    <motion.div
+                      animate={{ rotate: showWalletSelector ? 180 : 0 }}
+                      className="text-white/40"
+                    >
+                      <ChevronDown className="w-4 h-4" />
+                    </motion.div>
+                  </div>
+                </button>
+                
+                <AnimatePresence>
+                  {showWalletSelector && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute top-full mt-2 left-0 right-0 bg-black/95 backdrop-blur-xl border border-white/20 rounded-lg overflow-hidden shadow-2xl z-50 p-2"
+                    >
+                      <div className="text-xs text-white/40 px-3 py-2 mb-1">Select Wallet for Tips</div>
+                      
+                      {kaswareWallet.connected && (
+                        <button
+                          onClick={() => {
+                            setSelectedReceivingWallet('kasware');
+                            localStorage.setItem('selected_receiving_wallet', 'kasware');
+                            setShowWalletSelector(false);
+                          }}
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                            selectedReceivingWallet === 'kasware'
+                              ? 'bg-cyan-500/20 border border-cyan-500/40'
+                              : 'hover:bg-white/10'
+                          }`}
+                        >
+                          <div className="w-8 h-8 bg-cyan-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Wallet className="w-4 h-4 text-cyan-400" />
+                          </div>
+                          <div className="flex-1 text-left min-w-0">
+                            <div className="text-white text-sm font-semibold">Kasware Wallet</div>
+                            <div className="text-white/40 text-xs font-mono truncate">
+                              {kaswareWallet.address.substring(0, 20)}...
+                            </div>
+                          </div>
+                          {selectedReceivingWallet === 'kasware' && (
+                            <CheckCircle2 className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+                          )}
+                        </button>
+                      )}
+                      
+                      {user?.created_wallet_address && (
+                        <button
+                          onClick={() => {
+                            setSelectedReceivingWallet('ttt');
+                            localStorage.setItem('selected_receiving_wallet', 'ttt');
+                            setShowWalletSelector(false);
+                          }}
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                            selectedReceivingWallet === 'ttt'
+                              ? 'bg-purple-500/20 border border-purple-500/40'
+                              : 'hover:bg-white/10'
+                          }`}
+                        >
+                          <div className="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Wallet className="w-4 h-4 text-purple-400" />
+                          </div>
+                          <div className="flex-1 text-left min-w-0">
+                            <div className="text-white text-sm font-semibold">TTT Wallet</div>
+                            <div className="text-white/40 text-xs font-mono truncate">
+                              {user.created_wallet_address.substring(0, 20)}...
+                            </div>
+                          </div>
+                          {selectedReceivingWallet === 'ttt' && (
+                            <CheckCircle2 className="w-5 h-5 text-purple-400 flex-shrink-0" />
+                          )}
+                        </button>
+                      )}
+                      
+                      {manualKaspaAddress.trim() && (
+                        <button
+                          onClick={() => {
+                            setSelectedReceivingWallet('manual');
+                            localStorage.setItem('selected_receiving_wallet', 'manual');
+                            setShowWalletSelector(false);
+                          }}
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                            selectedReceivingWallet === 'manual'
+                              ? 'bg-green-500/20 border border-green-500/40'
+                              : 'hover:bg-white/10'
+                          }`}
+                        >
+                          <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Wallet className="w-4 h-4 text-green-400" />
+                          </div>
+                          <div className="flex-1 text-left min-w-0">
+                            <div className="text-white text-sm font-semibold">Manual Address</div>
+                            <div className="text-white/40 text-xs font-mono truncate">
+                              {manualKaspaAddress.substring(0, 20)}...
+                            </div>
+                          </div>
+                          {selectedReceivingWallet === 'manual' && (
+                            <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0" />
+                          )}
+                        </button>
+                      )}
+                      
+                      <div className="border-t border-white/10 my-2" />
+                      
+                      <button
+                        onClick={() => {
+                          setSelectedReceivingWallet('auto');
+                          localStorage.setItem('selected_receiving_wallet', 'auto');
+                          setShowWalletSelector(false);
+                        }}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                          selectedReceivingWallet === 'auto'
+                            ? 'bg-blue-500/20 border border-blue-500/40'
+                            : 'hover:bg-white/10'
+                        }`}
+                      >
+                        <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Sparkles className="w-4 h-4 text-blue-400" />
+                        </div>
+                        <div className="flex-1 text-left">
+                          <div className="text-white text-sm font-semibold">Auto Select</div>
+                          <div className="text-white/40 text-xs">
+                            Kasware → TTT → Manual
+                          </div>
+                        </div>
+                        {selectedReceivingWallet === 'auto' && (
+                          <CheckCircle2 className="w-5 h-5 text-blue-400 flex-shrink-0" />
+                        )}
+                      </button>
+                      
+                      <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-3 mt-2">
+                        <div className="flex items-start gap-2">
+                          <AlertCircle className="w-3 h-3 text-cyan-400 flex-shrink-0 mt-0.5" />
+                          <p className="text-xs text-cyan-400 leading-relaxed">
+                            This wallet will receive all tips from your posts. Change anytime.
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             )}
             
