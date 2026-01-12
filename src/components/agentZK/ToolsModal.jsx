@@ -10,19 +10,9 @@ import { base44 } from "@/api/base44Client";
 import ReactMarkdown from 'react-markdown';
 import ShopWidget from "./ShopWidget";
 import TTTVWidget from "./TTTVWidget";
+import { createPageUrl } from "@/utils";
 
 const REPLIT_BASE_URL = 'https://tttxxx.live';
-
-// Placeholder for createPageUrl if it's not defined elsewhere.
-// In a real application, this would likely be provided by a routing library or framework.
-const createPageUrl = (pageName, params = {}) => {
-  let url = `/${pageName.toLowerCase()}`;
-  const query = new URLSearchParams(params).toString();
-  if (query) {
-    url += `?${query}`;
-  }
-  return url;
-};
 
 export default function ToolsModal({ onClose, agentZKId }) {
   const [activeTab, setActiveTab] = useState('chat');

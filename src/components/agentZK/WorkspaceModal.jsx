@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { X, Code, Play, Copy, CheckCircle2, Zap, Book, Sparkles, Terminal, Globe } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { createPageUrl } from "@/utils";
 
 const EXAMPLE_TEMPLATES = [
   {
