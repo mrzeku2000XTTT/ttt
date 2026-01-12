@@ -293,23 +293,18 @@ export default function CoursesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white relative overflow-hidden">
-      <div className="fixed inset-0 z-0 bg-zinc-950" />
-
+    <div className="min-h-screen bg-black text-white relative overflow-hidden">
       {/* Header */}
-      <div className="border-b border-zinc-800 bg-zinc-950 sticky top-0 z-40 relative">
+      <div className="border-b border-zinc-800 bg-black sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link to={createPageUrl("KaSkool")}>
-                <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-zinc-800">
+                <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/5">
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
               </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-white">Discover Communities</h1>
-                <p className="text-sm text-zinc-400">or create your own</p>
-              </div>
+              <h1 className="text-2xl font-bold text-white">Community Hub</h1>
             </div>
             {user && (
               <Button
@@ -324,22 +319,30 @@ export default function CoursesPage() {
         </div>
       </div>
 
+      {/* Hero Banner */}
+      <div className="border-b border-zinc-800 bg-gradient-to-br from-zinc-900 to-black">
+        <div className="max-w-7xl mx-auto px-6 py-12 text-center">
+          <h2 className="text-4xl font-bold text-white mb-4">Discover Communities</h2>
+          <p className="text-zinc-400 text-lg">Join communities or create your own to connect with like-minded people</p>
+        </div>
+      </div>
+
       {/* Category Pills */}
-      <div className="border-b border-zinc-800 bg-zinc-950 sticky top-[73px] z-30 relative">
+      <div className="border-b border-zinc-800 bg-black sticky top-[73px] z-30">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex gap-2 overflow-x-auto scrollbar-hide py-4">
             {categories.map((cat) => (
               <button
                 key={cat.name}
                 onClick={() => setSelectedCategory(cat.name)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-all ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-all font-medium ${
                   selectedCategory === cat.name
                     ? "bg-orange-500 text-white"
-                    : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+                    : "bg-transparent text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-700"
                 }`}
               >
                 <span>{cat.icon}</span>
-                <span className="text-sm font-medium">{cat.name}</span>
+                <span className="text-sm">{cat.name}</span>
               </button>
             ))}
           </div>
@@ -347,37 +350,33 @@ export default function CoursesPage() {
       </div>
 
       {/* Search */}
-      <div className="max-w-7xl mx-auto px-6 py-6 relative z-10">
+      <div className="max-w-7xl mx-auto px-6 py-6">
         <div className="relative mb-8">
-          <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+          <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-600" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search communities..."
-            className="w-full pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:border-orange-500"
+            className="w-full pl-12 pr-4 py-3 bg-black border border-zinc-800 rounded-lg text-white placeholder:text-zinc-600 focus:outline-none focus:border-orange-500"
           />
         </div>
 
-        {/* Communities List */}
-        <div className="space-y-3">
+        {/* Communities Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredCommunities.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-16"
-            >
+            <div className="col-span-full text-center py-16">
               <BookOpen className="w-16 h-16 text-zinc-700 mx-auto mb-4" />
-              <p className="text-zinc-400 text-lg">No communities found</p>
+              <p className="text-zinc-400 text-lg mb-4">No communities found</p>
               {user && (
                 <Button
                   onClick={() => setShowCreateModal(true)}
-                  className="mt-4 bg-orange-500 hover:bg-orange-600"
+                  className="bg-orange-500 hover:bg-orange-600"
                 >
                   Create the first one
                 </Button>
               )}
-            </motion.div>
+            </div>
           ) : (
             filteredCommunities.map((community, idx) => {
               const isOwner = user && community.created_by === user.email;
@@ -385,66 +384,75 @@ export default function CoursesPage() {
               return (
                 <motion.div
                   key={community.id}
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.05 }}
                 >
-                  <Card className="bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all">
-                    <CardContent className="p-6">
-                      <div className="flex items-start gap-4">
-                        <div className="flex-shrink-0 text-4xl">
-                          #{idx + 1}
+                  <Card className="bg-black border border-zinc-800 hover:border-zinc-700 transition-all h-full flex flex-col">
+                    <CardContent className="p-6 flex-1 flex flex-col">
+                      <div className="flex items-start gap-3 mb-4">
+                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-500/20 to-pink-500/20 flex items-center justify-center border border-orange-500/30">
+                          <BookOpen className="w-6 h-6 text-orange-400" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="text-lg font-bold text-white mb-1">{community.title}</h3>
-                          <p className="text-sm text-zinc-400 mb-3 line-clamp-2">{community.description}</p>
-                          <div className="flex items-center gap-4 text-sm">
-                            <div className="flex items-center gap-1 text-zinc-400">
-                              <Users className="w-4 h-4" />
-                              <span>{(community.member_count || 0).toLocaleString()}</span>
-                              <span className="text-zinc-600">Members</span>
-                            </div>
-                            <span className="text-zinc-600">•</span>
-                            {community.pricing_type === "free" ? (
-                              <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30">
-                                Free
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="bg-orange-500/10 text-orange-400 border-orange-500/30">
-                                ${community.price}/month
-                              </Badge>
-                            )}
-                            {isOwner && (
-                              <>
-                                <span className="text-zinc-600">•</span>
-                                <Badge className="bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
-                                  Owner
-                                </Badge>
-                              </>
-                            )}
-                          </div>
+                          <Badge variant="outline" className="bg-zinc-900 text-zinc-400 border-zinc-800 text-xs">
+                            {community.category}
+                          </Badge>
                         </div>
-                        {isOwner && (
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={() => handleEditCommunity(community)}
-                              size="sm"
-                              variant="outline"
-                              className="bg-zinc-800 border-zinc-700 hover:bg-zinc-700"
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              onClick={() => handleDeleteCommunity(community.id)}
-                              size="sm"
-                              variant="destructive"
-                              className="bg-red-500/20 border-red-500/30 hover:bg-red-500/30"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
+                      </div>
+                      
+                      <p className="text-sm text-zinc-400 mb-4 flex-1 line-clamp-3">
+                        {community.description}
+                      </p>
+
+                      <div className="flex items-center justify-between pt-4 border-t border-zinc-800">
+                        <div className="flex items-center gap-1 text-zinc-400 text-sm">
+                          <Users className="w-4 h-4" />
+                          <span>{(community.member_count || 0).toLocaleString()}</span>
+                        </div>
+                        
+                        {community.pricing_type === "free" ? (
+                          <Badge className="bg-green-500/10 text-green-400 border-green-500/30">
+                            Free
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-orange-500/10 text-orange-400 border-orange-500/30">
+                            ${community.price}/mo
+                          </Badge>
                         )}
                       </div>
+
+                      {isOwner && (
+                        <div className="flex gap-2 mt-4 pt-4 border-t border-zinc-800">
+                          <Button
+                            onClick={() => handleEditCommunity(community)}
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 bg-transparent border-zinc-700 hover:bg-zinc-800 text-white"
+                          >
+                            <Pencil className="w-3 h-3 mr-2" />
+                            Edit
+                          </Button>
+                          <Button
+                            onClick={() => handleDeleteCommunity(community.id)}
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 bg-transparent border-red-500/30 hover:bg-red-500/10 text-red-400"
+                          >
+                            <Trash2 className="w-3 h-3 mr-2" />
+                            Delete
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {!isOwner && (
+                        <Button
+                          className="w-full mt-4 bg-transparent border border-zinc-700 hover:bg-zinc-800 text-white"
+                        >
+                          Join Community
+                        </Button>
+                      )}
                     </CardContent>
                   </Card>
                 </motion.div>
