@@ -15,7 +15,8 @@ export default function WalletCards({
   activeVerification,
   loadDAGKnightStatus,
   onVerifyTTTWallet,
-  onDisconnectWallet
+  onDisconnectWallet,
+  onZKSelfSendVerify
 }) {
   const navigate = useNavigate();
   const [copiedAddress, setCopiedAddress] = useState(null);
@@ -84,23 +85,43 @@ export default function WalletCards({
               </div>
               <div className="space-y-2">
                 {!hasGenesisFor('kasware_l1') && (
-                  <Button
-                    onClick={() => createGenesisVerification('kasware_l1', wallets.kasware)}
-                    disabled={isVerifying}
-                    className="w-full bg-orange-500/10 border border-orange-500/30 text-orange-400 hover:bg-orange-500/20"
-                  >
-                    {isVerifying && activeVerification === 'kasware_l1' ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <Zap className="w-4 h-4 mr-2" />
-                        Create Genesis
-                      </>
-                    )}
-                  </Button>
+                  <>
+                    <Button
+                      onClick={() => createGenesisVerification('kasware_l1', wallets.kasware)}
+                      disabled={isVerifying}
+                      className="w-full bg-orange-500/10 border border-orange-500/30 text-orange-400 hover:bg-orange-500/20"
+                    >
+                      {isVerifying && activeVerification === 'kasware_l1' ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="w-4 h-4 mr-2" />
+                          Create Genesis
+                        </>
+                      )}
+                    </Button>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-px bg-white/10" />
+                      <span className="text-white/40 text-xs">or</span>
+                      <div className="flex-1 h-px bg-white/10" />
+                    </div>
+                    <Button
+                      onClick={onZKSelfSendVerify}
+                      variant="outline"
+                      className="w-full bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border-cyan-500/30 text-cyan-300 hover:from-cyan-500/20 hover:to-blue-500/20"
+                    >
+                      <Shield className="w-4 h-4 mr-2" />
+                      ZK Self-Send Verify
+                    </Button>
+                    <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-2">
+                      <p className="text-[10px] text-cyan-300 leading-tight">
+                        📱 Mobile users: Verify by sending KAS to yourself
+                      </p>
+                    </div>
+                  </>
                 )}
                 <Button
                   onClick={() => handleDisconnect('kasware')}
