@@ -19,7 +19,7 @@ export default function ToolsModal({ onClose, agentZKId }) {
   const [secrets, setSecrets] = useState([]);
   const [newSecret, setNewSecret] = useState({ key: "", value: "", description: "" });
   const [isAddingSecret, setIsAddingSecret] = useState(false);
-  const [revealedSecrets, setRevealedSecrets] = new useState(new Set());
+  const [revealedSecrets, setRevealedSecrets] = useState(new Set());
   const [isSaving, setIsSaving] = useState(false);
   
   // Chat state
