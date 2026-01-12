@@ -198,31 +198,6 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
       return;
     }
 
-    // Check if user is authenticated OR has Kaspa address connected
-    let isAuthed = false;
-    try {
-      const user = await base44.auth.me();
-      if (user) {
-        isAuthed = true;
-      }
-    } catch (err) {
-      // Not logged in, check for Kaspa address
-    }
-
-    // If not logged in, check for Kaspa address
-    if (!isAuthed) {
-      const kaspaAddress = localStorage.getItem('kaspa_address') || localStorage.getItem('manual_kaspa_address');
-      if (kaspaAddress) {
-        isAuthed = true;
-      }
-    }
-
-    if (!isAuthed) {
-      alert("⚠️ Authentication Required\n\nYou need to either login or connect a Kaspa address to generate images.\n\nPlease login or add your address to continue.");
-      base44.auth.redirectToLogin();
-      return;
-    }
-
     setIsGenerating(true);
 
     let attempts = 0;
