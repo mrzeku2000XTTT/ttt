@@ -58,11 +58,9 @@ export default function OliviaAppsPage() {
       <div className="relative z-10 h-screen w-full flex flex-col px-3 pt-3 pb-3">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
-          <Link to={createPageUrl("Categories")}>
-            <button className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors">
-              <ArrowLeft className="w-5 h-5 text-white" />
-            </button>
-          </Link>
+          <button onClick={() => window.history.back()} className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors">
+            <ArrowLeft className="w-5 h-5 text-white" />
+          </button>
           <div className="flex items-center gap-3">
             <img 
               src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/1f4d18802_image.png" 
