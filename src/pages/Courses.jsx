@@ -297,24 +297,13 @@ export default function CoursesPage() {
       {/* Header */}
       <div className="border-b border-zinc-800 bg-black sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link to={createPageUrl("KaSkool")}>
-                <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/5">
-                  <ArrowLeft className="w-5 h-5" />
-                </Button>
-              </Link>
-              <h1 className="text-2xl font-bold text-white">Community Hub</h1>
-            </div>
-            {user && (
-              <Button
-                onClick={() => setShowCreateModal(true)}
-                className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 rounded-lg"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Community
+          <div className="flex items-center gap-4">
+            <Link to={createPageUrl("KaSkool")}>
+              <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/5">
+                <ArrowLeft className="w-5 h-5" />
               </Button>
-            )}
+            </Link>
+            <h1 className="text-2xl font-bold text-white">Community Hub</h1>
           </div>
         </div>
       </div>
@@ -367,15 +356,7 @@ export default function CoursesPage() {
           {filteredCommunities.length === 0 ? (
             <div className="col-span-full text-center py-16">
               <BookOpen className="w-16 h-16 text-zinc-700 mx-auto mb-4" />
-              <p className="text-zinc-400 text-lg mb-4">No communities found</p>
-              {user && (
-                <Button
-                  onClick={() => setShowCreateModal(true)}
-                  className="bg-orange-500 hover:bg-orange-600"
-                >
-                  Create the first one
-                </Button>
-              )}
+              <p className="text-zinc-400 text-lg">No communities found</p>
             </div>
           ) : (
             filteredCommunities.map((community, idx) => {
