@@ -662,9 +662,11 @@ export default function AgentZKPage() {
                   <Sparkles className="w-2.5 h-2.5 md:w-3 md:h-3 mr-1" />
                   {verifications.length} Verifications
                 </Badge>
-                <Badge variant="outline" className="bg-blue-500/20 text-blue-300 border-blue-500/30 font-mono text-[10px] md:text-xs truncate max-w-[180px]">
-                  {user.created_wallet_address.slice(0, 15)}...
-                </Badge>
+                {user?.created_wallet_address && (
+                  <Badge variant="outline" className="bg-blue-500/20 text-blue-300 border-blue-500/30 font-mono text-[10px] md:text-xs truncate max-w-[180px]">
+                    {user.created_wallet_address.slice(0, 15)}...
+                  </Badge>
+                )}
               </div>
             </motion.div>
 
