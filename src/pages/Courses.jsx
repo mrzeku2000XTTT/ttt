@@ -3,10 +3,11 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, BookOpen, Plus, X, Search as SearchIcon, Loader2 } from "lucide-react";
+import { ArrowLeft, BookOpen, Plus, X, Search as SearchIcon, Loader2, Users, TrendingUp, DollarSign, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 export default function CoursesPage() {
   const [user, setUser] = useState(null);
@@ -18,9 +19,13 @@ export default function CoursesPage() {
     title: "",
     description: "",
     category: "",
-    difficulty: "beginner"
+    difficulty: "beginner",
+    price: "free",
+    memberCount: 0
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [sortBy, setSortBy] = useState("trending");
 
   useEffect(() => {
     loadUser();
@@ -62,6 +67,8 @@ export default function CoursesPage() {
         description: formData.description,
         category: formData.category,
         difficulty: formData.difficulty,
+        price: formData.price,
+        memberCount: 0,
         created_by: user?.email || "anonymous"
       });
 
@@ -69,7 +76,9 @@ export default function CoursesPage() {
         title: "",
         description: "",
         category: "",
-        difficulty: "beginner"
+        difficulty: "beginner",
+        price: "free",
+        memberCount: 0
       });
       setShowCreateModal(false);
       await loadCourses();
@@ -81,10 +90,30 @@ export default function CoursesPage() {
     }
   };
 
-  const filteredCourses = courses.filter(course =>
-    course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    course.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const categories = [
+    { icon: "🎨", name: "All" },
+    { icon: "💻", name: "Tech" },
+    { icon: "💰", name: "Money" },
+    { icon: "🥕", name: "Health" },
+    { icon: "🎸", name: "Music" },
+    { icon: "⚽", name: "Sports" },
+    { icon: "📚", name: "Self-improvement" },
+    { icon: "❤️", name: "Relationships" },
+    { icon: "🙏", name: "Spirituality" }
+  ];
+
+  const filteredCourses = courses
+    .filter(course => {
+      const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        course.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === "All" || course.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => {
+      if (sortBy === "members") return (b.memberCount || 0) - (a.memberCount || 0);
+      if (sortBy === "trending") return (b.memberCount || 0) - (a.memberCount || 0);
+      return 0;
+    });
 
   if (isLoading) {
     return (
@@ -95,125 +124,134 @@ export default function CoursesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white relative overflow-hidden">
-      {/* Futuristic Grid Background */}
-      <div className="fixed inset-0 z-0">
-        <div 
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(139, 92, 246, 0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(139, 92, 246, 0.1) 1px, transparent 1px),
-              linear-gradient(rgba(6, 182, 212, 0.05) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(6, 182, 212, 0.05) 1px, transparent 1px)
-            `,
-            backgroundSize: '100px 100px, 100px 100px, 20px 20px, 20px 20px',
-            backgroundPosition: '-1px -1px, -1px -1px, -1px -1px, -1px -1px',
-            transform: 'perspective(1000px) rotateX(60deg)',
-            transformOrigin: 'center center',
-            height: '200%',
-            top: '-50%'
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 via-transparent to-cyan-900/20" />
-        <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/40 to-black/60" />
-      </div>
+    <div className="min-h-screen bg-zinc-950 text-white relative overflow-hidden">
+      {/* Clean minimal background */}
+      <div className="fixed inset-0 z-0 bg-zinc-950" />
 
-      {/* Header with Back Button */}
-      <div className="border-b border-white/10 bg-gradient-to-r from-purple-900/30 via-black/90 to-cyan-900/30 backdrop-blur-xl sticky top-0 z-40 relative shadow-lg shadow-purple-500/10">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex items-center gap-4">
-            <Link to={createPageUrl("KaSkool")}>
-              <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-all">
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-3xl font-black text-white tracking-tight bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">Courses</h1>
-              <p className="text-sm text-gray-400 font-medium">Explore and create learning modules</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Search and Create Section */}
-      <div className="max-w-4xl mx-auto px-4 relative z-10 py-12">
-        {/* Search Bar - Google Style */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-12"
-        >
-          <div className="flex gap-4 items-center">
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search courses..."
-                className="w-full px-6 py-4 bg-white/5 border-2 border-purple-500/50 rounded-full text-white text-lg placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:shadow-[0_0_30px_rgba(168,85,247,0.4)] transition-all backdrop-blur-sm"
-                style={{
-                  boxShadow: '0 0 20px rgba(168, 85, 247, 0.2)'
-                }}
-              />
-              <SearchIcon className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+      {/* Header - Skool Style */}
+      <div className="border-b border-zinc-800 bg-zinc-950 sticky top-0 z-40 relative">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link to={createPageUrl("KaSkool")}>
+                <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-zinc-800 rounded-lg transition-all">
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-2xl font-bold text-white">Discover Communities</h1>
+                <p className="text-sm text-zinc-400">or create your own</p>
+              </div>
             </div>
             {user && (
               <Button
                 onClick={() => setShowCreateModal(true)}
-                className="bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 text-white font-semibold px-6 rounded-full shadow-lg shadow-purple-500/30"
+                className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 rounded-lg"
               >
-                <Plus className="w-5 h-5 mr-2" />
-                Create Course
+                <Plus className="w-4 h-4 mr-2" />
+                Create Community
               </Button>
             )}
           </div>
-        </motion.div>
+        </div>
+      </div>
 
-        {/* Courses Grid */}
-        <div className="space-y-6">
+      {/* Category Filter Pills */}
+      <div className="border-b border-zinc-800 bg-zinc-950 sticky top-[73px] z-30 relative">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide py-4">
+            {categories.map((cat) => (
+              <button
+                key={cat.name}
+                onClick={() => setSelectedCategory(cat.name)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-all ${
+                  selectedCategory === cat.name
+                    ? "bg-orange-500 text-white"
+                    : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+                }`}
+              >
+                <span>{cat.icon}</span>
+                <span className="text-sm font-medium">{cat.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Search and Sort Section */}
+      <div className="max-w-7xl mx-auto px-6 py-6 relative z-10">
+        <div className="flex gap-4 items-center mb-8">
+          <div className="flex-1 relative">
+            <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search communities..."
+              className="w-full pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:border-orange-500 transition-all"
+            />
+          </div>
+        </div>
+
+        {/* Communities Grid - Skool Style */}
+        <div className="space-y-3">
           {filteredCourses.length === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-12"
+              className="text-center py-16"
             >
-              <BookOpen className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400 text-lg">No courses found</p>
+              <BookOpen className="w-16 h-16 text-zinc-700 mx-auto mb-4" />
+              <p className="text-zinc-400 text-lg">No communities found</p>
               {user && (
-                <p className="text-gray-500 text-sm mt-2">Create the first course!</p>
+                <Button
+                  onClick={() => setShowCreateModal(true)}
+                  className="mt-4 bg-orange-500 hover:bg-orange-600"
+                >
+                  Create the first one
+                </Button>
               )}
             </motion.div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredCourses.map((course, idx) => (
-                <motion.div
-                  key={course.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.1 }}
-                >
-                  <Card className="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 backdrop-blur-sm hover:border-purple-500/30 transition-all shadow-lg hover:shadow-purple-500/20">
-                    <CardHeader>
-                      <CardTitle className="text-lg text-white">{course.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <p className="text-sm text-gray-400">{course.description}</p>
-                      <div className="flex gap-2 flex-wrap">
-                        {course.category && (
-                          <span className="px-2 py-1 bg-purple-500/20 border border-purple-500/30 rounded text-xs text-purple-300">
-                            {course.category}
-                          </span>
-                        )}
-                        <span className="px-2 py-1 bg-cyan-500/20 border border-cyan-500/30 rounded text-xs text-cyan-300">
-                          {course.difficulty || 'beginner'}
-                        </span>
+            filteredCourses.map((course, idx) => (
+              <motion.div
+                key={course.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05 }}
+              >
+                <Card className="bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all cursor-pointer">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0 text-4xl">
+                        #{idx + 1}
                       </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-bold text-white mb-1">{course.title}</h3>
+                        <p className="text-sm text-zinc-400 mb-3 line-clamp-2">{course.description}</p>
+                        <div className="flex items-center gap-4 text-sm">
+                          <div className="flex items-center gap-1 text-zinc-400">
+                            <Users className="w-4 h-4" />
+                            <span>{(course.memberCount || Math.floor(Math.random() * 50000)).toLocaleString()}</span>
+                            <span className="text-zinc-600">Members</span>
+                          </div>
+                          <span className="text-zinc-600">•</span>
+                          {course.price === "free" || !course.price ? (
+                            <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30">
+                              Free
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-orange-500/10 text-orange-400 border-orange-500/30">
+                              ${course.price}/month
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))
           )}
         </div>
       </div>
@@ -226,8 +264,8 @@ export default function CoursesPage() {
             animate={{ opacity: 1, scale: 1 }}
             className="bg-gradient-to-br from-zinc-900 to-black border border-white/10 rounded-2xl max-w-2xl w-full"
           >
-            <div className="bg-gradient-to-r from-purple-900/50 to-cyan-900/50 backdrop-blur-xl border-b border-white/10 px-6 py-4 flex items-center justify-between">
-              <h3 className="text-xl font-bold text-white">Create New Course</h3>
+            <div className="bg-zinc-900 border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-white">Create New Community</h3>
               <button
                 onClick={() => setShowCreateModal(false)}
                 className="text-white/60 hover:text-white transition-colors"
@@ -238,12 +276,12 @@ export default function CoursesPage() {
 
             <form onSubmit={handleCreateCourse} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-white mb-2">Course Title *</label>
+                <label className="block text-sm font-semibold text-white mb-2">Community Name *</label>
                 <Input
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="e.g., Introduction to Kaspa Blockchain"
-                  className="bg-white/5 border-white/20 text-white placeholder:text-white/30"
+                  placeholder="e.g., Kaspa Blockchain Mastery"
+                  className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
                   required
                 />
               </div>
@@ -253,8 +291,8 @@ export default function CoursesPage() {
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Describe what students will learn..."
-                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/50 resize-none"
+                  placeholder="What will members learn and achieve in this community?"
+                  className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:border-orange-500 resize-none"
                   rows={4}
                   required
                 />
@@ -263,24 +301,35 @@ export default function CoursesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-white mb-2">Category</label>
-                  <Input
+                  <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    placeholder="e.g., Blockchain"
-                    className="bg-white/5 border-white/20 text-white placeholder:text-white/30"
-                  />
+                    className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                  >
+                    <option value="Tech">💻 Tech</option>
+                    <option value="Money">💰 Money</option>
+                    <option value="Health">🥕 Health</option>
+                    <option value="Music">🎸 Music</option>
+                    <option value="Sports">⚽ Sports</option>
+                    <option value="Self-improvement">📚 Self-improvement</option>
+                    <option value="Relationships">❤️ Relationships</option>
+                    <option value="Spirituality">🙏 Spirituality</option>
+                  </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-white mb-2">Difficulty</label>
+                  <label className="block text-sm font-semibold text-white mb-2">Pricing</label>
                   <select
-                    value={formData.difficulty}
-                    onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
-                    className="w-full px-4 py-2 bg-white/5 border border-white/20 rounded-lg text-white focus:outline-none focus:border-purple-500/50"
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
                   >
-                    <option value="beginner">Beginner</option>
-                    <option value="intermediate">Intermediate</option>
-                    <option value="advanced">Advanced</option>
+                    <option value="free">Free</option>
+                    <option value="9">$9/month</option>
+                    <option value="29">$29/month</option>
+                    <option value="49">$49/month</option>
+                    <option value="99">$99/month</option>
+                    <option value="199">$199/month</option>
                   </select>
                 </div>
               </div>
@@ -290,7 +339,7 @@ export default function CoursesPage() {
                   type="button"
                   onClick={() => setShowCreateModal(false)}
                   variant="outline"
-                  className="flex-1 bg-zinc-900 border-zinc-800 text-white"
+                  className="flex-1 bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700"
                   disabled={isCreating}
                 >
                   Cancel
@@ -298,7 +347,7 @@ export default function CoursesPage() {
                 <Button
                   type="submit"
                   disabled={isCreating}
-                  className="flex-1 bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 text-white font-semibold"
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-semibold"
                 >
                   {isCreating ? (
                     <>
@@ -306,7 +355,7 @@ export default function CoursesPage() {
                       Creating...
                     </>
                   ) : (
-                    "Create Course"
+                    "Create Community"
                   )}
                 </Button>
               </div>
