@@ -191,7 +191,7 @@ export default function CoursesPage() {
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="e.g., Kaspa Blockchain Mastery"
-              className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+              className="bg-zinc-900/80 border-zinc-700 text-white placeholder:text-zinc-600 focus:bg-black focus:border-orange-500"
               required
             />
           </div>
@@ -202,7 +202,7 @@ export default function CoursesPage() {
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="What will members learn and achieve in this community?"
-              className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:border-orange-500 resize-none"
+              className="w-full px-4 py-3 bg-zinc-900/80 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-600 focus:outline-none focus:bg-black focus:border-orange-500 resize-none"
               rows={4}
               required
             />
@@ -248,7 +248,7 @@ export default function CoursesPage() {
                 value={formData.price}
                 onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                 placeholder="99"
-                className="bg-zinc-800 border-zinc-700 text-white"
+                className="bg-zinc-900/80 border-zinc-700 text-white focus:bg-black focus:border-orange-500"
                 min="1"
               />
             </div>
