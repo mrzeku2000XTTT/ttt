@@ -6,6 +6,7 @@ import { base44 } from "@/api/base44Client";
 import { ArrowLeft, BookOpen, GraduationCap, TrendingUp, Award, Clock, Search, ShieldCheck, Sparkles, X, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function KaSkoolPage() {
   const [user, setUser] = useState(null);
@@ -19,6 +20,7 @@ export default function KaSkoolPage() {
   const [explainPrompt, setExplainPrompt] = useState("");
   const [isExplaining, setIsExplaining] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [activeTab, setActiveTab] = useState("search");
 
   useEffect(() => {
     loadUser();
@@ -229,6 +231,31 @@ export default function KaSkoolPage() {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+        
+        {/* Tabs */}
+        <div className="border-t border-white/10">
+          <div className="max-w-7xl mx-auto px-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="bg-transparent border-0 h-auto p-0 space-x-1">
+                <TabsTrigger 
+                  value="search" 
+                  className="data-[state=active]:bg-transparent data-[state=active]:text-purple-400 data-[state=active]:border-b-2 data-[state=active]:border-purple-400 rounded-none px-4 py-3 text-white/60 hover:text-white transition-all"
+                >
+                  <Search className="w-4 h-4 mr-2" />
+                  Search
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="courses" 
+                  className="data-[state=active]:bg-transparent data-[state=active]:text-purple-400 data-[state=active]:border-b-2 data-[state=active]:border-purple-400 rounded-none px-4 py-3 text-white/60 hover:text-white transition-all"
+                  onClick={() => window.location.href = createPageUrl("Courses")}
+                >
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  Courses
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
         </div>
       </div>

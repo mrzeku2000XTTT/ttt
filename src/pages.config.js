@@ -49,6 +49,7 @@ import ContributorHistory from './pages/ContributorHistory';
 import CosmicEye from './pages/CosmicEye';
 import Countdown from './pages/Countdown';
 import CountryDetail from './pages/CountryDetail';
+import Courses from './pages/Courses';
 import CreateListing from './pages/CreateListing';
 import CreateShopListing from './pages/CreateShopListing';
 import Creator from './pages/Creator';
@@ -214,7 +215,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import Courses from './pages/Courses';
 import __Layout from './Layout.jsx';
 
 
@@ -270,6 +270,7 @@ export const PAGES = {
     "CosmicEye": CosmicEye,
     "Countdown": Countdown,
     "CountryDetail": CountryDetail,
+    "Courses": Courses,
     "CreateListing": CreateListing,
     "CreateShopListing": CreateShopListing,
     "Creator": Creator,
@@ -435,7 +436,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "Courses": Courses,
 }
 
 export const pagesConfig = {
