@@ -164,14 +164,23 @@ export default function WalletCards({
                 >
                   Connect Kasware
                 </Button>
-                <div className="text-white/40 text-xs">or</div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-px bg-white/10" />
+                  <span className="text-white/40 text-xs">Mobile?</span>
+                  <div className="flex-1 h-px bg-white/10" />
+                </div>
                 <Button
-                  onClick={() => navigate(createPageUrl("X"))}
-                  className="w-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 text-purple-300 hover:from-purple-500/30 hover:to-pink-500/30"
+                  onClick={onZKSelfSendVerify}
+                  className="w-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/40 text-cyan-300 hover:from-cyan-500/30 hover:to-blue-500/30"
                 >
-                  <Zap className="w-4 h-4 mr-2" />
-                  ZKU Verify
+                  <Shield className="w-4 h-4 mr-2" />
+                  ZK Self-Send Verify
                 </Button>
+                <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-2">
+                  <p className="text-[10px] text-cyan-300 leading-tight">
+                    📱 Verify by sending KAS to yourself
+                  </p>
+                </div>
               </div>
             </div>
           )}
