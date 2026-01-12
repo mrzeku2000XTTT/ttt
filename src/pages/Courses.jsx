@@ -123,7 +123,7 @@ export default function CoursesPage() {
       <div className="border-b border-white/10 bg-gradient-to-r from-purple-900/30 via-black/90 to-cyan-900/30 backdrop-blur-xl sticky top-0 z-40 relative shadow-lg shadow-purple-500/10">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center gap-4">
-            <Link to={createPageUrl("AppStore")}>
+            <Link to={createPageUrl("KaSkool")}>
               <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-all">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
