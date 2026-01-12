@@ -6,7 +6,6 @@ import { base44 } from "@/api/base44Client";
 import {
   ArrowLeft,
   Eye,
-  Play,
   Share2,
   Search,
   X,
