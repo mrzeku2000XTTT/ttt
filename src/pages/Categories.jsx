@@ -121,7 +121,6 @@ export default function CategoriesPage() {
       { id: "sendkas", name: "Send KAS", icon: "ArrowUpDown", path: "Bridge" },
       { id: "wallet", name: "Wallet", icon: "Wallet", path: "Wallet" },
       { id: "shop", name: "Shop", icon: "ShoppingCart", path: "Shop" },
-      { id: "tttprofile", name: "TTT Profile", icon: "User", path: "TTTProfile" },
       { id: "market", name: "Market", icon: "ShoppingBag", path: "Marketplace" },
       { id: "tttid", name: "TTT ID", icon: "Shield", path: "RegisterTTTID" },
       { id: "dagknight", name: "DAGKnight", icon: "Network", path: "DAGKnightWallet", premium: true },
