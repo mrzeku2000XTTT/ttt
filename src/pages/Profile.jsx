@@ -1018,7 +1018,7 @@ Return ONLY the post text, no quotes or extra formatting.`,
                     <div className="space-y-3">
                       <h3 className="text-sm text-gray-400">Connected Wallets</h3>
                       
-                      {/* L0 - Manual Kaspa Address */}
+                      {/* L0 - Manual Kaspa Address - ALWAYS VISIBLE */}
                       {localStorage.getItem('manual_kaspa_address') ? (
                         <div className="bg-gradient-to-r from-purple-500/20 to-cyan-500/20 border-2 border-purple-500/40 rounded-lg p-4">
                           <div className="flex items-center justify-between mb-3">
@@ -1048,7 +1048,7 @@ Return ONLY the post text, no quotes or extra formatting.`,
                             <span>Active on TTT Feed, DAG Feed, Bull Reels</span>
                           </div>
                         </div>
-                      ) : isEditing ? (
+                      ) : (
                         <div className="bg-purple-500/10 border-2 border-dashed border-purple-500/30 rounded-lg p-4">
                           <h3 className="text-purple-400 font-semibold mb-2 flex items-center gap-2">
                             <Wallet className="w-4 h-4" />
@@ -1071,17 +1071,6 @@ Return ONLY the post text, no quotes or extra formatting.`,
                               Add L0 Address
                             </Button>
                           </div>
-                        </div>
-                      ) : (
-                        <div className="bg-purple-500/10 border border-dashed border-purple-500/30 rounded-lg p-4 text-center">
-                          <p className="text-sm text-purple-300 mb-2">No Layer 0 address added</p>
-                          <Button
-                            onClick={() => setIsEditing(true)}
-                            className="bg-purple-500 hover:bg-purple-600 text-white text-xs"
-                            size="sm"
-                          >
-                            Add L0 Address
-                          </Button>
                         </div>
                       )}
 
