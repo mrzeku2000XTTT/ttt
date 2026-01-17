@@ -215,6 +215,7 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
+import KUniversity from './pages/KUniversity';
 import __Layout from './Layout.jsx';
 
 
@@ -436,6 +437,7 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
+    "KUniversity": KUniversity,
 }
 
 export const pagesConfig = {
