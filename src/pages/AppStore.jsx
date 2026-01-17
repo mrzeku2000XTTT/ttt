@@ -95,7 +95,7 @@ export default function AppStorePage() {
         app.category.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : apps).filter(app => {
-      // Hide KaSkool for non-admin users
+      // Hide KaSkool for non-admin users (K-University is public)
       if (app.name === "KaSkool" && !isAdmin) {
         return false;
       }
