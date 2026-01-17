@@ -79,6 +79,7 @@ export default function AppStorePage() {
     { name: "OnChain POS", icon: "Link2", path: "OnChainPOS", category: "Finance", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/cf40407bc_image.png" },
     { name: "Vox Invicta", icon: "Link2", path: "VoxInvicta", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/42e7376e4_image.png", circular: true },
     { name: "KaSkool", icon: "Link2", path: "KaSkool", category: "Education", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/403bdf8eb_image.png", circular: true },
+    { name: "K-University", icon: "Link2", path: "KUniversity", category: "Education", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/d84e3c738_image.png", circular: true },
     ];
 
   const getIconComponent = (iconName) => {
