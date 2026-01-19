@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, BookOpen, GraduationCap, TrendingUp, Award, Clock, Search, ShieldCheck, Sparkles, X, Menu } from "lucide-react";
+import { ArrowLeft, BookOpen, GraduationCap, TrendingUp, Award, Clock, Search, ShieldCheck, Sparkles, X, Menu, Brain, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,6 +22,13 @@ export default function KaSkoolPage() {
   const [isExplaining, setIsExplaining] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [activeTab, setActiveTab] = useState("search");
+  const [quizQuestions, setQuizQuestions] = useState([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [isAnswered, setIsAnswered] = useState(false);
+  const [score, setScore] = useState(0);
+  const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
+  const [showQuizResults, setShowQuizResults] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -114,6 +121,79 @@ export default function KaSkoolPage() {
     } finally {
       setIsExplaining(false);
     }
+  };
+
+  const generateQuiz = async () => {
+    if (searchResults.length === 0) return;
+
+    setIsGeneratingQuiz(true);
+    try {
+      const content = searchResults[0].originalContent || searchResults[0].content;
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: `Based on this educational content: "${content}"\n\nGenerate 5 multiple choice quiz questions to test understanding. Return ONLY a valid JSON array with this exact structure:\n[\n  {\n    "question": "question text",\n    "options": ["option1", "option2", "option3", "option4"],\n    "correctAnswer": 0\n  }\n]\n\nMake questions educational and test key concepts. correctAnswer should be the index (0-3) of the correct option.`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            questions: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  question: { type: "string" },
+                  options: {
+                    type: "array",
+                    items: { type: "string" }
+                  },
+                  correctAnswer: { type: "number" }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      if (response?.questions && Array.isArray(response.questions)) {
+        setQuizQuestions(response.questions);
+        setCurrentQuestionIndex(0);
+        setScore(0);
+        setShowQuizResults(false);
+      }
+    } catch (err) {
+      console.error('Quiz generation failed:', err);
+    } finally {
+      setIsGeneratingQuiz(false);
+    }
+  };
+
+  const handleAnswerSelect = (answerIndex) => {
+    if (isAnswered) return;
+    
+    setSelectedAnswer(answerIndex);
+    setIsAnswered(true);
+    
+    const currentQuestion = quizQuestions[currentQuestionIndex];
+    if (answerIndex === currentQuestion.correctAnswer) {
+      setScore(score + 1);
+    }
+  };
+
+  const handleNextQuestion = () => {
+    if (currentQuestionIndex < quizQuestions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      setSelectedAnswer(null);
+      setIsAnswered(false);
+    } else {
+      setShowQuizResults(true);
+    }
+  };
+
+  const resetQuiz = () => {
+    setQuizQuestions([]);
+    setCurrentQuestionIndex(0);
+    setSelectedAnswer(null);
+    setIsAnswered(false);
+    setScore(0);
+    setShowQuizResults(false);
   };
 
   const presets = [
@@ -386,6 +466,28 @@ export default function KaSkoolPage() {
                           <div className="prose prose-invert max-w-none">
                             <p className="text-gray-200 leading-relaxed text-base whitespace-pre-wrap">{result.content}</p>
                           </div>
+                          
+                          {/* Quiz Button */}
+                          {idx === 0 && quizQuestions.length === 0 && (
+                            <div className="mt-6 pt-6 border-t border-white/10">
+                              <Button
+                                onClick={generateQuiz}
+                                disabled={isGeneratingQuiz}
+                                className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white font-semibold py-6 text-lg"
+                              >
+                                {isGeneratingQuiz ? (
+                                  <motion.div
+                                    animate={{ rotate: 360 }}
+                                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                    className="w-5 h-5 border-2 border-white border-t-transparent rounded-full mr-2"
+                                  />
+                                ) : (
+                                  <Brain className="w-5 h-5 mr-2" />
+                                )}
+                                Generate Quiz
+                              </Button>
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
                     </motion.div>
@@ -395,6 +497,156 @@ export default function KaSkoolPage() {
             )}
           </div>
         </>
+      )}
+
+      {/* Quiz Section */}
+      {quizQuestions.length > 0 && !showQuizResults && (
+        <div className="max-w-4xl mx-auto px-6 py-12 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <Card className="bg-gradient-to-br from-cyan-900/20 to-purple-900/20 border-2 border-cyan-500/30 backdrop-blur-sm shadow-2xl">
+              <CardHeader className="border-b border-white/10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full flex items-center justify-center">
+                      <Brain className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-white text-2xl">Quiz Time!</CardTitle>
+                      <p className="text-sm text-gray-400 mt-1">
+                        Question {currentQuestionIndex + 1} of {quizQuestions.length}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-gray-400">Score</div>
+                    <div className="text-2xl font-bold text-cyan-400">{score}/{quizQuestions.length}</div>
+                  </div>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="p-8">
+                {quizQuestions[currentQuestionIndex] && (
+                  <>
+                    <h3 className="text-xl font-semibold text-white mb-6 leading-relaxed">
+                      {quizQuestions[currentQuestionIndex].question}
+                    </h3>
+                    
+                    <div className="space-y-3 mb-6">
+                      {quizQuestions[currentQuestionIndex].options.map((option, idx) => {
+                        const isCorrect = idx === quizQuestions[currentQuestionIndex].correctAnswer;
+                        const isSelected = idx === selectedAnswer;
+                        const showFeedback = isAnswered && (isSelected || isCorrect);
+                        
+                        return (
+                          <motion.button
+                            key={idx}
+                            onClick={() => handleAnswerSelect(idx)}
+                            disabled={isAnswered}
+                            className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
+                              !isAnswered
+                                ? 'bg-white/5 border-white/20 hover:border-cyan-500/50 hover:bg-white/10'
+                                : showFeedback
+                                ? isCorrect
+                                  ? 'bg-green-500/20 border-green-500'
+                                  : 'bg-red-500/20 border-red-500'
+                                : 'bg-white/5 border-white/10 opacity-50'
+                            }`}
+                            whileHover={!isAnswered ? { scale: 1.02 } : {}}
+                            whileTap={!isAnswered ? { scale: 0.98 } : {}}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-white font-medium">{option}</span>
+                              {showFeedback && (
+                                isCorrect ? (
+                                  <CheckCircle className="w-5 h-5 text-green-400" />
+                                ) : isSelected ? (
+                                  <XCircle className="w-5 h-5 text-red-400" />
+                                ) : null
+                              )}
+                            </div>
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+                    
+                    {isAnswered && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                      >
+                        <Button
+                          onClick={handleNextQuestion}
+                          className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white font-semibold py-4 text-lg"
+                        >
+                          {currentQuestionIndex < quizQuestions.length - 1 ? 'Next Question' : 'See Results'}
+                        </Button>
+                      </motion.div>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Quiz Results */}
+      {showQuizResults && (
+        <div className="max-w-4xl mx-auto px-6 py-12 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            <Card className="bg-gradient-to-br from-purple-900/30 to-cyan-900/30 border-2 border-purple-500/50 backdrop-blur-sm shadow-2xl">
+              <CardContent className="p-12 text-center">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: "spring" }}
+                  className="w-24 h-24 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full flex items-center justify-center mx-auto mb-6"
+                >
+                  <Award className="w-12 h-12 text-white" />
+                </motion.div>
+                
+                <h2 className="text-4xl font-bold text-white mb-4">Quiz Complete!</h2>
+                <p className="text-6xl font-black text-transparent bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text mb-6">
+                  {score}/{quizQuestions.length}
+                </p>
+                
+                <p className="text-xl text-gray-300 mb-8">
+                  {score === quizQuestions.length
+                    ? "Perfect score! You're a master! 🎉"
+                    : score >= quizQuestions.length * 0.8
+                    ? "Excellent work! Keep it up! 🌟"
+                    : score >= quizQuestions.length * 0.6
+                    ? "Good job! Keep learning! 📚"
+                    : "Keep studying and try again! 💪"}
+                </p>
+                
+                <div className="flex gap-4 justify-center">
+                  <Button
+                    onClick={resetQuiz}
+                    className="bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 text-white font-semibold px-8 py-4 text-lg"
+                  >
+                    Back to Content
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      resetQuiz();
+                      generateQuiz();
+                    }}
+                    className="bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold px-8 py-4 text-lg"
+                  >
+                    Try New Quiz
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
       )}
 
       {/* Explain Modal */}
