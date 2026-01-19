@@ -423,41 +423,20 @@ function AKContent() {
         } else if (isMovieRequest) {
           // Check if user just typed "watch" without movie name
           if (query.trim().toLowerCase() === 'watch') {
-            if (lastMovie) {
-              // Get AI response first, then show last movie
-              const aiResponse = await base44.integrations.Core.InvokeLLM({
-                prompt: "User wants to watch the last movie again. Give a friendly short response confirming you're reopening it.",
-                add_context_from_internet: false,
-              });
+            // Get best movies of the week from LLM
+            const today = new Date();
+            const weekStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay());
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 6);
+            
+            const aiResponse = await base44.integrations.Core.InvokeLLM({
+              prompt: `Today is ${today.toLocaleDateString()}. List the 5-7 best movies trending this week (${weekStart.toLocaleDateString()} - ${weekEnd.toLocaleDateString()}). Include new releases, popular films, and highly rated movies. Format as a numbered list with title and brief description (1-2 sentences each). Be concise and helpful.`,
+              add_context_from_internet: true,
+            });
 
-              setMessages(prev => [...prev, 
-                { role: "assistant", content: aiResponse },
-                { 
-                  role: "assistant", 
-                  content: `🎬 Reopening: ${lastMovie.title}`,
-                  movie: lastMovie
-                }
-              ]);
-            } else {
-              // Get AI response and show 123movies home page
-              const aiResponse = await base44.integrations.Core.InvokeLLM({
-                prompt: "User wants to watch something. Give a friendly short response about opening the movie browser for them.",
-                add_context_from_internet: false,
-              });
-              
-              setMessages(prev => [...prev, 
-                { role: "assistant", content: aiResponse },
-                { 
-                  role: "assistant", 
-                  content: "🎬 Opening movie browser...",
-                  movie: {
-                    embed_url: "https://fmovies-co.net",
-                    title: "Movie Browser",
-                    source: "FMovies"
-                  }
-                }
-              ]);
-            }
+            setMessages(prev => [...prev, 
+              { role: "assistant", content: "🎬 Here are the best movies this week:\n\n" + aiResponse }
+            ]);
           } else {
             // Search for specific movie
             const movieResult = await base44.functions.invoke('searchMovie', { query });
