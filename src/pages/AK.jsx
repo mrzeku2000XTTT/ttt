@@ -13,7 +13,7 @@ function AKContent() {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      content: "Hey agent, I'm AK, Your Artificial K 🤖\n\n**Available Commands:**\n• Type 'play [song name]' - Search and play music\n• Type 'watch [movie name]' - Search and watch movies\n• Type '!Split' - Multi-stream mode (watch up to 4 streams!)\n• Type '!Sports' - Watch live sports\n• Type '!Asian' - Browse Asian dramas\n• Type '!African' - Browse African content\n• Type '!Popcorn' - Browse Popcornflix\n• Click 'Browse Genres' - Browse movies by genre\n• Ask me anything - I'm here to help!\n\n⚠️ **Movie Tip:** An ad will pop up when you start a movie. Just close it and the movie will play with no more ads unless the screen is clicked."
+      content: "Hey agent, I'm AK, Your Artificial K 🤖\n\n**Available Commands:**\n• Type 'play [song name]' - Search and play music\n• Type 'watch' - Get best movies of the week\n• Type 'watch [movie name]' - Search and watch movies\n• Type '!Split' - Multi-stream mode (watch up to 4 streams!)\n• Type '!Sports' - Watch live sports\n• Type '!Asian' - Browse Asian dramas\n• Type '!African' - Browse African content\n• Type '!Popcorn' - Browse Popcornflix\n• Click 'Browse Genres' - Browse movies by genre\n• Ask me anything - I'm here to help!\n\n⚠️ **Movie Tip:** An ad will pop up when you start a movie. Just close it and the movie will play with no more ads unless the screen is clicked."
     }
   ]);
   const [input, setInput] = useState("");
