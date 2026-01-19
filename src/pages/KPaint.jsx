@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ArrowLeft, Download, Trash2, Undo, Redo, Type, Circle, Square, Minus, Droplet, Eraser, Pencil, Eye, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Download, Trash2, Undo, Redo, Circle, Square, Minus, Droplet, Eraser, Pencil, Image as ImageIcon, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
@@ -14,6 +14,8 @@ export default function KPaintPage() {
   const [historyStep, setHistoryStep] = useState(-1);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [canvasState, setCanvasState] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -185,10 +187,42 @@ export default function KPaintPage() {
     { name: "fill", icon: Droplet, label: "Fill" },
   ];
 
+  const handleImageUpload = (file) => {
+    if (!file || !file.type.startsWith('image/')) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        saveToHistory();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    handleImageUpload(file);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
   const colorPalette = [
     "#000000", "#FFFFFF", "#FF0000", "#00FF00", "#0000FF",
-    "#FFFF00", "#FF00FF", "#00FFFF", "#FF8800", "#8800FF",
-    "#808080", "#C0C0C0", "#800000", "#008000", "#000080",
+    "#FFFF00", "#FF00FF", "#00FFFF", "#FFA500", "#800080",
   ];
 
   return (
@@ -248,93 +282,119 @@ export default function KPaintPage() {
       </div>
 
       {/* Main Content */}
-      <div className="pt-20 pb-8 px-4">
+      <div className="pt-16 pb-4 px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="flex gap-4">
-            {/* Toolbar */}
-            <div className="w-20 bg-black/40 border border-white/10 rounded-lg p-2 space-y-2 h-fit sticky top-24">
+          {/* Compact Top Toolbar */}
+          <div className="flex items-center gap-3 mb-3 bg-black/40 border border-white/10 rounded-lg p-2">
+            {/* Tools */}
+            <div className="flex items-center gap-1">
               {tools.map((t) => {
                 const Icon = t.icon;
                 return (
                   <button
                     key={t.name}
                     onClick={() => setTool(t.name)}
-                    className={`w-full aspect-square flex flex-col items-center justify-center rounded-lg transition-all ${
+                    className={`w-8 h-8 flex items-center justify-center rounded transition-all ${
                       tool === t.name
-                        ? "bg-cyan-500/20 border-2 border-cyan-500"
-                        : "bg-white/5 border border-white/10 hover:bg-white/10"
+                        ? "bg-cyan-500/30 text-cyan-400"
+                        : "text-white/60 hover:bg-white/10 hover:text-white"
                     }`}
                     title={t.label}
                   >
-                    <Icon className="w-5 h-5" />
+                    <Icon className="w-4 h-4" />
                   </button>
                 );
               })}
             </div>
 
-            {/* Canvas */}
-            <div className="flex-1">
-              <div className="bg-white rounded-lg shadow-2xl overflow-hidden">
-                <canvas
-                  ref={canvasRef}
-                  width={1200}
-                  height={800}
-                  className="w-full cursor-crosshair"
-                  onMouseDown={startDrawing}
-                  onMouseMove={draw}
-                  onMouseUp={stopDrawing}
-                  onMouseLeave={stopDrawing}
-                  onTouchStart={startDrawing}
-                  onTouchMove={draw}
-                  onTouchEnd={stopDrawing}
+            <div className="w-px h-8 bg-white/10" />
+
+            {/* Upload Image */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-8 h-8 flex items-center justify-center rounded text-white/60 hover:bg-white/10 hover:text-white transition-all"
+              title="Upload Image"
+            >
+              <Upload className="w-4 h-4" />
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleImageUpload(e.target.files[0])}
+              className="hidden"
+            />
+
+            <div className="w-px h-8 bg-white/10" />
+
+            {/* Color Palette */}
+            <div className="flex items-center gap-1">
+              <input
+                type="color"
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                className="w-8 h-8 rounded cursor-pointer border border-white/20"
+              />
+              {colorPalette.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setColor(c)}
+                  className={`w-6 h-6 rounded border transition-all ${
+                    color === c ? "border-cyan-400 scale-110" : "border-white/30"
+                  }`}
+                  style={{ backgroundColor: c }}
                 />
-              </div>
+              ))}
+            </div>
 
-              {/* Bottom Controls */}
-              <div className="mt-4 bg-black/40 border border-white/10 rounded-lg p-4">
-                <div className="flex items-center gap-6">
-                  {/* Color Picker */}
-                  <div>
-                    <label className="text-xs text-gray-400 block mb-2">Color</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={color}
-                        onChange={(e) => setColor(e.target.value)}
-                        className="w-12 h-12 rounded cursor-pointer border-2 border-white/20"
-                      />
-                      <div className="flex flex-wrap gap-1 max-w-md">
-                        {colorPalette.map((c) => (
-                          <button
-                            key={c}
-                            onClick={() => setColor(c)}
-                            className={`w-8 h-8 rounded border-2 transition-all ${
-                              color === c ? "border-cyan-400 scale-110" : "border-white/20"
-                            }`}
-                            style={{ backgroundColor: c }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+            <div className="w-px h-8 bg-white/10" />
 
-                  {/* Brush Size */}
-                  <div>
-                    <label className="text-xs text-gray-400 block mb-2">
-                      Brush Size: {lineWidth}px
-                    </label>
-                    <input
-                      type="range"
-                      min="1"
-                      max="50"
-                      value={lineWidth}
-                      onChange={(e) => setLineWidth(Number(e.target.value))}
-                      className="w-48"
-                    />
-                  </div>
+            {/* Brush Size */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-400">{lineWidth}px</span>
+              <input
+                type="range"
+                min="1"
+                max="50"
+                value={lineWidth}
+                onChange={(e) => setLineWidth(Number(e.target.value))}
+                className="w-24"
+              />
+            </div>
+          </div>
+
+          {/* Canvas */}
+          <div className="relative">
+            <div 
+              className={`bg-white rounded-lg shadow-2xl overflow-hidden transition-all ${
+                isDragging ? "ring-4 ring-cyan-400" : ""
+              }`}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+            >
+              <canvas
+                ref={canvasRef}
+                width={1200}
+                height={650}
+                className="w-full cursor-crosshair"
+                onMouseDown={startDrawing}
+                onMouseMove={draw}
+                onMouseUp={stopDrawing}
+                onMouseLeave={stopDrawing}
+                onTouchStart={startDrawing}
+                onTouchMove={draw}
+                onTouchEnd={stopDrawing}
+              />
+            </div>
+            {isDragging && (
+              <div className="absolute inset-0 flex items-center justify-center bg-cyan-500/10 backdrop-blur-sm rounded-lg pointer-events-none">
+                <div className="text-center">
+                  <ImageIcon className="w-12 h-12 text-cyan-400 mx-auto mb-2" />
+                  <p className="text-white font-semibold">Drop image here</p>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
