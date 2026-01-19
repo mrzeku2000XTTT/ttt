@@ -34,6 +34,7 @@ export default function OliviaAppsPage() {
 
   const bridgeMindApps = [
     { id: "kpaint", name: "KPaint", icon: Brain, path: "KPaint", description: "Paint & Draw", blackBackground: true },
+    { id: "dgt", name: "DGT", icon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/f87dc6ce0_image.png", path: "DGT", description: "Digital Gold Talk", blackBackground: true, circularIcon: true },
     { id: "oracle", name: "Oracle", icon: Eye, path: "Oracle", description: "Seek wisdom and insights" },
     { id: "shill", name: "Shill", icon: Share2, path: "Shill", description: "Your link-in-bio page" },
     { id: "optiqcode", name: "OptiqCode", icon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/e603efa8b_image.png", path: "https://optiqcode.com", description: "Visual Code Identity", isExternal: true, blackBackground: true },
