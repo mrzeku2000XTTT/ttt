@@ -95,6 +95,7 @@ import KASari from './pages/KASari';
 import KFlow from './pages/KFlow';
 import KGigZ from './pages/KGigZ';
 import KP from './pages/KP';
+import KPaint from './pages/KPaint';
 import KUniversity from './pages/KUniversity';
 import KWSuccess from './pages/KWSuccess';
 import KaSkool from './pages/KaSkool';
@@ -136,8 +137,8 @@ import Marketplace from './pages/Marketplace';
 import Matrix from './pages/Matrix';
 import MobileTest from './pages/MobileTest';
 import Movies from './pages/Movies';
-import NASA from './pages/NASA';
 import MyChannel from './pages/MyChannel';
+import NASA from './pages/NASA';
 import NFTMint from './pages/NFTMint';
 import Olatomiwa from './pages/Olatomiwa';
 import OlatomiwaHub from './pages/OlatomiwaHub';
@@ -216,7 +217,7 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import KPaint from './pages/KPaint';
+import DGT from './pages/DGT';
 import __Layout from './Layout.jsx';
 
 
@@ -318,6 +319,7 @@ export const PAGES = {
     "KFlow": KFlow,
     "KGigZ": KGigZ,
     "KP": KP,
+    "KPaint": KPaint,
     "KUniversity": KUniversity,
     "KWSuccess": KWSuccess,
     "KaSkool": KaSkool,
@@ -359,8 +361,8 @@ export const PAGES = {
     "Matrix": Matrix,
     "MobileTest": MobileTest,
     "Movies": Movies,
-    "NASA": NASA,
     "MyChannel": MyChannel,
+    "NASA": NASA,
     "NFTMint": NFTMint,
     "Olatomiwa": Olatomiwa,
     "OlatomiwaHub": OlatomiwaHub,
@@ -439,7 +441,7 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "KPaint": KPaint,
+    "DGT": DGT,
 }
 
 export const pagesConfig = {
