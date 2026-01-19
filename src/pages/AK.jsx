@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Send, Loader2, Bot, Sparkles, Share2, Download, Film, Image as ImageIcon, Lock, Shield, AlertCircle, X } from "lucide-react";
+import { Send, Loader2, Bot, Sparkles, Share2, Download, Image as ImageIcon, Lock, Shield, AlertCircle, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,9 +22,6 @@ function AKContent() {
   const [shareModal, setShareModal] = useState({ open: false, data: "" });
   const [backgroundUrl, setBackgroundUrl] = useState(() => localStorage.getItem('ak_background_url') || '');
   const [bgLoading, setBgLoading] = useState(false);
-  const [showGenres, setShowGenres] = useState(false);
-  const [genreMovies, setGenreMovies] = useState([]);
-  const [loadingGenre, setLoadingGenre] = useState(false);
   const [lastMovie, setLastMovie] = useState(null);
   const [pastedImages, setPastedImages] = useState([]);
   const [splitScreen, setSplitScreen] = useState(false);
@@ -46,8 +43,6 @@ function AKContent() {
   });
   const { getSharedData, getAllSharedData } = useStarGate();
   const messagesEndRef = React.useRef(null);
-
-  const genres = ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Romance', 'Thriller', 'Animation'];
 
   useEffect(() => {
     loadUser();
@@ -246,36 +241,6 @@ function AKContent() {
         setInput(latestData.data.content);
       }
     }
-  };
-
-  const handleGenreClick = async (genre) => {
-    setLoadingGenre(true);
-    setGenreMovies([]);
-    try {
-      const result = await base44.functions.invoke('scrapeMovieGenres', { genre });
-      setGenreMovies(result.data.movies || []);
-    } catch (err) {
-      console.error('Genre error:', err);
-    } finally {
-      setLoadingGenre(false);
-    }
-  };
-
-  const handleMovieSelect = (movie) => {
-    const movieData = {
-      embed_url: movie.embed_url,
-      title: movie.title,
-      source: "0123Movie"
-    };
-    
-    setLastMovie(movieData);
-    setMessages(prev => [...prev, { 
-      role: "assistant", 
-      content: `🎬 Now playing: ${movie.title}`,
-      movie: movieData
-    }]);
-    setShowGenres(false);
-    setGenreMovies([]);
   };
 
   const loadUser = async () => {
@@ -999,61 +964,6 @@ function AKContent() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', flexShrink: 0, paddingTop: '0.5rem', paddingBottom: '0.25rem', background: 'linear-gradient(to bottom, transparent, rgba(59, 7, 100, 0.95) 5%, rgba(59, 7, 100, 1))', marginTop: 'auto' }}>
-          <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center' }}>
-            <Button
-              onClick={() => setShowGenres(!showGenres)}
-              className="bg-white/5 hover:bg-white/10 text-white border border-white/10 h-8 text-xs px-2.5"
-            >
-              <Film className="w-3.5 h-3.5 mr-1.5" />
-              Browse Genres
-            </Button>
-          </div>
-
-          {showGenres && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-2"
-            >
-              <div className="flex flex-wrap gap-1.5 mb-2">
-                {genres.map(genre => (
-                  <button
-                    key={genre}
-                    onClick={() => handleGenreClick(genre)}
-                    className="px-2 py-1 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 rounded text-white text-xs transition-colors"
-                  >
-                    {genre}
-                  </button>
-                ))}
-              </div>
-
-              {loadingGenre && (
-                <div className="flex items-center justify-center py-2">
-                  <Loader2 className="w-5 h-5 text-purple-400 animate-spin" />
-                </div>
-              )}
-
-              {genreMovies.length > 0 && (
-                <div className="grid grid-cols-1 gap-1.5 max-h-40 overflow-y-auto">
-                  {genreMovies.map((movie, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handleMovieSelect(movie)}
-                      className="text-left p-2 bg-white/5 hover:bg-white/10 active:bg-white/15 border border-white/10 rounded transition-colors"
-                    >
-                      <div className="text-white text-xs font-semibold line-clamp-1">{movie.title}</div>
-                      {movie.rating && (
-                        <div className="text-yellow-400 text-[10px] mt-0.5">⭐ {movie.rating}</div>
-                      )}
-                      <div className="text-white/60 text-[10px] line-clamp-1 mt-0.5">{movie.description}</div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </motion.div>
-          )}
-
           {pastedImages.length > 0 && (
             <div className="flex flex-wrap gap-2 p-2 bg-white/5 rounded-lg mb-2">
               {pastedImages.map((url, idx) => (
