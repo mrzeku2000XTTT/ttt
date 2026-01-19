@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ArrowLeft, Download, Trash2, Undo, Redo, Circle, Square, Minus, Droplet, Eraser, Pencil, Image as ImageIcon, Upload } from "lucide-react";
+import { ArrowLeft, Download, Trash2, Undo, Redo, Circle, Square, Minus, Droplet, Eraser, Pencil, Image as ImageIcon, Upload, Grid3x3, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function KPaintPage() {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ export default function KPaintPage() {
   const [canvasState, setCanvasState] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
+  const [showComicTemplates, setShowComicTemplates] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -220,6 +222,69 @@ export default function KPaintPage() {
     setIsDragging(false);
   };
 
+  const applyComicTemplate = (template) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    const w = canvas.width;
+    const h = canvas.height;
+    const margin = 20;
+    
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 4;
+
+    if (template === "2-horizontal") {
+      ctx.strokeRect(margin, margin, w - 2 * margin, h / 2 - 1.5 * margin);
+      ctx.strokeRect(margin, h / 2 + 0.5 * margin, w - 2 * margin, h / 2 - 1.5 * margin);
+    } else if (template === "2-vertical") {
+      ctx.strokeRect(margin, margin, w / 2 - 1.5 * margin, h - 2 * margin);
+      ctx.strokeRect(w / 2 + 0.5 * margin, margin, w / 2 - 1.5 * margin, h - 2 * margin);
+    } else if (template === "3-horizontal") {
+      const panelH = (h - 4 * margin) / 3;
+      ctx.strokeRect(margin, margin, w - 2 * margin, panelH);
+      ctx.strokeRect(margin, panelH + 2 * margin, w - 2 * margin, panelH);
+      ctx.strokeRect(margin, 2 * panelH + 3 * margin, w - 2 * margin, panelH);
+    } else if (template === "4-grid") {
+      const panelW = (w - 3 * margin) / 2;
+      const panelH = (h - 3 * margin) / 2;
+      ctx.strokeRect(margin, margin, panelW, panelH);
+      ctx.strokeRect(panelW + 2 * margin, margin, panelW, panelH);
+      ctx.strokeRect(margin, panelH + 2 * margin, panelW, panelH);
+      ctx.strokeRect(panelW + 2 * margin, panelH + 2 * margin, panelW, panelH);
+    } else if (template === "6-grid") {
+      const panelW = (w - 4 * margin) / 3;
+      const panelH = (h - 3 * margin) / 2;
+      for (let row = 0; row < 2; row++) {
+        for (let col = 0; col < 3; col++) {
+          ctx.strokeRect(
+            margin + col * (panelW + margin),
+            margin + row * (panelH + margin),
+            panelW,
+            panelH
+          );
+        }
+      }
+    } else if (template === "manga-right") {
+      const leftW = w * 0.6;
+      ctx.strokeRect(margin, margin, leftW - 1.5 * margin, h - 2 * margin);
+      const rightW = w - leftW - 0.5 * margin;
+      const topH = h * 0.4;
+      ctx.strokeRect(leftW + 0.5 * margin, margin, rightW - 1.5 * margin, topH - 1.5 * margin);
+      ctx.strokeRect(leftW + 0.5 * margin, topH + 0.5 * margin, rightW - 1.5 * margin, h - topH - 1.5 * margin);
+    }
+
+    saveToHistory();
+    setShowComicTemplates(false);
+  };
+
+  const comicTemplates = [
+    { id: "2-horizontal", name: "2 Panels (Horizontal)", preview: "━━\n━━" },
+    { id: "2-vertical", name: "2 Panels (Vertical)", preview: "┃┃" },
+    { id: "3-horizontal", name: "3 Panels (Horizontal)", preview: "━━\n━━\n━━" },
+    { id: "4-grid", name: "4 Panel Grid", preview: "┏┓\n┗┛" },
+    { id: "6-grid", name: "6 Panel Grid", preview: "┏┳┓\n┗┻┛" },
+    { id: "manga-right", name: "Manga Style", preview: "┏━┓\n┃ ┃\n┗━┛" },
+  ];
+
   const colorPalette = [
     "#000000", "#FFFFFF", "#FF0000", "#00FF00", "#0000FF",
     "#FFFF00", "#FF00FF", "#00FFFF", "#FFA500", "#800080",
@@ -308,6 +373,15 @@ export default function KPaintPage() {
             </div>
 
             <div className="w-px h-8 bg-white/10" />
+
+            {/* Comics Templates */}
+            <button
+              onClick={() => setShowComicTemplates(true)}
+              className="w-8 h-8 flex items-center justify-center rounded text-white/60 hover:bg-white/10 hover:text-white transition-all"
+              title="Comic Templates"
+            >
+              <Grid3x3 className="w-4 h-4" />
+            </button>
 
             {/* Upload Image */}
             <button
@@ -398,6 +472,52 @@ export default function KPaintPage() {
           </div>
         </div>
       </div>
+
+      {/* Comic Templates Modal */}
+      <AnimatePresence>
+        {showComicTemplates && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-gradient-to-br from-zinc-900 to-black border border-white/20 rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+            >
+              <div className="sticky top-0 bg-gradient-to-r from-purple-900/50 to-cyan-900/50 backdrop-blur-xl border-b border-white/10 px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Grid3x3 className="w-5 h-5 text-cyan-400" />
+                  <h3 className="text-xl font-bold text-white">Comic Panel Templates</h3>
+                </div>
+                <button
+                  onClick={() => setShowComicTemplates(false)}
+                  className="text-white/60 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-6 grid grid-cols-2 gap-4">
+                {comicTemplates.map((template) => (
+                  <motion.button
+                    key={template.id}
+                    onClick={() => applyComicTemplate(template.id)}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="bg-white/5 hover:bg-white/10 border border-white/20 hover:border-cyan-400 rounded-lg p-6 transition-all group"
+                  >
+                    <div className="text-4xl font-mono text-white/80 group-hover:text-cyan-400 mb-2 whitespace-pre-line">
+                      {template.preview}
+                    </div>
+                    <div className="text-sm text-white/60 group-hover:text-white font-medium">
+                      {template.name}
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
