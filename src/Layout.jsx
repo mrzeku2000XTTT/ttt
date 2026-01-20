@@ -55,7 +55,7 @@ export default function Layout({ children, currentPageName }) {
     // Add Impact.com verification meta tag
     const metaTag = document.createElement('meta');
     metaTag.name = 'impact-site-verification';
-    metaTag.content = 'f26ac8dc-9c99-4682-9297-d833462babed';
+    metaTag.content = 'f26aa8dc-9c99-4682-9297-a839462bebea';
     document.head.appendChild(metaTag);
     
     const interval = setInterval(checkSubscription, 10000);
