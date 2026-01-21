@@ -55,6 +55,11 @@ export default function CategoriesPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [showIconGenerator, setShowIconGenerator] = useState(false);
   const [customIcons, setCustomIcons] = useState({});
+  const [groups, setGroups] = useState({});
+  const [openGroupId, setOpenGroupId] = useState(null);
+  const [draggedApp, setDraggedApp] = useState(null);
+  const [hoverTarget, setHoverTarget] = useState(null);
+  const [longPressTimer, setLongPressTimer] = useState(null);
   const fileInputRef = React.useRef(null);
 
   useEffect(() => {
