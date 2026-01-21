@@ -777,28 +777,57 @@ export default function CategoriesPage() {
                              {/* Enhanced spotlight effect on hover */}
                              <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-24 h-40 bg-gradient-to-t from-cyan-400/40 via-cyan-500/20 to-transparent opacity-0 group-hover:opacity-100 blur-2xl transition-opacity duration-300 pointer-events-none" />
 
-                             <div className={`w-12 h-12 rounded-2xl ${
-                               app.blackOnBlack 
-                                 ? 'bg-black border-black'
-                                 : 'bg-black/60 backdrop-blur-md border border-white/20 group-hover:border-cyan-400/40 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.4)]'
-                             } flex items-center justify-center relative overflow-hidden transition-all duration-300 ${
-                               snapshot.isDragging ? 'shadow-2xl border-white/30' : ''
-                             }`}>
-                                {(customIcons[app.id] || app.customIcon) && !app.blackOnBlack ? (
-                                  <img 
-                                    src={customIcons[app.id] || app.customIcon} 
-                                    alt={app.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <Icon className={`w-6 h-6 ${app.blackOnBlack ? 'text-black' : 'text-white/90'}`} strokeWidth={1.5} />
-                                )}
-                                {app.premium && (
-                                  <div className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-yellow-500/90 rounded-full flex items-center justify-center">
-                                    <Crown className="w-2 h-2 text-black" />
-                                  </div>
-                                )}
-                              </div>
+<div className={`w-12 h-12 rounded-2xl ${
+  app.blackOnBlack 
+    ? 'bg-black border-black'
+    : `bg-black/60 backdrop-blur-md border border-white/20 group-hover:border-cyan-400/40 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] ${
+        isHovered ? 'border-cyan-400 shadow-[0_0_30px_rgba(6,182,212,0.6)] scale-110' : ''
+      }`
+} flex items-center justify-center relative overflow-hidden transition-all duration-300 ${
+  snapshot.isDragging ? 'shadow-2xl border-white/30' : ''
+}`}>
+  {app.isGroup ? (
+    <div className="relative w-full h-full flex items-center justify-center">
+      <div className="absolute inset-0 grid grid-cols-2 gap-0.5 p-1">
+        {groups[app.id]?.apps.slice(0, 4).map((appId, idx) => {
+          const groupedApp = loadAllDefaultApps().find(a => a.id === appId);
+          if (!groupedApp) return null;
+          const GroupIcon = getIconComponent(groupedApp.icon);
+          return (
+            <div key={idx} className="bg-white/10 rounded flex items-center justify-center">
+              {(customIcons[groupedApp.id] || groupedApp.customIcon) ? (
+                <img 
+                  src={customIcons[groupedApp.id] || groupedApp.customIcon} 
+                  alt=""
+                  className="w-full h-full object-cover rounded"
+                />
+              ) : (
+                <GroupIcon className="w-2.5 h-2.5 text-white/70" strokeWidth={2} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  ) : (
+    <>
+      {(customIcons[app.id] || app.customIcon) && !app.blackOnBlack ? (
+        <img 
+          src={customIcons[app.id] || app.customIcon} 
+          alt={app.name}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <Icon className={`w-6 h-6 ${app.blackOnBlack ? 'text-black' : 'text-white/90'}`} strokeWidth={1.5} />
+      )}
+    </>
+  )}
+  {app.premium && (
+    <div className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-yellow-500/90 rounded-full flex items-center justify-center">
+      <Crown className="w-2 h-2 text-black" />
+    </div>
+  )}
+</div>
                               <span className="text-white/90 text-[9px] font-medium text-center line-clamp-1 w-full px-0.5">
                                 {app.name}
                               </span>
