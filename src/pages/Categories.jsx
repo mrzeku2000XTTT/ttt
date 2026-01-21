@@ -692,6 +692,42 @@ export default function CategoriesPage() {
                   const Icon = getIconComponent(app.icon);
                   const isAdmin = user && user.role === 'admin';
                   const isLocked = app.premium && !isPremium && !isAdmin;
+                  const isHovered = hoverTarget === app.id;
+
+                  const handleTouchStart = (e) => {
+                    const timer = setTimeout(() => {
+                      setDraggedApp(app);
+                    }, 500);
+                    setLongPressTimer(timer);
+                  };
+
+                  const handleTouchEnd = () => {
+                    if (longPressTimer) {
+                      clearTimeout(longPressTimer);
+                      setLongPressTimer(null);
+                    }
+                    if (draggedApp && hoverTarget && draggedApp.id !== hoverTarget) {
+                      if (app.isGroup && draggedApp.id !== app.id) {
+                        addToGroup(app.id, draggedApp.id);
+                      } else if (!draggedApp.isGroup && !app.isGroup && draggedApp.id !== app.id) {
+                        createGroup(draggedApp.id, app.id);
+                      }
+                    }
+                    setDraggedApp(null);
+                    setHoverTarget(null);
+                  };
+
+                  const handleTouchMove = (e) => {
+                    if (draggedApp) {
+                      const touch = e.touches[0];
+                      const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                      const appElement = element?.closest('[data-app-id]');
+                      if (appElement) {
+                        const targetId = appElement.getAttribute('data-app-id');
+                        setHoverTarget(targetId);
+                      }
+                    }
+                  };
 
                   return (
                     <Draggable key={app.id} draggableId={app.id} index={index}>
@@ -701,12 +737,16 @@ export default function CategoriesPage() {
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
                           className={isLocked ? 'opacity-40' : ''}
+                          data-app-id={app.id}
+                          onTouchStart={handleTouchStart}
+                          onTouchEnd={handleTouchEnd}
+                          onTouchMove={handleTouchMove}
                         >
-                          <Link
-                            to={createPageUrl(app.path)}
-                            onClick={handleAppClick}
-                            className="block"
-                          >
+                          {app.isGroup ? (
+                            <button
+                              onClick={() => setOpenGroupId(app.id)}
+                              className="block w-full"
+                            >
                             <motion.div
                              initial={{ opacity: 0, scale: 0.8 }}
                              animate={{ 
