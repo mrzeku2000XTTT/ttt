@@ -430,31 +430,34 @@ export default function CategoriesPage() {
                             className="block"
                           >
                             <motion.div
-                              initial={{ opacity: 0, scale: 0.8 }}
-                              animate={{ 
-                                opacity: 1, 
-                                scale: snapshot.isDragging ? 1.1 : 1,
-                                rotate: snapshot.isDragging ? 5 : 0
-                              }}
-                              transition={{ 
-                                type: "spring",
-                                stiffness: 300,
-                                damping: 20
-                              }}
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                              className="flex flex-col items-center gap-0.5"
-                              style={{
-                                cursor: snapshot.isDragging ? 'grabbing' : 'grab'
-                              }}
+                             initial={{ opacity: 0, scale: 0.8 }}
+                             animate={{ 
+                               opacity: 1, 
+                               scale: snapshot.isDragging ? 1.1 : 1,
+                               rotate: snapshot.isDragging ? 5 : 0
+                             }}
+                             transition={{ 
+                               type: "spring",
+                               stiffness: 300,
+                               damping: 20
+                             }}
+                             whileHover={{ scale: 1.05 }}
+                             whileTap={{ scale: 0.95 }}
+                             className="flex flex-col items-center gap-0.5 relative group"
+                             style={{
+                               cursor: snapshot.isDragging ? 'grabbing' : 'grab'
+                             }}
                             >
-                              <div className={`w-12 h-12 rounded-2xl ${
-                                app.blackOnBlack 
-                                  ? 'bg-black border-black'
-                                  : 'bg-black/60 backdrop-blur-md border border-white/20'
-                              } flex items-center justify-center relative overflow-hidden ${
-                                snapshot.isDragging ? 'shadow-2xl border-white/30' : ''
-                              }`}>
+                             {/* Spotlight effect on hover */}
+                             <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-16 h-24 bg-gradient-to-t from-cyan-500/30 via-cyan-400/20 to-transparent opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-300 pointer-events-none" />
+
+                             <div className={`w-12 h-12 rounded-2xl ${
+                               app.blackOnBlack 
+                                 ? 'bg-black border-black'
+                                 : 'bg-black/60 backdrop-blur-md border border-white/20 group-hover:border-cyan-400/40 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.4)]'
+                             } flex items-center justify-center relative overflow-hidden transition-all duration-300 ${
+                               snapshot.isDragging ? 'shadow-2xl border-white/30' : ''
+                             }`}>
                                 {(customIcons[app.id] || app.customIcon) && !app.blackOnBlack ? (
                                   <img 
                                     src={customIcons[app.id] || app.customIcon} 
