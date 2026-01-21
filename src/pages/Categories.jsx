@@ -543,6 +543,112 @@ export default function CategoriesPage() {
         />
       )}
 
+      {/* Group Modal */}
+      <AnimatePresence>
+        {openGroupId && groups[openGroupId] && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
+            onClick={() => setOpenGroupId(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-black/90 backdrop-blur-xl border border-white/20 rounded-3xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <input
+                  type="text"
+                  value={groups[openGroupId].name}
+                  onChange={(e) => {
+                    const newGroups = {
+                      ...groups,
+                      [openGroupId]: {
+                        ...groups[openGroupId],
+                        name: e.target.value
+                      }
+                    };
+                    saveGroups(newGroups);
+                  }}
+                  className="bg-transparent text-white text-xl font-bold focus:outline-none border-b border-white/20 focus:border-white/40 px-2 py-1"
+                />
+                <button
+                  onClick={() => setOpenGroupId(null)}
+                  className="text-white/60 hover:text-white transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-4 gap-3">
+                {groups[openGroupId].apps.map((appId) => {
+                  const allDefaultApps = loadAllDefaultApps();
+                  const app = allDefaultApps.find(a => a.id === appId);
+                  if (!app) return null;
+
+                  const Icon = getIconComponent(app.icon);
+                  const isAdmin = user && user.role === 'admin';
+                  const isLocked = app.premium && !isPremium && !isAdmin;
+
+                  return (
+                    <div key={appId} className="relative group">
+                      <Link
+                        to={createPageUrl(app.path)}
+                        onClick={() => {
+                          handleAppClick();
+                          setOpenGroupId(null);
+                        }}
+                        className={`block ${isLocked ? 'opacity-40' : ''}`}
+                      >
+                        <motion.div
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          className="flex flex-col items-center gap-1"
+                        >
+                          <div className={`w-14 h-14 rounded-2xl ${
+                            app.blackOnBlack 
+                              ? 'bg-black border-black'
+                              : 'bg-black/60 backdrop-blur-md border border-white/20'
+                          } flex items-center justify-center relative overflow-hidden`}>
+                            {(customIcons[app.id] || app.customIcon) && !app.blackOnBlack ? (
+                              <img 
+                                src={customIcons[app.id] || app.customIcon} 
+                                alt={app.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Icon className={`w-7 h-7 ${app.blackOnBlack ? 'text-black' : 'text-white/90'}`} strokeWidth={1.5} />
+                            )}
+                            {app.premium && (
+                              <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-yellow-500/90 rounded-full flex items-center justify-center">
+                                <Crown className="w-2.5 h-2.5 text-black" />
+                              </div>
+                            )}
+                          </div>
+                          <span className="text-white/90 text-[9px] font-medium text-center line-clamp-1 w-full px-0.5">
+                            {app.name}
+                          </span>
+                        </motion.div>
+                      </Link>
+                      <button
+                        onClick={() => removeFromGroup(openGroupId, appId)}
+                        className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-3 h-3 text-white" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Content */}
       <div className="relative z-10 h-screen w-full flex flex-col px-3 pt-3 pb-3">
         {/* Header */}
