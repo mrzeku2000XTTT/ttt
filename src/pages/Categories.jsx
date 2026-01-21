@@ -218,6 +218,22 @@ export default function CategoriesPage() {
     localStorage.setItem('came_from_categories', 'true');
   };
 
+  const generateFuturisticBackground = async () => {
+    try {
+      const result = await base44.integrations.Core.GenerateImage({
+        prompt: "Dark futuristic background for a high-tech AI crypto dashboard. Deep black and midnight-blue gradient canvas with subtle neon blue and violet light streaks across the scene. Soft glowing particles floating in the air for atmosphere. The bottom half of the image is a glossy, mirror-like reflective floor that faintly reflects imaginary UI icons above it with realistic blur and light falloff. Gentle horizontal light beams in the distance for depth. Soft lens flares and glow halos around light sources. Cinematic, minimal, premium, sci-fi style. No text, no logos, no people, no UI elements. Ultra-high resolution, clean composition. Volumetric lighting, ray-traced reflections, subtle bokeh particles, ambient cyberpunk glow, OLED-style contrast, 8K ultra-sharp. Glossy reflective black floor mirroring soft blue and purple UI light sources, symmetrical layout, minimal sci-fi HUD aesthetic."
+      });
+      
+      const imageUrl = result.url;
+      setBackgroundImage(imageUrl);
+      setIsVideo(false);
+      localStorage.setItem('categories_background', imageUrl);
+      localStorage.setItem('categories_background_type', 'image');
+    } catch (err) {
+      console.error('Failed to generate background:', err);
+    }
+  };
+
   const loadBackgroundImage = () => {
     const saved = localStorage.getItem('categories_background');
     const savedType = localStorage.getItem('categories_background_type');
@@ -225,9 +241,8 @@ export default function CategoriesPage() {
       setBackgroundImage(saved);
       setIsVideo(savedType === 'video');
     } else {
-      // Set default video background for all users
-      setBackgroundImage('https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/b4b2c9ab1_file.mp4');
-      setIsVideo(true);
+      // Generate futuristic background on first load
+      generateFuturisticBackground();
     }
   };
 
