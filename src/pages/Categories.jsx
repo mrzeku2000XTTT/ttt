@@ -265,6 +265,157 @@ export default function CategoriesPage() {
     }
   };
 
+  const loadGroups = () => {
+    try {
+      const saved = localStorage.getItem('categories_groups');
+      if (saved) {
+        setGroups(JSON.parse(saved));
+      }
+    } catch (err) {
+      console.error('Failed to load groups:', err);
+    }
+  };
+
+  const saveGroups = (newGroups) => {
+    localStorage.setItem('categories_groups', JSON.stringify(newGroups));
+    setGroups(newGroups);
+  };
+
+  const createGroup = (app1Id, app2Id) => {
+    const groupId = `group_${Date.now()}`;
+    const newGroups = {
+      ...groups,
+      [groupId]: {
+        id: groupId,
+        name: 'Folder',
+        apps: [app1Id, app2Id]
+      }
+    };
+    
+    // Remove apps from main grid
+    const updatedApps = apps.filter(app => app.id !== app1Id && app.id !== app2Id);
+    updatedApps.push({ id: groupId, name: 'Folder', icon: 'LayoutGrid', isGroup: true });
+    
+    setApps(updatedApps);
+    saveAppsOrder(updatedApps);
+    saveGroups(newGroups);
+  };
+
+  const addToGroup = (groupId, appId) => {
+    const newGroups = {
+      ...groups,
+      [groupId]: {
+        ...groups[groupId],
+        apps: [...groups[groupId].apps, appId]
+      }
+    };
+    
+    const updatedApps = apps.filter(app => app.id !== appId);
+    setApps(updatedApps);
+    saveAppsOrder(updatedApps);
+    saveGroups(newGroups);
+  };
+
+  const removeFromGroup = (groupId, appId) => {
+    const group = groups[groupId];
+    const updatedGroupApps = group.apps.filter(id => id !== appId);
+    
+    if (updatedGroupApps.length <= 1) {
+      // Dissolve group
+      const newGroups = { ...groups };
+      delete newGroups[groupId];
+      
+      const remainingAppId = updatedGroupApps[0];
+      const updatedApps = apps.filter(app => app.id !== groupId);
+      
+      // Add back remaining apps
+      const allDefaultApps = loadAllDefaultApps();
+      if (remainingAppId) {
+        const remainingApp = allDefaultApps.find(a => a.id === remainingAppId);
+        if (remainingApp) updatedApps.push(remainingApp);
+      }
+      const removedApp = allDefaultApps.find(a => a.id === appId);
+      if (removedApp) updatedApps.push(removedApp);
+      
+      setApps(updatedApps);
+      saveAppsOrder(updatedApps);
+      saveGroups(newGroups);
+    } else {
+      const newGroups = {
+        ...groups,
+        [groupId]: {
+          ...group,
+          apps: updatedGroupApps
+        }
+      };
+      
+      // Add app back to main grid
+      const allDefaultApps = loadAllDefaultApps();
+      const removedApp = allDefaultApps.find(a => a.id === appId);
+      if (removedApp) {
+        const updatedApps = [...apps, removedApp];
+        setApps(updatedApps);
+        saveAppsOrder(updatedApps);
+      }
+      saveGroups(newGroups);
+    }
+  };
+
+  const loadAllDefaultApps = () => {
+    const isAdmin = user && user.role === 'admin';
+    return [
+      { id: "appstore", name: "App Store", icon: "LayoutGrid", path: "AppStore" },
+      { id: "oliviaapps", name: "OLIVIA APPS", icon: "Brain", path: "OliviaApps", customIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/1f4d18802_image.png" },
+      { id: "gate", name: "Gate", icon: "Activity", path: "Gate" },
+      { id: "bullmoon", name: "Bull Moon", icon: "Moon", path: "BullMoon" },
+      { id: "timer", name: "Timer", icon: "Activity", path: "Timer" },
+      { id: "tttv", name: "TTTV", icon: "Video", path: "Browser" },
+      { id: "camera", name: "Camera", icon: "Camera", path: "QRScanner" },
+      { id: "photos", name: "Photos", icon: "ImageIcon", path: "Feed" },
+      { id: "feed", name: "Feed", icon: "Users", path: "Feed" },
+      { id: "bullreels", name: "Bull Reels", icon: "Flame", path: "ProofOfBullish" },
+      { id: "kasfans", name: "KAS Fans", icon: "Users", path: "KasFans" },
+      { id: "kaspanodemap", name: "Kaspa Node Map", icon: "Network", path: "KaspaNodeMap" },
+      { id: "life", name: "LIFE", icon: "Activity", path: "Life" },
+      { id: "swan", name: "SWAN.AI", icon: "Terminal", path: "SWAN", premium: true },
+      { id: "agentzk", name: "Agent ZK", icon: "Bot", path: "AgentZK", premium: true },
+      { id: "agentzk2", name: "Agent ZK 2", icon: "Network", path: "AgentZK2", premium: true },
+      { id: "zekuai", name: "Zeku AI", icon: "Brain", path: "ZekuAI", premium: true },
+      { id: "agentfye", name: "Agent FYE", icon: "TrendingUp", path: "AgentFYE" },
+      { id: "knowledge", name: "Knowledge", icon: "BookOpen", path: "KnowledgeBase", blackOnBlack: true },
+      { id: "sendkas", name: "Send KAS", icon: "ArrowUpDown", path: "Bridge" },
+      { id: "wallet", name: "Wallet", icon: "Wallet", path: "Wallet" },
+      { id: "shop", name: "Shop", icon: "ShoppingCart", path: "Shop" },
+      { id: "market", name: "Market", icon: "ShoppingBag", path: "Marketplace" },
+      { id: "tttid", name: "TTT ID", icon: "Shield", path: "RegisterTTTID" },
+      { id: "dagknight", name: "DAGKnight", icon: "Network", path: "DAGKnightWallet", premium: true },
+      { id: "analytics", name: "Analytics", icon: "TrendingUp", path: "Analytics" },
+      { id: "history", name: "History", icon: "History", path: "History" },
+      { id: "god", name: "GOD", icon: "Activity", path: "God" },
+      { id: "singularity", name: "SINGULARITY", icon: "Brain", path: "Singularity", blackOnBlack: true },
+      { id: "veritas", name: "Veritas", icon: "Eye", path: "Veritas" },
+      { id: "vibe", name: "VIBE", icon: "Wallet", path: "Vibe", blackOnBlack: true },
+      { id: "tools", name: "Tools", icon: "Wrench", path: "Tools" },
+      { id: "settings", name: "Settings", icon: "Settings", path: "Settings" },
+      { id: "profile", name: "Profile", icon: "User", path: "Profile" },
+      { id: "premium", name: "Premium", icon: "Crown", path: "Subscription" },
+      { id: "vprogs", name: "VProgs", icon: "Terminal", path: "VProgs" },
+      { id: "ios", name: "iOS", icon: "Settings", path: "IOS" },
+      { id: "hypemind", name: "HYPEMIND", icon: "Brain", path: "HYPEMIND" },
+      { id: "bible", name: "Bible", icon: "BookOpen", path: "Bible" },
+      { id: "articles", name: "Articles", icon: "FileText", path: "Articles" },
+      { id: "bmtuniv", name: "BMT Univ", icon: "BookOpen", path: "BMTUniv" },
+      { id: "llmscraper", name: "LLM Miner", icon: "Terminal", path: "LLMScraper" },
+      { id: "calculator", name: "Calculator", icon: "Activity", path: "Calculator" },
+      ...(isAdmin ? [
+        { id: "arcade", name: "Arcade", icon: "Gamepad2", path: "Arcade" },
+        { id: "hub", name: "Hub", icon: "Activity", path: "Hub" },
+        { id: "ssh", name: "SSH", icon: "Terminal", path: "SSHManager" },
+        { id: "gift", name: "GIFT", icon: "Gift", path: "Gift" }
+      ] : [])
+    ];
+  };
+
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
