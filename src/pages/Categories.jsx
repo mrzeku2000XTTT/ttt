@@ -831,12 +831,74 @@ export default function CategoriesPage() {
                               <span className="text-white/90 text-[9px] font-medium text-center line-clamp-1 w-full px-0.5">
                                 {app.name}
                               </span>
-                            </motion.div>
-                          {app.isGroup ? (
-                            </button>
-                          ) : (
-                            </Link>
-                          )}
+                              </motion.div>
+                              </button>
+                              ) : (
+                              <Link
+                              to={createPageUrl(app.path)}
+                              onClick={handleAppClick}
+                              className="block"
+                              >
+                              <motion.div
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ 
+                                opacity: 1, 
+                                scale: snapshot.isDragging ? 1.1 : 1,
+                                rotate: snapshot.isDragging ? 5 : 0
+                              }}
+                              transition={{ 
+                                type: "spring",
+                                stiffness: 300,
+                                damping: 20
+                              }}
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="flex flex-col items-center gap-0.5 relative group"
+                              style={{
+                                cursor: snapshot.isDragging ? 'grabbing' : 'grab'
+                              }}
+                              >
+                              {/* Permanent spotlight beam from bottom */}
+                              <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-20 h-32 bg-gradient-to-t from-white/10 via-white/5 to-transparent blur-2xl pointer-events-none" 
+                                style={{ 
+                                  opacity: 0.3 + (index % 3) * 0.15,
+                                  animation: `pulse ${2 + (index % 4)}s ease-in-out infinite`
+                                }} 
+                              />
+
+                              {/* Enhanced spotlight effect on hover */}
+                              <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-24 h-40 bg-gradient-to-t from-cyan-400/40 via-cyan-500/20 to-transparent opacity-0 group-hover:opacity-100 blur-2xl transition-opacity duration-300 pointer-events-none" />
+
+                              <div className={`w-12 h-12 rounded-2xl ${
+                                app.blackOnBlack 
+                                  ? 'bg-black border-black'
+                                  : `bg-black/60 backdrop-blur-md border border-white/20 group-hover:border-cyan-400/40 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] ${
+                                      isHovered ? 'border-cyan-400 shadow-[0_0_30px_rgba(6,182,212,0.6)] scale-110' : ''
+                                    }`
+                              } flex items-center justify-center relative overflow-hidden transition-all duration-300 ${
+                                snapshot.isDragging ? 'shadow-2xl border-white/30' : ''
+                              }`}>
+                                {(customIcons[app.id] || app.customIcon) && !app.blackOnBlack ? (
+                                  <img 
+                                    src={customIcons[app.id] || app.customIcon} 
+                                    alt={app.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <Icon className={`w-6 h-6 ${app.blackOnBlack ? 'text-black' : 'text-white/90'}`} strokeWidth={1.5} />
+                                )}
+                                {app.premium && (
+                                  <div className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-yellow-500/90 rounded-full flex items-center justify-center">
+                                    <Crown className="w-2 h-2 text-black" />
+                                  </div>
+                                )}
+                              </div>
+                              <span className="text-white/90 text-[9px] font-medium text-center line-clamp-1 w-full px-0.5">
+                                {app.name}
+                              </span>
+                              </motion.div>
+                              </Link>
+                              )}
                         </div>
                       )}
                     </Draggable>
