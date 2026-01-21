@@ -448,8 +448,16 @@ export default function CategoriesPage() {
                                cursor: snapshot.isDragging ? 'grabbing' : 'grab'
                              }}
                             >
-                             {/* Spotlight effect on hover */}
-                             <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-16 h-24 bg-gradient-to-t from-cyan-500/30 via-cyan-400/20 to-transparent opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-300 pointer-events-none" />
+                             {/* Permanent spotlight beam from bottom */}
+                             <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-20 h-32 bg-gradient-to-t from-white/10 via-white/5 to-transparent blur-2xl pointer-events-none" 
+                               style={{ 
+                                 opacity: 0.3 + (index % 3) * 0.15,
+                                 animation: `pulse ${2 + (index % 4)}s ease-in-out infinite`
+                               }} 
+                             />
+
+                             {/* Enhanced spotlight effect on hover */}
+                             <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-24 h-40 bg-gradient-to-t from-cyan-400/40 via-cyan-500/20 to-transparent opacity-0 group-hover:opacity-100 blur-2xl transition-opacity duration-300 pointer-events-none" />
 
                              <div className={`w-12 h-12 rounded-2xl ${
                                app.blackOnBlack 
