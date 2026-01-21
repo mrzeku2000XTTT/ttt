@@ -66,6 +66,7 @@ export default function CategoriesPage() {
     loadInitialData();
     loadBackgroundImage();
     loadCustomIcons();
+    loadGroups();
   }, []);
 
   useEffect(() => {
