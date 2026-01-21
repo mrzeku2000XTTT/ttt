@@ -832,7 +832,11 @@ export default function CategoriesPage() {
                                 {app.name}
                               </span>
                             </motion.div>
-                          </Link>
+                          {app.isGroup ? (
+                            </button>
+                          ) : (
+                            </Link>
+                          )}
                         </div>
                       )}
                     </Draggable>
