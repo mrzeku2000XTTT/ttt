@@ -307,10 +307,18 @@ export default function ImageHistoryPage() {
             try {
               console.log(`Agent 1: Generating tile ${i + 1}/10 (attempt ${4 - retries}/3)...`);
               const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\nSTORYBOARD SHOT ${i + 1}/10 - Camera Angle: ${cameraAngles[i]}\nProfessional cinematography, consistent subject and style, high quality output`;
-              const response = await base44.integrations.Core.GenerateImage({
+              
+              // Add timeout to prevent infinite hanging
+              const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Generation timeout after 60s')), 60000)
+              );
+              
+              const generatePromise = base44.integrations.Core.GenerateImage({
                 prompt: enhancedPrompt,
                 ...(imageUrls.length > 0 && { existing_image_urls: imageUrls })
               });
+              
+              const response = await Promise.race([generatePromise, timeoutPromise]);
 
               if (response?.url) {
                 console.log(`✅ Agent 1: Tile ${i + 1}/10 complete`);
@@ -390,10 +398,18 @@ export default function ImageHistoryPage() {
             try {
               console.log(`Agent 2: Generating tile ${i + 1}/10 (attempt ${4 - retries}/3)...`);
               const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\nSTORYBOARD SHOT ${i + 1}/10 - Camera Angle: ${cameraAngles[i]}\nProfessional cinematography, consistent subject and style, high quality output`;
-              const response = await base44.integrations.Core.GenerateImage({
+              
+              // Add timeout to prevent infinite hanging
+              const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Generation timeout after 60s')), 60000)
+              );
+              
+              const generatePromise = base44.integrations.Core.GenerateImage({
                 prompt: enhancedPrompt,
                 ...(imageUrls.length > 0 && { existing_image_urls: imageUrls })
               });
+              
+              const response = await Promise.race([generatePromise, timeoutPromise]);
 
               if (response?.url) {
                 console.log(`✅ Agent 2: Tile ${i + 1}/10 complete`);
