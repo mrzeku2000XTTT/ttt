@@ -634,27 +634,45 @@ export default function ImageHistoryPage() {
     if (!confirm(`Delete ${selectedProjects.length} selected project(s)?`)) return;
     
     try {
-      const entriesToDelete = history.filter(entry => 
-        selectedProjects.includes(entry.project_id || entry.user_prompt?.match(/\[Project ID: ([^\]]+)\]/)?.[1] || 'Unknown')
-      );
+      const entriesToDelete = history.filter(entry => {
+        const projectId = entry.project_id || entry.user_prompt?.match(/\[Project ID: ([^\]]+)\]/)?.[1] || 'Unknown';
+        return selectedProjects.includes(projectId);
+      });
+
+      console.log(`Deleting ${entriesToDelete.length} entries from ${selectedProjects.length} projects`);
+
+      let deletedCount = 0;
+      let failedCount = 0;
 
       for (const entry of entriesToDelete) {
         try {
           await base44.entities.RemixAILearning.delete(entry.id);
+          deletedCount++;
         } catch (err) {
-          console.log('Failed to delete from DB, trying localStorage');
-          const localHistory = JSON.parse(localStorage.getItem('rmx_local_history') || '[]');
-          const filtered = localHistory.filter(item => item.id !== entry.id);
-          localStorage.setItem('rmx_local_history', JSON.stringify(filtered));
+          console.log('Failed to delete from DB, trying localStorage for entry:', entry.id);
+          try {
+            const localHistory = JSON.parse(localStorage.getItem('rmx_local_history') || '[]');
+            const filtered = localHistory.filter(item => item.id !== entry.id);
+            localStorage.setItem('rmx_local_history', JSON.stringify(filtered));
+            deletedCount++;
+          } catch (localErr) {
+            console.error('Failed to delete from localStorage:', localErr);
+            failedCount++;
+          }
         }
       }
 
       setSelectedProjects([]);
       await loadHistory();
-      alert('Selected projects deleted successfully');
+      
+      if (failedCount === 0) {
+        alert(`Successfully deleted ${deletedCount} images from ${selectedProjects.length} project(s)`);
+      } else {
+        alert(`Deleted ${deletedCount} images, but ${failedCount} failed to delete`);
+      }
     } catch (err) {
       console.error('Failed to delete projects:', err);
-      alert('Failed to delete some projects');
+      alert('Failed to delete projects: ' + err.message);
     }
   };
 
