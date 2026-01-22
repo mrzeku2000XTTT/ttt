@@ -37,7 +37,7 @@ export default function ImageHistoryPage() {
   const [user, setUser] = useState(null);
   const [showFeatures, setShowFeatures] = useState(false);
   const [selectedProjects, setSelectedProjects] = useState([]);
-  const [aspectRatio, setAspectRatio] = useState(() => localStorage.getItem('rmx_aspect_ratio') || '1:1');
+  const [aspectRatio, setAspectRatio] = useState(() => localStorage.getItem('rmx_aspect_ratio') || '4:3');
 
   useEffect(() => {
     loadHistory();
@@ -1241,6 +1241,28 @@ export default function ImageHistoryPage() {
                 <p className="text-zinc-500 text-xs">
                   Selected: <span className="text-cyan-400 font-semibold">{aspectRatio}</span>
                 </p>
+                <Button
+                  onClick={() => {
+                    const dimensionsMap = {
+                      '1:1': '1024x1024 Square',
+                      '4:3': '1024x768 Landscape',
+                      '3:4': '768x1024 Portrait',
+                      '16:9': '1280x720 Widescreen'
+                    };
+                    const aspectInfo = dimensionsMap[aspectRatio] || '1024x1024 Square';
+                    const additionalInstruction = `\n\n[ASPECT RATIO APPLIED: ${aspectInfo}]`;
+                    
+                    if (!prompt.includes('[ASPECT RATIO APPLIED:')) {
+                      setPrompt(prev => prev + additionalInstruction);
+                    } else {
+                      setPrompt(prev => prev.replace(/\[ASPECT RATIO APPLIED:.*?\]/g, `[ASPECT RATIO APPLIED: ${aspectInfo}]`));
+                    }
+                    setActiveTab('control');
+                  }}
+                  className="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-semibold"
+                >
+                  Apply Aspect Ratio
+                </Button>
               </div>
 
               {/* Mobile Upload Sections */}
