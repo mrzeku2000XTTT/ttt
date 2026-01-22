@@ -233,10 +233,31 @@ export default function ImageHistoryPage() {
     setShowProjectOptions(false);
   };
 
-  const handleStartGeneration = () => {
+  const handleStartGeneration = async () => {
     setIsGenerating(true);
     setShouldStop(false);
     setIsPaused(false);
+    
+    // Test with a simple single image first to diagnose
+    try {
+      console.log('🧪 Testing image generation...');
+      const testResponse = await base44.integrations.Core.GenerateImage({
+        prompt: 'a simple red circle on white background, test image'
+      });
+      console.log('✅ Test response:', testResponse);
+      
+      if (!testResponse || !testResponse.url) {
+        alert(`❌ Image generation not working. Response: ${JSON.stringify(testResponse)}`);
+        setIsGenerating(false);
+        return;
+      }
+    } catch (err) {
+      console.error('❌ Test generation failed:', err);
+      alert(`❌ Image generation error: ${err.message}`);
+      setIsGenerating(false);
+      return;
+    }
+    
     generateImages();
   };
 
@@ -319,6 +340,8 @@ export default function ImageHistoryPage() {
               });
               
               const response = await Promise.race([generatePromise, timeoutPromise]);
+              
+              console.log(`📦 Agent 1 Response for tile ${i + 1}:`, response);
 
               if (response?.url) {
                 console.log(`✅ Agent 1: Tile ${i + 1}/10 complete`);
@@ -372,8 +395,12 @@ export default function ImageHistoryPage() {
               }
             } catch (err) {
               console.error(`❌ Agent 1: Tile ${i + 1} error:`, err);
+              console.error(`❌ Full error details:`, err.message, err.stack);
               retries--;
-              if (retries > 0) console.log(`⚠️ Agent 1: Retrying tile ${i + 1}...`);
+              if (retries > 0) {
+                console.log(`⚠️ Agent 1: Retrying tile ${i + 1}...`);
+                await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s before retry
+              }
             }
           }
 
@@ -410,6 +437,8 @@ export default function ImageHistoryPage() {
               });
               
               const response = await Promise.race([generatePromise, timeoutPromise]);
+              
+              console.log(`📦 Agent 2 Response for tile ${i + 1}:`, response);
 
               if (response?.url) {
                 console.log(`✅ Agent 2: Tile ${i + 1}/10 complete`);
@@ -463,8 +492,12 @@ export default function ImageHistoryPage() {
               }
             } catch (err) {
               console.error(`❌ Agent 2: Tile ${i + 1} error:`, err);
+              console.error(`❌ Full error details:`, err.message, err.stack);
               retries--;
-              if (retries > 0) console.log(`⚠️ Agent 2: Retrying tile ${i + 1}...`);
+              if (retries > 0) {
+                console.log(`⚠️ Agent 2: Retrying tile ${i + 1}...`);
+                await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s before retry
+              }
             }
           }
 
