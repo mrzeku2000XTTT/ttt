@@ -42,7 +42,29 @@ export default function ImageHistoryPage() {
     loadHistory();
     checkAuth();
     loadWorkflowState();
+    resumeGenerationIfNeeded();
   }, []);
+
+  const resumeGenerationIfNeeded = () => {
+    const savedGen = localStorage.getItem('rmx_active_generation');
+    if (savedGen) {
+      const genState = JSON.parse(savedGen);
+      if (genState.isActive && !genState.completed) {
+        setIsGenerating(true);
+        setPrompt(genState.prompt);
+        setProjectId(genState.projectId);
+        setReferenceImages(genState.referenceImages || [null, null]);
+        setSubjectImage(genState.subjectImage);
+        setStyleImage(genState.styleImage);
+        setSceneImage(genState.sceneImage);
+        setCompletedImages(genState.completedImages || 0);
+        setGeneratedImages(genState.generatedImages || Array(10).fill(null));
+        
+        // Resume generation
+        generateImages(genState.completedImages || 0);
+      }
+    }
+  };
 
   useEffect(() => {
     // Save workflow state to localStorage
@@ -237,7 +259,22 @@ export default function ImageHistoryPage() {
     setIsGenerating(true);
     setShouldStop(false);
     setIsPaused(false);
-    generateImages();
+    
+    // Save generation state to localStorage
+    localStorage.setItem('rmx_active_generation', JSON.stringify({
+      isActive: true,
+      completed: false,
+      prompt,
+      projectId,
+      referenceImages,
+      subjectImage,
+      styleImage,
+      sceneImage,
+      completedImages: 0,
+      generatedImages: Array(10).fill(null)
+    }));
+    
+    generateImages(0);
   };
 
   const handlePause = () => {
@@ -248,10 +285,12 @@ export default function ImageHistoryPage() {
     setIsPaused(false);
   };
 
-  const generateImages = async () => {
-    setProgress(0);
-    setCompletedImages(0);
-    setGeneratedImages(Array(10).fill(null));
+  const generateImages = async (startFrom = 0) => {
+    if (startFrom === 0) {
+      setProgress(0);
+      setCompletedImages(0);
+      setGeneratedImages(Array(10).fill(null));
+    }
     
     try {
       // Collect ALL images: SUBJECT, STYLE, SCENE, and references
@@ -293,7 +332,7 @@ export default function ImageHistoryPage() {
       
       // Run two RMX ULTRA agents in parallel
       const agent1 = async () => {
-        for (let i = 0; i < 5; i++) {
+        for (let i = startFrom < 5 ? startFrom : 0; i < 5; i++) {
           if (shouldStop) break;
           while (isPaused && !shouldStop) {
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -390,7 +429,7 @@ export default function ImageHistoryPage() {
       };
 
       const agent2 = async () => {
-        for (let i = 5; i < 10; i++) {
+        for (let i = (startFrom >= 5 ? startFrom : 5); i < 10; i++) {
           if (shouldStop) break;
           while (isPaused && !shouldStop) {
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -490,10 +529,19 @@ export default function ImageHistoryPage() {
 
       console.log('✅ Generation complete!');
       setProgress(100);
+      
+      // Mark as completed in localStorage
+      const savedGen = JSON.parse(localStorage.getItem('rmx_active_generation') || '{}');
+      savedGen.completed = true;
+      savedGen.isActive = false;
+      localStorage.setItem('rmx_active_generation', JSON.stringify(savedGen));
+      
       await loadHistory();
     } catch (err) {
       console.error('Generation failed:', err);
-      alert('Failed to generate images: ' + err.message);
+      
+      // Clear generation state on error
+      localStorage.removeItem('rmx_active_generation');
     } finally {
       setIsGenerating(false);
       setRmxActivated(false);
@@ -506,6 +554,7 @@ export default function ImageHistoryPage() {
     setShouldStop(true);
     setIsGenerating(false);
     setIsPaused(false);
+    localStorage.removeItem('rmx_active_generation');
   };
 
   const handleDownloadAll = async (projectImages) => {
