@@ -346,7 +346,17 @@ export default function ImageHistoryPage() {
           while (retries > 0 && !success && !shouldStop) {
             try {
               console.log(`Agent 1: Generating tile ${i + 1}/10 (attempt ${4 - retries}/3)...`);
-              const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\n🎬 CRITICAL CAMERA INSTRUCTION - SHOT ${i + 1}/10:\n${cameraAngles[i]}\n\nIMPORTANT: This shot MUST be visually DIFFERENT from other shots. Apply the exact camera angle described above. Keep subject consistent but CHANGE the camera position, framing, and perspective dramatically.\n\nAspect ratio: ${aspectRatio}\nProfessional cinematography, high quality output`;
+              
+              // Map aspect ratio to actual dimensions
+              const dimensionsMap = {
+                '1:1': '1024x1024',
+                '4:3': '1024x768',
+                '3:4': '768x1024',
+                '16:9': '1280x720'
+              };
+              const dimensions = dimensionsMap[aspectRatio] || '1024x1024';
+              
+              const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\n🎬 CRITICAL CAMERA INSTRUCTION - SHOT ${i + 1}/10:\n${cameraAngles[i]}\n\nIMPORTANT: This shot MUST be visually DIFFERENT from other shots. Apply the exact camera angle described above. Keep subject consistent but CHANGE the camera position, framing, and perspective dramatically.\n\nImage dimensions: ${dimensions} (aspect ratio ${aspectRatio})\nProfessional cinematography, high quality output`;
               
               // Add timeout to prevent infinite hanging
               const timeoutPromise = new Promise((_, reject) => 
@@ -449,7 +459,17 @@ export default function ImageHistoryPage() {
           while (retries > 0 && !success && !shouldStop) {
             try {
               console.log(`Agent 2: Generating tile ${i + 1}/10 (attempt ${4 - retries}/3)...`);
-              const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\n🎬 CRITICAL CAMERA INSTRUCTION - SHOT ${i + 1}/10:\n${cameraAngles[i]}\n\nIMPORTANT: This shot MUST be visually DIFFERENT from other shots. Apply the exact camera angle described above. Keep subject consistent but CHANGE the camera position, framing, and perspective dramatically.\n\nAspect ratio: ${aspectRatio}\nProfessional cinematography, high quality output`;
+              
+              // Map aspect ratio to actual dimensions
+              const dimensionsMap = {
+                '1:1': '1024x1024',
+                '4:3': '1024x768',
+                '3:4': '768x1024',
+                '16:9': '1280x720'
+              };
+              const dimensions = dimensionsMap[aspectRatio] || '1024x1024';
+              
+              const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\n🎬 CRITICAL CAMERA INSTRUCTION - SHOT ${i + 1}/10:\n${cameraAngles[i]}\n\nIMPORTANT: This shot MUST be visually DIFFERENT from other shots. Apply the exact camera angle described above. Keep subject consistent but CHANGE the camera position, framing, and perspective dramatically.\n\nImage dimensions: ${dimensions} (aspect ratio ${aspectRatio})\nProfessional cinematography, high quality output`;
               
               // Add timeout to prevent infinite hanging
               const timeoutPromise = new Promise((_, reject) => 
