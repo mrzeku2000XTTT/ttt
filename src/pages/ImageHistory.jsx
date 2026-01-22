@@ -233,31 +233,10 @@ export default function ImageHistoryPage() {
     setShowProjectOptions(false);
   };
 
-  const handleStartGeneration = async () => {
+  const handleStartGeneration = () => {
     setIsGenerating(true);
     setShouldStop(false);
     setIsPaused(false);
-    
-    // Test with a simple single image first to diagnose
-    try {
-      console.log('🧪 Testing image generation...');
-      const testResponse = await base44.integrations.Core.GenerateImage({
-        prompt: 'a simple red circle on white background, test image'
-      });
-      console.log('✅ Test response:', testResponse);
-      
-      if (!testResponse || !testResponse.url) {
-        alert(`❌ Image generation not working. Response: ${JSON.stringify(testResponse)}`);
-        setIsGenerating(false);
-        return;
-      }
-    } catch (err) {
-      console.error('❌ Test generation failed:', err);
-      alert(`❌ Image generation error: ${err.message}`);
-      setIsGenerating(false);
-      return;
-    }
-    
     generateImages();
   };
 
