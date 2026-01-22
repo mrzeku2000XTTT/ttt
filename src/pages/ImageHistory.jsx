@@ -37,6 +37,7 @@ export default function ImageHistoryPage() {
   const [user, setUser] = useState(null);
   const [showFeatures, setShowFeatures] = useState(false);
   const [selectedProjects, setSelectedProjects] = useState([]);
+  const [imageSize, setImageSize] = useState(() => localStorage.getItem('rmx_image_size') || '1024x1024');
 
   useEffect(() => {
     loadHistory();
@@ -316,18 +317,18 @@ export default function ImageHistoryPage() {
         basePrompt += "- HIGH QUALITY, professional photography, 8K resolution, sharp focus, detailed\n";
       }
       
-      // Storyboard camera angles for cinematic sequencing
+      // Storyboard camera angles for cinematic sequencing - MORE DISTINCT
       const cameraAngles = [
-        "establishing wide shot, full scene context, cinematic framing",
-        "medium shot, main subject focus, eye level perspective",
-        "close-up on subject, emotional detail, shallow depth of field",
-        "3/4 angle view, dynamic composition, professional photography angle",
-        "side profile view, dramatic lighting, artistic perspective",
-        "over the shoulder shot, cinematic storytelling angle",
-        "low angle shot, heroic perspective, looking up at subject",
-        "high angle shot, bird's eye view, environmental context",
-        "Dutch angle, tilted dynamic perspective, tension and energy",
-        "extreme close-up, intimate detail focus, macro perspective"
+        "WIDE ESTABLISHING SHOT: full body visible, entire scene in frame, maximum environmental context, zoomed out perspective, show full background",
+        "EYE-LEVEL MEDIUM SHOT: waist up view, direct straight-on angle, neutral perspective, standard portrait framing",
+        "EXTREME CLOSE-UP: face only, emotional details, macro perspective, tight crop on facial features",
+        "LOW ANGLE SHOT: camera positioned below looking UP at subject, heroic powerful perspective, subject towers above viewer",
+        "HIGH ANGLE SHOT: camera positioned above looking DOWN at subject, bird's eye view, subject appears smaller",
+        "DRAMATIC SIDE PROFILE: 90-degree angle, complete side view, silhouette potential, profile lighting",
+        "OVER-THE-SHOULDER: camera behind subject's shoulder, looking at what they see, immersive POV perspective",
+        "DUTCH ANGLE TILT: camera tilted 45 degrees, diagonal horizon line, disorienting dynamic composition",
+        "EXTREME WIDE SHOT: subject very small in frame, vast environment, maximum context, aerial perspective",
+        "PORTRAIT CLOSE-UP: shoulders and head, centered composition, shallow depth of field, bokeh background"
       ];
       
       // Run two RMX ULTRA agents in parallel
@@ -345,7 +346,7 @@ export default function ImageHistoryPage() {
           while (retries > 0 && !success && !shouldStop) {
             try {
               console.log(`Agent 1: Generating tile ${i + 1}/10 (attempt ${4 - retries}/3)...`);
-              const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\nSTORYBOARD SHOT ${i + 1}/10 - Camera Angle: ${cameraAngles[i]}\nProfessional cinematography, consistent subject and style, high quality output`;
+              const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\n🎬 CRITICAL CAMERA INSTRUCTION - SHOT ${i + 1}/10:\n${cameraAngles[i]}\n\nIMPORTANT: This shot MUST be visually DIFFERENT from other shots. Apply the exact camera angle described above. Keep subject consistent but CHANGE the camera position, framing, and perspective dramatically.\n\nImage size: ${imageSize}\nProfessional cinematography, high quality output`;
               
               // Add timeout to prevent infinite hanging
               const timeoutPromise = new Promise((_, reject) => 
@@ -448,7 +449,7 @@ export default function ImageHistoryPage() {
           while (retries > 0 && !success && !shouldStop) {
             try {
               console.log(`Agent 2: Generating tile ${i + 1}/10 (attempt ${4 - retries}/3)...`);
-              const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\nSTORYBOARD SHOT ${i + 1}/10 - Camera Angle: ${cameraAngles[i]}\nProfessional cinematography, consistent subject and style, high quality output`;
+              const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\n🎬 CRITICAL CAMERA INSTRUCTION - SHOT ${i + 1}/10:\n${cameraAngles[i]}\n\nIMPORTANT: This shot MUST be visually DIFFERENT from other shots. Apply the exact camera angle described above. Keep subject consistent but CHANGE the camera position, framing, and perspective dramatically.\n\nImage size: ${imageSize}\nProfessional cinematography, high quality output`;
               
               // Add timeout to prevent infinite hanging
               const timeoutPromise = new Promise((_, reject) => 
@@ -1173,6 +1174,32 @@ export default function ImageHistoryPage() {
 
           {activeTab === 'settings' && (
             <div className="space-y-4">
+              {/* Image Size Selection */}
+              <div className="space-y-3">
+                <label className="text-zinc-400 text-sm font-semibold">Image Size</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {['1024x1024', '1024x768', '768x1024', '1280x720'].map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => {
+                        setImageSize(size);
+                        localStorage.setItem('rmx_image_size', size);
+                      }}
+                      className={`px-4 py-3 rounded-lg font-semibold text-sm transition-all ${
+                        imageSize === size
+                          ? 'bg-purple-500/30 text-purple-400 border-2 border-purple-500'
+                          : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 border-2 border-transparent'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-zinc-500 text-xs">
+                  Selected: <span className="text-cyan-400 font-semibold">{imageSize}</span>
+                </p>
+              </div>
+
               {/* Mobile Upload Sections */}
               <div className="lg:hidden grid grid-cols-3 gap-3">
                 {/* SUBJECT Section */}
