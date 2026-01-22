@@ -371,7 +371,13 @@ export default function ImageHistoryPage() {
                   return updated;
                 });
 
-                setCompletedImages(prev => prev + 1);
+                setCompletedImages(prev => {
+                  const newCount = prev + 1;
+                  const savedGen = JSON.parse(localStorage.getItem('rmx_active_generation') || '{}');
+                  savedGen.completedImages = newCount;
+                  localStorage.setItem('rmx_active_generation', JSON.stringify(savedGen));
+                  return newCount;
+                });
 
                 let walletAddress = 'guest';
                 try {
@@ -468,7 +474,13 @@ export default function ImageHistoryPage() {
                   return updated;
                 });
 
-                setCompletedImages(prev => prev + 1);
+                setCompletedImages(prev => {
+                  const newCount = prev + 1;
+                  const savedGen = JSON.parse(localStorage.getItem('rmx_active_generation') || '{}');
+                  savedGen.completedImages = newCount;
+                  localStorage.setItem('rmx_active_generation', JSON.stringify(savedGen));
+                  return newCount;
+                });
 
                 let walletAddress = 'guest';
                 try {
