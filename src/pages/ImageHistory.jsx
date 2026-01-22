@@ -37,7 +37,7 @@ export default function ImageHistoryPage() {
   const [user, setUser] = useState(null);
   const [showFeatures, setShowFeatures] = useState(false);
   const [selectedProjects, setSelectedProjects] = useState([]);
-  const [imageSize, setImageSize] = useState(() => localStorage.getItem('rmx_image_size') || '1024x1024');
+  const [aspectRatio, setAspectRatio] = useState(() => localStorage.getItem('rmx_aspect_ratio') || '1:1');
 
   useEffect(() => {
     loadHistory();
@@ -346,7 +346,7 @@ export default function ImageHistoryPage() {
           while (retries > 0 && !success && !shouldStop) {
             try {
               console.log(`Agent 1: Generating tile ${i + 1}/10 (attempt ${4 - retries}/3)...`);
-              const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\n🎬 CRITICAL CAMERA INSTRUCTION - SHOT ${i + 1}/10:\n${cameraAngles[i]}\n\nIMPORTANT: This shot MUST be visually DIFFERENT from other shots. Apply the exact camera angle described above. Keep subject consistent but CHANGE the camera position, framing, and perspective dramatically.\n\nImage size: ${imageSize}\nProfessional cinematography, high quality output`;
+              const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\n🎬 CRITICAL CAMERA INSTRUCTION - SHOT ${i + 1}/10:\n${cameraAngles[i]}\n\nIMPORTANT: This shot MUST be visually DIFFERENT from other shots. Apply the exact camera angle described above. Keep subject consistent but CHANGE the camera position, framing, and perspective dramatically.\n\nAspect ratio: ${aspectRatio}\nProfessional cinematography, high quality output`;
               
               // Add timeout to prevent infinite hanging
               const timeoutPromise = new Promise((_, reject) => 
@@ -449,7 +449,7 @@ export default function ImageHistoryPage() {
           while (retries > 0 && !success && !shouldStop) {
             try {
               console.log(`Agent 2: Generating tile ${i + 1}/10 (attempt ${4 - retries}/3)...`);
-              const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\n🎬 CRITICAL CAMERA INSTRUCTION - SHOT ${i + 1}/10:\n${cameraAngles[i]}\n\nIMPORTANT: This shot MUST be visually DIFFERENT from other shots. Apply the exact camera angle described above. Keep subject consistent but CHANGE the camera position, framing, and perspective dramatically.\n\nImage size: ${imageSize}\nProfessional cinematography, high quality output`;
+              const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\n🎬 CRITICAL CAMERA INSTRUCTION - SHOT ${i + 1}/10:\n${cameraAngles[i]}\n\nIMPORTANT: This shot MUST be visually DIFFERENT from other shots. Apply the exact camera angle described above. Keep subject consistent but CHANGE the camera position, framing, and perspective dramatically.\n\nAspect ratio: ${aspectRatio}\nProfessional cinematography, high quality output`;
               
               // Add timeout to prevent infinite hanging
               const timeoutPromise = new Promise((_, reject) => 
@@ -843,9 +843,9 @@ export default function ImageHistoryPage() {
 
           {/* Image Viewer Modal */}
           {viewingImage && (
-            <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 lg:p-8" onClick={() => setViewingImage(null)}>
-              <div className="relative max-w-5xl max-h-full w-full" onClick={(e) => e.stopPropagation()}>
-                <img src={viewingImage} alt="Full view" className="w-full h-full object-contain rounded-lg" />
+            <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4" onClick={() => setViewingImage(null)}>
+              <div className="relative w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                <img src={viewingImage} alt="Full view" className="max-w-full max-h-full object-contain rounded-lg" />
                 <div className="absolute top-4 right-4 flex gap-2">
                   <Button
                     onClick={() => {
@@ -1174,29 +1174,34 @@ export default function ImageHistoryPage() {
 
           {activeTab === 'settings' && (
             <div className="space-y-4">
-              {/* Image Size Selection */}
+              {/* Aspect Ratio Selection */}
               <div className="space-y-3">
-                <label className="text-zinc-400 text-sm font-semibold">Image Size</label>
+                <label className="text-zinc-400 text-sm font-semibold">Aspect Ratio</label>
                 <div className="grid grid-cols-2 gap-2">
-                  {['1024x1024', '1024x768', '768x1024', '1280x720'].map((size) => (
+                  {[
+                    { ratio: '1:1', label: 'Square (1:1)' },
+                    { ratio: '4:3', label: 'Landscape (4:3)' },
+                    { ratio: '3:4', label: 'Portrait (3:4)' },
+                    { ratio: '16:9', label: 'Widescreen (16:9)' }
+                  ].map((option) => (
                     <button
-                      key={size}
+                      key={option.ratio}
                       onClick={() => {
-                        setImageSize(size);
-                        localStorage.setItem('rmx_image_size', size);
+                        setAspectRatio(option.ratio);
+                        localStorage.setItem('rmx_aspect_ratio', option.ratio);
                       }}
-                      className={`px-4 py-3 rounded-lg font-semibold text-sm transition-all ${
-                        imageSize === size
+                      className={`px-4 py-3 rounded-lg font-semibold text-xs transition-all ${
+                        aspectRatio === option.ratio
                           ? 'bg-purple-500/30 text-purple-400 border-2 border-purple-500'
                           : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 border-2 border-transparent'
                       }`}
                     >
-                      {size}
+                      {option.label}
                     </button>
                   ))}
                 </div>
                 <p className="text-zinc-500 text-xs">
-                  Selected: <span className="text-cyan-400 font-semibold">{imageSize}</span>
+                  Selected: <span className="text-cyan-400 font-semibold">{aspectRatio}</span>
                 </p>
               </div>
 
