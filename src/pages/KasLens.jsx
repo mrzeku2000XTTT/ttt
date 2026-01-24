@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 export default function KasLensPage() {
   return (
-    <div className="fixed inset-0 bg-black flex flex-col" style={{ top: 'calc(var(--sat, 0px) + 7.5rem)' }}>
+    <div className="w-full bg-black flex flex-col" style={{ height: 'calc(100vh - 7.5rem - var(--sat, 0px))' }}>
       {/* Header */}
       <div className="bg-zinc-950 border-b border-zinc-800 p-4 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
@@ -28,7 +28,7 @@ export default function KasLensPage() {
       </div>
 
       {/* Iframe */}
-      <div className="flex-1">
+      <div className="flex-1 w-full">
         <iframe
           src="https://kaspa-lens.com/"
           className="w-full h-full border-0"
