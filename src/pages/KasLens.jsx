@@ -28,7 +28,7 @@ export default function KasLensPage() {
       </div>
 
       {/* Iframe */}
-      <div className="flex-1 w-full">
+      <div className="flex-1 w-full" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 4rem)' }}>
         <iframe
           src="https://kaspa-lens.com/"
           className="w-full h-full border-0"
