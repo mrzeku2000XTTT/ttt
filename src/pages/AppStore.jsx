@@ -82,6 +82,7 @@ export default function AppStorePage() {
     { name: "K-University", icon: "Link2", path: "KUniversity", category: "Education", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/d84e3c738_image.png", circular: true },
     { name: "DGT", icon: "Link2", path: "DGT", category: "Community", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/f87dc6ce0_image.png", circular: true },
     { name: "Olivia Apps", icon: "Link2", path: "OliviaApps", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/1f4d18802_image.png" },
+    { name: "KasLens", icon: "Link2", path: "KasLens", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/5169e3904_images.png", circular: true },
     ];
 
   const getIconComponent = (iconName) => {
