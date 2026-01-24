@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 
 export default function KasLensPage() {
   return (
-    <div className="min-h-screen bg-black flex flex-col">
+    <div className="fixed inset-0 bg-black flex flex-col" style={{ top: 'calc(var(--sat, 0px) + 7.5rem)' }}>
       {/* Header */}
-      <div className="bg-zinc-950 border-b border-zinc-800 p-4 flex items-center justify-between">
+      <div className="bg-zinc-950 border-b border-zinc-800 p-4 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
           <img 
             src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/5169e3904_images.png"

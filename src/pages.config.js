@@ -103,6 +103,7 @@ import KaSkool from './pages/KaSkool';
 import KaSkoolProfile from './pages/KaSkoolProfile';
 import KasCompute from './pages/KasCompute';
 import KasFans from './pages/KasFans';
+import KasLens from './pages/KasLens';
 import KasPlay from './pages/KasPlay';
 import Kasdate from './pages/Kasdate';
 import Kasmi from './pages/Kasmi';
@@ -218,7 +219,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import KasLens from './pages/KasLens';
 import __Layout from './Layout.jsx';
 
 
@@ -328,6 +328,7 @@ export const PAGES = {
     "KaSkoolProfile": KaSkoolProfile,
     "KasCompute": KasCompute,
     "KasFans": KasFans,
+    "KasLens": KasLens,
     "KasPlay": KasPlay,
     "Kasdate": Kasdate,
     "Kasmi": Kasmi,
@@ -443,7 +444,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "KasLens": KasLens,
 }
 
 export const pagesConfig = {
