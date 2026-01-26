@@ -612,13 +612,12 @@ export default function FeedPage() {
           p: "krc-20",
           op: "transfer",
           tick: tipKrc20Ticker.toUpperCase(),
-          amt: (tipAmountValue * Math.pow(10, 8)).toString(),
+          amt: tipAmountValue.toString(),
           to: tippingPost.author_wallet_address
         };
         
         txId = await window.kasware.signKRC20Transaction(
-          JSON.stringify(krc20Data),
-          4
+          JSON.stringify(krc20Data)
         );
       } else {
         // Send KAS (default)
