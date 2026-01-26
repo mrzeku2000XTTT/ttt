@@ -653,7 +653,7 @@ export default function FeedPage() {
         recipient_wallet: tippingPost.author_wallet_address,
         recipient_email: tippingPost.created_by || null,
         recipient_name: tippingPost.author_name,
-        amount: tipAmountKAS,
+        amount: tipAmountValue,
         tx_hash: txId,
         post_id: tippingPost.id,
         source: 'feed',
@@ -661,8 +661,10 @@ export default function FeedPage() {
       });
 
       // Update recipient's tips_received on their post (for display only)
+      // Only add to tips_received if sending KAS (not KRC-20)
+      const displayAmount = tipTokenType === "KAS" ? tipAmountValue : 0;
       await base44.entities.Post.update(tippingPost.id, {
-        tips_received: (tippingPost.tips_received || 0) + tipAmountKAS
+        tips_received: (tippingPost.tips_received || 0) + displayAmount
       });
 
       // Track tip stats - SENDER (by email OR wallet)
