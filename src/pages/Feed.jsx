@@ -3105,22 +3105,22 @@ export default function FeedPage() {
                 </div>
 
                 <Button
-                  onClick={handleSendTip}
-                  disabled={isSendingTip || !tipAmount || parseFloat(tipAmount) <= 0 || (tipTokenType === "KRC20" && !tipKrc20Ticker.trim())}
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 h-12 text-white font-bold"
-                >
-                  {isSendingTip ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Sending {tipTokenType === "KRC20" ? tipKrc20Ticker : "KAS"}...
-                    </>
-                  ) : (
-                    <>
-                      <Wallet className="w-5 h-5 mr-2" />
-                      Send {tipAmount} {tipTokenType === "KRC20" ? tipKrc20Ticker : "KAS"}
-                    </>
-                  )}
-                </Button>
+                   onClick={handleSendTip}
+                   disabled={isSendingTip || !tipAmount || parseFloat(tipAmount) <= 0}
+                   className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 h-12 text-white font-bold"
+                 >
+                   {isSendingTip ? (
+                     <>
+                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                       Sending KAS...
+                     </>
+                   ) : (
+                     <>
+                       <Wallet className="w-5 h-5 mr-2" />
+                       Send {tipAmount} KAS
+                     </>
+                   )}
+                 </Button>
 
                 <div className="bg-white/5 border border-white/10 rounded-lg p-3">
                   <div className="flex items-start gap-2">
