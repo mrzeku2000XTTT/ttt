@@ -599,11 +599,6 @@ export default function FeedPage() {
       return;
     }
 
-    if (tipTokenType === "KRC20" && !tipKrc20Ticker.trim()) {
-      setError('Please enter a token ticker (e.g., PACMAN)');
-      return;
-    }
-
     setIsSendingTip(true);
     setError(null);
 
