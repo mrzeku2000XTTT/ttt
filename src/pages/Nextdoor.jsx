@@ -11,6 +11,7 @@ export default function NextdoorPage() {
   const [user, setUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showProposeModal, setShowProposeModal] = useState(false);
+  const [selectedApp, setSelectedApp] = useState(null);
 
   useEffect(() => {
     loadUser();
@@ -26,16 +27,14 @@ export default function NextdoorPage() {
   };
 
   const apps = [
-    { id: 1, name: "TTTV", path: "Browser", icon: "🎬", category: "Entertainment", description: "Watch videos and streams" },
-    { id: 2, name: "Agent ZK", path: "AgentZK", icon: "🤖", category: "AI", description: "Your personal AI agent" },
-    { id: 3, name: "TTT Feed", path: "Feed", icon: "📱", category: "Social", description: "Connect with the community" },
-    { id: 4, name: "Marketplace", path: "Marketplace", icon: "🛍️", category: "Shopping", description: "Buy and sell items" },
-    { id: 5, name: "Wallet", path: "Wallet", icon: "💰", category: "Finance", description: "Manage your funds" },
-    { id: 6, name: "NFT Mint", path: "NFTMint", icon: "🎨", category: "NFT", description: "Create and mint NFTs" },
-    { id: 7, name: "Arcade", path: "Arcade", icon: "🎮", category: "Gaming", description: "Play games" },
-    { id: 8, name: "K-University", path: "KUniversity", icon: "📚", category: "Education", description: "Learn and grow" },
-    { id: 9, name: "Hercules", path: "Hercules", icon: "💪", category: "Tools", description: "Powerful utilities" },
-    { id: 10, name: "Analytics", path: "Analytics", icon: "📊", category: "Analytics", description: "Track performance" },
+    { 
+      id: 1, 
+      name: "Latoyabarre", 
+      url: "https://latoyabarre.base44.app", 
+      icon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/17e21f2a1_image.png", 
+      category: "Business", 
+      description: "Professional services" 
+    },
   ];
 
   const filteredApps = apps.filter(app => 
@@ -44,13 +43,53 @@ export default function NextdoorPage() {
     app.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  if (selectedApp) {
+    return (
+      <div className="fixed inset-0 bg-black flex flex-col" style={{ top: 'calc(var(--sat, 0px) + 7.5rem)' }}>
+        <div className="bg-zinc-950 border-b border-zinc-800 p-4 flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSelectedApp(null)}
+              className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4 text-white" />
+            </button>
+            <img 
+              src={selectedApp.icon}
+              alt={selectedApp.name}
+              className="w-8 h-8 object-contain"
+            />
+            <h1 className="text-white font-bold text-lg">{selectedApp.name}</h1>
+          </div>
+          <a 
+            href={selectedApp.url} 
+            target="_blank" 
+            rel="noopener noreferrer"
+          >
+            <Button className="bg-cyan-500 hover:bg-cyan-600 text-white h-8 text-xs">
+              <ExternalLink className="w-3 h-3 mr-2" />
+              Open
+            </Button>
+          </a>
+        </div>
+        <div className="flex-1" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 4rem)' }}>
+          <iframe
+            src={selectedApp.url}
+            className="w-full h-full border-0"
+            title={selectedApp.name}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-black to-zinc-900">
-      {/* Background Effects */}
       <div className="fixed inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDIpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20" />
       
       <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <button
@@ -64,18 +103,8 @@ export default function NextdoorPage() {
               <p className="text-zinc-400 text-sm">Your neighborhood app store</p>
             </div>
           </div>
-          {user && (
-            <Button
-              onClick={() => setShowProposeModal(true)}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Propose App
-            </Button>
-          )}
         </div>
 
-        {/* Search */}
         <div className="relative mb-8">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
           <Input
@@ -86,19 +115,17 @@ export default function NextdoorPage() {
           />
         </div>
 
-        {/* Apps Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-4">
           {filteredApps.map((app) => (
             <button
               key={app.id}
-              onClick={() => navigate(createPageUrl(app.path))}
-              className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-6 flex flex-col items-center gap-3 transition-all hover:scale-105 hover:border-purple-500/50 group"
+              onClick={() => setSelectedApp(app)}
+              className="flex flex-col items-center gap-2 group"
             >
-              <div className="text-5xl">{app.icon}</div>
-              <div className="text-center">
-                <h3 className="text-white font-bold text-sm">{app.name}</h3>
-                <p className="text-zinc-500 text-xs mt-1">{app.category}</p>
+              <div className="w-16 h-16 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl p-2 flex items-center justify-center transition-all hover:scale-105 hover:border-purple-500/50">
+                <img src={app.icon} alt={app.name} className="w-full h-full object-contain" />
               </div>
+              <span className="text-white text-xs text-center line-clamp-2">{app.name}</span>
             </button>
           ))}
         </div>
@@ -109,36 +136,6 @@ export default function NextdoorPage() {
           </div>
         )}
       </div>
-
-      {/* Propose App Modal */}
-      {showProposeModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-zinc-900 rounded-2xl border border-white/10 max-w-md w-full p-6">
-            <h3 className="text-white font-bold text-xl mb-4">Propose New App</h3>
-            <p className="text-zinc-400 text-sm mb-6">
-              Have an idea for a new app? Let us know!
-            </p>
-            <div className="flex gap-2">
-              <Button
-                onClick={() => setShowProposeModal(false)}
-                variant="ghost"
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowProposeModal(false);
-                  navigate(createPageUrl('AppStore'));
-                }}
-                className="flex-1 bg-purple-500 hover:bg-purple-600"
-              >
-                Go to App Store
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
