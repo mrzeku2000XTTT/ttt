@@ -616,13 +616,9 @@ export default function FeedPage() {
           to: tippingPost.author_wallet_address
         };
         
-        const inscribeJsonString = JSON.stringify(krc20Data);
-        
         txId = await window.kasware.signKRC20Transaction(
-          inscribeJsonString,
-          4,
-          tippingPost.author_wallet_address,
-          0.00001 // Minimal fee
+          JSON.stringify(krc20Data),
+          4
         );
       } else {
         // Send KAS (default)
