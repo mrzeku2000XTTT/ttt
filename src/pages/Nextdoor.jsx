@@ -48,20 +48,28 @@ export default function NextdoorPage() {
 
   if (selectedApp) {
     return (
-      <div className="w-full bg-black relative" style={{ height: '100vh', paddingTop: 'var(--sat, 0px)' }}>
-        <button
-          onClick={() => setSearchParams({})}
-          className="absolute top-4 left-4 z-50 w-10 h-10 bg-black/80 hover:bg-black rounded-lg flex items-center justify-center transition-colors backdrop-blur-sm border border-white/10"
-        >
-          <ArrowLeft className="w-5 h-5 text-white" />
-        </button>
-        <iframe
-          src={selectedApp.url}
-          className="w-full h-full border-0"
-          title={selectedApp.name}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
+      <div className="w-full bg-black" style={{ height: '100vh', paddingTop: 'var(--sat, 0px)' }}>
+        <div className="fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-sm border-b border-white/10" style={{ paddingTop: 'var(--sat, 0px)' }}>
+          <button
+            onClick={() => setSearchParams({})}
+            className="w-full h-16 flex items-center justify-center hover:opacity-80 transition-opacity"
+          >
+            <img 
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/1a9339d5c_image.png"
+              alt="Back to Nextdoor"
+              className="h-12 w-auto object-contain"
+            />
+          </button>
+        </div>
+        <div style={{ paddingTop: '4rem' }} className="h-full">
+          <iframe
+            src={selectedApp.url}
+            className="w-full h-full border-0"
+            title={selectedApp.name}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
       </div>
     );
   }
