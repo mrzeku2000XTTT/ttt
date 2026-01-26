@@ -3114,9 +3114,8 @@ export default function FeedPage() {
                      </Button>
                      <Button
                        onClick={() => setTipTokenType("KRC20")}
-                       variant={tipTokenType === "KRC20" ? "default" : "outline"}
                        size="sm"
-                       className={tipTokenType === "KRC20" ? "bg-purple-600 hover:bg-purple-700" : "border-white/20 text-white/60 hover:bg-white/10"}
+                       className={tipTokenType === "KRC20" ? "bg-purple-600 hover:bg-purple-700 text-white" : "bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white"}
                      >
                        KRC-20
                      </Button>
