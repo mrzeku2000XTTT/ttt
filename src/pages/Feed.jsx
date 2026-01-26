@@ -732,7 +732,7 @@ export default function FeedPage() {
       setTippingPost(null);
       setTipAmount('');
       setTipTokenType("KAS");
-      setTipKrc20Ticker("");
+      setTipKrc20Ticker(""); // Keep KRC-20 ticker input empty after successful transfer
 
       // Show custom notification instead of alert
       const notification = document.createElement('div');
