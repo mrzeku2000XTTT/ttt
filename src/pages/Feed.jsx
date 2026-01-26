@@ -771,6 +771,8 @@ export default function FeedPage() {
 
       if (err.message?.includes('User reject')) {
         setError('Transaction cancelled');
+      } else if (err.message?.includes('storage mass') || err.message?.includes('Storage mass')) {
+        setError('⚠️ Storage mass error: Your wallet has too many small UTXOs. Go to your wallet settings and use the "Consolidate" or "Compound" button to merge UTXOs, then try again.');
       } else {
         setError('Failed to send tip: ' + err.message);
       }
