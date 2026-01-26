@@ -612,7 +612,8 @@ export default function FeedPage() {
           p: "krc-20",
           op: "transfer",
           tick: tipKrc20Ticker.toUpperCase(),
-          amt: tipAmountValue.toString()
+          amt: tipAmountValue.toString(),
+          to: tippingPost.author_wallet_address
         };
         
         const inscribeJsonString = JSON.stringify(krc20Data);
@@ -621,7 +622,7 @@ export default function FeedPage() {
           inscribeJsonString,
           4,
           tippingPost.author_wallet_address,
-          0.005
+          0.01
         );
       } else {
         // Send KAS (default)
