@@ -48,7 +48,13 @@ export default function NextdoorPage() {
 
   if (selectedApp) {
     return (
-      <div className="w-full bg-black" style={{ height: '100vh', paddingTop: 'var(--sat, 0px)' }}>
+      <div className="w-full bg-black relative" style={{ height: '100vh', paddingTop: 'var(--sat, 0px)' }}>
+        <button
+          onClick={() => setSearchParams({})}
+          className="absolute top-4 left-4 z-50 w-10 h-10 bg-black/80 hover:bg-black rounded-lg flex items-center justify-center transition-colors backdrop-blur-sm border border-white/10"
+        >
+          <ArrowLeft className="w-5 h-5 text-white" />
+        </button>
         <iframe
           src={selectedApp.url}
           className="w-full h-full border-0"
