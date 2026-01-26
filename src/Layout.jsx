@@ -129,16 +129,25 @@ export default function Layout({ children, currentPageName }) {
 
   const loadPendingConnections = async () => {
     try {
-      const currentUser = await base44.auth.me();
-      if (currentUser?.created_wallet_address) {
-        const incoming = await base44.entities.AgentZKConnection.filter({
-          target_address: currentUser.created_wallet_address,
-          status: 'pending'
-        });
-        setPendingConnectionsCount(incoming.length);
+      const isAuth = await base44.auth.isAuthenticated();
+      if (!isAuth) {
+        setPendingConnectionsCount(0);
+        return;
       }
+      
+      const currentUser = await base44.auth.me();
+      if (!currentUser?.created_wallet_address) {
+        setPendingConnectionsCount(0);
+        return;
+      }
+      
+      const incoming = await base44.entities.AgentZKConnection.filter({
+        target_address: currentUser.created_wallet_address,
+        status: 'pending'
+      });
+      setPendingConnectionsCount(incoming.length);
     } catch (err) {
-      console.error('Failed to load pending connections:', err);
+      console.log('Could not load pending connections (user not authenticated)');
       setPendingConnectionsCount(0);
     }
   };
