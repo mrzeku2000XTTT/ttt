@@ -747,9 +747,9 @@ export default function FeedPage() {
         </div>
         <div class="space-y-1.5 text-xs text-white/60">
           <div class="flex justify-between gap-3">
-            <span>Amount:</span>
-            <span class="text-white font-semibold">${tipAmountKAS} ${ticker}</span>
-          </div>
+                <span>Amount:</span>
+                <span class="text-white font-semibold">${tipAmount} ${ticker}</span>
+              </div>
           <div class="flex justify-between gap-3">
             <span>To:</span>
             <span class="text-white font-semibold truncate">${tippingPost.author_name}</span>
