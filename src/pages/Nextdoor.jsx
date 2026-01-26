@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -8,10 +8,10 @@ import { ArrowLeft, Search, Plus, ExternalLink } from "lucide-react";
 
 export default function NextdoorPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [user, setUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showProposeModal, setShowProposeModal] = useState(false);
-  const [selectedApp, setSelectedApp] = useState(null);
 
   useEffect(() => {
     loadUser();
@@ -43,13 +43,16 @@ export default function NextdoorPage() {
     app.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const appName = searchParams.get('app');
+  const selectedApp = appName ? apps.find(a => a.name.toLowerCase() === appName.toLowerCase()) : null;
+
   if (selectedApp) {
     return (
       <div className="w-full bg-black flex flex-col" style={{ height: 'calc(100vh - 7.5rem - var(--sat, 0px))' }}>
         <div className="bg-zinc-950 border-b border-zinc-800 p-4 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setSelectedApp(null)}
+              onClick={() => navigate(createPageUrl('Nextdoor'))}
               className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors"
             >
               <ArrowLeft className="w-4 h-4 text-white" />
@@ -119,7 +122,7 @@ export default function NextdoorPage() {
           {filteredApps.map((app) => (
             <button
               key={app.id}
-              onClick={() => setSelectedApp(app)}
+              onClick={() => navigate(`${createPageUrl('Nextdoor')}?app=${encodeURIComponent(app.name)}`)}
               className="flex flex-col items-center gap-2 group"
             >
               <div className="w-16 h-16 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl p-2 flex items-center justify-center transition-all hover:scale-105 hover:border-purple-500/50">
