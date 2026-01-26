@@ -48,42 +48,15 @@ export default function NextdoorPage() {
 
   if (selectedApp) {
     return (
-      <div className="w-full bg-black flex flex-col" style={{ height: 'calc(100vh - 7.5rem - var(--sat, 0px))' }}>
-        <div className="bg-zinc-950 border-b border-zinc-800 p-4 flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate(createPageUrl('Nextdoor'))}
-              className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4 text-white" />
-            </button>
-            <img 
-              src={selectedApp.icon}
-              alt={selectedApp.name}
-              className="w-8 h-8 object-contain"
-            />
-            <h1 className="text-white font-bold text-lg">{selectedApp.name}</h1>
-          </div>
-          <a 
-            href={selectedApp.url} 
-            target="_blank" 
-            rel="noopener noreferrer"
-          >
-            <Button className="bg-cyan-500 hover:bg-cyan-600 text-white h-8 text-xs">
-              <ExternalLink className="w-3 h-3 mr-2" />
-              Open
-            </Button>
-          </a>
-        </div>
-        <div className="flex-1 w-full" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 4rem)' }}>
-          <iframe
-            src={selectedApp.url}
-            className="w-full h-full border-0"
-            title={selectedApp.name}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        </div>
+      <div className="w-full h-full bg-black">
+        <iframe
+          src={selectedApp.url}
+          className="w-full border-0"
+          style={{ height: 'calc(100vh - 7.5rem - var(--sat, 0px) - env(safe-area-inset-bottom, 0px) - 4rem)' }}
+          title={selectedApp.name}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
       </div>
     );
   }
