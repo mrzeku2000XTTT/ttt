@@ -612,16 +612,17 @@ export default function FeedPage() {
           p: "krc-20",
           op: "transfer",
           tick: tipKrc20Ticker.toUpperCase(),
-          amt: tipAmountValue.toString()
+          amt: (tipAmountValue * Math.pow(10, 8)).toString(), // Assuming 8 decimals, adjust as needed
+          to: tippingPost.author_wallet_address
         };
         
-        const inscribeJsonString = JSON.stringify(krc20Data);
+        const inscribeJsonString = JSON.stringify(krc20Data, null, 0);
         
         txId = await window.kasware.signKRC20Transaction(
           inscribeJsonString,
-          4,
+          4, // Type 4 = Transfer operation
           tippingPost.author_wallet_address,
-          0.01
+          0.01 // Priority fee in KAS (minimal)
         );
       } else {
         // Send KAS (default)
