@@ -45,6 +45,7 @@ export default function OliviaAppsPage() {
     { id: "fhz", name: "FHZ", icon: Gamepad2, path: "FHZ", description: "Play FHZ", blackBackground: true },
     { id: "blockrun", name: "BlockRun", icon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/5e601e579_image.png", path: "BlockRun", description: "Endless Runner", blackBackground: true, circularIcon: true, fisheye: true },
     { id: "datenight", name: "DateNight", icon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/b9a733e4b_image.png", path: "DateNight", description: "AI Date Planner", blackBackground: true, circularIcon: true },
+    { id: "nextdoor", name: "Nextdoor", icon: LayoutGrid, path: "Nextdoor", description: "Neighborhood App Store", blackBackground: true },
     ];
 
   const filteredApps = bridgeMindApps.filter(app => 
