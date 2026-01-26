@@ -3098,7 +3098,7 @@ export default function FeedPage() {
                    {/* KRC-20 support coming soon */}
 
                    <label className="text-sm text-white/60 mb-2 block">
-                      Tip Amount {tipTokenType === "KRC20" ? `(${tipKrc20Ticker || "Tokens"})` : "(KAS)"}
+                      Tip Amount (KAS)
                     </label>
                    <Input
                      type="number"
@@ -3106,23 +3106,10 @@ export default function FeedPage() {
                      min="0.01"
                      value={tipAmount}
                      onChange={(e) => setTipAmount(e.target.value)}
-                     placeholder={tipTokenType === "KRC20" ? "Amount of tokens" : "0.5"}
+                     placeholder="0.5"
                      className="bg-white/5 border-white/10 text-white text-lg text-center h-14"
                      autoFocus
                    />
-
-                   {tipTokenType === "KRC20" && (
-                     <div className="mt-3">
-                       <label className="text-sm text-white/60 mb-2 block">Token Ticker</label>
-                       <Input
-                         type="text"
-                         value={tipKrc20Ticker}
-                         onChange={(e) => setTipKrc20Ticker(e.target.value.toUpperCase())}
-                         placeholder="e.g., KSPR, LEGEND"
-                         className="bg-white/5 border-white/10 text-white text-center h-10 font-semibold"
-                       />
-                     </div>
-                   )}
 
                    {tipTokenType === "KAS" && (
                      <div className="flex gap-2 mt-2">
