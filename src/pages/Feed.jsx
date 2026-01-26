@@ -618,11 +618,17 @@ export default function FeedPage() {
         
         const inscribeJsonString = JSON.stringify(krc20Data, null, 0);
         
+        // Get sender's address from Kasware
+        const senderAddress = kaswareWallet.address;
+        if (!senderAddress) {
+          throw new Error('Kasware wallet not connected');
+        }
+        
         txId = await window.kasware.signKRC20Transaction(
           inscribeJsonString,
           4, // Type 4 = Transfer operation
-          tippingPost.author_wallet_address,
-          0.1 // Priority fee in KAS (optional)
+          senderAddress, // Use SENDER's address, not recipient
+          0.001 // Minimal KAS fee
         );
       } else {
         // Send KAS (default)
