@@ -3182,14 +3182,24 @@ export default function FeedPage() {
                    )}
                  </Button>
 
-                <div className="bg-white/5 border border-white/10 rounded-lg p-3">
-                  <div className="flex items-start gap-2">
-                    <Sparkles className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-white/60">
-                      Tips are sent directly from your Kasware wallet to the creator's wallet instantly.
-                    </p>
-                  </div>
-                </div>
+                <div className="space-y-2">
+                   <div className="bg-white/5 border border-white/10 rounded-lg p-3">
+                     <div className="flex items-start gap-2">
+                       <Sparkles className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
+                       <p className="text-xs text-white/60">
+                         Tips are sent directly from your Kasware wallet to the creator's wallet instantly.
+                       </p>
+                     </div>
+                   </div>
+                   <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
+                     <div className="flex items-start gap-2">
+                       <AlertCircle className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                       <p className="text-xs text-blue-300">
+                         ⚠️ Must have minimum 5 KAS in your wallet to prevent storage mass errors. Ensure sufficient funds before sending tips.
+                       </p>
+                     </div>
+                   </div>
+                 </div>
               </div>
             </motion.div>
           </motion.div>
