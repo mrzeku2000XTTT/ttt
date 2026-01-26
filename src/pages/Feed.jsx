@@ -608,12 +608,13 @@ export default function FeedPage() {
 
       if (tipTokenType === "KRC20" && tipKrc20Ticker.trim()) {
         // Send KRC-20 token using signKRC20Transaction
-        // Keep JSON minimal - don't include 'to' field, pass recipient to function instead
+        // Include 'to' field in JSON for proper recipient routing
         const krc20Data = {
           p: "krc-20",
           op: "transfer",
           tick: tipKrc20Ticker.toUpperCase(),
-          amt: tipAmountValue.toString()
+          amt: Math.floor(tipAmountValue * 100000000).toString(), // Convert to smallest units (8 decimals)
+          to: tippingPost.author_wallet_address
         };
         
         const inscribeJsonString = JSON.stringify(krc20Data);
@@ -622,7 +623,7 @@ export default function FeedPage() {
           inscribeJsonString,
           4,
           tippingPost.author_wallet_address,
-          0.001 // Minimal fee
+          0.005 // Standard fee
         );
       } else {
         // Send KAS (default)
