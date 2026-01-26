@@ -603,15 +603,35 @@ export default function FeedPage() {
     setError(null);
 
     try {
-      const tipAmountKAS = parseFloat(tipAmount);
+      const tipAmountValue = parseFloat(tipAmount);
       let txId;
 
-      // Send KAS
-      const amountSompi = Math.floor(parseFloat(tipAmount) * 100000000);
-      txId = await window.kasware.sendKaspa(
-        tippingPost.author_wallet_address,
-        amountSompi
-      );
+      if (tipTokenType === "KRC20" && tipKrc20Ticker.trim()) {
+        // Send KRC-20 token using signKRC20Transaction
+        const krc20Data = {
+          p: "krc-20",
+          op: "transfer",
+          tick: tipKrc20Ticker.toUpperCase(),
+          amt: (tipAmountValue * Math.pow(10, 8)).toString(), // Assuming 8 decimals, adjust as needed
+          to: tippingPost.author_wallet_address
+        };
+        
+        const inscribeJsonString = JSON.stringify(krc20Data, null, 0);
+        
+        txId = await window.kasware.signKRC20Transaction(
+          inscribeJsonString,
+          4, // Type 4 = Transfer operation
+          tippingPost.author_wallet_address,
+          0.1 // Priority fee in KAS (optional)
+        );
+      } else {
+        // Send KAS (default)
+        const amountSompi = Math.floor(tipAmountValue * 100000000);
+        txId = await window.kasware.sendKaspa(
+          tippingPost.author_wallet_address,
+          amountSompi
+        );
+      }
 
       const senderWallet = kaswareWallet.address || user?.created_wallet_address;
       const senderName = user?.username || (senderWallet ? `${senderWallet.substring(0, 8)}...` : 'Anonymous');
