@@ -154,16 +154,25 @@ export default function Layout({ children, currentPageName }) {
 
   const loadUnreadMessages = async () => {
     try {
-      const currentUser = await base44.auth.me();
-      if (currentUser?.email) {
-        const unread = await base44.entities.AgentMessage.filter({
-          recipient_email: currentUser.email,
-          is_read: false
-        });
-        setUnreadMessagesCount(unread.length);
+      const isAuth = await base44.auth.isAuthenticated();
+      if (!isAuth) {
+        setUnreadMessagesCount(0);
+        return;
       }
+      
+      const currentUser = await base44.auth.me();
+      if (!currentUser?.email) {
+        setUnreadMessagesCount(0);
+        return;
+      }
+      
+      const unread = await base44.entities.AgentMessage.filter({
+        recipient_email: currentUser.email,
+        is_read: false
+      });
+      setUnreadMessagesCount(unread.length);
     } catch (err) {
-      console.error('Failed to load unread messages:', err);
+      console.log('Could not load unread messages (user not authenticated)');
       setUnreadMessagesCount(0);
     }
   };
