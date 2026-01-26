@@ -27,6 +27,8 @@ export default function TipModal({ isOpen, onClose }) {
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [tokenType, setTokenType] = useState("KAS"); // "KAS" or "KRC20"
+  const [krc20Ticker, setKrc20Ticker] = useState("");
 
   // Countdown timer
   useEffect(() => {
@@ -86,6 +88,60 @@ export default function TipModal({ isOpen, onClose }) {
     }
   }, [step, tipData, verifying]);
 
+  const sendKaswareToken = async () => {
+    if (!window.kasware) {
+      toast.error("Kasware wallet not found. Please install Kasware.");
+      return;
+    }
+
+    if (tokenType === "KRC20" && !krc20Ticker) {
+      toast.error("Please enter a token ticker (e.g., PACMAN)");
+      return;
+    }
+
+    if (!amount || parseFloat(amount) <= 0) {
+      toast.error("Please enter a valid amount");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const accounts = await window.kasware.getAccounts();
+      if (!accounts || accounts.length === 0) {
+        toast.error("Please connect Kasware wallet first");
+        setLoading(false);
+        return;
+      }
+
+      // Open Kasware token send interface
+      const ticker = tokenType === "KRC20" ? krc20Ticker.toUpperCase() : "KAS";
+      
+      // Kasware will open its own UI to send the token
+      await window.kasware.sendToken({
+        tick: ticker,
+        to: recipientAddress,
+        amount: amount
+      });
+
+      toast.success(`${ticker} tip sent via Kasware!`);
+      setStep("success");
+      setTipData({
+        recipientAddress,
+        amount,
+        ticker,
+        senderName: senderName || "Anonymous",
+        message: message || ""
+      });
+      triggerConfetti();
+    } catch (err) {
+      console.error("Kasware send error:", err);
+      toast.error(err.message || "Failed to send tip via Kasware");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const createTipRequest = async () => {
     if (!recipientAddress) {
       toast.error("Recipient address is required");
@@ -95,6 +151,12 @@ export default function TipModal({ isOpen, onClose }) {
     // Validate Kaspa address format
     if (!recipientAddress.startsWith('kaspa:')) {
       toast.error("Invalid Kaspa address - must start with 'kaspa:'");
+      return;
+    }
+
+    // If KRC20 mode, use Kasware directly
+    if (tokenType === "KRC20") {
+      await sendKaswareToken();
       return;
     }
 
@@ -110,7 +172,8 @@ export default function TipModal({ isOpen, onClose }) {
       senderName: senderName || "Anonymous",
       message: message || "",
       qrCode,
-      expiresAt
+      expiresAt,
+      ticker: "KAS"
     });
     
     setTimeRemaining(600); // Reset to 10 minutes
@@ -183,6 +246,8 @@ export default function TipModal({ isOpen, onClose }) {
     setMessage("");
     setTipData(null);
     setTimeRemaining(1800);
+    setTokenType("KAS");
+    setKrc20Ticker("");
   };
 
   if (!isOpen) return null;
@@ -236,6 +301,39 @@ export default function TipModal({ isOpen, onClose }) {
 
               {step === "form" && (
                 <div className="space-y-4">
+                  {/* Token Type Toggle */}
+                  <div>
+                    <label className="text-sm text-white/80 mb-2 block">Token Type</label>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => setTokenType("KAS")}
+                        className={`flex-1 h-10 ${tokenType === "KAS" ? "bg-[#4fd1c5] text-black" : "bg-white/5 text-white/60"}`}
+                      >
+                        KAS
+                      </Button>
+                      <Button
+                        onClick={() => setTokenType("KRC20")}
+                        className={`flex-1 h-10 ${tokenType === "KRC20" ? "bg-[#4fd1c5] text-black" : "bg-white/5 text-white/60"}`}
+                      >
+                        KRC-20 Token
+                      </Button>
+                    </div>
+                  </div>
+
+                  {tokenType === "KRC20" && (
+                    <div>
+                      <label className="text-sm text-white/80 mb-2 block">
+                        Token Ticker <span className="text-red-400">*</span>
+                      </label>
+                      <Input
+                        value={krc20Ticker}
+                        onChange={(e) => setKrc20Ticker(e.target.value.toUpperCase())}
+                        placeholder="PACMAN"
+                        className="bg-white/5 border-white/10 text-white h-12 rounded-lg uppercase"
+                      />
+                    </div>
+                  )}
+
                   <div>
                     <label className="text-sm text-white/80 mb-2 block">
                       Recipient Address <span className="text-red-400">*</span>
@@ -250,7 +348,7 @@ export default function TipModal({ isOpen, onClose }) {
 
                   <div>
                     <label className="text-sm text-white/80 mb-2 block">
-                      Amount in KAS (optional)
+                      Amount {tokenType === "KRC20" ? `in ${krc20Ticker || "Tokens"}` : "in KAS"} <span className="text-red-400">*</span>
                     </label>
                     <Input
                       type="number"
@@ -287,10 +385,10 @@ export default function TipModal({ isOpen, onClose }) {
 
                   <Button
                     onClick={createTipRequest}
-                    disabled={loading || !recipientAddress}
+                    disabled={loading || !recipientAddress || (tokenType === "KRC20" && !krc20Ticker)}
                     className="w-full bg-[#4fd1c5] hover:bg-[#45c0b5] text-black h-12 rounded-lg font-bold disabled:opacity-50"
                   >
-                    {loading ? "Creating..." : "Create Tip Request"}
+                    {loading ? (tokenType === "KRC20" ? "Sending via Kasware..." : "Creating...") : (tokenType === "KRC20" ? `Send ${krc20Ticker || "Token"} via Kasware` : "Create Tip Request")}
                   </Button>
                 </div>
               )}
@@ -363,10 +461,10 @@ export default function TipModal({ isOpen, onClose }) {
                   </div>
 
                   <div>
-                    <h3 className="text-2xl font-bold text-white mb-2">Tip Received! 🎉</h3>
-                    <p className="text-lg text-[#4fd1c5] font-semibold">
-                      {tipData.amountReceived} KAS sent successfully
-                    </p>
+                   <h3 className="text-2xl font-bold text-white mb-2">Tip Sent! 🎉</h3>
+                   <p className="text-lg text-[#4fd1c5] font-semibold">
+                     {tipData.amount} {tipData.ticker || "KAS"} sent successfully
+                   </p>
                   </div>
 
                   {message && (
