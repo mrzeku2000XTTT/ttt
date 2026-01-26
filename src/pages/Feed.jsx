@@ -3094,39 +3094,77 @@ export default function FeedPage() {
               <div className="space-y-4">
                 <div className="bg-white/5 border border-white/10 rounded-lg p-4">
                   <div className="text-xs text-white/60 mb-1">Recipient Wallet</div>
-                  <div className="text-white font-mono text-sm break-all">
-                    {tippingPost.author_wallet_address}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm text-white/60 mb-2 block">
-                     Tip Amount (KAS)
-                   </label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    value={tipAmount}
-                    onChange={(e) => setTipAmount(e.target.value)}
-                    placeholder="0.5"
-                    className="bg-white/5 border-white/10 text-white text-lg text-center h-14"
-                    autoFocus
-                  />
-                  <div className="flex gap-2 mt-2">
-                     {['0.5', '1', '5', '10'].map(amount => (
-                       <Button
-                         key={amount}
-                         onClick={() => setTipAmount(amount)}
-                         size="sm"
-                         variant="outline"
-                         className="flex-1 border-white/20 text-white/60 hover:bg-white/10 hover:text-white"
-                       >
-                         {amount} KAS
-                       </Button>
-                     ))}
+                   <div className="text-white font-mono text-sm break-all">
+                     {tippingPost.author_wallet_address}
                    </div>
-                </div>
+                  </div>
+
+                  <div>
+                   <div className="flex gap-2 mb-3">
+                     <Button
+                       onClick={() => {
+                         setTipTokenType("KAS");
+                         setTipKrc20Ticker("");
+                       }}
+                       variant={tipTokenType === "KAS" ? "default" : "outline"}
+                       size="sm"
+                       className={tipTokenType === "KAS" ? "bg-green-600 hover:bg-green-700" : "border-white/20 text-white/60 hover:bg-white/10"}
+                     >
+                       KAS
+                     </Button>
+                     <Button
+                       onClick={() => setTipTokenType("KRC20")}
+                       variant={tipTokenType === "KRC20" ? "default" : "outline"}
+                       size="sm"
+                       className={tipTokenType === "KRC20" ? "bg-purple-600 hover:bg-purple-700" : "border-white/20 text-white/60 hover:bg-white/10"}
+                     >
+                       KRC-20
+                     </Button>
+                   </div>
+
+                   <label className="text-sm text-white/60 mb-2 block">
+                      Tip Amount {tipTokenType === "KRC20" ? `(${tipKrc20Ticker || "Tokens"})` : "(KAS)"}
+                    </label>
+                   <Input
+                     type="number"
+                     step="0.01"
+                     min="0.01"
+                     value={tipAmount}
+                     onChange={(e) => setTipAmount(e.target.value)}
+                     placeholder={tipTokenType === "KRC20" ? "Amount of tokens" : "0.5"}
+                     className="bg-white/5 border-white/10 text-white text-lg text-center h-14"
+                     autoFocus
+                   />
+
+                   {tipTokenType === "KRC20" && (
+                     <div className="mt-3">
+                       <label className="text-sm text-white/60 mb-2 block">Token Ticker</label>
+                       <Input
+                         type="text"
+                         value={tipKrc20Ticker}
+                         onChange={(e) => setTipKrc20Ticker(e.target.value.toUpperCase())}
+                         placeholder="e.g., KSPR, LEGEND"
+                         className="bg-white/5 border-white/10 text-white text-center h-10 font-semibold"
+                       />
+                     </div>
+                   )}
+
+                   {tipTokenType === "KAS" && (
+                     <div className="flex gap-2 mt-2">
+                        {['0.5', '1', '5', '10'].map(amount => (
+                          <Button
+                            key={amount}
+                            onClick={() => setTipAmount(amount)}
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 border-white/20 text-white/60 hover:bg-white/10 hover:text-white"
+                          >
+                            {amount} KAS
+                          </Button>
+                        ))}
+                      </div>
+                   )}
+                  </div>
 
                 <Button
                    onClick={handleSendTip}
