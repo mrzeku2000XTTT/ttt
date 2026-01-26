@@ -624,7 +624,7 @@ export default function FeedPage() {
       });
 
       // Record tip transaction with emails for cross-wallet tracking
-      const ticker = tipTokenType === "KRC20" ? tipKrc20Ticker.toUpperCase() : "KAS";
+      const ticker = "KAS";
       await base44.entities.TipTransaction.create({
         sender_wallet: senderWallet,
         sender_email: user?.email || null,
