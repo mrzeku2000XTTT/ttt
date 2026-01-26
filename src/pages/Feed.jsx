@@ -3075,8 +3075,8 @@ export default function FeedPage() {
 
                 <div>
                   <label className="text-sm text-white/60 mb-2 block">
-                    Tip Amount {tipTokenType === "KRC20" ? `(${tipKrc20Ticker || "Tokens"})` : "(KAS)"}
-                  </label>
+                     Tip Amount (KAS)
+                   </label>
                   <Input
                     type="number"
                     step="0.01"
