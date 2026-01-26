@@ -639,12 +639,13 @@ export default function FeedPage() {
       console.log('💸 Recording tip transaction:', {
         sender: senderWallet,
         recipient: tippingPost.author_wallet_address,
-        amount: tipAmountKAS,
-        txId
+        amount: tipAmountValue,
+        txId,
+        token: tipTokenType
       });
 
       // Record tip transaction with emails for cross-wallet tracking
-      const ticker = "KAS";
+      const ticker = tipTokenType === "KRC20" ? tipKrc20Ticker.toUpperCase() : "KAS";
       await base44.entities.TipTransaction.create({
         sender_wallet: senderWallet,
         sender_email: user?.email || null,
