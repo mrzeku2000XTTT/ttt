@@ -3111,20 +3111,18 @@ export default function FeedPage() {
                      autoFocus
                    />
 
-                   {tipTokenType === "KAS" && (
-                     <div className="flex gap-2 mt-2">
-                        {['0.5', '1', '5', '10'].map(amount => (
-                          <Button
-                            key={amount}
-                            onClick={() => setTipAmount(amount)}
-                            size="sm"
-                            className="flex-1 bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white"
-                          >
-                            {amount} KAS
-                          </Button>
-                        ))}
-                      </div>
-                   )}
+                   <div className="flex gap-2 mt-2">
+                      {['0.5', '1', '5', '10'].map(amount => (
+                        <Button
+                          key={amount}
+                          onClick={() => setTipAmount(amount)}
+                          size="sm"
+                          className="flex-1 bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white"
+                        >
+                          {amount} KAS
+                        </Button>
+                      ))}
+                    </div>
                   </div>
 
                 <Button
