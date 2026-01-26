@@ -48,11 +48,10 @@ export default function NextdoorPage() {
 
   if (selectedApp) {
     return (
-      <div className="w-full h-full bg-black">
+      <div className="w-full bg-black" style={{ height: 'calc(100vh - var(--sat, 0px) - 7.5rem)' }}>
         <iframe
           src={selectedApp.url}
-          className="w-full border-0"
-          style={{ height: 'calc(100vh - 7.5rem - var(--sat, 0px) - env(safe-area-inset-bottom, 0px) - 4rem)' }}
+          className="w-full h-full border-0"
           title={selectedApp.name}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
