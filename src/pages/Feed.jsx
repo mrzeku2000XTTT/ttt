@@ -611,18 +611,12 @@ export default function FeedPage() {
       const tipAmountKAS = parseFloat(tipAmount);
       let txId;
 
-      if (tipTokenType === "KRC20") {
-        // Send KRC-20 token via Kasware - use sendKaspa for KRC-20 (Kasware doesn't have separate KRC-20 method)
-        // For now, show error that KRC-20 not fully supported
-        throw new Error('KRC-20 transfers require wallet UI interaction - please use the Kasware wallet directly to send KRC-20 tokens');
-      } else {
-        // Send KAS
-        const amountSompi = Math.floor(parseFloat(tipAmount) * 100000000);
-        txId = await window.kasware.sendKaspa(
-          tippingPost.author_wallet_address,
-          amountSompi
-        );
-      }
+      // Send KAS
+      const amountSompi = Math.floor(parseFloat(tipAmount) * 100000000);
+      txId = await window.kasware.sendKaspa(
+        tippingPost.author_wallet_address,
+        amountSompi
+      );
 
       const senderWallet = kaswareWallet.address || user?.created_wallet_address;
       const senderName = user?.username || (senderWallet ? `${senderWallet.substring(0, 8)}...` : 'Anonymous');
