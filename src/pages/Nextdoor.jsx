@@ -48,7 +48,7 @@ export default function NextdoorPage() {
 
   if (selectedApp) {
     return (
-      <div className="w-full bg-black" style={{ height: 'calc(100vh - var(--sat, 0px) - 7.5rem)' }}>
+      <div className="w-full bg-black" style={{ height: '100vh', paddingTop: 'var(--sat, 0px)' }}>
         <iframe
           src={selectedApp.url}
           className="w-full h-full border-0"

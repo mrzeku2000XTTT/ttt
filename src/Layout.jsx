@@ -211,8 +211,9 @@ export default function Layout({ children, currentPageName }) {
     const isKaSkoolPage = currentPageName === "KaSkool";
     const isKaSkoolProfilePage = currentPageName === "KaSkoolProfile";
     const isCoursesPage = currentPageName === "Courses";
+    const isNextdoorPage = currentPageName === "Nextdoor";
 
-    if (isHomePage || isLobbyPage || isEarthPage || isCountryDetailPage || isKonektPage || isArea51Page || isTheRealmPage || isTruthLandingPage || isUNIPage || isShiLLzPage || isOliviaAppsPage || isB44PromptsPage || isWindowPage || isImageHistoryPage || isKaSkoolPage || isKaSkoolProfilePage || isCoursesPage) {
+    if (isHomePage || isLobbyPage || isEarthPage || isCountryDetailPage || isKonektPage || isArea51Page || isTheRealmPage || isTruthLandingPage || isUNIPage || isShiLLzPage || isOliviaAppsPage || isB44PromptsPage || isWindowPage || isImageHistoryPage || isKaSkoolPage || isKaSkoolProfilePage || isCoursesPage || isNextdoorPage) {
     return (
       <React.Suspense fallback={<div className="min-h-screen bg-black" />}>
         <VideoPlayerProvider>
