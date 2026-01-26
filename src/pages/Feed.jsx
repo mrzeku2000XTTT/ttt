@@ -47,6 +47,8 @@ export default function FeedPage() {
   const [tippingPost, setTippingPost] = useState(null);
   const [tipAmount, setTipAmount] = useState('');
   const [isSendingTip, setIsSendingTip] = useState(false);
+  const [tipTokenType, setTipTokenType] = useState("KAS");
+  const [tipKrc20Ticker, setTipKrc20Ticker] = useState("");
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [showMediaMenu, setShowMediaMenu] = useState(false);
   const [showGrokModal, setShowGrokModal] = useState(false);
@@ -597,17 +599,34 @@ export default function FeedPage() {
       return;
     }
 
+    if (tipTokenType === "KRC20" && !tipKrc20Ticker.trim()) {
+      setError('Please enter a token ticker (e.g., PACMAN)');
+      return;
+    }
+
     setIsSendingTip(true);
     setError(null);
 
     try {
-      const amountSompi = Math.floor(parseFloat(tipAmount) * 100000000);
       const tipAmountKAS = parseFloat(tipAmount);
+      let txId;
 
-      const txId = await window.kasware.sendKaspa(
-        tippingPost.author_wallet_address,
-        amountSompi
-      );
+      if (tipTokenType === "KRC20") {
+        // Send KRC-20 token via Kasware
+        const ticker = tipKrc20Ticker.toUpperCase();
+        txId = await window.kasware.sendToken({
+          tick: ticker,
+          to: tippingPost.author_wallet_address,
+          amount: tipAmount
+        });
+      } else {
+        // Send KAS
+        const amountSompi = Math.floor(parseFloat(tipAmount) * 100000000);
+        txId = await window.kasware.sendKaspa(
+          tippingPost.author_wallet_address,
+          amountSompi
+        );
+      }
 
       const senderWallet = kaswareWallet.address || user?.created_wallet_address;
       const senderName = user?.username || (senderWallet ? `${senderWallet.substring(0, 8)}...` : 'Anonymous');
@@ -620,6 +639,7 @@ export default function FeedPage() {
       });
 
       // Record tip transaction with emails for cross-wallet tracking
+      const ticker = tipTokenType === "KRC20" ? tipKrc20Ticker.toUpperCase() : "KAS";
       await base44.entities.TipTransaction.create({
         sender_wallet: senderWallet,
         sender_email: user?.email || null,
@@ -630,7 +650,8 @@ export default function FeedPage() {
         amount: tipAmountKAS,
         tx_hash: txId,
         post_id: tippingPost.id,
-        source: 'feed'
+        source: 'feed',
+        token_ticker: ticker
       });
 
       // Update recipient's tips_received on their post (for display only)
@@ -699,6 +720,8 @@ export default function FeedPage() {
       setShowTipModal(false);
       setTippingPost(null);
       setTipAmount('');
+      setTipTokenType("KAS");
+      setTipKrc20Ticker("");
 
       // Show custom notification instead of alert
       const notification = document.createElement('div');
@@ -714,7 +737,7 @@ export default function FeedPage() {
         <div class="space-y-1.5 text-xs text-white/60">
           <div class="flex justify-between gap-3">
             <span>Amount:</span>
-            <span class="text-white font-semibold">${tipAmountKAS} KAS</span>
+            <span class="text-white font-semibold">${tipAmountKAS} ${ticker}</span>
           </div>
           <div class="flex justify-between gap-3">
             <span>To:</span>
@@ -3058,6 +3081,39 @@ export default function FeedPage() {
               </div>
 
               <div className="space-y-4">
+                {/* Token Type Toggle */}
+                <div>
+                  <label className="text-sm text-white/60 mb-2 block">Token Type</label>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => setTipTokenType("KAS")}
+                      className={`flex-1 h-10 ${tipTokenType === "KAS" ? "bg-[#4fd1c5] text-black" : "bg-white/5 text-white/60"}`}
+                    >
+                      KAS
+                    </Button>
+                    <Button
+                      onClick={() => setTipTokenType("KRC20")}
+                      className={`flex-1 h-10 ${tipTokenType === "KRC20" ? "bg-[#4fd1c5] text-black" : "bg-white/5 text-white/60"}`}
+                    >
+                      KRC-20 Token
+                    </Button>
+                  </div>
+                </div>
+
+                {tipTokenType === "KRC20" && (
+                  <div>
+                    <label className="text-sm text-white/60 mb-2 block">
+                      Token Ticker <span className="text-red-400">*</span>
+                    </label>
+                    <Input
+                      value={tipKrc20Ticker}
+                      onChange={(e) => setTipKrc20Ticker(e.target.value.toUpperCase())}
+                      placeholder="PACMAN"
+                      className="bg-white/5 border-white/10 text-white h-12 rounded-lg uppercase"
+                    />
+                  </div>
+                )}
+
                 <div className="bg-white/5 border border-white/10 rounded-lg p-4">
                   <div className="text-xs text-white/60 mb-1">Recipient Wallet</div>
                   <div className="text-white font-mono text-sm break-all">
@@ -3066,7 +3122,9 @@ export default function FeedPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm text-white/60 mb-2 block">Tip Amount (KAS)</label>
+                  <label className="text-sm text-white/60 mb-2 block">
+                    Tip Amount {tipTokenType === "KRC20" ? `(${tipKrc20Ticker || "Tokens"})` : "(KAS)"}
+                  </label>
                   <Input
                     type="number"
                     step="0.01"
@@ -3077,35 +3135,37 @@ export default function FeedPage() {
                     className="bg-white/5 border-white/10 text-white text-lg text-center h-14"
                     autoFocus
                   />
-                  <div className="flex gap-2 mt-2">
-                    {['0.5', '1', '5', '10'].map(amount => (
-                      <Button
-                        key={amount}
-                        onClick={() => setTipAmount(amount)}
-                        size="sm"
-                        variant="outline"
-                        className="flex-1 border-white/20 text-white/60 hover:bg-white/10 hover:text-white"
-                      >
-                        {amount} KAS
-                      </Button>
-                    ))}
-                  </div>
+                  {tipTokenType === "KAS" && (
+                    <div className="flex gap-2 mt-2">
+                      {['0.5', '1', '5', '10'].map(amount => (
+                        <Button
+                          key={amount}
+                          onClick={() => setTipAmount(amount)}
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 border-white/20 text-white/60 hover:bg-white/10 hover:text-white"
+                        >
+                          {amount} KAS
+                        </Button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <Button
                   onClick={handleSendTip}
-                  disabled={isSendingTip || !tipAmount || parseFloat(tipAmount) <= 0}
+                  disabled={isSendingTip || !tipAmount || parseFloat(tipAmount) <= 0 || (tipTokenType === "KRC20" && !tipKrc20Ticker.trim())}
                   className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 h-12 text-white font-bold"
                 >
                   {isSendingTip ? (
                     <>
                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Sending Tip...
+                      Sending {tipTokenType === "KRC20" ? tipKrc20Ticker : "KAS"}...
                     </>
                   ) : (
                     <>
                       <Wallet className="w-5 h-5 mr-2" />
-                      Send {tipAmount} KAS
+                      Send {tipAmount} {tipTokenType === "KRC20" ? tipKrc20Ticker : "KAS"}
                     </>
                   )}
                 </Button>
