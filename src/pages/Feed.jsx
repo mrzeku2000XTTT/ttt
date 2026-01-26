@@ -3156,8 +3156,7 @@ export default function FeedPage() {
                             key={amount}
                             onClick={() => setTipAmount(amount)}
                             size="sm"
-                            variant="outline"
-                            className="flex-1 border-white/20 text-white/60 hover:bg-white/10 hover:text-white"
+                            className="flex-1 bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white"
                           >
                             {amount} KAS
                           </Button>
