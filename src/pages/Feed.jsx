@@ -607,8 +607,8 @@ export default function FeedPage() {
       let txId;
 
       if (tipTokenType === "KRC20" && tipKrc20Ticker.trim()) {
-        // Send KRC-20 token using signKRC20Transaction
-        const krc20Data = {
+        // Send KRC-20 token using sendKaspa with payload
+        const krc20Payload = {
           p: "krc-20",
           op: "transfer",
           tick: tipKrc20Ticker.toUpperCase(),
@@ -616,13 +616,13 @@ export default function FeedPage() {
           to: tippingPost.author_wallet_address
         };
         
-        const inscribeJsonString = JSON.stringify(krc20Data);
-        
-        txId = await window.kasware.signKRC20Transaction(
-          inscribeJsonString,
-          4,
+        txId = await window.kasware.sendKaspa(
           tippingPost.author_wallet_address,
-          0.001 // KAS fee
+          1000, // 0.00001 KAS
+          {
+            priorityFee: 1000,
+            payload: JSON.stringify(krc20Payload)
+          }
         );
       } else {
         // Send KAS (default)
