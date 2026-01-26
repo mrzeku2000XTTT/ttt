@@ -3077,39 +3077,6 @@ export default function FeedPage() {
               </div>
 
               <div className="space-y-4">
-                {/* Token Type Toggle */}
-                <div>
-                  <label className="text-sm text-white/60 mb-2 block">Token Type</label>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => setTipTokenType("KAS")}
-                      className={`flex-1 h-10 ${tipTokenType === "KAS" ? "bg-[#4fd1c5] text-black" : "bg-white/5 text-white/60"}`}
-                    >
-                      KAS
-                    </Button>
-                    <Button
-                      onClick={() => setTipTokenType("KRC20")}
-                      className={`flex-1 h-10 ${tipTokenType === "KRC20" ? "bg-[#4fd1c5] text-black" : "bg-white/5 text-white/60"}`}
-                    >
-                      KRC-20 Token
-                    </Button>
-                  </div>
-                </div>
-
-                {tipTokenType === "KRC20" && (
-                  <div>
-                    <label className="text-sm text-white/60 mb-2 block">
-                      Token Ticker <span className="text-red-400">*</span>
-                    </label>
-                    <Input
-                      value={tipKrc20Ticker}
-                      onChange={(e) => setTipKrc20Ticker(e.target.value.toUpperCase())}
-                      placeholder="PACMAN"
-                      className="bg-white/5 border-white/10 text-white h-12 rounded-lg uppercase"
-                    />
-                  </div>
-                )}
-
                 <div className="bg-white/5 border border-white/10 rounded-lg p-4">
                   <div className="text-xs text-white/60 mb-1">Recipient Wallet</div>
                   <div className="text-white font-mono text-sm break-all">
