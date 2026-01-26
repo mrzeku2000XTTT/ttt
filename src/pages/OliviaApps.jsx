@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 export default function OliviaAppsPage() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -61,7 +62,10 @@ export default function OliviaAppsPage() {
       <div className="relative z-10 h-screen w-full flex flex-col px-3 pt-3 pb-3">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
-          <button onClick={() => window.history.back()} className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors">
+          <button 
+            onClick={() => navigate(createPageUrl('Categories'))} 
+            className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors"
+          >
             <ArrowLeft className="w-5 h-5 text-white" />
           </button>
           <div className="flex items-center gap-3">
