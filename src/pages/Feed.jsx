@@ -614,11 +614,11 @@ export default function FeedPage() {
       if (tipTokenType === "KRC20") {
         // Send KRC-20 token via Kasware
         const ticker = tipKrc20Ticker.toUpperCase();
-        txId = await window.kasware.sendToken({
-          tick: ticker,
-          to: tippingPost.author_wallet_address,
-          amount: tipAmount
-        });
+        txId = await window.kasware.sendKRC20Token(
+          ticker,
+          tippingPost.author_wallet_address,
+          tipAmount
+        );
       } else {
         // Send KAS
         const amountSompi = Math.floor(parseFloat(tipAmount) * 100000000);
