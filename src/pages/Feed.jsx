@@ -667,61 +667,64 @@ export default function FeedPage() {
         tips_received: (tippingPost.tips_received || 0) + displayAmount
       });
 
-      // Track tip stats - SENDER (by email OR wallet)
-      const senderIdentifier = user?.email || senderWallet;
-      if (senderIdentifier) {
-        const senderStats = user?.email 
-          ? await base44.entities.UserTipStats.filter({ user_email: user.email })
-          : await base44.entities.UserTipStats.filter({ wallet_address: senderWallet });
-        
-        if (senderStats.length > 0) {
-          await base44.entities.UserTipStats.update(senderStats[0].id, {
-            feed_tips_sent: (senderStats[0].feed_tips_sent || 0) + tipAmountKAS,
-            username: user?.username || senderName,
-            wallet_address: senderWallet
-          });
-        } else {
-          await base44.entities.UserTipStats.create({
-            user_email: user?.email || null,
-            wallet_address: senderWallet,
-            username: user?.username || senderName,
-            feed_tips_sent: tipAmountKAS,
-            feed_tips_received: 0,
-            bull_tips_sent: 0,
-            bull_tips_received: 0
-          });
+      // Only track KAS tips in UserTipStats (not KRC-20)
+      if (tipTokenType === "KAS") {
+        // Track tip stats - SENDER (by email OR wallet)
+        const senderIdentifier = user?.email || senderWallet;
+        if (senderIdentifier) {
+          const senderStats = user?.email 
+            ? await base44.entities.UserTipStats.filter({ user_email: user.email })
+            : await base44.entities.UserTipStats.filter({ wallet_address: senderWallet });
+          
+          if (senderStats.length > 0) {
+            await base44.entities.UserTipStats.update(senderStats[0].id, {
+              feed_tips_sent: (senderStats[0].feed_tips_sent || 0) + tipAmountValue,
+              username: user?.username || senderName,
+              wallet_address: senderWallet
+            });
+          } else {
+            await base44.entities.UserTipStats.create({
+              user_email: user?.email || null,
+              wallet_address: senderWallet,
+              username: user?.username || senderName,
+              feed_tips_sent: tipAmountValue,
+              feed_tips_received: 0,
+              bull_tips_sent: 0,
+              bull_tips_received: 0
+            });
+          }
         }
-      }
 
-      // Track tip stats - RECIPIENT (by email OR wallet)
-      const recipientIdentifier = tippingPost.created_by || tippingPost.author_wallet_address;
-      if (recipientIdentifier) {
-        const recipientStats = tippingPost.created_by
-          ? await base44.entities.UserTipStats.filter({ user_email: tippingPost.created_by })
-          : await base44.entities.UserTipStats.filter({ wallet_address: tippingPost.author_wallet_address });
-        
-        if (recipientStats.length > 0) {
-          await base44.entities.UserTipStats.update(recipientStats[0].id, {
-            feed_tips_received: (recipientStats[0].feed_tips_received || 0) + tipAmountKAS,
-            username: tippingPost.author_name,
-            wallet_address: tippingPost.author_wallet_address
-          });
-        } else {
-          await base44.entities.UserTipStats.create({
-            user_email: tippingPost.created_by || null,
-            wallet_address: tippingPost.author_wallet_address,
-            username: tippingPost.author_name,
-            feed_tips_sent: 0,
-            feed_tips_received: tipAmountKAS,
-            bull_tips_sent: 0,
-            bull_tips_received: 0
-          });
+        // Track tip stats - RECIPIENT (by email OR wallet)
+        const recipientIdentifier = tippingPost.created_by || tippingPost.author_wallet_address;
+        if (recipientIdentifier) {
+          const recipientStats = tippingPost.created_by
+            ? await base44.entities.UserTipStats.filter({ user_email: tippingPost.created_by })
+            : await base44.entities.UserTipStats.filter({ wallet_address: tippingPost.author_wallet_address });
+          
+          if (recipientStats.length > 0) {
+            await base44.entities.UserTipStats.update(recipientStats[0].id, {
+              feed_tips_received: (recipientStats[0].feed_tips_received || 0) + tipAmountValue,
+              username: tippingPost.author_name,
+              wallet_address: tippingPost.author_wallet_address
+            });
+          } else {
+            await base44.entities.UserTipStats.create({
+              user_email: tippingPost.created_by || null,
+              wallet_address: tippingPost.author_wallet_address,
+              username: tippingPost.author_name,
+              feed_tips_sent: 0,
+              feed_tips_received: tipAmountValue,
+              bull_tips_sent: 0,
+              bull_tips_received: 0
+            });
+          }
         }
       }
 
       setPosts(posts.map(p => 
         p.id === tippingPost.id 
-          ? { ...p, tips_received: (p.tips_received || 0) + tipAmountKAS }
+          ? { ...p, tips_received: (p.tips_received || 0) + displayAmount }
           : p
       ));
 
