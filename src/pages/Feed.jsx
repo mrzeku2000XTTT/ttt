@@ -622,7 +622,7 @@ export default function FeedPage() {
           inscribeJsonString,
           4, // Type 4 = Transfer operation
           tippingPost.author_wallet_address,
-          0.1 // Priority fee in KAS (optional)
+          0.01 // Priority fee in KAS (minimal)
         );
       } else {
         // Send KAS (default)
