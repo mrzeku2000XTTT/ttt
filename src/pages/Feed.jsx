@@ -3095,26 +3095,7 @@ export default function FeedPage() {
                   </div>
 
                   <div>
-                   <div className="flex gap-2 mb-3">
-                     <Button
-                       onClick={() => {
-                         setTipTokenType("KAS");
-                         setTipKrc20Ticker("");
-                       }}
-                       variant={tipTokenType === "KAS" ? "default" : "outline"}
-                       size="sm"
-                       className={tipTokenType === "KAS" ? "bg-green-600 hover:bg-green-700" : "border-white/20 text-white/60 hover:bg-white/10"}
-                     >
-                       KAS
-                     </Button>
-                     <Button
-                       onClick={() => setTipTokenType("KRC20")}
-                       size="sm"
-                       className={tipTokenType === "KRC20" ? "bg-purple-600 hover:bg-purple-700 text-white" : "bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white"}
-                     >
-                       KRC-20
-                     </Button>
-                   </div>
+                   {/* KRC-20 support coming soon */}
 
                    <label className="text-sm text-white/60 mb-2 block">
                       Tip Amount {tipTokenType === "KRC20" ? `(${tipKrc20Ticker || "Tokens"})` : "(KAS)"}
