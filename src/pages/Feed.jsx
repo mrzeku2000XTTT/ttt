@@ -622,7 +622,7 @@ export default function FeedPage() {
           inscribeJsonString,
           4,
           tippingPost.author_wallet_address,
-          0.00001 // Minimal fee
+          0.001 // KAS fee
         );
       } else {
         // Send KAS (default)
