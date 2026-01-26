@@ -612,12 +612,17 @@ export default function FeedPage() {
           p: "krc-20",
           op: "transfer",
           tick: tipKrc20Ticker.toUpperCase(),
-          amt: tipAmountValue.toString(),
+          amt: (tipAmountValue * Math.pow(10, 8)).toString(),
           to: tippingPost.author_wallet_address
         };
         
+        const inscribeJsonString = JSON.stringify(krc20Data);
+        
         txId = await window.kasware.signKRC20Transaction(
-          JSON.stringify(krc20Data)
+          inscribeJsonString,
+          4,
+          tippingPost.author_wallet_address,
+          0.00001 // Minimal fee
         );
       } else {
         // Send KAS (default)
@@ -3095,10 +3100,29 @@ export default function FeedPage() {
                   </div>
 
                   <div>
-                   {/* KRC-20 support coming soon */}
+                   <div className="flex gap-2 mb-3">
+                     <Button
+                       onClick={() => {
+                         setTipTokenType("KAS");
+                         setTipKrc20Ticker("");
+                       }}
+                       variant={tipTokenType === "KAS" ? "default" : "outline"}
+                       size="sm"
+                       className={tipTokenType === "KAS" ? "bg-green-600 hover:bg-green-700" : "border-white/20 text-white/60 hover:bg-white/10"}
+                     >
+                       KAS
+                     </Button>
+                     <Button
+                       onClick={() => setTipTokenType("KRC20")}
+                       size="sm"
+                       className={tipTokenType === "KRC20" ? "bg-purple-600 hover:bg-purple-700 text-white" : "bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white"}
+                     >
+                       KRC-20
+                     </Button>
+                   </div>
 
                    <label className="text-sm text-white/60 mb-2 block">
-                      Tip Amount (KAS)
+                      Tip Amount {tipTokenType === "KRC20" ? `(${tipKrc20Ticker || "Tokens"})` : "(KAS)"}
                     </label>
                    <Input
                      type="number"
@@ -3106,23 +3130,38 @@ export default function FeedPage() {
                      min="0.01"
                      value={tipAmount}
                      onChange={(e) => setTipAmount(e.target.value)}
-                     placeholder="0.5"
+                     placeholder={tipTokenType === "KRC20" ? "Amount of tokens" : "0.5"}
                      className="bg-white/5 border-white/10 text-white text-lg text-center h-14"
                      autoFocus
                    />
 
-                   <div className="flex gap-2 mt-2">
-                      {['0.5', '1', '5', '10'].map(amount => (
-                        <Button
-                          key={amount}
-                          onClick={() => setTipAmount(amount)}
-                          size="sm"
-                          className="flex-1 bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white"
-                        >
-                          {amount} KAS
-                        </Button>
-                      ))}
-                    </div>
+                   {tipTokenType === "KRC20" && (
+                     <div className="mt-3">
+                       <label className="text-sm text-white/60 mb-2 block">Token Ticker</label>
+                       <Input
+                         type="text"
+                         value={tipKrc20Ticker}
+                         onChange={(e) => setTipKrc20Ticker(e.target.value.toUpperCase())}
+                         placeholder="e.g., KSPR, LEGEND"
+                         className="bg-white/5 border-white/10 text-white text-center h-10 font-semibold"
+                       />
+                     </div>
+                   )}
+
+                   {tipTokenType === "KAS" && (
+                     <div className="flex gap-2 mt-2">
+                        {['0.5', '1', '5', '10'].map(amount => (
+                          <Button
+                            key={amount}
+                            onClick={() => setTipAmount(amount)}
+                            size="sm"
+                            className="flex-1 bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white"
+                          >
+                            {amount} KAS
+                          </Button>
+                        ))}
+                      </div>
+                   )}
                   </div>
 
                 <Button
