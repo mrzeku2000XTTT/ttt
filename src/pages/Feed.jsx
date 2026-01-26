@@ -625,16 +625,11 @@ export default function FeedPage() {
           0.001 // KAS fee
         );
       } else {
-        // Send KAS (default) - from sender's address
-        const senderAddress = kaswareWallet.address || user?.created_wallet_address;
-        if (!senderAddress) {
-          throw new Error('Kasware wallet not connected');
-        }
+        // Send KAS (default)
         const amountSompi = Math.floor(tipAmountValue * 100000000);
         txId = await window.kasware.sendKaspa(
           tippingPost.author_wallet_address,
-          amountSompi,
-          senderAddress
+          amountSompi
         );
       }
 
