@@ -900,8 +900,8 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                         key={amount}
                         onClick={() => setTipAmount(amount)}
                         size="sm"
-                        variant="outline"
-                        className="flex-1 border-white/20 text-white/60 hover:bg-white/10 hover:text-white"
+                        variant="ghost"
+                        className="flex-1 bg-black border border-white/20 text-white/60 hover:bg-white/10 hover:text-white"
                       >
                         {amount}
                       </Button>
