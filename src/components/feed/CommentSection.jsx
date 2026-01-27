@@ -477,7 +477,7 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
 
         if (recipientStats.length > 0) {
           await base44.entities.UserTipStats.update(recipientStats[0].id, {
-            comment_tips_received: (recipientStats[0].comment_tips_received || 0) + tipAmountKAS,
+            comment_tips_received: (recipientStats[0].comment_tips_received || 0) + tipAmountValue,
             username: tipModal.author_name || tipModal.commenter_name,
             wallet_address: tipModal.author_wallet_address
           });
@@ -491,30 +491,18 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
             bull_tips_sent: 0,
             bull_tips_received: 0,
             comment_tips_sent: 0,
-            comment_tips_received: tipAmountKAS
+            comment_tips_received: tipAmountValue
           });
         }
       }
 
-      // Update comment tips
-      const comment = await base44.entities.PostComment.filter({ id: tipModal.id });
-      if (comment.length > 0) {
-        if (tipTokenType === "KRC20") {
-          const currentKrc20Tips = comment[0].krc20_tips_received || {};
-          const tickerAmount = currentKrc20Tips[tipKrc20Ticker] || 0;
-          await base44.entities.PostComment.update(tipModal.id, {
-            krc20_tips_received: {
-              ...currentKrc20Tips,
-              [tipKrc20Ticker]: tickerAmount + tipAmountValue
-            }
-          });
-        } else {
-          const currentTips = comment[0].tips_received || 0;
-          await base44.entities.PostComment.update(tipModal.id, {
-            tips_received: currentTips + tipAmountValue
-          });
-        }
-      }
+      // Update comment tips using backend function (bypasses RLS)
+      await base44.functions.invoke('updateCommentTips', {
+        comment_id: tipModal.id,
+        amount: tipAmountValue,
+        token_type: tipTokenType,
+        krc20_ticker: tipTokenType === "KRC20" ? tipKrc20Ticker : null
+      });
 
       setTipModal(null);
       setTipAmount('');
