@@ -23,6 +23,9 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
   const [isSendingTip, setIsSendingTip] = useState(false);
   const [commenterTips, setCommenterTips] = useState({});
   const [zkIsResponding, setZkIsResponding] = useState(false);
+  const [tipTokenType, setTipTokenType] = useState("KAS");
+  const [tipKrc20Ticker, setTipKrc20Ticker] = useState("PACMAN");
+  const [tipError, setTipError] = useState('');
 
   useEffect(() => {
     loadComments();
@@ -383,15 +386,40 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
     }
 
     setIsSendingTip(true);
+    setTipError('');
 
     try {
-      const amountSompi = Math.floor(parseFloat(tipAmount) * 100000000);
-      const tipAmountKAS = parseFloat(tipAmount);
+      let txId;
+      const tipAmountValue = parseFloat(tipAmount);
 
-      const txId = await window.kasware.sendKaspa(
-        tipModal.author_wallet_address,
-        amountSompi
-      );
+      if (tipTokenType === "KRC20" && tipKrc20Ticker.trim()) {
+        // Send KRC-20 token using signKRC20Transaction
+        const krc20Data = {
+          p: "krc-20",
+          op: "transfer",
+          tick: tipKrc20Ticker.toUpperCase(),
+          amt: (tipAmountValue * Math.pow(10, 8)).toString(),
+          to: tipModal.author_wallet_address
+        };
+        
+        const inscribeJsonString = JSON.stringify(krc20Data);
+        
+        txId = await window.kasware.signKRC20Transaction(
+          inscribeJsonString,
+          4,
+          tipModal.author_wallet_address,
+          0.0002 // KAS fee (standard network rate)
+        );
+      } else {
+        // Send KAS
+        const amountSompi = Math.floor(tipAmountValue * 100000000);
+        txId = await window.kasware.sendKaspa(
+          tipModal.author_wallet_address,
+          amountSompi
+        );
+      }
+
+      const tipAmountKAS = tipAmountValue;
 
       // Record tip transaction
       await base44.entities.TipTransaction.create({
@@ -502,6 +530,14 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
 
     } catch (err) {
       console.error('Failed to send tip:', err);
+
+      if (err.message?.includes('User reject')) {
+        setTipError('Transaction cancelled');
+      } else if (err.message?.includes('storage mass') || err.message?.includes('Storage mass')) {
+        setTipError('⚠️ Storage mass error: Your wallet has too many small UTXOs. Go to your wallet settings and use the "Consolidate" or "Compound" button to merge UTXOs, then try again.');
+      } else {
+        setTipError('Failed to send tip: ' + err.message);
+      }
     } finally {
       setIsSendingTip(false);
     }
@@ -807,8 +843,45 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                   </div>
                 </div>
 
+                <div className="flex gap-2 mb-4">
+                  <Button
+                    onClick={() => setTipTokenType("KAS")}
+                    className={`flex-1 ${
+                      tipTokenType === "KAS"
+                        ? "bg-white/10 text-white border-white/20"
+                        : "bg-transparent text-white/40 border-white/10"
+                    } border`}
+                  >
+                    KAS
+                  </Button>
+                  <Button
+                    onClick={() => setTipTokenType("KRC20")}
+                    className={`flex-1 ${
+                      tipTokenType === "KRC20"
+                        ? "bg-white/10 text-white border-white/20"
+                        : "bg-transparent text-white/40 border-white/10"
+                    } border`}
+                  >
+                    KRC-20
+                  </Button>
+                </div>
+
+                {tipTokenType === "KRC20" && (
+                  <div className="mb-4">
+                    <label className="text-sm text-white/60 mb-2 block">Token Ticker</label>
+                    <Input
+                      value={tipKrc20Ticker}
+                      onChange={(e) => setTipKrc20Ticker(e.target.value.toUpperCase())}
+                      placeholder="PACMAN"
+                      className="bg-white/5 border-white/10 text-white"
+                    />
+                  </div>
+                )}
+
                 <div>
-                  <label className="text-sm text-white/60 mb-2 block">Tip Amount (KAS)</label>
+                  <label className="text-sm text-white/60 mb-2 block">
+                    Tip Amount ({tipTokenType === "KRC20" ? tipKrc20Ticker : "KAS"})
+                  </label>
                   <Input
                     type="number"
                     step="0.01"
@@ -834,6 +907,12 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                   </div>
                 </div>
 
+                {tipError && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                    <p className="text-xs text-red-400">{tipError}</p>
+                  </div>
+                )}
+
                 <Button
                   onClick={sendTipToCommenter}
                   disabled={isSendingTip || !tipAmount || parseFloat(tipAmount) <= 0}
@@ -847,16 +926,22 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                   ) : (
                     <>
                       <Wallet className="w-5 h-5 mr-2" />
-                      Send KAS
+                      Send {tipTokenType === "KRC20" ? tipKrc20Ticker : "KAS"}
                     </>
                   )}
                 </Button>
 
-                <div className="bg-white/5 border border-white/10 rounded-lg p-3">
+                <div className="bg-white/5 border border-white/10 rounded-lg p-3 space-y-2">
                   <div className="flex items-start gap-2">
                     <Sparkles className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
                     <p className="text-xs text-white/60">
                       Tips are sent directly from your Kasware wallet to the creator's wallet instantly.
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Sparkles className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-white/60">
+                      💡 Keep at least 5 KAS in your wallet to avoid transaction errors.
                     </p>
                   </div>
                 </div>
