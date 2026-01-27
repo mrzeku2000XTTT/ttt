@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Heart, Send, Loader2, Trash2, DollarSign, X, Wallet, Sparkles, CornerDownRight } from "lucide-react";
 import { format } from "date-fns";
-import TipModal from "@/components/TipModal";
 
 export default function CommentSection({ postId, currentUser, onCommentAdded }) {
   const [comments, setComments] = useState([]);
@@ -19,7 +18,9 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
     const saved = localStorage.getItem('liked_comments');
     return saved ? JSON.parse(saved) : {};
   });
-  const [tippingComment, setTippingComment] = useState(null);
+  const [tipModal, setTipModal] = useState(null);
+  const [tipAmount, setTipAmount] = useState('');
+  const [isSendingTip, setIsSendingTip] = useState(false);
   const [commenterTips, setCommenterTips] = useState({});
   const [zkIsResponding, setZkIsResponding] = useState(false);
 
@@ -373,12 +374,137 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
       alert('This user has not connected a wallet yet');
       return;
     }
-    setTippingComment(comment);
+    setTipModal(comment);
   };
 
-  const handleTipSuccess = async () => {
-    // Reload tips to update display
-    await loadCommenterTips();
+  const sendTipToCommenter = async () => {
+    if (!tipAmount || isNaN(parseFloat(tipAmount)) || parseFloat(tipAmount) <= 0) {
+      return;
+    }
+
+    setIsSendingTip(true);
+
+    try {
+      const amountSompi = Math.floor(parseFloat(tipAmount) * 100000000);
+      const tipAmountKAS = parseFloat(tipAmount);
+
+      const txId = await window.kasware.sendKaspa(
+        tipModal.author_wallet_address,
+        amountSompi
+      );
+
+      // Record tip transaction
+      await base44.entities.TipTransaction.create({
+        sender_wallet: currentUser?.created_wallet_address || '',
+        sender_email: currentUser?.email || null,
+        sender_name: currentUser?.username || 'Anonymous',
+        recipient_wallet: tipModal.author_wallet_address,
+        recipient_email: tipModal.created_by || null,
+        recipient_name: tipModal.author_name || tipModal.commenter_name,
+        amount: tipAmountKAS,
+        tx_hash: txId,
+        post_id: postId,
+        source: 'feed_comment'
+      });
+
+      // Track comment tip stats - SENDER (by email OR wallet)
+      const senderWallet = currentUser?.created_wallet_address || '';
+      const senderIdentifier = currentUser?.email || senderWallet;
+
+      if (senderIdentifier) {
+        const senderStats = currentUser?.email 
+          ? await base44.entities.UserTipStats.filter({ user_email: currentUser.email })
+          : await base44.entities.UserTipStats.filter({ wallet_address: senderWallet });
+
+        if (senderStats.length > 0) {
+          await base44.entities.UserTipStats.update(senderStats[0].id, {
+            comment_tips_sent: (senderStats[0].comment_tips_sent || 0) + tipAmountKAS,
+            username: currentUser?.username || 'Anonymous',
+            wallet_address: senderWallet
+          });
+        } else {
+          await base44.entities.UserTipStats.create({
+            user_email: currentUser?.email || null,
+            wallet_address: senderWallet,
+            username: currentUser?.username || 'Anonymous',
+            feed_tips_sent: 0,
+            feed_tips_received: 0,
+            bull_tips_sent: 0,
+            bull_tips_received: 0,
+            comment_tips_sent: tipAmountKAS,
+            comment_tips_received: 0
+          });
+        }
+      }
+
+      // Track comment tip stats - RECIPIENT (by email OR wallet)
+      const recipientIdentifier = tipModal.created_by || tipModal.author_wallet_address;
+
+      if (recipientIdentifier) {
+        const recipientStats = tipModal.created_by
+          ? await base44.entities.UserTipStats.filter({ user_email: tipModal.created_by })
+          : await base44.entities.UserTipStats.filter({ wallet_address: tipModal.author_wallet_address });
+
+        if (recipientStats.length > 0) {
+          await base44.entities.UserTipStats.update(recipientStats[0].id, {
+            comment_tips_received: (recipientStats[0].comment_tips_received || 0) + tipAmountKAS,
+            username: tipModal.author_name || tipModal.commenter_name,
+            wallet_address: tipModal.author_wallet_address
+          });
+        } else {
+          await base44.entities.UserTipStats.create({
+            user_email: tipModal.created_by || null,
+            wallet_address: tipModal.author_wallet_address,
+            username: tipModal.author_name || tipModal.commenter_name,
+            feed_tips_sent: 0,
+            feed_tips_received: 0,
+            bull_tips_sent: 0,
+            bull_tips_received: 0,
+            comment_tips_sent: 0,
+            comment_tips_received: tipAmountKAS
+          });
+        }
+      }
+
+      setTipModal(null);
+      setTipAmount('');
+
+      // Reload tips to update display
+      await loadCommenterTips();
+
+      // Show notification
+      const notification = document.createElement('div');
+      notification.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[1000] max-w-xs';
+      notification.style.top = 'calc(var(--sat, 0px) + 8rem)';
+      notification.innerHTML = `
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0">
+            <span class="text-sm">✓</span>
+          </div>
+          <h3 class="font-bold text-sm">Tip sent to commenter!</h3>
+        </div>
+        <div class="space-y-1.5 text-xs text-white/60">
+          <div class="flex justify-between gap-3">
+            <span>Amount:</span>
+            <span class="text-white font-semibold">${tipAmountKAS} KAS</span>
+          </div>
+          <div class="flex justify-between gap-3">
+            <span>To:</span>
+            <span class="text-white font-semibold truncate">${tipModal.author_name || tipModal.commenter_name}</span>
+          </div>
+        </div>
+        <button onclick="this.parentElement.remove()" class="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-lg py-1.5 text-xs font-medium transition-colors border border-white/10">
+          OK
+        </button>
+      `;
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 5000);
+
+    } catch (err) {
+      console.error('Failed to send tip:', err);
+    } finally {
+      setIsSendingTip(false);
+    }
   };
 
   return (
@@ -630,22 +756,115 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
         </div>
       )}
 
-      {/* Tip Modal - Same as Feed Posts */}
-      {tippingComment && (
-        <TipModal
-          isOpen={!!tippingComment}
-          onClose={() => setTippingComment(null)}
-          post={{
-            author_name: tippingComment.author_name || tippingComment.commenter_name,
-            author_wallet_address: tippingComment.author_wallet_address,
-            created_by: tippingComment.created_by,
-            id: postId
-          }}
-          currentUser={currentUser}
-          onTipSuccess={handleTipSuccess}
-          source="feed_comment"
-        />
-      )}
+      {/* Tip Modal - Matching Feed Post Tip Modal */}
+      <AnimatePresence>
+        {tipModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
+            onClick={() => {
+              setTipModal(null);
+              setTipAmount('');
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-black border border-white/20 rounded-xl w-full max-w-md p-6"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-lg flex items-center justify-center">
+                    <DollarSign className="w-5 h-5 text-green-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold text-lg">Send Tip</h3>
+                    <p className="text-white/60 text-sm">to {tipModal.author_name || tipModal.commenter_name}</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => {
+                    setTipModal(null);
+                    setTipAmount('');
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="text-white/60 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+                  <div className="text-xs text-white/60 mb-1">Recipient Wallet</div>
+                  <div className="text-white font-mono text-sm break-all">
+                    {tipModal.author_wallet_address}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm text-white/60 mb-2 block">Tip Amount (KAS)</label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={tipAmount}
+                    onChange={(e) => setTipAmount(e.target.value)}
+                    placeholder="0.5"
+                    className="bg-white/5 border-white/10 text-white text-lg text-center h-14"
+                    autoFocus
+                  />
+                  <div className="flex gap-2 mt-2">
+                    {['0.5', '1', '5', '10'].map(amount => (
+                      <Button
+                        key={amount}
+                        onClick={() => setTipAmount(amount)}
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 border-white/20 text-white/60 hover:bg-white/10 hover:text-white"
+                      >
+                        {amount}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                <Button
+                  onClick={sendTipToCommenter}
+                  disabled={isSendingTip || !tipAmount || parseFloat(tipAmount) <= 0}
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 h-12 text-white font-bold"
+                >
+                  {isSendingTip ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Sending Tip...
+                    </>
+                  ) : (
+                    <>
+                      <Wallet className="w-5 h-5 mr-2" />
+                      Send KAS
+                    </>
+                  )}
+                </Button>
+
+                <div className="bg-white/5 border border-white/10 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <Sparkles className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-white/60">
+                      Tips are sent directly from your Kasware wallet to the creator's wallet instantly.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
