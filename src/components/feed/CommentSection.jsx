@@ -429,7 +429,9 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
         recipient_wallet: tipModal.author_wallet_address,
         recipient_email: tipModal.created_by || null,
         recipient_name: tipModal.author_name || tipModal.commenter_name,
-        amount: tipAmountKAS,
+        amount: tipAmountValue,
+        token_type: tipTokenType,
+        krc20_ticker: tipTokenType === "KRC20" ? tipKrc20Ticker : null,
         tx_hash: txId,
         post_id: postId,
         source: 'feed_comment'
@@ -490,6 +492,26 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
             bull_tips_received: 0,
             comment_tips_sent: 0,
             comment_tips_received: tipAmountKAS
+          });
+        }
+      }
+
+      // Update comment tips
+      const comment = await base44.entities.PostComment.filter({ id: tipModal.id });
+      if (comment.length > 0) {
+        if (tipTokenType === "KRC20") {
+          const currentKrc20Tips = comment[0].krc20_tips_received || {};
+          const tickerAmount = currentKrc20Tips[tipKrc20Ticker] || 0;
+          await base44.entities.PostComment.update(tipModal.id, {
+            krc20_tips_received: {
+              ...currentKrc20Tips,
+              [tipKrc20Ticker]: tickerAmount + tipAmountValue
+            }
+          });
+        } else {
+          const currentTips = comment[0].tips_received || 0;
+          await base44.entities.PostComment.update(tipModal.id, {
+            tips_received: currentTips + tipAmountValue
           });
         }
       }
