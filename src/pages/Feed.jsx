@@ -654,18 +654,29 @@ export default function FeedPage() {
         recipient_email: tippingPost.created_by || null,
         recipient_name: tippingPost.author_name,
         amount: tipAmountValue,
+        token_type: tipTokenType,
+        krc20_ticker: tipTokenType === "KRC20" ? tipKrc20Ticker.toUpperCase() : null,
         tx_hash: txId,
         post_id: tippingPost.id,
-        source: 'feed',
-        token_ticker: ticker
+        source: 'feed'
       });
 
-      // Update recipient's tips_received on their post (for display only)
-      // Only add to tips_received if sending KAS (not KRC-20)
-      const displayAmount = tipTokenType === "KAS" ? tipAmountValue : 0;
-      await base44.entities.Post.update(tippingPost.id, {
-        tips_received: (tippingPost.tips_received || 0) + displayAmount
-      });
+      // Update post tips
+      if (tipTokenType === "KRC20") {
+        const currentKrc20Tips = tippingPost.krc20_tips_received || {};
+        const tickerAmount = currentKrc20Tips[tipKrc20Ticker.toUpperCase()] || 0;
+        await base44.entities.Post.update(tippingPost.id, {
+          krc20_tips_received: {
+            ...currentKrc20Tips,
+            [tipKrc20Ticker.toUpperCase()]: tickerAmount + tipAmountValue
+          }
+        });
+      } else {
+        const currentTips = tippingPost.tips_received || 0;
+        await base44.entities.Post.update(tippingPost.id, {
+          tips_received: currentTips + tipAmountValue
+        });
+      }
 
       // Only track KAS tips in UserTipStats (not KRC-20)
       if (tipTokenType === "KAS") {
@@ -722,11 +733,29 @@ export default function FeedPage() {
         }
       }
 
-      setPosts(posts.map(p => 
-        p.id === tippingPost.id 
-          ? { ...p, tips_received: (p.tips_received || 0) + displayAmount }
-          : p
-      ));
+      // Update local state
+      if (tipTokenType === "KRC20") {
+        setPosts(posts.map(p => {
+          if (p.id === tippingPost.id) {
+            const currentKrc20 = p.krc20_tips_received || {};
+            const tickerAmount = currentKrc20[tipKrc20Ticker.toUpperCase()] || 0;
+            return {
+              ...p,
+              krc20_tips_received: {
+                ...currentKrc20,
+                [tipKrc20Ticker.toUpperCase()]: tickerAmount + tipAmountValue
+              }
+            };
+          }
+          return p;
+        }));
+      } else {
+        setPosts(posts.map(p => 
+          p.id === tippingPost.id 
+            ? { ...p, tips_received: (p.tips_received || 0) + tipAmountValue }
+            : p
+        ));
+      }
 
       setShowTipModal(false);
       setTippingPost(null);
