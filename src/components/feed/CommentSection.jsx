@@ -846,21 +846,23 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                 <div className="flex gap-2 mb-4">
                   <Button
                     onClick={() => setTipTokenType("KAS")}
+                    variant="ghost"
                     className={`flex-1 ${
                       tipTokenType === "KAS"
-                        ? "bg-white/10 text-white border-white/20"
-                        : "bg-transparent text-white/40 border-white/10"
-                    } border`}
+                        ? "bg-white/10 text-white border border-white/20"
+                        : "bg-black text-white/40 border border-white/10"
+                    }`}
                   >
                     KAS
                   </Button>
                   <Button
                     onClick={() => setTipTokenType("KRC20")}
+                    variant="ghost"
                     className={`flex-1 ${
                       tipTokenType === "KRC20"
-                        ? "bg-white/10 text-white border-white/20"
-                        : "bg-transparent text-white/40 border-white/10"
-                    } border`}
+                        ? "bg-white/10 text-white border border-white/20"
+                        : "bg-black text-white/40 border border-white/10"
+                    }`}
                   >
                     KRC-20
                   </Button>
