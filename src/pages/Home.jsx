@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Loader2, Wand2, Shield, LogIn, ArrowRight, Zap, LogOut, Link as LinkIcon, Hand, ChevronRight, X, TrendingUp, Link2, ArrowUpDown, Wallet, Key, CheckCircle2, Menu, CreditCard } from "lucide-react";
+import { Sparkles, Loader2, Wand2, Shield, LogIn, ArrowRight, Zap, LogOut, Link as LinkIcon, Hand, ChevronRight, X, TrendingUp, Link2, ArrowUpDown, Wallet, Key, CheckCircle2, Menu } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import KasperPayConnectButton from "@/components/KasperoPay/KasperPayConnectButton";
 
 export default function HomePage() {
   const [user, setUser] = useState(null);
@@ -103,30 +104,22 @@ export default function HomePage() {
     }
   };
 
-  const connectKasperoPay = () => {
-    if (typeof window.KasperoPay === 'undefined') {
-      alert('KasperoPay widget not loaded. Please try again or refresh the page.');
-      return;
-    }
+  const connectKasperoPay = async (address) => {
     setIsConnectingWallet(true);
     try {
-      window.KasperoPay.connect({
-        merchant: 'kpm_hocgtdnj',
-        onConnect: (user) => {
-          if (user && user.address) {
-            setWalletAddress(user.address);
-            loadConversationHistory(user.address);
-            setShowWalletModal(false);
-          }
-          setIsConnectingWallet(false);
-        },
-        onCancel: () => {
-          setIsConnectingWallet(false);
-        }
+      const response = await base44.functions.invoke('kasperPayConnect', {
+        walletAddress: address
       });
+
+      if (response.data?.success) {
+        setWalletAddress(address);
+        await loadConversationHistory(address);
+        setShowWalletModal(false);
+      }
     } catch (err) {
-      console.error('KasperoPay initialization failed:', err);
-      alert('Failed to initialize KasperoPay');
+      console.error('KasperoPay connect failed:', err);
+      alert('Failed to connect wallet');
+    } finally {
       setIsConnectingWallet(false);
     }
   };
@@ -982,21 +975,10 @@ export default function HomePage() {
                              </button>
 
                              {/* KasperoPay Option */}
-                             <button
-                               onClick={connectKasperoPay}
-                               disabled={isConnectingWallet}
-                               className="w-full p-4 bg-gradient-to-r from-teal-500/20 to-green-500/20 border border-teal-500/40 rounded-xl hover:from-teal-500/30 hover:to-green-500/30 transition-all text-left"
-                             >
-                               <div className="flex items-center gap-3">
-                                 <div className="w-12 h-12 bg-teal-500/20 rounded-full flex items-center justify-center">
-                                   <CreditCard className="w-6 h-6 text-teal-400" />
-                                 </div>
-                                 <div>
-                                   <p className="text-white font-semibold">KasperoPay</p>
-                                   <p className="text-xs text-gray-400">Connect from any wallet</p>
-                                 </div>
-                               </div>
-                             </button>
+                             <KasperPayConnectButton 
+                               onConnect={connectKasperoPay}
+                               isConnecting={isConnectingWallet}
+                             />
                             </div>
 
                           {isConnectingWallet && (
