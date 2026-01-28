@@ -833,6 +833,10 @@ export default function Layout({ children, currentPageName }) {
         {/* Impact.com Verification */}
         <div className="hidden">Impact-Site-Verification: f26aa8dc-9c99-4682-9297-a839462bebea</div>
 
+        {/* KasperoPay Widget */}
+        <div id="kaspero-pay-button" data-merchant="kpm_hocgtdnj" style={{ display: 'none' }}></div>
+        <script src="https://kaspa-store.com/pay/widget.js"></script>
+
         {/* Mobile Bottom Navigation */}
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[90] bg-black/95 backdrop-blur-xl border-t border-white/10" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
           <div className="flex items-center justify-around px-2 py-1.5">
