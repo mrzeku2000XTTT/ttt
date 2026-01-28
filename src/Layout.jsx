@@ -842,36 +842,46 @@ export default function Layout({ children, currentPageName }) {
 
         {/* Mobile Bottom Navigation */}
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[90] bg-black/95 backdrop-blur-xl border-t border-white/10" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-          <div className="flex items-center justify-around px-2 py-1.5">
+          <div className="flex items-center justify-around px-1 py-1.5">
             <Link to={createPageUrl("Categories")}>
-              <button className={`flex flex-col items-center gap-0.5 py-1 ${currentPageName === 'Categories' ? 'text-cyan-400' : 'text-white/60'}`}>
+              <button className={`flex flex-col items-center gap-0.5 py-1 px-1 ${currentPageName === 'Categories' ? 'text-cyan-400' : 'text-white/60'}`}>
                 <LayoutGrid className="w-4 h-4" />
                 <span className="text-[8px]">Apps</span>
               </button>
             </Link>
             <Link to={createPageUrl("Browser")}>
-              <button className={`flex flex-col items-center gap-0.5 py-1 ${currentPageName === 'Browser' ? 'text-cyan-400' : 'text-white/60'}`}>
+              <button className={`flex flex-col items-center gap-0.5 py-1 px-1 ${currentPageName === 'Browser' ? 'text-cyan-400' : 'text-white/60'}`}>
                 <Search className="w-4 h-4" />
                 <span className="text-[8px]">TTTV</span>
               </button>
             </Link>
             <Link to={createPageUrl("Feed")}>
-              <button className={`flex flex-col items-center gap-0.5 py-1 ${currentPageName === 'Feed' ? 'text-cyan-400' : 'text-white/60'}`}>
+              <button className={`flex flex-col items-center gap-0.5 py-1 px-1 ${currentPageName === 'Feed' ? 'text-cyan-400' : 'text-white/60'}`}>
                 <Users className="w-4 h-4" />
                 <span className="text-[8px]">Feed</span>
               </button>
             </Link>
             <Link to={createPageUrl("AgentZK")}>
-              <button className={`relative flex flex-col items-center gap-0.5 py-1 ${currentPageName === 'AgentZK' ? 'text-cyan-400' : 'text-white/60'}`}>
+              <button className={`relative flex flex-col items-center gap-0.5 py-1 px-1 ${currentPageName === 'AgentZK' ? 'text-cyan-400' : 'text-white/60'}`}>
                 <Bot className="w-4 h-4" />
                 <Crown className="w-2 h-2 text-yellow-400 absolute -top-0.5 -right-0.5" />
                 <span className="text-[8px]">ZK</span>
               </button>
             </Link>
             <Link to={createPageUrl("Profile")}>
-              <button className={`flex flex-col items-center gap-0.5 py-1 ${currentPageName === 'Profile' ? 'text-cyan-400' : 'text-white/60'}`}>
+              <button className={`flex flex-col items-center gap-0.5 py-1 px-1 ${currentPageName === 'Profile' ? 'text-cyan-400' : 'text-white/60'}`}>
                 <UserIcon className="w-4 h-4" />
                 <span className="text-[8px]">Profile</span>
+              </button>
+            </Link>
+            <Link to={createPageUrl("KaspaOnboarding")}>
+              <button className={`flex flex-col items-center gap-0.5 py-1 px-1 ${currentPageName === 'KaspaOnboarding' ? 'text-cyan-400' : 'text-white/60'} hover:text-cyan-400 transition-colors`}>
+                <img 
+                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/6bee04b5b_image.png"
+                  alt="Kaspa"
+                  className="w-4 h-4"
+                />
+                <span className="text-[8px]">Wallet</span>
               </button>
             </Link>
           </div>
