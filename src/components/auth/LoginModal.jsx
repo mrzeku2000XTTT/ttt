@@ -27,14 +27,25 @@ export default function LoginModal({ isOpen, onClose }) {
 
   useEffect(() => {
     if (isOpen) {
-      // Load Kaspero connect widget script
-      if (!window.KasperoPay) {
-        const script = document.createElement('script');
-        script.src = 'https://kaspa-store.com/connect/widget.js';
-        script.async = true;
-        script.onerror = () => console.error('Failed to load KasperoPay connect script');
-        document.body.appendChild(script);
-      }
+      // Load Kaspero connect widget script and wait for it
+      const script = document.createElement('script');
+      script.src = 'https://kaspa-store.com/connect/widget.js';
+      script.async = true;
+      script.onload = () => {
+        // Script loaded, trigger widget initialization
+        if (window.KasperoPay && window.KasperoPay.renderConnectButton) {
+          window.KasperoPay.renderConnectButton();
+        }
+      };
+      script.onerror = () => console.error('Failed to load KasperoPay connect script');
+      document.body.appendChild(script);
+      
+      return () => {
+        // Cleanup
+        if (script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
+      };
     }
   }, [isOpen]);
 
