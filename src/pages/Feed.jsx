@@ -2530,15 +2530,15 @@ export default function FeedPage() {
             </div>
         )}
 
-        <div className="flex items-center gap-6 pt-4 border-t border-white/10">
+        <div className="flex items-center gap-2 md:gap-6 pt-4 border-t border-white/10">
           <Button
             onClick={(e) => handleLike(post, e)}
             variant="ghost"
             size="sm"
             className={`h-auto p-0 ${userLikes[post.id] ? 'text-red-400' : 'text-white/40 hover:text-red-400'}`}
           >
-            <Heart className={`w-5 h-5 mr-2 ${userLikes[post.id] ? 'fill-current' : ''}`} />
-            <span className="text-sm">{post.likes || 0}</span>
+            <Heart className={`w-3 h-3 md:w-5 md:h-5 mr-1 md:mr-2 ${userLikes[post.id] ? 'fill-current' : ''}`} />
+            <span className="text-xs md:text-sm">{post.likes || 0}</span>
           </Button>
 
           <Button
@@ -2547,11 +2547,11 @@ export default function FeedPage() {
             size="sm"
             className="text-white/40 hover:text-white h-auto p-0"
           >
-            <MessageCircle className="w-5 h-5 mr-2" />
-            <span className="text-sm">{post.comments_count || 0}</span>
+            <MessageCircle className="w-3 h-3 md:w-5 md:h-5 mr-1 md:mr-2" />
+            <span className="text-xs md:text-sm">{post.comments_count || 0}</span>
           </Button>
 
-          {!isReply && ( // Only show reply button for main posts
+          {!isReply && (
             <Button
               onClick={() => handleReply(post)}
               variant="ghost"
@@ -2559,8 +2559,8 @@ export default function FeedPage() {
               className={`h-auto p-0 ${replyingTo?.id === post.id ? 'text-cyan-400' : 'text-white/40 hover:text-cyan-400'}`}
               title="Reply to post"
             >
-              <CornerDownRight className="w-5 h-5 mr-2" />
-              <span className="text-sm">{post.replies_count || 0}</span>
+              <CornerDownRight className="w-3 h-3 md:w-5 md:h-5 mr-1 md:mr-2" />
+              <span className="text-xs md:text-sm">{post.replies_count || 0}</span>
             </Button>
           )}
 
@@ -2572,13 +2572,13 @@ export default function FeedPage() {
               className="text-white/40 hover:text-green-400 h-auto p-0 group"
               title={typeof window !== 'undefined' && window.innerWidth < 768 ? "Copy wallet address" : "Send KAS tip"}
             >
-              <div className="w-5 h-5 mr-2 bg-white/10 border border-white/20 rounded-full flex items-center justify-center group-hover:bg-green-500/20 group-hover:border-green-500/30 transition-all">
-                <span className="text-xs font-bold">$</span>
+              <div className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2 bg-white/10 border border-white/20 rounded-full flex items-center justify-center group-hover:bg-green-500/20 group-hover:border-green-500/30 transition-all">
+                <span className="text-[10px] md:text-xs font-bold">$</span>
               </div>
               {copiedWallet === post.id ? (
-                <span className="text-xs text-green-400">Copied!</span>
+                <span className="text-[10px] md:text-xs text-green-400">Copied!</span>
               ) : post.tips_received > 0 && (
-                <span className="text-xs">{post.tips_received.toFixed(2)}</span>
+                <span className="text-[10px] md:text-xs">{post.tips_received.toFixed(2)}</span>
               )}
             </Button>
           )}
@@ -2590,9 +2590,9 @@ export default function FeedPage() {
             className="text-white/40 hover:text-cyan-400 h-auto p-0"
             title="Share post"
           >
-            <Share className="w-5 h-5 mr-2" />
+            <Share className="w-3 h-3 md:w-5 md:h-5 mr-1 md:mr-2" />
             {copiedPostId === post.id && (
-              <span className="text-xs text-cyan-400">Copied!</span>
+              <span className="text-[10px] md:text-xs text-cyan-400">Copied!</span>
             )}
           </Button>
 
@@ -2610,7 +2610,7 @@ export default function FeedPage() {
             <img 
               src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/f14ad4d81_image.png"
               alt="Boxing"
-              className="w-5 h-5 mr-2 object-contain"
+              className="w-3 h-3 md:w-5 md:h-5 mr-1 md:mr-2 object-contain"
             />
           </Button>
 
@@ -2620,7 +2620,7 @@ export default function FeedPage() {
               disabled={!kaswareWallet.connected || stampingPostId === post.id}
               variant="ghost"
               size="sm"
-              className="text-white/40 hover:text-orange-400 h-auto p-0 ml-auto"
+              className="text-white/40 hover:text-orange-400 h-auto p-0 ml-auto hidden md:flex"
             >
               {stampingPostId === post.id ? (
                 <>
