@@ -16,6 +16,41 @@ export default function KaspaWalletHeader({ onClose }) {
   const [showAmountForm, setShowAmountForm] = useState(null);
   const [amountInput, setAmountInput] = useState('');
 
+  // Listen for transactions from Kaspa.com iframe
+  React.useEffect(() => {
+    const handleMessage = (event) => {
+      // Only accept messages from Kaspa domain
+      if (event.origin !== 'https://wallet.kaspa.com') return;
+
+      const data = event.data;
+      
+      // Handle transaction sent message
+      if (data.type === 'TRANSACTION_SENT') {
+        const toAddress = data.toAddress;
+        const amount = data.amount;
+
+        // Find and update the contact
+        const updated = contacts.map(c => {
+          if (c.address === toAddress) {
+            return {
+              ...c,
+              sentAmounts: [...(c.sentAmounts || []), { amount, date: new Date().toISOString() }]
+            };
+          }
+          return c;
+        });
+
+        if (updated.some((c, idx) => c !== contacts[idx])) {
+          setContacts(updated);
+          localStorage.setItem('kaspa_contacts', JSON.stringify(updated));
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [contacts]);
+
   const handleAddContact = () => {
     if (newContact.name.trim() && newContact.address.trim()) {
       const updated = [...contacts, { id: Date.now(), ...newContact }];
@@ -178,8 +213,7 @@ export default function KaspaWalletHeader({ onClose }) {
                       <Button
                         onClick={() => handleCopyAddress(contact.id, contact.address)}
                         size="sm"
-                        variant="outline"
-                        className={`flex-1 h-7 text-xs border-white/10 transition-all ${copiedId === contact.id ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'text-white/60 hover:text-white'}`}
+                        className={`flex-1 h-7 text-xs transition-all ${copiedId === contact.id ? 'bg-green-500/30 text-green-400 border border-green-500/40' : 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/30'}`}
                       >
                         <Copy className="w-3 h-3 mr-1" />
                         {copiedId === contact.id ? 'Copied!' : 'Copy'}
@@ -189,8 +223,7 @@ export default function KaspaWalletHeader({ onClose }) {
                         <Button
                           onClick={() => setShowAmountForm(showAmountForm === contact.id ? null : contact.id)}
                           size="sm"
-                          variant="outline"
-                          className="w-full h-7 text-xs border-white/10 text-cyan-400 hover:text-cyan-300"
+                          className="w-full h-7 text-xs bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/30"
                         >
                           <TrendingUp className="w-3 h-3 mr-1" />
                           {getTotalSent(contact) || '0'} KAS
