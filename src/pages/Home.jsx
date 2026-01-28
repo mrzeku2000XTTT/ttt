@@ -110,22 +110,17 @@ export default function HomePage() {
     }
     setIsConnectingWallet(true);
     try {
-      window.KasperoPay.pay({
-        amount: 0,
-        item: 'Connect Wallet',
-        onSuccess: (data) => {
-          if (data && data.address) {
-            setWalletAddress(data.address);
-            loadConversationHistory(data.address);
+      window.KasperoPay.connect({
+        merchant: 'kpm_hocgtdnj',
+        onConnect: (user) => {
+          if (user && user.address) {
+            setWalletAddress(user.address);
+            loadConversationHistory(user.address);
             setShowWalletModal(false);
           }
-        },
-        onCancel: () => {
           setIsConnectingWallet(false);
         },
-        onError: (error) => {
-          console.error('KasperoPay error:', error);
-          alert('Connection failed. Please try another wallet method.');
+        onCancel: () => {
           setIsConnectingWallet(false);
         }
       });
