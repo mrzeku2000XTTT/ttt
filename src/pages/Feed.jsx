@@ -2620,7 +2620,7 @@ export default function FeedPage() {
               disabled={!kaswareWallet.connected || stampingPostId === post.id}
               variant="ghost"
               size="sm"
-              className="text-white/40 hover:text-orange-400 h-auto p-0 ml-auto hidden md:flex"
+              className="text-white/40 hover:text-orange-400 h-auto p-0 ml-auto"
             >
               {stampingPostId === post.id ? (
                 <>
