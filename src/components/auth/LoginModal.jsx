@@ -1,122 +1,45 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, LogIn, Wallet } from "lucide-react";
+import { X, LogIn } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 export default function LoginModal({ isOpen, onClose }) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    // Handle Keystone OAuth callback on any page load
+    const params = new URLSearchParams(window.location.search);
+    const keystoneConnected = params.get('keystone_connected');
+    const token = params.get('token');
+
+    if (keystoneConnected === 'true' && token) {
+      setLoading(true);
+      localStorage.setItem('keystone_auth_token', token);
+      localStorage.setItem('auth_method', 'keystone');
+      window.history.replaceState({}, '', window.location.pathname);
+      
+      // Small delay to ensure localStorage is set
+      setTimeout(() => {
+        window.location.reload();
+      }, 300);
+    }
+  }, []);
+
+  useEffect(() => {
     if (isOpen) {
-      // Load KasperoPay script only once
+      // Load Kaspero connect widget script
       if (!window.KasperoPay) {
         const script = document.createElement('script');
-        script.src = 'https://kaspa-store.com/pay/widget.js';
+        script.src = 'https://kaspa-store.com/connect/widget.js';
         script.async = true;
-        script.onerror = () => console.error('Failed to load KasperoPay script');
+        script.onerror = () => console.error('Failed to load KasperoPay connect script');
         document.body.appendChild(script);
-      }
-
-      // Handle Keystone OAuth callback
-      const params = new URLSearchParams(window.location.search);
-      const keystoneConnected = params.get('keystone_connected');
-      const token = params.get('token');
-
-      if (keystoneConnected === 'true' && token) {
-        localStorage.setItem('keystone_auth_token', token);
-        localStorage.setItem('keystone_connected', 'true');
-        window.history.replaceState({}, '', window.location.pathname);
-        authenticateWithKeystone(token);
       }
     }
   }, [isOpen]);
 
-  const authenticateWithKeystone = async (token) => {
-    try {
-      setLoading(true);
-      // Store the token and mark user as Keystone authenticated
-      localStorage.setItem('keystone_auth_token', token);
-      localStorage.setItem('auth_method', 'keystone');
-      
-      // Close modal and refresh
-      setTimeout(() => {
-        onClose();
-        window.location.reload();
-      }, 500);
-    } catch (error) {
-      console.error('Keystone auth error:', error);
-      setLoading(false);
-    }
-  };
-
   const handleBase44Login = () => {
     base44.auth.redirectToLogin();
-  };
-
-  const handleKasperoPay = async () => {
-    // Wait for KasperoPay to load if needed
-    let attempts = 0;
-    const waitForKasperoPay = new Promise((resolve) => {
-      const interval = setInterval(() => {
-        if (window.KasperoPay || attempts > 30) {
-          clearInterval(interval);
-          resolve(window.KasperoPay);
-        }
-        attempts++;
-      }, 100);
-    });
-
-    const KasperoPay = await waitForKasperoPay;
-    
-    if (KasperoPay) {
-      setLoading(true);
-      try {
-        KasperoPay.connect({
-          merchant: 'kpm_vx7c48go',
-          onConnect: async (user) => {
-            try {
-              // Store wallet connection info
-              localStorage.setItem('wallet_address', user.address);
-              localStorage.setItem('wallet_type', user.walletType);
-              localStorage.setItem('auth_method', 'wallet');
-              if (user.publicKey) {
-                localStorage.setItem('wallet_public_key', user.publicKey);
-              }
-              if (user.email) {
-                localStorage.setItem('wallet_email', user.email);
-              }
-              
-              // Verify connection was successful
-              if (window.KasperoPay.isConnected && window.KasperoPay.isConnected()) {
-                onClose();
-                // Small delay to ensure localStorage is persisted
-                setTimeout(() => {
-                  window.location.reload();
-                }, 300);
-              } else {
-                setLoading(false);
-              }
-            } catch (error) {
-              console.error('Post-connection error:', error);
-              setLoading(false);
-            }
-          },
-          onCancel: () => {
-            setLoading(false);
-          },
-          onError: (error) => {
-            console.error('KasperoPay error:', error);
-            setLoading(false);
-          }
-        });
-      } catch (error) {
-        console.error('Connection error:', error);
-        setLoading(false);
-      }
-    } else {
-      console.error('KasperoPay failed to load');
-      setLoading(false);
-    }
   };
 
   return (
@@ -149,7 +72,7 @@ export default function LoginModal({ isOpen, onClose }) {
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               {/* Base44 Login */}
               <motion.button
                 whileHover={{ scale: 1.02 }}
@@ -167,22 +90,16 @@ export default function LoginModal({ isOpen, onClose }) {
                 <LogIn className="w-5 h-5 text-cyan-400" />
               </motion.button>
 
-              {/* KasperoPay Wallet Connection */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleKasperoPay}
-                disabled={loading}
-                className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-orange-500/20 to-amber-500/20 hover:from-orange-500/30 hover:to-amber-500/30 border border-orange-500/40 rounded-xl transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <div className="flex-1 text-left">
-                  <div className="font-semibold text-white group-hover:text-orange-300 transition-colors">
-                    {loading ? 'Connecting...' : 'Connect Wallet'}
-                  </div>
-                  <div className="text-xs text-gray-400">Kasware, Kastle, Keystone</div>
-                </div>
-                <Wallet className="w-5 h-5 text-orange-400" />
-              </motion.button>
+              {/* Kaspero Connect Widget */}
+              <div className="bg-white/5 border border-orange-500/30 rounded-xl p-4 flex justify-center">
+                <div
+                  id="kaspero-connect-button"
+                  data-merchant="kpm_vx7c48go"
+                  data-wallets="kasware,kastle,keystone,google,email"
+                  data-theme="dark"
+                  style={{ width: '100%' }}
+                />
+              </div>
             </div>
 
             <div className="mt-6 pt-6 border-t border-white/10">
