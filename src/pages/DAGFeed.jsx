@@ -220,7 +220,8 @@ export default function DAGFeedPage() {
     }
 
     try {
-      const message = `Stamping DAG Post: ${post.id} - ${post.content.substring(0, 50)}`;
+      // Use safe message that avoids Unicode encoding issues
+      const message = `Stamping DAG Post: ${post.id}`;
       const signature = await window.kasware.signMessage(message);
 
       await base44.entities.DAGPost.update(post.id, {
