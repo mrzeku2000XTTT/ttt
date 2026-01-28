@@ -4420,20 +4420,6 @@ export default function FeedPage() {
                         </Button>
                       </Link>
                       
-                      <Button
-                        onClick={() => setShowKaspaWalletModal(true)}
-                        size="sm"
-                        variant="ghost"
-                        className="h-5 px-1.5 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 border border-cyan-500/30"
-                        title="Kaspa Wallet Onboarding"
-                      >
-                        <img 
-                          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/3c64bfa3b_image.png"
-                          alt="SK"
-                          className="w-3 h-3 object-contain"
-                        />
-                      </Button>
-                      
                       <AnimatePresence>
                         {showLayer01 && (
                           <motion.div
