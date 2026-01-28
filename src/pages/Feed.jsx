@@ -557,18 +557,14 @@ export default function FeedPage() {
     setError(null);
 
     try {
-      const message = `TTT Post Stamp - Post ID: ${post.id} - Date: ${new Date().toISOString()} - Stamper: ${stamperWallet}`;
+      const message = `TTT Post Stamp\n\nPost ID: ${post.id}\nContent: ${post.content.substring(0, 50)}...\nDate: ${new Date().toISOString()}\nStamper: ${stamperWallet}`;
 
       let signature;
       if (kaswareWallet.connected) {
         signature = await window.kasware.signMessage(message);
       } else {
-        // For non-Kasware wallets, create a hash-based signature (safe from Unicode)
-        const encoder = new TextEncoder();
-        const data = encoder.encode(message + stamperWallet + new Date().toISOString());
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        // For non-Kasware wallets, create a hash-based signature
+        signature = btoa(message + stamperWallet + new Date().toISOString());
       }
 
       // Create stamp record
