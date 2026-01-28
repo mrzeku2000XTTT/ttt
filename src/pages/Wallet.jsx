@@ -124,7 +124,7 @@ export default function WalletPage() {
   const [needsIframe, setNeedsIframe] = useState(false);
   const [toast, setToast] = useState(null); // New toast state
   const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const [showKaspaComModal, setShowKaspaComModal] = useState(false);
+
   const [showContactsModal, setShowContactsModal] = useState(false);
 
   const showToast = (message, type = 'success', duration = 3000) => {
@@ -609,11 +609,7 @@ export default function WalletPage() {
          )}
        </AnimatePresence>
 
-       <AnimatePresence>
-         {showKaspaComModal && (
-           <KaspaComModal isOpen={showKaspaComModal} onClose={() => setShowKaspaComModal(false)} />
-         )}
-       </AnimatePresence>
+
 
        <AnimatePresence>
          {showContactsModal && (
@@ -641,10 +637,12 @@ export default function WalletPage() {
                <Users className="w-4 h-4 mr-2" />
                Contacts
              </Button>
-             <Button onClick={() => setShowKaspaComModal(true)} variant="outline" className="bg-cyan-500/20 border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/30">
-               <Globe className="w-4 h-4 mr-2" />
-               KaspaCom
-             </Button>
+             <a href="https://kaspacom.net" target="_blank" rel="noopener noreferrer" className="inline">
+               <Button variant="outline" className="bg-cyan-500/20 border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/30">
+                 <Globe className="w-4 h-4 mr-2" />
+                 KaspaCom
+               </Button>
+             </a>
              {address && (
                <Button onClick={() => setShowClearConfirm(true)} variant="outline" className="bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800">
                  <ArrowLeft className="w-4 h-4 mr-2" />
