@@ -23,7 +23,6 @@ import PostExplainerModal from "@/components/feed/PostExplainerModal";
 import MatrixGridBackground from "@/components/feed/MatrixGridBackground";
 import BoxingGame from "@/components/feed/BoxingGame";
 import StampModal from "@/components/feed/StampModal";
-import KaspaComModal from "@/components/wallet/KaspaComModal";
 
 export default function FeedPage() {
   const navigate = useNavigate();
@@ -134,7 +133,6 @@ export default function FeedPage() {
   const [copiedWallet, setCopiedWallet] = useState(null);
   const [showStampModal, setShowStampModal] = useState(false);
   const [stampPostData, setStampPostData] = useState(null);
-  const [showKaspaComModal, setShowKaspaComModal] = useState(false);
 
   const fileInputRef = useRef(null);
   const replyFileInputRef = useRef(null);
@@ -4272,13 +4270,6 @@ export default function FeedPage() {
         )}
       </AnimatePresence>
 
-      {/* KaspaCom Modal */}
-      <AnimatePresence>
-        {showKaspaComModal && (
-          <KaspaComModal isOpen={showKaspaComModal} onClose={() => setShowKaspaComModal(false)} />
-        )}
-      </AnimatePresence>
-
       {/* Kaspa Wallet Onboarding Modal */}
       <AnimatePresence>
         {showKaspaWalletModal && (
@@ -4439,20 +4430,6 @@ export default function FeedPage() {
                         <img 
                           src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/3c64bfa3b_image.png"
                           alt="SK"
-                          className="w-3 h-3 object-contain"
-                        />
-                      </Button>
-
-                      <Button
-                        onClick={() => setShowKaspaComModal(true)}
-                        size="sm"
-                        variant="ghost"
-                        className="h-5 px-1.5 text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 border border-purple-500/30"
-                        title="KaspaCom Wallet"
-                      >
-                        <img 
-                          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/06db8d60f_image.png"
-                          alt="KaspaCom"
                           className="w-3 h-3 object-contain"
                         />
                       </Button>
