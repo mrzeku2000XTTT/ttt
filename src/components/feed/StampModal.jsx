@@ -123,15 +123,14 @@ export default function StampModal({ post, onClose, onConfirm, isLoading }) {
           <div className="flex gap-3">
             <Button
               onClick={onClose}
-              variant="outline"
-              className="flex-1 border-white/20 text-white hover:bg-white/10"
+              className="flex-1 bg-orange-500/20 border border-orange-500/30 text-orange-400 hover:bg-orange-500/30"
             >
               Close
             </Button>
             <Button
               onClick={onConfirm}
               disabled={isLoading}
-              className="flex-1 bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white font-bold"
+              className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold"
             >
               {isLoading ? "Stamping..." : "Stamp Post"}
             </Button>
