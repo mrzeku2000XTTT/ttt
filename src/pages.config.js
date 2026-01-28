@@ -271,6 +271,7 @@ import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
 import KaShop from './pages/KaShop';
+import KCbridge from './pages/KCbridge';
 import __Layout from './Layout.jsx';
 
 
@@ -499,6 +500,7 @@ export const PAGES = {
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
     "KaShop": KaShop,
+    "KCbridge": KCbridge,
 }
 
 export const pagesConfig = {
