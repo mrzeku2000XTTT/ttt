@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Shield, Wrench, Zap, Lock, CheckCircle2, Loader2, Sparkles, Terminal, Code, Database, Network, Crown, AlertCircle, Camera, Upload, Save, Smartphone, Key, Users } from "lucide-react";
+import { Shield, Wrench, Zap, Lock, CheckCircle2, Loader2, Sparkles, Terminal, Code, Database, Network, Crown, AlertCircle, Camera, Upload, Save, Smartphone, Key, Users, Menu, X, LogOut, LogIn, Wallet } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import WorkspaceModal from "@/components/agentZK/WorkspaceModal";
@@ -41,6 +41,10 @@ export default function AgentZKPage() {
   const [isSavingCover, setIsSavingCover] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [isConnectingWallet, setIsConnectingWallet] = useState(false);
+  const [manualAddress, setManualAddress] = useState("");
 
   // Location state
   const [userLocation, setUserLocation] = useState(null);
@@ -100,6 +104,62 @@ export default function AgentZKPage() {
   };
 
   const isAdmin = user?.role === 'admin';
+
+  const connectKasware = async () => {
+    setIsConnectingWallet(true);
+    try {
+      if (typeof window.kasware === 'undefined') {
+        alert('Please install Kasware wallet extension');
+        return;
+      }
+      
+      const accounts = await window.kasware.requestAccounts();
+      if (accounts && accounts.length > 0) {
+        localStorage.setItem('ttt_wallet_address', accounts[0]);
+        setShowWalletModal(false);
+        loadData();
+      }
+    } catch (err) {
+      console.error('Wallet connection failed:', err);
+      alert('Failed to connect wallet');
+    } finally {
+      setIsConnectingWallet(false);
+    }
+  };
+
+  const connectZKWallet = async () => {
+    setIsConnectingWallet(true);
+    try {
+      const zkAddress = user?.created_wallet_address;
+      if (!zkAddress) {
+        alert('Please create a ZK wallet first');
+        return;
+      }
+      localStorage.setItem('ttt_wallet_address', zkAddress);
+      setShowWalletModal(false);
+      loadData();
+    } catch (err) {
+      console.error('ZK wallet connection failed:', err);
+      alert('Failed to connect ZK wallet');
+    } finally {
+      setIsConnectingWallet(false);
+    }
+  };
+
+  const handleManualConnect = async () => {
+    if (manualAddress.trim()) {
+      localStorage.setItem('ttt_wallet_address', manualAddress.trim());
+      setShowWalletModal(false);
+      setManualAddress("");
+      loadData();
+    }
+  };
+
+  const handleLogout = async () => {
+    await base44.auth.logout();
+    setUser(null);
+    setShowMenu(false);
+  };
 
   const loadData = async () => {
     setIsLoading(true);
