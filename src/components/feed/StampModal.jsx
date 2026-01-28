@@ -120,7 +120,7 @@ export default function StampModal({ post, onClose, onConfirm, isLoading }) {
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex gap-3">
             <Button
               onClick={onClose}
               className="flex-1 bg-orange-500/20 border border-orange-500/30 text-orange-400 hover:bg-orange-500/30"
