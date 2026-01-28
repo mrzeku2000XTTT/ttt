@@ -27,30 +27,39 @@ export default function LoginModal({ isOpen, onClose }) {
 
   useEffect(() => {
     if (isOpen) {
-      // Load Kaspero connect widget script and wait for it
-      const script = document.createElement('script');
-      script.src = 'https://kaspa-store.com/connect/widget.js';
-      script.async = true;
-      script.onload = () => {
-        // Script loaded, trigger widget initialization
-        if (window.KasperoPay && window.KasperoPay.renderConnectButton) {
-          window.KasperoPay.renderConnectButton();
-        }
-      };
-      script.onerror = () => console.error('Failed to load KasperoPay connect script');
-      document.body.appendChild(script);
-      
-      return () => {
-        // Cleanup
-        if (script.parentNode) {
-          script.parentNode.removeChild(script);
-        }
-      };
+      // Load Kaspero pay script for connect functionality
+      if (!document.getElementById('kaspero-pay-script')) {
+        const script = document.createElement('script');
+        script.id = 'kaspero-pay-script';
+        script.src = 'https://kaspa-store.com/pay/widget.js';
+        script.async = true;
+        document.body.appendChild(script);
+      }
     }
   }, [isOpen]);
 
   const handleBase44Login = () => {
     base44.auth.redirectToLogin();
+  };
+
+  const handleKasperaConnect = () => {
+    if (!window.KasperoPay) {
+      console.error('KasperoPay not loaded yet');
+      return;
+    }
+
+    window.KasperoPay.connect({
+      merchant: 'kpm_hocgtdnj',
+      onConnect: function(user) {
+        localStorage.setItem('kaspa_address', user.address);
+        localStorage.setItem('auth_method', 'kastera');
+        onClose();
+        window.location.reload();
+      },
+      onCancel: function() {
+        console.log('Connection cancelled');
+      }
+    });
   };
 
   return (
