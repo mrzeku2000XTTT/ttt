@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Copy, Eye, EyeOff, Loader2, CheckCircle2, Lock, ArrowLeft, Shield, RefreshCw, X, AlertTriangle } from "lucide-react";
+import { Copy, Eye, EyeOff, Loader2, CheckCircle2, Lock, ArrowLeft, Shield, RefreshCw, X, AlertTriangle, Users, Globe } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion, AnimatePresence } from "framer-motion";
+import KaspaComModal from "@/components/wallet/KaspaComModal";
+import ContactsModal from "@/components/wallet/ContactsModal";
 
 const REPLIT_BASE_URL = 'https://3997eddf-54b0-4dd7-bd11-b6322df14705-00-2nohbenfxyfz4.spock.replit.dev';
 
@@ -122,6 +124,8 @@ export default function WalletPage() {
   const [needsIframe, setNeedsIframe] = useState(false);
   const [toast, setToast] = useState(null); // New toast state
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showKaspaComModal, setShowKaspaComModal] = useState(false);
+  const [showContactsModal, setShowContactsModal] = useState(false);
 
   const showToast = (message, type = 'success', duration = 3000) => {
     setToast({ message, type });
@@ -595,15 +599,27 @@ export default function WalletPage() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {showClearConfirm && (
-          <ConfirmModal
-            title="Clear Wallet?"
-            message="⚠️ Make sure you've backed up your seed phrase! This action cannot be undone."
-            onConfirm={clearWallet}
-            onCancel={() => setShowClearConfirm(false)}
-          />
-        )}
-      </AnimatePresence>
+         {showClearConfirm && (
+           <ConfirmModal
+             title="Clear Wallet?"
+             message="⚠️ Make sure you've backed up your seed phrase! This action cannot be undone."
+             onConfirm={clearWallet}
+             onCancel={() => setShowClearConfirm(false)}
+           />
+         )}
+       </AnimatePresence>
+
+       <AnimatePresence>
+         {showKaspaComModal && (
+           <KaspaComModal isOpen={showKaspaComModal} onClose={() => setShowKaspaComModal(false)} />
+         )}
+       </AnimatePresence>
+
+       <AnimatePresence>
+         {showContactsModal && (
+           <ContactsModal isOpen={showContactsModal} onClose={() => setShowContactsModal(false)} />
+         )}
+       </AnimatePresence>
 
       {needsIframe && (
         <iframe 
@@ -615,18 +631,30 @@ export default function WalletPage() {
       )}
 
       <div className="max-w-4xl mx-auto">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white">TTT WALLET</h1>
-            <p className="text-gray-400 text-sm">{user?.username || user?.email || 'Anonymous User'}</p>
-          </div>
-          {address && (
-            <Button onClick={() => setShowClearConfirm(true)} variant="outline" className="bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Clear
-            </Button>
-          )}
-        </div>
+         <div className="mb-8 flex items-center justify-between">
+           <div>
+             <h1 className="text-3xl font-bold text-white">TTT WALLET</h1>
+             <p className="text-gray-400 text-sm">{user?.username || user?.email || 'Anonymous User'}</p>
+           </div>
+           <div className="flex gap-2">
+             {address && (
+               <>
+                 <Button onClick={() => setShowContactsModal(true)} variant="outline" className="bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800">
+                   <Users className="w-4 h-4 mr-2" />
+                   Contacts
+                 </Button>
+                 <Button onClick={() => setShowKaspaComModal(true)} variant="outline" className="bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800">
+                   <Globe className="w-4 h-4 mr-2" />
+                   KaspaCom
+                 </Button>
+               </>
+             )}
+             <Button onClick={() => setShowClearConfirm(true)} variant="outline" className="bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800">
+               <ArrowLeft className="w-4 h-4 mr-2" />
+               Clear
+             </Button>
+           </div>
+         </div>
 
         {error && (
           <div className="mb-4 bg-red-500/10 border border-red-500/30 rounded-lg p-3">
