@@ -43,34 +43,42 @@ export default function LoginModal({ isOpen, onClose }) {
   };
 
   const handleKasperaConnect = () => {
-    if (!window.KasperoPay) {
-      console.error('KasperoPay not loaded yet');
-      return;
-    }
-
-    try {
-      window.KasperoPay.connect({
-        merchant: 'kpm_hocgtdnj',
-        onConnect: function(user) {
-          if (user && user.address) {
-            localStorage.setItem('kaspa_address', user.address);
-            localStorage.setItem('auth_method', 'kaspero');
-            onClose();
-            setTimeout(() => {
-              window.location.reload();
-            }, 300);
-          }
-        },
-        onCancel: function() {
-          console.log('Connection cancelled');
-        },
-        onError: function(error) {
-          console.error('KasperoPay error:', error);
+    // Wait for KasperoPay to be available, with timeout
+    let attempts = 0;
+    const maxAttempts = 50; // 5 seconds max
+    
+    const tryConnect = () => {
+      if (window.KasperoPay && window.KasperoPay.connect) {
+        try {
+          window.KasperoPay.connect({
+            merchant: 'kpm_hocgtdnj',
+            onConnect: function(user) {
+              if (user && user.address) {
+                localStorage.setItem('kaspa_address', user.address);
+                localStorage.setItem('kaspa_wallet_type', user.walletType || 'unknown');
+                localStorage.setItem('auth_method', 'kaspero');
+                onClose();
+                setTimeout(() => {
+                  window.location.reload();
+                }, 300);
+              }
+            },
+            onCancel: function() {
+              console.log('Connection cancelled');
+            }
+          });
+        } catch (error) {
+          console.error('Failed to call KasperoPay.connect():', error);
         }
-      });
-    } catch (error) {
-      console.error('Failed to open KasperoPay:', error);
-    }
+      } else if (attempts < maxAttempts) {
+        attempts++;
+        setTimeout(tryConnect, 100);
+      } else {
+        console.error('KasperoPay widget did not load');
+      }
+    };
+    
+    tryConnect();
   };
 
   return (
@@ -83,7 +91,10 @@ export default function LoginModal({ isOpen, onClose }) {
           className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[1000] flex items-center justify-center p-4"
           onClick={onClose}
         >
-          <motion.div
+          {/* Hidden KasperoPay widget container - MUST be in DOM */}
+      <div id="kaspero-pay-button" style={{ display: 'none' }} />
+
+      <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
