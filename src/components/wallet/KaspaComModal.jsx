@@ -26,9 +26,7 @@ export default function KaspaComModal({ isOpen, onClose }) {
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-cyan-500/20 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <h2 className="text-xl font-bold text-white">Kaspa Wallet</h2>
-            <Button
+          <Button
               asChild
               className="bg-cyan-500/30 border border-cyan-500/50 text-cyan-300 hover:bg-cyan-500/40 h-8 px-3 text-sm"
             >
