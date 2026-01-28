@@ -222,21 +222,35 @@ export default function ProfilePage() {
         }
 
         try {
-          // Load stamps by email OR wallet address
-          let userStamps = [];
-          if (currentUser?.email) {
-            userStamps = await base44.entities.StampedNews.filter({
-              created_by: currentUser.email
-            }, '-created_date', 100);
-          } else if (walletAddr) {
-            userStamps = await base44.entities.StampedNews.filter({
-              stamper_address: walletAddr
-            }, '-created_date', 100);
-          }
-          setStamps(userStamps);
-        } catch (err) {
-          console.error('Failed to load stamps:', err);
-        }
+           // Load stamps (news) by email OR wallet address
+           let userStamps = [];
+           if (currentUser?.email) {
+             userStamps = await base44.entities.StampedNews.filter({
+               created_by: currentUser.email
+             }, '-created_date', 100);
+           } else if (walletAddr) {
+             userStamps = await base44.entities.StampedNews.filter({
+               stamper_address: walletAddr
+             }, '-created_date', 100);
+           }
+           setStamps(userStamps);
+
+           // Load stamped posts by wallet address
+           try {
+             let userStampedPosts = [];
+             if (walletAddr) {
+               userStampedPosts = await base44.entities.Post.filter({
+                 is_stamped: true,
+                 stamper_address: walletAddr
+               }, '-stamped_date', 100);
+             }
+             setStampedPosts(userStampedPosts);
+           } catch (err) {
+             console.error('Failed to load stamped posts:', err);
+           }
+         } catch (err) {
+           console.error('Failed to load stamps:', err);
+         }
 
         try {
           // Load TTTID and SealedWallet by email OR wallet address
