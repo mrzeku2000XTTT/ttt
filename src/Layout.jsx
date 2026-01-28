@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 const SearchBar = React.lazy(() => import("@/components/SearchBar").catch(() => ({ default: () => <div className="w-full max-w-md h-10 bg-white/5 rounded-lg" /> })));
 const MiniPlayer = React.lazy(() => import("@/components/MiniPlayer").catch(() => ({ default: () => null })));
 const VideoPlayerProvider = React.lazy(() => import("@/components/VideoPlayerContext").then(m => ({ default: m.VideoPlayerProvider })).catch(() => ({ default: ({ children }) => <>{children}</> })));
+const LoginModal = React.lazy(() => import("@/components/auth/LoginModal").catch(() => ({ default: () => null })));
 
 import {
   DropdownMenu,
@@ -31,6 +32,7 @@ export default function Layout({ children, currentPageName }) {
   const [pendingConnectionsCount, setPendingConnectionsCount] = useState(0);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [showBackButton, setShowBackButton] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try {
       const saved = localStorage.getItem('sidebar_collapsed');
@@ -495,17 +497,17 @@ export default function Layout({ children, currentPageName }) {
                     <DropdownMenuLabel className="text-gray-300 font-semibold">All Pages</DropdownMenuLabel>
                     <DropdownMenuSeparator className="bg-zinc-700" />
                     {!user && (
-                      <>
-                        <DropdownMenuItem 
-                          onClick={() => base44.auth.redirectToLogin()}
-                          className="cursor-pointer text-cyan-400 hover:bg-cyan-500/10 border-b border-zinc-700"
-                        >
-                          <UserIcon className="w-4 h-4 mr-2" />
-                          <span className="font-semibold">Login</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator className="bg-zinc-700" />
-                      </>
-                    )}
+                          <>
+                            <DropdownMenuItem 
+                              onClick={() => setLoginModalOpen(true)}
+                              className="cursor-pointer text-cyan-400 hover:bg-cyan-500/10 border-b border-zinc-700"
+                            >
+                              <UserIcon className="w-4 h-4 mr-2" />
+                              <span className="font-semibold">Login</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="bg-zinc-700" />
+                          </>
+                        )}
                     {morePages.map((page) => {
                       const Icon = page.icon;
                       const isActive = currentPageName === page.path;
@@ -674,17 +676,17 @@ export default function Layout({ children, currentPageName }) {
                   >
                     <div className="p-4 space-y-2">
                       {!user && (
-                        <button
-                          onClick={() => {
-                            setMobileMenuOpen(false);
-                            base44.auth.redirectToLogin();
-                          }}
-                          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/30 mb-2"
-                        >
-                          <UserIcon className="w-5 h-5" />
-                          <span className="font-bold text-sm">Login</span>
-                        </button>
-                      )}
+                          <button
+                            onClick={() => {
+                              setMobileMenuOpen(false);
+                              setLoginModalOpen(true);
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/30 mb-2"
+                          >
+                            <UserIcon className="w-5 h-5" />
+                            <span className="font-bold text-sm">Login</span>
+                          </button>
+                        )}
 
                       {[...mainNavItems, ...morePages].map((item) => {
                         const Icon = item.icon;
@@ -733,7 +735,7 @@ export default function Layout({ children, currentPageName }) {
                         <button
                           onClick={() => {
                             setMobileMenuOpen(false);
-                            base44.auth.redirectToLogin();
+                            setLoginModalOpen(true);
                           }}
                           className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 mt-4"
                         >
@@ -873,6 +875,9 @@ export default function Layout({ children, currentPageName }) {
       </div>
       <React.Suspense fallback={null}>
         <MiniPlayer currentPage={currentPageName} />
+      </React.Suspense>
+      <React.Suspense fallback={null}>
+        <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
       </React.Suspense>
       </VideoPlayerProvider>
       </React.Suspense>
