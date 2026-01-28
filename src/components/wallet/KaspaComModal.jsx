@@ -38,8 +38,7 @@ export default function KaspaComModal({ isOpen, onClose }) {
                 Visit Site
                 <ExternalLink className="w-3 h-3 ml-1" />
               </a>
-            </Button>
-          </div>
+              </Button>
           <Button
             onClick={onClose}
             variant="ghost"
