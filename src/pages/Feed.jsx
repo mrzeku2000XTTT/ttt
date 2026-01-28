@@ -2623,15 +2623,9 @@ export default function FeedPage() {
               className="text-white/40 hover:text-orange-400 h-auto p-0 ml-auto"
             >
               {stampingPostId === post.id ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  <span className="text-sm">Stamping...</span>
-                </>
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <>
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  <span className="text-sm">Stamp</span>
-                </>
+                <Sparkles className="w-4 h-4" />
               )}
             </Button>
           )}
