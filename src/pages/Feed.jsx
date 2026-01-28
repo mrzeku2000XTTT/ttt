@@ -2654,12 +2654,13 @@ export default function FeedPage() {
             <Button
               onClick={(e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 handleStampPost(post);
               }}
-              disabled={!kaswareWallet.connected || stampingPostId === post.id}
+              disabled={stampingPostId === post.id}
               variant="ghost"
               size="sm"
-              className="text-white/40 hover:text-orange-400 h-8 w-8 p-0 ml-auto flex items-center justify-center"
+              className="text-white/40 hover:text-orange-400 h-8 w-8 p-0 ml-auto flex items-center justify-center relative z-[40]"
               title="Stamp post"
             >
               {stampingPostId === post.id ? (
