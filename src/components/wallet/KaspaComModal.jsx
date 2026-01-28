@@ -27,18 +27,18 @@ export default function KaspaComModal({ isOpen, onClose }) {
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-cyan-500/20 flex-shrink-0">
           <Button
-              asChild
-              className="bg-cyan-500/30 border border-cyan-500/50 text-cyan-300 hover:bg-cyan-500/40 h-8 px-3 text-sm"
+            asChild
+            className="bg-cyan-500/30 border border-cyan-500/50 text-cyan-300 hover:bg-cyan-500/40 h-8 px-3 text-sm"
+          >
+            <a
+              href="https://kaspacom.net"
+              target="_blank"
+              rel="noopener noreferrer"
             >
-              <a
-                href="https://kaspacom.net"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Visit Site
-                <ExternalLink className="w-3 h-3 ml-1" />
-              </a>
-              </Button>
+              Visit Site
+              <ExternalLink className="w-3 h-3 ml-1" />
+            </a>
+          </Button>
           <Button
             onClick={onClose}
             variant="ghost"
