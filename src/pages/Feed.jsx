@@ -128,6 +128,7 @@ export default function FeedPage() {
     return localStorage.getItem('selected_receiving_wallet') || 'auto';
   });
   const [showWalletSelector, setShowWalletSelector] = useState(false);
+  const [showKaspaWalletModal, setShowKaspaWalletModal] = useState(false);
 
   const fileInputRef = useRef(null);
   const replyFileInputRef = useRef(null);
@@ -4201,6 +4202,60 @@ export default function FeedPage() {
         )}
       </AnimatePresence>
 
+      {/* Kaspa Wallet Onboarding Modal */}
+      <AnimatePresence>
+        {showKaspaWalletModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowKaspaWalletModal(false)}
+            className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-black border border-white/20 rounded-2xl w-full max-w-6xl h-[85vh] overflow-hidden flex flex-col"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-white/10 bg-black/80 backdrop-blur-xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 rounded-lg flex items-center justify-center">
+                    <img 
+                      src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/3c64bfa3b_image.png"
+                      alt="SK"
+                      className="w-5 h-5 object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold text-lg">Kaspa Wallet</h3>
+                    <p className="text-white/60 text-xs">Onboarding Guide</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => setShowKaspaWalletModal(false)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-white/60 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+
+              <div className="flex-1 bg-white">
+                <iframe
+                  src="https://wallet.kaspa.com/onboarding"
+                  className="w-full h-full border-0"
+                  title="Kaspa Wallet Onboarding"
+                  allow="clipboard-read; clipboard-write"
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="relative z-10 p-6 md:p-8 lg:p-12">
         <div className="max-w-2xl mx-auto">
           <motion.div
@@ -4293,10 +4348,23 @@ export default function FeedPage() {
                           className="h-5 px-1.5 text-[10px] font-mono tracking-widest text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 border border-purple-500/30"
                           title="Window AI - Smartest Assistant"
                         >
-                          <Brain className="w-3 h-3 mr-1" />
-                          WINDOW
+                          <Brain className="w-3 h-3" />
                         </Button>
                       </Link>
+                      
+                      <Button
+                        onClick={() => setShowKaspaWalletModal(true)}
+                        size="sm"
+                        variant="ghost"
+                        className="h-5 px-1.5 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 border border-cyan-500/30"
+                        title="Kaspa Wallet Onboarding"
+                      >
+                        <img 
+                          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/3c64bfa3b_image.png"
+                          alt="SK"
+                          className="w-3 h-3 object-contain"
+                        />
+                      </Button>
                       
                       <AnimatePresence>
                         {showLayer01 && (
