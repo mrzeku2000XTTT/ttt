@@ -4255,6 +4255,21 @@ export default function FeedPage() {
         )}
       </AnimatePresence>
 
+      {/* Stamp Modal */}
+      <AnimatePresence>
+        {showStampModal && stampPostData && (
+          <StampModal
+            post={stampPostData}
+            onClose={() => setShowStampModal(false)}
+            onConfirm={() => {
+              handleStampPost(stampPostData);
+              setShowStampModal(false);
+            }}
+            isLoading={stampingPostId === stampPostData.id}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Kaspa Wallet Onboarding Modal */}
       <AnimatePresence>
         {showKaspaWalletModal && (
