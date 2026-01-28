@@ -26,15 +26,11 @@ export default function LoginModal({ isOpen, onClose }) {
   }, []);
 
   useEffect(() => {
-    if (isOpen) {
-      // Load Kaspero pay script for connect functionality
-      if (!document.getElementById('kaspero-pay-script')) {
-        const script = document.createElement('script');
-        script.id = 'kaspero-pay-script';
-        script.src = 'https://kaspa-store.com/pay/widget.js';
-        script.async = true;
-        document.body.appendChild(script);
-      }
+    if (isOpen && !window.KasperoPay) {
+      const script = document.createElement('script');
+      script.src = 'https://kaspa-store.com/pay/widget.js';
+      script.async = true;
+      document.body.appendChild(script);
     }
   }, [isOpen]);
 
