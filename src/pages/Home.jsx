@@ -464,6 +464,18 @@ export default function HomePage() {
             exit={{ opacity: 0, y: -10 }}
             className="absolute top-16 right-4 md:top-20 md:right-6 z-50 bg-black/90 backdrop-blur-xl border border-white/20 rounded-xl p-2 min-w-[160px]"
           >
+            {!user && (
+              <button
+                onClick={() => {
+                  setShowWalletModal(true);
+                  setShowMenu(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-cyan-400 hover:bg-cyan-500/10 transition-all font-semibold border-b border-white/10 mb-2"
+              >
+                <Wallet className="w-4 h-4" />
+                <span className="text-sm">Connect Wallet</span>
+              </button>
+            )}
             {user ? (
               <button
                 onClick={() => {
