@@ -26,6 +26,8 @@ export default function AgentZKProfilePage() {
   const [showIDCard, setShowIDCard] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
+  const [stamps, setStamps] = useState([]);
+  const [activeTab, setActiveTab] = useState('profile');
 
   useEffect(() => {
     if (kaspaAddress) {
