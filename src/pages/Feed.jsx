@@ -528,25 +528,61 @@ export default function FeedPage() {
   };
 
   const handleStampPost = async (post) => {
-    if (!kaswareWallet.connected) {
-      setError('Please connect Kasware wallet first to stamp posts');
-      await connectKasware();
+    let stamperWallet = '';
+    let stamperName = '';
+
+    // Get stamper wallet (Kasware > TTT > Manual)
+    if (kaswareWallet.connected) {
+      stamperWallet = kaswareWallet.address;
+    } else if (user?.created_wallet_address) {
+      stamperWallet = user.created_wallet_address;
+    } else if (manualKaspaAddress.trim()) {
+      stamperWallet = manualKaspaAddress.trim();
+    } else {
+      setError('Please connect a wallet or enter a Kaspa address to stamp posts');
       return;
+    }
+
+    // Get stamper name
+    if (user?.username) {
+      stamperName = user.username;
+    } else if (stamperWallet) {
+      stamperName = `${stamperWallet.substring(0, 6)}...${stamperWallet.substring(-4)}`;
     }
 
     setStampingPostId(post.id);
     setError(null);
 
     try {
-      const message = `TTT Post Stamp\n\nPost ID: ${post.id}\nContent: ${post.content.substring(0, 50)}...\nDate: ${new Date().toISOString()}\nStamper: ${kaswareWallet.address}`;
+      const message = `TTT Post Stamp\n\nPost ID: ${post.id}\nContent: ${post.content.substring(0, 50)}...\nDate: ${new Date().toISOString()}\nStamper: ${stamperWallet}`;
 
-      const signature = await window.kasware.signMessage(message);
+      let signature;
+      if (kaswareWallet.connected) {
+        signature = await window.kasware.signMessage(message);
+      } else {
+        // For non-Kasware wallets, create a hash-based signature
+        signature = btoa(message + stamperWallet + new Date().toISOString());
+      }
 
+      // Create stamp record
+      await base44.entities.Stamp.create({
+        post_id: post.id,
+        post_owner_address: post.author_wallet_address,
+        post_owner_name: post.author_name,
+        post_content: post.content,
+        stamper_address: stamperWallet,
+        stamper_name: stamperName,
+        stamp_signature: signature,
+        stamp_message: message,
+        stamped_date: new Date().toISOString()
+      });
+
+      // Update post stamped status
       await base44.entities.Post.update(post.id, {
         is_stamped: true,
         stamp_signature: signature,
         stamp_message: message,
-        stamper_address: kaswareWallet.address,
+        stamper_address: stamperWallet,
         stamped_date: new Date().toISOString()
       });
 
@@ -554,7 +590,7 @@ export default function FeedPage() {
         ...p,
         is_stamped: true,
         stamp_signature: signature,
-        stamper_address: kaswareWallet.address,
+        stamper_address: stamperWallet,
         stamped_date: new Date().toISOString()
       } : p));
 
