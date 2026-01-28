@@ -131,6 +131,8 @@ export default function FeedPage() {
   const [showWalletSelector, setShowWalletSelector] = useState(false);
   const [showKaspaWalletModal, setShowKaspaWalletModal] = useState(false);
   const [copiedWallet, setCopiedWallet] = useState(null);
+  const [showStampModal, setShowStampModal] = useState(false);
+  const [stampPostData, setStampPostData] = useState(null);
 
   const fileInputRef = useRef(null);
   const replyFileInputRef = useRef(null);
