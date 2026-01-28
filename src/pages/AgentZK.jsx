@@ -588,6 +588,160 @@ export default function AgentZKPage() {
 
 
 
+      {/* Hamburger Menu Button - Top Right */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        className="absolute top-4 right-4 z-50"
+      >
+        <button
+          onClick={() => setShowMenu(!showMenu)}
+          className="bg-white/5 hover:bg-white/10 border border-white/20 text-white backdrop-blur-xl h-10 w-10 rounded-lg flex items-center justify-center transition-all"
+        >
+          {showMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+      </motion.div>
+
+      {/* Hamburger Menu Dropdown */}
+      <AnimatePresence>
+        {showMenu && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="absolute top-16 right-4 z-50 bg-black/90 backdrop-blur-xl border border-white/20 rounded-xl p-2 min-w-[200px]"
+          >
+            {!user ? (
+              <>
+                <button
+                  onClick={() => setShowWalletModal(true)}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-cyan-400 hover:bg-cyan-500/10 transition-all font-semibold border-b border-white/10 mb-2"
+                >
+                  <Wallet className="w-4 h-4" />
+                  <span className="text-sm">Connect Wallet</span>
+                </button>
+                <button
+                  onClick={() => {
+                    base44.auth.redirectToLogin();
+                    setShowMenu(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-white/10 transition-all"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span className="text-sm">Login</span>
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-white/10 transition-all"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="text-sm">Logout</span>
+              </button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Wallet Connection Modal */}
+      <AnimatePresence>
+        {showWalletModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[120] flex items-center justify-center p-4"
+            onClick={() => setShowWalletModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-gradient-to-br from-zinc-900 to-black border-2 border-cyan-500/50 rounded-2xl p-6 max-w-md w-full shadow-2xl"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-white">Connect Wallet</h3>
+                <button
+                  onClick={() => setShowWalletModal(false)}
+                  className="text-white/60 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {/* Agent ZK Wallet Option */}
+                <button
+                  onClick={connectZKWallet}
+                  disabled={isConnectingWallet}
+                  className="w-full p-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/40 rounded-xl hover:from-purple-500/30 hover:to-pink-500/30 transition-all text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center">
+                      <Shield className="w-6 h-6 text-purple-400" />
+                    </div>
+                    <div>
+                      <p className="text-white font-semibold">Agent ZK Wallet</p>
+                      <p className="text-xs text-gray-400">Use your ZK identity wallet</p>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Manual Address Entry */}
+                <div className="p-4 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/40 rounded-xl">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center">
+                      <Key className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <p className="text-white font-semibold text-sm">Manual Entry</p>
+                  </div>
+                  <Input
+                    value={manualAddress}
+                    onChange={(e) => setManualAddress(e.target.value)}
+                    placeholder="kaspa:..."
+                    className="w-full bg-black/40 border-blue-500/40 text-white mb-2"
+                  />
+                  <Button
+                    onClick={handleManualConnect}
+                    disabled={!manualAddress.trim()}
+                    className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+                  >
+                    Connect
+                  </Button>
+                </div>
+
+                {/* Kasware Option */}
+                <button
+                  onClick={connectKasware}
+                  disabled={isConnectingWallet}
+                  className="w-full p-4 bg-gradient-to-r from-cyan-500/20 to-emerald-500/20 border border-cyan-500/40 rounded-xl hover:from-cyan-500/30 hover:to-emerald-500/30 transition-all text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-cyan-500/20 rounded-full flex items-center justify-center">
+                      <Wallet className="w-6 h-6 text-cyan-400" />
+                    </div>
+                    <div>
+                      <p className="text-white font-semibold">Kasware</p>
+                      <p className="text-xs text-gray-400">Connect browser extension</p>
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              {isConnectingWallet && (
+                <div className="mt-4 flex items-center justify-center gap-2 text-cyan-400">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-sm">Connecting...</span>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="relative z-10 p-3 sm:p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
           {/* Avatar Profile Section with Background */}
