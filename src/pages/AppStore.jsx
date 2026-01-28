@@ -85,6 +85,7 @@ export default function AppStorePage() {
     { name: "KasLens", icon: "Link2", path: "KasLens", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/5169e3904_images.png", circular: true },
     { name: "Keystone", icon: "Link2", path: "Keystone", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/dc41afffb_image.png" },
     { name: "KaShop", icon: "ShoppingBag", path: "KaShop", category: "Shop", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/00f7c1aac_image.png", circular: true },
+    { name: "KC Bridge", icon: "Link2", path: "KCbridge", category: "Finance", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a36a42449_image.png" },
     ];
 
   const getIconComponent = (iconName) => {
