@@ -81,29 +81,19 @@ export default function AppIconGenerator({ onClose, onUpdate }) {
 
     setIsSaving(true);
     try {
-      // Check if customization exists
-      const existing = await base44.entities.AppIconCustomization.filter({ app_id: selectedApp });
-      
-      if (existing && existing.length > 0) {
-        await base44.entities.AppIconCustomization.update(existing[0].id, {
-          icon_url: previewUrl,
-          icon_type: mode === 'ai' ? 'ai_generated' : 'uploaded',
-          generation_prompt: mode === 'ai' ? prompt : null
-        });
-      } else {
-        await base44.entities.AppIconCustomization.create({
-          app_id: selectedApp,
-          icon_url: previewUrl,
-          icon_type: mode === 'ai' ? 'ai_generated' : 'uploaded',
-          generation_prompt: mode === 'ai' ? prompt : null
-        });
-      }
+      // Use backend function to save (bypasses RLS restrictions)
+      await base44.functions.invoke('saveAppIcon', {
+        app_id: selectedApp,
+        icon_url: previewUrl,
+        icon_type: mode === 'ai' ? 'ai_generated' : 'uploaded',
+        generation_prompt: mode === 'ai' ? prompt : null
+      });
 
       await onUpdate();
       onClose();
     } catch (err) {
       console.error("Save failed:", err);
-      alert("Failed to save custom icon. Please try again.");
+      alert(`Failed to save custom icon: ${err.message || 'Please try again'}`);
     } finally {
       setIsSaving(false);
     }
