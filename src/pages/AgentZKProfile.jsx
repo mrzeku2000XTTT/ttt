@@ -796,27 +796,33 @@ export default function AgentZKProfilePage() {
                   ) : (
                     <div className="space-y-4">
                       {stampedPosts.map((post) => (
-                        <Card key={post.id} className="backdrop-blur-xl bg-white/5 border-cyan-500/20 hover:border-cyan-500/40 transition-all">
-                          <CardContent className="p-4 md:p-6">
-                            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                              <div className="flex-1">
-                                <h3 className="text-white font-semibold text-lg mb-2">{post.author_name}</h3>
-                                <p className="text-gray-300 mb-3">{post.content.substring(0, 200)}...</p>
-                                <div className="flex flex-wrap gap-2">
-                                  <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30 text-xs">
-                                    Post ID: {post.id.substring(0, 8)}...
-                                  </Badge>
-                                  <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 text-xs">
-                                    {post.author_wallet_address.substring(0, 6)}...{post.author_wallet_address.substring(-4)}
-                                  </Badge>
-                                  <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30 text-xs">
-                                    Stamped
-                                  </Badge>
+                        <Link 
+                          key={post.id} 
+                          to={`${createPageUrl("Feed")}?post=${post.id}`}
+                          className="block"
+                        >
+                          <Card className="backdrop-blur-xl bg-white/5 border-cyan-500/20 hover:border-cyan-500/40 transition-all cursor-pointer">
+                            <CardContent className="p-4 md:p-6">
+                              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                                <div className="flex-1">
+                                  <h3 className="text-white font-semibold text-lg mb-2">{post.author_name}</h3>
+                                  <p className="text-gray-300 mb-3">{post.content.substring(0, 200)}...</p>
+                                  <div className="flex flex-wrap gap-2">
+                                    <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30 text-xs">
+                                      Post ID: {post.id.substring(0, 8)}...
+                                    </Badge>
+                                    <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 text-xs">
+                                      {post.author_wallet_address.substring(0, 6)}...{post.author_wallet_address.substring(-4)}
+                                    </Badge>
+                                    <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30 text-xs">
+                                      Stamped
+                                    </Badge>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </CardContent>
-                        </Card>
+                            </CardContent>
+                          </Card>
+                        </Link>
                       ))}
                     </div>
                   )}
