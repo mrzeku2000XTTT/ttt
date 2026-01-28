@@ -73,19 +73,39 @@ export default function LoginModal({ isOpen, onClose }) {
       try {
         KasperoPay.connect({
           merchant: 'kpm_vx7c48go',
-          onConnect: (user) => {
-            // Store wallet connection info
-            localStorage.setItem('wallet_address', user.address);
-            localStorage.setItem('wallet_type', user.walletType);
-            localStorage.setItem('auth_method', 'wallet');
-            if (user.publicKey) {
-              localStorage.setItem('wallet_public_key', user.publicKey);
+          onConnect: async (user) => {
+            try {
+              // Store wallet connection info
+              localStorage.setItem('wallet_address', user.address);
+              localStorage.setItem('wallet_type', user.walletType);
+              localStorage.setItem('auth_method', 'wallet');
+              if (user.publicKey) {
+                localStorage.setItem('wallet_public_key', user.publicKey);
+              }
+              if (user.email) {
+                localStorage.setItem('wallet_email', user.email);
+              }
+              
+              // Verify connection was successful
+              if (window.KasperoPay.isConnected && window.KasperoPay.isConnected()) {
+                onClose();
+                // Small delay to ensure localStorage is persisted
+                setTimeout(() => {
+                  window.location.reload();
+                }, 300);
+              } else {
+                setLoading(false);
+              }
+            } catch (error) {
+              console.error('Post-connection error:', error);
+              setLoading(false);
             }
-            
-            onClose();
-            window.location.reload();
           },
           onCancel: () => {
+            setLoading(false);
+          },
+          onError: (error) => {
+            console.error('KasperoPay error:', error);
             setLoading(false);
           }
         });
