@@ -26,7 +26,17 @@ export default function KaspaComModal({ isOpen, onClose }) {
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-cyan-500/20 flex-shrink-0">
-          <h2 className="text-xl font-bold text-white">KaspaCom Wallet</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold text-white">Kaspa Wallet</h2>
+            <a
+              href="https://kaspacom.net"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1 bg-cyan-500/20 border border-cyan-500/50 rounded text-cyan-400 hover:bg-cyan-500/30 text-sm font-semibold transition-colors"
+            >
+              Visit Site
+            </a>
+          </div>
           <Button
             onClick={onClose}
             variant="ghost"
