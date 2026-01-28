@@ -48,18 +48,29 @@ export default function LoginModal({ isOpen, onClose }) {
       return;
     }
 
-    window.KasperoPay.connect({
-      merchant: 'kpm_hocgtdnj',
-      onConnect: function(user) {
-        localStorage.setItem('kaspa_address', user.address);
-        localStorage.setItem('auth_method', 'kastera');
-        onClose();
-        window.location.reload();
-      },
-      onCancel: function() {
-        console.log('Connection cancelled');
-      }
-    });
+    try {
+      window.KasperoPay.connect({
+        merchant: 'kpm_hocgtdnj',
+        onConnect: function(user) {
+          if (user && user.address) {
+            localStorage.setItem('kaspa_address', user.address);
+            localStorage.setItem('auth_method', 'kaspero');
+            onClose();
+            setTimeout(() => {
+              window.location.reload();
+            }, 300);
+          }
+        },
+        onCancel: function() {
+          console.log('Connection cancelled');
+        },
+        onError: function(error) {
+          console.error('KasperoPay error:', error);
+        }
+      });
+    } catch (error) {
+      console.error('Failed to open KasperoPay:', error);
+    }
   };
 
   return (
@@ -77,7 +88,7 @@ export default function LoginModal({ isOpen, onClose }) {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-gradient-to-br from-slate-900 to-slate-800 border border-cyan-500/30 rounded-2xl p-8 max-w-md w-full shadow-2xl"
+            className="bg-gradient-to-br from-slate-900 to-slate-800 border border-cyan-500/30 rounded-2xl p-8 max-w-md w-full shadow-2xl z-[1001]"
           >
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -110,7 +121,7 @@ export default function LoginModal({ isOpen, onClose }) {
                 <LogIn className="w-5 h-5 text-cyan-400" />
               </motion.button>
 
-              {/* Kastera Wallet Connect */}
+              {/* KasperoPay Wallet Connect */}
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -120,7 +131,7 @@ export default function LoginModal({ isOpen, onClose }) {
               >
                 <div className="flex-1 text-left">
                   <div className="font-semibold text-white group-hover:text-orange-300 transition-colors">
-                    Connect Wallet
+                    KasperoPay
                   </div>
                   <div className="text-xs text-gray-400">Kasware, Kastle, Keystone</div>
                 </div>
