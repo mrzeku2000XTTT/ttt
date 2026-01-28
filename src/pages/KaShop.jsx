@@ -68,13 +68,14 @@ export default function KaShopPage() {
       </div>
 
       {/* Iframe Container */}
-      <div className="flex-1 pt-16">
+      <div className="flex-1 pt-16 overflow-hidden">
         <iframe
           id="kashop-iframe"
           src="https://kashop.base44.app"
           className="w-full h-full border-0"
           title="KaShop"
           allow="fullscreen"
+          style={{ marginBottom: 0, paddingBottom: 0 }}
         />
       </div>
     </div>
