@@ -22,6 +22,7 @@ import BadgeManagerModal from "@/components/feed/BadgeManagerModal";
 import PostExplainerModal from "@/components/feed/PostExplainerModal";
 import MatrixGridBackground from "@/components/feed/MatrixGridBackground";
 import BoxingGame from "@/components/feed/BoxingGame";
+import StampModal from "@/components/feed/StampModal";
 
 export default function FeedPage() {
   const navigate = useNavigate();
