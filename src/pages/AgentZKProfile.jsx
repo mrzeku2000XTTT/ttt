@@ -73,6 +73,19 @@ export default function AgentZKProfilePage() {
         console.error('⚠️ [Profile] Failed to load verifications:', err);
       }
 
+      // Load stamps if own profile
+      if (user?.email === profile?.user_email) {
+        try {
+          const allStamps = await base44.entities.Stamp.filter({
+            stamper_address: kaspaAddress
+          });
+          setStamps(allStamps);
+          console.log('✅ [Profile] Loaded', allStamps.length, 'stamps');
+        } catch (err) {
+          console.error('⚠️ [Profile] Failed to load stamps:', err);
+        }
+      }
+
       if (user?.created_wallet_address) {
         try {
           const outgoingConnections = await base44.entities.AgentZKConnection.filter({
