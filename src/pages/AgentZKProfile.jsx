@@ -713,7 +713,36 @@ export default function AgentZKProfilePage() {
               transition={{ delay: 0.4 }}
               className="mt-8"
             >
-              <h2 className="text-2xl font-bold text-white mb-6">My Stamped News</h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-white">
+                  {stampsView === 'news' ? 'My Stamped News' : 'My Stamped Posts'}
+                </h2>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setStampsView('news')}
+                    className={`px-4 py-2 rounded-lg font-semibold transition-all text-sm ${
+                      stampsView === 'news'
+                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                        : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                    }`}
+                  >
+                    News
+                  </button>
+                  <button
+                    onClick={() => setStampsView('posts')}
+                    className={`px-4 py-2 rounded-lg font-semibold transition-all text-sm ${
+                      stampsView === 'posts'
+                        ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white'
+                        : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                    }`}
+                  >
+                    Posts
+                  </button>
+                </div>
+              </div>
+
+              {stampsView === 'news' ? (
+                <>
               {stamps.length === 0 ? (
                 <Card className="backdrop-blur-xl bg-white/5 border-white/10">
                   <CardContent className="p-8 text-center">
