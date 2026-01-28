@@ -2658,7 +2658,8 @@ export default function FeedPage() {
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                handleStampPost(post);
+                setStampPostData(post);
+                setShowStampModal(true);
               }}
               disabled={stampingPostId === post.id}
               variant="ghost"
