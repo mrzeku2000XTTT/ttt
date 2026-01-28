@@ -637,22 +637,20 @@ export default function WalletPage() {
              <p className="text-gray-400 text-sm">{user?.username || user?.email || 'Anonymous User'}</p>
            </div>
            <div className="flex gap-2">
-             {address && (
-               <>
-                 <Button onClick={() => setShowContactsModal(true)} variant="outline" className="bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800">
-                   <Users className="w-4 h-4 mr-2" />
-                   Contacts
-                 </Button>
-                 <Button onClick={() => setShowKaspaComModal(true)} variant="outline" className="bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800">
-                   <Globe className="w-4 h-4 mr-2" />
-                   KaspaCom
-                 </Button>
-               </>
-             )}
-             <Button onClick={() => setShowClearConfirm(true)} variant="outline" className="bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800">
-               <ArrowLeft className="w-4 h-4 mr-2" />
-               Clear
+             <Button onClick={() => setShowContactsModal(true)} variant="outline" className="bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800">
+               <Users className="w-4 h-4 mr-2" />
+               Contacts
              </Button>
+             <Button onClick={() => setShowKaspaComModal(true)} variant="outline" className="bg-cyan-500/20 border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/30">
+               <Globe className="w-4 h-4 mr-2" />
+               KaspaCom
+             </Button>
+             {address && (
+               <Button onClick={() => setShowClearConfirm(true)} variant="outline" className="bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800">
+                 <ArrowLeft className="w-4 h-4 mr-2" />
+                 Clear
+               </Button>
+             )}
            </div>
          </div>
 
