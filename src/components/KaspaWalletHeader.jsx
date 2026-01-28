@@ -131,140 +131,124 @@ export default function KaspaWalletHeader({ onClose }) {
       {/* Contacts Sidebar */}
       <AnimatePresence>
         {showContacts && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowContacts(false)}
-              className="fixed inset-0 z-40"
-            />
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="fixed top-20 right-4 w-96 bg-gradient-to-b from-zinc-900 to-black border border-cyan-500/30 rounded-xl shadow-2xl shadow-cyan-500/10 z-50 max-h-[70vh] overflow-y-auto"
-            >
-            <div className="p-5 border-b border-cyan-500/20 sticky top-0 bg-gradient-to-b from-black to-black/80 backdrop-blur-xl">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-white font-bold text-lg">Saved Addresses</h4>
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className="absolute top-16 right-4 w-80 bg-black/95 backdrop-blur-xl border border-white/20 rounded-xl shadow-2xl z-50 max-h-[60vh] overflow-y-auto"
+          >
+            <div className="p-4 border-b border-white/10 sticky top-0 bg-black/80">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-white font-semibold">Saved Addresses</h4>
                 <Button
                   onClick={() => setShowAddContact(!showAddContact)}
                   size="sm"
-                  className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/40 h-8 w-8 p-0"
+                  variant="ghost"
+                  className="text-cyan-400 hover:text-cyan-300 h-6 w-6 p-0"
                 >
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
 
               {showAddContact && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-3 p-4 bg-cyan-500/10 rounded-lg border border-cyan-500/30"
-                >
+                <div className="space-y-2 p-3 bg-white/5 rounded-lg border border-white/10">
                   <Input
-                    placeholder="Contact Name"
+                    placeholder="Name"
                     value={newContact.name}
                     onChange={(e) => setNewContact({...newContact, name: e.target.value})}
-                    className="bg-black/40 border-cyan-500/30 text-white h-9 text-sm"
+                    className="bg-white/5 border-white/10 text-white h-8 text-sm"
                   />
                   <Input
-                    placeholder="kaspa:..."
+                    placeholder="Kaspa Address"
                     value={newContact.address}
                     onChange={(e) => setNewContact({...newContact, address: e.target.value})}
-                    className="bg-black/40 border-cyan-500/30 text-white h-9 text-sm font-mono text-xs"
+                    className="bg-white/5 border-white/10 text-white h-8 text-sm font-mono text-xs"
                   />
                   <div className="flex gap-2">
                     <Button
                       onClick={handleAddContact}
                       disabled={!newContact.name.trim() || !newContact.address.trim()}
-                      className="flex-1 bg-cyan-600 hover:bg-cyan-700 h-8 text-sm font-semibold"
+                      size="sm"
+                      className="flex-1 bg-cyan-600 hover:bg-cyan-700 h-7 text-xs"
                     >
                       Save
                     </Button>
                     <Button
                       onClick={() => setShowAddContact(false)}
+                      size="sm"
                       variant="outline"
-                      className="flex-1 h-8 text-sm border-cyan-500/40 text-white"
+                      className="flex-1 h-7 text-xs border-white/10"
                     >
                       Cancel
                     </Button>
                   </div>
-                </motion.div>
+                </div>
               )}
             </div>
 
-            <div className="p-4 space-y-3">
+            <div className="p-3 space-y-2">
               {contacts.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-white/40 text-sm">No saved addresses yet</p>
-                  <p className="text-white/20 text-xs mt-1">Add one to get started</p>
-                </div>
+                <p className="text-white/40 text-xs text-center py-4">No saved addresses yet</p>
               ) : (
                 contacts.map(contact => (
-                  <motion.div 
-                    key={contact.id} 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-lg p-4 hover:from-cyan-500/20 hover:to-blue-500/20 transition-all"
-                  >
-                    <div className="flex items-start justify-between gap-3 mb-3">
+                  <motion.div key={contact.id} className="bg-white/5 border border-white/10 rounded-lg p-3 hover:bg-white/10 transition-colors">
+                    <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-bold">{contact.name}</p>
-                        <p className="text-white/50 text-xs font-mono break-all mt-1">
+                        <p className="text-white text-sm font-semibold">{contact.name}</p>
+                        <p className="text-white/60 text-xs font-mono truncate">
                           {contact.address}
                         </p>
                       </div>
                       <Button
                         onClick={() => handleDeleteContact(contact.id)}
                         size="sm"
-                        className="bg-red-500/20 hover:bg-red-500/30 text-red-400 h-7 w-7 p-0 flex-shrink-0"
+                        variant="ghost"
+                        className="text-red-400/60 hover:text-red-400 h-6 w-6 p-0 flex-shrink-0"
                       >
                         <X className="w-3 h-3" />
                       </Button>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="flex gap-2">
                       <Button
                         onClick={() => handleCopyAddress(contact.id, contact.address)}
                         size="sm"
-                        className={`h-8 text-xs font-semibold transition-all ${copiedId === contact.id ? 'bg-green-600 text-white' : 'bg-cyan-600 hover:bg-cyan-700 text-white'}`}
+                        className={`flex-1 h-7 text-xs transition-all ${copiedId === contact.id ? 'bg-green-500/30 text-green-400 border border-green-500/40' : 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/30'}`}
                       >
                         <Copy className="w-3 h-3 mr-1" />
-                        {copiedId === contact.id ? 'Copied' : 'Copy'}
+                        {copiedId === contact.id ? 'Copied!' : 'Copy'}
                       </Button>
 
-                      <motion.div className="relative">
+                      <motion.div className="relative flex-1">
                         <Button
                           onClick={() => setShowAmountForm(showAmountForm === contact.id ? null : contact.id)}
                           size="sm"
-                          className="w-full h-8 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white"
+                          className="w-full h-7 text-xs bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/30"
                         >
                           <TrendingUp className="w-3 h-3 mr-1" />
-                          {getTotalSent(contact)} KAS
+                          {getTotalSent(contact) || '0'} KAS
                         </Button>
 
                         <AnimatePresence>
                           {showAmountForm === contact.id && (
                             <motion.div
-                              initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                              animate={{ opacity: 1, scale: 1, y: 0 }}
-                              exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                              className="absolute top-full mt-2 left-0 right-0 bg-black/90 border border-cyan-500/40 rounded-lg p-3 z-50 backdrop-blur-xl shadow-lg"
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -10 }}
+                              className="absolute top-full mt-1 left-0 right-0 bg-white/10 border border-white/10 rounded-lg p-2 z-50"
                             >
-                              <p className="text-white/60 text-xs mb-2 font-semibold">Log Amount Sent</p>
-                              <div className="flex gap-2">
+                              <div className="flex gap-1">
                                 <Input
                                   type="number"
                                   placeholder="KAS amount"
                                   value={amountInput}
                                   onChange={(e) => setAmountInput(e.target.value)}
-                                  className="h-8 text-sm bg-white/5 border-cyan-500/30 text-white placeholder:text-white/30"
+                                  className="h-6 text-xs bg-white/5 border-white/10"
                                 />
                                 <Button
                                   onClick={() => handleAddAmount(contact.id)}
-                                  className="h-8 px-3 bg-cyan-600 hover:bg-cyan-700 text-sm font-semibold"
+                                  size="sm"
+                                  className="h-6 px-2 bg-cyan-600 hover:bg-cyan-700 text-xs"
                                 >
                                   Add
                                 </Button>
@@ -278,8 +262,7 @@ export default function KaspaWalletHeader({ onClose }) {
                 ))
               )}
             </div>
-            </motion.div>
-          </>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
