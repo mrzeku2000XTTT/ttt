@@ -25,6 +25,7 @@ export default function ProfilePage() {
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [transactions, setTransactions] = useState([]);
   const [stamps, setStamps] = useState([]);
+  const [stampedPosts, setStampedPosts] = useState([]);
   const [seals, setSeals] = useState([]);
   const [subscription, setSubscription] = useState(null);
   const [createdWallets, setCreatedWallets] = useState([]);
@@ -33,6 +34,7 @@ export default function ProfilePage() {
   const [dagKnightCertificate, setDagKnightCertificate] = useState(null);
   const [isSharingStamp, setIsSharingStamp] = useState(null);
   const [manualAddress, setManualAddress] = useState("");
+  const [stampsView, setStampsView] = useState('news');
 
   useEffect(() => {
     loadData();
