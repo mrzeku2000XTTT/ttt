@@ -204,7 +204,6 @@ import Peculiar from './pages/Peculiar';
 import Pera from './pages/Pera';
 import Poki from './pages/Poki';
 import Privacy from './pages/Privacy';
-import Profile from './pages/Profile';
 import ProofOfBullish from './pages/ProofOfBullish';
 import QRScanner from './pages/QRScanner';
 import Receive from './pages/Receive';
@@ -269,6 +268,7 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
+import Profile from './pages/Profile';
 import __Layout from './Layout.jsx';
 
 
@@ -430,7 +430,6 @@ export const PAGES = {
     "Pera": Pera,
     "Poki": Poki,
     "Privacy": Privacy,
-    "Profile": Profile,
     "ProofOfBullish": ProofOfBullish,
     "QRScanner": QRScanner,
     "Receive": Receive,
@@ -495,6 +494,7 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
+    "Profile": Profile,
 }
 
 export const pagesConfig = {

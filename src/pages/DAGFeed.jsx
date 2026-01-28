@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   Send, Heart, MessageCircle, Trash2, Edit2,
-  Loader2, Image as ImageIcon, X, Lock, LockOpen, Users, Video, FileText, DollarSign, Plus, AlertCircle, Sparkles, Shield, Reply
+  Loader2, Image as ImageIcon, X, Lock, LockOpen, Users, Video, FileText, DollarSign, Plus, AlertCircle, Sparkles, Shield, Reply, Wallet
 } from "lucide-react";
 import DAGCommentSection from "../components/feed/DAGCommentSection";
 import { format } from "date-fns";
