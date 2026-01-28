@@ -83,6 +83,18 @@ export default function AgentZKProfilePage() {
           });
           setStamps(allStamps);
           console.log('✅ [Profile] Loaded', allStamps.length, 'stamps');
+
+          // Load stamped posts from feed
+          try {
+            const allPosts = await base44.entities.Post.filter({
+              is_stamped: true,
+              stamper_address: kaspaAddress
+            });
+            setStampedPosts(allPosts);
+            console.log('✅ [Profile] Loaded', allPosts.length, 'stamped posts');
+          } catch (err) {
+            console.error('⚠️ [Profile] Failed to load stamped posts:', err);
+          }
         } catch (err) {
           console.error('⚠️ [Profile] Failed to load stamps:', err);
         }
