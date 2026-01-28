@@ -129,6 +129,7 @@ export default function FeedPage() {
   });
   const [showWalletSelector, setShowWalletSelector] = useState(false);
   const [showKaspaWalletModal, setShowKaspaWalletModal] = useState(false);
+  const [copiedWallet, setCopiedWallet] = useState(null);
 
   const fileInputRef = useRef(null);
   const replyFileInputRef = useRef(null);
@@ -569,6 +570,17 @@ export default function FeedPage() {
       }
     } finally {
       setStampingPostId(null);
+    }
+  };
+
+  const handleCopyWalletAddress = async (post) => {
+    try {
+      await navigator.clipboard.writeText(post.author_wallet_address);
+      setCopiedWallet(post.id);
+      setTimeout(() => setCopiedWallet(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy address:', err);
+      setError('Failed to copy wallet address');
     }
   };
 
@@ -2554,16 +2566,18 @@ export default function FeedPage() {
 
           {post.author_wallet_address && post.created_by !== user?.email && (
             <Button
-              onClick={() => handleOpenTipModal(post)}
+              onClick={() => typeof window !== 'undefined' && window.innerWidth < 768 ? handleCopyWalletAddress(post) : handleOpenTipModal(post)}
               variant="ghost"
               size="sm"
               className="text-white/40 hover:text-green-400 h-auto p-0 group"
-              title="Send KAS tip"
+              title={typeof window !== 'undefined' && window.innerWidth < 768 ? "Copy wallet address" : "Send KAS tip"}
             >
               <div className="w-5 h-5 mr-2 bg-white/10 border border-white/20 rounded-full flex items-center justify-center group-hover:bg-green-500/20 group-hover:border-green-500/30 transition-all">
                 <span className="text-xs font-bold">$</span>
               </div>
-              {post.tips_received > 0 && (
+              {copiedWallet === post.id ? (
+                <span className="text-xs text-green-400">Copied!</span>
+              ) : post.tips_received > 0 && (
                 <span className="text-xs">{post.tips_received.toFixed(2)}</span>
               )}
             </Button>
