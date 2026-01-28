@@ -373,7 +373,11 @@ export default function HomePage() {
   };
 
   if (loading) {
-    return null;
+    return (
+      <div className="fixed inset-0 w-screen h-screen bg-black flex items-center justify-center z-[9999]">
+        <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+      </div>
+    );
   }
 
   return (
