@@ -166,6 +166,7 @@ import KaspaSTORE from './pages/KaspaSTORE';
 import KaspaTTT from './pages/KaspaTTT';
 import Kasplore from './pages/Kasplore';
 import Kehinde from './pages/Kehinde';
+import Keystone from './pages/Keystone';
 import KnowledgeBase from './pages/KnowledgeBase';
 import Kolade from './pages/Kolade';
 import Konekt from './pages/Konekt';
@@ -269,7 +270,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import Keystone from './pages/Keystone';
 import __Layout from './Layout.jsx';
 
 
@@ -393,6 +393,7 @@ export const PAGES = {
     "KaspaTTT": KaspaTTT,
     "Kasplore": Kasplore,
     "Kehinde": Kehinde,
+    "Keystone": Keystone,
     "KnowledgeBase": KnowledgeBase,
     "Kolade": Kolade,
     "Konekt": Konekt,
@@ -496,7 +497,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "Keystone": Keystone,
 }
 
 export const pagesConfig = {
