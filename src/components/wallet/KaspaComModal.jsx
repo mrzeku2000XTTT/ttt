@@ -1,9 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function KaspaComModal({ isOpen, onClose }) {
+  const [isLoading, setIsLoading] = useState(true);
+
   if (!isOpen) return null;
 
   return (
@@ -19,11 +21,11 @@ export default function KaspaComModal({ isOpen, onClose }) {
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-black border border-cyan-500/30 rounded-xl w-full max-w-2xl shadow-2xl flex flex-col"
-        style={{ height: '80vh' }}
+        className="bg-black border border-cyan-500/30 rounded-xl w-full max-w-3xl shadow-2xl flex flex-col"
+        style={{ height: '85vh', maxHeight: '90vh' }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-cyan-500/20">
+        <div className="flex items-center justify-between p-6 border-b border-cyan-500/20 flex-shrink-0">
           <h2 className="text-xl font-bold text-white">KaspaCom Wallet</h2>
           <Button
             onClick={onClose}
@@ -35,12 +37,21 @@ export default function KaspaComModal({ isOpen, onClose }) {
           </Button>
         </div>
 
+        {/* Loading Spinner */}
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10 rounded-xl">
+            <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+          </div>
+        )}
+
         {/* KaspaCom Iframe */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden relative">
           <iframe
-            src="https://kaspa.kaspacom.net"
+            src="https://kaspacom.net/wallet"
             title="KaspaCom Wallet"
             className="w-full h-full border-0"
+            onLoad={() => setIsLoading(false)}
+            allow="clipboard-read; clipboard-write"
           />
         </div>
       </motion.div>
