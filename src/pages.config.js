@@ -142,12 +142,14 @@ import KASBOOKS from './pages/KASBOOKS';
 import KASBridge from './pages/KASBridge';
 import KASIA from './pages/KASIA';
 import KASari from './pages/KASari';
+import KCbridge from './pages/KCbridge';
 import KFlow from './pages/KFlow';
 import KGigZ from './pages/KGigZ';
 import KP from './pages/KP';
 import KPaint from './pages/KPaint';
 import KUniversity from './pages/KUniversity';
 import KWSuccess from './pages/KWSuccess';
+import KaShop from './pages/KaShop';
 import KaSkool from './pages/KaSkool';
 import KaSkoolProfile from './pages/KaSkoolProfile';
 import KasCompute from './pages/KasCompute';
@@ -270,8 +272,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import KaShop from './pages/KaShop';
-import KCbridge from './pages/KCbridge';
 import __Layout from './Layout.jsx';
 
 
@@ -371,12 +371,14 @@ export const PAGES = {
     "KASBridge": KASBridge,
     "KASIA": KASIA,
     "KASari": KASari,
+    "KCbridge": KCbridge,
     "KFlow": KFlow,
     "KGigZ": KGigZ,
     "KP": KP,
     "KPaint": KPaint,
     "KUniversity": KUniversity,
     "KWSuccess": KWSuccess,
+    "KaShop": KaShop,
     "KaSkool": KaSkool,
     "KaSkoolProfile": KaSkoolProfile,
     "KasCompute": KasCompute,
@@ -499,8 +501,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "KaShop": KaShop,
-    "KCbridge": KCbridge,
 }
 
 export const pagesConfig = {
