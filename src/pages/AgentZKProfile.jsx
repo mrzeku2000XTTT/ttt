@@ -28,6 +28,8 @@ export default function AgentZKProfilePage() {
   const [showQRModal, setShowQRModal] = useState(false);
   const [stamps, setStamps] = useState([]);
   const [activeTab, setActiveTab] = useState('profile');
+  const [stampsView, setStampsView] = useState('news'); // 'news' or 'posts'
+  const [stampedPosts, setStampedPosts] = useState([]);
 
   useEffect(() => {
     if (kaspaAddress) {
