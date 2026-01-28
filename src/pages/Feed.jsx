@@ -23,6 +23,7 @@ import PostExplainerModal from "@/components/feed/PostExplainerModal";
 import MatrixGridBackground from "@/components/feed/MatrixGridBackground";
 import BoxingGame from "@/components/feed/BoxingGame";
 import StampModal from "@/components/feed/StampModal";
+import KaspaWalletHeader from "@/components/KaspaWalletHeader";
 
 export default function FeedPage() {
   const navigate = useNavigate();
@@ -4287,29 +4288,7 @@ export default function FeedPage() {
               onClick={(e) => e.stopPropagation()}
               className="bg-black border border-white/20 rounded-2xl w-full max-w-6xl h-[85vh] overflow-hidden flex flex-col"
             >
-              <div className="flex items-center justify-between p-4 border-b border-white/10 bg-black/80 backdrop-blur-xl">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 rounded-lg flex items-center justify-center">
-                    <img 
-                      src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/3c64bfa3b_image.png"
-                      alt="SK"
-                      className="w-5 h-5 object-contain"
-                    />
-                  </div>
-                  <div>
-                    <h3 className="text-white font-bold text-lg">Kaspa Wallet</h3>
-                    <p className="text-white/60 text-xs">Onboarding Guide</p>
-                  </div>
-                </div>
-                <Button
-                  onClick={() => setShowKaspaWalletModal(false)}
-                  variant="ghost"
-                  size="sm"
-                  className="text-white/60 hover:text-white"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
+              <KaspaWalletHeader onClose={() => setShowKaspaWalletModal(false)} />
 
               <div className="flex-1 bg-white">
                 <iframe
@@ -4419,6 +4398,20 @@ export default function FeedPage() {
                           <Brain className="w-3 h-3" />
                         </Button>
                       </Link>
+
+                      <Button
+                        onClick={() => setShowKaspaWalletModal(true)}
+                        size="sm"
+                        variant="ghost"
+                        className="h-5 px-1.5 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 border border-cyan-500/30"
+                        title="Kaspa.com Wallet"
+                      >
+                        <img 
+                          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/6bee04b5b_image.png"
+                          alt="Kaspa"
+                          className="w-3 h-3 object-contain"
+                        />
+                      </Button>
                       
                       <AnimatePresence>
                         {showLayer01 && (
