@@ -1573,6 +1573,13 @@ Return ONLY the post text, no quotes or extra formatting.`,
             </motion.div>
           )}
         </div>
+
+        {selectedStampPost && (
+          <StampPostDetailsModal
+            post={selectedStampPost}
+            onClose={() => setSelectedStampPost(null)}
+          />
+        )}
       </div>
 
       <style jsx>{`
