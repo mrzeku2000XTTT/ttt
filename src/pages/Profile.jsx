@@ -33,6 +33,8 @@ export default function ProfilePage() {
   const [dagKnightCertificate, setDagKnightCertificate] = useState(null);
   const [isSharingStamp, setIsSharingStamp] = useState(null);
   const [manualAddress, setManualAddress] = useState("");
+  const [stampsView, setStampsView] = useState('news');
+  const [stampedPosts, setStampedPosts] = useState([]);
 
   useEffect(() => {
     loadData();
@@ -232,6 +234,21 @@ export default function ProfilePage() {
             }, '-created_date', 100);
           }
           setStamps(userStamps);
+
+          // Load stamped posts from feed
+          let userStampedPosts = [];
+          if (currentUser?.email) {
+            userStampedPosts = await base44.entities.Post.filter({
+              is_stamped: true,
+              created_by: currentUser.email
+            }, '-created_date', 100);
+          } else if (walletAddr) {
+            userStampedPosts = await base44.entities.Post.filter({
+              is_stamped: true,
+              stamper_address: walletAddr
+            }, '-created_date', 100);
+          }
+          setStampedPosts(userStampedPosts);
         } catch (err) {
           console.error('Failed to load stamps:', err);
         }
@@ -1345,52 +1362,126 @@ Return ONLY the post text, no quotes or extra formatting.`,
               >
                 <Card className="backdrop-blur-xl bg-white/5 border-white/10">
                   <CardHeader className="border-b border-white/10">
-                    <h2 className="text-xl font-bold text-white">My Stamped News</h2>
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-xl font-bold text-white">
+                        {stampsView === 'news' ? 'My Stamped News' : 'My Stamped Posts'}
+                      </h2>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setStampsView('news')}
+                          className={`px-4 py-2 rounded-lg font-semibold transition-all text-sm ${
+                            stampsView === 'news'
+                              ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                              : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                          }`}
+                        >
+                          News
+                        </button>
+                        <button
+                          onClick={() => setStampsView('posts')}
+                          className={`px-4 py-2 rounded-lg font-semibold transition-all text-sm ${
+                            stampsView === 'posts'
+                              ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white'
+                              : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                          }`}
+                        >
+                          Posts
+                        </button>
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent className="pt-6">
-                    {stamps.length === 0 ? (
-                      <div className="text-center py-12 text-gray-500">
-                        <Stamp className="w-16 h-16 mx-auto mb-4 text-gray-700" />
-                        <p>No news stamped yet</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {stamps.map((stamp) => (
-                          <div key={stamp.id} className="bg-white/5 border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-colors">
-                            <h3 className="text-white font-semibold mb-2">{stamp.news_title}</h3>
-                            <p className="text-gray-400 text-sm mb-3">{stamp.news_summary?.substring(0, 150)}...</p>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 text-xs text-gray-500">
-                                <Calendar className="w-4 h-4" />
-                                {new Date(stamp.stamped_date).toLocaleDateString()}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
-                                  Stamped
-                                </Badge>
-                                <Button
-                                  onClick={() => handleShareStampToFeed(stamp)}
-                                  disabled={isSharingStamp === stamp.id}
-                                  size="sm"
-                                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-                                >
-                                  {isSharingStamp === stamp.id ? (
-                                    <>
-                                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                                      Sharing...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Share2 className="w-3 h-3 mr-1" />
-                                      Push to Feed
-                                    </>
-                                  )}
-                                </Button>
-                              </div>
-                            </div>
+                    {stampsView === 'news' ? (
+                      <>
+                        {stamps.length === 0 ? (
+                          <div className="text-center py-12 text-gray-500">
+                            <Stamp className="w-16 h-16 mx-auto mb-4 text-gray-700" />
+                            <p>No news stamped yet</p>
                           </div>
-                        ))}
-                      </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {stamps.map((stamp) => (
+                              <div key={stamp.id} className="bg-white/5 border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-colors">
+                                <h3 className="text-white font-semibold mb-2">{stamp.news_title}</h3>
+                                <p className="text-gray-400 text-sm mb-3">{stamp.news_summary?.substring(0, 150)}...</p>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                                    <Calendar className="w-4 h-4" />
+                                    {new Date(stamp.stamped_date).toLocaleDateString()}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="outline" className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
+                                      Stamped
+                                    </Badge>
+                                    <Button
+                                      onClick={() => handleShareStampToFeed(stamp)}
+                                      disabled={isSharingStamp === stamp.id}
+                                      size="sm"
+                                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                                    >
+                                      {isSharingStamp === stamp.id ? (
+                                        <>
+                                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                          Sharing...
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Share2 className="w-3 h-3 mr-1" />
+                                          Push to Feed
+                                        </>
+                                      )}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {stampedPosts.length === 0 ? (
+                          <div className="text-center py-12 text-gray-500">
+                            <Sparkles className="w-16 h-16 mx-auto mb-4 text-gray-700" />
+                            <p>No posts stamped yet</p>
+                            <p className="text-xs mt-2">Stamp posts from the Feed to see them here</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {stampedPosts.map((post) => (
+                              <Link 
+                                key={post.id} 
+                                to={`${createPageUrl("Feed")}?post=${post.id}`}
+                                className="block"
+                              >
+                                <div className="bg-white/5 border border-cyan-500/20 hover:border-cyan-500/40 transition-all cursor-pointer rounded-lg p-4">
+                                  <div className="flex items-start gap-3 mb-3">
+                                    <div className="w-10 h-10 bg-white/10 border border-white/20 rounded-full flex items-center justify-center text-sm font-bold text-white">
+                                      {post.author_name[0].toUpperCase()}
+                                    </div>
+                                    <div className="flex-1">
+                                      <h3 className="text-white font-semibold mb-1">{post.author_name}</h3>
+                                      <p className="text-gray-300 text-sm mb-2">{post.content.substring(0, 200)}{post.content.length > 200 ? '...' : ''}</p>
+                                      <div className="flex flex-wrap gap-2">
+                                        <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30 text-xs">
+                                          {post.likes || 0} likes
+                                        </Badge>
+                                        <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 text-xs">
+                                          {post.comments_count || 0} comments
+                                        </Badge>
+                                        <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30 text-xs">
+                                          <Sparkles className="w-3 h-3 mr-1" />
+                                          Stamped
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </>
                     )}
                   </CardContent>
                 </Card>
