@@ -782,9 +782,48 @@ export default function AgentZKProfilePage() {
                     </Card>
                   ))}
                 </div>
-              )}
-            </motion.div>
-          )}
+                )}
+                </>
+                ) : (
+                <>
+                  {stampedPosts.length === 0 ? (
+                    <Card className="backdrop-blur-xl bg-white/5 border-white/10">
+                      <CardContent className="p-8 text-center">
+                        <Sparkles className="w-12 h-12 text-gray-400 mx-auto mb-4 opacity-50" />
+                        <p className="text-gray-400">No stamped posts yet. Start stamping posts from the feed!</p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="space-y-4">
+                      {stampedPosts.map((post) => (
+                        <Card key={post.id} className="backdrop-blur-xl bg-white/5 border-cyan-500/20 hover:border-cyan-500/40 transition-all">
+                          <CardContent className="p-4 md:p-6">
+                            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                              <div className="flex-1">
+                                <h3 className="text-white font-semibold text-lg mb-2">{post.author_name}</h3>
+                                <p className="text-gray-300 mb-3">{post.content.substring(0, 200)}...</p>
+                                <div className="flex flex-wrap gap-2">
+                                  <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30 text-xs">
+                                    Post ID: {post.id.substring(0, 8)}...
+                                  </Badge>
+                                  <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 text-xs">
+                                    {post.author_wallet_address.substring(0, 6)}...{post.author_wallet_address.substring(-4)}
+                                  </Badge>
+                                  <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30 text-xs">
+                                    Stamped
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </>
+                )}
+                </motion.div>
+                )}
         </div>
       </div>
 
