@@ -270,6 +270,7 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
+import KaShop from './pages/KaShop';
 import __Layout from './Layout.jsx';
 
 
@@ -497,6 +498,7 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
+    "KaShop": KaShop,
 }
 
 export const pagesConfig = {
