@@ -10,6 +10,7 @@ import { User as UserIcon, Stamp, Shield, Camera, Loader2, Save, X, CheckCircle2
 import { useNavigate } from "react-router-dom";
 import DAGKnightBadge from "@/components/profile/DAGKnightBadge";
 import JobSelector from "@/components/profile/JobSelector";
+import StampPostDetailsModal from "@/components/profile/StampPostDetailsModal";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -35,6 +36,7 @@ export default function ProfilePage() {
   const [manualAddress, setManualAddress] = useState("");
   const [stampsView, setStampsView] = useState('news');
   const [stampedPosts, setStampedPosts] = useState([]);
+  const [selectedStampPost, setSelectedStampPost] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -1449,35 +1451,42 @@ Return ONLY the post text, no quotes or extra formatting.`,
                         ) : (
                           <div className="space-y-4">
                             {stampedPosts.map((post) => (
-                              <Link 
-                                key={post.id} 
-                                to={`${createPageUrl("Feed")}?post=${post.id}`}
-                                className="block"
-                              >
-                                <div className="bg-white/5 border border-cyan-500/20 hover:border-cyan-500/40 transition-all cursor-pointer rounded-lg p-4">
-                                  <div className="flex items-start gap-3 mb-3">
-                                    <div className="w-10 h-10 bg-white/10 border border-white/20 rounded-full flex items-center justify-center text-sm font-bold text-white">
-                                      {post.author_name[0].toUpperCase()}
-                                    </div>
-                                    <div className="flex-1">
-                                      <h3 className="text-white font-semibold mb-1">{post.author_name}</h3>
-                                      <p className="text-gray-300 text-sm mb-2">{post.content.substring(0, 200)}{post.content.length > 200 ? '...' : ''}</p>
-                                      <div className="flex flex-wrap gap-2">
-                                        <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30 text-xs">
-                                          {post.likes || 0} likes
-                                        </Badge>
-                                        <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 text-xs">
-                                          {post.comments_count || 0} comments
-                                        </Badge>
-                                        <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30 text-xs">
-                                          <Sparkles className="w-3 h-3 mr-1" />
-                                          Stamped
-                                        </Badge>
+                              <div key={post.id} className="space-y-2">
+                                <Link 
+                                  to={`${createPageUrl("Feed")}?post=${post.id}`}
+                                  className="block"
+                                >
+                                  <div className="bg-white/5 border border-cyan-500/20 hover:border-cyan-500/40 transition-all cursor-pointer rounded-lg p-4">
+                                    <div className="flex items-start gap-3 mb-3">
+                                      <div className="w-10 h-10 bg-white/10 border border-white/20 rounded-full flex items-center justify-center text-sm font-bold text-white">
+                                        {post.author_name[0].toUpperCase()}
+                                      </div>
+                                      <div className="flex-1">
+                                        <h3 className="text-white font-semibold mb-1">{post.author_name}</h3>
+                                        <p className="text-gray-300 text-sm mb-2">{post.content.substring(0, 200)}{post.content.length > 200 ? '...' : ''}</p>
+                                        <div className="flex flex-wrap gap-2">
+                                          <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30 text-xs">
+                                            {post.likes || 0} likes
+                                          </Badge>
+                                          <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 text-xs">
+                                            {post.comments_count || 0} comments
+                                          </Badge>
+                                          <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30 text-xs">
+                                            <Sparkles className="w-3 h-3 mr-1" />
+                                            Stamped
+                                          </Badge>
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
-                                </div>
-                              </Link>
+                                </Link>
+                                <button
+                                  onClick={() => setSelectedStampPost(post)}
+                                  className="w-full px-3 py-2 text-xs font-semibold bg-orange-500/20 hover:bg-orange-500/30 border border-orange-500/30 text-orange-300 rounded-lg transition-all"
+                                >
+                                  View Post Details
+                                </button>
+                              </div>
                             ))}
                           </div>
                         )}
