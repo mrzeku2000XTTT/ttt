@@ -6,7 +6,6 @@ import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import KasperPayConnectButton from "@/components/KasperoPay/KasperPayConnectButton";
 
 export default function HomePage() {
   const [user, setUser] = useState(null);
@@ -104,25 +103,7 @@ export default function HomePage() {
     }
   };
 
-  const connectKasperoPay = async (address) => {
-    setIsConnectingWallet(true);
-    try {
-      const response = await base44.functions.invoke('kasperPayConnect', {
-        walletAddress: address
-      });
 
-      if (response.data?.success) {
-        setWalletAddress(address);
-        await loadConversationHistory(address);
-        setShowWalletModal(false);
-      }
-    } catch (err) {
-      console.error('KasperoPay connect failed:', err);
-      alert('Failed to connect wallet');
-    } finally {
-      setIsConnectingWallet(false);
-    }
-  };
 
   const connectZKWallet = async () => {
     setIsConnectingWallet(true);
@@ -974,11 +955,7 @@ export default function HomePage() {
                                </div>
                              </button>
 
-                             {/* KasperoPay Option */}
-                             <KasperPayConnectButton 
-                               onConnect={connectKasperoPay}
-                               isConnecting={isConnectingWallet}
-                             />
+
                             </div>
 
                           {isConnectingWallet && (
