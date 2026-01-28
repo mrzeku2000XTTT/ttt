@@ -8,14 +8,14 @@ export default function LoginModal({ isOpen, onClose }) {
 
   useEffect(() => {
     if (isOpen) {
-      // Load KasperoPay script
-      const script = document.createElement('script');
-      script.src = 'https://kaspa-store.com/pay/widget.js';
-      script.async = true;
-      script.onload = () => {
-        // Script loaded successfully
-      };
-      document.body.appendChild(script);
+      // Load KasperoPay script only once
+      if (!window.KasperoPay) {
+        const script = document.createElement('script');
+        script.src = 'https://kaspa-store.com/pay/widget.js';
+        script.async = true;
+        script.onerror = () => console.error('Failed to load KasperoPay script');
+        document.body.appendChild(script);
+      }
 
       // Handle Keystone OAuth callback
       const params = new URLSearchParams(window.location.search);
@@ -26,16 +26,8 @@ export default function LoginModal({ isOpen, onClose }) {
         localStorage.setItem('keystone_auth_token', token);
         localStorage.setItem('keystone_connected', 'true');
         window.history.replaceState({}, '', window.location.pathname);
-        
-        // Authenticate with Base44 using the token
         authenticateWithKeystone(token);
       }
-
-      return () => {
-        if (document.body.contains(script)) {
-          document.body.removeChild(script);
-        }
-      };
     }
   }, [isOpen]);
 
@@ -61,13 +53,27 @@ export default function LoginModal({ isOpen, onClose }) {
     base44.auth.redirectToLogin();
   };
 
-  const handleKasperoPay = () => {
-    if (typeof window !== 'undefined' && window.KasperoPay) {
+  const handleKasperoPay = async () => {
+    // Wait for KasperoPay to load if needed
+    let attempts = 0;
+    const waitForKasperoPay = new Promise((resolve) => {
+      const interval = setInterval(() => {
+        if (window.KasperoPay || attempts > 30) {
+          clearInterval(interval);
+          resolve(window.KasperoPay);
+        }
+        attempts++;
+      }, 100);
+    });
+
+    const KasperoPay = await waitForKasperoPay;
+    
+    if (KasperoPay) {
       setLoading(true);
-      window.KasperoPay.connect({
-        merchant: 'kpm_vx7c48go',
-        onConnect: async (user) => {
-          try {
+      try {
+        KasperoPay.connect({
+          merchant: 'kpm_vx7c48go',
+          onConnect: (user) => {
             // Store wallet connection info
             localStorage.setItem('wallet_address', user.address);
             localStorage.setItem('wallet_type', user.walletType);
@@ -76,22 +82,19 @@ export default function LoginModal({ isOpen, onClose }) {
               localStorage.setItem('wallet_public_key', user.publicKey);
             }
             
-            // Close modal and refresh
-            setTimeout(() => {
-              onClose();
-              window.location.reload();
-            }, 500);
-          } catch (error) {
-            console.error('Connection error:', error);
+            onClose();
+            window.location.reload();
+          },
+          onCancel: () => {
             setLoading(false);
           }
-        },
-        onCancel: () => {
-          setLoading(false);
-        }
-      });
+        });
+      } catch (error) {
+        console.error('Connection error:', error);
+        setLoading(false);
+      }
     } else {
-      console.error('KasperoPay not loaded');
+      console.error('KasperoPay failed to load');
       setLoading(false);
     }
   };
