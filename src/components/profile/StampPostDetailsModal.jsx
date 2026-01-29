@@ -31,7 +31,7 @@ export default function StampPostDetailsModal({ post, onClose }) {
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl border border-orange-500/30 rounded-xl p-6 max-w-md w-full shadow-2xl"
+        className="bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl border border-orange-500/30 rounded-xl p-4 md:p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl"
       >
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
