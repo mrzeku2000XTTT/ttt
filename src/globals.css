@@ -68,6 +68,26 @@ input:focus, select:focus, textarea:focus {
   font-size: 16px !important;
 }
 
+@viewport {
+  width: device-width;
+  zoom: 1;
+}
+
+html {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Prevent iOS zoom on input focus */
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+textarea {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
