@@ -2606,9 +2606,14 @@ export default function FeedPage() {
 
           {post.author_wallet_address && post.created_by !== user?.email && (
             <Button
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('💰 Tip button clicked');
                 handleCopyWalletAddress(post);
+                console.log('📱 Opening Kaspa wallet modal...');
                 setShowKaspaWalletModal(true);
+                console.log('✅ Modal state set to true');
               }}
               variant="ghost"
               size="sm"
