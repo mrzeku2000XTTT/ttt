@@ -2606,11 +2606,18 @@ export default function FeedPage() {
 
           {post.author_wallet_address && post.created_by !== user?.email && (
             <Button
-              onClick={() => typeof window !== 'undefined' && window.innerWidth < 768 ? handleCopyWalletAddress(post) : handleOpenTipModal(post)}
+              onClick={() => {
+                if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                  handleCopyWalletAddress(post);
+                  setShowKaspaWalletModal(true);
+                } else {
+                  handleOpenTipModal(post);
+                }
+              }}
               variant="ghost"
               size="sm"
               className="text-white/40 hover:text-green-400 h-auto p-0 group"
-              title={typeof window !== 'undefined' && window.innerWidth < 768 ? "Copy wallet address" : "Send KAS tip"}
+              title={typeof window !== 'undefined' && window.innerWidth < 768 ? "Copy wallet address & open wallet" : "Send KAS tip"}
             >
               <div className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2 bg-white/10 border border-white/20 rounded-full flex items-center justify-center group-hover:bg-green-500/20 group-hover:border-green-500/30 transition-all">
                 <span className="text-[10px] md:text-xs font-bold">$</span>
