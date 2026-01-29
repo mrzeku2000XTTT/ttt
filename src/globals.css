@@ -1,3 +1,4 @@
+css
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
 
 /* Global dark scrollbar styles */
@@ -56,6 +57,15 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background: black;
   color: white;
+}
+
+input, select, textarea {
+  font-size: 16px !important;
+  touch-action: manipulation;
+}
+
+input:focus, select:focus, textarea:focus {
+  font-size: 16px !important;
 }
 
 code {
