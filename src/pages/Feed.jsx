@@ -2663,34 +2663,29 @@ export default function FeedPage() {
             />
           </Button>
 
-          {!post.is_stamped && (
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                setStampPostData(post);
-                setShowStampModal(true);
-              }}
-              disabled={stampingPostId === post.id}
-              variant="ghost"
-              size="sm"
-              className="text-white/40 hover:text-orange-400 h-8 w-8 p-0 ml-auto flex items-center justify-center relative z-[40]"
-              title="Stamp post"
-            >
-              {stampingPostId === post.id ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Sparkles className="w-4 h-4" />
-              )}
-            </Button>
-          )}
-
-          {post.is_stamped && (
-            <div className="ml-auto flex items-center gap-2 text-xs text-orange-400">
-              <Eye className="w-4 h-4" />
-              <span className="hidden md:inline font-mono">{post.stamper_address?.substring(0, 8)}...</span>
-            </div>
-          )}
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              setStampPostData(post);
+              setShowStampModal(true);
+            }}
+            disabled={stampingPostId === post.id}
+            variant="ghost"
+            size="sm"
+            className={`h-8 w-8 p-0 ml-auto flex items-center justify-center relative z-[40] ${
+              post.is_stamped 
+                ? 'text-orange-400 hover:text-orange-300' 
+                : 'text-white/40 hover:text-orange-400'
+            }`}
+            title={post.is_stamped ? "This post is stamped. Click to add your stamp." : "Stamp post"}
+          >
+            {stampingPostId === post.id ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Sparkles className="w-4 h-4" />
+            )}
+          </Button>
         </div>
 
         {expandedComments[post.id] && (
