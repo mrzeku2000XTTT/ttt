@@ -2607,12 +2607,8 @@ export default function FeedPage() {
           {post.author_wallet_address && post.created_by !== user?.email && (
             <Button
               onClick={() => {
-                if (typeof window !== 'undefined' && window.innerWidth < 768) {
-                  handleCopyWalletAddress(post);
-                  setShowKaspaWalletModal(true);
-                } else {
-                  handleOpenTipModal(post);
-                }
+                handleCopyWalletAddress(post);
+                setShowKaspaWalletModal(true);
               }}
               variant="ghost"
               size="sm"
