@@ -2609,11 +2609,12 @@ export default function FeedPage() {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('💰 Tip button clicked');
-                handleCopyWalletAddress(post);
-                console.log('📱 Opening Kaspa wallet modal...');
-                setShowKaspaWalletModal(true);
-                console.log('✅ Modal state set to true');
+                if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                  handleCopyWalletAddress(post);
+                  setShowKaspaWalletModal(true);
+                } else {
+                  handleOpenTipModal(post);
+                }
               }}
               variant="ghost"
               size="sm"
