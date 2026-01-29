@@ -2686,9 +2686,9 @@ export default function FeedPage() {
           )}
 
           {post.is_stamped && (
-            <div className="ml-auto flex items-center gap-2 text-xs text-orange-400/60">
+            <div className="ml-auto flex items-center gap-2 text-xs text-orange-400">
               <Eye className="w-4 h-4" />
-              <span className="font-mono">{post.stamper_address?.substring(0, 8)}...</span>
+              <span className="hidden md:inline font-mono">{post.stamper_address?.substring(0, 8)}...</span>
             </div>
           )}
         </div>
