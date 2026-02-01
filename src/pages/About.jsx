@@ -434,61 +434,62 @@ export default function AboutPage() {
                   Why Choose TTT?
                 </h2>
               
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <Zap className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-1" />
-                    <div>
-                      <h4 className="text-white font-semibold mb-1">Instant Transactions</h4>
-                      <p className="text-white/70 text-sm">Kaspa's 1-block confirmation time enables real-time tipping and payments</p>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <Zap className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-1" />
+                      <div>
+                        <h4 className="text-white font-semibold mb-1">Instant Transactions</h4>
+                        <p className="text-white/70 text-sm">Kaspa's 1-block confirmation time enables real-time tipping and payments</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-3">
+                      <DollarSign className="w-5 h-5 text-green-400 flex-shrink-0 mt-1" />
+                      <div>
+                        <h4 className="text-white font-semibold mb-1">Minimal Fees</h4>
+                        <p className="text-white/70 text-sm">Near-zero transaction costs make microtransactions practical</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-3">
+                      <Shield className="w-5 h-5 text-orange-400 flex-shrink-0 mt-1" />
+                      <div>
+                        <h4 className="text-white font-semibold mb-1">Cryptographic Security</h4>
+                        <p className="text-white/70 text-sm">Wallet signatures verify content authenticity and ownership</p>
+                      </div>
                     </div>
                   </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <DollarSign className="w-5 h-5 text-green-400 flex-shrink-0 mt-1" />
-                    <div>
-                      <h4 className="text-white font-semibold mb-1">Minimal Fees</h4>
-                      <p className="text-white/70 text-sm">Near-zero transaction costs make microtransactions practical</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <Shield className="w-5 h-5 text-orange-400 flex-shrink-0 mt-1" />
-                    <div>
-                      <h4 className="text-white font-semibold mb-1">Cryptographic Security</h4>
-                      <p className="text-white/70 text-sm">Wallet signatures verify content authenticity and ownership</p>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <Brain className="w-5 h-5 text-purple-400 flex-shrink-0 mt-1" />
-                    <div>
-                      <h4 className="text-white font-semibold mb-1">AI Integration</h4>
-                      <p className="text-white/70 text-sm">Cutting-edge AI agents enhance user experience and automation</p>
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <Brain className="w-5 h-5 text-purple-400 flex-shrink-0 mt-1" />
+                      <div>
+                        <h4 className="text-white font-semibold mb-1">AI Integration</h4>
+                        <p className="text-white/70 text-sm">Cutting-edge AI agents enhance user experience and automation</p>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <Network className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-1" />
-                    <div>
-                      <h4 className="text-white font-semibold mb-1">Multi-Layer Support</h4>
-                      <p className="text-white/70 text-sm">Bridge between Kaspa L1 and L2 networks seamlessly</p>
+                    
+                    <div className="flex items-start gap-3">
+                      <Network className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-1" />
+                      <div>
+                        <h4 className="text-white font-semibold mb-1">Multi-Layer Support</h4>
+                        <p className="text-white/70 text-sm">Bridge between Kaspa L1 and L2 networks seamlessly</p>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <Users className="w-5 h-5 text-blue-400 flex-shrink-0 mt-1" />
-                    <div>
-                      <h4 className="text-white font-semibold mb-1">Community Rewards</h4>
-                      <p className="text-white/70 text-sm">Earn badges, build reputation, and get recognized for contributions</p>
+                    
+                    <div className="flex items-start gap-3">
+                      <Users className="w-5 h-5 text-blue-400 flex-shrink-0 mt-1" />
+                      <div>
+                        <h4 className="text-white font-semibold mb-1">Community Rewards</h4>
+                        <p className="text-white/70 text-sm">Earn badges, build reputation, and get recognized for contributions</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </motion.div>
 
         {/* Technical Overview */}
@@ -661,23 +662,28 @@ export default function AboutPage() {
                   finance, and AI—all on the Kaspa blockchain.
                 </p>
               
-              <div className="flex flex-wrap gap-4 justify-center">
-                <Link to={createPageUrl("Feed")}>
-                  <Button className="bg-gradient-to-r from-cyan-500/20 to-blue-600/20 hover:from-cyan-500/30 hover:to-blue-600/30 border border-cyan-500/40 text-cyan-300 h-14 px-10 backdrop-blur-xl shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30 transition-all">
-                    <Users className="w-5 h-5 mr-2" />
-                    Start Using TTT
-                  </Button>
-                </Link>
-                <Link to={createPageUrl("Docs")}>
-                  <Button className="bg-black/40 hover:bg-black/60 border border-white/20 hover:border-white/30 text-white h-14 px-10 backdrop-blur-xl transition-all">
-                    <BookOpen className="w-5 h-5 mr-2" />
-                    Read Documentation
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="flex flex-wrap gap-4 justify-center">
+                  <Link to={createPageUrl("Feed")}>
+                    <Button className="bg-gradient-to-r from-cyan-500/20 to-blue-600/20 hover:from-cyan-500/30 hover:to-blue-600/30 border border-cyan-500/40 text-cyan-300 h-14 px-10 backdrop-blur-xl shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30 transition-all">
+                      <Users className="w-5 h-5 mr-2" />
+                      Start Using TTT
+                    </Button>
+                  </Link>
+                  <Link to={createPageUrl("Docs")}>
+                    <Button className="bg-black/40 hover:bg-black/60 border border-white/20 hover:border-white/30 text-white h-14 px-10 backdrop-blur-xl transition-all">
+                      <BookOpen className="w-5 h-5 mr-2" />
+                      Read Documentation
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </motion.div>
+      </div>
+    </div>
+  );
+}
       </div>
     </div>
   );
