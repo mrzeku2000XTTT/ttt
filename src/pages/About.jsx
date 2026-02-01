@@ -331,24 +331,26 @@ export default function AboutPage() {
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-4">
-                    {category.items.map((item) => {
-                      const ItemIcon = item.icon;
-                      return (
-                        <Card key={item.name} className="bg-black/40 backdrop-blur-xl border-white/10 hover:border-white/20 transition-all group">
-                          <CardContent className="p-5">
-                            <div className="flex items-start gap-3">
-                              <div className="w-10 h-10 bg-white/5 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-white/10 transition-colors">
-                                <ItemIcon className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" />
-                              </div>
-                              <div>
-                                <h4 className="text-white font-semibold mb-1">{item.name}</h4>
-                                <p className="text-white/60 text-sm">{item.desc}</p>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
+                   {category.items.map((item) => {
+                     const ItemIcon = item.icon;
+                     return (
+                       <motion.div whileHover={{ x: 4 }} key={item.name}>
+                         <Card className="bg-black/50 backdrop-blur-xl border border-white/10 hover:border-cyan-500/30 hover:bg-black/70 transition-all group h-full">
+                           <CardContent className="p-6">
+                             <div className="flex items-start gap-4">
+                               <div className="w-12 h-12 bg-gradient-to-br from-white/10 to-white/5 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:from-cyan-500/20 group-hover:to-blue-500/20 transition-all shadow-inner">
+                                 <ItemIcon className="w-6 h-6 text-white/60 group-hover:text-cyan-400 transition-colors" />
+                               </div>
+                               <div>
+                                 <h4 className="text-white font-bold mb-2 text-base">{item.name}</h4>
+                                 <p className="text-white/60 text-sm leading-relaxed">{item.desc}</p>
+                               </div>
+                             </div>
+                           </CardContent>
+                         </Card>
+                       </motion.div>
+                     );
+                   })}
                   </div>
                 </motion.div>
               );
@@ -499,38 +501,53 @@ export default function AboutPage() {
           <h2 className="text-3xl font-bold text-white text-center mb-12">Technical Foundation</h2>
           
           <div className="grid lg:grid-cols-3 gap-6">
-            <Card className="bg-black/40 backdrop-blur-xl border-white/10">
-              <CardContent className="p-6">
-                <Network className="w-10 h-10 text-cyan-400 mb-4" />
-                <h3 className="text-white font-bold text-lg mb-3">Kaspa BlockDAG</h3>
-                <p className="text-white/70 text-sm leading-relaxed">
-                  Unlike traditional blockchains, Kaspa uses a Directed Acyclic Graph (DAG) structure, 
-                  enabling parallel block creation and instant confirmations without sacrificing security.
-                </p>
-              </CardContent>
-            </Card>
+            <motion.div whileHover={{ y: -8, scale: 1.02 }} className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Card className="relative bg-black/60 backdrop-blur-2xl border border-cyan-500/20 h-full group-hover:border-cyan-500/40 transition-all shadow-xl">
+                <CardContent className="p-8">
+                  <div className="w-16 h-16 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-2xl flex items-center justify-center mb-6">
+                    <Network className="w-8 h-8 text-cyan-400" />
+                  </div>
+                  <h3 className="text-white font-bold text-xl mb-4">Kaspa BlockDAG</h3>
+                  <p className="text-white/60 text-sm leading-relaxed">
+                    Unlike traditional blockchains, Kaspa uses a Directed Acyclic Graph (DAG) structure, 
+                    enabling parallel block creation and instant confirmations without sacrificing security.
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
 
-            <Card className="bg-black/40 backdrop-blur-xl border-white/10">
-              <CardContent className="p-6">
-                <Shield className="w-10 h-10 text-orange-400 mb-4" />
-                <h3 className="text-white font-bold text-lg mb-3">Cryptographic Stamping</h3>
-                <p className="text-white/70 text-sm leading-relaxed">
-                  All content can be "stamped" using Kasware wallet signatures, creating an immutable 
-                  proof of authenticity and ownership without requiring gas fees or smart contracts.
-                </p>
-              </CardContent>
-            </Card>
+            <motion.div whileHover={{ y: -8, scale: 1.02 }} className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Card className="relative bg-black/60 backdrop-blur-2xl border border-orange-500/20 h-full group-hover:border-orange-500/40 transition-all shadow-xl">
+                <CardContent className="p-8">
+                  <div className="w-16 h-16 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-2xl flex items-center justify-center mb-6">
+                    <Shield className="w-8 h-8 text-orange-400" />
+                  </div>
+                  <h3 className="text-white font-bold text-xl mb-4">Cryptographic Stamping</h3>
+                  <p className="text-white/60 text-sm leading-relaxed">
+                    All content can be "stamped" using Kasware wallet signatures, creating an immutable 
+                    proof of authenticity and ownership without requiring gas fees or smart contracts.
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
 
-            <Card className="bg-black/40 backdrop-blur-xl border-white/10">
-              <CardContent className="p-6">
-                <Brain className="w-10 h-10 text-purple-400 mb-4" />
-                <h3 className="text-white font-bold text-lg mb-3">AI-Native Design</h3>
-                <p className="text-white/70 text-sm leading-relaxed">
-                  TTT integrates advanced AI agents (Agent ZK, Zeku, Window) for content moderation, 
-                  user assistance, image analysis, and automated workflows.
-                </p>
-              </CardContent>
-            </Card>
+            <motion.div whileHover={{ y: -8, scale: 1.02 }} className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Card className="relative bg-black/60 backdrop-blur-2xl border border-purple-500/20 h-full group-hover:border-purple-500/40 transition-all shadow-xl">
+                <CardContent className="p-8">
+                  <div className="w-16 h-16 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-2xl flex items-center justify-center mb-6">
+                    <Brain className="w-8 h-8 text-purple-400" />
+                  </div>
+                  <h3 className="text-white font-bold text-xl mb-4">AI-Native Design</h3>
+                  <p className="text-white/60 text-sm leading-relaxed">
+                    TTT integrates advanced AI agents (Agent ZK, Zeku, Window) for content moderation, 
+                    user assistance, image analysis, and automated workflows.
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
         </motion.div>
 
@@ -556,18 +573,22 @@ export default function AboutPage() {
                     </div>
                     
                     <div className="grid md:grid-cols-2 gap-4">
-                      {category.items.map((item) => {
-                        const ItemIcon = item.icon;
-                        return (
-                          <div key={item.name} className="flex items-start gap-3 p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors">
-                            <ItemIcon className="w-5 h-5 text-white/60 flex-shrink-0 mt-0.5" />
-                            <div>
-                              <h4 className="text-white font-semibold text-sm mb-1">{item.name}</h4>
-                              <p className="text-white/60 text-xs leading-relaxed">{item.desc}</p>
-                            </div>
-                          </div>
-                        );
-                      })}
+                     {category.items.map((item) => {
+                       const ItemIcon = item.icon;
+                       return (
+                         <motion.div whileHover={{ x: 4 }} key={item.name}>
+                           <div className="flex items-start gap-4 p-5 bg-black/30 rounded-xl border border-white/10 hover:border-cyan-500/30 hover:bg-black/50 transition-all h-full">
+                             <div className="w-11 h-11 bg-gradient-to-br from-white/10 to-white/5 rounded-xl flex items-center justify-center flex-shrink-0 shadow-inner">
+                               <ItemIcon className="w-6 h-6 text-white/60" />
+                             </div>
+                             <div>
+                               <h4 className="text-white font-bold text-sm mb-1.5">{item.name}</h4>
+                               <p className="text-white/60 text-xs leading-relaxed">{item.desc}</p>
+                             </div>
+                           </div>
+                         </motion.div>
+                       );
+                     })}
                     </div>
                   </CardContent>
                 </Card>
