@@ -127,11 +127,31 @@ export default function AboutPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-black relative overflow-hidden">
-      {/* Animated background */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/10 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
+    <div className="min-h-screen bg-black relative overflow-hidden">
+      {/* Advanced animated background */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        {/* Multiple glowing orbs */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/20 rounded-full blur-[150px] animate-pulse" style={{ animationDuration: '8s' }} />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/20 rounded-full blur-[130px] animate-pulse" style={{ animationDelay: '2s', animationDuration: '10s' }} />
+        <div className="absolute top-1/2 right-1/3 w-72 h-72 bg-blue-500/15 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '4s', animationDuration: '12s' }} />
+        <div className="absolute bottom-1/3 left-1/3 w-64 h-64 bg-pink-500/15 rounded-full blur-[110px] animate-pulse" style={{ animationDelay: '6s', animationDuration: '14s' }} />
+        
+        {/* Grid pattern overlay */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(6,182,212,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(6,182,212,0.03)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_80%)]" />
+        
+        {/* Floating particles */}
+        {[...Array(30)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 bg-cyan-400/30 rounded-full animate-pulse"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 5}s`,
+              animationDuration: `${3 + Math.random() * 4}s`
+            }}
+          />
+        ))}
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -141,30 +161,44 @@ export default function AboutPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-16"
         >
-          <div className="inline-flex items-center gap-3 mb-6">
-            <div className="text-6xl sm:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600">
-              TTT
+          <motion.div
+            animate={{
+              scale: [1, 1.02, 1],
+            }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="inline-flex items-center gap-3 mb-8"
+          >
+            <div className="relative">
+              {/* Glow effect behind text */}
+              <div className="absolute inset-0 blur-3xl bg-gradient-to-r from-cyan-400/40 via-blue-500/40 to-purple-600/40" />
+              <div className="relative text-7xl sm:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600" style={{ fontFamily: '"Orbitron", sans-serif' }}>
+                TTT
+              </div>
             </div>
-          </div>
+          </motion.div>
           
-          <h1 className="text-3xl sm:text-5xl font-bold text-white mb-6">
-            The Kaspa Super-App
+          <h1 className="text-4xl sm:text-6xl font-bold text-white mb-6 tracking-tight">
+            The Kaspa <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Super-App</span>
           </h1>
           
-          <p className="text-lg sm:text-xl text-white/70 max-w-3xl mx-auto leading-relaxed mb-8">
-            A comprehensive ecosystem connecting social networking, DeFi, AI agents, gaming, 
-            and commerce—all powered by the Kaspa blockchain.
+          <p className="text-lg sm:text-2xl text-white/60 max-w-4xl mx-auto leading-relaxed mb-10 font-light">
+            A comprehensive ecosystem connecting <span className="text-cyan-400/80">social networking</span>, <span className="text-purple-400/80">DeFi</span>, <span className="text-pink-400/80">AI agents</span>, <span className="text-yellow-400/80">gaming</span>, 
+            and <span className="text-green-400/80">commerce</span>—all powered by the Kaspa blockchain.
           </p>
 
           <div className="flex flex-wrap gap-4 justify-center">
             <Link to={createPageUrl("Feed")}>
-              <Button className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white h-12 px-8">
+              <Button className="bg-gradient-to-r from-cyan-500/20 to-blue-600/20 hover:from-cyan-500/30 hover:to-blue-600/30 border border-cyan-500/40 text-cyan-300 h-14 px-10 backdrop-blur-xl shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30 transition-all">
                 <Users className="w-5 h-5 mr-2" />
                 Explore Feed
               </Button>
             </Link>
             <Link to={createPageUrl("Categories")}>
-              <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 h-12 px-8">
+              <Button className="bg-black/40 hover:bg-black/60 border border-white/20 hover:border-white/30 text-white h-14 px-10 backdrop-blur-xl transition-all">
                 View All Apps
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
@@ -179,21 +213,23 @@ export default function AboutPage() {
           transition={{ delay: 0.1 }}
           className="mb-16"
         >
-          <Card className="bg-black/40 backdrop-blur-xl border-white/10">
-            <CardContent className="p-8">
-              <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                <Sparkles className="w-6 h-6 text-cyan-400" />
-                What is TTT?
-              </h2>
+          <Card className="bg-black/60 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-cyan-500/5 hover:border-white/20 transition-all">
+            <CardContent className="p-10">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-14 h-14 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-2xl flex items-center justify-center">
+                  <Sparkles className="w-7 h-7 text-cyan-400" />
+                </div>
+                <h2 className="text-3xl font-bold text-white">What is TTT?</h2>
+              </div>
               
-              <div className="space-y-4 text-white/80 leading-relaxed">
-                <p>
-                  <strong className="text-white">TTT (Tap-To-Tip)</strong> is the first all-in-one super-app for the Kaspa ecosystem, 
+              <div className="space-y-6 text-white/70 leading-relaxed text-base">
+                <p className="text-lg">
+                  <strong className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">TTT (Tap-To-Tip)</strong> is the first all-in-one super-app for the Kaspa ecosystem, 
                   combining social networking, decentralized finance, artificial intelligence, gaming, and e-commerce into a unified platform.
                 </p>
                 
                 <p>
-                  Built on Kaspa's revolutionary <strong className="text-cyan-400">BlockDAG technology</strong>, TTT enables 
+                  Built on Kaspa's revolutionary <strong className="text-cyan-400 font-semibold">BlockDAG technology</strong>, TTT enables 
                   instant microtransactions, cryptographic content verification, and seamless cross-layer (L1/L2) interactions—all 
                   without compromising decentralization or security.
                 </p>
@@ -203,14 +239,21 @@ export default function AboutPage() {
                   TTT provides the tools and infrastructure to do it all in one place.
                 </p>
 
-                <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4 mt-6">
-                  <div className="flex items-start gap-2">
-                    <Sparkles className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-cyan-300">
-                      <strong>Key Innovation:</strong> TTT is the first platform to integrate Kaspa's instant, 
-                      feeless microtransactions into social interactions—allowing users to tip creators, 
-                      verify content, and participate in the economy with zero friction.
-                    </p>
+                <div className="relative bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-purple-500/10 border border-cyan-500/30 rounded-2xl p-6 mt-8 overflow-hidden">
+                  {/* Glow effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-purple-500/5 blur-2xl" />
+                  <div className="relative flex items-start gap-3">
+                    <div className="w-10 h-10 bg-cyan-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Sparkles className="w-5 h-5 text-cyan-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-cyan-300 font-semibold mb-2">Key Innovation</p>
+                      <p className="text-sm text-white/70 leading-relaxed">
+                        TTT is the first platform to integrate Kaspa's instant, 
+                        feeless microtransactions into social interactions—allowing users to tip creators, 
+                        verify content, and participate in the economy with zero friction.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -230,20 +273,27 @@ export default function AboutPage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {coreValues.map((value, idx) => {
               const Icon = value.icon;
+              const gradients = [
+                'from-cyan-500/20 to-blue-500/20',
+                'from-orange-500/20 to-red-500/20',
+                'from-purple-500/20 to-pink-500/20',
+                'from-green-500/20 to-emerald-500/20'
+              ];
               return (
                 <motion.div
                   key={value.title}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 + idx * 0.1 }}
+                  whileHover={{ y: -8, scale: 1.02 }}
                 >
-                  <Card className="bg-black/40 backdrop-blur-xl border-white/10 h-full hover:border-cyan-500/30 transition-all">
-                    <CardContent className="p-6">
-                      <div className="w-12 h-12 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-xl flex items-center justify-center mb-4">
-                        <Icon className="w-6 h-6 text-cyan-400" />
+                  <Card className={`bg-gradient-to-br ${gradients[idx]} backdrop-blur-2xl border border-white/10 h-full hover:border-white/20 transition-all shadow-lg`}>
+                    <CardContent className="p-8">
+                      <div className="w-16 h-16 bg-black/40 rounded-2xl flex items-center justify-center mb-6 shadow-inner">
+                        <Icon className="w-8 h-8 text-cyan-400" />
                       </div>
-                      <h3 className="text-white font-bold text-lg mb-2">{value.title}</h3>
-                      <p className="text-white/60 text-sm">{value.desc}</p>
+                      <h3 className="text-white font-bold text-xl mb-3">{value.title}</h3>
+                      <p className="text-white/60 text-sm leading-relaxed">{value.desc}</p>
                     </CardContent>
                   </Card>
                 </motion.div>
@@ -315,45 +365,54 @@ export default function AboutPage() {
         >
           <h2 className="text-3xl font-bold text-white text-center mb-12">How TTT Works</h2>
           
-          <div className="grid md:grid-cols-3 gap-6">
-            <Card className="bg-black/40 backdrop-blur-xl border-white/10">
-              <CardContent className="p-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-full flex items-center justify-center mb-4 mx-auto">
-                  <span className="text-2xl font-bold text-cyan-400">1</span>
-                </div>
-                <h3 className="text-white font-bold text-center mb-3">Connect Your Wallet</h3>
-                <p className="text-white/60 text-sm text-center">
-                  Link Kasware (L1), TTT Wallet, or MetaMask (L2) to start interacting with the platform. 
-                  No signup required—your wallet is your identity.
-                </p>
-              </CardContent>
-            </Card>
+          <div className="grid md:grid-cols-3 gap-8">
+            <motion.div whileHover={{ y: -8 }} className="relative">
+              <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-2xl blur-xl" />
+              <Card className="relative bg-black/80 backdrop-blur-2xl border border-cyan-500/30">
+                <CardContent className="p-8">
+                  <div className="w-16 h-16 bg-gradient-to-br from-cyan-500/30 to-blue-500/30 rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-lg shadow-cyan-500/20">
+                    <span className="text-3xl font-black text-cyan-400">1</span>
+                  </div>
+                  <h3 className="text-white font-bold text-xl text-center mb-4">Connect Your Wallet</h3>
+                  <p className="text-white/60 text-sm text-center leading-relaxed">
+                    Link Kasware (L1), TTT Wallet, or MetaMask (L2) to start interacting with the platform. 
+                    No signup required—your wallet is your identity.
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
 
-            <Card className="bg-black/40 backdrop-blur-xl border-white/10">
-              <CardContent className="p-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full flex items-center justify-center mb-4 mx-auto">
-                  <span className="text-2xl font-bold text-purple-400">2</span>
-                </div>
-                <h3 className="text-white font-bold text-center mb-3">Explore & Create</h3>
-                <p className="text-white/60 text-sm text-center">
-                  Post content, share ideas, trade assets, play games, or build with AI agents. 
-                  Every action is secured by Kaspa's blockchain.
-                </p>
-              </CardContent>
-            </Card>
+            <motion.div whileHover={{ y: -8 }} className="relative">
+              <div className="absolute -inset-1 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-2xl blur-xl" />
+              <Card className="relative bg-black/80 backdrop-blur-2xl border border-purple-500/30">
+                <CardContent className="p-8">
+                  <div className="w-16 h-16 bg-gradient-to-br from-purple-500/30 to-pink-500/30 rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-lg shadow-purple-500/20">
+                    <span className="text-3xl font-black text-purple-400">2</span>
+                  </div>
+                  <h3 className="text-white font-bold text-xl text-center mb-4">Explore & Create</h3>
+                  <p className="text-white/60 text-sm text-center leading-relaxed">
+                    Post content, share ideas, trade assets, play games, or build with AI agents. 
+                    Every action is secured by Kaspa's blockchain.
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
 
-            <Card className="bg-black/40 backdrop-blur-xl border-white/10">
-              <CardContent className="p-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-full flex items-center justify-center mb-4 mx-auto">
-                  <span className="text-2xl font-bold text-green-400">3</span>
-                </div>
-                <h3 className="text-white font-bold text-center mb-3">Earn & Grow</h3>
-                <p className="text-white/60 text-sm text-center">
-                  Receive tips for quality content, complete tasks for rewards, or participate in the ecosystem 
-                  to earn badges and build your reputation.
-                </p>
-              </CardContent>
-            </Card>
+            <motion.div whileHover={{ y: -8 }} className="relative">
+              <div className="absolute -inset-1 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-2xl blur-xl" />
+              <Card className="relative bg-black/80 backdrop-blur-2xl border border-green-500/30">
+                <CardContent className="p-8">
+                  <div className="w-16 h-16 bg-gradient-to-br from-green-500/30 to-emerald-500/30 rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-lg shadow-green-500/20">
+                    <span className="text-3xl font-black text-green-400">3</span>
+                  </div>
+                  <h3 className="text-white font-bold text-xl text-center mb-4">Earn & Grow</h3>
+                  <p className="text-white/60 text-sm text-center leading-relaxed">
+                    Receive tips for quality content, complete tasks for rewards, or participate in the ecosystem 
+                    to earn badges and build your reputation.
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
         </motion.div>
 
@@ -364,9 +423,14 @@ export default function AboutPage() {
           transition={{ delay: 0.5 }}
           className="mt-16"
         >
-          <Card className="bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border-cyan-500/30">
-            <CardContent className="p-8">
-              <h2 className="text-2xl font-bold text-white mb-6 text-center">Why Choose TTT?</h2>
+          <div className="relative">
+            <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/30 to-purple-500/30 rounded-3xl blur-2xl" />
+            <Card className="relative bg-black/80 backdrop-blur-2xl border border-cyan-500/40 shadow-2xl shadow-cyan-500/10">
+              <CardContent className="p-10">
+                <h2 className="text-3xl font-bold text-white mb-8 text-center flex items-center justify-center gap-3">
+                  <Zap className="w-8 h-8 text-yellow-400" />
+                  Why Choose TTT?
+                </h2>
               
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-4">
@@ -482,11 +546,11 @@ export default function AboutPage() {
               const CategoryIcon = category.icon;
               
               return (
-                <Card key={category.category} className="bg-black/40 backdrop-blur-xl border-white/10">
-                  <CardContent className="p-8">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className={`w-12 h-12 bg-gradient-to-br ${category.color} rounded-xl flex items-center justify-center`}>
-                        <CategoryIcon className="w-6 h-6 text-white" />
+                <Card key={category.category} className="bg-black/70 backdrop-blur-2xl border border-white/10 hover:border-white/20 transition-all shadow-xl">
+                  <CardContent className="p-10">
+                    <div className="flex items-center gap-4 mb-8">
+                      <div className={`w-14 h-14 bg-gradient-to-br ${category.color} rounded-2xl flex items-center justify-center shadow-lg`}>
+                        <CategoryIcon className="w-7 h-7 text-white" />
                       </div>
                       <h3 className="text-2xl font-bold text-white">{category.category}</h3>
                     </div>
@@ -523,22 +587,30 @@ export default function AboutPage() {
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { role: "Content Creators", desc: "Share posts, earn tips, build audience", icon: Video },
-              { role: "Traders", desc: "P2P trading, marketplace, DeFi tools", icon: TrendingUp },
-              { role: "Developers", desc: "Build with AI agents, APIs, and tools", icon: Zap },
-              { role: "Gamers", desc: "Play-to-earn games with KAS rewards", icon: Gamepad2 }
-            ].map((useCase) => {
+              { role: "Content Creators", desc: "Share posts, earn tips, build audience", icon: Video, gradient: "from-pink-500/20 to-purple-500/20", border: "border-pink-500/30" },
+              { role: "Traders", desc: "P2P trading, marketplace, DeFi tools", icon: TrendingUp, gradient: "from-green-500/20 to-emerald-500/20", border: "border-green-500/30" },
+              { role: "Developers", desc: "Build with AI agents, APIs, and tools", icon: Zap, gradient: "from-yellow-500/20 to-orange-500/20", border: "border-yellow-500/30" },
+              { role: "Gamers", desc: "Play-to-earn games with KAS rewards", icon: Gamepad2, gradient: "from-blue-500/20 to-cyan-500/20", border: "border-blue-500/30" }
+            ].map((useCase, idx) => {
               const Icon = useCase.icon;
               return (
-                <Card key={useCase.role} className="bg-black/40 backdrop-blur-xl border-white/10 hover:border-cyan-500/30 transition-all">
-                  <CardContent className="p-6 text-center">
-                    <div className="w-14 h-14 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Icon className="w-7 h-7 text-cyan-400" />
-                    </div>
-                    <h4 className="text-white font-bold mb-2">{useCase.role}</h4>
-                    <p className="text-white/60 text-sm">{useCase.desc}</p>
-                  </CardContent>
-                </Card>
+                <motion.div
+                  key={useCase.role}
+                  whileHover={{ y: -8, scale: 1.03 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.1 }}
+                >
+                  <Card className={`bg-gradient-to-br ${useCase.gradient} backdrop-blur-2xl border ${useCase.border} hover:border-opacity-60 transition-all shadow-xl h-full`}>
+                    <CardContent className="p-8 text-center">
+                      <div className={`w-16 h-16 bg-black/40 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg`}>
+                        <Icon className="w-8 h-8 text-white" />
+                      </div>
+                      <h4 className="text-white font-bold text-lg mb-3">{useCase.role}</h4>
+                      <p className="text-white/70 text-sm leading-relaxed">{useCase.desc}</p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               );
             })}
           </div>
@@ -551,23 +623,32 @@ export default function AboutPage() {
           transition={{ delay: 0.9 }}
           className="mt-16 mb-12"
         >
-          <Card className="bg-gradient-to-br from-cyan-500/10 via-blue-500/10 to-purple-500/10 border-cyan-500/30">
-            <CardContent className="p-8 text-center">
-              <h2 className="text-3xl font-bold text-white mb-4">Ready to Get Started?</h2>
-              <p className="text-white/70 mb-8 max-w-2xl mx-auto">
-                Join the growing TTT community and experience the future of decentralized social networking, 
-                finance, and AI—all on the Kaspa blockchain.
-              </p>
+          <div className="relative">
+            <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/30 via-blue-500/30 to-purple-500/30 rounded-3xl blur-2xl animate-pulse" style={{ animationDuration: '4s' }} />
+            <Card className="relative bg-black/80 backdrop-blur-2xl border-2 border-cyan-500/40 shadow-2xl shadow-cyan-500/20">
+              <CardContent className="p-12 text-center">
+                <motion.div
+                  animate={{ scale: [1, 1.05, 1] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                  className="w-20 h-20 bg-gradient-to-br from-cyan-500/30 to-purple-500/30 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-cyan-500/30"
+                >
+                  <Sparkles className="w-10 h-10 text-cyan-400" />
+                </motion.div>
+                <h2 className="text-4xl font-bold text-white mb-6">Ready to Get Started?</h2>
+                <p className="text-white/60 text-lg mb-10 max-w-2xl mx-auto leading-relaxed">
+                  Join the growing TTT community and experience the future of decentralized social networking, 
+                  finance, and AI—all on the Kaspa blockchain.
+                </p>
               
               <div className="flex flex-wrap gap-4 justify-center">
                 <Link to={createPageUrl("Feed")}>
-                  <Button className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white h-12 px-8">
+                  <Button className="bg-gradient-to-r from-cyan-500/20 to-blue-600/20 hover:from-cyan-500/30 hover:to-blue-600/30 border border-cyan-500/40 text-cyan-300 h-14 px-10 backdrop-blur-xl shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30 transition-all">
                     <Users className="w-5 h-5 mr-2" />
                     Start Using TTT
                   </Button>
                 </Link>
                 <Link to={createPageUrl("Docs")}>
-                  <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 h-12 px-8">
+                  <Button className="bg-black/40 hover:bg-black/60 border border-white/20 hover:border-white/30 text-white h-14 px-10 backdrop-blur-xl transition-all">
                     <BookOpen className="w-5 h-5 mr-2" />
                     Read Documentation
                   </Button>
