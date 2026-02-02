@@ -213,25 +213,26 @@ export default function Layout({ children, currentPageName }) {
   };
 
   const isHomePage = currentPageName === "Home";
-    const isLobbyPage = currentPageName === "Lobby";
-    const isEarthPage = currentPageName === "Earth";
-    const isCountryDetailPage = currentPageName === "CountryDetail";
-    const isKonektPage = currentPageName === "Konekt";
-    const isArea51Page = currentPageName === "Area51";
-    const isTheRealmPage = currentPageName === "TheRealm";
-    const isTruthLandingPage = currentPageName === "TruthLanding";
-    const isUNIPage = currentPageName === "UNI";
-    const isShiLLzPage = currentPageName === "ShiLLz";
-    const isOliviaAppsPage = currentPageName === "OliviaApps";
-    const isB44PromptsPage = currentPageName === "B44Prompts";
-    const isWindowPage = currentPageName === "Window";
-    const isImageHistoryPage = currentPageName === "ImageHistory";
-    const isKaSkoolPage = currentPageName === "KaSkool";
-    const isKaSkoolProfilePage = currentPageName === "KaSkoolProfile";
-    const isCoursesPage = currentPageName === "Courses";
-    const isNextdoorPage = currentPageName === "Nextdoor";
+  const isLobbyPage = currentPageName === "Lobby";
+  const isEarthPage = currentPageName === "Earth";
+  const isCountryDetailPage = currentPageName === "CountryDetail";
+  const isKonektPage = currentPageName === "Konekt";
+  const isArea51Page = currentPageName === "Area51";
+  const isTheRealmPage = currentPageName === "TheRealm";
+  const isTruthLandingPage = currentPageName === "TruthLanding";
+  const isUNIPage = currentPageName === "UNI";
+  const isShiLLzPage = currentPageName === "ShiLLz";
+  const isOliviaAppsPage = currentPageName === "OliviaApps";
+  const isB44PromptsPage = currentPageName === "B44Prompts";
+  const isWindowPage = currentPageName === "Window";
+  const isImageHistoryPage = currentPageName === "ImageHistory";
+  const isKaSkoolPage = currentPageName === "KaSkool";
+  const isKaSkoolProfilePage = currentPageName === "KaSkoolProfile";
+  const isCoursesPage = currentPageName === "Courses";
+  const isNextdoorPage = currentPageName === "Nextdoor";
+  const isFluxKmailPage = currentPageName === "FluxKmail";
 
-    if (isHomePage || isLobbyPage || isEarthPage || isCountryDetailPage || isKonektPage || isArea51Page || isTheRealmPage || isTruthLandingPage || isUNIPage || isShiLLzPage || isOliviaAppsPage || isB44PromptsPage || isWindowPage || isImageHistoryPage || isKaSkoolPage || isKaSkoolProfilePage || isCoursesPage || isNextdoorPage) {
+  if (isHomePage || isLobbyPage || isEarthPage || isCountryDetailPage || isKonektPage || isArea51Page || isTheRealmPage || isTruthLandingPage || isUNIPage || isShiLLzPage || isOliviaAppsPage || isB44PromptsPage || isWindowPage || isImageHistoryPage || isKaSkoolPage || isKaSkoolProfilePage || isCoursesPage || isNextdoorPage || isFluxKmailPage) {
     return (
       <React.Suspense fallback={<div className="min-h-screen bg-black" />}>
         <VideoPlayerProvider>
