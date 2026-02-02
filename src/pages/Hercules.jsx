@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
@@ -84,6 +83,7 @@ export default function HerculesPage() {
   const [testOutput, setTestOutput] = useState('');
   const [isTesting, setIsTesting] = useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = useState(null);
+  const [selectedVoice, setSelectedVoice] = useState('alloy');
 
   const showToast = (message, type = 'info') => {
     setToast({ message, type });
@@ -238,6 +238,12 @@ Return ONLY valid JSON with this structure:
                           tool.tool_name.toLowerCase().includes('image') ||
                           tool.description?.toLowerCase().includes('image');
 
+      // Check if it's a text-to-speech tool
+      const isTTSTool = tool.category === 'audio' || 
+                        tool.tool_name.toLowerCase().includes('speech') ||
+                        tool.tool_name.toLowerCase().includes('text to speech') ||
+                        tool.description?.toLowerCase().includes('text to speech');
+
       if (isImageTool) {
         // Use the actual image generation API
         showToast('Generating image with AI...', 'info');
@@ -263,6 +269,37 @@ Return ONLY valid JSON with this structure:
                 timestamp: new Date().toISOString()
             }, null, 2));
             showToast('Image generation failed', 'error');
+        }
+      } else if (isTTSTool) {
+        // Text to Speech tool
+        showToast('Generating audio...', 'info');
+        
+        // Use the text input and selected voice
+        const textToSpeak = testInput;
+        const voice = selectedVoice || 'alloy';
+
+        const response = await base44.functions.invoke('elevenLabsTTS', {
+          text: textToSpeak,
+          voice: voice
+        });
+
+        if (response && response.data && response.data.audio_url) {
+          setTestOutput(JSON.stringify({
+            success: true,
+            tool: tool.tool_name,
+            text: textToSpeak,
+            voice: voice,
+            audio_url: response.data.audio_url,
+            timestamp: new Date().toISOString()
+          }, null, 2));
+          showToast('Audio generated successfully!', 'success');
+        } else {
+          setTestOutput(JSON.stringify({
+            error: "Audio generation failed",
+            response: response?.data || "No response data",
+            timestamp: new Date().toISOString()
+          }, null, 2));
+          showToast('Audio generation failed', 'error');
         }
       } else {
         // For other tools, try to parse as JSON
@@ -791,6 +828,48 @@ Return ONLY valid JSON with this structure:
                       💡 Tip: Be detailed and specific for better results
                     </p>
                   </div>
+                ) : (selectedTool.category === 'audio' || 
+                      selectedTool.tool_name.toLowerCase().includes('speech') ||
+                      selectedTool.tool_name.toLowerCase().includes('text to speech') ||
+                      selectedTool.description?.toLowerCase().includes('text to speech')) ? (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm text-gray-400 mb-2 block">
+                        Text to Convert ({testInput.length}/5000)
+                      </label>
+                      <Textarea
+                        value={testInput}
+                        onChange={(e) => {
+                          if (e.target.value.length <= 5000) {
+                            setTestInput(e.target.value);
+                          }
+                        }}
+                        placeholder="Enter the text you want to convert to speech..."
+                        className="bg-white/5 border-white/10 text-white h-32"
+                        maxLength={5000}
+                      />
+                      <p className="text-xs text-gray-500 mt-2">
+                        💡 Maximum 5000 characters
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-gray-400 mb-2 block">
+                        Voice Selection
+                      </label>
+                      <select
+                        value={selectedVoice}
+                        onChange={(e) => setSelectedVoice(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
+                      >
+                        <option value="alloy">Alloy (Neutral)</option>
+                        <option value="echo">Echo (Male)</option>
+                        <option value="fable">Fable (British Male)</option>
+                        <option value="onyx">Onyx (Deep Male)</option>
+                        <option value="nova">Nova (Female)</option>
+                        <option value="shimmer">Shimmer (Soft Female)</option>
+                      </select>
+                    </div>
+                  </div>
                 ) : (
                   <div>
                     <label className="text-sm text-gray-400 mb-2 block">
@@ -860,6 +939,36 @@ Return ONLY valid JSON with this structure:
                       readOnly
                       className="bg-black/50 border-cyan-500/30 text-cyan-400 font-mono text-xs h-48"
                     />
+                    {(() => {
+                      try {
+                        const output = JSON.parse(testOutput);
+                        if (output.audio_url) {
+                          return (
+                            <div className="mt-3 space-y-2">
+                              <audio controls className="w-full">
+                                <source src={output.audio_url} type="audio/mpeg" />
+                              </audio>
+                              <Button
+                                onClick={() => {
+                                  const a = document.createElement('a');
+                                  a.href = output.audio_url;
+                                  a.download = `tts_${Date.now()}.mp3`;
+                                  a.click();
+                                }}
+                                size="sm"
+                                className="w-full bg-gradient-to-r from-green-500 to-emerald-500"
+                              >
+                                <Save className="w-4 h-4 mr-2" />
+                                Download Audio
+                              </Button>
+                            </div>
+                          );
+                        }
+                      } catch (e) {
+                        // Not JSON or no audio_url
+                      }
+                      return null;
+                    })()}
                     <Button
                       onClick={() => copyToClipboard(testOutput)}
                       size="sm"
