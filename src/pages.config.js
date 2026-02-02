@@ -121,6 +121,7 @@ import Enoch from './pages/Enoch';
 import Explorer from './pages/Explorer';
 import FHZ from './pages/FHZ';
 import Feed from './pages/Feed';
+import FluxKmail from './pages/FluxKmail';
 import Focus from './pages/Focus';
 import Gate from './pages/Gate';
 import Gift from './pages/Gift';
@@ -272,7 +273,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import FluxKmail from './pages/FluxKmail';
 import __Layout from './Layout.jsx';
 
 
@@ -351,6 +351,7 @@ export const PAGES = {
     "Explorer": Explorer,
     "FHZ": FHZ,
     "Feed": Feed,
+    "FluxKmail": FluxKmail,
     "Focus": Focus,
     "Gate": Gate,
     "Gift": Gift,
@@ -502,7 +503,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "FluxKmail": FluxKmail,
 }
 
 export const pagesConfig = {

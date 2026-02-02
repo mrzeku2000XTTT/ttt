@@ -313,7 +313,7 @@ export default function Layout({ children, currentPageName }) {
     : subNavItems;
 
   return (
-    <React.Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><div className="text-white">Loading...</div></div>}>
+    <React.Suspense fallback={<div className="fixed inset-0 bg-black flex items-center justify-center z-[9999]"><div className="text-white">Loading...</div></div>}>
       <VideoPlayerProvider>
         <div className="min-h-screen bg-black">
         {/* Compact Desktop Sidebar */}
