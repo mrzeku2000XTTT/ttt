@@ -127,6 +127,7 @@ import Gate from './pages/Gate';
 import Gift from './pages/Gift';
 import GlobalHistory from './pages/GlobalHistory';
 import God from './pages/God';
+import GridSplit from './pages/GridSplit';
 import Guide from './pages/Guide';
 import HAYPHASE from './pages/HAYPHASE';
 import HYPEMIND from './pages/HYPEMIND';
@@ -274,7 +275,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import GridSplit from './pages/GridSplit';
 import __Layout from './Layout.jsx';
 
 
@@ -359,6 +359,7 @@ export const PAGES = {
     "Gift": Gift,
     "GlobalHistory": GlobalHistory,
     "God": God,
+    "GridSplit": GridSplit,
     "Guide": Guide,
     "HAYPHASE": HAYPHASE,
     "HYPEMIND": HYPEMIND,
@@ -506,7 +507,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "GridSplit": GridSplit,
 }
 
 export const pagesConfig = {

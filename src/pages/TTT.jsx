@@ -164,9 +164,7 @@ export default function TTTPage() {
         {/* Apps grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
           <AnimatePresence mode="popLayout">
-            {filteredApps.map((app, i) => {
-              const Icon = app.icon;
-              return (
+            {filteredApps.map((app, i) => (
                 <Link key={app.path} to={createPageUrl(app.path)}>
                   <motion.div
                     layout
@@ -180,15 +178,17 @@ export default function TTTPage() {
                     onHoverEnd={() => setHoveredApp(null)}
                     className="relative group"
                   >
-                    <div className={`relative w-full aspect-square bg-gradient-to-br ${app.color} rounded-3xl flex items-center justify-center overflow-hidden`}>
+                    <div className={`relative w-full aspect-square ${app.color ? `bg-gradient-to-br ${app.color}` : 'bg-black'} rounded-3xl flex items-center justify-center overflow-hidden`}>
                       {/* Glow effect on hover */}
-                      <motion.div
-                        className={`absolute inset-0 bg-gradient-to-br ${app.color} blur-2xl`}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: hoveredApp === app.path ? 0.6 : 0 }}
-                        transition={{ duration: 0.3 }}
-                      />
-                      
+                      {app.color && (
+                        <motion.div
+                          className={`absolute inset-0 bg-gradient-to-br ${app.color} blur-2xl`}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: hoveredApp === app.path ? 0.6 : 0 }}
+                          transition={{ duration: 0.3 }}
+                        />
+                      )}
+
                       {/* Icon */}
                       <motion.div
                         animate={{
@@ -199,9 +199,11 @@ export default function TTTPage() {
                       >
                         {appImages[app.path] ? (
                           <img src={appImages[app.path]} alt={app.name} className="w-10 h-10 object-cover rounded-xl" />
-                        ) : (
-                          <Icon className="w-10 h-10 text-white" strokeWidth={1.5} />
-                        )}
+                        ) : app.defaultIcon ? (
+                          <img src={app.defaultIcon} alt={app.name} className="w-10 h-10 object-cover rounded-xl" />
+                        ) : app.icon ? (
+                          <app.icon className="w-10 h-10 text-white" strokeWidth={1.5} />
+                        ) : null}
                       </motion.div>
 
                       {/* Shimmer effect */}
@@ -236,9 +238,8 @@ export default function TTTPage() {
                       transition={{ duration: 0.3 }}
                     />
                   </motion.div>
-                </Link>
-              );
-            })}
+                  </Link>
+                  ))}
           </AnimatePresence>
         </div>
 
