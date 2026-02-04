@@ -28,20 +28,7 @@ export default function TTTPage() {
     }
   };
 
-  const apps = [
-    { name: "Feed", path: "Feed", category: "Social", icon: Users, color: "from-cyan-500 to-blue-500" },
-    { name: "TTTV", path: "Browser", category: "Media", icon: Sparkles, color: "from-purple-500 to-pink-500" },
-    { name: "Bridge", path: "Bridge", category: "Finance", icon: Wallet, color: "from-green-500 to-emerald-500" },
-    { name: "Agent ZK", path: "AgentZK", category: "AI", icon: Brain, color: "from-orange-500 to-red-500" },
-    { name: "Zeku AI", path: "ZekuAI", category: "AI", icon: Sparkles, color: "from-yellow-500 to-orange-500" },
-    { name: "Marketplace", path: "Marketplace", category: "Shop", icon: ShoppingBag, color: "from-pink-500 to-purple-500" },
-    { name: "Arcade", path: "Arcade", category: "Games", icon: Gamepad2, color: "from-blue-500 to-cyan-500" },
-    { name: "Courses", path: "Courses", category: "Education", icon: BookOpen, color: "from-indigo-500 to-purple-500" },
-    { name: "DAGKnight", path: "DAGKnightWallet", category: "Security", icon: Shield, color: "from-red-500 to-orange-500" },
-    { name: "Analytics", path: "Analytics", category: "Tools", icon: TrendingUp, color: "from-cyan-500 to-blue-500" },
-    { name: "Wallet", path: "Wallet", category: "Finance", icon: Wallet, color: "from-green-500 to-teal-500" },
-    { name: "Shop", path: "Shop", category: "Shop", icon: ShoppingBag, color: "from-pink-500 to-rose-500" },
-  ];
+  const apps = [];
 
   const categories = ["All", "Social", "AI", "Finance", "Games", "Shop", "Education", "Security", "Tools", "Media"];
 
@@ -209,9 +196,9 @@ export default function TTTPage() {
                         className="relative z-10"
                       >
                         {appImages[app.path] ? (
-                          <img src={appImages[app.path]} alt={app.name} className="w-16 h-16 object-cover rounded-2xl" />
+                          <img src={appImages[app.path]} alt={app.name} className="w-10 h-10 object-cover rounded-xl" />
                         ) : (
-                          <Icon className="w-16 h-16 text-white" strokeWidth={1.5} />
+                          <Icon className="w-10 h-10 text-white" strokeWidth={1.5} />
                         )}
                       </motion.div>
 

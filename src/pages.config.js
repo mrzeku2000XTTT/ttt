@@ -231,6 +231,7 @@ import Singularity from './pages/Singularity';
 import StateOfMind from './pages/StateOfMind';
 import Subscription from './pages/Subscription';
 import TD from './pages/TD';
+import TTT from './pages/TTT';
 import TTTAudit from './pages/TTTAudit';
 import TTTClassic from './pages/TTTClassic';
 import TTTIDProfile from './pages/TTTIDProfile';
@@ -273,7 +274,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import TTT from './pages/TTT';
 import __Layout from './Layout.jsx';
 
 
@@ -462,6 +462,7 @@ export const PAGES = {
     "StateOfMind": StateOfMind,
     "Subscription": Subscription,
     "TD": TD,
+    "TTT": TTT,
     "TTTAudit": TTTAudit,
     "TTTClassic": TTTClassic,
     "TTTIDProfile": TTTIDProfile,
@@ -504,7 +505,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "TTT": TTT,
 }
 
 export const pagesConfig = {
