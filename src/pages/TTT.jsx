@@ -162,7 +162,7 @@ export default function TTTPage() {
         </motion.div>
 
         {/* Apps grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-4">
           <AnimatePresence mode="popLayout">
             {filteredApps.map((app, i) => (
                 <Link key={app.path} to={createPageUrl(app.path)}>
@@ -178,13 +178,13 @@ export default function TTTPage() {
                     onHoverEnd={() => setHoveredApp(null)}
                     className="relative group"
                   >
-                    <div className={`relative w-full aspect-square ${app.color ? `bg-gradient-to-br ${app.color}` : 'bg-black'} rounded-3xl flex items-center justify-center overflow-hidden`}>
+                    <div className={`relative w-full aspect-square ${app.color ? `bg-gradient-to-br ${app.color}` : 'bg-black'} rounded-xl flex items-center justify-center overflow-hidden border border-white/10`}>
                       {/* Glow effect on hover */}
                       {app.color && (
                         <motion.div
-                          className={`absolute inset-0 bg-gradient-to-br ${app.color} blur-2xl`}
+                          className={`absolute inset-0 bg-gradient-to-br ${app.color} blur-lg`}
                           initial={{ opacity: 0 }}
-                          animate={{ opacity: hoveredApp === app.path ? 0.6 : 0 }}
+                          animate={{ opacity: hoveredApp === app.path ? 0.2 : 0 }}
                           transition={{ duration: 0.3 }}
                         />
                       )}
@@ -192,28 +192,28 @@ export default function TTTPage() {
                       {/* Icon */}
                       <motion.div
                         animate={{
-                          rotate: hoveredApp === app.path ? [0, -10, 10, -10, 0] : 0,
+                          scale: hoveredApp === app.path ? 1.1 : 1,
                         }}
-                        transition={{ duration: 0.5 }}
+                        transition={{ duration: 0.3 }}
                         className="relative z-10"
                       >
                         {appImages[app.path] ? (
-                          <img src={appImages[app.path]} alt={app.name} className="w-10 h-10 object-cover rounded-xl" />
+                          <img src={appImages[app.path]} alt={app.name} className="w-8 h-8 object-cover rounded-lg" />
                         ) : app.defaultIcon ? (
-                          <img src={app.defaultIcon} alt={app.name} className="w-10 h-10 object-cover rounded-xl" />
+                          <img src={app.defaultIcon} alt={app.name} className="w-8 h-8 object-cover rounded-lg" />
                         ) : app.icon ? (
-                          <app.icon className="w-10 h-10 text-white" strokeWidth={1.5} />
+                          <app.icon className="w-8 h-8 text-white" strokeWidth={1.5} />
                         ) : null}
                       </motion.div>
 
                       {/* Shimmer effect */}
                       <motion.div
-                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"
                         animate={{
                           x: hoveredApp === app.path ? ['-100%', '200%'] : '-100%',
                         }}
                         transition={{
-                          duration: 0.8,
+                          duration: 1,
                           ease: "easeInOut",
                         }}
                       />
@@ -226,13 +226,13 @@ export default function TTTPage() {
                       transition={{ delay: i * 0.03 + 0.1 }}
                       className="mt-3 text-center"
                     >
-                      <p className="text-white font-bold text-sm">{app.name}</p>
-                      <p className="text-white/40 text-xs mt-1">{app.category}</p>
+                      <p className="text-white font-semibold text-xs">{app.name}</p>
+                      <p className="text-white/30 text-[10px] mt-0.5">{app.category}</p>
                     </motion.div>
 
                     {/* Hover glow */}
                     <motion.div
-                      className="absolute -inset-2 bg-white/10 rounded-3xl blur-xl"
+                      className="absolute -inset-1 bg-white/5 rounded-xl blur-md"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: hoveredApp === app.path ? 1 : 0 }}
                       transition={{ duration: 0.3 }}
