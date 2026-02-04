@@ -274,6 +274,7 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
+import GridSplit from './pages/GridSplit';
 import __Layout from './Layout.jsx';
 
 
@@ -505,6 +506,7 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
+    "GridSplit": GridSplit,
 }
 
 export const pagesConfig = {
