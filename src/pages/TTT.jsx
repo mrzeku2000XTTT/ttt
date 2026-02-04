@@ -148,7 +148,7 @@ export default function TTTPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setSelectedCategory(category)}
-              className={`px-6 py-2 rounded-full backdrop-blur-xl transition-all ${
+              className={`px-4 py-1.5 text-sm rounded-full backdrop-blur-xl transition-all ${
                 selectedCategory === category
                   ? "bg-white text-black font-bold"
                   : "bg-white/10 text-white/80 border border-white/10 hover:bg-white/20"
