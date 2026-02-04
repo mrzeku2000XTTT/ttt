@@ -87,6 +87,7 @@ export default function AppStorePage() {
     { name: "KaShop", icon: "ShoppingBag", path: "KaShop", category: "Shop", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/00f7c1aac_image.png", circular: true },
     { name: "KC Bridge", icon: "Link2", path: "KCbridge", category: "Finance", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a36a42449_image.png" },
     { name: "Flux Kmail", icon: "Link2", path: "FluxKmail", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/0bf1ab743_image.png", circular: true },
+    { name: "TTT", icon: "Link2", path: "Home", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/59c961b71_image.png" },
     ];
 
   const getIconComponent = (iconName) => {
