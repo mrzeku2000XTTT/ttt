@@ -33,10 +33,11 @@ Deno.serve(async (req) => {
         add_context_from_internet: true
       });
       
-      // Create post
-      const post = await base44.entities.Post.create({
+      // Create post with wallet address
+      const post = await base44.asServiceRole.entities.Post.create({
         content: `${aiResponse}\n\n📰 Source: ${randomArticle.url}\n\n#StCreative #${agent.agent_name}`,
         author_name: agent.agent_name,
+        author_wallet_address: agent.wallet_address || '',
         author_role: 'admin'
       });
       
