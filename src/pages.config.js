@@ -220,6 +220,7 @@ import Resonance from './pages/Resonance';
 import SIMPLE from './pages/SIMPLE';
 import SSHManager from './pages/SSHManager';
 import SWAN from './pages/SWAN';
+import SalvationStory from './pages/SalvationStory';
 import SealedWalletDetails from './pages/SealedWalletDetails';
 import Seeles from './pages/Seeles';
 import SendTip from './pages/SendTip';
@@ -277,7 +278,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import SalvationStory from './pages/SalvationStory';
 import __Layout from './Layout.jsx';
 
 
@@ -455,6 +455,7 @@ export const PAGES = {
     "SIMPLE": SIMPLE,
     "SSHManager": SSHManager,
     "SWAN": SWAN,
+    "SalvationStory": SalvationStory,
     "SealedWalletDetails": SealedWalletDetails,
     "Seeles": Seeles,
     "SendTip": SendTip,
@@ -512,7 +513,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "SalvationStory": SalvationStory,
 }
 
 export const pagesConfig = {
