@@ -4417,7 +4417,7 @@ export default function FeedPage() {
                         />
                       </Button>
 
-                      <Link to={createPageUrl("Arhtuun")}>
+                      <Link to={createPageUrl("St")}>
                         <Button
                           size="sm"
                           variant="ghost"

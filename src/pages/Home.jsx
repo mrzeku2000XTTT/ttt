@@ -1263,7 +1263,7 @@ export default function HomePage() {
                                     </motion.div>
                                   </Link>
 
-                                  <Link to={createPageUrl("Arhtuun")}>
+                                  <Link to={createPageUrl("St")}>
                                     <motion.div whileHover={{ scale: 1.15, y: -8 }} whileTap={{ scale: 0.95 }} className="relative group">
                                       <div className="absolute inset-0 bg-white/10 rounded-full blur-xl group-hover:bg-white/20 transition-all" />
                                       <img 
