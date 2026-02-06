@@ -22,6 +22,10 @@ export default function ArhtuunPage() {
   const loadUser = async () => {
     try {
       const currentUser = await base44.auth.me();
+      if (currentUser.role !== 'admin') {
+        window.location.href = '/';
+        return;
+      }
       setUser(currentUser);
     } catch (err) {
       console.log("User not logged in");
