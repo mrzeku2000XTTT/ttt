@@ -65,6 +65,7 @@ import Analytics from './pages/Analytics';
 import AppStore from './pages/AppStore';
 import Arcade from './pages/Arcade';
 import Area51 from './pages/Area51';
+import Arhtuun from './pages/Arhtuun';
 import Articles from './pages/Articles';
 import AuraDashboard from './pages/AuraDashboard';
 import B44Prompts from './pages/B44Prompts';
@@ -275,7 +276,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import Arhtuun from './pages/Arhtuun';
 import __Layout from './Layout.jsx';
 
 
@@ -298,6 +298,7 @@ export const PAGES = {
     "AppStore": AppStore,
     "Arcade": Arcade,
     "Area51": Area51,
+    "Arhtuun": Arhtuun,
     "Articles": Articles,
     "AuraDashboard": AuraDashboard,
     "B44Prompts": B44Prompts,
@@ -508,7 +509,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "Arhtuun": Arhtuun,
 }
 
 export const pagesConfig = {

@@ -1263,6 +1263,20 @@ export default function HomePage() {
                                     </motion.div>
                                   </Link>
 
+                                  <Link to={createPageUrl("Arhtuun")}>
+                                    <motion.div whileHover={{ scale: 1.15, y: -8 }} whileTap={{ scale: 0.95 }} className="relative group">
+                                      <div className="absolute inset-0 bg-white/10 rounded-full blur-xl group-hover:bg-white/20 transition-all" />
+                                      <img 
+                                        src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/0042f30b3_image.png"
+                                        alt="St."
+                                        className="w-10 h-10 relative drop-shadow-[0_0_12px_rgba(255,255,255,0.5)] group-hover:drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] object-contain"
+                                      />
+                                      <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                        <span className="text-xs text-white font-semibold">St.</span>
+                                      </div>
+                                    </motion.div>
+                                  </Link>
+
                                   <Link to={createPageUrl("GlobalHistory")}>
                                     <motion.div whileHover={{ scale: 1.15, y: -8 }} whileTap={{ scale: 0.95 }} className="relative group">
                                       <div className="absolute inset-0 bg-orange-500/20 rounded-full blur-xl group-hover:bg-orange-500/40 transition-all" />
