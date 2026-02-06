@@ -514,17 +514,19 @@ export default function HomePage() {
           transition={{ duration: 1.2, delay: 0.5 }}
           className="mb-4 px-4 text-center"
         >
-          <h1 
-            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-2 tracking-tight leading-tight"
-            style={{
-              color: '#d1d5db',
-              textShadow: '0 4px 20px rgba(0, 0, 0, 0.8), 0 0 40px rgba(255, 255, 255, 0.1)',
-              fontFamily: '"Orbitron", "Rajdhani", sans-serif',
-              fontWeight: 900
-            }}
-          >
-            UNCHAIN HUMANITY
-          </h1>
+          <Link to={createPageUrl("SalvationStory")}>
+            <h1 
+              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-2 tracking-tight leading-tight cursor-pointer hover:opacity-80 transition-opacity"
+              style={{
+                color: '#d1d5db',
+                textShadow: '0 4px 20px rgba(0, 0, 0, 0.8), 0 0 40px rgba(255, 255, 255, 0.1)',
+                fontFamily: '"Orbitron", "Rajdhani", sans-serif',
+                fontWeight: 900
+              }}
+            >
+              UNCHAIN HUMANITY
+            </h1>
+          </Link>
         </motion.div>
 
         {/* Subtitle */}
