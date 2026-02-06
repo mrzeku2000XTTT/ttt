@@ -27,6 +27,8 @@ export default function HomePage() {
   const [isConnectingWallet, setIsConnectingWallet] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showKaspaIframe, setShowKaspaIframe] = useState(false);
+  const [showKasplexIframe, setShowKasplexIframe] = useState(false);
   const messagesEndRef = React.useRef(null);
 
   useEffect(() => {
@@ -528,19 +530,20 @@ export default function HomePage() {
         </motion.div>
 
         {/* Subtitle */}
-        <div className="flex items-center justify-center gap-3 mb-8 ml-8 md:ml-12">
-          <motion.span
+        <div className="flex items-center justify-center gap-3 mb-8 md:ml-8">
+          <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1, delay: 0.8 }}
-            className="text-white/70 text-xs md:text-sm tracking-[0.2em] font-light"
+            onClick={() => setShowKaspaIframe(true)}
+            className="text-white/70 hover:text-white text-xs md:text-sm tracking-[0.2em] font-light transition-all duration-300 cursor-pointer"
             style={{
               textShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
               fontFamily: '"Orbitron", "Rajdhani", sans-serif',
             }}
           >
             KASPA L1
-          </motion.span>
+          </motion.button>
 
           <button 
             onClick={() => setShowPortal(true)}
@@ -661,18 +664,19 @@ export default function HomePage() {
                   ))}
                   </button>
 
-          <motion.span
+          <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1, delay: 0.8 }}
-            className="text-white/70 text-xs md:text-sm tracking-[0.2em] font-light"
+            onClick={() => setShowKasplexIframe(true)}
+            className="text-white/70 hover:text-white text-xs md:text-sm tracking-[0.2em] font-light transition-all duration-300 cursor-pointer"
             style={{
               textShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
               fontFamily: '"Orbitron", "Rajdhani", sans-serif',
             }}
           >
             KASPLEX L2
-          </motion.span>
+          </motion.button>
           </div>
 
         {/* Buttons - Vertical Stack Centered - Higher Position */}
@@ -1360,6 +1364,60 @@ export default function HomePage() {
                       </motion.div>
                     )}
                   </AnimatePresence>
+
+      {/* Kaspa.org Iframe Modal */}
+      <AnimatePresence>
+        {showKaspaIframe && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black z-[200] flex flex-col"
+          >
+            <div className="flex items-center justify-between p-4 bg-black/90 border-b border-white/10">
+              <h3 className="text-white font-bold">Kaspa.org</h3>
+              <button
+                onClick={() => setShowKaspaIframe(false)}
+                className="text-white/60 hover:text-white transition-all"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <iframe
+              src="https://kaspa.org"
+              className="flex-1 w-full h-full border-0"
+              allow="fullscreen"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Kasplex.org Iframe Modal */}
+      <AnimatePresence>
+        {showKasplexIframe && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black z-[200] flex flex-col"
+          >
+            <div className="flex items-center justify-between p-4 bg-black/90 border-b border-white/10">
+              <h3 className="text-white font-bold">Kasplex.org</h3>
+              <button
+                onClick={() => setShowKasplexIframe(false)}
+                className="text-white/60 hover:text-white transition-all"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <iframe
+              src="https://kasplex.org"
+              className="flex-1 w-full h-full border-0"
+              allow="fullscreen"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
                   </div>
                   );
                   }
