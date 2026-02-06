@@ -9,7 +9,7 @@ export default function SalvationStoryPage() {
     {
       title: "The Beginning",
       text: "In the beginning, God created humanity in His image, perfect and without sin. But through disobedience, sin entered the world, separating mankind from God.",
-      image: "https://images.unsplash.com/photo-1505069190533-3a7a0c5f0f03?w=800&auto=format&fit=crop"
+      image: "https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?w=800&auto=format&fit=crop&q=80"
     },
     {
       title: "The Promise",
@@ -143,6 +143,144 @@ export default function SalvationStoryPage() {
               Through faith in Him, we are unchained from the bondage of sin and death.
             </p>
           </div>
+        </div>
+      </motion.div>
+
+      {/* Kaspa Storyboard - Freedom Through Decentralization */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        className="py-20 px-4 bg-black border-t border-cyan-500/20"
+      >
+        <div className="max-w-6xl mx-auto">
+          <motion.h2
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-4xl md:text-6xl font-black text-center mb-4 bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent"
+          >
+            The Digital Battleground
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-xl text-gray-400 text-center mb-16 max-w-3xl mx-auto"
+          >
+            Where Kaspa Fights for Financial Freedom
+          </motion.p>
+
+          {/* Storyboard Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+            {/* The Threat - CBDCs */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="bg-gradient-to-br from-red-500/10 to-red-900/10 border border-red-500/30 rounded-2xl p-8"
+            >
+              <div className="text-red-400 text-5xl mb-4">⛓️</div>
+              <h3 className="text-2xl font-black text-red-400 mb-4">The Chains</h3>
+              <p className="text-gray-300 leading-relaxed mb-4">
+                CBDCs (Central Bank Digital Currencies) threaten individual sovereignty. 
+                Programmable money that can be controlled, monitored, and restricted by authorities.
+              </p>
+              <p className="text-gray-400 text-sm">
+                Digital identity systems tracking every transaction, every purchase, every move.
+              </p>
+            </motion.div>
+
+            {/* The Solution - Kaspa */}
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="bg-gradient-to-br from-cyan-500/10 to-blue-900/10 border border-cyan-500/30 rounded-2xl p-8"
+            >
+              <div className="text-cyan-400 text-5xl mb-4">🔓</div>
+              <h3 className="text-2xl font-black text-cyan-400 mb-4">The Freedom</h3>
+              <p className="text-gray-300 leading-relaxed mb-4">
+                Kaspa blockchain: truly decentralized, censorship-resistant, and permission-less. 
+                No single authority can control, freeze, or reverse your transactions.
+              </p>
+              <p className="text-gray-400 text-sm">
+                BlockDAG technology ensuring speed, security, and true decentralization.
+              </p>
+            </motion.div>
+          </div>
+
+          {/* DAGKnight Network Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="bg-gradient-to-br from-purple-500/10 via-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-2xl p-10"
+          >
+            <div className="text-center mb-8">
+              <div className="text-6xl mb-4">🛡️</div>
+              <h3 className="text-3xl md:text-4xl font-black bg-gradient-to-r from-purple-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent mb-4">
+                DAGKnight Network
+              </h3>
+              <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+                The Quantum-Secured Multi-Wallet Verification System
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="bg-black/40 border border-white/10 rounded-xl p-6 text-center">
+                <div className="text-3xl mb-3">🪪</div>
+                <h4 className="text-lg font-bold text-white mb-2">Decentralized ID</h4>
+                <p className="text-sm text-gray-400">
+                  No central authority controls your identity. You own your data.
+                </p>
+              </div>
+
+              <div className="bg-black/40 border border-white/10 rounded-xl p-6 text-center">
+                <div className="text-3xl mb-3">🔗</div>
+                <h4 className="text-lg font-bold text-white mb-2">DAG Verification</h4>
+                <p className="text-sm text-gray-400">
+                  Quantum-secured cross-wallet verification through DAGKnight consensus.
+                </p>
+              </div>
+
+              <div className="bg-black/40 border border-white/10 rounded-xl p-6 text-center">
+                <div className="text-3xl mb-3">⚡</div>
+                <h4 className="text-lg font-bold text-white mb-2">True Freedom</h4>
+                <p className="text-sm text-gray-400">
+                  Fast, secure, and completely decentralized financial sovereignty.
+                </p>
+              </div>
+            </div>
+
+            <div className="text-center">
+              <Link to={createPageUrl("DAGKnightWallet")}>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-cyan-500/50 transition-all"
+                >
+                  Explore DAGKnight Wallet
+                </motion.button>
+              </Link>
+            </div>
+          </motion.div>
+
+          {/* Final Message */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-center mt-16"
+          >
+            <p className="text-2xl md:text-3xl font-black text-white mb-4">
+              UNCHAIN HUMANITY
+            </p>
+            <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+              From spiritual bondage through Christ. From financial tyranny through Kaspa. 
+              True freedom in both the eternal and the temporal.
+            </p>
+          </motion.div>
         </div>
       </motion.div>
     </div>
