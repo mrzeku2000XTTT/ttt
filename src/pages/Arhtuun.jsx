@@ -137,7 +137,8 @@ export default function ArhtuunPage() {
           <select
             value={filterPressure}
             onChange={(e) => setFilterPressure(e.target.value)}
-            className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm"
+            className="px-4 py-2 bg-black border border-white/10 rounded-lg text-white text-sm"
+            style={{ colorScheme: 'dark' }}
           >
             <option value="all">All Pressures</option>
             <option value="creative_flow">Creative Flow</option>

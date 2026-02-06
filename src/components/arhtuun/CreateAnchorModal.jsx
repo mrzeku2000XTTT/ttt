@@ -119,7 +119,8 @@ export default function CreateAnchorModal({ onClose, onSuccess }) {
               <select
                 value={pressure}
                 onChange={(e) => setPressure(e.target.value)}
-                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white"
+                className="w-full px-3 py-2 bg-black border border-white/10 rounded-lg text-white"
+                style={{ colorScheme: 'dark' }}
               >
                 <option value="creative_flow">Creative Flow</option>
                 <option value="urgent_solving">Urgent Problem Solving</option>
