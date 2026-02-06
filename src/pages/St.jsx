@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Settings, Send, Heart, MessageCircle, Loader2, X, Image as ImageIcon, Sparkles, Bot, Plus, Trash2, Edit2 } from "lucide-react";
+import AgentSettingsModal from "@/components/st/AgentSettingsModal";
 
 export default function StPage() {
   const [user, setUser] = useState(null);
@@ -19,6 +20,7 @@ export default function StPage() {
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [agentPrompt, setAgentPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showAgentSettings, setShowAgentSettings] = useState(false);
   const fileInputRef = useRef(null);
   const observerRef = useRef(null);
 
@@ -203,14 +205,24 @@ export default function StPage() {
           </div>
 
           {isAdmin && (
-            <Button
-              onClick={() => setShowAdminPanel(!showAdminPanel)}
-              variant="outline"
-              className="bg-white/5 border-white/10 text-white hover:bg-white/10"
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              AI Agent
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setShowAdminPanel(!showAdminPanel)}
+                variant="outline"
+                className="bg-white/5 border-white/10 text-white hover:bg-white/10"
+              >
+                <Bot className="w-4 h-4 mr-2" />
+                Quick Gen
+              </Button>
+              <Button
+                onClick={() => setShowAgentSettings(true)}
+                variant="outline"
+                className="bg-purple-500/20 border-purple-500/30 text-purple-400 hover:bg-purple-500/30"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Agent Settings
+              </Button>
+            </div>
           )}
         </motion.div>
 
@@ -442,6 +454,11 @@ export default function StPage() {
           </div>
         )}
       </div>
+
+      {/* Agent Settings Modal */}
+      {showAgentSettings && (
+        <AgentSettingsModal onClose={() => setShowAgentSettings(false)} />
+      )}
     </div>
   );
 }
