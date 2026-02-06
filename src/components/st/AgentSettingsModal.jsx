@@ -93,24 +93,38 @@ export default function AgentSettingsModal({ onClose }) {
   };
 
   const handleSave = async () => {
-    if (!formData.agent_name || !formData.persona) {
-      alert('Agent name and persona are required');
+    if (!formData.agent_name?.trim()) {
+      alert('Agent name is required');
+      return;
+    }
+    
+    if (!formData.persona?.trim()) {
+      alert('Persona is required');
       return;
     }
 
     setIsSaving(true);
     try {
+      const saveData = {
+        ...formData,
+        agent_name: formData.agent_name.trim(),
+        persona: formData.persona.trim(),
+        enabled_tools: formData.enabled_tools || [],
+        knowledge_base: formData.knowledge_base || [],
+        analytics: formData.analytics || { posts: 0, likes: 0, engagement: 0 }
+      };
+
       if (selectedAgent) {
-        await base44.entities.AgentConfig.update(selectedAgent.id, formData);
+        await base44.entities.AgentConfig.update(selectedAgent.id, saveData);
       } else {
-        const newAgent = await base44.entities.AgentConfig.create(formData);
+        const newAgent = await base44.entities.AgentConfig.create(saveData);
         setSelectedAgent(newAgent);
       }
       await loadAgents();
       alert('Agent saved successfully!');
     } catch (err) {
       console.error('Failed to save:', err);
-      alert('Failed to save agent');
+      alert(`Failed to save agent: ${err.message || 'Unknown error'}`);
     } finally {
       setIsSaving(false);
     }
