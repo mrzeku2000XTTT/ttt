@@ -120,7 +120,7 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
       let authorName = '';
       let authorWalletAddress = '';
 
-      // Try to get wallet address first
+      // Try to get wallet address - Kasware, user, or manual
       if (window.kasware) {
         try {
           const accounts = await window.kasware.getAccounts();
@@ -158,11 +158,29 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
             : currentUser.email.split('@')[0];
         }
       } else {
-        // Not logged in - use wallet address
+        // Not logged in - check manual address or wallet
+        const manualAddress = localStorage.getItem('manual_kaspa_address');
+        if (!authorWalletAddress && manualAddress?.trim()) {
+          authorWalletAddress = manualAddress.trim();
+        }
+        
         if (authorWalletAddress) {
-          authorName = `${authorWalletAddress.slice(0, 6)}...${authorWalletAddress.slice(-4)}`;
+          // Try to get username from WalletProfile for manual address
+          try {
+            const profiles = await base44.entities.WalletProfile.filter({ wallet_address: authorWalletAddress });
+            if (profiles && profiles.length > 0 && profiles[0].username) {
+              authorName = profiles[0].username;
+            }
+          } catch (err) {
+            console.log('Could not fetch username from WalletProfile');
+          }
+          
+          // Fallback to truncated address
+          if (!authorName) {
+            authorName = `${authorWalletAddress.slice(0, 6)}...${authorWalletAddress.slice(-4)}`;
+          }
         } else {
-          alert('Please connect Kasware wallet to comment');
+          alert('Please connect wallet to comment');
           setIsCommenting(false);
           return;
         }
@@ -228,7 +246,7 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
             let authorName = '';
             let authorWalletAddress = '';
 
-            // Try to get wallet address first
+            // Try to get wallet address - Kasware, user, or manual
             if (window.kasware) {
               try {
                 const accounts = await window.kasware.getAccounts();
@@ -264,11 +282,28 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                   : currentUser.email.split('@')[0];
               }
             } else {
-              // Not logged in - use wallet address
+              // Not logged in - check manual address or wallet
+              const manualAddress = localStorage.getItem('manual_kaspa_address');
+              if (!authorWalletAddress && manualAddress?.trim()) {
+                authorWalletAddress = manualAddress.trim();
+              }
+
               if (authorWalletAddress) {
-                authorName = `${authorWalletAddress.slice(0, 6)}...${authorWalletAddress.slice(-4)}`;
+                // Try to get username from WalletProfile for manual address
+                try {
+                  const profiles = await base44.entities.WalletProfile.filter({ wallet_address: authorWalletAddress });
+                  if (profiles && profiles.length > 0 && profiles[0].username) {
+                    authorName = profiles[0].username;
+                  }
+                } catch (err) {
+                  console.log('Could not fetch username from WalletProfile');
+                }
+
+                if (!authorName) {
+                  authorName = `${authorWalletAddress.slice(0, 6)}...${authorWalletAddress.slice(-4)}`;
+                }
               } else {
-                alert('Please connect Kasware wallet to reply');
+                alert('Please connect wallet to reply');
                 setIsCommenting(false);
                 return;
               }
