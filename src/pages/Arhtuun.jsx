@@ -21,31 +21,35 @@ export default function ArhtuunPage() {
     <div className="min-h-screen bg-black relative overflow-hidden">
       {/* Animated background particles */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        {[...Array(100)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 bg-white rounded-full"
-            initial={{
-              x: Math.random() * window.innerWidth,
-              y: Math.random() * window.innerHeight,
-              opacity: Math.random() * 0.5,
-            }}
-            animate={{
-              y: [null, Math.random() * window.innerHeight],
-              opacity: [null, Math.random() * 0.7, 0],
-            }}
-            transition={{
-              duration: Math.random() * 15 + 10,
-              repeat: Infinity,
-              ease: "linear",
-            }}
-          />
-        ))}
+        {[...Array(100)].map((_, i) => {
+          const initialY = Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 1000);
+          const targetY = Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 1000);
+          return (
+            <motion.div
+              key={i}
+              className="absolute w-1 h-1 bg-white rounded-full"
+              style={{
+                x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1000),
+                y: initialY,
+                opacity: Math.random() * 0.5,
+              }}
+              animate={{
+                y: targetY,
+                opacity: [Math.random() * 0.5, Math.random() * 0.7, 0],
+              }}
+              transition={{
+                duration: Math.random() * 15 + 10,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+            />
+          );
+        })}
       </div>
 
       {/* Dynamic gradient orbs */}
       <motion.div
-        className="fixed w-96 h-96 rounded-full blur-[120px] opacity-30"
+        className="fixed w-96 h-96 rounded-full blur-[120px] opacity-30 pointer-events-none"
         style={{
           background: "radial-gradient(circle, rgba(251,146,60,0.4) 0%, transparent 70%)",
           left: `${mousePosition.x}%`,
@@ -59,11 +63,12 @@ export default function ArhtuunPage() {
           duration: 8,
           repeat: Infinity,
           ease: "easeInOut",
+          repeatType: "loop",
         }}
       />
 
       <motion.div
-        className="fixed w-80 h-80 rounded-full blur-[100px] opacity-20"
+        className="fixed w-80 h-80 rounded-full blur-[100px] opacity-20 pointer-events-none"
         style={{
           background: "radial-gradient(circle, rgba(96,165,250,0.4) 0%, transparent 70%)",
           right: `${100 - mousePosition.x}%`,
@@ -77,6 +82,7 @@ export default function ArhtuunPage() {
           duration: 10,
           repeat: Infinity,
           ease: "easeInOut",
+          repeatType: "loop",
         }}
       />
 
@@ -96,13 +102,14 @@ export default function ArhtuunPage() {
               duration: 20,
               repeat: Infinity,
               ease: "linear",
+              repeatType: "loop",
             }}
             className="absolute inset-0 w-full h-full"
           >
-            <div className="absolute top-0 left-1/2 w-1 h-32 bg-gradient-to-b from-orange-400/50 to-transparent" />
-            <div className="absolute bottom-0 left-1/2 w-1 h-32 bg-gradient-to-t from-orange-400/50 to-transparent" />
-            <div className="absolute left-0 top-1/2 h-1 w-32 bg-gradient-to-r from-orange-400/50 to-transparent" />
-            <div className="absolute right-0 top-1/2 h-1 w-32 bg-gradient-to-l from-orange-400/50 to-transparent" />
+            <div className="absolute top-0 left-1/2 w-1 h-32 bg-gradient-to-b from-orange-400/50 to-transparent -translate-x-1/2" />
+            <div className="absolute bottom-0 left-1/2 w-1 h-32 bg-gradient-to-t from-orange-400/50 to-transparent -translate-x-1/2" />
+            <div className="absolute left-0 top-1/2 h-1 w-32 bg-gradient-to-r from-orange-400/50 to-transparent -translate-y-1/2" />
+            <div className="absolute right-0 top-1/2 h-1 w-32 bg-gradient-to-l from-orange-400/50 to-transparent -translate-y-1/2" />
           </motion.div>
 
           <img
@@ -112,7 +119,7 @@ export default function ArhtuunPage() {
           />
 
           <motion.div
-            className="absolute inset-0 blur-3xl opacity-50"
+            className="absolute inset-0 blur-3xl opacity-50 pointer-events-none"
             animate={{
               scale: [1, 1.3, 1],
               opacity: [0.3, 0.6, 0.3],
@@ -121,6 +128,7 @@ export default function ArhtuunPage() {
               duration: 4,
               repeat: Infinity,
               ease: "easeInOut",
+              repeatType: "loop",
             }}
           >
             <div className="w-full h-full bg-gradient-to-r from-orange-400 via-cyan-400 to-orange-400" />
