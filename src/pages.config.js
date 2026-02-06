@@ -230,6 +230,7 @@ import Shill from './pages/Shill';
 import Shop from './pages/Shop';
 import ShopItemView from './pages/ShopItemView';
 import Singularity from './pages/Singularity';
+import St from './pages/St';
 import StateOfMind from './pages/StateOfMind';
 import Subscription from './pages/Subscription';
 import TD from './pages/TD';
@@ -276,7 +277,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import St from './pages/St';
 import __Layout from './Layout.jsx';
 
 
@@ -464,6 +464,7 @@ export const PAGES = {
     "Shop": Shop,
     "ShopItemView": ShopItemView,
     "Singularity": Singularity,
+    "St": St,
     "StateOfMind": StateOfMind,
     "Subscription": Subscription,
     "TD": TD,
@@ -510,7 +511,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "St": St,
 }
 
 export const pagesConfig = {
