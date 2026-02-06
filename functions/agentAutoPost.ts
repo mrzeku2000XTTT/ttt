@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
       
       Create a ${agent.voice_tone} social media post about this. Include insights, analysis, and hashtags. Keep it under 280 characters.`;
       
-      const aiResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      const aiResponse = await base44.integrations.Core.InvokeLLM({
         prompt,
         add_context_from_internet: true
       });
