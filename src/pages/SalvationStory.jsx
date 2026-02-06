@@ -19,7 +19,7 @@ export default function SalvationStoryPage() {
     {
       title: "The Birth",
       text: "Jesus Christ was born in Bethlehem, fulfilling ancient prophecies. The Word became flesh and made His dwelling among us. Light came into the darkness.",
-      image: "https://images.unsplash.com/photo-1513002749550-c59d786b8e6c?w=800&auto=format&fit=crop&q=80"
+      image: "https://images.unsplash.com/photo-1543589077-47d81606c1bf?w=800&auto=format&fit=crop&q=80"
     },
     {
       title: "The Ministry",
