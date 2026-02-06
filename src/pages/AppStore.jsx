@@ -42,6 +42,7 @@ export default function AppStorePage() {
   };
 
   const apps = [
+    { name: "Arh'tuun", icon: "Link2", path: "Arhtuun", category: "AI", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a2caf932e_image.png", premium: true },
     { name: "SIMPLE", icon: "Link2", path: "SIMPLE", category: "Tools", defaultIcon: "😊", isEmoji: true },
     { name: "K Learning Hub", icon: "Link2", path: "Learning", category: "Education", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/0f7f76839_image.png", circular: true },
     { name: "BMT Univ", icon: "Link2", path: "BMTUniv", category: "Education", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/ab3b7f637_image.png", circular: true },
