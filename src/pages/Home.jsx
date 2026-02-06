@@ -395,6 +395,76 @@ export default function HomePage() {
             filter: 'brightness(0.7) contrast(1.1)'
           }}
         />
+
+        {/* Smoke Effects */}
+        <motion.div
+          animate={{
+            x: [0, 50, 0],
+            y: [0, -30, 0],
+            opacity: [0.3, 0.5, 0.3],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="absolute -top-20 -left-20 w-96 h-96 rounded-full"
+          style={{
+            background: 'radial-gradient(circle, rgba(100, 100, 100, 0.4) 0%, transparent 70%)',
+            filter: 'blur(60px)',
+          }}
+        />
+        <motion.div
+          animate={{
+            x: [0, -40, 0],
+            y: [0, 40, 0],
+            opacity: [0.2, 0.4, 0.2],
+          }}
+          transition={{
+            duration: 25,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="absolute -bottom-20 -right-20 w-[500px] h-[500px] rounded-full"
+          style={{
+            background: 'radial-gradient(circle, rgba(80, 80, 80, 0.5) 0%, transparent 70%)',
+            filter: 'blur(80px)',
+          }}
+        />
+        <motion.div
+          animate={{
+            x: [0, 30, 0],
+            y: [0, -50, 0],
+            opacity: [0.25, 0.45, 0.25],
+          }}
+          transition={{
+            duration: 22,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="absolute top-1/3 -right-32 w-[400px] h-[400px] rounded-full"
+          style={{
+            background: 'radial-gradient(circle, rgba(90, 90, 90, 0.4) 0%, transparent 70%)',
+            filter: 'blur(70px)',
+          }}
+        />
+        <motion.div
+          animate={{
+            x: [0, -35, 0],
+            y: [0, 30, 0],
+            opacity: [0.3, 0.5, 0.3],
+          }}
+          transition={{
+            duration: 18,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="absolute bottom-1/4 -left-32 w-[450px] h-[450px] rounded-full"
+          style={{
+            background: 'radial-gradient(circle, rgba(70, 70, 70, 0.45) 0%, transparent 70%)',
+            filter: 'blur(75px)',
+          }}
+        />
         
         {/* TTT Text Behind Everything - Made More Visible */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 1 }}>
