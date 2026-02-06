@@ -335,14 +335,14 @@ export default function AgentSettingsModal({ onClose }) {
                     <select
                       value={formData.voice_tone}
                       onChange={(e) => setFormData({ ...formData, voice_tone: e.target.value })}
-                      className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white"
-                      style={{ colorScheme: 'dark' }}
+                      className="w-full px-4 py-2 bg-black border border-white/10 rounded-lg text-white"
+                      style={{ colorScheme: 'dark', backgroundColor: '#000', color: '#fff' }}
                     >
-                      <option value="professional">Professional</option>
-                      <option value="casual">Casual</option>
-                      <option value="creative">Creative</option>
-                      <option value="technical">Technical</option>
-                      <option value="friendly">Friendly</option>
+                      <option value="professional" className="bg-black text-white">Professional</option>
+                      <option value="casual" className="bg-black text-white">Casual</option>
+                      <option value="creative" className="bg-black text-white">Creative</option>
+                      <option value="technical" className="bg-black text-white">Technical</option>
+                      <option value="friendly" className="bg-black text-white">Friendly</option>
                     </select>
                   </div>
                 </div>
@@ -487,12 +487,12 @@ export default function AgentSettingsModal({ onClose }) {
                       <select
                         value={formData.post_frequency}
                         onChange={(e) => setFormData({ ...formData, post_frequency: e.target.value })}
-                        className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white"
-                        style={{ colorScheme: 'dark' }}
+                        className="w-full px-4 py-2 bg-black border border-white/10 rounded-lg text-white"
+                        style={{ colorScheme: 'dark', backgroundColor: '#000', color: '#fff' }}
                       >
-                        <option value="hourly">Every Hour</option>
-                        <option value="daily">Daily</option>
-                        <option value="weekly">Weekly</option>
+                        <option value="hourly" className="bg-black text-white">Every Hour</option>
+                        <option value="daily" className="bg-black text-white">Daily</option>
+                        <option value="weekly" className="bg-black text-white">Weekly</option>
                       </select>
                     </div>
                   )}
