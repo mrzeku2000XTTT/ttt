@@ -275,7 +275,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import Arhtuun from './pages/Arhtuun';
 import __Layout from './Layout.jsx';
 
 
@@ -508,7 +507,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "Arhtuun": Arhtuun,
 }
 
 export const pagesConfig = {
