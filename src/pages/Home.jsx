@@ -385,11 +385,11 @@ export default function HomePage() {
   return (
     <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-black">
       {/* Water Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-gray-800 via-gray-900 to-black">
+      <div className="absolute inset-0">
         <img
           src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/717b9d2dc_image.png"
           alt="Background"
-          className="w-full h-full object-contain md:object-cover object-center"
+          className="w-full h-full object-contain object-center"
           style={{ 
             imageRendering: 'high-quality',
             filter: 'brightness(0.7) contrast(1.1)'
