@@ -1017,18 +1017,21 @@ export default function FeedPage() {
     // Check if calling ZK bot
     const zkMatch = replyText.trim().match(/^@zk\s+(.+)/i);
 
-    // Get wallet from Kasware or TTT wallet
+    // Get wallet from Kasware, TTT wallet, or manual address
     let walletAddress = '';
     if (kaswareWallet.connected) {
       walletAddress = kaswareWallet.address;
     } else if (user?.created_wallet_address) {
       walletAddress = user.created_wallet_address;
+    } else if (manualKaspaAddress.trim()) {
+      walletAddress = manualKaspaAddress.trim();
     } else {
       const localWallet = localStorage.getItem('ttt_wallet_address');
       if (localWallet) {
         walletAddress = localWallet;
       } else {
-        setError('Please create a TTT wallet or connect Kasware to reply');
+        setError('Please connect wallet or enter address to reply');
+        setShowManualAddressInput(true);
         return;
       }
     }
@@ -1146,7 +1149,7 @@ export default function FeedPage() {
       e.stopPropagation();
     }
 
-    // Get wallet address from Kasware or user
+    // Get wallet address from Kasware, user, or manual address
     let walletAddress = '';
     let userEmail = user?.email || null;
     
@@ -1164,11 +1167,16 @@ export default function FeedPage() {
     if (user) {
       walletAddress = user.created_wallet_address || walletAddress;
     }
+    
+    // Check manual address if no other wallet found
+    if (!walletAddress && manualKaspaAddress.trim()) {
+      walletAddress = manualKaspaAddress.trim();
+    }
 
     // Allow if either wallet OR email exists
     if (!walletAddress && !userEmail) {
       setError('Please connect wallet or login to like posts');
-      await connectKasware();
+      setShowManualAddressInput(true);
       return;
     }
 
