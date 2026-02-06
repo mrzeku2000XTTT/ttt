@@ -19,12 +19,12 @@ export default function SalvationStoryPage() {
     {
       title: "The Birth",
       text: "Jesus Christ was born in Bethlehem, fulfilling ancient prophecies. The Word became flesh and made His dwelling among us. Light came into the darkness.",
-      image: "https://images.unsplash.com/photo-1482059470115-f5d7b33cf31c?w=800&auto=format&fit=crop&q=80"
+      image: "https://images.unsplash.com/photo-1513002749550-c59d786b8e6c?w=800&auto=format&fit=crop&q=80"
     },
     {
       title: "The Ministry",
       text: "Jesus walked among the people, healing the sick, giving sight to the blind, and proclaiming the Kingdom of God. He showed us the Father's love through miracles and teachings.",
-      image: "https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=800&auto=format&fit=crop&q=80"
+      image: "https://images.unsplash.com/photo-1529070538774-1843cb3265df?w=800&auto=format&fit=crop&q=80"
     },
     {
       title: "The Sacrifice",
@@ -34,12 +34,12 @@ export default function SalvationStoryPage() {
     {
       title: "The Resurrection",
       text: "On the third day, Jesus rose from the dead, conquering sin and death forever. He appeared to His disciples, proving that He is the Son of God with power.",
-      image: "https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?w=800&auto=format&fit=crop&q=80"
+      image: "https://images.unsplash.com/photo-1464207687429-7505649dae38?w=800&auto=format&fit=crop&q=80"
     },
     {
       title: "The Victory",
       text: "Through His resurrection, Jesus defeated death and offers eternal life to all who believe. He ascended to heaven and sits at the right hand of God, interceding for us.",
-      image: "https://images.unsplash.com/photo-1517685352821-92cf88aee5a5?w=800&auto=format&fit=crop&q=80"
+      image: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&auto=format&fit=crop&q=80"
     },
     {
       title: "The Promise of Return",
