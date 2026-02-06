@@ -4416,6 +4416,21 @@ export default function FeedPage() {
                           className="w-3 h-3 object-contain"
                         />
                       </Button>
+
+                      <Link to={createPageUrl("Arhtuun")}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-5 px-1.5 text-white/60 hover:text-white hover:bg-white/10 border border-white/20"
+                          title="St."
+                        >
+                          <img 
+                            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/0042f30b3_image.png"
+                            alt="St."
+                            className="w-3 h-3 object-contain"
+                          />
+                        </Button>
+                      </Link>
                       
                       <AnimatePresence>
                         {showLayer01 && (
