@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Sparkles, Zap, Eye, Infinity } from "lucide-react";
 
 export default function ArhtuunPage() {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 });
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -108,7 +108,7 @@ export default function ArhtuunPage() {
           <img
             src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/af9093f96_image.png"
             alt="Arh'tuun"
-            className="w-64 h-64 object-contain relative z-10"
+            className="w-[600px] h-[600px] object-contain relative z-10"
           />
 
           <motion.div
@@ -128,117 +128,7 @@ export default function ArhtuunPage() {
         </motion.div>
       </div>
 
-      {/* Title */}
-      <div className="fixed top-20 left-0 right-0 z-10">
-        <motion.div
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 1 }}
-          className="text-center"
-        >
-          <motion.h1
-            className="text-7xl font-black text-white mb-4"
-            style={{ fontFamily: '"Orbitron", sans-serif' }}
-            animate={{
-              textShadow: [
-                "0 0 20px rgba(251,146,60,0.5)",
-                "0 0 40px rgba(96,165,250,0.5)",
-                "0 0 20px rgba(251,146,60,0.5)",
-              ],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          >
-            ARH'TUUN
-          </motion.h1>
-          <motion.p
-            className="text-xl text-white/60"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1, duration: 1 }}
-          >
-            The Eternal Convergence
-          </motion.p>
-        </motion.div>
-      </div>
 
-      {/* Floating icons */}
-      <motion.div
-        className="fixed top-1/4 left-1/4 text-orange-400/30"
-        animate={{
-          y: [0, -20, 0],
-          rotate: [0, 360],
-        }}
-        transition={{
-          duration: 6,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      >
-        <Infinity className="w-16 h-16" />
-      </motion.div>
-
-      <motion.div
-        className="fixed top-1/3 right-1/4 text-cyan-400/30"
-        animate={{
-          y: [0, 20, 0],
-          rotate: [360, 0],
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      >
-        <Sparkles className="w-12 h-12" />
-      </motion.div>
-
-      <motion.div
-        className="fixed bottom-1/3 left-1/3 text-orange-400/30"
-        animate={{
-          y: [0, -15, 0],
-          scale: [1, 1.2, 1],
-        }}
-        transition={{
-          duration: 5,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      >
-        <Eye className="w-14 h-14" />
-      </motion.div>
-
-      <motion.div
-        className="fixed bottom-1/4 right-1/3 text-cyan-400/30"
-        animate={{
-          y: [0, 15, 0],
-          rotate: [0, 180, 360],
-        }}
-        transition={{
-          duration: 10,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      >
-        <Zap className="w-10 h-10" />
-      </motion.div>
-
-      {/* Bottom info */}
-      <div className="fixed bottom-8 left-0 right-0 z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.5, duration: 1 }}
-          className="text-center"
-        >
-          <p className="text-white/40 text-sm">
-            Where infinity meets singularity
-          </p>
-        </motion.div>
-      </div>
 
       {/* Import Orbitron font */}
       <style jsx global>{`
