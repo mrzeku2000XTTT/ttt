@@ -19,6 +19,20 @@ export default function PostExplainerModal({ post, onClose, currentUser }) {
   const explainPost = async () => {
     setIsLoading(true);
     setRateLimitError(null);
+    
+    // Define mediaUrls at function scope
+    const mediaUrls = [];
+    if (post.image_url) {
+      mediaUrls.push(post.image_url);
+    }
+    if (post.media_files?.length > 0) {
+      post.media_files.forEach(file => {
+        if (file.url && file.type?.startsWith('image/')) {
+          mediaUrls.push(file.url);
+        }
+      });
+    }
+    
     try {
       // Check rate limit for non-admins
       const isAdmin = currentUser?.role === 'admin';
@@ -49,20 +63,9 @@ export default function PostExplainerModal({ post, onClose, currentUser }) {
         });
         setQueriesUsed(prev => prev + 1);
       }
-      // Gather post context and media
-      const postContent = post.content || "";
-      const mediaUrls = [];
       
-      if (post.image_url) {
-        mediaUrls.push(post.image_url);
-      }
-      if (post.media_files?.length > 0) {
-        post.media_files.forEach(file => {
-          if (file.url && file.type?.startsWith('image/')) {
-            mediaUrls.push(file.url);
-          }
-        });
-      }
+      // Gather post content
+      const postContent = post.content || "";
       
       const prompt = postContent 
         ? `You are an expert post analyzer on TTT Feed. Explain this post in TWO detailed, specific sentences.
@@ -171,7 +174,9 @@ Analyze the images in detail and provide TWO informative sentences explaining wh
                 </div>
                 <div className="text-center space-y-2">
                   <p className="text-white/60 text-sm font-medium">Analyzing post...</p>
-                  <p className="text-white/40 text-xs">Searching web + processing context</p>
+                  <p className="text-white/40 text-xs">
+                    {mediaUrls.length > 0 ? 'Reading images + searching web + processing' : 'Searching web + processing context'}
+                  </p>
                 </div>
               </div>
             ) : (
@@ -196,7 +201,7 @@ Analyze the images in detail and provide TWO informative sentences explaining wh
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs text-white/40">
                 <Sparkles className="w-3 h-3" />
-                <span>Powered by AI with real-time internet context</span>
+                <span>Powered by AI with vision + internet context</span>
               </div>
               {currentUser?.role !== 'admin' && !rateLimitError && (
                 <div className="text-xs text-white/40">
