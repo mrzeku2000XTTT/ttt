@@ -42,11 +42,17 @@ export default function RegisterCreditCodePage() {
         return;
       }
 
-      // Generate PIN
-      const newPin = Math.floor(100000 + Math.random() * 900000).toString();
-      setGeneratedPin(newPin);
+      // Call backend to generate and send PIN
+      const response = await base44.functions.invoke('creditCodePinVerify', {
+        kaspaAddress,
+        action: 'generatePin'
+      });
 
-      setStep("verify-pin");
+      if (response.data?.success) {
+        setStep("verify-pin");
+      } else {
+        setError("Failed to send PIN");
+      }
       setLoading(false);
     } catch (err) {
       setError(err.message || "Registration failed");
