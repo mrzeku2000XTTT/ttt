@@ -280,13 +280,13 @@ export default function RegisterCreditCodePage() {
                 </Button>
               </form>
             ) : (
-              <form onSubmit={handleVerifyEmail} className="space-y-5">
+              <form onSubmit={handleVerifyPin} className="space-y-5">
                 <div>
                   <label className="block text-sm font-medium text-white/70 mb-2">
-                    Verification PIN
+                    Enter Your PIN
                   </label>
                   <p className="text-white/50 text-xs mb-3">
-                    Check your email ({email}) for the 6-digit PIN
+                    PIN: <span className="text-cyan-400 font-bold text-sm">{generatedPin}</span>
                   </p>
                   <Input
                     type="text"
