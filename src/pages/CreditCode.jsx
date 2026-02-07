@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -8,14 +8,34 @@ import { ArrowLeft, Lock, User } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function CreditCodePage() {
+  const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [tttId, setTttId] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPinStep, setShowPinStep] = useState(false);
   const [pin, setPin] = useState("");
   const [generatedPin, setGeneratedPin] = useState("");
   const [userEmail, setUserEmail] = useState("");
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      try {
+        const user = await base44.auth.me();
+        if (!user || user.role !== 'admin') {
+          navigate(createPageUrl("Home"));
+          return;
+        }
+        setIsAdmin(true);
+      } catch {
+        navigate(createPageUrl("Home"));
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkAdmin();
+  }, [navigate]);
 
   const handleSignIn = async (e) => {
     e.preventDefault();

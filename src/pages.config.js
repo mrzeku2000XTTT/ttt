@@ -103,6 +103,7 @@ import Courses from './pages/Courses';
 import CreateListing from './pages/CreateListing';
 import CreateShopListing from './pages/CreateShopListing';
 import Creator from './pages/Creator';
+import CreditCode from './pages/CreditCode';
 import CryptoHire from './pages/CryptoHire';
 import DAGFeed from './pages/DAGFeed';
 import DAGKnightWallet from './pages/DAGKnightWallet';
@@ -215,6 +216,7 @@ import ProofOfBullish from './pages/ProofOfBullish';
 import QRScanner from './pages/QRScanner';
 import Receive from './pages/Receive';
 import RegisterBusiness from './pages/RegisterBusiness';
+import RegisterCreditCode from './pages/RegisterCreditCode';
 import RegisterTTTID from './pages/RegisterTTTID';
 import Resonance from './pages/Resonance';
 import SIMPLE from './pages/SIMPLE';
@@ -278,8 +280,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import CreditCode from './pages/CreditCode';
-import RegisterCreditCode from './pages/RegisterCreditCode';
 import __Layout from './Layout.jsx';
 
 
@@ -340,6 +340,7 @@ export const PAGES = {
     "CreateListing": CreateListing,
     "CreateShopListing": CreateShopListing,
     "Creator": Creator,
+    "CreditCode": CreditCode,
     "CryptoHire": CryptoHire,
     "DAGFeed": DAGFeed,
     "DAGKnightWallet": DAGKnightWallet,
@@ -452,6 +453,7 @@ export const PAGES = {
     "QRScanner": QRScanner,
     "Receive": Receive,
     "RegisterBusiness": RegisterBusiness,
+    "RegisterCreditCode": RegisterCreditCode,
     "RegisterTTTID": RegisterTTTID,
     "Resonance": Resonance,
     "SIMPLE": SIMPLE,
@@ -515,8 +517,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "CreditCode": CreditCode,
-    "RegisterCreditCode": RegisterCreditCode,
 }
 
 export const pagesConfig = {
