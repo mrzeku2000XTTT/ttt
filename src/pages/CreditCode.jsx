@@ -255,7 +255,7 @@ export default function CreditCodePage() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 hover:from-cyan-600 hover:via-purple-600 hover:to-pink-600 text-white font-bold py-3 rounded-lg transition-all shadow-lg hover:shadow-cyan-500/50"
+                className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 rounded-lg transition-all shadow-lg hover:shadow-cyan-500/50"
               >
                 {loading ? (
                   <div className="flex items-center gap-2">
