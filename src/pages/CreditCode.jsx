@@ -128,6 +128,18 @@ export default function CreditCodePage() {
     setShowPinStep(false);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
       {/* Animated background */}
