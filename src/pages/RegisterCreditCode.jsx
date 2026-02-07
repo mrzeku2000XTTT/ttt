@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,9 @@ import { ArrowLeft, Lock, User } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function RegisterCreditCodePage() {
+  const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   const [step, setStep] = useState("register"); // register, verify-pin
   const [kaspaAddress, setKaspaAddress] = useState("");
   const [tttId, setTttId] = useState("");
@@ -17,6 +20,24 @@ export default function RegisterCreditCodePage() {
   const [error, setError] = useState("");
   const [pin, setPin] = useState("");
   const [generatedPin, setGeneratedPin] = useState("");
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      try {
+        const user = await base44.auth.me();
+        if (!user || user.role !== 'admin') {
+          navigate(createPageUrl("Home"));
+          return;
+        }
+        setIsAdmin(true);
+      } catch {
+        navigate(createPageUrl("Home"));
+      } finally {
+        setPageLoading(false);
+      }
+    };
+    checkAdmin();
+  }, [navigate]);
 
   const handleRegister = async (e) => {
     e.preventDefault();
