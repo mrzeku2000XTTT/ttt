@@ -30,7 +30,8 @@ export default function TTTPage() {
 
   const apps = [
     { name: "Arh'tuun", path: "Arhtuun", category: "AI", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a2caf932e_image.png", premium: true },
-    { name: "GridSplit", path: "GridSplit", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/98b40fc33_image.png" }
+    { name: "GridSplit", path: "GridSplit", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/98b40fc33_image.png" },
+    { name: "CreditCode", path: "CreditCode", category: "Security", icon: Shield }
   ];
 
   const categories = ["All", "Social", "AI", "Finance", "Games", "Shop", "Education", "Security", "Tools", "Media"];
