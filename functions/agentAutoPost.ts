@@ -40,20 +40,47 @@ Deno.serve(async (req) => {
       // Pick random article
       const article = articles[Math.floor(Math.random() * articles.length)];
       
-      // Generate AI post
-      const prompt = `You are ${agent.agent_name}. ${agent.persona}
+      // Vary the prompt approach randomly to avoid repetitive content
+      const postStyles = [
+        'insightful analysis',
+        'hype and excitement',
+        'technical explanation',
+        'market commentary',
+        'community engagement',
+        'news breakdown',
+        'perspective and vision',
+        'fun observation'
+      ];
+      const style = postStyles[Math.floor(Math.random() * postStyles.length)];
+      
+      // Generate AI post with varied prompts
+      const prompts = [
+        `You are ${agent.agent_name}. ${agent.persona}
+        
+Create a ${style} social media post about: ${article.title}
+${article.description ? `Details: ${article.description}` : ''}
+${kasPrice ? `Market context: KAS at $${kasPrice}` : ''}
 
-      Create an engaging social media post about: ${article.title}
-      ${article.description ? `Context: ${article.description}` : ''}
-      ${kasPrice ? `Current Kaspa Price: $${kasPrice}` : ''}
+Voice: ${agent.voice_tone}
+Style: ${style}
+- Under 280 chars, authentic, shareable, with hashtags
+${kasPrice ? '- Weave in the price naturally if it fits' : ''}`,
 
-      Voice: ${agent.voice_tone}
-      Requirements:
-      - Keep it under 280 characters
-      - Be authentic and creative
-      - Make it shareable
-      - Include relevant hashtags
-      ${kasPrice ? '- Mention the price if relevant' : ''}`;
+        `As ${agent.agent_name}, what's your hot take on this? ${article.title}
+${article.description ? `\n${article.description}` : ''}
+
+Write a social post that's ${agent.voice_tone} and ${style}.
+Make it punchy, under 280 chars, with #kaspa hashtag.`,
+
+        `${agent.agent_name} here. Someone just sent me this: ${article.title}
+${article.description ? `TL;DR: ${article.description}` : ''}
+
+Drop a ${agent.voice_tone}} post about what this means for Kaspa.
+${kasPrice ? `Price is at $${kasPrice} btw.` : ''}
+Keep it fresh, under 280 chars.`
+      ];
+      
+      const prompt = prompts[Math.floor(Math.random() * prompts.length)];
       
       const aiResponse = await base44.integrations.Core.InvokeLLM({
         prompt,
