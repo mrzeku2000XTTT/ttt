@@ -51,30 +51,57 @@ Deno.serve(async (req) => {
       // Pick random article
       const article = articles[Math.floor(Math.random() * articles.length)];
       
-      // Pick random article
-      const randomArticle = articles[Math.floor(Math.random() * articles.length)];
-      
-      // Generate AI post based on agent persona
+      // Generate AI post
       const prompt = `You are ${agent.agent_name}. ${agent.persona}
-      
-      Based on this news: "${randomArticle.title}" - ${randomArticle.description}
-      Source: ${randomArticle.url}
-      Category: ${randomArticle.category}
-      
-      Create a ${agent.voice_tone} social media post about this. Include insights, analysis, and hashtags. Keep it under 280 characters.`;
+
+Create an engaging social media post about: ${article.title}
+${article.description ? `Context: ${article.description}` : ''}
+
+Voice: ${agent.voice_tone}
+Requirements:
+- Keep it under 280 characters
+- Be authentic and creative
+- Make it shareable
+- Include relevant hashtags`;
       
       const aiResponse = await base44.integrations.Core.InvokeLLM({
         prompt,
-        add_context_from_internet: true
+        add_context_from_internet: false
       });
       
-      // Create post with wallet address
-      const post = await base44.asServiceRole.entities.Post.create({
-        content: `${aiResponse}\n\n📰 Source: ${randomArticle.url}\n\n#StCreative #${agent.agent_name}`,
-        author_name: agent.agent_name,
-        author_wallet_address: agent.wallet_address || '',
-        author_role: 'admin'
+      // Generate image if enabled
+      let imageUrl = agent.avatar_url;
+      if (agent.image_generation_enabled) {
+        try {
+          const imagePrompt = `${agent.image_style || 'modern digital art'}. Visual for: ${article.title}. ${agent.voice_tone} style, eye-catching, professional.`;
+          
+          const imgResponse = await base44.integrations.Core.GenerateImage({
+            prompt: imagePrompt
+          });
+          
+          imageUrl = imgResponse.url;
+          console.log(`Generated image for ${agent.agent_name}`);
+        } catch (imgError) {
+          console.log(`Image generation failed for ${agent.agent_name}:`, imgError.message);
+        }
+      }
+      
+      // Get agent wallet from created_by user
+      const agentUsers = await base44.asServiceRole.entities.User.filter({ 
+        full_name: agent.agent_name 
       });
+      const walletAddress = agentUsers.length > 0 ? agentUsers[0].created_wallet_address : '';
+      
+      // Create post with wallet and image
+      const post = await base44.asServiceRole.entities.Post.create({
+        content: `${aiResponse}\n\nSource: ${article.url}`,
+        author_name: agent.agent_name,
+        author_wallet_address: walletAddress,
+        author_role: 'admin',
+        image_url: imageUrl
+      });
+      
+      console.log(`Post created for ${agent.agent_name} with image: ${imageUrl !== agent.avatar_url}`);
       
       // Update analytics
       const analytics = agent.analytics || {};
@@ -86,8 +113,17 @@ Deno.serve(async (req) => {
       results.push({
         agent: agent.agent_name,
         post_id: post.id,
-        article: randomArticle.title
+        has_image: imageUrl !== agent.avatar_url,
+        article: article.title
       });
+      
+      } catch (agentError) {
+        console.error(`Error posting for ${agent.agent_name}:`, agentError.message);
+        results.push({
+          agent: agent.agent_name,
+          error: agentError.message
+        });
+      }
     }
     
     return Response.json({ 
