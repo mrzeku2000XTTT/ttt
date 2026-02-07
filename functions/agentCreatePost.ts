@@ -3,9 +3,10 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { agent_name, generate_image = false } = await req.json();
+    const body = await req.json();
+    const { agent_name, generate_image = false } = body;
     
-    // Get agent config
+    // Get agent config (using service role for all operations)
     const agents = await base44.asServiceRole.entities.AgentConfig.filter({
       agent_name,
       is_active: true
@@ -18,7 +19,7 @@ Deno.serve(async (req) => {
     const agent = agents[0];
     
     // Get latest news for content inspiration
-    const newsResponse = await base44.functions.invoke('scrapeKaspaNews', {});
+    const newsResponse = await base44.asServiceRole.functions.invoke('scrapeKaspaNews', {});
     const { articles } = newsResponse.data;
     
     let topic = 'crypto trends and innovation';
