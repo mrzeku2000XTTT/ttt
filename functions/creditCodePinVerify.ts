@@ -28,28 +28,31 @@ Deno.serve(async (req) => {
         expiresAt: Date.now() + (10 * 60 * 1000) // 10 minutes
       };
 
-      // Send PIN via FluxKmail using SendEmail integration
-      await base44.integrations.Core.SendEmail({
-        to: user.email,
-        subject: 'CreditCode Registration - Verify Your Identity',
-        body: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #000; color: #fff; padding: 20px; border: 1px solid #333;">
-            <h1 style="color: #06b6d4; margin: 0 0 20px 0;">CreditCode Verification</h1>
-            <p style="margin: 0 0 20px 0; color: #ccc;">Welcome to CreditCode! Your verification PIN is:</p>
-            <div style="background: linear-gradient(135deg, #06b6d4, #0891b2); padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
-              <div style="font-size: 36px; letter-spacing: 8px; font-weight: bold; font-family: monospace;">${pin}</div>
-            </div>
-            <p style="margin: 20px 0; color: #999; font-size: 14px;">
-              <strong>Kaspa Address:</strong> ${kaspaAddress}
-            </p>
-            <p style="margin: 20px 0 0 0; color: #666; font-size: 12px;">This PIN will expire in 10 minutes. If you didn't request this, please ignore this email.</p>
-          </div>
-        `
+      const fluxkmailApiUrl = Deno.env.get("FLUXKMAIL_API_URL");
+      const fluxkmailApiKey = Deno.env.get("FLUXKMAIL_API_KEY");
+
+      if (!fluxkmailApiUrl || !fluxkmailApiKey) {
+        return Response.json({ error: 'Fluxkmail API credentials (FLUXKMAIL_API_URL or FLUXKMAIL_API_KEY) not configured in CreditCode app environment variables.' }, { status: 500 });
+      }
+
+      // Send PIN to Fluxkmail's receiveVibecodePin function
+      await fetch(fluxkmailApiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': fluxkmailApiKey
+        },
+        body: JSON.stringify({
+          recipientAddress: kaspaAddress,
+          pinCode: pin,
+          subject: 'CreditCode PIN Verification',
+          body: `Your CreditCode verification PIN is: <b>${pin}</b><br><br>This PIN will expire in 10 minutes. If you didn't request this, please ignore this message.`
+        })
       });
 
       return Response.json({
         success: true,
-        message: 'PIN sent to your email',
+        message: 'PIN sent to your Kaspa address via Fluxkmail',
         expiresIn: 600 // seconds
       });
     }
