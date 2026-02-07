@@ -60,25 +60,27 @@ export default function RegisterCreditCodePage() {
     }
   };
 
-  const handleVerifyPin = (e) => {
+  const handleVerifyPin = async (e) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
-    if (pin !== generatedPin) {
-      setError("Invalid PIN.");
-      return;
+    try {
+      // Store registration data
+      localStorage.setItem('creditcode_user', JSON.stringify({
+        kaspa_address: kaspaAddress,
+        ttt_id: tttId,
+        password: btoa(password),
+        registered_at: new Date().toISOString()
+      }));
+
+      alert("Registration successful! Please log in.");
+      window.location.href = createPageUrl("CreditCode");
+    } catch (err) {
+      setError(err.message || "Verification failed");
+    } finally {
+      setLoading(false);
     }
-
-    // Store registration data
-    localStorage.setItem('creditcode_user', JSON.stringify({
-      kaspa_address: kaspaAddress,
-      ttt_id: tttId,
-      password: btoa(password),
-      registered_at: new Date().toISOString()
-    }));
-
-    alert("Registration successful! Please log in.");
-    window.location.href = createPageUrl("CreditCode");
   };
 
   return (
