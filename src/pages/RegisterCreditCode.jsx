@@ -175,23 +175,23 @@ export default function RegisterCreditCodePage() {
           >
             <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
               <Lock className="w-6 h-6 text-cyan-400" />
-              {step === "register" ? "Register" : "Verify Email"}
+              {step === "register" ? "Register" : "Verify PIN"}
             </h2>
 
             {step === "register" ? (
               <form onSubmit={handleRegister} className="space-y-5">
-                {/* Email */}
+                {/* Kaspa Address */}
                 <div>
                   <label className="block text-sm font-medium text-white/70 mb-2">
-                    Email Address
+                    Kaspa Address
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
                     <Input
-                      type="email"
-                      placeholder="your@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      type="text"
+                      placeholder="kaspa1... or zkaspa1..."
+                      value={kaspaAddress}
+                      onChange={(e) => setKaspaAddress(e.target.value)}
                       className="pl-10 bg-black/50 border-white/10 text-white placeholder:text-white/30 focus:border-cyan-500/50"
                       required
                     />
