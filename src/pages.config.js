@@ -279,6 +279,7 @@ import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
 import CreditCode from './pages/CreditCode';
+import RegisterCreditCode from './pages/RegisterCreditCode';
 import __Layout from './Layout.jsx';
 
 
@@ -515,6 +516,7 @@ export const PAGES = {
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
     "CreditCode": CreditCode,
+    "RegisterCreditCode": RegisterCreditCode,
 }
 
 export const pagesConfig = {
