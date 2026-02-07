@@ -127,7 +127,7 @@ export default function CreditCodePage() {
             ease: "easeInOut",
             delay: 1
           }}
-          className="absolute bottom-1/4 -right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"
+          className="absolute bottom-1/4 -right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl"
         />
       </div>
 
@@ -150,7 +150,7 @@ export default function CreditCodePage() {
           >
             <div className="w-32 h-32 mx-auto relative group">
               {/* Outer glow */}
-              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-purple-500/20 to-pink-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all" />
+              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-cyan-500/10 rounded-2xl blur-xl group-hover:blur-2xl transition-all" />
               
               {/* Black glass box */}
               <div className="relative w-full h-full bg-gradient-to-br from-zinc-900 via-black to-zinc-900 rounded-2xl border border-white/10 backdrop-blur-xl shadow-2xl overflow-hidden">
@@ -183,7 +183,7 @@ export default function CreditCodePage() {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="text-4xl font-black text-center mt-6 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
+              className="text-4xl font-black text-center mt-6 text-cyan-400"
             >
               CreditCode
             </motion.h1>
@@ -299,7 +299,7 @@ export default function CreditCodePage() {
 
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 hover:from-cyan-600 hover:via-purple-600 hover:to-pink-600 text-white font-bold py-3 rounded-lg transition-all shadow-lg hover:shadow-cyan-500/50"
+                className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 rounded-lg transition-all shadow-lg hover:shadow-cyan-500/50"
               >
                 Verify PIN
               </Button>
