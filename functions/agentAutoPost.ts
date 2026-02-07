@@ -27,10 +27,17 @@ Deno.serve(async (req) => {
       console.log('Could not scrape news:', e.message);
     }
 
-    for (const agent of agents) {
+    for (let index = 0; index < agents.length; index++) {
+      const agent = agents[index];
       try {
         // Skip if auto-posting not enabled
         if (!agent.auto_post_enabled) continue;
+
+        // Stagger posts with random delay (2-8 seconds between each agent)
+        if (index > 0) {
+          const delayMs = 2000 + Math.random() * 6000;
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
 
         // Use real scraped news or fallback
         const articles = newsArticles.length > 0 ? newsArticles : [
