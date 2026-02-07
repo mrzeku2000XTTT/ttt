@@ -4,7 +4,7 @@ import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Lock, User, Gem } from "lucide-react";
+import { ArrowLeft, Lock, User } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function CreditCodePage() {
@@ -159,7 +159,7 @@ export default function CreditCodePage() {
                 
                 {/* Static Diamond inside */}
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Gem className="w-12 h-12 text-cyan-400" />
+                  <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/ea0085322_image.png" alt="Diamond" className="w-16 h-16" />
                 </div>
 
                 {/* Shine effect */}
