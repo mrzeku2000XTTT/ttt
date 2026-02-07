@@ -27,6 +27,60 @@ Deno.serve(async (req) => {
       console.log('Could not scrape news:', e.message);
     }
 
+    // Kaspa knowledge base facts
+    const kaspaFacts = [
+      { 
+        title: "BlockDAG Technology",
+        description: "Kaspa uses GHOSTDAG protocol - the first blockDAG that allows parallel block creation without orphaning. It processes all blocks in parallel, creating a DAG structure instead of a linear chain.",
+        fact: "First blockDAG cryptocurrency"
+      },
+      { 
+        title: "10 Blocks Per Second",
+        description: "Kaspa's Crescendo upgrade enabled 10 blocks per second, with a vision for 32 BPS and eventual 100 BPS. Block time is just 0.1 seconds.",
+        fact: "10 blocks per second processing power"
+      },
+      { 
+        title: "Instant Confirmation",
+        description: "Kaspa transactions are visible to the network in 1 second and fully confirmed in 10 seconds on average - hundreds of times faster than Bitcoin.",
+        fact: "10-second confirmation time"
+      },
+      { 
+        title: "Fair Launch",
+        description: "Kaspa launched on November 7, 2021 with ZERO premine and zero pre-allocation. Completely community-driven, open-source, no central governance.",
+        fact: "No premine, fair-launched like Bitcoin"
+      },
+      { 
+        title: "Scalability Without Compromise",
+        description: "Kaspa solves blockchain scalability with multiple blocks per second while maintaining full security and decentralization - no proof-of-stake tradeoffs.",
+        fact: "Scalable Proof-of-Work Layer 1"
+      },
+      { 
+        title: "kHeavyHash Algorithm",
+        description: "Kaspa uses the optical-mining ready kHeavyHash algorithm for efficient proof-of-work. More energy-efficient than other PoW networks with no wasted blocks.",
+        fact: "Energy-efficient mining algorithm"
+      },
+      { 
+        title: "Circulating Supply",
+        description: "Currently 27.18B KAS in circulation with a max supply of ~28.7B. Ticker: KAS. Market cap: $847.7M and growing.",
+        fact: "27.18B KAS circulating, 28.7B max"
+      },
+      { 
+        title: "Network Supported Platforms",
+        description: "Kaspa runs on Windows, macOS, Linux, and even Raspberry Pi - making it truly decentralized and accessible for anyone to run a full node.",
+        fact: "Works on Raspberry Pi to enterprise servers"
+      },
+      { 
+        title: "Proof-of-Work Security",
+        description: "Pure stake-less proof-of-work with revolutionary GhostDAG consensus. Ultra-secure network architecture with no compromise to decentralization.",
+        fact: "Secure PoW without proof-of-stake"
+      },
+      { 
+        title: "Real-Time Decentralization",
+        description: "Built for real-world settlement. Kaspa is the fastest, open-source, decentralized, fully scalable Layer 1 in the world - designed for everyday transactions.",
+        fact: "Built for real-world settlement"
+      }
+    ];
+
     for (let index = 0; index < agents.length; index++) {
       const agent = agents[index];
       try {
@@ -39,52 +93,47 @@ Deno.serve(async (req) => {
           await new Promise(resolve => setTimeout(resolve, delayMs));
         }
 
-        // Use real scraped news or fallback
-        const articles = newsArticles.length > 0 ? newsArticles : [
-          { title: "Kaspa Price Update", url: "https://kaspa.news", description: `Current KAS price: $${kasPrice || 'N/A'}` }
-        ];
-      
-      // Pick random article
-      const article = articles[Math.floor(Math.random() * articles.length)];
+        // Pick a random Kaspa fact
+        const kaspaFact = kaspaFacts[Math.floor(Math.random() * kaspaFacts.length)];
       
       // Vary the prompt approach randomly to avoid repetitive content
       const postStyles = [
-        'insightful analysis',
-        'hype and excitement',
-        'technical explanation',
-        'market commentary',
-        'community engagement',
-        'news breakdown',
-        'perspective and vision',
-        'fun observation'
+        'insightful technical breakdown',
+        'passionate enthusiasm',
+        'educational explanation',
+        'market insight',
+        'community highlight',
+        'feature spotlight',
+        'visionary perspective',
+        'casual observation'
       ];
       const style = postStyles[Math.floor(Math.random() * postStyles.length)];
       
-      // Generate AI post with varied prompts
+      // Generate AI post with Kaspa facts
       const prompts = [
         `You are ${agent.agent_name}. ${agent.persona}
-        
-Create a ${style} social media post about: ${article.title}
-${article.description ? `Details: ${article.description}` : ''}
-${kasPrice ? `Market context: KAS at $${kasPrice}` : ''}
+
+Create a ${style} social media post about Kaspa's ${kaspaFact.title}:
+Key fact: ${kaspaFact.fact}
+Details: ${kaspaFact.description}
+${kasPrice ? `Current KAS price: $${kasPrice}` : ''}
 
 Voice: ${agent.voice_tone}
-Style: ${style}
-- Under 280 chars, authentic, shareable, with hashtags
-${kasPrice ? '- Weave in the price naturally if it fits' : ''}`,
+- Under 280 chars, authentic, shareable, with #kaspa hashtag
+- Make it unique and factual, not generic`,
 
-        `As ${agent.agent_name}, what's your hot take on this? ${article.title}
-${article.description ? `\n${article.description}` : ''}
+        `As ${agent.agent_name}, here's why this matters: "${kaspaFact.title}"
+${kaspaFact.description}
 
-Write a social post that's ${agent.voice_tone} and ${style}.
-Make it punchy, under 280 chars, with #kaspa hashtag.`,
+Write a ${agent.voice_tone} social post that explains this in a ${style} way.
+Keep it under 280 chars, punchy, with #kaspa #blockdag hashtags.`,
 
-        `${agent.agent_name} here. Someone just sent me this: ${article.title}
-${article.description ? `TL;DR: ${article.description}` : ''}
+        `${agent.agent_name} breaking down Kaspa tech: ${kaspaFact.fact}
 
-Drop a ${agent.voice_tone}} post about what this means for Kaspa.
-${kasPrice ? `Price is at $${kasPrice} btw.` : ''}
-Keep it fresh, under 280 chars.`
+What's wild about "${kaspaFact.title}"? ${kaspaFact.description}
+
+Drop a post about why this is groundbreaking for crypto.
+${agent.voice_tone} tone, ${style}, under 280 chars.`
       ];
       
       const prompt = prompts[Math.floor(Math.random() * prompts.length)];
