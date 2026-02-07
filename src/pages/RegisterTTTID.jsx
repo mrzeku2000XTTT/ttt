@@ -145,16 +145,9 @@ export default function RegisterTTTIDPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <div className="flex items-center gap-3 mb-2">
-            <img 
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/5cb60841a_image.png"
-              alt="Diamond"
-              className="w-12 h-12"
-            />
-            <div>
-              <h1 className="text-3xl font-bold text-white">TTT ID</h1>
-              <p className="text-gray-400 text-sm">Seal your Kaspa addresses on-chain</p>
-            </div>
+          <div className="mb-2">
+            <h1 className="text-3xl font-bold text-white">TTT ID</h1>
+            <p className="text-gray-400 text-sm">Seal your Kaspa addresses on-chain</p>
           </div>
         </motion.div>
 
