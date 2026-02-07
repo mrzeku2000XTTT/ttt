@@ -10,9 +10,28 @@ Deno.serve(async (req) => {
     const results = [];
     
     for (const agent of agents) {
-      // Get latest news
-      const newsResponse = await base44.asServiceRole.functions.invoke('scrapeKaspaNews', {});
-      const { articles } = newsResponse.data;
+      // Scrape news directly
+      const response = await fetch('https://kaspa.news');
+      const html = await response.text();
+      
+      const articleMatches = html.matchAll(/<article[^>]*>(.*?)<\/article>/gs);
+      const articles = [];
+      
+      for (const match of articleMatches) {
+        const article = match[1];
+        const titleMatch = article.match(/<h[1-6][^>]*>(.*?)<\/h[1-6]>/s);
+        const linkMatch = article.match(/href="([^"]+)"/);
+        const descMatch = article.match(/<p[^>]*>(.*?)<\/p>/s);
+        
+        if (titleMatch && linkMatch) {
+          articles.push({
+            title: titleMatch[1].replace(/<[^>]+>/g, '').trim(),
+            url: linkMatch[1].startsWith('http') ? linkMatch[1] : `https://kaspa.news${linkMatch[1]}`,
+            description: descMatch ? descMatch[1].replace(/<[^>]+>/g, '').trim() : '',
+            category: 'latest'
+          });
+        }
+      }
       
       if (!articles || articles.length === 0) continue;
       
