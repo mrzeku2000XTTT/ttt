@@ -79,27 +79,18 @@ export default function CreditCodePage() {
 
       setUserEmail(user.email);
 
-      // Generate 6-digit PIN
-      const newPin = Math.floor(100000 + Math.random() * 900000).toString();
-      setGeneratedPin(newPin);
-
-      // Send PIN via FluxKmail
-      await base44.integrations.Core.SendEmail({
-        to: user.email,
-        subject: "CreditCode Sign In - Verification PIN",
-        body: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #000; color: #fff; padding: 20px;">
-            <h1 style="color: #06b6d4;">CreditCode Verification</h1>
-            <p>Your verification PIN is:</p>
-            <h2 style="background: linear-gradient(to right, #06b6d4, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 36px; letter-spacing: 8px;">${newPin}</h2>
-            <p style="color: #9ca3af;">This PIN will expire in 10 minutes.</p>
-            <p style="color: #9ca3af; font-size: 12px;">If you didn't request this, please ignore this email.</p>
-          </div>
-        `
+      // Call backend to send PIN via FluxKmail
+      const response = await base44.functions.invoke('creditCodePinVerify', {
+        kaspaAddress: tttRecords[0].kaspa_address,
+        action: 'generatePin'
       });
 
-      // Show PIN verification step
-      setShowPinStep(true);
+      if (response.data?.success) {
+        setGeneratedPin(response.data.generatedPin || "");
+        setShowPinStep(true);
+      } else {
+        setError("Failed to send PIN via FluxKmail");
+      }
       setLoading(false);
       
     } catch (err) {
