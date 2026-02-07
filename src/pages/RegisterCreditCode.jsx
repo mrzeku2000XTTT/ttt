@@ -8,8 +8,8 @@ import { ArrowLeft, Lock, User } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function RegisterCreditCodePage() {
-  const [step, setStep] = useState("register"); // register, verify-email
-  const [email, setEmail] = useState("");
+  const [step, setStep] = useState("register"); // register, verify-pin
+  const [kaspaAddress, setKaspaAddress] = useState("");
   const [tttId, setTttId] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
