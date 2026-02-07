@@ -200,12 +200,12 @@ export default function TTTPage() {
                         className="relative z-10"
                       >
                         {appImages[app.path] ? (
-                          <img src={appImages[app.path]} alt={app.name} className="w-8 h-8 object-cover rounded-lg" />
-                        ) : app.defaultIcon ? (
-                          <img src={app.defaultIcon} alt={app.name} className="w-8 h-8 object-cover rounded-lg" />
-                        ) : app.icon ? (
-                          <app.icon className="w-8 h-8 text-white" strokeWidth={1.5} />
-                        ) : null}
+                           <img src={appImages[app.path]} alt={app.name} className="w-10 h-10 object-cover" />
+                         ) : app.defaultIcon ? (
+                           <img src={app.defaultIcon} alt={app.name} className="w-10 h-10 object-cover" />
+                         ) : app.icon ? (
+                           <app.icon className="w-8 h-8 text-white" strokeWidth={1.5} />
+                         ) : null}
                       </motion.div>
 
                       {/* Shimmer effect */}
