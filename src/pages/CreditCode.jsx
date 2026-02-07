@@ -12,6 +12,10 @@ export default function CreditCodePage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPinStep, setShowPinStep] = useState(false);
+  const [pin, setPin] = useState("");
+  const [generatedPin, setGeneratedPin] = useState("");
+  const [userEmail, setUserEmail] = useState("");
 
   const handleSignIn = async (e) => {
     e.preventDefault();
@@ -30,31 +34,69 @@ export default function CreditCodePage() {
         return;
       }
 
-      // TODO: Implement password verification
-      // For now, just check if password is provided
       if (!password) {
         setError("Password required");
         setLoading(false);
         return;
       }
 
-      // Success - store session
-      localStorage.setItem('creditcode_session', JSON.stringify({
-        ttt_id: tttId,
-        kaspa_address: tttRecords[0].kaspa_address,
-        display_name: tttRecords[0].display_name,
-        timestamp: Date.now()
-      }));
+      // Get user email from authenticated user
+      const user = await base44.auth.me();
+      if (!user?.email) {
+        setError("Please log in to continue");
+        setLoading(false);
+        return;
+      }
 
-      // Redirect or show dashboard
-      setError("");
-      alert("Sign in successful!");
+      setUserEmail(user.email);
+
+      // Generate 6-digit PIN
+      const newPin = Math.floor(100000 + Math.random() * 900000).toString();
+      setGeneratedPin(newPin);
+
+      // Send PIN via FluxKmail
+      await base44.integrations.Core.SendEmail({
+        to: user.email,
+        subject: "CreditCode Sign In - Verification PIN",
+        body: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #000; color: #fff; padding: 20px;">
+            <h1 style="color: #06b6d4;">CreditCode Verification</h1>
+            <p>Your verification PIN is:</p>
+            <h2 style="background: linear-gradient(to right, #06b6d4, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 36px; letter-spacing: 8px;">${newPin}</h2>
+            <p style="color: #9ca3af;">This PIN will expire in 10 minutes.</p>
+            <p style="color: #9ca3af; font-size: 12px;">If you didn't request this, please ignore this email.</p>
+          </div>
+        `
+      });
+
+      // Show PIN verification step
+      setShowPinStep(true);
+      setLoading(false);
       
     } catch (err) {
       setError(err.message || "Sign in failed");
-    } finally {
       setLoading(false);
     }
+  };
+
+  const handleVerifyPin = (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (pin !== generatedPin) {
+      setError("Invalid PIN. Please check your email.");
+      return;
+    }
+
+    // Success - store session
+    localStorage.setItem('creditcode_session', JSON.stringify({
+      ttt_id: tttId,
+      email: userEmail,
+      timestamp: Date.now()
+    }));
+
+    alert("Sign in successful!");
+    setShowPinStep(false);
   };
 
   return (
@@ -172,6 +214,7 @@ export default function CreditCodePage() {
               Sign In
             </h2>
 
+            {!showPinStep ? (
             <form onSubmit={handleSignIn} className="space-y-5">
               {/* TTT ID */}
               <div>
@@ -236,6 +279,53 @@ export default function CreditCodePage() {
                 )}
               </Button>
             </form>
+            ) : (
+            <form onSubmit={handleVerifyPin} className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-white/70 mb-2">
+                  Verification PIN
+                </label>
+                <p className="text-white/50 text-xs mb-3">
+                  Check your email ({userEmail}) for the 6-digit PIN
+                </p>
+                <Input
+                  type="text"
+                  placeholder="Enter 6-digit PIN"
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value)}
+                  className="bg-black/50 border-white/10 text-white placeholder:text-white/30 focus:border-cyan-500/50 text-center text-2xl tracking-widest"
+                  maxLength={6}
+                  required
+                />
+              </div>
+
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-red-400 text-sm"
+                >
+                  {error}
+                </motion.div>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 hover:from-cyan-600 hover:via-purple-600 hover:to-pink-600 text-white font-bold py-3 rounded-lg transition-all shadow-lg hover:shadow-cyan-500/50"
+              >
+                Verify PIN
+              </Button>
+
+              <Button
+                type="button"
+                onClick={() => setShowPinStep(false)}
+                variant="ghost"
+                className="w-full text-white/60 hover:text-white"
+              >
+                Back to Sign In
+              </Button>
+            </form>
+            )}
 
             {/* Register link */}
             <div className="mt-6 text-center">
