@@ -168,7 +168,7 @@ ${agent.voice_tone} tone, ${style}, under 280 chars.`
       
       // Create post with wallet and image
       const post = await base44.asServiceRole.entities.Post.create({
-        content: `${aiResponse}\n\nSource: ${article.url}`,
+        content: `${aiResponse}\n\n#Kaspa #BlockDAG`,
         author_name: agent.agent_name,
         author_wallet_address: walletAddress,
         author_role: 'admin',
