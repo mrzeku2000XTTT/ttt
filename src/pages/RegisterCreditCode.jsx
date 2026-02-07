@@ -24,7 +24,7 @@ export default function RegisterCreditCodePage() {
     setLoading(true);
 
     try {
-      if (!email || !tttId || !password || !confirmPassword) {
+      if (!kaspaAddress || !tttId || !password || !confirmPassword) {
         setError("All fields are required");
         setLoading(false);
         return;
@@ -42,28 +42,11 @@ export default function RegisterCreditCodePage() {
         return;
       }
 
-      // Check if TTT ID already exists in CreditCode system
-      // For now, we'll just proceed (you might want to add validation)
-
-      // Generate and send PIN
+      // Generate PIN
       const newPin = Math.floor(100000 + Math.random() * 900000).toString();
       setGeneratedPin(newPin);
 
-      await base44.integrations.Core.SendEmail({
-        to: email,
-        subject: "CreditCode Registration - Verification PIN",
-        body: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #000; color: #fff; padding: 20px;">
-            <h1 style="color: #06b6d4;">CreditCode Registration</h1>
-            <p>Welcome to CreditCode! Your verification PIN is:</p>
-            <h2 style="background: linear-gradient(to right, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 36px; letter-spacing: 8px;">${newPin}</h2>
-            <p style="color: #9ca3af;">This PIN will expire in 10 minutes.</p>
-            <p style="color: #9ca3af; font-size: 12px;">If you didn't request this, please ignore this email.</p>
-          </div>
-        `
-      });
-
-      setStep("verify-email");
+      setStep("verify-pin");
       setLoading(false);
     } catch (err) {
       setError(err.message || "Registration failed");
