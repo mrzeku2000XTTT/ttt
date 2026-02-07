@@ -4,7 +4,7 @@ import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Lock, User, Mail } from "lucide-react";
+import { ArrowLeft, Lock, User } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function RegisterCreditCodePage() {
