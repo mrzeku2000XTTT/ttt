@@ -318,8 +318,8 @@ export default function CreditCodePage() {
             {/* Register link */}
             <div className="mt-6 text-center">
               <p className="text-white/40 text-sm">
-                Don't have a TTT ID?{" "}
-                <Link to={createPageUrl("RegisterTTTID")} className="text-cyan-400 hover:text-cyan-300 font-medium">
+                Don't have an account?{" "}
+                <Link to={createPageUrl("RegisterCreditCode")} className="text-cyan-400 hover:text-cyan-300 font-medium">
                   Register here
                 </Link>
               </p>
