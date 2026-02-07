@@ -146,8 +146,12 @@ export default function RegisterTTTIDPage() {
           className="mb-8"
         >
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/50">
-              <Shield className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 flex items-center justify-center">
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/82e6a6d34_image.png"
+                alt="Diamond"
+                className="w-12 h-12"
+              />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-white">TTT ID</h1>
@@ -213,10 +217,10 @@ export default function RegisterTTTIDPage() {
                 </div>
 
                 <Button
-                  onClick={handleSeal}
-                  disabled={isSealing || !address}
-                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold h-12"
-                >
+                   onClick={handleSeal}
+                   disabled={isSealing || !address}
+                   className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-semibold h-12"
+                 >
                   {isSealing ? (
                     <>
                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
@@ -311,14 +315,14 @@ export default function RegisterTTTIDPage() {
                       <button
                         key={wallet.id}
                         onClick={() => handleViewWallet(wallet)}
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-4 hover:bg-zinc-800 hover:border-purple-500/30 transition-all text-left"
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-4 hover:bg-zinc-800 hover:border-cyan-500/30 transition-all text-left"
                       >
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
-                              <Badge variant="outline" className="bg-purple-500/20 text-purple-400 border-purple-500/30 font-mono">
-                                WALLET-{wallet.wallet_address.substring(wallet.wallet_address.length - 8)}
-                              </Badge>
+                              <Badge variant="outline" className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 font-mono">
+                                 WALLET-{wallet.wallet_address.substring(wallet.wallet_address.length - 8)}
+                               </Badge>
                               <Badge variant="outline" className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-xs">
                                 {wallet.mnemonic_word_count} words
                               </Badge>
@@ -327,12 +331,12 @@ export default function RegisterTTTIDPage() {
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0 ml-3">
                             <CheckCircle2 className="w-5 h-5 text-green-400" />
-                            <WalletIcon className="w-4 h-4 text-purple-400" />
+                            <WalletIcon className="w-4 h-4 text-cyan-400" />
                           </div>
                         </div>
                         <div className="flex items-center justify-between text-xs text-gray-500">
                           <div>{new Date(wallet.sealed_date).toLocaleDateString()}</div>
-                          <div className="text-purple-400 font-semibold">Click to view →</div>
+                          <div className="text-cyan-400 font-semibold">Click to view →</div>
                         </div>
                       </button>
                     ))}
