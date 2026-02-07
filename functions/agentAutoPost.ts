@@ -4,14 +4,14 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
-    // Get all active agents  
-    const agents = await base44.entities.AgentConfig.filter({ is_active: true });
+    // Get all active agents (using service role)
+    const agents = await base44.asServiceRole.entities.AgentConfig.filter({ is_active: true });
     
     const results = [];
     
     for (const agent of agents) {
       // Get latest news
-      const newsResponse = await base44.functions.invoke('scrapeKaspaNews', {});
+      const newsResponse = await base44.asServiceRole.functions.invoke('scrapeKaspaNews', {});
       const { articles } = newsResponse.data;
       
       if (!articles || articles.length === 0) continue;
@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
       analytics.total_posts = (analytics.total_posts || 0) + 1;
       analytics.last_post_at = new Date().toISOString();
       
-      await base44.entities.AgentConfig.update(agent.id, { analytics });
+      await base44.asServiceRole.entities.AgentConfig.update(agent.id, { analytics });
       
       results.push({
         agent: agent.agent_name,
