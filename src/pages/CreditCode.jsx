@@ -23,13 +23,22 @@ export default function CreditCodePage() {
     setLoading(true);
 
     try {
-      // Verify TTT ID exists
-      const tttRecords = await base44.entities.TTTID.filter({
-        ttt_id: tttId
-      });
+      // Check if input is Kaspa address or TTT ID
+      let tttRecords;
+      if (tttId.startsWith('kaspa:')) {
+        // Search by Kaspa address
+        tttRecords = await base44.entities.TTTID.filter({
+          kaspa_address: tttId
+        });
+      } else {
+        // Search by TTT ID
+        tttRecords = await base44.entities.TTTID.filter({
+          ttt_id: tttId
+        });
+      }
 
       if (tttRecords.length === 0) {
-        setError("Invalid TTT ID");
+        setError("Invalid TTT ID or Kaspa address. Make sure you registered first.");
         setLoading(false);
         return;
       }
