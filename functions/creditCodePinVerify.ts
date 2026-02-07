@@ -46,15 +46,16 @@ Deno.serve(async (req) => {
           recipientAddress: kaspaAddress,
           pinCode: pin,
           subject: 'CreditCode PIN Verification',
-          body: `Your CreditCode verification PIN is: <b>${pin}</b><br><br>This PIN will expire in 10 minutes. If you didn't request this, please ignore this message.`
+          body: `Your CreditCode verification PIN is: ${pin}\n\nThis PIN will expire in 10 minutes. If you didn't request this, please ignore this message.`
         })
-      });
+        });
 
-      return Response.json({
+        return Response.json({
         success: true,
         message: 'PIN sent to your Kaspa address via Fluxkmail',
+        generatedPin: pin,
         expiresIn: 600 // seconds
-      });
+        });
     }
 
     return Response.json({ error: 'Invalid action' }, { status: 400 });
