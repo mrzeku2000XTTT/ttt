@@ -157,21 +157,9 @@ export default function CreditCodePage() {
                 {/* Glass effect overlay */}
                 <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent" />
                 
-                {/* Diamond inside */}
+                {/* Static Diamond inside */}
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <motion.div
-                    animate={{
-                      rotate: [0, 360],
-                      scale: [1, 1.1, 1],
-                    }}
-                    transition={{
-                      duration: 8,
-                      repeat: Infinity,
-                      ease: "linear"
-                    }}
-                  >
-                    <Sparkles className="w-12 h-12 text-cyan-400" />
-                  </motion.div>
+                  <Sparkles className="w-12 h-12 text-cyan-400" />
                 </div>
 
                 {/* Shine effect */}
