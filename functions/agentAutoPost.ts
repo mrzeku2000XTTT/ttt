@@ -93,25 +93,29 @@ Deno.serve(async (req) => {
           await new Promise(resolve => setTimeout(resolve, delayMs));
         }
 
-        // Pick a random Kaspa fact
-        const kaspaFact = kaspaFacts[Math.floor(Math.random() * kaspaFacts.length)];
-      
-      // Vary the prompt approach randomly to avoid repetitive content
-      const postStyles = [
-        'insightful technical breakdown',
-        'passionate enthusiasm',
-        'educational explanation',
-        'market insight',
-        'community highlight',
-        'feature spotlight',
-        'visionary perspective',
-        'casual observation'
-      ];
-      const style = postStyles[Math.floor(Math.random() * postStyles.length)];
-      
-      // Generate AI post with Kaspa facts
-      const prompts = [
-        `You are ${agent.agent_name}. ${agent.persona}
+        // Vary the prompt approach randomly to avoid repetitive content
+        const postStyles = [
+          'insightful technical breakdown',
+          'passionate enthusiasm',
+          'educational explanation',
+          'market insight',
+          'community highlight',
+          'feature spotlight',
+          'visionary perspective',
+          'casual observation'
+        ];
+        const style = postStyles[Math.floor(Math.random() * postStyles.length)];
+
+        // Randomly choose between posting about Kaspa facts OR news
+        const useFactPost = Math.random() > 0.5;
+        let prompt;
+
+        if (useFactPost) {
+          // Post about Kaspa facts from kaspa.org
+          const kaspaFact = kaspaFacts[Math.floor(Math.random() * kaspaFacts.length)];
+          
+          const factPrompts = [
+            `You are ${agent.agent_name}. ${agent.persona}
 
 Create a ${style} social media post about Kaspa's ${kaspaFact.title}:
 Key fact: ${kaspaFact.fact}
@@ -122,21 +126,56 @@ Voice: ${agent.voice_tone}
 - Under 280 chars, authentic, shareable, with #kaspa hashtag
 - Make it unique and factual, not generic`,
 
-        `As ${agent.agent_name}, here's why this matters: "${kaspaFact.title}"
+            `As ${agent.agent_name}, here's why this matters: "${kaspaFact.title}"
 ${kaspaFact.description}
 
 Write a ${agent.voice_tone} social post that explains this in a ${style} way.
 Keep it under 280 chars, punchy, with #kaspa #blockdag hashtags.`,
 
-        `${agent.agent_name} breaking down Kaspa tech: ${kaspaFact.fact}
+            `${agent.agent_name} breaking down Kaspa tech: ${kaspaFact.fact}
 
 What's wild about "${kaspaFact.title}"? ${kaspaFact.description}
 
 Drop a post about why this is groundbreaking for crypto.
 ${agent.voice_tone} tone, ${style}, under 280 chars.`
-      ];
-      
-      const prompt = prompts[Math.floor(Math.random() * prompts.length)];
+          ];
+          
+          prompt = factPrompts[Math.floor(Math.random() * factPrompts.length)];
+        } else {
+          // Post about Kaspa news from kaspa.news
+          const articles = newsArticles.length > 0 ? newsArticles : [
+            { title: "Kaspa Updates", url: "https://kaspa.news", description: "Latest Kaspa ecosystem news and developments" }
+          ];
+          const article = articles[Math.floor(Math.random() * articles.length)];
+
+          const newsPrompts = [
+            `You are ${agent.agent_name}. ${agent.persona}
+
+Create a ${style} social media post about this Kaspa news:
+${article.title}
+${article.description ? `Details: ${article.description}` : ''}
+${kasPrice ? `Market context: KAS at $${kasPrice}` : ''}
+
+Voice: ${agent.voice_tone}
+- Under 280 chars, authentic, shareable, with hashtags
+- Make it engaging and current`,
+
+            `As ${agent.agent_name}, what's your take on: "${article.title}"
+${article.description ? `\n${article.description}` : ''}
+
+Write a ${agent.voice_tone} social post about this news in a ${style} way.
+Make it punchy, under 280 chars, with #kaspa hashtag.`,
+
+            `${agent.agent_name} here. Just saw this: ${article.title}
+${article.description ? `TL;DR: ${article.description}` : ''}
+
+Drop a ${agent.voice_tone} post about what this means for Kaspa.
+${kasPrice ? `Price is at $${kasPrice} btw.` : ''}
+Keep it fresh, under 280 chars.`
+          ];
+          
+          prompt = newsPrompts[Math.floor(Math.random() * newsPrompts.length)];
+        }
       
       const aiResponse = await base44.integrations.Core.InvokeLLM({
         prompt,
