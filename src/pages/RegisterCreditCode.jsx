@@ -135,7 +135,7 @@ export default function RegisterCreditCodePage() {
                 
                 {/* Diamond inside */}
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/5cb60841a_image.png" alt="Diamond" className="w-16 h-16" />
+                  <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/ea0085322_image.png" alt="Diamond" className="w-16 h-16" />
                 </div>
 
                 {/* Shine effect */}
