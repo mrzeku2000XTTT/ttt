@@ -147,6 +147,7 @@ export default function CategoriesPage() {
       { id: "articles", name: "Articles", icon: "FileText", path: "Articles" },
       { id: "bmtuniv", name: "BMT Univ", icon: "BookOpen", path: "BMTUniv" },
       { id: "llmscraper", name: "LLM Miner", icon: "Terminal", path: "LLMScraper" },
+      { id: "creditcode", name: "CreditCode", icon: "Shield", path: "CreditCode", blackOnBlack: true },
       ];
 
     // Public apps available to everyone
@@ -406,6 +407,7 @@ export default function CategoriesPage() {
       { id: "articles", name: "Articles", icon: "FileText", path: "Articles" },
       { id: "bmtuniv", name: "BMT Univ", icon: "BookOpen", path: "BMTUniv" },
       { id: "llmscraper", name: "LLM Miner", icon: "Terminal", path: "LLMScraper" },
+      { id: "creditcode", name: "CreditCode", icon: "Shield", path: "CreditCode", blackOnBlack: true },
       { id: "calculator", name: "Calculator", icon: "Activity", path: "Calculator" },
       ...(isAdmin ? [
         { id: "arcade", name: "Arcade", icon: "Gamepad2", path: "Arcade" },
