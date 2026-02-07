@@ -10,66 +10,46 @@ Deno.serve(async (req) => {
     const results = [];
     
     for (const agent of agents) {
-      // Scrape news directly
-      const response = await fetch('https://kaspa.news');
-      const html = await response.text();
-      
-      const articleMatches = html.matchAll(/<article[^>]*>(.*?)<\/article>/gs);
-      const articles = [];
-      
-      for (const match of articleMatches) {
-        const article = match[1];
-        const titleMatch = article.match(/<h[1-6][^>]*>(.*?)<\/h[1-6]>/s);
-        const linkMatch = article.match(/href="([^"]+)"/);
-        const descMatch = article.match(/<p[^>]*>(.*?)<\/p>/s);
+      try {
+        // Skip if auto-posting not enabled
+        if (!agent.auto_post_enabled) continue;
         
-        if (titleMatch && linkMatch) {
-          articles.push({
-            title: titleMatch[1].replace(/<[^>]+>/g, '').trim(),
-            url: linkMatch[1].startsWith('http') ? linkMatch[1] : `https://kaspa.news${linkMatch[1]}`,
-            description: descMatch ? descMatch[1].replace(/<[^>]+>/g, '').trim() : '',
-            category: 'latest'
-          });
+        // Scrape real Kaspa news
+        const response = await fetch('https://kaspa.news/api/posts?limit=10');
+        let articles = [];
+        
+        try {
+          const newsData = await response.json();
+          articles = newsData.posts || [];
+        } catch {
+          // Fallback to HTML scraping
+          const htmlResponse = await fetch('https://kaspa.news');
+          const html = await htmlResponse.text();
+          const articleMatches = html.matchAll(/<article[^>]*>(.*?)<\/article>/gs);
+          
+          for (const match of articleMatches) {
+            const article = match[1];
+            const titleMatch = article.match(/<h[1-6][^>]*>(.*?)<\/h[1-6]>/s);
+            const linkMatch = article.match(/href="([^"]+)"/);
+            const descMatch = article.match(/<p[^>]*>(.*?)<\/p>/s);
+            
+            if (titleMatch && linkMatch) {
+              articles.push({
+                title: titleMatch[1].replace(/<[^>]+>/g, '').trim(),
+                url: linkMatch[1].startsWith('http') ? linkMatch[1] : `https://kaspa.news${linkMatch[1]}`,
+                description: descMatch ? descMatch[1].replace(/<[^>]+>/g, '').trim() : ''
+              });
+            }
+          }
         }
-      }
+        
+        if (!articles || articles.length === 0) {
+          console.log(`No articles found for ${agent.agent_name}, skipping`);
+          continue;
+        }
       
-      if (!articles || articles.length === 0) {
-        console.log(`No articles found for ${agent.agent_name}, creating generic post`);
-        
-        // Create a generic creative post without news
-        const prompt = `You are ${agent.agent_name}. ${agent.persona}
-        
-Create an engaging social media post about crypto innovation, Kaspa technology, or blockchain trends.
-Voice: ${agent.voice_tone}. Keep it under 280 characters. Be thought-provoking and creative.`;
-        
-        const aiResponse = await base44.integrations.Core.InvokeLLM({
-          prompt,
-          add_context_from_internet: false
-        });
-        
-        // Create post
-        const post = await base44.asServiceRole.entities.Post.create({
-          content: `${aiResponse}\n\n#StCreative #${agent.agent_name}`,
-          author_name: agent.agent_name,
-          author_wallet_address: agent.wallet_address || '',
-          author_role: 'admin'
-        });
-        
-        // Update analytics
-        const analytics = agent.analytics || {};
-        analytics.total_posts = (analytics.total_posts || 0) + 1;
-        analytics.last_post_at = new Date().toISOString();
-        
-        await base44.asServiceRole.entities.AgentConfig.update(agent.id, { analytics });
-        
-        results.push({
-          agent: agent.agent_name,
-          post_id: post.id,
-          type: 'generic'
-        });
-        
-        continue;
-      }
+      // Pick random article
+      const article = articles[Math.floor(Math.random() * articles.length)];
       
       // Pick random article
       const randomArticle = articles[Math.floor(Math.random() * articles.length)];
