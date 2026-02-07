@@ -54,20 +54,20 @@ export default function RegisterCreditCodePage() {
     }
   };
 
-  const handleVerifyEmail = (e) => {
+  const handleVerifyPin = (e) => {
     e.preventDefault();
     setError("");
 
     if (pin !== generatedPin) {
-      setError("Invalid PIN. Please check your email.");
+      setError("Invalid PIN.");
       return;
     }
 
     // Store registration data
     localStorage.setItem('creditcode_user', JSON.stringify({
-      email,
+      kaspa_address: kaspaAddress,
       ttt_id: tttId,
-      password: btoa(password), // Basic encoding (use proper hashing in production)
+      password: btoa(password),
       registered_at: new Date().toISOString()
     }));
 
