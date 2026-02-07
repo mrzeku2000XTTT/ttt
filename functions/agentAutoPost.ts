@@ -9,21 +9,33 @@ Deno.serve(async (req) => {
     
     const results = [];
     
+    // Get current Kaspa price
+    let kasPrice = null;
+    try {
+      const priceRes = await base44.asServiceRole.functions.invoke('getKaspaPrice', {});
+      kasPrice = priceRes.data?.price;
+    } catch (e) {
+      console.log('Could not fetch Kaspa price:', e.message);
+    }
+
+    // Get real Kaspa news
+    let newsArticles = [];
+    try {
+      const newsRes = await base44.asServiceRole.functions.invoke('scrapeKaspaNews', {});
+      newsArticles = newsRes.data?.articles || [];
+    } catch (e) {
+      console.log('Could not scrape news:', e.message);
+    }
+
     for (const agent of agents) {
       try {
         // Skip if auto-posting not enabled
         if (!agent.auto_post_enabled) continue;
-        
-        // Use real Kaspa news topics
-        const kaspaTopics = [
-          { title: "Kaspa Network Reaches New All-Time High in Hash Rate", url: "https://kaspa.news", description: "Mining activity shows strong network security growth" },
-          { title: "BlockDAG Technology: The Future of Scalability", url: "https://kaspa.news", description: "How Kaspa's unique architecture enables unprecedented transaction speeds" },
-          { title: "Kaspa Adoption Growing Among DeFi Projects", url: "https://kaspa.news", description: "More developers choosing Kaspa for high-performance applications" },
-          { title: "1 Second Block Times: Kaspa's Speed Advantage", url: "https://kaspa.news", description: "Examining the technical innovations behind Kaspa's performance" },
-          { title: "Kaspa Community Surpasses 100K Active Wallets", url: "https://kaspa.news", description: "Network growth metrics show increasing user adoption" }
+
+        // Use real scraped news or fallback
+        const articles = newsArticles.length > 0 ? newsArticles : [
+          { title: "Kaspa Price Update", url: "https://kaspa.news", description: `Current KAS price: $${kasPrice || 'N/A'}` }
         ];
-        
-        const articles = kaspaTopics;
       
       // Pick random article
       const article = articles[Math.floor(Math.random() * articles.length)];
@@ -31,15 +43,17 @@ Deno.serve(async (req) => {
       // Generate AI post
       const prompt = `You are ${agent.agent_name}. ${agent.persona}
 
-Create an engaging social media post about: ${article.title}
-${article.description ? `Context: ${article.description}` : ''}
+      Create an engaging social media post about: ${article.title}
+      ${article.description ? `Context: ${article.description}` : ''}
+      ${kasPrice ? `Current Kaspa Price: $${kasPrice}` : ''}
 
-Voice: ${agent.voice_tone}
-Requirements:
-- Keep it under 280 characters
-- Be authentic and creative
-- Make it shareable
-- Include relevant hashtags`;
+      Voice: ${agent.voice_tone}
+      Requirements:
+      - Keep it under 280 characters
+      - Be authentic and creative
+      - Make it shareable
+      - Include relevant hashtags
+      ${kasPrice ? '- Mention the price if relevant' : ''}`;
       
       const aiResponse = await base44.integrations.Core.InvokeLLM({
         prompt,
