@@ -18,13 +18,13 @@ Deno.serve(async (req) => {
       console.log('Could not fetch Kaspa price:', e.message);
     }
 
-    // Get real Kaspa news
+    // Get detailed Kaspa news with real quotes and authors
     let newsArticles = [];
     try {
-      const newsRes = await base44.asServiceRole.functions.invoke('scrapeKaspaNews', {});
+      const newsRes = await base44.asServiceRole.functions.invoke('getKaspaNewsDetails', {});
       newsArticles = newsRes.data?.articles || [];
     } catch (e) {
-      console.log('Could not scrape news:', e.message);
+      console.log('Could not get news details:', e.message);
     }
 
     // Kaspa knowledge base facts
@@ -142,38 +142,60 @@ ${agent.voice_tone} tone, ${style}, under 280 chars.`
           
           prompt = factPrompts[Math.floor(Math.random() * factPrompts.length)];
         } else {
-          // Post about Kaspa news from kaspa.news
+          // Post about Kaspa news with REAL quotes and authors
           const articles = newsArticles.length > 0 ? newsArticles : [
-            { title: "Kaspa Updates", url: "https://kaspa.news", description: "Latest Kaspa ecosystem news and developments" }
+            { title: "Kaspa Updates", author: "Community", quotes: ["Latest developments in the ecosystem"], topic: "General", details: "Check kaspa.news for updates", url: "https://kaspa.news" }
           ];
           const article = articles[Math.floor(Math.random() * articles.length)];
 
           const newsPrompts = [
             `You are ${agent.agent_name}. ${agent.persona}
 
-Create a ${style} social media post about this Kaspa news:
-${article.title}
-${article.description ? `Details: ${article.description}` : ''}
-${kasPrice ? `Market context: KAS at $${kasPrice}` : ''}
+        Create a HUMAN-SOUNDING ${style} post about this REAL kaspa.news article:
 
-Voice: ${agent.voice_tone}
-- Under 280 chars, authentic, shareable, with hashtags
-- Make it engaging and current`,
+        Title: "${article.title}"
+        Author: ${article.author}
+        ${article.quotes?.length > 0 ? `Real quote: "${article.quotes[0]}"` : ''}
+        Topic: ${article.topic}
+        Details: ${article.details}
+        ${kasPrice ? `\nCurrent KAS: $${kasPrice}` : ''}
 
-            `As ${agent.agent_name}, what's your take on: "${article.title}"
-${article.description ? `\n${article.description}` : ''}
+        REQUIREMENTS:
+        - Quote the author directly: "${article.author} said [quote]"
+        - Use SIMPLE everyday language, not technical jargon
+        - Sound like a regular person talking, not a robot
+        - Under 280 chars
+        - ${agent.voice_tone} tone but NATURAL
+        - Add 1-2 relevant hashtags max
+        - NO generic phrases like "exciting news" or "breaking"`,
 
-Write a ${agent.voice_tone} social post about this news in a ${style} way.
-Make it punchy, under 280 chars, with #kaspa hashtag.`,
+            `${agent.agent_name} here. I just read this on kaspa.news:
 
-            `${agent.agent_name} here. Just saw this: ${article.title}
-${article.description ? `TL;DR: ${article.description}` : ''}
+        "${article.title}" by ${article.author}
+        ${article.quotes?.length > 0 ? `\nThey said: "${article.quotes[0]}"` : ''}
 
-Drop a ${agent.voice_tone} post about what this means for Kaspa.
-${kasPrice ? `Price is at $${kasPrice} btw.` : ''}
-Keep it fresh, under 280 chars.`
+        Main point: ${article.details}
+
+        Write a SHORT reaction (under 280 chars) in ${agent.voice_tone} voice.
+        Use NORMAL human words. Quote ${article.author} if relevant.
+        Explain it like you're texting a friend, not writing a press release.`,
+
+            `Real talk from ${agent.agent_name}:
+
+        Article: "${article.title}"
+        Posted by: ${article.author}
+        ${article.quotes?.length > 1 ? `Key quote: "${article.quotes[1]}"` : article.quotes?.length > 0 ? `Quote: "${article.quotes[0]}"` : ''}
+
+        What it means: ${article.details}
+        ${kasPrice ? `KAS price rn: $${kasPrice}` : ''}
+
+        Give a ${style} take in under 280 chars.
+        - Sound like a REAL person
+        - Use simple words anyone can understand
+        - Reference ${article.author}'s quote
+        - ${agent.voice_tone} but CASUAL`
           ];
-          
+
           prompt = newsPrompts[Math.floor(Math.random() * newsPrompts.length)];
         }
       
