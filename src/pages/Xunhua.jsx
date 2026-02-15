@@ -150,12 +150,7 @@ export default function XunhuaPage() {
 
     if (!isDrawing) return;
     
-    const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
-    const rect = canvas.getBoundingClientRect();
-    
-    const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
-    const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
 
     if (lastPoint) {
       ctx.beginPath();
