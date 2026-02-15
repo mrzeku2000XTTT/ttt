@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Trash2, Wand2, Download, Palette, Eraser, Paintbrush, FlipHorizontal, ToggleLeft, ToggleRight } from "lucide-react";
+import { Loader2, Trash2, Wand2, Download, Palette, Eraser, Paintbrush, FlipHorizontal, ToggleLeft, ToggleRight, Undo, Redo, Circle, Square, Droplet, Sparkles, Pencil, Highlighter, Brush, Pipette, Stamp } from "lucide-react";
 
 export default function XunhuaPage() {
   const canvasRef = useRef(null);
@@ -20,6 +20,8 @@ export default function XunhuaPage() {
   const [autoRender, setAutoRender] = useState(false);
   const [drawingBounds, setDrawingBounds] = useState(null);
   const [advancedMode, setAdvancedMode] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [historyStep, setHistoryStep] = useState(-1);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -39,7 +41,44 @@ export default function XunhuaPage() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     resultCtx.fillStyle = "#1a1a1a";
     resultCtx.fillRect(0, 0, resultCanvas.width, resultCanvas.height);
+    
+    saveToHistory();
   }, []);
+
+  const saveToHistory = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const newHistory = history.slice(0, historyStep + 1);
+    newHistory.push(canvas.toDataURL());
+    setHistory(newHistory);
+    setHistoryStep(newHistory.length - 1);
+  };
+
+  const undo = () => {
+    if (historyStep <= 0) return;
+    const newStep = historyStep - 1;
+    restoreFromHistory(newStep);
+    setHistoryStep(newStep);
+  };
+
+  const redo = () => {
+    if (historyStep >= history.length - 1) return;
+    const newStep = historyStep + 1;
+    restoreFromHistory(newStep);
+    setHistoryStep(newStep);
+  };
+
+  const restoreFromHistory = (step) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+    img.onload = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+    };
+    img.src = history[step];
+  };
 
   const startDrawing = (e) => {
     const canvas = canvasRef.current;
@@ -66,11 +105,43 @@ export default function XunhuaPage() {
       ctx.beginPath();
       ctx.moveTo(lastPoint.x, lastPoint.y);
       ctx.lineTo(x, y);
-      ctx.strokeStyle = tool === "eraser" ? "#1a1a1a" : color;
-      ctx.lineWidth = brushSize;
+      
+      // Tool-specific drawing
+      if (tool === "eraser") {
+        ctx.strokeStyle = "#1a1a1a";
+        ctx.lineWidth = brushSize * 2;
+      } else if (tool === "pencil") {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = Math.max(1, brushSize / 2);
+      } else if (tool === "marker") {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = brushSize * 2;
+        ctx.globalAlpha = 0.7;
+      } else if (tool === "spray") {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = brushSize * 3;
+        ctx.globalAlpha = 0.3;
+      } else if (tool === "glow") {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = brushSize;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = color;
+      } else if (tool === "neon") {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = brushSize;
+        ctx.shadowBlur = 30;
+        ctx.shadowColor = color;
+        ctx.globalAlpha = 0.8;
+      } else {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = brushSize;
+      }
+      
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
       ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.shadowBlur = 0;
       
       // Update drawing bounds
       setDrawingBounds(prev => {
@@ -86,6 +157,9 @@ export default function XunhuaPage() {
   };
 
   const stopDrawing = () => {
+    if (isDrawing) {
+      saveToHistory();
+    }
     setIsDrawing(false);
     setLastPoint(null);
   };
@@ -260,21 +334,35 @@ export default function XunhuaPage() {
 
         {/* Drawing Tools */}
         <div className="flex items-center gap-2 mb-3 flex-wrap">
-          <Button
-            onClick={() => setTool("brush")}
-            size="sm"
-            className={`h-8 px-3 ${tool === "brush" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}
-          >
-            <Paintbrush className="w-4 h-4 mr-1" />
-            <span className="hidden sm:inline">Brush</span>
+          <Button onClick={undo} disabled={historyStep <= 0} size="sm" className="h-8 px-2 bg-white/5 text-white disabled:opacity-30">
+            <Undo className="w-4 h-4" />
           </Button>
-          <Button
-            onClick={() => setTool("eraser")}
-            size="sm"
-            className={`h-8 px-3 ${tool === "eraser" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}
-          >
-            <Eraser className="w-4 h-4 mr-1" />
-            <span className="hidden sm:inline">Eraser</span>
+          <Button onClick={redo} disabled={historyStep >= history.length - 1} size="sm" className="h-8 px-2 bg-white/5 text-white disabled:opacity-30">
+            <Redo className="w-4 h-4" />
+          </Button>
+          
+          <div className="w-px h-8 bg-white/10" />
+          
+          <Button onClick={() => setTool("brush")} size="sm" className={`h-8 px-2 ${tool === "brush" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}>
+            <Paintbrush className="w-4 h-4" />
+          </Button>
+          <Button onClick={() => setTool("pencil")} size="sm" className={`h-8 px-2 ${tool === "pencil" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}>
+            <Pencil className="w-4 h-4" />
+          </Button>
+          <Button onClick={() => setTool("marker")} size="sm" className={`h-8 px-2 ${tool === "marker" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}>
+            <Highlighter className="w-4 h-4" />
+          </Button>
+          <Button onClick={() => setTool("spray")} size="sm" className={`h-8 px-2 ${tool === "spray" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}>
+            <Pipette className="w-4 h-4" />
+          </Button>
+          <Button onClick={() => setTool("glow")} size="sm" className={`h-8 px-2 ${tool === "glow" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}>
+            <Sparkles className="w-4 h-4" />
+          </Button>
+          <Button onClick={() => setTool("neon")} size="sm" className={`h-8 px-2 ${tool === "neon" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}>
+            <Droplet className="w-4 h-4" />
+          </Button>
+          <Button onClick={() => setTool("eraser")} size="sm" className={`h-8 px-2 ${tool === "eraser" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}>
+            <Eraser className="w-4 h-4" />
           </Button>
           
           <input
