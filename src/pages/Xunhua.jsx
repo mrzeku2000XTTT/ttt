@@ -93,26 +93,38 @@ export default function XunhuaPage() {
     img.src = history[step];
   };
 
-  const redrawCanvas = () => {
+  const redrawCanvas = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     
-    layers.forEach(layer => {
-      if (!layer.visible) return;
+    // Clear canvas first
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#1a1a1a";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw layers
+    for (const layer of layers) {
+      if (!layer.visible) continue;
       
-      ctx.save();
-      ctx.globalAlpha = layer.opacity;
-      
-      if (layer.filter) {
-        ctx.filter = layer.filter;
-      }
-      
-      const img = new Image();
-      img.src = layer.imageData;
-      ctx.drawImage(img, layer.x, layer.y, layer.width, layer.height);
-      ctx.restore();
-    });
+      await new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          ctx.save();
+          ctx.globalAlpha = layer.opacity;
+          
+          if (layer.filter && layer.filter !== "none") {
+            ctx.filter = layer.filter;
+          }
+          
+          ctx.drawImage(img, layer.x, layer.y, layer.width, layer.height);
+          ctx.restore();
+          resolve();
+        };
+        img.onerror = () => resolve();
+        img.src = layer.imageData;
+      });
+    }
     
     // Draw selection handles for selected layer
     if (selectedLayer && (tool === "move" || cropMode)) {
@@ -125,14 +137,14 @@ export default function XunhuaPage() {
       // Draw resize handles
       const handleSize = 10;
       const handles = [
-        { x: selectedLayer.x, y: selectedLayer.y, cursor: "nw-resize" },
-        { x: selectedLayer.x + selectedLayer.width, y: selectedLayer.y, cursor: "ne-resize" },
-        { x: selectedLayer.x, y: selectedLayer.y + selectedLayer.height, cursor: "sw-resize" },
-        { x: selectedLayer.x + selectedLayer.width, y: selectedLayer.y + selectedLayer.height, cursor: "se-resize" },
-        { x: selectedLayer.x + selectedLayer.width / 2, y: selectedLayer.y, cursor: "n-resize" },
-        { x: selectedLayer.x + selectedLayer.width / 2, y: selectedLayer.y + selectedLayer.height, cursor: "s-resize" },
-        { x: selectedLayer.x, y: selectedLayer.y + selectedLayer.height / 2, cursor: "w-resize" },
-        { x: selectedLayer.x + selectedLayer.width, y: selectedLayer.y + selectedLayer.height / 2, cursor: "e-resize" },
+        { x: selectedLayer.x, y: selectedLayer.y },
+        { x: selectedLayer.x + selectedLayer.width, y: selectedLayer.y },
+        { x: selectedLayer.x, y: selectedLayer.y + selectedLayer.height },
+        { x: selectedLayer.x + selectedLayer.width, y: selectedLayer.y + selectedLayer.height },
+        { x: selectedLayer.x + selectedLayer.width / 2, y: selectedLayer.y },
+        { x: selectedLayer.x + selectedLayer.width / 2, y: selectedLayer.y + selectedLayer.height },
+        { x: selectedLayer.x, y: selectedLayer.y + selectedLayer.height / 2 },
+        { x: selectedLayer.x + selectedLayer.width, y: selectedLayer.y + selectedLayer.height / 2 },
       ];
       
       ctx.fillStyle = "#06b6d4";
@@ -366,8 +378,20 @@ export default function XunhuaPage() {
 
   const deleteSelectedLayer = () => {
     if (!selectedLayer) return;
-    setLayers(layers.filter(layer => layer.id !== selectedLayer.id));
+    const newLayers = layers.filter(layer => layer.id !== selectedLayer.id);
+    setLayers(newLayers);
     setSelectedLayer(null);
+    
+    // Redraw canvas after deletion
+    setTimeout(() => {
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#1a1a1a";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+    }, 0);
   };
 
   const clearCanvas = () => {
@@ -376,21 +400,26 @@ export default function XunhuaPage() {
     
     if (canvas) {
       const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = "#1a1a1a";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
     
     if (resultCanvas) {
       const resultCtx = resultCanvas.getContext("2d");
+      resultCtx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
       resultCtx.fillStyle = "#1a1a1a";
       resultCtx.fillRect(0, 0, resultCanvas.width, resultCanvas.height);
     }
     
+    setLayers([]);
+    setSelectedLayer(null);
     setDrawingBounds(null);
     setGeneratedImage(null);
     setIsDrawing(false);
     setLastPoint(null);
     setIsFlipped(false);
+    saveToHistory();
   };
 
   const handleGenerate = async () => {
