@@ -214,11 +214,17 @@ export default function XunhuaPage() {
             <Button
               onClick={() => setAdvancedMode(!advancedMode)}
               size="sm"
-              className={`h-8 px-3 transition-all ${advancedMode ? "bg-purple-500 text-white shadow-lg shadow-purple-500/50 border-2 border-purple-400" : "bg-white/5 text-white/60 border-2 border-transparent"}`}
+              style={{
+                backgroundColor: advancedMode ? '#a855f7' : 'rgba(255,255,255,0.05)',
+                color: advancedMode ? '#ffffff' : 'rgba(255,255,255,0.6)',
+                border: advancedMode ? '2px solid #c084fc' : '2px solid transparent',
+                boxShadow: advancedMode ? '0 0 20px rgba(168,85,247,0.5)' : 'none'
+              }}
+              className="h-8 px-3 transition-all"
               title={advancedMode ? "Advanced: AI adds details" : "Exact: Only what you drew"}
             >
-              <Wand2 className={`w-4 h-4 mr-1 ${advancedMode ? "animate-pulse" : ""}`} />
-              <span className="hidden sm:inline font-bold">{advancedMode ? "Advanced" : "Exact"}</span>
+              <Wand2 className="w-4 h-4 mr-1" style={{ animation: advancedMode ? 'pulse 2s infinite' : 'none' }} />
+              <span className="hidden sm:inline font-bold">{advancedMode ? "Advanced ✨" : "Exact"}</span>
             </Button>
             
             <Button
