@@ -207,12 +207,15 @@ export default function XunhuaPage() {
   };
 
   const draw = (e) => {
+    if (!canvasRef.current) return;
+    
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
     const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
 
     if (resizeHandle && selectedLayer && dragStart) {
+      e.preventDefault();
       const dx = x - dragStart.x;
       const dy = y - dragStart.y;
       let newX = dragStart.startX;
@@ -244,28 +247,29 @@ export default function XunhuaPage() {
         }
       }
       
+      const updatedLayer = { ...selectedLayer, x: newX, y: newY, width: Math.max(20, newWidth), height: Math.max(20, newHeight) };
       const updatedLayers = layers.map(layer =>
-        layer.id === selectedLayer.id
-          ? { ...layer, x: newX, y: newY, width: Math.max(20, newWidth), height: Math.max(20, newHeight) }
-          : layer
+        layer.id === selectedLayer.id ? updatedLayer : layer
       );
       setLayers(updatedLayers);
-      setSelectedLayer({ ...selectedLayer, x: newX, y: newY, width: Math.max(20, newWidth), height: Math.max(20, newHeight) });
+      setSelectedLayer(updatedLayer);
       return;
     }
 
     if (isDragging && selectedLayer && dragStart) {
+      e.preventDefault();
+      const newX = x - dragStart.x;
+      const newY = y - dragStart.y;
+      const updatedLayer = { ...selectedLayer, x: newX, y: newY };
       const updatedLayers = layers.map(layer =>
-        layer.id === selectedLayer.id
-          ? { ...layer, x: x - dragStart.x, y: y - dragStart.y }
-          : layer
+        layer.id === selectedLayer.id ? updatedLayer : layer
       );
       setLayers(updatedLayers);
-      setSelectedLayer({ ...selectedLayer, x: x - dragStart.x, y: y - dragStart.y });
+      setSelectedLayer(updatedLayer);
       return;
     }
 
-    if (!isDrawing) return;
+    if (!isDrawing || isDragging || resizeHandle) return;
     
     const ctx = canvas.getContext("2d");
 
