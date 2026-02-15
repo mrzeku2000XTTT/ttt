@@ -33,6 +33,9 @@ export default function XunhuaPage() {
   const [textMode, setTextMode] = useState(false);
   const [textLayers, setTextLayers] = useState([]);
   const [editingText, setEditingText] = useState(null);
+  
+  // Kaspa logo reference
+  const KASPA_LOGO_URL = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/3f644abe6_IMG_0952.png";
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -542,9 +545,15 @@ export default function XunhuaPage() {
         aiPrompt = `${prompt}. CRITICAL: Match the sketch EXACTLY - same number of objects, same positions, same proportions. Only enhance colors and textures. Do NOT add any objects or elements that don't exist in the sketch.`;
       }
       
+      // Check if prompt mentions Kaspa - if so, include Kaspa logo as reference
+      const imageUrls = [file_url];
+      if (/kaspa/i.test(prompt)) {
+        imageUrls.push(KASPA_LOGO_URL);
+      }
+      
       const result = await base44.integrations.Core.GenerateImage({
         prompt: aiPrompt,
-        existing_image_urls: [file_url]
+        existing_image_urls: imageUrls
       });
 
       setGeneratedImage(result.url);
