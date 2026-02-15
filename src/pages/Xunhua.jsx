@@ -251,7 +251,7 @@ export default function XunhuaPage() {
     const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
     const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
 
-    // If dragging from modal, place text and stop
+    // If dragging from modal, place text and stop (don't open modal)
     if (draggingTextFromModal && editingText) {
       const updatedTextLayers = textLayers.map(t =>
         t.id === editingText.id ? { ...t, x: x - (editingText.fontSize || 32) / 2, y: y - (editingText.fontSize || 32) / 2 } : t
@@ -263,20 +263,22 @@ export default function XunhuaPage() {
       return;
     }
 
-    // Check for text clicks (only if not dragging from modal)
-    const ctx = canvas.getContext("2d");
-    for (let i = textLayers.length - 1; i >= 0; i--) {
-      const textLayer = textLayers[i];
-      if (!textLayer.visible) continue;
-      
-      ctx.font = `${textLayer.bold ? 'bold ' : ''}${textLayer.fontSize}px ${textLayer.fontFamily}`;
-      const textWidth = ctx.measureText(textLayer.text).width;
-      const textHeight = textLayer.fontSize;
-      
-      if (x >= textLayer.x && x <= textLayer.x + textWidth &&
-          y >= textLayer.y && y <= textLayer.y + textHeight) {
-        setEditingText(textLayer);
-        return;
+    // Check for text clicks (only if NOT in dragging mode)
+    if (!draggingTextFromModal) {
+      const ctx = canvas.getContext("2d");
+      for (let i = textLayers.length - 1; i >= 0; i--) {
+        const textLayer = textLayers[i];
+        if (!textLayer.visible) continue;
+        
+        ctx.font = `${textLayer.bold ? 'bold ' : ''}${textLayer.fontSize}px ${textLayer.fontFamily}`;
+        const textWidth = ctx.measureText(textLayer.text).width;
+        const textHeight = textLayer.fontSize;
+        
+        if (x >= textLayer.x && x <= textLayer.x + textWidth &&
+            y >= textLayer.y && y <= textLayer.y + textHeight) {
+          setEditingText(textLayer);
+          return;
+        }
       }
     }
 
