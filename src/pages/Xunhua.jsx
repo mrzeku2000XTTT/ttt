@@ -28,6 +28,8 @@ export default function XunhuaPage() {
   const [showLayerPanel, setShowLayerPanel] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState(null);
+  const [resizeHandle, setResizeHandle] = useState(null);
+  const [cropMode, setCropMode] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -111,6 +113,57 @@ export default function XunhuaPage() {
       ctx.drawImage(img, layer.x, layer.y, layer.width, layer.height);
       ctx.restore();
     });
+    
+    // Draw selection handles for selected layer
+    if (selectedLayer && (tool === "move" || cropMode)) {
+      ctx.save();
+      ctx.strokeStyle = "#06b6d4";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.strokeRect(selectedLayer.x, selectedLayer.y, selectedLayer.width, selectedLayer.height);
+      
+      // Draw resize handles
+      const handleSize = 10;
+      const handles = [
+        { x: selectedLayer.x, y: selectedLayer.y, cursor: "nw-resize" },
+        { x: selectedLayer.x + selectedLayer.width, y: selectedLayer.y, cursor: "ne-resize" },
+        { x: selectedLayer.x, y: selectedLayer.y + selectedLayer.height, cursor: "sw-resize" },
+        { x: selectedLayer.x + selectedLayer.width, y: selectedLayer.y + selectedLayer.height, cursor: "se-resize" },
+        { x: selectedLayer.x + selectedLayer.width / 2, y: selectedLayer.y, cursor: "n-resize" },
+        { x: selectedLayer.x + selectedLayer.width / 2, y: selectedLayer.y + selectedLayer.height, cursor: "s-resize" },
+        { x: selectedLayer.x, y: selectedLayer.y + selectedLayer.height / 2, cursor: "w-resize" },
+        { x: selectedLayer.x + selectedLayer.width, y: selectedLayer.y + selectedLayer.height / 2, cursor: "e-resize" },
+      ];
+      
+      ctx.fillStyle = "#06b6d4";
+      handles.forEach(handle => {
+        ctx.fillRect(handle.x - handleSize / 2, handle.y - handleSize / 2, handleSize, handleSize);
+      });
+      ctx.restore();
+    }
+  };
+  
+  const getResizeHandle = (x, y) => {
+    if (!selectedLayer) return null;
+    
+    const handleSize = 10;
+    const handles = [
+      { pos: "nw", x: selectedLayer.x, y: selectedLayer.y },
+      { pos: "ne", x: selectedLayer.x + selectedLayer.width, y: selectedLayer.y },
+      { pos: "sw", x: selectedLayer.x, y: selectedLayer.y + selectedLayer.height },
+      { pos: "se", x: selectedLayer.x + selectedLayer.width, y: selectedLayer.y + selectedLayer.height },
+      { pos: "n", x: selectedLayer.x + selectedLayer.width / 2, y: selectedLayer.y },
+      { pos: "s", x: selectedLayer.x + selectedLayer.width / 2, y: selectedLayer.y + selectedLayer.height },
+      { pos: "w", x: selectedLayer.x, y: selectedLayer.y + selectedLayer.height / 2 },
+      { pos: "e", x: selectedLayer.x + selectedLayer.width, y: selectedLayer.y + selectedLayer.height / 2 },
+    ];
+    
+    for (const handle of handles) {
+      if (Math.abs(x - handle.x) < handleSize && Math.abs(y - handle.y) < handleSize) {
+        return handle.pos;
+      }
+    }
+    return null;
   };
 
   const startDrawing = (e) => {
@@ -121,10 +174,20 @@ export default function XunhuaPage() {
     const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
     const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
 
-    if (tool === "move" && selectedLayer) {
-      setIsDragging(true);
-      setDragStart({ x: x - selectedLayer.x, y: y - selectedLayer.y });
-      return;
+    if ((tool === "move" || cropMode) && selectedLayer) {
+      const handle = getResizeHandle(x, y);
+      if (handle) {
+        setResizeHandle(handle);
+        setDragStart({ x, y, startX: selectedLayer.x, startY: selectedLayer.y, startWidth: selectedLayer.width, startHeight: selectedLayer.height });
+        return;
+      }
+      
+      if (x >= selectedLayer.x && x <= selectedLayer.x + selectedLayer.width &&
+          y >= selectedLayer.y && y <= selectedLayer.y + selectedLayer.height) {
+        setIsDragging(true);
+        setDragStart({ x: x - selectedLayer.x, y: y - selectedLayer.y });
+        return;
+      }
     }
 
     setIsDrawing(true);
@@ -136,6 +199,48 @@ export default function XunhuaPage() {
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
     const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+
+    if (resizeHandle && selectedLayer && dragStart) {
+      const dx = x - dragStart.x;
+      const dy = y - dragStart.y;
+      let newX = dragStart.startX;
+      let newY = dragStart.startY;
+      let newWidth = dragStart.startWidth;
+      let newHeight = dragStart.startHeight;
+      
+      const aspectRatio = dragStart.startWidth / dragStart.startHeight;
+      
+      if (resizeHandle.includes("e")) {
+        newWidth = dragStart.startWidth + dx;
+      }
+      if (resizeHandle.includes("w")) {
+        newWidth = dragStart.startWidth - dx;
+        newX = dragStart.startX + dx;
+      }
+      if (resizeHandle.includes("s")) {
+        newHeight = dragStart.startHeight + dy;
+      }
+      if (resizeHandle.includes("n")) {
+        newHeight = dragStart.startHeight - dy;
+        newY = dragStart.startY + dy;
+      }
+      
+      if (resizeHandle === "se" || resizeHandle === "nw" || resizeHandle === "ne" || resizeHandle === "sw") {
+        newHeight = newWidth / aspectRatio;
+        if (resizeHandle === "nw" || resizeHandle === "ne") {
+          newY = dragStart.startY + (dragStart.startHeight - newHeight);
+        }
+      }
+      
+      const updatedLayers = layers.map(layer =>
+        layer.id === selectedLayer.id
+          ? { ...layer, x: newX, y: newY, width: Math.max(20, newWidth), height: Math.max(20, newHeight) }
+          : layer
+      );
+      setLayers(updatedLayers);
+      setSelectedLayer({ ...selectedLayer, x: newX, y: newY, width: Math.max(20, newWidth), height: Math.max(20, newHeight) });
+      return;
+    }
 
     if (isDragging && selectedLayer && dragStart) {
       const updatedLayers = layers.map(layer =>
@@ -213,6 +318,7 @@ export default function XunhuaPage() {
     }
     setIsDrawing(false);
     setIsDragging(false);
+    setResizeHandle(null);
     setLastPoint(null);
     setDragStart(null);
   };
@@ -482,8 +588,11 @@ export default function XunhuaPage() {
           
           <div className="w-px h-8 bg-white/10" />
           
-          <Button onClick={() => setTool("move")} size="sm" className={`h-8 px-2 ${tool === "move" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}>
+          <Button onClick={() => setTool("move")} size="sm" className={`h-8 px-2 ${tool === "move" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`} title="Move/Resize layers">
             <Move className="w-4 h-4" />
+          </Button>
+          <Button onClick={() => setCropMode(!cropMode)} size="sm" className={`h-8 px-2 ${cropMode ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`} title="Crop mode">
+            <Maximize2 className="w-4 h-4" />
           </Button>
           <label className="cursor-pointer">
             <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
