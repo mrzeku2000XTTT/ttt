@@ -251,7 +251,19 @@ export default function XunhuaPage() {
     const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
     const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
 
-    // Always check for text clicks first (regardless of mode)
+    // If dragging from modal, place text and stop
+    if (draggingTextFromModal && editingText) {
+      const updatedTextLayers = textLayers.map(t =>
+        t.id === editingText.id ? { ...t, x: x - (editingText.fontSize || 32) / 2, y: y - (editingText.fontSize || 32) / 2 } : t
+      );
+      setTextLayers(updatedTextLayers);
+      setEditingText({ ...editingText, x: x - (editingText.fontSize || 32) / 2, y: y - (editingText.fontSize || 32) / 2 });
+      setDraggingTextFromModal(false);
+      saveToHistory();
+      return;
+    }
+
+    // Check for text clicks (only if not dragging from modal)
     const ctx = canvas.getContext("2d");
     for (let i = textLayers.length - 1; i >= 0; i--) {
       const textLayer = textLayers[i];
@@ -368,17 +380,6 @@ export default function XunhuaPage() {
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
     const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
-
-    // Handle text dragging from modal
-    if (draggingTextFromModal && editingText) {
-      e.preventDefault();
-      const updatedTextLayers = textLayers.map(t =>
-        t.id === editingText.id ? { ...t, x: x - (editingText.fontSize || 32) / 2, y: y - (editingText.fontSize || 32) / 2 } : t
-      );
-      setTextLayers(updatedTextLayers);
-      setEditingText({ ...editingText, x: x - (editingText.fontSize || 32) / 2, y: y - (editingText.fontSize || 32) / 2 });
-      return;
-    }
 
     // Handle text dragging
     if (isDragging && dragStart?.isText && dragStart?.textLayer) {
