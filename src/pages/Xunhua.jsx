@@ -61,7 +61,7 @@ export default function XunhuaPage() {
 
   useEffect(() => {
     redrawCanvas();
-  }, [layers]);
+  }, [layers, textLayers, editingText]);
 
   const saveToHistory = () => {
     const canvas = canvasRef.current;
@@ -248,8 +248,10 @@ export default function XunhuaPage() {
         stroke: false,
         strokeColor: '#000000'
       };
-      setTextLayers([...textLayers, newText]);
+      const updated = [...textLayers, newText];
+      setTextLayers(updated);
       setEditingText(newText);
+      setTimeout(() => redrawCanvas(), 0);
       return;
     }
 
@@ -720,15 +722,16 @@ export default function XunhuaPage() {
 
           <Button 
             onClick={() => {
-              setTextMode(!textMode);
-              if (!textMode) {
+              const newMode = !textMode;
+              setTextMode(newMode);
+              if (newMode) {
                 setTool("brush");
                 setCropMode(false);
               }
             }} 
             size="sm" 
             className={`h-8 px-2 ${textMode ? "bg-purple-500 text-white" : "bg-white/5 text-white"}`}
-            title="Add Text"
+            title="Add Text - Click on canvas to place"
           >
             <Type className="w-4 h-4" />
           </Button>
@@ -742,6 +745,7 @@ export default function XunhuaPage() {
               } else {
                 setTool("move");
                 setCropMode(false);
+                setTextMode(false);
               }
             }} 
             size="sm" 
@@ -752,9 +756,11 @@ export default function XunhuaPage() {
           </Button>
           <Button 
             onClick={() => {
-              setCropMode(!cropMode);
-              if (!cropMode) {
+              const newMode = !cropMode;
+              setCropMode(newMode);
+              if (newMode) {
                 setTool("move");
+                setTextMode(false);
               }
             }} 
             size="sm" 
