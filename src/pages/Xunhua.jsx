@@ -33,6 +33,7 @@ export default function XunhuaPage() {
   const [textMode, setTextMode] = useState(false);
   const [textLayers, setTextLayers] = useState([]);
   const [editingText, setEditingText] = useState(null);
+  const [draggingTextFromModal, setDraggingTextFromModal] = useState(false);
   
   // Kaspa logo reference
   const KASPA_LOGO_URL = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/3f644abe6_IMG_0952.png";
@@ -368,6 +369,17 @@ export default function XunhuaPage() {
     const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
     const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
 
+    // Handle text dragging from modal
+    if (draggingTextFromModal && editingText) {
+      e.preventDefault();
+      const updatedTextLayers = textLayers.map(t =>
+        t.id === editingText.id ? { ...t, x: x - (editingText.fontSize || 32) / 2, y: y - (editingText.fontSize || 32) / 2 } : t
+      );
+      setTextLayers(updatedTextLayers);
+      setEditingText({ ...editingText, x: x - (editingText.fontSize || 32) / 2, y: y - (editingText.fontSize || 32) / 2 });
+      return;
+    }
+
     // Handle text dragging
     if (isDragging && dragStart?.isText && dragStart?.textLayer) {
       e.preventDefault();
@@ -495,7 +507,7 @@ export default function XunhuaPage() {
   };
 
   const stopDrawing = () => {
-    if (isDrawing || (isDragging && dragStart?.isText)) {
+    if (isDrawing || (isDragging && dragStart?.isText) || draggingTextFromModal) {
       saveToHistory();
     }
     setIsDrawing(false);
@@ -503,6 +515,7 @@ export default function XunhuaPage() {
     setResizeHandle(null);
     setLastPoint(null);
     setDragStart(null);
+    setDraggingTextFromModal(false);
   };
 
   const handleImageUpload = async (e) => {
@@ -918,6 +931,15 @@ export default function XunhuaPage() {
                   placeholder="Enter text..."
                 />
 
+                <Button
+                  onClick={() => setDraggingTextFromModal(!draggingTextFromModal)}
+                  size="sm"
+                  className={`w-full mb-3 ${draggingTextFromModal ? 'bg-cyan-500 text-black' : 'bg-white/10 text-white'}`}
+                >
+                  <Move className="w-4 h-4 mr-2" />
+                  {draggingTextFromModal ? 'Click Canvas to Place' : 'Move Text'}
+                </Button>
+
                 <div className="space-y-2">
                   <div>
                     <label className="text-white/60 text-xs">Font Family</label>
@@ -1038,7 +1060,10 @@ export default function XunhuaPage() {
                 </Button>
 
                 <Button
-                  onClick={() => setEditingText(null)}
+                  onClick={() => {
+                    setEditingText(null);
+                    setDraggingTextFromModal(false);
+                  }}
                   size="sm"
                   className="w-full bg-white/10 text-white"
                 >
