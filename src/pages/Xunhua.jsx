@@ -19,6 +19,7 @@ export default function XunhuaPage() {
   const [isFlipped, setIsFlipped] = useState(false);
   const [autoRender, setAutoRender] = useState(false);
   const [drawingBounds, setDrawingBounds] = useState(null);
+  const [advancedMode, setAdvancedMode] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -132,8 +133,12 @@ export default function XunhuaPage() {
         file: new File([blob], "sketch.png", { type: "image/png" })
       });
 
+      const aiPrompt = advancedMode 
+        ? `${prompt}. Transform this sketch into a beautiful, detailed artistic image. Add creative details, textures, and enhancements.`
+        : `${prompt}. CRITICAL: Match the sketch EXACTLY - same number of objects, same positions, same proportions. Only enhance colors and textures. Do NOT add any objects or elements that don't exist in the sketch.`;
+      
       const result = await base44.integrations.Core.GenerateImage({
-        prompt: `${prompt}. IMPORTANT: Follow the sketch EXACTLY - same number of objects, same positions, same composition. Only enhance the artistic quality. Do not add extra objects.`,
+        prompt: aiPrompt,
         existing_image_urls: [file_url]
       });
 
@@ -206,6 +211,16 @@ export default function XunhuaPage() {
           </div>
           
           <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setAdvancedMode(!advancedMode)}
+              size="sm"
+              className={`h-8 px-3 ${advancedMode ? "bg-purple-500 text-white" : "bg-white/5 text-white"}`}
+              title={advancedMode ? "Advanced: AI adds details" : "Exact: Only what you drew"}
+            >
+              <Wand2 className="w-4 h-4 mr-1" />
+              <span className="hidden sm:inline">{advancedMode ? "Advanced" : "Exact"}</span>
+            </Button>
+            
             <Button
               onClick={() => setAutoRender(!autoRender)}
               size="sm"
