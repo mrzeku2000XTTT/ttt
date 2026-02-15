@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Trash2, Wand2, Download, Palette, Eraser, Paintbrush, FlipHorizontal, ToggleLeft, ToggleRight, Undo, Redo, Circle, Square, Droplet, Sparkles, Pencil, Highlighter, Brush, Pipette, Stamp, Upload, Move, Maximize2, Layers, Eye, EyeOff, Trash } from "lucide-react";
+import { Loader2, Trash2, Wand2, Download, Palette, Eraser, Paintbrush, FlipHorizontal, ToggleLeft, ToggleRight, Undo, Redo, Circle, Square, Droplet, Sparkles, Pencil, Highlighter, Brush, Pipette, Stamp, Upload, Move, Maximize2, Layers, Eye, EyeOff, Trash, Type } from "lucide-react";
 
 export default function XunhuaPage() {
   const canvasRef = useRef(null);
@@ -30,6 +30,9 @@ export default function XunhuaPage() {
   const [dragStart, setDragStart] = useState(null);
   const [resizeHandle, setResizeHandle] = useState(null);
   const [cropMode, setCropMode] = useState(false);
+  const [textMode, setTextMode] = useState(false);
+  const [textLayers, setTextLayers] = useState([]);
+  const [editingText, setEditingText] = useState(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -153,6 +156,44 @@ export default function XunhuaPage() {
       });
       ctx.restore();
     }
+    
+    // Draw text layers
+    textLayers.forEach(textLayer => {
+      if (!textLayer.visible) return;
+      
+      ctx.save();
+      ctx.globalAlpha = textLayer.opacity || 1;
+      ctx.font = `${textLayer.bold ? 'bold ' : ''}${textLayer.fontSize || 24}px ${textLayer.fontFamily || 'Arial'}`;
+      ctx.fillStyle = textLayer.color || '#ffffff';
+      ctx.textAlign = textLayer.align || 'left';
+      ctx.textBaseline = 'top';
+      
+      if (textLayer.shadow) {
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+      }
+      
+      if (textLayer.stroke) {
+        ctx.strokeStyle = textLayer.strokeColor || '#000000';
+        ctx.lineWidth = 2;
+        ctx.strokeText(textLayer.text, textLayer.x, textLayer.y);
+      }
+      
+      ctx.fillText(textLayer.text, textLayer.x, textLayer.y);
+      ctx.restore();
+      
+      // Draw selection box for editing text
+      if (editingText?.id === textLayer.id) {
+        ctx.save();
+        ctx.strokeStyle = "#06b6d4";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        const textWidth = ctx.measureText(textLayer.text).width;
+        const textHeight = textLayer.fontSize || 24;
+        ctx.strokeRect(textLayer.x - 5, textLayer.y - 5, textWidth + 10, textHeight + 10);
+        ctx.restore();
+      }
+    });
   };
   
   const getResizeHandle = (x, y) => {
@@ -185,6 +226,29 @@ export default function XunhuaPage() {
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
     const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+
+    if (textMode) {
+      // Create new text layer at click position
+      const newText = {
+        id: Date.now(),
+        text: "Double-click to edit",
+        x,
+        y,
+        color: color,
+        fontSize: 24,
+        fontFamily: 'Arial',
+        bold: false,
+        align: 'left',
+        opacity: 1,
+        visible: true,
+        shadow: false,
+        stroke: false,
+        strokeColor: '#000000'
+      };
+      setTextLayers([...textLayers, newText]);
+      setEditingText(newText);
+      return;
+    }
 
     if (tool === "move" || cropMode) {
       // Check if clicking on a resize handle of selected layer
@@ -438,6 +502,8 @@ export default function XunhuaPage() {
     
     setLayers([]);
     setSelectedLayer(null);
+    setTextLayers([]);
+    setEditingText(null);
     setDrawingBounds(null);
     setGeneratedImage(null);
     setIsDrawing(false);
@@ -640,7 +706,24 @@ export default function XunhuaPage() {
           <Button onClick={() => { setTool("eraser"); setCropMode(false); }} size="sm" className={`h-8 px-2 ${tool === "eraser" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}>
             <Eraser className="w-4 h-4" />
           </Button>
-          
+
+          <div className="w-px h-8 bg-white/10" />
+
+          <Button 
+            onClick={() => {
+              setTextMode(!textMode);
+              if (!textMode) {
+                setTool("brush");
+                setCropMode(false);
+              }
+            }} 
+            size="sm" 
+            className={`h-8 px-2 ${textMode ? "bg-purple-500 text-white" : "bg-white/5 text-white"}`}
+            title="Add Text"
+          >
+            <Type className="w-4 h-4" />
+          </Button>
+
           <div className="w-px h-8 bg-white/10" />
           
           <Button 
@@ -703,6 +786,145 @@ export default function XunhuaPage() {
             <Trash2 className="w-4 h-4" />
           </Button>
         </div>
+
+        {/* Text Editor Modal */}
+        <AnimatePresence>
+          {editingText && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-20 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+              onClick={() => setEditingText(null)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-black/90 backdrop-blur-xl border border-white/20 rounded-lg p-4 w-80 space-y-3"
+              >
+                <h3 className="text-white font-bold flex items-center gap-2">
+                  <Type className="w-4 h-4" />
+                  Edit Text
+                </h3>
+
+                <Input
+                  value={editingText.text}
+                  onChange={(e) => {
+                    const updated = textLayers.map(t => 
+                      t.id === editingText.id ? { ...t, text: e.target.value } : t
+                    );
+                    setTextLayers(updated);
+                    setEditingText({ ...editingText, text: e.target.value });
+                  }}
+                  className="bg-white/10 text-white border-white/20"
+                  placeholder="Enter text..."
+                />
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-white/60 text-xs">Font Size</label>
+                    <input
+                      type="number"
+                      value={editingText.fontSize}
+                      onChange={(e) => {
+                        const updated = textLayers.map(t => 
+                          t.id === editingText.id ? { ...t, fontSize: parseInt(e.target.value) } : t
+                        );
+                        setTextLayers(updated);
+                        setEditingText({ ...editingText, fontSize: parseInt(e.target.value) });
+                      }}
+                      className="w-full bg-white/10 text-white rounded px-2 py-1 text-sm border border-white/20"
+                      min="8"
+                      max="200"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-white/60 text-xs">Color</label>
+                    <input
+                      type="color"
+                      value={editingText.color}
+                      onChange={(e) => {
+                        const updated = textLayers.map(t => 
+                          t.id === editingText.id ? { ...t, color: e.target.value } : t
+                        );
+                        setTextLayers(updated);
+                        setEditingText({ ...editingText, color: e.target.value });
+                      }}
+                      className="w-full h-8 rounded cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => {
+                      const updated = textLayers.map(t => 
+                        t.id === editingText.id ? { ...t, bold: !t.bold } : t
+                      );
+                      setTextLayers(updated);
+                      setEditingText({ ...editingText, bold: !editingText.bold });
+                    }}
+                    size="sm"
+                    className={`flex-1 ${editingText.bold ? 'bg-cyan-500 text-black' : 'bg-white/10 text-white'}`}
+                  >
+                    Bold
+                  </Button>
+
+                  <Button
+                    onClick={() => {
+                      const updated = textLayers.map(t => 
+                        t.id === editingText.id ? { ...t, shadow: !t.shadow } : t
+                      );
+                      setTextLayers(updated);
+                      setEditingText({ ...editingText, shadow: !editingText.shadow });
+                    }}
+                    size="sm"
+                    className={`flex-1 ${editingText.shadow ? 'bg-cyan-500 text-black' : 'bg-white/10 text-white'}`}
+                  >
+                    Shadow
+                  </Button>
+
+                  <Button
+                    onClick={() => {
+                      const updated = textLayers.map(t => 
+                        t.id === editingText.id ? { ...t, stroke: !t.stroke } : t
+                      );
+                      setTextLayers(updated);
+                      setEditingText({ ...editingText, stroke: !editingText.stroke });
+                    }}
+                    size="sm"
+                    className={`flex-1 ${editingText.stroke ? 'bg-cyan-500 text-black' : 'bg-white/10 text-white'}`}
+                  >
+                    Outline
+                  </Button>
+                </div>
+
+                <Button
+                  onClick={() => {
+                    setTextLayers(textLayers.filter(t => t.id !== editingText.id));
+                    setEditingText(null);
+                  }}
+                  size="sm"
+                  className="w-full bg-red-500/20 text-red-400 border border-red-500/30"
+                >
+                  <Trash className="w-3 h-3 mr-1" />
+                  Delete Text
+                </Button>
+
+                <Button
+                  onClick={() => setEditingText(null)}
+                  size="sm"
+                  className="w-full bg-white/10 text-white"
+                >
+                  Done
+                </Button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Layer Panel */}
         <AnimatePresence>
@@ -825,6 +1047,27 @@ export default function XunhuaPage() {
                 onTouchStart={startDrawing}
                 onTouchMove={draw}
                 onTouchEnd={stopDrawing}
+                onDoubleClick={(e) => {
+                  const canvas = canvasRef.current;
+                  const rect = canvas.getBoundingClientRect();
+                  const x = e.clientX - rect.left;
+                  const y = e.clientY - rect.top;
+
+                  // Check if double-clicking on existing text
+                  for (let i = textLayers.length - 1; i >= 0; i--) {
+                    const textLayer = textLayers[i];
+                    const ctx = canvas.getContext("2d");
+                    ctx.font = `${textLayer.fontSize}px ${textLayer.fontFamily}`;
+                    const textWidth = ctx.measureText(textLayer.text).width;
+                    const textHeight = textLayer.fontSize;
+
+                    if (x >= textLayer.x && x <= textLayer.x + textWidth &&
+                        y >= textLayer.y && y <= textLayer.y + textHeight) {
+                      setEditingText(textLayer);
+                      return;
+                    }
+                  }
+                }}
                 className="w-full h-full rounded-lg border border-white/10 cursor-crosshair touch-none"
                 style={{ touchAction: "none" }}
               />
