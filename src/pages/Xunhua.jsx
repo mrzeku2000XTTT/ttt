@@ -19,6 +19,8 @@ export default function XunhuaPage() {
   const [isFlipped, setIsFlipped] = useState(false);
   const [autoRender, setAutoRender] = useState(false);
   const [drawingBounds, setDrawingBounds] = useState(null);
+  const [isAutoGenerating, setIsAutoGenerating] = useState(false);
+  const autoGenerateTimeoutRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -87,6 +89,16 @@ export default function XunhuaPage() {
   const stopDrawing = () => {
     setIsDrawing(false);
     setLastPoint(null);
+    
+    // Trigger auto-generation after drawing stops
+    if (autoRender && prompt.trim() && drawingBounds) {
+      if (autoGenerateTimeoutRef.current) {
+        clearTimeout(autoGenerateTimeoutRef.current);
+      }
+      autoGenerateTimeoutRef.current = setTimeout(() => {
+        handleAutoGenerate();
+      }, 1000);
+    }
   };
 
   const clearCanvas = () => {
@@ -110,6 +122,49 @@ export default function XunhuaPage() {
     setIsDrawing(false);
     setLastPoint(null);
     setIsFlipped(false);
+  };
+
+  const handleAutoGenerate = async () => {
+    if (isAutoGenerating || isGenerating) return;
+    
+    setIsAutoGenerating(true);
+    try {
+      const canvas = canvasRef.current;
+      const blob = await new Promise(resolve => canvas.toBlob(resolve));
+      
+      const { file_url } = await base44.integrations.Core.UploadFile({ 
+        file: new File([blob], "sketch.png", { type: "image/png" })
+      });
+
+      const result = await base44.integrations.Core.GenerateImage({
+        prompt: `${prompt}. IMPORTANT: Follow the sketch EXACTLY - same number of objects, same positions, same composition. Only enhance the artistic quality. Do not add extra objects.`,
+        existing_image_urls: [file_url]
+      });
+
+      setGeneratedImage(result.url);
+      
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        const resultCanvas = resultCanvasRef.current;
+        const resultCtx = resultCanvas.getContext("2d");
+        
+        resultCanvas.width = canvas.width;
+        resultCanvas.height = canvas.height;
+        resultCtx.fillStyle = "#1a1a1a";
+        resultCtx.fillRect(0, 0, resultCanvas.width, resultCanvas.height);
+        
+        const scale = Math.min(resultCanvas.width / img.width, resultCanvas.height / img.height);
+        const x = (resultCanvas.width - img.width * scale) / 2;
+        const y = (resultCanvas.height - img.height * scale) / 2;
+        resultCtx.drawImage(img, x, y, img.width * scale, img.height * scale);
+      };
+      img.src = result.url;
+    } catch (err) {
+      console.error("Auto-generation failed:", err);
+    } finally {
+      setIsAutoGenerating(false);
+    }
   };
 
   const handleGenerate = async () => {
@@ -183,11 +238,7 @@ export default function XunhuaPage() {
   };
 
   const handleFlip = () => {
-    if (!isFlipped && autoRender && prompt.trim() && drawingBounds && !generatedImage) {
-      handleGenerate();
-    } else {
-      setIsFlipped(!isFlipped);
-    }
+    setIsFlipped(!isFlipped);
   };
 
   return (
@@ -210,6 +261,7 @@ export default function XunhuaPage() {
               onClick={() => setAutoRender(!autoRender)}
               size="sm"
               className={`h-8 px-3 ${autoRender ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}
+              title={autoRender ? "Auto-render ON - generates as you draw" : "Auto-render OFF"}
             >
               {autoRender ? <ToggleRight className="w-4 h-4 mr-1" /> : <ToggleLeft className="w-4 h-4 mr-1" />}
               <span className="hidden sm:inline">Auto</span>
@@ -308,15 +360,25 @@ export default function XunhuaPage() {
                 ref={resultCanvasRef}
                 className="w-full h-full rounded-lg border border-white/10"
               />
-              {isGenerating && (
+              {(isGenerating || isAutoGenerating) && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/80 rounded-lg">
                   <div className="text-center">
                     <Loader2 className="w-12 h-12 text-cyan-400 animate-spin mx-auto mb-3" />
-                    <p className="text-white/60 text-sm">Generating...</p>
+                    <p className="text-white/60 text-sm">
+                      {isAutoGenerating ? "Auto-generating..." : "Generating..."}
+                    </p>
                   </div>
                 </div>
               )}
             </div>
+            
+            {/* Live Status Indicator */}
+            {isAutoGenerating && !isFlipped && (
+              <div className="absolute top-4 right-4 bg-cyan-500/20 backdrop-blur-sm border border-cyan-500/30 rounded-lg px-3 py-2 flex items-center gap-2">
+                <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
+                <span className="text-cyan-400 text-sm">Live rendering...</span>
+              </div>
+            )}
           </motion.div>
         </div>
 
