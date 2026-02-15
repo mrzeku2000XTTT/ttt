@@ -91,16 +91,25 @@ export default function XunhuaPage() {
 
   const clearCanvas = () => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "#1a1a1a";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const resultCanvas = resultCanvasRef.current;
+    
+    if (canvas) {
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#1a1a1a";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    
+    if (resultCanvas) {
+      const resultCtx = resultCanvas.getContext("2d");
+      resultCtx.fillStyle = "#1a1a1a";
+      resultCtx.fillRect(0, 0, resultCanvas.width, resultCanvas.height);
+    }
+    
     setDrawingBounds(null);
     setGeneratedImage(null);
-    if (resultCanvasRef.current) {
-      const resultCtx = resultCanvasRef.current.getContext("2d");
-      resultCtx.fillStyle = "#1a1a1a";
-      resultCtx.fillRect(0, 0, resultCanvasRef.current.width, resultCanvasRef.current.height);
-    }
+    setIsDrawing(false);
+    setLastPoint(null);
+    setIsFlipped(false);
   };
 
   const handleGenerate = async () => {
@@ -124,7 +133,7 @@ export default function XunhuaPage() {
       });
 
       const result = await base44.integrations.Core.GenerateImage({
-        prompt: `${prompt}. Create a beautiful artistic interpretation. Professional quality, detailed, vibrant colors.`,
+        prompt: `${prompt}. IMPORTANT: Follow the sketch EXACTLY - same number of objects, same positions, same composition. Only enhance the artistic quality. Do not add extra objects.`,
         existing_image_urls: [file_url]
       });
 
