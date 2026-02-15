@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Trash2, Wand2, Download, Palette, Eraser, Paintbrush, FlipHorizontal, ToggleLeft, ToggleRight, AlertCircle } from "lucide-react";
+import { Loader2, Trash2, Wand2, Download, Palette, Eraser, Paintbrush, FlipHorizontal, ToggleLeft, ToggleRight } from "lucide-react";
 
 export default function XunhuaPage() {
   const canvasRef = useRef(null);
@@ -19,9 +19,6 @@ export default function XunhuaPage() {
   const [isFlipped, setIsFlipped] = useState(false);
   const [autoRender, setAutoRender] = useState(false);
   const [drawingBounds, setDrawingBounds] = useState(null);
-  const [isAutoGenerating, setIsAutoGenerating] = useState(false);
-  const [error, setError] = useState("");
-  const autoGenerateTimeoutRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -90,16 +87,6 @@ export default function XunhuaPage() {
   const stopDrawing = () => {
     setIsDrawing(false);
     setLastPoint(null);
-    
-    // Trigger auto-generation after drawing stops
-    if (autoRender && prompt.trim() && drawingBounds) {
-      if (autoGenerateTimeoutRef.current) {
-        clearTimeout(autoGenerateTimeoutRef.current);
-      }
-      autoGenerateTimeoutRef.current = setTimeout(() => {
-        handleAutoGenerate();
-      }, 1000);
-    }
   };
 
   const clearCanvas = () => {
@@ -125,122 +112,30 @@ export default function XunhuaPage() {
     setIsFlipped(false);
   };
 
-  const handleAutoGenerate = async (retryCount = 0) => {
-    if (isAutoGenerating || isGenerating || !prompt.trim() || !drawingBounds) return;
-    
-    setIsAutoGenerating(true);
-    setError("");
-    
-    try {
-      const canvas = canvasRef.current;
-      const blob = await new Promise((resolve, reject) => {
-        canvas.toBlob((b) => {
-          if (b) resolve(b);
-          else reject(new Error("Failed to create canvas blob"));
-        }, "image/png", 1.0);
-      });
-      
-      if (!blob || blob.size === 0) {
-        throw new Error("Canvas is empty");
-      }
-      
-      const uploadResult = await base44.integrations.Core.UploadFile({ 
-        file: new File([blob], "sketch.png", { type: "image/png" })
-      });
-
-      if (!uploadResult?.file_url) {
-        throw new Error("Upload failed");
-      }
-
-      const result = await base44.integrations.Core.GenerateImage({
-        prompt: `${prompt}. IMPORTANT: Follow the sketch EXACTLY - same number of objects, same positions, same composition. Only enhance the artistic quality. Do not add extra objects.`,
-        existing_image_urls: [uploadResult.file_url]
-      });
-
-      if (!result?.url) {
-        throw new Error("Generation failed");
-      }
-
-      setGeneratedImage(result.url);
-      
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => {
-        const resultCanvas = resultCanvasRef.current;
-        if (!resultCanvas) return;
-        
-        const resultCtx = resultCanvas.getContext("2d");
-        resultCanvas.width = canvas.width;
-        resultCanvas.height = canvas.height;
-        resultCtx.fillStyle = "#1a1a1a";
-        resultCtx.fillRect(0, 0, resultCanvas.width, resultCanvas.height);
-        
-        const scale = Math.min(resultCanvas.width / img.width, resultCanvas.height / img.height);
-        const x = (resultCanvas.width - img.width * scale) / 2;
-        const y = (resultCanvas.height - img.height * scale) / 2;
-        resultCtx.drawImage(img, x, y, img.width * scale, img.height * scale);
-      };
-      img.onerror = () => {
-        setError("Failed to load generated image");
-      };
-      img.src = result.url;
-    } catch (err) {
-      console.error("Auto-generation failed:", err);
-      if (retryCount < 2) {
-        setTimeout(() => handleAutoGenerate(retryCount + 1), 2000);
-        setError(`Retrying... (${retryCount + 1}/2)`);
-      } else {
-        setError("Network error. Check connection and try again.");
-      }
-    } finally {
-      if (retryCount >= 2) {
-        setIsAutoGenerating(false);
-      }
-    }
-  };
-
-  const handleGenerate = async (retryCount = 0) => {
+  const handleGenerate = async () => {
     if (!prompt.trim()) {
-      setError("Please describe what you're drawing");
+      alert("Please describe what you're drawing");
       return;
     }
 
     if (!drawingBounds) {
-      setError("Please draw something first");
+      alert("Please draw something first");
       return;
     }
 
     setIsGenerating(true);
-    setError("");
     try {
       const canvas = canvasRef.current;
-      const blob = await new Promise((resolve, reject) => {
-        canvas.toBlob((b) => {
-          if (b) resolve(b);
-          else reject(new Error("Failed to create canvas blob"));
-        }, "image/png", 1.0);
-      });
-
-      if (!blob || blob.size === 0) {
-        throw new Error("Canvas is empty");
-      }
+      const blob = await new Promise(resolve => canvas.toBlob(resolve));
       
-      const uploadResult = await base44.integrations.Core.UploadFile({ 
+      const { file_url } = await base44.integrations.Core.UploadFile({ 
         file: new File([blob], "sketch.png", { type: "image/png" })
       });
 
-      if (!uploadResult?.file_url) {
-        throw new Error("Upload failed");
-      }
-
       const result = await base44.integrations.Core.GenerateImage({
         prompt: `${prompt}. IMPORTANT: Follow the sketch EXACTLY - same number of objects, same positions, same composition. Only enhance the artistic quality. Do not add extra objects.`,
-        existing_image_urls: [uploadResult.file_url]
+        existing_image_urls: [file_url]
       });
-
-      if (!result?.url) {
-        throw new Error("Generation failed");
-      }
 
       setGeneratedImage(result.url);
       
@@ -269,17 +164,9 @@ export default function XunhuaPage() {
       }
     } catch (err) {
       console.error("Generation failed:", err);
-      if (retryCount < 2) {
-        setTimeout(() => handleGenerate(retryCount + 1), 2000);
-        setError(`Retrying... (${retryCount + 1}/2)`);
-      } else {
-        setError("Network error. Check connection and try again.");
-        setIsGenerating(false);
-      }
+      alert("Failed to generate image. Try again.");
     } finally {
-      if (retryCount >= 2) {
-        setIsGenerating(false);
-      }
+      setIsGenerating(false);
     }
   };
 
@@ -296,7 +183,11 @@ export default function XunhuaPage() {
   };
 
   const handleFlip = () => {
-    setIsFlipped(!isFlipped);
+    if (!isFlipped && autoRender && prompt.trim() && drawingBounds && !generatedImage) {
+      handleGenerate();
+    } else {
+      setIsFlipped(!isFlipped);
+    }
   };
 
   return (
@@ -319,7 +210,6 @@ export default function XunhuaPage() {
               onClick={() => setAutoRender(!autoRender)}
               size="sm"
               className={`h-8 px-3 ${autoRender ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}
-              title={autoRender ? "Auto-render ON - generates as you draw" : "Auto-render OFF"}
             >
               {autoRender ? <ToggleRight className="w-4 h-4 mr-1" /> : <ToggleLeft className="w-4 h-4 mr-1" />}
               <span className="hidden sm:inline">Auto</span>
@@ -418,44 +308,23 @@ export default function XunhuaPage() {
                 ref={resultCanvasRef}
                 className="w-full h-full rounded-lg border border-white/10"
               />
-              {(isGenerating || isAutoGenerating) && (
+              {isGenerating && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/80 rounded-lg">
                   <div className="text-center">
                     <Loader2 className="w-12 h-12 text-cyan-400 animate-spin mx-auto mb-3" />
-                    <p className="text-white/60 text-sm">
-                      {isAutoGenerating ? "Auto-generating..." : "Generating..."}
-                    </p>
+                    <p className="text-white/60 text-sm">Generating...</p>
                   </div>
                 </div>
               )}
             </div>
-            
-            {/* Live Status Indicator */}
-            {isAutoGenerating && !isFlipped && (
-              <div className="absolute top-4 right-4 bg-cyan-500/20 backdrop-blur-sm border border-cyan-500/30 rounded-lg px-3 py-2 flex items-center gap-2">
-                <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
-                <span className="text-cyan-400 text-sm">Live rendering...</span>
-              </div>
-            )}
           </motion.div>
         </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-500/20 border border-red-500/30 rounded-lg px-4 py-2 flex items-center gap-2 mb-2">
-            <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-            <span className="text-red-400 text-sm">{error}</span>
-          </div>
-        )}
 
         {/* Bottom Input */}
         <div className="flex gap-2 mt-3">
           <Input
             value={prompt}
-            onChange={(e) => {
-              setPrompt(e.target.value);
-              setError("");
-            }}
+            onChange={(e) => setPrompt(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && !autoRender && handleGenerate()}
             placeholder="Describe your drawing..."
             className="flex-1 bg-black border-white/20 text-white h-11"
