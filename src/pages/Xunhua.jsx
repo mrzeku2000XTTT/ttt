@@ -124,30 +124,29 @@ export default function XunhuaPage() {
       });
 
       const result = await base44.integrations.Core.GenerateImage({
-        prompt: `${prompt}. Transform this sketch into a detailed, artistic image. Keep the exact position and proportions of the drawing.`,
+        prompt: `${prompt}. Create a beautiful artistic interpretation. Professional quality, detailed, vibrant colors.`,
         existing_image_urls: [file_url]
       });
 
       setGeneratedImage(result.url);
       
-      // Composite the result
+      // Show generated image on result canvas
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.onload = () => {
         const resultCanvas = resultCanvasRef.current;
         const resultCtx = resultCanvas.getContext("2d");
         
-        // Copy original canvas
         resultCanvas.width = canvas.width;
         resultCanvas.height = canvas.height;
         resultCtx.fillStyle = "#1a1a1a";
         resultCtx.fillRect(0, 0, resultCanvas.width, resultCanvas.height);
         
-        // Draw generated image at the same position
-        const { minX, minY, maxX, maxY } = drawingBounds;
-        const width = maxX - minX;
-        const height = maxY - minY;
-        resultCtx.drawImage(img, minX, minY, width, height);
+        // Center and fit the generated image
+        const scale = Math.min(resultCanvas.width / img.width, resultCanvas.height / img.height);
+        const x = (resultCanvas.width - img.width * scale) / 2;
+        const y = (resultCanvas.height - img.height * scale) / 2;
+        resultCtx.drawImage(img, x, y, img.width * scale, img.height * scale);
       };
       img.src = result.url;
       
