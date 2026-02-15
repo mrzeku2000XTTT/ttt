@@ -125,7 +125,7 @@ export default function XunhuaPage() {
     setIsFlipped(false);
   };
 
-  const handleAutoGenerate = async () => {
+  const handleAutoGenerate = async (retryCount = 0) => {
     if (isAutoGenerating || isGenerating || !prompt.trim() || !drawingBounds) return;
     
     setIsAutoGenerating(true);
@@ -133,23 +133,32 @@ export default function XunhuaPage() {
     
     try {
       const canvas = canvasRef.current;
-      const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png", 1.0));
+      const blob = await new Promise((resolve, reject) => {
+        canvas.toBlob((b) => {
+          if (b) resolve(b);
+          else reject(new Error("Failed to create canvas blob"));
+        }, "image/png", 1.0);
+      });
       
       if (!blob || blob.size === 0) {
-        throw new Error("Invalid canvas data");
+        throw new Error("Canvas is empty");
       }
       
-      const { file_url } = await base44.integrations.Core.UploadFile({ 
+      const uploadResult = await base44.integrations.Core.UploadFile({ 
         file: new File([blob], "sketch.png", { type: "image/png" })
       });
 
+      if (!uploadResult?.file_url) {
+        throw new Error("Upload failed");
+      }
+
       const result = await base44.integrations.Core.GenerateImage({
         prompt: `${prompt}. IMPORTANT: Follow the sketch EXACTLY - same number of objects, same positions, same composition. Only enhance the artistic quality. Do not add extra objects.`,
-        existing_image_urls: [file_url]
+        existing_image_urls: [uploadResult.file_url]
       });
 
       if (!result?.url) {
-        throw new Error("No image URL returned");
+        throw new Error("Generation failed");
       }
 
       setGeneratedImage(result.url);
@@ -177,13 +186,20 @@ export default function XunhuaPage() {
       img.src = result.url;
     } catch (err) {
       console.error("Auto-generation failed:", err);
-      setError(err.message || "Generation failed. Try again.");
+      if (retryCount < 2) {
+        setTimeout(() => handleAutoGenerate(retryCount + 1), 2000);
+        setError(`Retrying... (${retryCount + 1}/2)`);
+      } else {
+        setError("Network error. Check connection and try again.");
+      }
     } finally {
-      setIsAutoGenerating(false);
+      if (retryCount >= 2) {
+        setIsAutoGenerating(false);
+      }
     }
   };
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (retryCount = 0) => {
     if (!prompt.trim()) {
       setError("Please describe what you're drawing");
       return;
@@ -198,16 +214,33 @@ export default function XunhuaPage() {
     setError("");
     try {
       const canvas = canvasRef.current;
-      const blob = await new Promise(resolve => canvas.toBlob(resolve));
+      const blob = await new Promise((resolve, reject) => {
+        canvas.toBlob((b) => {
+          if (b) resolve(b);
+          else reject(new Error("Failed to create canvas blob"));
+        }, "image/png", 1.0);
+      });
+
+      if (!blob || blob.size === 0) {
+        throw new Error("Canvas is empty");
+      }
       
-      const { file_url } = await base44.integrations.Core.UploadFile({ 
+      const uploadResult = await base44.integrations.Core.UploadFile({ 
         file: new File([blob], "sketch.png", { type: "image/png" })
       });
 
+      if (!uploadResult?.file_url) {
+        throw new Error("Upload failed");
+      }
+
       const result = await base44.integrations.Core.GenerateImage({
         prompt: `${prompt}. IMPORTANT: Follow the sketch EXACTLY - same number of objects, same positions, same composition. Only enhance the artistic quality. Do not add extra objects.`,
-        existing_image_urls: [file_url]
+        existing_image_urls: [uploadResult.file_url]
       });
+
+      if (!result?.url) {
+        throw new Error("Generation failed");
+      }
 
       setGeneratedImage(result.url);
       
@@ -236,9 +269,17 @@ export default function XunhuaPage() {
       }
     } catch (err) {
       console.error("Generation failed:", err);
-      setError(err.message || "Failed to generate image. Try again.");
+      if (retryCount < 2) {
+        setTimeout(() => handleGenerate(retryCount + 1), 2000);
+        setError(`Retrying... (${retryCount + 1}/2)`);
+      } else {
+        setError("Network error. Check connection and try again.");
+        setIsGenerating(false);
+      }
     } finally {
-      setIsGenerating(false);
+      if (retryCount >= 2) {
+        setIsGenerating(false);
+      }
     }
   };
 
