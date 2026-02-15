@@ -186,20 +186,40 @@ export default function XunhuaPage() {
     const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
     const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
 
-    if ((tool === "move" || cropMode) && selectedLayer) {
-      const handle = getResizeHandle(x, y);
-      if (handle) {
-        setResizeHandle(handle);
-        setDragStart({ x, y, startX: selectedLayer.x, startY: selectedLayer.y, startWidth: selectedLayer.width, startHeight: selectedLayer.height });
-        return;
+    if (tool === "move" || cropMode) {
+      // Check if clicking on a resize handle of selected layer
+      if (selectedLayer) {
+        const handle = getResizeHandle(x, y);
+        if (handle) {
+          setResizeHandle(handle);
+          setDragStart({ x, y, startX: selectedLayer.x, startY: selectedLayer.y, startWidth: selectedLayer.width, startHeight: selectedLayer.height });
+          return;
+        }
+        
+        // Check if clicking inside selected layer
+        if (x >= selectedLayer.x && x <= selectedLayer.x + selectedLayer.width &&
+            y >= selectedLayer.y && y <= selectedLayer.y + selectedLayer.height) {
+          setIsDragging(true);
+          setDragStart({ x: x - selectedLayer.x, y: y - selectedLayer.y });
+          return;
+        }
       }
       
-      if (x >= selectedLayer.x && x <= selectedLayer.x + selectedLayer.width &&
-          y >= selectedLayer.y && y <= selectedLayer.y + selectedLayer.height) {
-        setIsDragging(true);
-        setDragStart({ x: x - selectedLayer.x, y: y - selectedLayer.y });
-        return;
+      // Check if clicking on any layer to select it
+      for (let i = layers.length - 1; i >= 0; i--) {
+        const layer = layers[i];
+        if (layer.visible && x >= layer.x && x <= layer.x + layer.width &&
+            y >= layer.y && y <= layer.y + layer.height) {
+          setSelectedLayer(layer);
+          setIsDragging(true);
+          setDragStart({ x: x - layer.x, y: y - layer.y });
+          return;
+        }
       }
+      
+      // Click outside any layer - deselect
+      setSelectedLayer(null);
+      return;
     }
 
     setIsDrawing(true);
@@ -597,34 +617,56 @@ export default function XunhuaPage() {
           
           <div className="w-px h-8 bg-white/10" />
           
-          <Button onClick={() => setTool("brush")} size="sm" className={`h-8 px-2 ${tool === "brush" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}>
+          <Button onClick={() => { setTool("brush"); setCropMode(false); }} size="sm" className={`h-8 px-2 ${tool === "brush" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}>
             <Paintbrush className="w-4 h-4" />
           </Button>
-          <Button onClick={() => setTool("pencil")} size="sm" className={`h-8 px-2 ${tool === "pencil" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}>
+          <Button onClick={() => { setTool("pencil"); setCropMode(false); }} size="sm" className={`h-8 px-2 ${tool === "pencil" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}>
             <Pencil className="w-4 h-4" />
           </Button>
-          <Button onClick={() => setTool("marker")} size="sm" className={`h-8 px-2 ${tool === "marker" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}>
+          <Button onClick={() => { setTool("marker"); setCropMode(false); }} size="sm" className={`h-8 px-2 ${tool === "marker" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}>
             <Highlighter className="w-4 h-4" />
           </Button>
-          <Button onClick={() => setTool("spray")} size="sm" className={`h-8 px-2 ${tool === "spray" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}>
+          <Button onClick={() => { setTool("spray"); setCropMode(false); }} size="sm" className={`h-8 px-2 ${tool === "spray" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}>
             <Pipette className="w-4 h-4" />
           </Button>
-          <Button onClick={() => setTool("glow")} size="sm" className={`h-8 px-2 ${tool === "glow" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}>
+          <Button onClick={() => { setTool("glow"); setCropMode(false); }} size="sm" className={`h-8 px-2 ${tool === "glow" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}>
             <Sparkles className="w-4 h-4" />
           </Button>
-          <Button onClick={() => setTool("neon")} size="sm" className={`h-8 px-2 ${tool === "neon" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}>
+          <Button onClick={() => { setTool("neon"); setCropMode(false); }} size="sm" className={`h-8 px-2 ${tool === "neon" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}>
             <Droplet className="w-4 h-4" />
           </Button>
-          <Button onClick={() => setTool("eraser")} size="sm" className={`h-8 px-2 ${tool === "eraser" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}>
+          <Button onClick={() => { setTool("eraser"); setCropMode(false); }} size="sm" className={`h-8 px-2 ${tool === "eraser" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}>
             <Eraser className="w-4 h-4" />
           </Button>
           
           <div className="w-px h-8 bg-white/10" />
           
-          <Button onClick={() => setTool("move")} size="sm" className={`h-8 px-2 ${tool === "move" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`} title="Move/Resize layers">
+          <Button 
+            onClick={() => {
+              if (tool === "move") {
+                setTool("brush");
+              } else {
+                setTool("move");
+                setCropMode(false);
+              }
+            }} 
+            size="sm" 
+            className={`h-8 px-2 ${tool === "move" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`} 
+            title="Move/Resize - Click to toggle"
+          >
             <Move className="w-4 h-4" />
           </Button>
-          <Button onClick={() => setCropMode(!cropMode)} size="sm" className={`h-8 px-2 ${cropMode ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`} title="Crop mode">
+          <Button 
+            onClick={() => {
+              setCropMode(!cropMode);
+              if (!cropMode) {
+                setTool("move");
+              }
+            }} 
+            size="sm" 
+            className={`h-8 px-2 ${cropMode ? "bg-orange-500 text-black" : "bg-white/5 text-white"}`} 
+            title="Crop Mode - Click to toggle"
+          >
             <Maximize2 className="w-4 h-4" />
           </Button>
           <label className="cursor-pointer">
