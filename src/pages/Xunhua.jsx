@@ -183,11 +183,13 @@ export default function XunhuaPage() {
   };
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden flex flex-col" style={{
+    <div className="fixed inset-0 bg-black flex flex-col touch-none overscroll-none" style={{
       top: 'calc(var(--sat, 0px) + 7.5rem)',
-      bottom: 'calc(env(safe-area-inset-bottom, 0px) + 4rem)'
+      bottom: 'calc(env(safe-area-inset-bottom, 0px) + 4rem)',
+      overflow: 'hidden',
+      position: 'fixed'
     }}>
-      <div className="flex-1 flex flex-col overflow-hidden p-3">
+      <div className="flex-1 flex flex-col p-3" style={{ overflow: 'hidden', touchAction: 'none' }}>
         {/* Top Controls */}
         <div className="flex items-center justify-between mb-3 gap-2">
           <div className="flex items-center gap-2">
@@ -344,6 +346,8 @@ export default function XunhuaPage() {
         .preserve-3d { transform-style: preserve-3d; }
         .backface-hidden { backface-visibility: hidden; }
         .rotate-y-180 { transform: rotateY(180deg); }
+        body { overflow: hidden !important; position: fixed; width: 100%; }
+        html { overflow: hidden !important; }
       `}</style>
     </div>
   );
