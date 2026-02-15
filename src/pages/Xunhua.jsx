@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Trash2, Wand2, Download, Palette, Eraser, Paintbrush, FlipHorizontal, ToggleLeft, ToggleRight, Undo, Redo, Circle, Square, Droplet, Sparkles, Pencil, Highlighter, Brush, Pipette, Stamp } from "lucide-react";
+import { Loader2, Trash2, Wand2, Download, Palette, Eraser, Paintbrush, FlipHorizontal, ToggleLeft, ToggleRight, Undo, Redo, Circle, Square, Droplet, Sparkles, Pencil, Highlighter, Brush, Pipette, Stamp, Upload, Move, Maximize2, Layers, Eye, EyeOff, Trash } from "lucide-react";
 
 export default function XunhuaPage() {
   const canvasRef = useRef(null);
@@ -22,6 +22,12 @@ export default function XunhuaPage() {
   const [advancedMode, setAdvancedMode] = useState(false);
   const [history, setHistory] = useState([]);
   const [historyStep, setHistoryStep] = useState(-1);
+  const [sketchMode, setSketchMode] = useState(false);
+  const [layers, setLayers] = useState([]);
+  const [selectedLayer, setSelectedLayer] = useState(null);
+  const [showLayerPanel, setShowLayerPanel] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -44,6 +50,10 @@ export default function XunhuaPage() {
     
     saveToHistory();
   }, []);
+
+  useEffect(() => {
+    redrawCanvas();
+  }, [layers]);
 
   const saveToHistory = () => {
     const canvas = canvasRef.current;
@@ -76,22 +86,68 @@ export default function XunhuaPage() {
     img.onload = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0);
+      redrawCanvas();
     };
     img.src = history[step];
+  };
+
+  const redrawCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    
+    layers.forEach(layer => {
+      if (!layer.visible) return;
+      
+      ctx.save();
+      ctx.globalAlpha = layer.opacity;
+      
+      if (layer.filter) {
+        ctx.filter = layer.filter;
+      }
+      
+      const img = new Image();
+      img.src = layer.imageData;
+      ctx.drawImage(img, layer.x, layer.y, layer.width, layer.height);
+      ctx.restore();
+    });
   };
 
   const startDrawing = (e) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    setIsDrawing(true);
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
     const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+
+    if (tool === "move" && selectedLayer) {
+      setIsDragging(true);
+      setDragStart({ x: x - selectedLayer.x, y: y - selectedLayer.y });
+      return;
+    }
+
+    setIsDrawing(true);
     setLastPoint({ x, y });
   };
 
   const draw = (e) => {
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
+    const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+
+    if (isDragging && selectedLayer && dragStart) {
+      const updatedLayers = layers.map(layer =>
+        layer.id === selectedLayer.id
+          ? { ...layer, x: x - dragStart.x, y: y - dragStart.y }
+          : layer
+      );
+      setLayers(updatedLayers);
+      setSelectedLayer({ ...selectedLayer, x: x - dragStart.x, y: y - dragStart.y });
+      return;
+    }
+
     if (!isDrawing) return;
     
     const canvas = canvasRef.current;
@@ -161,7 +217,56 @@ export default function XunhuaPage() {
       saveToHistory();
     }
     setIsDrawing(false);
+    setIsDragging(false);
     setLastPoint(null);
+    setDragStart(null);
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = canvasRef.current;
+        const maxSize = Math.min(canvas.width, canvas.height) * 0.5;
+        const scale = Math.min(maxSize / img.width, maxSize / img.height);
+        
+        const newLayer = {
+          id: Date.now(),
+          imageData: event.target.result,
+          x: canvas.width / 4,
+          y: canvas.height / 4,
+          width: img.width * scale,
+          height: img.height * scale,
+          opacity: 1,
+          visible: true,
+          filter: "none"
+        };
+        
+        setLayers([...layers, newLayer]);
+        setSelectedLayer(newLayer);
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const updateSelectedLayer = (updates) => {
+    if (!selectedLayer) return;
+    const updatedLayers = layers.map(layer =>
+      layer.id === selectedLayer.id ? { ...layer, ...updates } : layer
+    );
+    setLayers(updatedLayers);
+    setSelectedLayer({ ...selectedLayer, ...updates });
+  };
+
+  const deleteSelectedLayer = () => {
+    if (!selectedLayer) return;
+    setLayers(layers.filter(layer => layer.id !== selectedLayer.id));
+    setSelectedLayer(null);
   };
 
   const clearCanvas = () => {
@@ -207,9 +312,14 @@ export default function XunhuaPage() {
         file: new File([blob], "sketch.png", { type: "image/png" })
       });
 
-      const aiPrompt = advancedMode 
-        ? `${prompt}. Transform this sketch into a beautiful, detailed artistic image. Add creative details, textures, and enhancements.`
-        : `${prompt}. CRITICAL: Match the sketch EXACTLY - same number of objects, same positions, same proportions. Only enhance colors and textures. Do NOT add any objects or elements that don't exist in the sketch.`;
+      let aiPrompt;
+      if (sketchMode) {
+        aiPrompt = `${prompt}. Render this as a HIGHLY REALISTIC PENCIL SKETCH with fine details, shading, cross-hatching, and texture. Black and white only, photorealistic pencil drawing style.`;
+      } else if (advancedMode) {
+        aiPrompt = `${prompt}. Transform this sketch into a beautiful, detailed artistic image. Add creative details, textures, and enhancements.`;
+      } else {
+        aiPrompt = `${prompt}. CRITICAL: Match the sketch EXACTLY - same number of objects, same positions, same proportions. Only enhance colors and textures. Do NOT add any objects or elements that don't exist in the sketch.`;
+      }
       
       const result = await base44.integrations.Core.GenerateImage({
         prompt: aiPrompt,
@@ -285,21 +395,31 @@ export default function XunhuaPage() {
           </div>
           
           <div className="flex items-center gap-2">
-            <Button
-              onClick={() => setAdvancedMode(!advancedMode)}
-              size="sm"
-              style={{
-                backgroundColor: advancedMode ? '#a855f7' : 'rgba(255,255,255,0.05)',
-                color: advancedMode ? '#ffffff' : 'rgba(255,255,255,0.6)',
-                border: advancedMode ? '2px solid #c084fc' : '2px solid transparent',
-                boxShadow: advancedMode ? '0 0 20px rgba(168,85,247,0.5)' : 'none'
-              }}
-              className="h-8 px-3 transition-all"
-              title={advancedMode ? "Advanced: AI adds details" : "Exact: Only what you drew"}
-            >
-              <Wand2 className="w-4 h-4 mr-1" style={{ animation: advancedMode ? 'pulse 2s infinite' : 'none' }} />
-              <span className="hidden sm:inline font-bold">{advancedMode ? "Advanced ✨" : "Exact"}</span>
-            </Button>
+              <Button
+                onClick={() => setSketchMode(!sketchMode)}
+                size="sm"
+                className={`h-8 px-3 ${sketchMode ? "bg-gray-700 text-white border-2 border-gray-400" : "bg-white/5 text-white"}`}
+                title="Generate as realistic pencil sketch"
+              >
+                <Pencil className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">Sketch</span>
+              </Button>
+
+              <Button
+                onClick={() => setAdvancedMode(!advancedMode)}
+                size="sm"
+                style={{
+                  backgroundColor: advancedMode ? '#a855f7' : 'rgba(255,255,255,0.05)',
+                  color: advancedMode ? '#ffffff' : 'rgba(255,255,255,0.6)',
+                  border: advancedMode ? '2px solid #c084fc' : '2px solid transparent',
+                  boxShadow: advancedMode ? '0 0 20px rgba(168,85,247,0.5)' : 'none'
+                }}
+                className="h-8 px-3 transition-all"
+                title={advancedMode ? "Advanced: AI adds details" : "Exact: Only what you drew"}
+              >
+                <Wand2 className="w-4 h-4 mr-1" style={{ animation: advancedMode ? 'pulse 2s infinite' : 'none' }} />
+                <span className="hidden sm:inline font-bold">{advancedMode ? "Advanced ✨" : "Exact"}</span>
+              </Button>
             
             <Button
               onClick={() => setAutoRender(!autoRender)}
@@ -365,6 +485,21 @@ export default function XunhuaPage() {
             <Eraser className="w-4 h-4" />
           </Button>
           
+          <div className="w-px h-8 bg-white/10" />
+          
+          <Button onClick={() => setTool("move")} size="sm" className={`h-8 px-2 ${tool === "move" ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}>
+            <Move className="w-4 h-4" />
+          </Button>
+          <label className="cursor-pointer">
+            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+            <Button as="span" size="sm" className="h-8 px-2 bg-white/5 text-white pointer-events-none">
+              <Upload className="w-4 h-4" />
+            </Button>
+          </label>
+          <Button onClick={() => setShowLayerPanel(!showLayerPanel)} size="sm" className={`h-8 px-2 ${showLayerPanel ? "bg-cyan-500 text-black" : "bg-white/5 text-white"}`}>
+            <Layers className="w-4 h-4" />
+          </Button>
+          
           <input
             type="color"
             value={color}
@@ -387,6 +522,109 @@ export default function XunhuaPage() {
             <Trash2 className="w-4 h-4" />
           </Button>
         </div>
+
+        {/* Layer Panel */}
+        <AnimatePresence>
+          {showLayerPanel && (
+            <motion.div
+              initial={{ x: -300, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -300, opacity: 0 }}
+              className="absolute left-3 top-32 z-10 w-64 bg-black/90 backdrop-blur-xl border border-white/20 rounded-lg p-3"
+            >
+              <h3 className="text-white font-bold mb-2 flex items-center gap-2">
+                <Layers className="w-4 h-4" />
+                Layers ({layers.length})
+              </h3>
+              
+              {selectedLayer && (
+                <div className="mb-3 p-2 bg-white/5 rounded border border-white/10">
+                  <p className="text-white/60 text-xs mb-2">Selected Layer</p>
+                  
+                  <div className="space-y-2">
+                    <div>
+                      <label className="text-white/60 text-xs">Opacity</label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={selectedLayer.opacity}
+                        onChange={(e) => updateSelectedLayer({ opacity: parseFloat(e.target.value) })}
+                        className="w-full"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="text-white/60 text-xs">Size</label>
+                      <input
+                        type="range"
+                        min="50"
+                        max="500"
+                        value={selectedLayer.width}
+                        onChange={(e) => {
+                          const newWidth = parseInt(e.target.value);
+                          const ratio = selectedLayer.height / selectedLayer.width;
+                          updateSelectedLayer({ width: newWidth, height: newWidth * ratio });
+                        }}
+                        className="w-full"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="text-white/60 text-xs">Filter</label>
+                      <select
+                        value={selectedLayer.filter}
+                        onChange={(e) => updateSelectedLayer({ filter: e.target.value })}
+                        className="w-full bg-white/10 text-white rounded px-2 py-1 text-xs"
+                      >
+                        <option value="none">None</option>
+                        <option value="grayscale(1)">Grayscale</option>
+                        <option value="sepia(1)">Sepia</option>
+                        <option value="blur(2px)">Blur</option>
+                        <option value="brightness(1.5)">Brighten</option>
+                        <option value="contrast(1.5)">Contrast</option>
+                        <option value="invert(1)">Invert</option>
+                      </select>
+                    </div>
+                    
+                    <Button
+                      onClick={deleteSelectedLayer}
+                      size="sm"
+                      className="w-full h-7 bg-red-500/20 text-red-400 border border-red-500/30"
+                    >
+                      <Trash className="w-3 h-3 mr-1" />
+                      Delete Layer
+                    </Button>
+                  </div>
+                </div>
+              )}
+              
+              <div className="space-y-1 max-h-48 overflow-y-auto">
+                {layers.map((layer, idx) => (
+                  <div
+                    key={layer.id}
+                    onClick={() => setSelectedLayer(layer)}
+                    className={`p-2 rounded cursor-pointer flex items-center gap-2 ${
+                      selectedLayer?.id === layer.id ? "bg-cyan-500/20 border border-cyan-500/50" : "bg-white/5 hover:bg-white/10"
+                    }`}
+                  >
+                    <img src={layer.imageData} className="w-8 h-8 object-cover rounded" />
+                    <span className="text-white text-xs flex-1">Layer {layers.length - idx}</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        updateSelectedLayer({ visible: !layer.visible });
+                      }}
+                    >
+                      {layer.visible ? <Eye className="w-4 h-4 text-white/60" /> : <EyeOff className="w-4 h-4 text-white/30" />}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Canvas Container with Flip Animation */}
         <div className="flex-1 relative overflow-hidden perspective-1000">
