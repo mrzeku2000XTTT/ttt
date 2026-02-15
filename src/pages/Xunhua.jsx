@@ -251,8 +251,36 @@ export default function XunhuaPage() {
       const updated = [...textLayers, newText];
       setTextLayers(updated);
       setEditingText(newText);
-      setTimeout(() => redrawCanvas(), 0);
+      setTimeout(() => {
+        redrawCanvas();
+        saveToHistory();
+      }, 0);
       return;
+    }
+
+    if (tool === "move" || cropMode) {
+      // Check for text layer click first
+      const ctx = canvas.getContext("2d");
+      for (let i = textLayers.length - 1; i >= 0; i--) {
+        const textLayer = textLayers[i];
+        if (!textLayer.visible) continue;
+        
+        ctx.font = `${textLayer.bold ? 'bold ' : ''}${textLayer.fontSize}px ${textLayer.fontFamily}`;
+        const textWidth = ctx.measureText(textLayer.text).width;
+        const textHeight = textLayer.fontSize;
+        
+        if (x >= textLayer.x && x <= textLayer.x + textWidth &&
+            y >= textLayer.y && y <= textLayer.y + textHeight) {
+          setIsDragging(true);
+          setDragStart({ 
+            x: x - textLayer.x, 
+            y: y - textLayer.y,
+            isText: true,
+            textLayer
+          });
+          return;
+        }
+      }
     }
 
     if (tool === "move" || cropMode) {
@@ -302,6 +330,18 @@ export default function XunhuaPage() {
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
     const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+
+    // Handle text dragging
+    if (isDragging && dragStart?.isText && dragStart?.textLayer) {
+      e.preventDefault();
+      const newX = x - dragStart.x;
+      const newY = y - dragStart.y;
+      const updatedTextLayers = textLayers.map(t =>
+        t.id === dragStart.textLayer.id ? { ...t, x: newX, y: newY } : t
+      );
+      setTextLayers(updatedTextLayers);
+      return;
+    }
 
     if (resizeHandle && selectedLayer && dragStart) {
       e.preventDefault();
@@ -418,7 +458,7 @@ export default function XunhuaPage() {
   };
 
   const stopDrawing = () => {
-    if (isDrawing) {
+    if (isDrawing || (isDragging && dragStart?.isText)) {
       saveToHistory();
     }
     setIsDrawing(false);
@@ -454,6 +494,7 @@ export default function XunhuaPage() {
         
         setLayers([...layers, newLayer]);
         setSelectedLayer(newLayer);
+        setTimeout(() => saveToHistory(), 0);
       };
       img.src = event.target.result;
     };
@@ -837,39 +878,66 @@ export default function XunhuaPage() {
                   placeholder="Enter text..."
                 />
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
                   <div>
-                    <label className="text-white/60 text-xs">Font Size</label>
-                    <input
-                      type="number"
-                      value={editingText.fontSize}
+                    <label className="text-white/60 text-xs">Font Family</label>
+                    <select
+                      value={editingText.fontFamily}
                       onChange={(e) => {
                         const updated = textLayers.map(t => 
-                          t.id === editingText.id ? { ...t, fontSize: parseInt(e.target.value) } : t
+                          t.id === editingText.id ? { ...t, fontFamily: e.target.value } : t
                         );
                         setTextLayers(updated);
-                        setEditingText({ ...editingText, fontSize: parseInt(e.target.value) });
+                        setEditingText({ ...editingText, fontFamily: e.target.value });
                       }}
                       className="w-full bg-white/10 text-white rounded px-2 py-1 text-sm border border-white/20"
-                      min="8"
-                      max="200"
-                    />
+                    >
+                      <option value="Arial">Arial</option>
+                      <option value="Helvetica">Helvetica</option>
+                      <option value="Times New Roman">Times New Roman</option>
+                      <option value="Courier New">Courier New</option>
+                      <option value="Georgia">Georgia</option>
+                      <option value="Verdana">Verdana</option>
+                      <option value="Comic Sans MS">Comic Sans MS</option>
+                      <option value="Impact">Impact</option>
+                      <option value="Trebuchet MS">Trebuchet MS</option>
+                    </select>
                   </div>
 
-                  <div>
-                    <label className="text-white/60 text-xs">Color</label>
-                    <input
-                      type="color"
-                      value={editingText.color}
-                      onChange={(e) => {
-                        const updated = textLayers.map(t => 
-                          t.id === editingText.id ? { ...t, color: e.target.value } : t
-                        );
-                        setTextLayers(updated);
-                        setEditingText({ ...editingText, color: e.target.value });
-                      }}
-                      className="w-full h-8 rounded cursor-pointer"
-                    />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-white/60 text-xs">Font Size</label>
+                      <input
+                        type="number"
+                        value={editingText.fontSize}
+                        onChange={(e) => {
+                          const updated = textLayers.map(t => 
+                            t.id === editingText.id ? { ...t, fontSize: parseInt(e.target.value) } : t
+                          );
+                          setTextLayers(updated);
+                          setEditingText({ ...editingText, fontSize: parseInt(e.target.value) });
+                        }}
+                        className="w-full bg-white/10 text-white rounded px-2 py-1 text-sm border border-white/20"
+                        min="8"
+                        max="200"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-white/60 text-xs">Color</label>
+                      <input
+                        type="color"
+                        value={editingText.color}
+                        onChange={(e) => {
+                          const updated = textLayers.map(t => 
+                            t.id === editingText.id ? { ...t, color: e.target.value } : t
+                          );
+                          setTextLayers(updated);
+                          setEditingText({ ...editingText, color: e.target.value });
+                        }}
+                        className="w-full h-8 rounded cursor-pointer"
+                      />
+                    </div>
                   </div>
                 </div>
 
