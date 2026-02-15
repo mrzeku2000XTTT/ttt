@@ -452,8 +452,9 @@ export default function XunhuaPage() {
       return;
     }
 
-    if (!drawingBounds) {
-      alert("Please draw something first");
+    const hasContent = drawingBounds || layers.length > 0;
+    if (!hasContent) {
+      alert("Please draw something or add an image first");
       return;
     }
 
@@ -468,7 +469,7 @@ export default function XunhuaPage() {
 
       let aiPrompt;
       if (sketchMode) {
-        aiPrompt = `${prompt}. Render this as a HIGHLY REALISTIC PENCIL SKETCH with fine details, shading, cross-hatching, and texture. Black and white only, photorealistic pencil drawing style.`;
+        aiPrompt = `${prompt}. Render this as a HIGHLY REALISTIC PENCIL SKETCH with fine details, shading, cross-hatching, and texture. Black and white only, photorealistic pencil drawing style. Convert any photos or images into detailed pencil sketch artwork.`;
       } else if (advancedMode) {
         aiPrompt = `${prompt}. Transform this sketch into a beautiful, detailed artistic image. Add creative details, textures, and enhancements.`;
       } else {
@@ -526,7 +527,8 @@ export default function XunhuaPage() {
   };
 
   const handleFlip = () => {
-    if (!isFlipped && autoRender && prompt.trim() && drawingBounds && !generatedImage) {
+    const hasContent = drawingBounds || layers.length > 0;
+    if (!isFlipped && autoRender && prompt.trim() && hasContent && !generatedImage) {
       handleGenerate();
     } else {
       setIsFlipped(!isFlipped);
