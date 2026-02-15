@@ -20,6 +20,7 @@ export default function XunhuaPage() {
   const [autoRender, setAutoRender] = useState(false);
   const [drawingBounds, setDrawingBounds] = useState(null);
   const [isAutoGenerating, setIsAutoGenerating] = useState(false);
+  const [error, setError] = useState("");
   const autoGenerateTimeoutRef = useRef(null);
 
   useEffect(() => {
@@ -125,12 +126,18 @@ export default function XunhuaPage() {
   };
 
   const handleAutoGenerate = async () => {
-    if (isAutoGenerating || isGenerating) return;
+    if (isAutoGenerating || isGenerating || !prompt.trim() || !drawingBounds) return;
     
     setIsAutoGenerating(true);
+    setError("");
+    
     try {
       const canvas = canvasRef.current;
-      const blob = await new Promise(resolve => canvas.toBlob(resolve));
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png", 1.0));
+      
+      if (!blob || blob.size === 0) {
+        throw new Error("Invalid canvas data");
+      }
       
       const { file_url } = await base44.integrations.Core.UploadFile({ 
         file: new File([blob], "sketch.png", { type: "image/png" })
@@ -141,14 +148,19 @@ export default function XunhuaPage() {
         existing_image_urls: [file_url]
       });
 
+      if (!result?.url) {
+        throw new Error("No image URL returned");
+      }
+
       setGeneratedImage(result.url);
       
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.onload = () => {
         const resultCanvas = resultCanvasRef.current;
-        const resultCtx = resultCanvas.getContext("2d");
+        if (!resultCanvas) return;
         
+        const resultCtx = resultCanvas.getContext("2d");
         resultCanvas.width = canvas.width;
         resultCanvas.height = canvas.height;
         resultCtx.fillStyle = "#1a1a1a";
@@ -159,9 +171,13 @@ export default function XunhuaPage() {
         const y = (resultCanvas.height - img.height * scale) / 2;
         resultCtx.drawImage(img, x, y, img.width * scale, img.height * scale);
       };
+      img.onerror = () => {
+        setError("Failed to load generated image");
+      };
       img.src = result.url;
     } catch (err) {
       console.error("Auto-generation failed:", err);
+      setError(err.message || "Generation failed. Try again.");
     } finally {
       setIsAutoGenerating(false);
     }
