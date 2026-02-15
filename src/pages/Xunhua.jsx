@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Trash2, Wand2, Download, Palette, Eraser, Paintbrush, FlipHorizontal, ToggleLeft, ToggleRight } from "lucide-react";
+import { Loader2, Trash2, Wand2, Download, Palette, Eraser, Paintbrush, FlipHorizontal, ToggleLeft, ToggleRight, AlertCircle } from "lucide-react";
 
 export default function XunhuaPage() {
   const canvasRef = useRef(null);
@@ -185,16 +185,17 @@ export default function XunhuaPage() {
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
-      alert("Please describe what you're drawing");
+      setError("Please describe what you're drawing");
       return;
     }
 
     if (!drawingBounds) {
-      alert("Please draw something first");
+      setError("Please draw something first");
       return;
     }
 
     setIsGenerating(true);
+    setError("");
     try {
       const canvas = canvasRef.current;
       const blob = await new Promise(resolve => canvas.toBlob(resolve));
@@ -235,7 +236,7 @@ export default function XunhuaPage() {
       }
     } catch (err) {
       console.error("Generation failed:", err);
-      alert("Failed to generate image. Try again.");
+      setError(err.message || "Failed to generate image. Try again.");
     } finally {
       setIsGenerating(false);
     }
@@ -398,11 +399,22 @@ export default function XunhuaPage() {
           </motion.div>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-500/20 border border-red-500/30 rounded-lg px-4 py-2 flex items-center gap-2 mb-2">
+            <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+            <span className="text-red-400 text-sm">{error}</span>
+          </div>
+        )}
+
         {/* Bottom Input */}
         <div className="flex gap-2 mt-3">
           <Input
             value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
+            onChange={(e) => {
+              setPrompt(e.target.value);
+              setError("");
+            }}
             onKeyPress={(e) => e.key === "Enter" && !autoRender && handleGenerate()}
             placeholder="Describe your drawing..."
             className="flex-1 bg-black border-white/20 text-white h-11"
