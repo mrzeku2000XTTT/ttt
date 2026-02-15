@@ -22,21 +22,22 @@ export default function XunhuaPage() {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const resultCanvas = resultCanvasRef.current;
+    if (!canvas || !resultCanvas) return;
 
     const ctx = canvas.getContext("2d");
-    const updateCanvasSize = () => {
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
-      ctx.fillStyle = "#1a1a1a";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-    };
-
-    updateCanvasSize();
-    window.addEventListener("resize", updateCanvasSize);
+    const resultCtx = resultCanvas.getContext("2d");
     
-    return () => window.removeEventListener("resize", updateCanvasSize);
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    resultCanvas.width = rect.width;
+    resultCanvas.height = rect.height;
+    
+    ctx.fillStyle = "#1a1a1a";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    resultCtx.fillStyle = "#1a1a1a";
+    resultCtx.fillRect(0, 0, resultCanvas.width, resultCanvas.height);
   }, []);
 
   const startDrawing = (e) => {

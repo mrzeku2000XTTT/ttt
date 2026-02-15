@@ -276,11 +276,11 @@ import Window from './pages/Window';
 import WorkerTask from './pages/WorkerTask';
 import X from './pages/X';
 import XYZ from './pages/XYZ';
+import Xunhua from './pages/Xunhua';
 import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import Xunhua from './pages/Xunhua';
 import __Layout from './Layout.jsx';
 
 
@@ -514,11 +514,11 @@ export const PAGES = {
     "WorkerTask": WorkerTask,
     "X": X,
     "XYZ": XYZ,
+    "Xunhua": Xunhua,
     "ZKVault": ZKVault,
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "Xunhua": Xunhua,
 }
 
 export const pagesConfig = {
