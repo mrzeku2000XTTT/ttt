@@ -185,15 +185,35 @@ export default function XunhuaPage() {
       ctx.fillText(textLayer.text, textLayer.x, textLayer.y);
       ctx.restore();
       
-      // Draw selection box for editing text
+      // Draw selection box for editing text with solid background
       if (editingText?.id === textLayer.id) {
         ctx.save();
-        ctx.strokeStyle = "#06b6d4";
-        ctx.lineWidth = 2;
-        ctx.setLineDash([5, 5]);
         const textWidth = ctx.measureText(textLayer.text).width;
         const textHeight = textLayer.fontSize || 24;
-        ctx.strokeRect(textLayer.x - 5, textLayer.y - 5, textWidth + 10, textHeight + 10);
+        
+        // Draw white background box
+        ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+        ctx.fillRect(textLayer.x - 8, textLayer.y - 6, textWidth + 16, textHeight + 12);
+        
+        // Draw cyan border
+        ctx.strokeStyle = "#06b6d4";
+        ctx.lineWidth = 3;
+        ctx.setLineDash([]);
+        ctx.strokeRect(textLayer.x - 8, textLayer.y - 6, textWidth + 16, textHeight + 12);
+        
+        // Draw corner handles
+        const handleSize = 8;
+        ctx.fillStyle = "#06b6d4";
+        const corners = [
+          [textLayer.x - 8, textLayer.y - 6],
+          [textLayer.x + textWidth + 8, textLayer.y - 6],
+          [textLayer.x - 8, textLayer.y + textHeight + 6],
+          [textLayer.x + textWidth + 8, textLayer.y + textHeight + 6]
+        ];
+        corners.forEach(([cx, cy]) => {
+          ctx.fillRect(cx - handleSize/2, cy - handleSize/2, handleSize, handleSize);
+        });
+        
         ctx.restore();
       }
     });
@@ -231,14 +251,31 @@ export default function XunhuaPage() {
     const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
 
     if (textMode) {
+      // Check if clicking on existing text to edit
+      const ctx = canvas.getContext("2d");
+      for (let i = textLayers.length - 1; i >= 0; i--) {
+        const textLayer = textLayers[i];
+        if (!textLayer.visible) continue;
+        
+        ctx.font = `${textLayer.bold ? 'bold ' : ''}${textLayer.fontSize}px ${textLayer.fontFamily}`;
+        const textWidth = ctx.measureText(textLayer.text).width;
+        const textHeight = textLayer.fontSize;
+        
+        if (x >= textLayer.x && x <= textLayer.x + textWidth &&
+            y >= textLayer.y && y <= textLayer.y + textHeight) {
+          setEditingText(textLayer);
+          return;
+        }
+      }
+      
       // Create new text layer at click position
       const newText = {
         id: Date.now(),
-        text: "Double-click to edit",
+        text: "Type here",
         x,
         y,
         color: color,
-        fontSize: 24,
+        fontSize: 32,
         fontFamily: 'Arial',
         bold: false,
         align: 'left',
@@ -768,10 +805,13 @@ export default function XunhuaPage() {
               if (newMode) {
                 setTool("brush");
                 setCropMode(false);
+                setEditingText(null);
+              } else {
+                setEditingText(null);
               }
             }} 
             size="sm" 
-            className={`h-8 px-2 ${textMode ? "bg-purple-500 text-white" : "bg-white/5 text-white"}`}
+            className={`h-8 px-2 transition-all ${textMode ? "bg-purple-500 text-white border-2 border-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.5)]" : "bg-white/5 text-white border border-transparent"}`}
             title="Add Text - Click on canvas to place"
           >
             <Type className="w-4 h-4" />
