@@ -250,24 +250,24 @@ export default function XunhuaPage() {
     const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
     const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
 
-    if (textMode) {
-      // Check if clicking on existing text to edit
-      const ctx = canvas.getContext("2d");
-      for (let i = textLayers.length - 1; i >= 0; i--) {
-        const textLayer = textLayers[i];
-        if (!textLayer.visible) continue;
-        
-        ctx.font = `${textLayer.bold ? 'bold ' : ''}${textLayer.fontSize}px ${textLayer.fontFamily}`;
-        const textWidth = ctx.measureText(textLayer.text).width;
-        const textHeight = textLayer.fontSize;
-        
-        if (x >= textLayer.x && x <= textLayer.x + textWidth &&
-            y >= textLayer.y && y <= textLayer.y + textHeight) {
-          setEditingText(textLayer);
-          return;
-        }
-      }
+    // Always check for text clicks first (regardless of mode)
+    const ctx = canvas.getContext("2d");
+    for (let i = textLayers.length - 1; i >= 0; i--) {
+      const textLayer = textLayers[i];
+      if (!textLayer.visible) continue;
       
+      ctx.font = `${textLayer.bold ? 'bold ' : ''}${textLayer.fontSize}px ${textLayer.fontFamily}`;
+      const textWidth = ctx.measureText(textLayer.text).width;
+      const textHeight = textLayer.fontSize;
+      
+      if (x >= textLayer.x && x <= textLayer.x + textWidth &&
+          y >= textLayer.y && y <= textLayer.y + textHeight) {
+        setEditingText(textLayer);
+        return;
+      }
+    }
+
+    if (textMode) {
       // Create new text layer at click position
       const newText = {
         id: Date.now(),
@@ -1170,27 +1170,7 @@ export default function XunhuaPage() {
                 onTouchStart={startDrawing}
                 onTouchMove={draw}
                 onTouchEnd={stopDrawing}
-                onDoubleClick={(e) => {
-                  const canvas = canvasRef.current;
-                  const rect = canvas.getBoundingClientRect();
-                  const x = e.clientX - rect.left;
-                  const y = e.clientY - rect.top;
 
-                  // Check if double-clicking on existing text
-                  for (let i = textLayers.length - 1; i >= 0; i--) {
-                    const textLayer = textLayers[i];
-                    const ctx = canvas.getContext("2d");
-                    ctx.font = `${textLayer.fontSize}px ${textLayer.fontFamily}`;
-                    const textWidth = ctx.measureText(textLayer.text).width;
-                    const textHeight = textLayer.fontSize;
-
-                    if (x >= textLayer.x && x <= textLayer.x + textWidth &&
-                        y >= textLayer.y && y <= textLayer.y + textHeight) {
-                      setEditingText(textLayer);
-                      return;
-                    }
-                  }
-                }}
                 className="w-full h-full rounded-lg border border-white/10 cursor-crosshair touch-none"
                 style={{ touchAction: "none" }}
               />
