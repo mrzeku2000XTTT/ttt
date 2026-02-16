@@ -687,14 +687,26 @@ export default function XunhuaPage() {
 
   const downloadImage = () => {
     if (!resultCanvasRef.current) return;
-    resultCanvasRef.current.toBlob((blob) => {
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "xunhua-generated.png";
-      link.click();
-      URL.revokeObjectURL(url);
-    });
+    
+    // For mobile - open in new tab so user can save to photos
+    const dataUrl = resultCanvasRef.current.toDataURL('image/png');
+    
+    // Try native download first
+    const link = document.createElement("a");
+    link.href = dataUrl;
+    link.download = "xunhua-generated.png";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Also open in new tab as fallback for mobile
+    setTimeout(() => {
+      const newWindow = window.open();
+      if (newWindow) {
+        newWindow.document.write(`<img src="${dataUrl}" style="max-width:100%;height:auto;" />`);
+        newWindow.document.title = "Long press image to save to photos";
+      }
+    }, 100);
   };
 
   const handleFlip = () => {
