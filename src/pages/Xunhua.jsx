@@ -1276,23 +1276,25 @@ export default function XunhuaPage() {
             </div>
 
             {/* Back - Generated Result */}
-            <div className="absolute inset-0 backface-hidden rotate-y-180">
+            <div 
+              className="absolute inset-0 backface-hidden rotate-y-180"
+              onClick={handleResultCanvasClick}
+              style={{ cursor: generatedImage ? 'pointer' : 'default' }}
+            >
               <div className="relative w-full h-full">
                 <canvas
                   ref={resultCanvasRef}
-                  onClick={handleResultCanvasClick}
-                  onTouchEnd={handleResultCanvasClick}
-                  className="w-full h-full rounded-lg border border-white/10 cursor-pointer active:opacity-80 touch-manipulation"
+                  className="w-full h-full rounded-lg border border-white/10"
                 />
                 {generatedImage && !isGenerating && (
                   <div className="absolute bottom-4 left-0 right-0 text-center pointer-events-none">
-                    <p className="text-white/80 text-sm bg-black/60 backdrop-blur-sm px-4 py-2 rounded-full inline-block">
-                      📸 Tap to open fullscreen & save
+                    <p className="text-white/80 text-sm bg-black/60 backdrop-blur-sm px-4 py-2 rounded-full inline-block animate-pulse">
+                      👆 Tap to view fullscreen
                     </p>
                   </div>
                 )}
                 {isGenerating && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/80 rounded-lg">
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/80 rounded-lg pointer-events-none">
                     <div className="text-center">
                       <Loader2 className="w-12 h-12 text-cyan-400 animate-spin mx-auto mb-3" />
                       <p className="text-white/60 text-sm">Generating...</p>
