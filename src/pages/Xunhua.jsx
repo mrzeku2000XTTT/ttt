@@ -685,8 +685,8 @@ export default function XunhuaPage() {
     }
   };
 
-  const handleResultCanvasClick = () => {
-    if (!generatedImage || !resultCanvasRef.current) return;
+  const downloadImage = () => {
+    if (!resultCanvasRef.current || !generatedImage) return;
     
     const dataUrl = resultCanvasRef.current.toDataURL('image/png');
     
@@ -737,6 +737,11 @@ export default function XunhuaPage() {
       `);
       win.document.close();
     }
+  };
+
+  const handleResultCanvasClick = () => {
+    if (!generatedImage) return;
+    downloadImage();
   };
 
   const handleFlip = () => {
