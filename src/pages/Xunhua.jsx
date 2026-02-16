@@ -686,62 +686,15 @@ export default function XunhuaPage() {
   };
 
   const downloadImage = () => {
-    if (!resultCanvasRef.current || !generatedImage) return;
-    
-    const dataUrl = resultCanvasRef.current.toDataURL('image/png');
-    
-    // Create and open new window with fullscreen image
-    const win = window.open('', '_blank');
-    if (win) {
-      win.document.write(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-            <title>Tap and hold to save</title>
-            <style>
-              * { margin: 0; padding: 0; box-sizing: border-box; }
-              body { 
-                background: #000; 
-                display: flex; 
-                flex-direction: column;
-                justify-content: center; 
-                align-items: center; 
-                min-height: 100vh; 
-                overflow: hidden;
-              }
-              .hint {
-                color: #fff;
-                text-align: center;
-                padding: 15px;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-                font-size: 16px;
-                background: rgba(0,0,0,0.8);
-                border-radius: 10px;
-                margin: 10px;
-              }
-              img { 
-                max-width: 100vw; 
-                max-height: 80vh; 
-                display: block;
-                -webkit-user-select: none;
-                user-select: none;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="hint">📸 Tap and hold image to save to photos</div>
-            <img src="${dataUrl}" alt="Generated" />
-          </body>
-        </html>
-      `);
-      win.document.close();
-    }
-  };
-
-  const handleResultCanvasClick = () => {
-    if (!generatedImage) return;
-    downloadImage();
+    if (!resultCanvasRef.current) return;
+    resultCanvasRef.current.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "xunhua-generated.png";
+      link.click();
+      URL.revokeObjectURL(url);
+    });
   };
 
   const handleFlip = () => {
@@ -1252,32 +1205,19 @@ export default function XunhuaPage() {
             </div>
 
             {/* Back - Generated Result */}
-            <div 
-              className="absolute inset-0 backface-hidden rotate-y-180"
-              onClick={handleResultCanvasClick}
-              style={{ cursor: generatedImage ? 'pointer' : 'default' }}
-            >
-              <div className="relative w-full h-full">
-                <canvas
-                  ref={resultCanvasRef}
-                  className="w-full h-full rounded-lg border border-white/10"
-                />
-                {generatedImage && !isGenerating && (
-                  <div className="absolute bottom-4 left-0 right-0 text-center pointer-events-none">
-                    <p className="text-white/80 text-sm bg-black/60 backdrop-blur-sm px-4 py-2 rounded-full inline-block animate-pulse">
-                      👆 Tap to view fullscreen
-                    </p>
+            <div className="absolute inset-0 backface-hidden rotate-y-180">
+              <canvas
+                ref={resultCanvasRef}
+                className="w-full h-full rounded-lg border border-white/10"
+              />
+              {isGenerating && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/80 rounded-lg">
+                  <div className="text-center">
+                    <Loader2 className="w-12 h-12 text-cyan-400 animate-spin mx-auto mb-3" />
+                    <p className="text-white/60 text-sm">Generating...</p>
                   </div>
-                )}
-                {isGenerating && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/80 rounded-lg pointer-events-none">
-                    <div className="text-center">
-                      <Loader2 className="w-12 h-12 text-cyan-400 animate-spin mx-auto mb-3" />
-                      <p className="text-white/60 text-sm">Generating...</p>
-                    </div>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </motion.div>
         </div>
