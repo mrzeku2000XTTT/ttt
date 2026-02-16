@@ -701,9 +701,11 @@ export default function XunhuaPage() {
             <style>
               body { margin: 0; padding: 0; background: black; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
               img { max-width: 100%; max-height: 100vh; display: block; }
+              p { color: white; text-align: center; padding: 20px; font-family: Arial; }
             </style>
           </head>
           <body>
+            <p>📸 Long press image to save to photos</p>
             <img src="${dataUrl}" alt="Generated Image" />
           </body>
         </html>
@@ -712,8 +714,10 @@ export default function XunhuaPage() {
     }
   };
   
-  const openImageFullscreen = () => {
-    if (!resultCanvasRef.current || !generatedImage) return;
+  const handleResultCanvasClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!generatedImage) return;
     downloadImage();
   };
 
