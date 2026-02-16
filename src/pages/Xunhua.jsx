@@ -687,26 +687,34 @@ export default function XunhuaPage() {
 
   const downloadImage = () => {
     if (!resultCanvasRef.current) return;
-    
-    // For mobile - open in new tab so user can save to photos
     const dataUrl = resultCanvasRef.current.toDataURL('image/png');
     
-    // Try native download first
-    const link = document.createElement("a");
-    link.href = dataUrl;
-    link.download = "xunhua-generated.png";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    // Also open in new tab as fallback for mobile
-    setTimeout(() => {
-      const newWindow = window.open();
-      if (newWindow) {
-        newWindow.document.write(`<img src="${dataUrl}" style="max-width:100%;height:auto;" />`);
-        newWindow.document.title = "Long press image to save to photos";
-      }
-    }, 100);
+    // Open fullscreen in new tab for mobile - user can long-press to save
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+      newWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Long press to save to photos</title>
+            <style>
+              body { margin: 0; padding: 0; background: black; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+              img { max-width: 100%; max-height: 100vh; display: block; }
+            </style>
+          </head>
+          <body>
+            <img src="${dataUrl}" alt="Generated Image" />
+          </body>
+        </html>
+      `);
+      newWindow.document.close();
+    }
+  };
+  
+  const openImageFullscreen = () => {
+    if (!resultCanvasRef.current || !generatedImage) return;
+    downloadImage();
   };
 
   const handleFlip = () => {
