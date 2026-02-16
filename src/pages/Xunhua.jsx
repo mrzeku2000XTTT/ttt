@@ -685,35 +685,6 @@ export default function XunhuaPage() {
     }
   };
 
-  const downloadImage = () => {
-    if (!resultCanvasRef.current) return;
-    const dataUrl = resultCanvasRef.current.toDataURL('image/png');
-    
-    // Open fullscreen in new tab for mobile - user can long-press to save
-    const newWindow = window.open('', '_blank');
-    if (newWindow) {
-      newWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Long press to save to photos</title>
-            <style>
-              body { margin: 0; padding: 0; background: black; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-              img { max-width: 100%; max-height: 100vh; display: block; }
-              p { color: white; text-align: center; padding: 20px; font-family: Arial; }
-            </style>
-          </head>
-          <body>
-            <p>📸 Long press image to save to photos</p>
-            <img src="${dataUrl}" alt="Generated Image" />
-          </body>
-        </html>
-      `);
-      newWindow.document.close();
-    }
-  };
-  
   const handleResultCanvasClick = () => {
     if (!generatedImage || !resultCanvasRef.current) return;
     
