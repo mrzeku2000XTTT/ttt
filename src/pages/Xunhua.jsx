@@ -1228,7 +1228,8 @@ export default function XunhuaPage() {
             <div className="absolute inset-0 backface-hidden rotate-y-180">
               <canvas
                 ref={resultCanvasRef}
-                className="w-full h-full rounded-lg border border-white/10"
+                onClick={openImageFullscreen}
+                className="w-full h-full rounded-lg border border-white/10 cursor-pointer active:opacity-80"
               />
               {isGenerating && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/80 rounded-lg">
