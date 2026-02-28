@@ -5,7 +5,7 @@ const VIBE_WALLET_URL = "https://www.vibecodeapp.com/s/cml70h8sz001y07mdw8puh73k
 
 export default function VibeWalletPage() {
   return (
-    <div className="fixed inset-0 flex flex-col bg-black" style={{ top: 'calc(var(--sat, 0px) + 7.5rem)', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 4rem)' }}>
+    <div className="fixed inset-0 flex flex-col bg-black" style={{ top: 'calc(var(--sat, 0px) + 7.5rem)', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 4rem)', overflow: 'hidden' }}>
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-2 bg-black/80 backdrop-blur-xl border-b border-cyan-500/20 flex-shrink-0">
         <div className="flex items-center gap-2">
