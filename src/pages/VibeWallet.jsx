@@ -35,17 +35,20 @@ export default function VibeWalletPage() {
         <span className="text-white/40 text-xs">💡 Press and hold any QR code to save or open in your wallet app</span>
       </div>
 
-      {/* Iframe - centered, no scroll */}
-      <div className="flex-1 relative overflow-hidden">
-        <iframe
-          src={VIBE_WALLET_URL}
-          className="absolute inset-0 w-full h-full border-0"
-          title="VibeWallet"
-          allow="clipboard-read; clipboard-write"
-          scrolling="yes"
-          style={{ overflow: 'auto' }}
-        />
-      </div>
+      {/* Iframe - full fit */}
+      <iframe
+        src={VIBE_WALLET_URL}
+        title="VibeWallet"
+        allow="clipboard-read; clipboard-write"
+        style={{
+          flex: 1,
+          width: '100%',
+          height: '100%',
+          border: 'none',
+          display: 'block',
+          minHeight: 0
+        }}
+      />
     </div>
   );
 }
