@@ -9,12 +9,12 @@ export default function VibeWalletPage() {
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-2 bg-black/80 backdrop-blur-xl border-b border-cyan-500/20 flex-shrink-0">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg overflow-hidden bg-black flex items-center justify-center">
+          <div className="w-7 h-7 rounded-lg overflow-hidden bg-black flex items-center justify-center border border-white/10">
             <img
               src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/f12be76ff_917DCBBE-5E2C-48AE-98CE-2E10DFA61973.png"
               alt="VibeWallet"
               className="w-full h-full object-contain"
-              style={{ filter: 'brightness(0) invert(1) sepia(1) saturate(5) hue-rotate(180deg)', mixBlendMode: 'normal' }}
+              style={{ mixBlendMode: 'multiply', filter: 'invert(1)' }}
             />
           </div>
           <span className="text-cyan-400 font-bold text-sm tracking-widest">VIBE WALLET</span>
