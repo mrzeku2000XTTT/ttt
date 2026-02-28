@@ -14,7 +14,7 @@ export default function VibeWalletPage() {
               src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/f12be76ff_917DCBBE-5E2C-48AE-98CE-2E10DFA61973.png"
               alt="VibeWallet"
               className="w-full h-full object-contain"
-              style={{ mixBlendMode: 'multiply', filter: 'invert(1)' }}
+              style={{ mixBlendMode: 'screen' }}
             />
           </div>
           <span className="text-cyan-400 font-bold text-sm tracking-widest">VIBE WALLET</span>
