@@ -30,12 +30,19 @@ export default function VibeWalletPage() {
         </a>
       </div>
 
-      {/* Iframe */}
+      {/* Hint message */}
+      <div className="text-center py-1.5 bg-black border-b border-white/5 flex-shrink-0">
+        <span className="text-white/40 text-xs">💡 Press and hold any QR code to save or open in your wallet app</span>
+      </div>
+
+      {/* Iframe - no scroll, native fit */}
       <iframe
         src={VIBE_WALLET_URL}
-        className="flex-1 w-full border-0"
+        className="flex-1 w-full border-0 overflow-hidden"
         title="VibeWallet"
         allow="clipboard-read; clipboard-write"
+        scrolling="no"
+        style={{ overflow: 'hidden' }}
       />
     </div>
   );
