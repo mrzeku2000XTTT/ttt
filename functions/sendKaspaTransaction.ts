@@ -92,20 +92,43 @@ Deno.serve(async (req) => {
     const outputs = [{ address: normalizedToAddress, amount: amountSompi }];
     if (change > 0) outputs.push({ address: normalizedFromAddress, amount: change });
 
-    // 6. Build proper Kaspa transaction format for signing
-    // OKX SDK expects the raw transaction data
+    // 6. Build full transaction for signing (OKX SDK format)
     const txData = {
-      inputs: inputs.map(i => ({
+      version: 0,
+      inputs: selectedUtxos.map((u, i) => ({
         previousOutpoint: {
-          transactionId: i.txId,
-          index: i.vOut,
+          transactionId: u.outpoint.transactionId,
+          index: u.outpoint.index,
         },
+        signatureScript: '00', // Will be populated during signing
+        sequence: 0,
       })),
-      outputs: outputs.map(o => ({
-        value: o.amount.toString(),
-        address: o.address,
-      })),
+      outputs: [
+        {
+          value: amountSompi.toString(),
+          scriptPublicKey: {
+            script: '',
+            version: 0,
+          },
+        },
+      ],
+      lockTime: 0,
+      subnetworkId: '0000000000000000000000000000000000000000',
+      gas: 0,
+      payloadHash: '0000000000000000000000000000000000000000000000000000000000000000',
+      payload: null,
     };
+
+    // Add change output if needed
+    if (change > 0) {
+      txData.outputs.push({
+        value: change.toString(),
+        scriptPublicKey: {
+          script: '',
+          version: 0,
+        },
+      });
+    }
 
     // 7. Sign transaction with OKX SDK
     let signedTx;
@@ -113,22 +136,20 @@ Deno.serve(async (req) => {
       signedTx = await wallet.signTransaction({
         data: txData,
         privateKey,
+        from: normalizedFromAddress,
       });
     } catch (e) {
       throw new Error(`Failed to sign transaction: ${e.message}`);
     }
 
-    // 8. Format transaction for Kaspa REST API
-    // The API expects hex-encoded transaction
-    const txHex = typeof signedTx === 'string' ? signedTx : JSON.stringify(signedTx);
-
-    // 9. Submit to Kaspa API
+    // 8. Submit to Kaspa API
+    // The signed transaction should be in the correct format
     const submitRes = await fetch(`${KASPA_API}/transactions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        transaction: txHex,
-      }),
+      body: JSON.stringify(
+        typeof signedTx === 'string' ? { transaction: signedTx } : signedTx
+      ),
     });
 
     const submitText = await submitRes.text();
