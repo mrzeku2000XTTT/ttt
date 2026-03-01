@@ -164,13 +164,14 @@ function parseKaspaQR(raw) {
 }
 
 // ── Main SendSheet ───────────────────────────────────────────────────────────
-export default function SendSheet({ onClose, activeWallet, onBalanceUpdate }) {
+export default function SendSheet({ onClose, activeWallet, onBalanceUpdate, balance = 0 }) {
   const [step, setStep] = useState('input'); // input | confirm | sending | done | error
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [showScanner, setShowScanner] = useState(false);
   const [txId, setTxId] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [compounding, setCompounding] = useState(false);
 
   const hasMnemonic = activeWallet?.mnemonic;
 
@@ -178,6 +179,30 @@ export default function SendSheet({ onClose, activeWallet, onBalanceUpdate }) {
     if (k === "⌫") setAmount(a => a.slice(0, -1));
     else if (k === "." && amount.includes(".")) return;
     else if (amount.length < 10) setAmount(a => a + k);
+  };
+
+  const handleMax = () => {
+    const maxAmount = Math.max(0, balance - 0.0001);
+    setAmount(maxAmount.toString());
+  };
+
+  const handleCompound = async () => {
+    setCompounding(true);
+    try {
+      const res = await base44.functions.invoke('compoundKaspaUTXOs', {
+        mnemonic: activeWallet.mnemonic,
+        address: activeWallet.address,
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      if (onBalanceUpdate) {
+        setTimeout(() => onBalanceUpdate(), 2000);
+      }
+      setErrorMsg('UTXOs consolidated successfully');
+      setCompounding(false);
+    } catch (err) {
+      setErrorMsg(err.message || 'Compound failed');
+      setCompounding(false);
+    }
   };
 
   const handleScan = (raw) => {
@@ -191,7 +216,7 @@ export default function SendSheet({ onClose, activeWallet, onBalanceUpdate }) {
    } else {
      setErrorMsg('Invalid QR code. Expected a Kaspa address.');
    }
-  };
+   };
 
   const handleSend = async () => {
     setStep('sending');
@@ -255,7 +280,10 @@ export default function SendSheet({ onClose, activeWallet, onBalanceUpdate }) {
 
               {/* Amount */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>Amount (KAS)</span>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+                  <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>Amount (KAS)</span>
+                  <button onClick={handleMax} style={{ background: '#1c1c1e', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', borderRadius: 6, padding: '4px 10px', fontSize: 11, cursor: 'pointer', fontFamily: SF }}>Max</button>
+                </div>
                 <span style={{ color: 'white', fontSize: 54, fontWeight: 700, letterSpacing: -2 }}>{amount || "0"}</span>
                 <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>KAS</span>
               </div>
@@ -277,10 +305,16 @@ export default function SendSheet({ onClose, activeWallet, onBalanceUpdate }) {
                 </div>
               )}
 
-              <button onClick={() => canContinue && setStep('confirm')}
-                style={{ background: canContinue ? ACCENT : '#2c2c2e', color: 'white', border: 'none', borderRadius: 14, padding: '16px', fontSize: 16, fontWeight: 600, cursor: canContinue ? 'pointer' : 'default', fontFamily: SF }}>
-                Continue
-              </button>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={handleCompound} disabled={compounding || !hasMnemonic}
+                  style={{ flex: 1, background: compounding ? '#2c2c2e' : '#1c1c1e', color: compounding ? 'rgba(255,255,255,0.5)' : 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: '12px', fontSize: 14, fontWeight: 500, cursor: compounding || !hasMnemonic ? 'default' : 'pointer', fontFamily: SF }}>
+                  {compounding ? 'Compounding...' : 'Compound UTXOs'}
+                </button>
+                <button onClick={() => canContinue && setStep('confirm')}
+                  style={{ flex: 1, background: canContinue ? ACCENT : '#2c2c2e', color: 'white', border: 'none', borderRadius: 14, padding: '12px', fontSize: 14, fontWeight: 600, cursor: canContinue ? 'pointer' : 'default', fontFamily: SF }}>
+                  Continue
+                </button>
+              </div>
             </motion.div>
           )}
 
