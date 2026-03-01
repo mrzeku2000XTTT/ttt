@@ -260,6 +260,7 @@ export default function SendSheet({ onClose, activeWallet, onBalanceUpdate, bala
                 <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>Amount (KAS)</span>
                 <span style={{ color: 'white', fontSize: 54, fontWeight: 700, letterSpacing: -2 }}>{amount || "0"}</span>
                 <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>KAS</span>
+                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 8 }}>Balance: {balanceNum.toFixed(8)} KAS</span>
               </div>
 
               {/* Numpad */}
