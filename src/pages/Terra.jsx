@@ -199,6 +199,9 @@ export default function TerraPage() {
   const [showImport, setShowImport] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
 
+  const activeWallet = wallets[activeWalletIdx] || null;
+  const walletAddress = activeWallet?.address || null;
+
   useEffect(() => { loadData(); }, []);
 
   useEffect(() => {
@@ -206,9 +209,6 @@ export default function TerraPage() {
       loadTransactions();
     }
   }, [tab, walletAddress]);
-
-  const activeWallet = wallets[activeWalletIdx] || null;
-  const walletAddress = activeWallet?.address || null;
 
   const loadTransactions = async () => {
     if (!walletAddress) return;
