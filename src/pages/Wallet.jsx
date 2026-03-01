@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Copy, Eye, EyeOff, Loader2, CheckCircle2, Lock, ArrowLeft, Shield, RefreshCw, X, AlertTriangle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion, AnimatePresence } from "framer-motion";
+import TerraCard from "@/components/terra/TerraCard";
 
 const REPLIT_BASE_URL = 'https://3997eddf-54b0-4dd7-bd11-b6322df14705-00-2nohbenfxyfz4.spock.replit.dev';
 
