@@ -16,8 +16,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Address required' }, { status: 400 });
     }
 
-    // Remove kaspa: prefix if present
-    const cleanAddress = address.replace('kaspa:', '');
+    // Ensure kaspa: prefix is present for the API
+    const cleanAddress = address.startsWith('kaspa:') ? address : `kaspa:${address}`;
     
     console.log('🔍 Fetching balance for:', cleanAddress);
 
@@ -32,16 +32,8 @@ Deno.serve(async (req) => {
         })
       },
       {
-        name: 'Explorer API',
-        url: `https://api.kaspa.org/addresses/${cleanAddress}`,
-        parser: (data) => ({
-          balanceSompi: parseInt(data.balance || '0'),
-          balanceKAS: parseInt(data.balance || '0') / 100000000
-        })
-      },
-      {
         name: 'Kas.fyi API',
-        url: `https://api.kas.fyi/addresses/${cleanAddress}/balance`,
+        url: `https://api.kas.fyi/address/${cleanAddress.replace('kaspa:', '')}/balance`,
         parser: (data) => ({
           balanceSompi: parseInt(data.balance || '0'),
           balanceKAS: parseInt(data.balance || '0') / 100000000
