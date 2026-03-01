@@ -27,6 +27,9 @@ export default function ToolsPage() {
     setSessionId(generateSessionId());
   }, []);
 
+  const TERRA_LOGO = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/791e2bd15_IMG_1195.jpg";
+  const VIBE_LOGO = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/f12be76ff_917DCBBE-5E2C-48AE-98CE-2E10DFA61973.png";
+
   const apps = [
     { name: 'TTT', icon: Globe, path: 'Home' },
     { name: 'Feed', icon: Users, path: 'Feed' },
@@ -34,6 +37,8 @@ export default function ToolsPage() {
     { name: 'Wallet', icon: Wallet, path: 'Wallet' },
     { name: 'Agent ZK', icon: Bot, path: 'AgentZK' },
     { name: 'Shop', icon: ShoppingBag, path: 'Shop' },
+    { name: 'VibeWallet', customImg: VIBE_LOGO, path: 'VibeWallet', blendScreen: true },
+    { name: 'Terra', customImg: TERRA_LOGO, path: 'Terra' },
   ];
 
   const handleFileSelect = async (e) => {
