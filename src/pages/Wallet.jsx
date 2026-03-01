@@ -875,7 +875,12 @@ export default function WalletPage() {
               </Card>
             )}
 
-            {mnemonic && (
+            {/* Terra Card Tab */}
+            {activeTab === 'card' && address && (
+              <TerraCard walletAddress={address} user={user} />
+            )}
+
+            {activeTab === 'wallet' && mnemonic && (
               <Card className="bg-zinc-950 border-zinc-800">
                 <CardHeader className="border-b border-zinc-800">
                   <div className="flex justify-between items-center">
