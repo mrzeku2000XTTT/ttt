@@ -4,11 +4,13 @@ import WalletManager, { WalletMenuSheet, BackupSeedSheet, ImportWalletSheet, Del
 import ReceiveSheet from "@/components/terra/ReceiveSheet";
 import SendSheet from "@/components/terra/SendSheet";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import {
   QrCode, Plus, ArrowDownLeft, ArrowUpRight,
   CreditCard, ChevronRight, Eye, EyeOff,
   Home, Wallet, History, User, Scan, X, Check, RefreshCw,
-  Copy, AlertTriangle, Shield
+  Copy, AlertTriangle, Shield, ArrowLeft
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
@@ -175,6 +177,7 @@ function saveStoredWallets(wallets) {
 }
 
 export default function TerraPage() {
+  const navigate = useNavigate();
   const [tab, setTab] = useState("home");
   const [balanceHidden, setBalanceHidden] = useState(false);
   const [sheet, setSheet] = useState(null);
@@ -182,6 +185,8 @@ export default function TerraPage() {
   const [kasPrice, setKasPrice] = useState(null);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [loadingTx, setLoadingTx] = useState(false);
 
   // Multi-wallet state
   const [wallets, setWallets] = useState([]); // [{address, mnemonic, label}]
@@ -196,8 +201,27 @@ export default function TerraPage() {
 
   useEffect(() => { loadData(); }, []);
 
+  useEffect(() => {
+    if (tab === "history" && walletAddress) {
+      loadTransactions();
+    }
+  }, [tab, walletAddress]);
+
   const activeWallet = wallets[activeWalletIdx] || null;
   const walletAddress = activeWallet?.address || null;
+
+  const loadTransactions = async () => {
+    if (!walletAddress) return;
+    setLoadingTx(true);
+    try {
+      const res = await base44.functions.invoke('getKaspaTransactionHistory', { address: walletAddress });
+      setTransactions(res.data?.transactions || []);
+    } catch (err) {
+      console.error('Failed to fetch transactions:', err);
+      setTransactions([]);
+    }
+    setLoadingTx(false);
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -282,6 +306,15 @@ export default function TerraPage() {
 
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: '#000', fontFamily: SF, overflow: 'hidden' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#0a0a0a', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+        <button onClick={() => navigate(createPageUrl('Categories'))} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <ArrowLeft size={20} />
+        </button>
+        <span style={{ color: 'white', fontWeight: 700, fontSize: 18 }}>TTT</span>
+        <div style={{ width: 36 }} />
+      </div>
+
       {/* Scrollable Content */}
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 16 }}>
         {tab === "home" && (
@@ -417,14 +450,56 @@ export default function TerraPage() {
         )}
 
         {tab === "history" && (
-          <div style={{ padding: '16px 16px 0' }}>
-            <h2 style={{ color: 'white', fontSize: 22, fontWeight: 700, marginBottom: 20 }}>Activity</h2>
-            <div style={{ background: '#0d0d0d', borderRadius: 18, padding: '40px 16px', border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
-              <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: 14 }}>No transaction history</div>
-              <div style={{ color: 'rgba(255,255,255,0.15)', fontSize: 12, marginTop: 6 }}>Your KAS transactions will appear here</div>
-            </div>
-          </div>
-        )}
+           <div style={{ padding: '16px 16px 0' }}>
+             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+               <h2 style={{ color: 'white', fontSize: 22, fontWeight: 700 }}>Activity</h2>
+               {transactions.length > 0 && (
+                 <button onClick={loadTransactions} disabled={loadingTx} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: 4 }}>
+                   <RefreshCw size={16} style={{ transform: loadingTx ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }} />
+                 </button>
+               )}
+             </div>
+             {loadingTx && transactions.length === 0 ? (
+               <div style={{ background: '#0d0d0d', borderRadius: 18, padding: '40px 16px', border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
+                 <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14 }}>Loading transactions...</div>
+               </div>
+             ) : transactions.length === 0 ? (
+               <div style={{ background: '#0d0d0d', borderRadius: 18, padding: '40px 16px', border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
+                 <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: 14 }}>No transactions</div>
+                 <div style={{ color: 'rgba(255,255,255,0.15)', fontSize: 12, marginTop: 6 }}>Send or receive KAS to see activity</div>
+               </div>
+             ) : (
+               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                 {transactions.map((tx, idx) => (
+                   <div key={idx} style={{ background: '#0d0d0d', borderRadius: 14, padding: '14px', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                       <div style={{ width: 40, height: 40, borderRadius: 20, background: tx.type === 'receive' ? 'rgba(52,199,89,0.2)' : 'rgba(255,59,48,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                         {tx.type === 'receive' ? (
+                           <ArrowDownLeft size={20} color="#34c759" />
+                         ) : (
+                           <ArrowUpRight size={20} color="#ff3b30" />
+                         )}
+                       </div>
+                       <div style={{ flex: 1 }}>
+                         <div style={{ color: 'white', fontSize: 14, fontWeight: 500 }}>
+                           {tx.type === 'receive' ? 'Received' : 'Sent'} {tx.amount.toLocaleString("en-US", { maximumFractionDigits: 2 })} KAS
+                         </div>
+                         <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, fontFamily: 'monospace', marginTop: 2, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                           {tx.id}
+                         </div>
+                       </div>
+                     </div>
+                     <button onClick={() => {
+                       navigator.clipboard.writeText(tx.id);
+                     }} style={{ background: '#1c1c1e', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', borderRadius: 8, padding: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                       <Copy size={16} />
+                     </button>
+                   </div>
+                 ))}
+               </div>
+             )}
+           </div>
+         )}
 
         {tab === "profile" && (
           <ProfileTab
