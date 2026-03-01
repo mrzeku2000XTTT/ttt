@@ -306,8 +306,8 @@ export default function TerraPage() {
               {[
                 { icon: <ArrowUpRight size={18} />, label: "Send", action: () => setSheet("send"), color: ACCENT },
                 { icon: <ArrowDownLeft size={18} />, label: "Receive", action: () => setSheet("receive"), color: '#1c4a3a' },
-                { icon: <Plus size={18} />, label: "Add", action: () => setShowCreateWallet(true), color: '#2c2c2e' },
-                { icon: <QrCode size={18} />, label: "QR", action: () => {}, color: '#2c2c2e' },
+                { icon: <Plus size={18} />, label: "New", action: () => setShowCreateWallet(true), color: '#2c2c2e' },
+                { icon: <QrCode size={18} />, label: "Import", action: () => setShowImport(true), color: '#2c2c2e' },
               ].map(btn => (
                 <button key={btn.label} onClick={btn.action}
                   style={{ flex: 1, background: btn.color, border: 'none', borderRadius: 14, padding: '12px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: 'pointer', color: 'white' }}>
