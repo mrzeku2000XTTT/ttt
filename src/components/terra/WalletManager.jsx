@@ -123,7 +123,8 @@ function ImportWalletSheet({ onClose, onImported, onBalanceUpdate }) {
       onImported({ address: bestAddress, mnemonic: mnemonic.trim(), label: label || `Wallet ${Date.now()}`, addressIndex: bestIndex });
       // Refresh balance after import
       if (onBalanceUpdate) {
-        setTimeout(() => onBalanceUpdate(), 1000);
+        await new Promise(resolve => setTimeout(resolve, 100));
+        onBalanceUpdate();
       }
       onClose();
     } catch (err) {
