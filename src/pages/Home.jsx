@@ -701,6 +701,22 @@ export default function HomePage() {
             </Link>
           </motion.div>
 
+          {/* Create Wallet Button */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 1.35 }}
+          >
+            <Link to={createPageUrl("Terra")}>
+              <Button
+                className="h-12 px-8 text-sm md:text-base font-bold bg-black/60 hover:bg-black/40 text-cyan-400 border border-cyan-500/40 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                <Wallet className="w-4 h-4 mr-2" />
+                Create Wallet
+              </Button>
+            </Link>
+          </motion.div>
+
           {/* Enter TTT Button - No Background */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
