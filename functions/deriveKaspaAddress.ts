@@ -14,11 +14,8 @@ Deno.serve(async (req) => {
       hdPath: `m/44'/111111'/0'/0/${idx}`,
     });
     const { address } = await wallet.getNewAddress({ privateKey });
-    
-    // Strip kaspa: prefix if present to ensure consistency
-    const cleanAddress = address.startsWith('kaspa:') ? address.slice(6) : address;
 
-    return Response.json({ address: cleanAddress, addressIndex: idx });
+    return Response.json({ address, addressIndex: idx });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
