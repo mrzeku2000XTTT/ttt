@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ProfileTab from "@/components/terra/ProfileTab";
+import WalletManager, { WalletMenuSheet, BackupSeedSheet, ImportWalletSheet, DeleteConfirmSheet } from "@/components/terra/WalletManager";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   QrCode, Plus, ArrowDownLeft, ArrowUpRight,
