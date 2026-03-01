@@ -202,10 +202,17 @@ export default function TerraPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
+      // Try to get user data if authenticated, but don't fail if not logged in
+      let currentUser = null;
+      try {
+        currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (err) {
+        console.log('User not authenticated, continuing in wallet-only mode');
+        setUser(null);
+      }
 
-      // Load wallets: start from localStorage, seed from user profile
+      // Load wallets: start from localStorage, seed from user profile if authenticated
       let stored = loadStoredWallets();
       const profileAddr = currentUser?.created_wallet_address || currentUser?.kaspa_address;
       if (profileAddr && !stored.find(w => w.address === profileAddr)) {
