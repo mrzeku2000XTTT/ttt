@@ -418,44 +418,49 @@ export default function TerraPage() {
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 16 }}>
         {tab === "home" && (
           <div>
-            {/* Balance Card */}
-            <div style={{ margin: '16px 16px 20px', background: '#0d0d0d', borderRadius: 22, padding: '28px 24px', border: '1px solid rgba(255,255,255,0.07)', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 80% 20%, rgba(26,115,232,0.08) 0%, transparent 60%)', pointerEvents: 'none' }} />
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>Total Balance</span>
-                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                  <button onClick={loadData} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', padding: 0 }}>
-                    <RefreshCw size={14} />
-                  </button>
-                  <button onClick={() => setBalanceHidden(h => !h)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer' }}>
-                    {balanceHidden ? <Eye size={16} /> : <EyeOff size={16} />}
-                  </button>
-                </div>
-              </div>
-              {loading ? (
-                <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 28, fontWeight: 600, marginBottom: 4 }}>Loading...</div>
+            {/* Wallet Cards + Manage */}
+            <div style={{ margin: '16px 16px 8px' }}>
+              {wallets.length > 0 ? (
+                <WalletManager
+                  wallets={wallets}
+                  activeIdx={activeWalletIdx}
+                  onChangeIdx={setActiveWalletIdx}
+                  balances={balances}
+                  kasPrice={kasPrice}
+                  loading={loading}
+                  balanceHidden={balanceHidden}
+                  onMenuOpen={() => setShowWalletMenu(true)}
+                />
               ) : (
-                <>
-                  <div style={{ color: 'white', fontSize: 36, fontWeight: 700, letterSpacing: -1, marginBottom: 4 }}>{displayKas}</div>
-                  <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 15, marginBottom: 20 }}>{displayUsd}</div>
-                </>
+                /* Empty card placeholder */
+                <div style={{ background: '#0d0d0d', borderRadius: 22, padding: '28px 24px', border: '1px solid rgba(255,255,255,0.07)', textAlign: 'center' }}>
+                  <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 15 }}>No wallet</div>
+                </div>
               )}
-              <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: 11, marginBottom: 18, fontFamily: 'monospace' }}>{shortAddress}</div>
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: 10 }}>
-                {[
-                  { icon: <ArrowUpRight size={18} />, label: "Send", action: () => setSheet("send"), color: ACCENT },
-                  { icon: <ArrowDownLeft size={18} />, label: "Request", action: () => setSheet("request"), color: '#1c4a3a' },
-                  { icon: <Plus size={18} />, label: "Add", action: () => {}, color: '#2c2c2e' },
-                  { icon: <QrCode size={18} />, label: "QR", action: () => {}, color: '#2c2c2e' },
-                ].map(btn => (
-                  <button key={btn.label} onClick={btn.action}
-                    style={{ flex: 1, background: btn.color, border: 'none', borderRadius: 14, padding: '12px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: 'pointer', color: 'white' }}>
-                    {btn.icon}
-                    <span style={{ fontSize: 11, fontWeight: 500 }}>{btn.label}</span>
-                  </button>
-                ))}
-              </div>
+            </div>
+
+            {/* Quick toggle row */}
+            <div style={{ margin: '8px 16px 16px', display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={loadData} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', padding: 4 }}><RefreshCw size={14} /></button>
+              <button onClick={() => setBalanceHidden(h => !h)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: 4 }}>
+                {balanceHidden ? <Eye size={16} /> : <EyeOff size={16} />}
+              </button>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ margin: '0 16px 20px', display: 'flex', gap: 10 }}>
+              {[
+                { icon: <ArrowUpRight size={18} />, label: "Send", action: () => setSheet("send"), color: ACCENT },
+                { icon: <ArrowDownLeft size={18} />, label: "Request", action: () => setSheet("request"), color: '#1c4a3a' },
+                { icon: <Plus size={18} />, label: "Add", action: () => setShowCreateWallet(true), color: '#2c2c2e' },
+                { icon: <QrCode size={18} />, label: "QR", action: () => {}, color: '#2c2c2e' },
+              ].map(btn => (
+                <button key={btn.label} onClick={btn.action}
+                  style={{ flex: 1, background: btn.color, border: 'none', borderRadius: 14, padding: '12px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: 'pointer', color: 'white' }}>
+                  {btn.icon}
+                  <span style={{ fontSize: 11, fontWeight: 500 }}>{btn.label}</span>
+                </button>
+              ))}
             </div>
 
             {/* Create Wallet CTA — shown when no wallet connected */}
