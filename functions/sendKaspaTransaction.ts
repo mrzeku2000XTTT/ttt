@@ -2,7 +2,7 @@
 import { KaspaWallet } from 'npm:@okxweb3/coin-kaspa@2.4.9';
 
 const KASPA_API = 'https://api.kaspa.org';
-const FEE_SOMPI = 10000; // 0.0001 KAS minimum fee
+const FEE_SOMPI = 1000; // 0.00001 KAS minimum fee
 
 Deno.serve(async (req) => {
   try {
