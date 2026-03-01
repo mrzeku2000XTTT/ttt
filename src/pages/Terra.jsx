@@ -431,7 +431,7 @@ export default function TerraPage() {
       {/* Sheets */}
       <AnimatePresence>
         {sheet === "send" && <SendSheet onClose={() => setSheet(null)} activeWallet={activeWallet} />}
-        {sheet === "receive" && <ReceiveSheet onClose={() => setSheet(null)} address={walletAddress} />}
+        {sheet === "receive" && <ReceiveSheet onClose={() => setSheet(null)} address={walletAddress} onSuccess={() => { setSheet(null); setTab("home"); loadData(); }} />}
         {showCreateWallet && (
           <CreateWalletModal
             onClose={() => setShowCreateWallet(false)}
