@@ -258,8 +258,6 @@ export default function TerraPage() {
     setWallets(updated);
     saveStoredWallets(updated);
     setActiveWalletIdx(updated.length - 1);
-    // Initialize balance to 0 for immediate display
-    setBalances(prev => ({ ...prev, [w.address]: 0 }));
     // save primary to user profile if first
     if (wallets.length === 0) {
       base44.auth.updateMe({ created_wallet_address: w.address }).catch(() => {});
