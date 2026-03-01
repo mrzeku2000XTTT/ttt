@@ -581,10 +581,46 @@ export default function TerraPage() {
         {showCreateWallet && (
           <CreateWalletModal
             onClose={() => setShowCreateWallet(false)}
-            onCreated={(w) => {
-              setWalletAddress(w.address);
-              base44.auth.updateMe({ created_wallet_address: w.address }).catch(() => {});
-            }}
+            onCreated={(w) => addWallet(w)}
+          />
+        )}
+        {showWalletMenu && (
+          <WalletMenuSheet
+            wallet={activeWallet}
+            onClose={() => setShowWalletMenu(false)}
+            onBackup={() => setShowBackup(true)}
+            onImport={() => setShowImport(true)}
+            onDelete={() => setShowDelete(true)}
+          />
+        )}
+        {showBackup && activeWallet?.mnemonic && (
+          <BackupSeedSheet wallet={activeWallet} onClose={() => setShowBackup(false)} />
+        )}
+        {showBackup && !activeWallet?.mnemonic && (
+          <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 28, stiffness: 300 }}
+            style={{ position: 'fixed', inset: 0, background: '#0a0a0a', zIndex: 300, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: SF, gap: 16 }}>
+            <AlertTriangle size={40} color="#ff9500" />
+            <div style={{ color: 'white', fontSize: 17, fontWeight: 700 }}>No seed phrase stored</div>
+            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, textAlign: 'center', padding: '0 32px' }}>
+              This wallet was imported by address only. To backup, import the wallet using its seed phrase.
+            </div>
+            <button onClick={() => setShowBackup(false)} style={{ background: '#1c1c1e', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)', borderRadius: 14, padding: '14px 32px', fontSize: 15, cursor: 'pointer', fontFamily: SF }}>
+              Close
+            </button>
+          </motion.div>
+        )}
+        {showImport && (
+          <ImportWalletSheet
+            onClose={() => setShowImport(false)}
+            onImported={(w) => addWallet(w)}
+          />
+        )}
+        {showDelete && activeWallet && (
+          <DeleteConfirmSheet
+            wallet={activeWallet}
+            onClose={() => setShowDelete(false)}
+            onDeleted={deleteActiveWallet}
           />
         )}
       </AnimatePresence>
