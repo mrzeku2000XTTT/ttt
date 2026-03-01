@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
     const { mnemonic, fromAddress, toAddress, amountKas } = await req.json();
 
     if (!mnemonic || !fromAddress || !toAddress || !amountKas) {
-      return Response.json({ error: 'Missing required fields: mnemonic, fromAddress, toAddress, amountKas' }, { status: 400 });
+      return Response.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     const amountSompi = Math.round(parseFloat(amountKas) * 1e8);
@@ -22,29 +22,27 @@ Deno.serve(async (req) => {
       hdPath: "m/44'/111111'/0'/0/0",
     });
 
-    // 2. Fetch UTXOs for sender
+    // 2. Fetch UTXOs
     const utxoRes = await fetch(`${KASPA_API}/addresses/${fromAddress}/utxos`);
-    if (!utxoRes.ok) throw new Error(`Failed to fetch UTXOs: ${utxoRes.statusText}`);
+    if (!utxoRes.ok) {
+      const txt = await utxoRes.text();
+      throw new Error(`Failed to fetch UTXOs: ${utxoRes.status} ${txt}`);
+    }
     const utxos = await utxoRes.json();
+    if (!utxos || utxos.length === 0) throw new Error('No UTXOs. Your balance may be 0 or unconfirmed.');
 
-    if (!utxos || utxos.length === 0) throw new Error('No UTXOs available. Balance may be 0.');
-
-    // 3. Select UTXOs (greedy selection)
+    // 3. Greedy UTXO selection
     const needed = amountSompi + FEE_SOMPI;
     let totalIn = 0;
     const selectedUtxos = [];
-
-    // Sort by amount descending for efficiency
     utxos.sort((a, b) => Number(b.utxoEntry.amount) - Number(a.utxoEntry.amount));
-
     for (const utxo of utxos) {
       if (totalIn >= needed) break;
       selectedUtxos.push(utxo);
       totalIn += Number(utxo.utxoEntry.amount);
     }
-
     if (totalIn < needed) {
-      throw new Error(`Insufficient balance. Need ${needed / 1e8} KAS (including fee), have ${totalIn / 1e8} KAS`);
+      throw new Error(`Insufficient balance. Need ${(needed / 1e8).toFixed(4)} KAS (incl. fee), have ${(totalIn / 1e8).toFixed(4)} KAS`);
     }
 
     const change = totalIn - amountSompi - FEE_SOMPI;
@@ -61,30 +59,34 @@ Deno.serve(async (req) => {
     const outputs = [{ address: toAddress, amount: amountSompi }];
     if (change > 0) outputs.push({ address: fromAddress, amount: change });
 
-    // 6. Sign transaction with OKX SDK
-    const signParams = {
+    // 6. Sign with OKX SDK
+    const signResult = await wallet.signTransaction({
       data: { inputs, outputs, address: fromAddress, fee: FEE_SOMPI },
       privateKey,
-    };
-    const signedTx = await wallet.signTransaction(signParams);
-    const txData = typeof signedTx === 'string' ? JSON.parse(signedTx) : signedTx;
+    });
 
-    // 7. Submit to Kaspa REST API
-    const submitBody = {
-      transaction: txData.transaction || txData,
-      allowOrphan: false,
-    };
+    // The OKX SDK may return a string or object
+    const signed = typeof signResult === 'string' ? JSON.parse(signResult) : signResult;
+    console.log('OKX sign result keys:', Object.keys(signed));
+
+    // 7. Extract the raw transaction object and submit
+    // OKX SDK wraps result – handle both shapes
+    const rawTx = signed.transaction ?? signed.tx ?? signed;
+    console.log('rawTx keys:', Object.keys(rawTx));
 
     const submitRes = await fetch(`${KASPA_API}/transactions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(submitBody),
+      body: JSON.stringify({ transaction: rawTx, allowOrphan: false }),
     });
 
-    const submitData = await submitRes.json();
+    const submitText = await submitRes.text();
+    let submitData;
+    try { submitData = JSON.parse(submitText); } catch { submitData = submitText; }
+    console.log('submit status:', submitRes.status, 'body:', submitText.slice(0, 300));
 
     if (!submitRes.ok) {
-      throw new Error(`Submit failed: ${JSON.stringify(submitData)}`);
+      throw new Error(`Submit failed (${submitRes.status}): ${submitText.slice(0, 200)}`);
     }
 
     return Response.json({
@@ -95,6 +97,7 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
+    console.error('sendKaspaTransaction error:', error.message);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
