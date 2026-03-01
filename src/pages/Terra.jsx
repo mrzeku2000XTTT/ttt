@@ -387,6 +387,20 @@ export default function TerraPage() {
               </div>
             </div>
 
+            {/* Create Wallet CTA — shown when no wallet connected */}
+            {!loading && !walletAddress && (
+              <div style={{ margin: '0 16px 20px', background: '#0d0d0d', borderRadius: 18, padding: '24px', border: '1px solid rgba(26,115,232,0.2)', textAlign: 'center' }}>
+                <div style={{ color: 'white', fontSize: 17, fontWeight: 700, marginBottom: 6 }}>No Wallet Connected</div>
+                <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, marginBottom: 18, lineHeight: 1.5 }}>
+                  Create a new Kaspa wallet to send, receive, and manage your KAS.
+                </div>
+                <button onClick={() => setShowCreateWallet(true)}
+                  style={{ background: ACCENT, color: 'white', border: 'none', borderRadius: 14, padding: '14px 32px', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: SF, width: '100%' }}>
+                  Create Wallet
+                </button>
+              </div>
+            )}
+
             {/* KAS Price Info */}
             {kasPrice && (
               <div style={{ margin: '0 16px 20px', background: '#0d0d0d', borderRadius: 14, padding: '14px 18px', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
