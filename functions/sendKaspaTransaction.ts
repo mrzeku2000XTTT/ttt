@@ -71,40 +71,22 @@ Deno.serve(async (req) => {
 
     const change = totalIn - amountSompi - FEE_SOMPI;
 
-    // 4. Build inputs for OKX SDK
+    // 4. Build inputs for signing
     const inputs = selectedUtxos.map(u => ({
-      txId: u.outpoint.transactionId,
-      vOut: u.outpoint.index,
-      address: normalizedFromAddress,
-      amount: Number(u.utxoEntry.amount),
+     txId: u.outpoint.transactionId,
+     vOut: u.outpoint.index,
+     address: normalizedFromAddress,
+     amount: Number(u.utxoEntry.amount),
     }));
 
     // 5. Build outputs
     const outputs = [{ address: normalizedToAddress, amount: amountSompi }];
     if (change > 0) outputs.push({ address: normalizedFromAddress, amount: change });
 
-    // 6. Build transaction for Kaspa network
-    // Kaspa transaction format expects: inputs with scriptPublicKey, outputs
-    const txIns = selectedUtxos.map((u, idx) => ({
-      previousOutpoint: {
-        transactionId: u.outpoint.transactionId,
-        index: u.outpoint.index,
-      },
-      signatureScript: '', // Will be filled after signing
-    }));
-
-    const txOuts = outputs.map(o => ({
-      value: o.amount.toString(),
-      scriptPublicKey: {
-        version: 0,
-        script: o.address, // Kaspa expects address in script field for now
-      },
-    }));
-
-    // 7. Sign transaction with OKX SDK
+    // 6. Sign transaction with OKX SDK
     const signResult = await wallet.signTransaction({
-      data: { inputs, outputs, address: normalizedFromAddress, fee: FEE_SOMPI },
-      privateKey,
+     data: { inputs, outputs, address: normalizedFromAddress, fee: FEE_SOMPI },
+     privateKey,
     });
 
     // Parse OKX result
