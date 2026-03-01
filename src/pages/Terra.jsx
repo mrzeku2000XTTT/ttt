@@ -455,7 +455,7 @@ export default function TerraPage() {
                <h2 style={{ color: 'white', fontSize: 22, fontWeight: 700 }}>Activity</h2>
                {transactions.length > 0 && (
                  <button onClick={loadTransactions} disabled={loadingTx} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: 4 }}>
-                   <RefreshCw size={16} style={{ transform: loadingTx ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }} />
+                   <RefreshCw size={16} />
                  </button>
                )}
              </div>
