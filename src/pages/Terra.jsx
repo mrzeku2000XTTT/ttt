@@ -225,8 +225,11 @@ export default function TerraPage() {
       const priceRes = await base44.functions.invoke('getKaspaPrice', {});
       const price = priceRes?.data?.price || priceRes?.data?.usd || null;
       setKasPrice(price);
+      
+      // End loading—balance will fetch in background
+      setLoading(false);
 
-      // Fetch balances for all wallets
+      // Fetch balances for all wallets (non-blocking)
       if (stored.length > 0) {
         const balMap = {};
         await Promise.all(stored.map(async (w) => {
@@ -245,8 +248,8 @@ export default function TerraPage() {
       }
     } catch (err) {
       console.log('Terra load error:', err);
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const addWallet = (w) => {
