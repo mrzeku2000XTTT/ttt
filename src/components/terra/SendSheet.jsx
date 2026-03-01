@@ -164,16 +164,13 @@ function parseKaspaQR(raw) {
 }
 
 // ── Main SendSheet ───────────────────────────────────────────────────────────
-export default function SendSheet({ onClose, activeWallet, onBalanceUpdate, balance }) {
+export default function SendSheet({ onClose, activeWallet, onBalanceUpdate }) {
   const [step, setStep] = useState('input'); // input | confirm | sending | done | error
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [showScanner, setShowScanner] = useState(false);
   const [txId, setTxId] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-  
-  const balanceNum = parseFloat(balance) || 0;
-  const maxSendable = Math.max(0, balanceNum - 0.0001); // Reserve fee
 
   const hasMnemonic = activeWallet?.mnemonic;
 
@@ -201,13 +198,11 @@ export default function SendSheet({ onClose, activeWallet, onBalanceUpdate, bala
     setErrorMsg('');
     try {
       if (!hasMnemonic) throw new Error('No seed phrase stored for this wallet. Import the wallet with its seed phrase to send.');
-      const amountNum = parseFloat(amount);
-      if (isNaN(amountNum) || amountNum <= 0) throw new Error('Invalid amount');
       const res = await base44.functions.invoke('sendKaspaTransaction', {
         mnemonic: activeWallet.mnemonic,
         fromAddress: activeWallet.address,
         toAddress: recipient.trim(),
-        amountKas: amountNum,
+        amountKas: parseFloat(amount),
       });
       if (res.data?.error) throw new Error(res.data.error);
       setTxId(res.data.txId || '');
@@ -262,14 +257,7 @@ export default function SendSheet({ onClose, activeWallet, onBalanceUpdate, bala
                 <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>Amount (KAS)</span>
                 <span style={{ color: 'white', fontSize: 54, fontWeight: 700, letterSpacing: -2 }}>{amount || "0"}</span>
                 <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>KAS</span>
-                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 8 }}>Balance: {balanceNum.toFixed(8)} KAS</span>
               </div>
-
-              {/* Max button */}
-              <button onClick={() => setAmount(maxSendable.toFixed(8))}
-                style={{ width: '100%', background: 'rgba(26,115,232,0.1)', border: '1px solid rgba(26,115,232,0.3)', borderRadius: 10, padding: '10px', color: ACCENT, fontSize: 13, fontWeight: 500, cursor: 'pointer', marginBottom: 8, fontFamily: SF }}>
-                Max: {maxSendable.toFixed(8)} KAS
-              </button>
 
               {/* Numpad */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2, marginBottom: 14 }}>

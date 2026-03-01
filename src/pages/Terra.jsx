@@ -3,7 +3,6 @@ import ProfileTab from "@/components/terra/ProfileTab";
 import WalletManager, { WalletMenuSheet, BackupSeedSheet, ImportWalletSheet, DeleteConfirmSheet } from "@/components/terra/WalletManager";
 import ReceiveSheet from "@/components/terra/ReceiveSheet";
 import SendSheet from "@/components/terra/SendSheet";
-import TerraCard from "@/components/terra/TerraCard";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   QrCode, Plus, ArrowDownLeft, ArrowUpRight,
@@ -196,16 +195,7 @@ export default function TerraPage() {
   const [showImport, setShowImport] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
 
-  useEffect(() => { 
-    loadData();
-    
-    // Auto-refresh balances every 10 seconds
-    const interval = setInterval(() => {
-      loadData();
-    }, 10000);
-    
-    return () => clearInterval(interval);
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const activeWallet = wallets[activeWalletIdx] || null;
   const walletAddress = activeWallet?.address || null;
@@ -263,23 +253,12 @@ export default function TerraPage() {
     }
   };
 
-  const addWallet = async (w) => {
+  const addWallet = (w) => {
     const newWallet = { address: w.address, mnemonic: w.mnemonic || '', label: w.label || `Wallet ${wallets.length + 1}` };
     const updated = [...wallets, newWallet];
     setWallets(updated);
     saveStoredWallets(updated);
     setActiveWalletIdx(updated.length - 1);
-    
-    // Fetch balance for new wallet immediately
-    try {
-      const balRes = await base44.functions.invoke('getKaspaBalance', { address: w.address });
-      const bal = balRes?.data?.balanceKAS ?? balRes?.data?.balance ?? balRes?.data?.kaspa ?? 0;
-      setBalances(prev => ({ ...prev, [w.address]: bal }));
-    } catch (e) {
-      console.error(`Failed to fetch balance for ${w.address}:`, e);
-      setBalances(prev => ({ ...prev, [w.address]: 0 }));
-    }
-    
     // save primary to user profile if first
     if (wallets.length === 0) {
       base44.auth.updateMe({ created_wallet_address: w.address }).catch(() => {});
@@ -430,11 +409,6 @@ export default function TerraPage() {
                 <ChevronRight size={18} color="rgba(255,255,255,0.3)" />
               </div>
             ))}
-            {walletAddress && (
-              <div style={{ marginTop: 24 }}>
-                <TerraCard walletAddress={walletAddress} user={user} />
-              </div>
-            )}
           </div>
         )}
 
@@ -481,7 +455,7 @@ export default function TerraPage() {
 
       {/* Sheets */}
       <AnimatePresence>
-        {sheet === "send" && <SendSheet onClose={() => setSheet(null)} activeWallet={activeWallet} onBalanceUpdate={loadData} balance={balances[walletAddress] || 0} />}
+        {sheet === "send" && <SendSheet onClose={() => setSheet(null)} activeWallet={activeWallet} onBalanceUpdate={loadData} />}
         {sheet === "receive" && <ReceiveSheet onClose={() => setSheet(null)} address={walletAddress} onSuccess={() => { setSheet(null); setTab("home"); loadData(); }} />}
         {showCreateWallet && (
           <CreateWalletModal

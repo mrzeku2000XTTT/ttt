@@ -247,7 +247,6 @@ import Taiwo from './pages/Taiwo';
 import TapToTip from './pages/TapToTip';
 import TemplateBuilder from './pages/TemplateBuilder';
 import Terms from './pages/Terms';
-import Terra from './pages/Terra';
 import TestJobAPI from './pages/TestJobAPI';
 import TestKaspaAPI from './pages/TestKaspaAPI';
 import TestZelcore from './pages/TestZelcore';
@@ -283,6 +282,7 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
+import Terra from './pages/Terra';
 import __Layout from './Layout.jsx';
 
 
@@ -487,7 +487,6 @@ export const PAGES = {
     "TapToTip": TapToTip,
     "TemplateBuilder": TemplateBuilder,
     "Terms": Terms,
-    "Terra": Terra,
     "TestJobAPI": TestJobAPI,
     "TestKaspaAPI": TestKaspaAPI,
     "TestZelcore": TestZelcore,
@@ -523,6 +522,7 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
+    "Terra": Terra,
 }
 
 export const pagesConfig = {
