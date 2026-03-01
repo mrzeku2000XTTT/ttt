@@ -126,7 +126,7 @@ export default function ReceiveSheet({ address, onClose, onSuccess }) {
              <div style={{ width: '100%' }}>
                <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, marginBottom: 6, textAlign: 'center' }}>Your Kaspa Address</div>
                <div style={{ color: 'white', fontSize: 11, fontFamily: 'monospace', lineHeight: 1.7, wordBreak: 'break-all', background: '#1c1c1e', borderRadius: 12, padding: '12px 14px', border: '1px solid rgba(255,255,255,0.08)', textAlign: 'center' }}>
-                 kaspa:{address}
+                 kaspa:{address.startsWith('kaspa:') ? address.slice(6) : address}
                </div>
              </div>
 
