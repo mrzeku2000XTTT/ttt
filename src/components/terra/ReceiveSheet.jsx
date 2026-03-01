@@ -1,51 +1,51 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { X, Copy, Check } from "lucide-react";
 
 const SF = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', sans-serif";
 
-function QRCanvas({ value, size = 220 }) {
-  const canvasRef = useRef(null);
-  const [ready, setReady] = useState(false);
+function QRImage({ value, size = 220 }) {
+  const [dataUrl, setDataUrl] = useState(null);
 
   useEffect(() => {
     if (!value) return;
+    let cancelled = false;
 
-    const loadAndRender = async () => {
-      // Load qrcode lib if not present
-      if (!window.QRCode || !window.QRCode.toCanvas) {
+    const run = async () => {
+      // Load lib if needed
+      if (!window.QRCode || !window.QRCode.toDataURL) {
         await new Promise((resolve, reject) => {
-          // remove any stale script
-          const existing = document.querySelector('script[data-qrlib]');
-          if (existing) existing.remove();
           const s = document.createElement('script');
-          s.setAttribute('data-qrlib', '1');
           s.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
           s.onload = resolve;
           s.onerror = reject;
           document.head.appendChild(s);
         });
       }
-      setReady(true);
+      // Use toDataURL — purely async, no DOM ref needed
+      const url = await window.QRCode.toDataURL(value, {
+        width: size,
+        margin: 2,
+        color: { dark: '#000000', light: '#ffffff' },
+      });
+      if (!cancelled) setDataUrl(url);
     };
 
-    loadAndRender().catch(console.error);
-  }, [value]);
+    run().catch(console.error);
+    return () => { cancelled = true; };
+  }, [value, size]);
 
-  useEffect(() => {
-    if (!ready || !value || !canvasRef.current) return;
-    if (!window.QRCode || !window.QRCode.toCanvas) return;
-    window.QRCode.toCanvas(canvasRef.current, value, {
-      width: size,
-      margin: 2,
-      color: { dark: '#000000', light: '#ffffff' },
-    }, (err) => { if (err) console.error('QR render error:', err); });
-  }, [ready, value, size]);
+  if (!dataUrl) {
+    return (
+      <div style={{ width: size, height: size, background: '#f0f0f0', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ color: '#aaa', fontSize: 12 }}>Loading…</span>
+      </div>
+    );
+  }
 
   return (
-    <canvas ref={canvasRef}
-      width={size} height={size}
-      style={{ borderRadius: 12, display: 'block', width: size, height: size }} />
+    <img src={dataUrl} alt="QR Code"
+      style={{ width: size, height: size, borderRadius: 12, display: 'block', imageRendering: 'pixelated' }} />
   );
 }
 
