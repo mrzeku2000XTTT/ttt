@@ -92,14 +92,14 @@ Deno.serve(async (req) => {
     const outputs = [{ address: normalizedToAddress, amount: amountSompi }];
     if (change > 0) outputs.push({ address: normalizedFromAddress, amount: change });
 
-    // 6. Build transaction payload
-    const txPayload = {
-      inputs: selectedUtxos.map(u => ({
+    // 6. Build proper Kaspa transaction format for signing
+    // OKX SDK expects the raw transaction data
+    const txData = {
+      inputs: inputs.map(i => ({
         previousOutpoint: {
-          transactionId: u.outpoint.transactionId,
-          index: u.outpoint.index,
+          transactionId: i.txId,
+          index: i.vOut,
         },
-        scriptPubKey: '', // Will be populated by signing
       })),
       outputs: outputs.map(o => ({
         value: o.amount.toString(),
@@ -107,40 +107,45 @@ Deno.serve(async (req) => {
       })),
     };
 
-    // 7. Sign transaction
+    // 7. Sign transaction with OKX SDK
     let signedTx;
     try {
-      const txString = JSON.stringify(txPayload);
       signedTx = await wallet.signTransaction({
-        data: txString,
+        data: txData,
         privateKey,
       });
     } catch (e) {
       throw new Error(`Failed to sign transaction: ${e.message}`);
     }
 
-    // 8. Submit to Kaspa API
-    const submitPayload = {
-      transaction: typeof signedTx === 'string' ? signedTx : JSON.stringify(signedTx),
-    };
+    // 8. Format transaction for Kaspa REST API
+    // The API expects hex-encoded transaction
+    const txHex = typeof signedTx === 'string' ? signedTx : JSON.stringify(signedTx);
 
+    // 9. Submit to Kaspa API
     const submitRes = await fetch(`${KASPA_API}/transactions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(submitPayload),
+      body: JSON.stringify({
+        transaction: txHex,
+      }),
     });
 
     const submitText = await submitRes.text();
-    let submitData;
-    try { submitData = JSON.parse(submitText); } catch { submitData = submitText; }
+    let submitData = {};
+    try { 
+      submitData = JSON.parse(submitText); 
+    } catch { 
+      submitData = { raw: submitText };
+    }
 
     if (!submitRes.ok) {
-      throw new Error(`Transaction rejected by network (${submitRes.status}): ${submitText.slice(0, 200)}`);
+      throw new Error(`Network rejected transaction (${submitRes.status}): ${submitText.slice(0, 150)}`);
     }
 
     return Response.json({
       success: true,
-      txId: submitData.transactionId || submitData.txid || submitData.id,
+      txId: submitData.transactionId || submitData.txid || submitData.id || 'pending',
       amountKas: parseFloat(amountKas),
       fee: FEE_SOMPI / 1e8,
     });
