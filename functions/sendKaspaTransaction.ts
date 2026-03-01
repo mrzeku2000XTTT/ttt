@@ -92,38 +92,55 @@ Deno.serve(async (req) => {
     const outputs = [{ address: normalizedToAddress, amount: amountSompi }];
     if (change > 0) outputs.push({ address: normalizedFromAddress, amount: change });
 
-    // 6. Sign transaction with OKX SDK
-    const signResult = await wallet.signTransaction({
-     data: { inputs, outputs, address: normalizedFromAddress, fee: FEE_SOMPI },
-     privateKey,
-    });
+    // 6. Build transaction payload
+    const txPayload = {
+      inputs: selectedUtxos.map(u => ({
+        previousOutpoint: {
+          transactionId: u.outpoint.transactionId,
+          index: u.outpoint.index,
+        },
+        scriptPubKey: '', // Will be populated by signing
+      })),
+      outputs: outputs.map(o => ({
+        value: o.amount.toString(),
+        address: o.address,
+      })),
+    };
 
-    // Parse OKX result
-    const signed = typeof signResult === 'string' ? JSON.parse(signResult) : signResult;
-    const signedTx = signed.transaction || signed.tx || signed;
+    // 7. Sign transaction
+    let signedTx;
+    try {
+      const txString = JSON.stringify(txPayload);
+      signedTx = await wallet.signTransaction({
+        data: txString,
+        privateKey,
+      });
+    } catch (e) {
+      throw new Error(`Failed to sign transaction: ${e.message}`);
+    }
 
     // 8. Submit to Kaspa API
-    // Wrap transaction in proper format expected by API
-    const submitPayload = typeof signedTx === 'string' ? { transaction: signedTx } : { transaction: JSON.stringify(signedTx) };
+    const submitPayload = {
+      transaction: typeof signedTx === 'string' ? signedTx : JSON.stringify(signedTx),
+    };
 
     const submitRes = await fetch(`${KASPA_API}/transactions`, {
-     method: 'POST',
-     headers: { 'Content-Type': 'application/json' },
-     body: JSON.stringify(submitPayload),
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(submitPayload),
     });
 
     const submitText = await submitRes.text();
     let submitData;
     try { submitData = JSON.parse(submitText); } catch { submitData = submitText; }
-    console.log('submit status:', submitRes.status, 'body:', submitText.slice(0, 300));
 
     if (!submitRes.ok) {
-      throw new Error(`Submit failed (${submitRes.status}): ${submitText.slice(0, 200)}`);
+      throw new Error(`Transaction rejected by network (${submitRes.status}): ${submitText.slice(0, 200)}`);
     }
 
     return Response.json({
       success: true,
-      txId: submitData.transactionId || submitData.txid || submitData,
+      txId: submitData.transactionId || submitData.txid || submitData.id,
       amountKas: parseFloat(amountKas),
       fee: FEE_SOMPI / 1e8,
     });
