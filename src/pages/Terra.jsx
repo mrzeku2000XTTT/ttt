@@ -254,12 +254,23 @@ export default function TerraPage() {
     }
   };
 
-  const addWallet = (w) => {
+  const addWallet = async (w) => {
     const newWallet = { address: w.address, mnemonic: w.mnemonic || '', label: w.label || `Wallet ${wallets.length + 1}` };
     const updated = [...wallets, newWallet];
     setWallets(updated);
     saveStoredWallets(updated);
     setActiveWalletIdx(updated.length - 1);
+    
+    // Fetch balance for new wallet immediately
+    try {
+      const balRes = await base44.functions.invoke('getKaspaBalance', { address: w.address });
+      const bal = balRes?.data?.balanceKAS ?? balRes?.data?.balance ?? balRes?.data?.kaspa ?? 0;
+      setBalances(prev => ({ ...prev, [w.address]: bal }));
+    } catch (e) {
+      console.error(`Failed to fetch balance for ${w.address}:`, e);
+      setBalances(prev => ({ ...prev, [w.address]: 0 }));
+    }
+    
     // save primary to user profile if first
     if (wallets.length === 0) {
       base44.auth.updateMe({ created_wallet_address: w.address }).catch(() => {});
