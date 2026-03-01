@@ -168,9 +168,15 @@ function CreateWalletModal({ onClose, onCreated }) {
 
   const generate = async () => {
     setStep("loading");
-    const res = await base44.functions.invoke('createKaspaWallet', { wordCount });
-    setWallet(res.data);
-    setStep("reveal");
+    try {
+      const res = await base44.functions.invoke('createKaspaWallet', { wordCount });
+      if (res.data?.error) throw new Error(res.data.error);
+      setWallet(res.data);
+      setStep("reveal");
+    } catch (err) {
+      console.error('Wallet generation failed:', err);
+      setStep("error");
+    }
   };
 
   const copyMnemonic = () => {
