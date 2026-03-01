@@ -3,81 +3,70 @@ import { wordlist } from 'npm:@scure/bip39@1.3.0/wordlists/english';
 import { HDKey } from 'npm:@scure/bip32@1.4.0';
 
 // =============================================================
-// Kaspa address encoding
-// Kaspa uses a custom bech32 variant:
-//   - HRP: "kaspa"
-//   - 8-byte checksum (not 6)
-//   - Custom generator polynomial
-//   - P2PK Schnorr: version byte = 0x00, payload = x-only pubkey (32 bytes) converted to 5-bit groups
+// Kaspa address encoding — ported directly from:
+// https://github.com/kaspanet/rusty-kaspa/blob/master/crypto/addresses/src/bech32.rs
 // =============================================================
 
 const CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
 
-// Kaspa's specific generator (different from Bitcoin's bech32)
-const GENERATOR = [
-  0x98f2bc8e61n,
-  0x79b76d99e2n,
-  0xf33e5fb3c4n,
-  0xae2eabe2a8n,
-  0x1e4f43e470n,
-];
-
 function polymod(values) {
-  let chk = 1n;
-  for (const v of values) {
-    const b = chk >> 35n;
-    chk = ((chk & 0x07ffffffffn) << 5n) ^ BigInt(v);
-    for (let i = 0; i < 5; i++) {
-      if ((b >> BigInt(i)) & 1n) chk ^= GENERATOR[i];
+  let c = 1n;
+  for (const d of values) {
+    const c0 = c >> 35n;
+    c = ((c & 0x07ffffffffn) << 5n) ^ BigInt(d);
+    if (c0 & 0x01n) c ^= 0x98f2bc8e61n;
+    if (c0 & 0x02n) c ^= 0x79b76d99e2n;
+    if (c0 & 0x04n) c ^= 0xf33e5fb3c4n;
+    if (c0 & 0x08n) c ^= 0xae2eabe2a8n;
+    if (c0 & 0x10n) c ^= 0x1e4f43e470n;
+  }
+  return c ^ 1n;
+}
+
+// Convert 8-bit array to 5-bit array with right padding (matches Rust conv8to5)
+function conv8to5(payload) {
+  const extra = payload.length % 5 === 0 ? 0 : 1;
+  const result = new Array(Math.floor(payload.length * 8 / 5) + extra).fill(0);
+  let idx = 0, buff = 0, bits = 0;
+  for (const c of payload) {
+    buff = (buff << 8) | c;
+    bits += 8;
+    while (bits >= 5) {
+      bits -= 5;
+      result[idx++] = (buff >> bits) & 0x1f;
     }
   }
-  return chk ^ 1n;
+  if (bits > 0) result[idx] = (buff << (5 - bits)) & 0x1f;
+  return result;
 }
 
-function hrpExpand(hrp) {
-  const ret = [];
-  for (const c of hrp) ret.push(c.charCodeAt(0) & 0x1f);
-  ret.push(0);
-  return ret;
-}
-
-function createChecksum(hrp, data) {
-  const values = hrpExpand(hrp).concat(data).concat([0, 0, 0, 0, 0, 0, 0, 0]);
-  const mod = polymod(values);
-  const ret = [];
-  for (let p = 7; p >= 0; p--) {
-    ret.push(Number((mod >> BigInt(p * 5)) & 31n));
-  }
-  return ret;
-}
-
-function convertBits(data, fromBits, toBits, pad = true) {
-  let acc = 0, bits = 0;
-  const ret = [];
-  const maxv = (1 << toBits) - 1;
-  for (const value of data) {
-    acc = (acc << fromBits) | value;
-    bits += fromBits;
-    while (bits >= toBits) {
-      bits -= toBits;
-      ret.push((acc >> bits) & maxv);
-    }
-  }
-  if (pad && bits > 0) ret.push((acc << (toBits - bits)) & maxv);
-  return ret;
+function checksum(payload, prefixStr) {
+  // prefix low-5-bits + [0] + payload + [0,0,0,0,0,0,0,0]
+  const prefixBytes = [...prefixStr].map(c => c.charCodeAt(0) & 0x1f);
+  const values = [...prefixBytes, 0, ...payload, 0, 0, 0, 0, 0, 0, 0, 0];
+  return polymod(values);
 }
 
 function kaspaAddress(compressedPubkey) {
-  // Extract x-only (32 bytes) from 33-byte compressed pubkey
-  const xOnly = compressedPubkey.slice(1); // drop the 02/03 prefix byte
+  // P2PK Schnorr: version = 0, payload = x-only pubkey (32 bytes)
+  const xOnly = Array.from(compressedPubkey.slice(1)); // drop 02/03 prefix
 
-  // Payload: version byte 0 (P2PK Schnorr) + x-only pubkey in 5-bit groups
-  const converted = convertBits(Array.from(xOnly), 8, 5, true);
-  const payload = [0x00, ...converted];
+  // Encode: conv8to5([version, ...payload])
+  const fiveBitPayload = conv8to5([0x00, ...xOnly]);
 
-  const checksum = createChecksum('kaspa', payload);
+  // Compute checksum (u64), take bytes [3..8] (last 5 bytes of 8-byte big-endian)
+  const chk = checksum(fiveBitPayload, 'kaspa');
+  const chkBig = BigInt(chk);
+  // Convert u64 to 8 big-endian bytes, take last 5
+  const chkBytes = [];
+  for (let i = 7; i >= 0; i--) {
+    chkBytes.unshift(Number((chkBig >> BigInt(i * 8)) & 0xffn));
+  }
+  const chkLast5 = chkBytes.slice(3); // bytes [3..8]
+  const fiveBitChecksum = conv8to5(chkLast5);
+
   let addr = 'kaspa:';
-  for (const b of [...payload, ...checksum]) addr += CHARSET[b];
+  for (const b of [...fiveBitPayload, ...fiveBitChecksum]) addr += CHARSET[b];
   return addr;
 }
 
@@ -92,7 +81,7 @@ Deno.serve(async (req) => {
     // 2. Derive seed (no passphrase)
     const seed = await bip39.mnemonicToSeed(mnemonic);
 
-    // 3. Kaspa HD derivation path: m/44'/111111'/0'/0/0
+    // 3. Kaspa HD derivation: m/44'/111111'/0'/0/0
     const master = HDKey.fromMasterSeed(seed);
     const child = master.derive("m/44'/111111'/0'/0/0");
 
