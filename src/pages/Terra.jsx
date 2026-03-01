@@ -196,7 +196,16 @@ export default function TerraPage() {
   const [showImport, setShowImport] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { 
+    loadData();
+    
+    // Auto-refresh balances every 10 seconds
+    const interval = setInterval(() => {
+      loadData();
+    }, 10000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const activeWallet = wallets[activeWalletIdx] || null;
   const walletAddress = activeWallet?.address || null;
