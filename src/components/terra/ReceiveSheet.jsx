@@ -72,7 +72,7 @@ export default function ReceiveSheet({ address, onClose }) {
         {address ? (
           <>
             <div style={{ background: 'white', borderRadius: 20, padding: 20, boxShadow: '0 0 40px rgba(26,115,232,0.25)' }}>
-              <QRCanvas value={address} size={220} />
+              <QRImage value={address} size={220} />
             </div>
 
             <div style={{ width: '100%' }}>
