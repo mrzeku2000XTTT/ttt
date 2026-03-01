@@ -256,7 +256,7 @@ export default function TerraPage() {
         top: 0,
         bottom: 0,
       }}
-
+    >
       {/* Scrollable Content */}
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 16 }}>
         {tab === "home" && (
