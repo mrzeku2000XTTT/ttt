@@ -20,9 +20,12 @@ Deno.serve(async (req) => {
 
     // 3. Derive address from private key
     const { address } = await wallet.getNewAddress({ privateKey });
+    
+    // Strip kaspa: prefix if present to ensure consistency
+    const cleanAddress = address.startsWith('kaspa:') ? address.slice(6) : address;
 
     return Response.json({
-      address,
+      address: cleanAddress,
       mnemonic,
       derivationPath: "m/44'/111111'/0'/0/0",
     });
