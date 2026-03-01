@@ -112,10 +112,13 @@ Deno.serve(async (req) => {
     const signedTx = signed.transaction || signed.tx || signed;
 
     // 8. Submit to Kaspa API
+    // Wrap transaction in proper format expected by API
+    const submitPayload = typeof signedTx === 'string' ? { transaction: signedTx } : { transaction: JSON.stringify(signedTx) };
+
     const submitRes = await fetch(`${KASPA_API}/transactions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(signedTx),
+     method: 'POST',
+     headers: { 'Content-Type': 'application/json' },
+     body: JSON.stringify(submitPayload),
     });
 
     const submitText = await submitRes.text();
