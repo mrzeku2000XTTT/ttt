@@ -269,6 +269,7 @@ import Veritas from './pages/Veritas';
 import Vibe from './pages/Vibe';
 import VibeSession from './pages/VibeSession';
 import VibeSetup from './pages/VibeSetup';
+import VibeWallet from './pages/VibeWallet';
 import VoxInvicta from './pages/VoxInvicta';
 import Waitlist from './pages/Waitlist';
 import Wallet from './pages/Wallet';
@@ -281,7 +282,7 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import VibeWallet from './pages/VibeWallet';
+import Terra from './pages/Terra';
 import __Layout from './Layout.jsx';
 
 
@@ -508,6 +509,7 @@ export const PAGES = {
     "Vibe": Vibe,
     "VibeSession": VibeSession,
     "VibeSetup": VibeSetup,
+    "VibeWallet": VibeWallet,
     "VoxInvicta": VoxInvicta,
     "Waitlist": Waitlist,
     "Wallet": Wallet,
@@ -520,7 +522,7 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "VibeWallet": VibeWallet,
+    "Terra": Terra,
 }
 
 export const pagesConfig = {
