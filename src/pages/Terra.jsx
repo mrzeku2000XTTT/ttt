@@ -225,7 +225,7 @@ export default function TerraPage() {
         await Promise.all(stored.map(async (w) => {
           if (!w.address) return;
           const balRes = await base44.functions.invoke('getKaspaBalance', { address: w.address });
-          balMap[w.address] = balRes?.data?.balance ?? balRes?.data?.kaspa ?? 0;
+          balMap[w.address] = balRes?.data?.balanceKAS ?? balRes?.data?.balance ?? balRes?.data?.kaspa ?? 0;
         }));
         setBalances(balMap);
       }
