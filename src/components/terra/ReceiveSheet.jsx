@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { X, Copy, Check } from "lucide-react";
+import QRCode from "qrcode";
 
 const SF = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', sans-serif";
 
@@ -10,42 +11,23 @@ function QRImage({ value, size = 220 }) {
   useEffect(() => {
     if (!value) return;
     let cancelled = false;
-
-    const run = async () => {
-      // Load lib if needed
-      if (!window.QRCode || !window.QRCode.toDataURL) {
-        await new Promise((resolve, reject) => {
-          const s = document.createElement('script');
-          s.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
-          s.onload = resolve;
-          s.onerror = reject;
-          document.head.appendChild(s);
-        });
-      }
-      // Use toDataURL — purely async, no DOM ref needed
-      const url = await window.QRCode.toDataURL(value, {
-        width: size,
-        margin: 2,
-        color: { dark: '#000000', light: '#ffffff' },
-      });
-      if (!cancelled) setDataUrl(url);
-    };
-
-    run().catch(console.error);
+    QRCode.toDataURL(value, {
+      width: size,
+      margin: 2,
+      color: { dark: '#000000', light: '#ffffff' },
+    }).then(url => { if (!cancelled) setDataUrl(url); }).catch(console.error);
     return () => { cancelled = true; };
   }, [value, size]);
 
   if (!dataUrl) {
     return (
-      <div style={{ width: size, height: size, background: '#f0f0f0', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ color: '#aaa', fontSize: 12 }}>Loading…</span>
-      </div>
+      <div style={{ width: size, height: size, background: '#e8e8e8', borderRadius: 12 }} />
     );
   }
 
   return (
     <img src={dataUrl} alt="QR Code"
-      style={{ width: size, height: size, borderRadius: 12, display: 'block', imageRendering: 'pixelated' }} />
+      style={{ width: size, height: size, borderRadius: 12, display: 'block' }} />
   );
 }
 
