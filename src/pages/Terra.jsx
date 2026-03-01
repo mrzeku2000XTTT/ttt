@@ -483,9 +483,9 @@ export default function TerraPage() {
             onClose={() => setShowImport(false)}
             onImported={(w) => {
               addWallet(w);
-              setTimeout(() => loadData(), 500);
               setTab("home");
             }}
+            onBalanceUpdate={loadData}
           />
         )}
         {showDelete && activeWallet && (
