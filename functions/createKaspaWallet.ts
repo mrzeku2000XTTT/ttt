@@ -1,16 +1,26 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import * as bip39 from 'npm:@scure/bip39@1.3.0';
 import { wordlist } from 'npm:@scure/bip39@1.3.0/wordlists/english';
 import { HDKey } from 'npm:@scure/bip32@1.4.0';
-import { secp256k1 } from 'npm:@noble/curves@1.4.0/secp256k1';
 
-// Kaspa uses schnorr pubkeys with a specific address encoding
-// Address format: kaspa:<version><hash_hex>
-// Kaspa P2PK address = bech32-like encoding with "kaspa" prefix
+// =============================================================
+// Kaspa address encoding
+// Kaspa uses a custom bech32 variant:
+//   - HRP: "kaspa"
+//   - 8-byte checksum (not 6)
+//   - Custom generator polynomial
+//   - P2PK Schnorr: version byte = 0x00, payload = x-only pubkey (32 bytes) converted to 5-bit groups
+// =============================================================
 
-// Kaspa custom bech32 encoding
 const CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
-const GENERATOR = [0x98f2bc8e61n, 0x79b76d99e2n, 0xf33e5fb3c4n, 0xae2eabe2a8n, 0x1e4f43e470n];
+
+// Kaspa's specific generator (different from Bitcoin's bech32)
+const GENERATOR = [
+  0x98f2bc8e61n,
+  0x79b76d99e2n,
+  0xf33e5fb3c4n,
+  0xae2eabe2a8n,
+  0x1e4f43e470n,
+];
 
 function polymod(values) {
   let chk = 1n;
@@ -26,9 +36,8 @@ function polymod(values) {
 
 function hrpExpand(hrp) {
   const ret = [];
-  for (const c of hrp) ret.push(c.charCodeAt(0) >> 5);
+  for (const c of hrp) ret.push(c.charCodeAt(0) & 0x1f);
   ret.push(0);
-  for (const c of hrp) ret.push(c.charCodeAt(0) & 31);
   return ret;
 }
 
@@ -58,38 +67,39 @@ function convertBits(data, fromBits, toBits, pad = true) {
   return ret;
 }
 
-function kaspaAddress(pubkeyBytes) {
-  // Kaspa P2PK uses schnorr x-only pubkey (32 bytes)
-  // version byte 0x00 for P2PK schnorr
-  const xOnly = pubkeyBytes.slice(1); // remove 04/02/03 prefix, take 32 bytes
-  const payload = [0x00, ...convertBits(Array.from(xOnly), 8, 5)];
+function kaspaAddress(compressedPubkey) {
+  // Extract x-only (32 bytes) from 33-byte compressed pubkey
+  const xOnly = compressedPubkey.slice(1); // drop the 02/03 prefix byte
+
+  // Payload: version byte 0 (P2PK Schnorr) + x-only pubkey in 5-bit groups
+  const converted = convertBits(Array.from(xOnly), 8, 5, true);
+  const payload = [0x00, ...converted];
+
   const checksum = createChecksum('kaspa', payload);
   let addr = 'kaspa:';
-  for (const b of payload.concat(checksum)) addr += CHARSET[b];
+  for (const b of [...payload, ...checksum]) addr += CHARSET[b];
   return addr;
 }
 
 Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
-    const wordCount = body.wordCount === 24 ? 256 : 128; // 12 or 24 words
+    const strength = body.wordCount === 24 ? 256 : 128;
 
-    // Generate mnemonic
-    const mnemonic = bip39.generateMnemonic(wordlist, wordCount);
+    // 1. Generate mnemonic
+    const mnemonic = bip39.generateMnemonic(wordlist, strength);
 
-    // Derive seed
+    // 2. Derive seed (no passphrase)
     const seed = await bip39.mnemonicToSeed(mnemonic);
 
-    // Kaspa HD path: m/44'/111111'/0'/0/0
-    // coin type 111111 for Kaspa mainnet
-    const hdkey = HDKey.fromMasterSeed(seed);
-    const child = hdkey.derive("m/44'/111111'/0'/0/0");
+    // 3. Kaspa HD derivation path: m/44'/111111'/0'/0/0
+    const master = HDKey.fromMasterSeed(seed);
+    const child = master.derive("m/44'/111111'/0'/0/0");
 
-    // Get compressed public key
-    const pubkey = child.publicKey; // 33 bytes compressed
+    if (!child.publicKey) throw new Error('Failed to derive public key');
 
-    // Derive Kaspa address from pubkey
-    const address = kaspaAddress(pubkey);
+    // 4. Encode Kaspa address
+    const address = kaspaAddress(child.publicKey);
 
     return Response.json({
       address,
