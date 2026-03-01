@@ -6,32 +6,45 @@ const SF = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 
 
 function QRCanvas({ value, size = 220 }) {
   const canvasRef = useRef(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (!value || !canvasRef.current) return;
+    if (!value) return;
 
     const loadAndRender = async () => {
-      if (!window._QRCodeLib) {
+      // Load qrcode lib if not present
+      if (!window.QRCode || !window.QRCode.toCanvas) {
         await new Promise((resolve, reject) => {
+          // remove any stale script
+          const existing = document.querySelector('script[data-qrlib]');
+          if (existing) existing.remove();
           const s = document.createElement('script');
+          s.setAttribute('data-qrlib', '1');
           s.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
-          s.onload = () => { window._QRCodeLib = window.QRCode; resolve(); };
+          s.onload = resolve;
           s.onerror = reject;
           document.head.appendChild(s);
         });
       }
-      window.QRCode.toCanvas(canvasRef.current, value, {
-        width: size,
-        margin: 2,
-        color: { dark: '#000000', light: '#ffffff' },
-      });
+      setReady(true);
     };
 
     loadAndRender().catch(console.error);
-  }, [value, size]);
+  }, [value]);
+
+  useEffect(() => {
+    if (!ready || !value || !canvasRef.current) return;
+    if (!window.QRCode || !window.QRCode.toCanvas) return;
+    window.QRCode.toCanvas(canvasRef.current, value, {
+      width: size,
+      margin: 2,
+      color: { dark: '#000000', light: '#ffffff' },
+    }, (err) => { if (err) console.error('QR render error:', err); });
+  }, [ready, value, size]);
 
   return (
     <canvas ref={canvasRef}
+      width={size} height={size}
       style={{ borderRadius: 12, display: 'block', width: size, height: size }} />
   );
 }
