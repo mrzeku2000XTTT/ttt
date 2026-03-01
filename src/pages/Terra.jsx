@@ -524,7 +524,7 @@ export default function TerraPage() {
             </div>
             {[{ label: "Send KAS", sub: "Transfer to another address" }, { label: "Receive KAS", sub: "Share your address" }, { label: "Transaction History", sub: "View all activity" }].map(item => (
               <div key={item.label} style={{ background: '#0d0d0d', borderRadius: 14, padding: '16px', marginBottom: 10, border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
-                onClick={() => item.label === "Send KAS" ? setSheet("send") : item.label === "Receive KAS" ? setSheet("request") : null}>
+                onClick={() => item.label === "Send KAS" ? setSheet("send") : item.label === "Receive KAS" ? setSheet("receive") : null}>
                 <div>
                   <div style={{ color: 'white', fontSize: 15, fontWeight: 500 }}>{item.label}</div>
                   <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13 }}>{item.sub}</div>
