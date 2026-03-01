@@ -565,7 +565,6 @@ export default function TerraPage() {
           { id: "home", icon: <Home size={22} />, label: "Home" },
           { id: "wallet", icon: <Wallet size={22} />, label: "Wallet" },
           { id: "scan", icon: <Scan size={22} />, label: "Scan", action: () => setSheet("send") },
-          // Scan opens send with scanner
           { id: "history", icon: <History size={22} />, label: "Activity" },
           { id: "profile", icon: <User size={22} />, label: "Profile" },
         ].map(t => (
