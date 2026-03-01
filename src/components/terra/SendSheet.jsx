@@ -263,6 +263,12 @@ export default function SendSheet({ onClose, activeWallet, onBalanceUpdate, bala
                 <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 8 }}>Balance: {balanceNum.toFixed(8)} KAS</span>
               </div>
 
+              {/* Max button */}
+              <button onClick={() => setAmount(maxSendable.toFixed(8))}
+                style={{ width: '100%', background: 'rgba(26,115,232,0.1)', border: '1px solid rgba(26,115,232,0.3)', borderRadius: 10, padding: '10px', color: ACCENT, fontSize: 13, fontWeight: 500, cursor: 'pointer', marginBottom: 8, fontFamily: SF }}>
+                Max: {maxSendable.toFixed(8)} KAS
+              </button>
+
               {/* Numpad */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2, marginBottom: 14 }}>
                 {["1","2","3","4","5","6","7","8","9",".","0","⌫"].map(k => (
