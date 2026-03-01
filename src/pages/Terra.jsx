@@ -286,6 +286,13 @@ export default function TerraPage() {
 
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: '#000', fontFamily: SF, overflow: 'hidden' }}>
+      {/* Top Header with TTT Logo */}
+      <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+        <a href={createPageUrl('Categories')} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: 24, fontWeight: 900, textDecoration: 'none', letterSpacing: '-1px' }}>
+          TTT
+        </a>
+      </div>
+
       {/* Scrollable Content */}
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 16 }}>
         {tab === "home" && (
