@@ -45,7 +45,7 @@ export default function ReceiveSheet({ address, onClose, onSuccess }) {
     setWatching(true);
     // snapshot current balance
     const res = await base44.functions.invoke('getKaspaBalance', { address });
-    const initial = parseFloat(res?.data?.balance ?? res?.data?.kaspa ?? 0);
+    const initial = parseFloat(res?.data?.balanceKAS ?? res?.data?.balance ?? res?.data?.kaspa ?? 0);
     setPrevBalance(initial);
 
     pollRef.current = setInterval(async () => {
