@@ -36,7 +36,7 @@ export default function ReceiveSheet({ address, onClose, onSuccess }) {
     : `kaspa:${address}`;
 
   const copy = () => {
-    navigator.clipboard.writeText(address);
+    navigator.clipboard.writeText(`kaspa:${address}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
