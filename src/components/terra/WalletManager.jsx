@@ -85,7 +85,7 @@ function BackupSeedSheet({ wallet, onClose }) {
 }
 
 // ── Import Wallet Sheet ──────────────────────────────────────────────────────
-function ImportWalletSheet({ onClose, onImported }) {
+function ImportWalletSheet({ onClose, onImported, onBalanceUpdate }) {
   const [mnemonic, setMnemonic] = useState("");
   const [label, setLabel] = useState("");
   const [loading, setLoading] = useState(false);
@@ -121,6 +121,10 @@ function ImportWalletSheet({ onClose, onImported }) {
 
       console.log(`[ImportWallet] Selected address: ${bestAddress.slice(0,10)}... at index ${bestIndex}`);
       onImported({ address: bestAddress, mnemonic: mnemonic.trim(), label: label || `Wallet ${Date.now()}`, addressIndex: bestIndex });
+      // Refresh balance after import
+      if (onBalanceUpdate) {
+        setTimeout(() => onBalanceUpdate(), 1000);
+      }
       onClose();
     } catch (err) {
       setError(err.message || "Failed to import wallet.");
