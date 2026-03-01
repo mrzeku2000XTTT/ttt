@@ -28,9 +28,14 @@ export default function TerraCard({ walletAddress, user }) {
       setLoading(true);
       setError(null);
 
-      // Check for existing card
+      if (!walletAddress) {
+        setError('No wallet address provided');
+        setLoading(false);
+        return;
+      }
+
+      // Check for existing card by wallet address only
       const existingCards = await base44.entities.DebitCard.filter({
-        user_id: user?.email,
         linked_wallet_address: walletAddress
       });
 
@@ -46,7 +51,6 @@ export default function TerraCard({ walletAddress, user }) {
         if (res.data?.success) {
           // Fetch newly created card
           const cards = await base44.entities.DebitCard.filter({
-            user_id: user?.email,
             linked_wallet_address: walletAddress
           });
 
@@ -54,7 +58,11 @@ export default function TerraCard({ walletAddress, user }) {
             setCard(cards[0]);
             setSuccess('🎉 Terra Card Created!');
             setTimeout(() => setSuccess(null), 3000);
+          } else {
+            setError('Card created but unable to retrieve');
           }
+        } else {
+          setError(res.data?.error || 'Failed to create Terra Card');
         }
       }
     } catch (err) {
