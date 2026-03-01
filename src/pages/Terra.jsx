@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import ProfileTab from "@/components/terra/ProfileTab";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   QrCode, Plus, ArrowDownLeft, ArrowUpRight,
