@@ -521,6 +521,15 @@ export default function TerraPage() {
       <AnimatePresence>
         {sheet === "send" && <SendMoneySheet onClose={() => setSheet(null)} />}
         {sheet === "request" && <RequestSheet onClose={() => setSheet(null)} />}
+        {showCreateWallet && (
+          <CreateWalletModal
+            onClose={() => setShowCreateWallet(false)}
+            onCreated={(w) => {
+              setWalletAddress(w.address);
+              base44.auth.updateMe({ created_wallet_address: w.address }).catch(() => {});
+            }}
+          />
+        )}
       </AnimatePresence>
     </div>
   );
