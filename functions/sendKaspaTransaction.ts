@@ -30,6 +30,15 @@ Deno.serve(async (req) => {
     // Ensure addresses have kaspa: prefix
     const normalizedFromAddress = fromAddress.startsWith('kaspa:') ? fromAddress : `kaspa:${fromAddress}`;
     const normalizedToAddress = toAddress.startsWith('kaspa:') ? toAddress : `kaspa:${toAddress}`;
+    
+    // Validate address format (kaspa: followed by q or p, then 60+ alphanumeric chars)
+    const addressRegex = /^kaspa:[qp][a-z0-9]{59,62}$/i;
+    if (!addressRegex.test(normalizedFromAddress)) {
+      throw new Error(`Invalid from address format: ${normalizedFromAddress}`);
+    }
+    if (!addressRegex.test(normalizedToAddress)) {
+      throw new Error(`Invalid to address format: ${normalizedToAddress}`);
+    }
 
     const amountSompi = Math.round(parseFloat(amountKas) * 1e8);
     if (amountSompi <= 0) return Response.json({ error: 'Invalid amount' }, { status: 400 });
