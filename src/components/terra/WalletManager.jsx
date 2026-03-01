@@ -99,10 +99,25 @@ function ImportWalletSheet({ onClose, onImported }) {
     if (!valid) return setError("Please enter a valid 12 or 24 word seed phrase.");
     setLoading(true);
     try {
-      // derive address from mnemonic via backend
-      const res = await base44.functions.invoke('deriveKaspaAddress', { mnemonic: mnemonic.trim() });
-      if (res.data?.error) throw new Error(res.data.error);
-      onImported({ address: res.data.address, mnemonic: mnemonic.trim(), label: label || `Wallet ${Date.now()}` });
+      // Scan first 5 address indices and pick the one with balance (or default to index 0)
+      let bestAddress = null;
+      let bestBalance = -1;
+      let bestIndex = 0;
+
+      for (let i = 0; i < 5; i++) {
+        const res = await base44.functions.invoke('deriveKaspaAddress', { mnemonic: mnemonic.trim(), addressIndex: i });
+        if (res.data?.error) throw new Error(res.data.error);
+        const addr = res.data.address;
+
+        const balRes = await base44.functions.invoke('getKaspaBalance', { address: addr });
+        const bal = balRes?.data?.balanceKAS ?? 0;
+
+        if (bestAddress === null) { bestAddress = addr; bestIndex = i; }
+        if (bal > bestBalance) { bestBalance = bal; bestAddress = addr; bestIndex = i; }
+        if (bal > 0) break; // found a funded address, stop scanning
+      }
+
+      onImported({ address: bestAddress, mnemonic: mnemonic.trim(), label: label || `Wallet ${Date.now()}`, addressIndex: bestIndex });
       onClose();
     } catch (err) {
       setError(err.message || "Failed to import wallet.");
