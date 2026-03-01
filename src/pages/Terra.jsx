@@ -403,7 +403,7 @@ export default function TerraPage() {
             walletAddress={walletAddress}
             shortAddress={shortAddress}
             onWalletCreated={(addr) => {
-              setWalletAddress(addr);
+              addWallet({ address: addr, mnemonic: '', label: 'Main Wallet' });
               base44.auth.updateMe({ created_wallet_address: addr }).catch(() => {});
             }}
             onOpenCreateWallet={() => setShowCreateWallet(true)}
