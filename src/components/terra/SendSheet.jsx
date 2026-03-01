@@ -201,11 +201,13 @@ export default function SendSheet({ onClose, activeWallet, onBalanceUpdate, bala
     setErrorMsg('');
     try {
       if (!hasMnemonic) throw new Error('No seed phrase stored for this wallet. Import the wallet with its seed phrase to send.');
+      const amountNum = parseFloat(amount);
+      if (isNaN(amountNum) || amountNum <= 0) throw new Error('Invalid amount');
       const res = await base44.functions.invoke('sendKaspaTransaction', {
         mnemonic: activeWallet.mnemonic,
         fromAddress: activeWallet.address,
         toAddress: recipient.trim(),
-        amountKas: parseFloat(amount),
+        amountKas: amountNum,
       });
       if (res.data?.error) throw new Error(res.data.error);
       setTxId(res.data.txId || '');
