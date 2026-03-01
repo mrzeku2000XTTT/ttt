@@ -396,6 +396,7 @@ export default function CategoriesPage() {
       { id: "singularity", name: "SINGULARITY", icon: "Brain", path: "Singularity", blackOnBlack: true },
       { id: "veritas", name: "Veritas", icon: "Eye", path: "Veritas" },
       { id: "vibe", name: "VIBE", icon: "Wallet", path: "Vibe", blackOnBlack: true },
+      { id: "terra", name: "Terra", icon: "Globe", path: "Terra", customIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/791e2bd15_IMG_1195.jpg" },
       { id: "tools", name: "Tools", icon: "Wrench", path: "Tools" },
       { id: "settings", name: "Settings", icon: "Settings", path: "Settings" },
       { id: "profile", name: "Profile", icon: "User", path: "Profile" },
