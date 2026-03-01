@@ -486,35 +486,16 @@ export default function TerraPage() {
         )}
 
         {tab === "profile" && (
-          <div style={{ padding: '16px 16px 0' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 0 32px' }}>
-              <div style={{ width: 72, height: 72, borderRadius: 36, background: '#1c1c1e', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-                <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 26, fontWeight: 600 }}>
-                  {user?.full_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "?"}
-                </span>
-              </div>
-              <div style={{ color: 'white', fontSize: 20, fontWeight: 700 }}>{user?.full_name || user?.username || "Terra User"}</div>
-              <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, marginTop: 4 }}>{user?.email || ""}</div>
-              {walletAddress && (
-                <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: 11, marginTop: 6, fontFamily: 'monospace' }}>{shortAddress}</div>
-              )}
-            </div>
-            {[
-              { label: "Personal Info", sub: "Name, email, phone" },
-              { label: "Security", sub: "Password, biometrics" },
-              { label: "Notifications", sub: "Alerts, updates" },
-              { label: "Linked Banks", sub: "Manage accounts" },
-              { label: "Help & Support", sub: "FAQ, contact us" },
-            ].map(item => (
-              <div key={item.label} style={{ background: '#0d0d0d', borderRadius: 14, padding: '16px', marginBottom: 10, border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
-                <div>
-                  <div style={{ color: 'white', fontSize: 15, fontWeight: 500 }}>{item.label}</div>
-                  <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13 }}>{item.sub}</div>
-                </div>
-                <ChevronRight size={18} color="rgba(255,255,255,0.3)" />
-              </div>
-            ))}
-          </div>
+          <ProfileTab
+            user={user}
+            walletAddress={walletAddress}
+            shortAddress={shortAddress}
+            onWalletCreated={(addr) => {
+              setWalletAddress(addr);
+              base44.auth.updateMe({ created_wallet_address: addr }).catch(() => {});
+            }}
+            onOpenCreateWallet={() => setShowCreateWallet(true)}
+          />
         )}
       </div>
 
