@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   QrCode, Plus, ArrowDownLeft, ArrowUpRight,
   CreditCard, ChevronRight, Eye, EyeOff,
-  Home, Wallet, History, User, Scan, X, Check, RefreshCw
+  Home, Wallet, History, User, Scan, X, Check, RefreshCw,
+  Copy, AlertTriangle, Shield
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
