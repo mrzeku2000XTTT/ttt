@@ -806,6 +806,32 @@ export default function WalletPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Tab Navigation */}
+                {address && (
+                  <div className="flex gap-2 border-b border-zinc-800 mt-6">
+                    <button
+                      onClick={() => setActiveTab('wallet')}
+                      className={`px-4 py-3 font-semibold text-sm transition-colors ${
+                        activeTab === 'wallet'
+                          ? 'border-b-2 border-cyan-400 text-cyan-400'
+                          : 'text-gray-500 hover:text-white'
+                      }`}
+                    >
+                      Wallet
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('card')}
+                      className={`px-4 py-3 font-semibold text-sm transition-colors ${
+                        activeTab === 'card'
+                          ? 'border-b-2 border-cyan-400 text-cyan-400'
+                          : 'text-gray-500 hover:text-white'
+                      }`}
+                    >
+                      Terra Card
+                    </button>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
