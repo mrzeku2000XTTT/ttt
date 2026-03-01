@@ -164,13 +164,16 @@ function parseKaspaQR(raw) {
 }
 
 // ── Main SendSheet ───────────────────────────────────────────────────────────
-export default function SendSheet({ onClose, activeWallet, onBalanceUpdate }) {
+export default function SendSheet({ onClose, activeWallet, onBalanceUpdate, balance }) {
   const [step, setStep] = useState('input'); // input | confirm | sending | done | error
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [showScanner, setShowScanner] = useState(false);
   const [txId, setTxId] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  
+  const balanceNum = parseFloat(balance) || 0;
+  const maxSendable = Math.max(0, balanceNum - 0.0001); // Reserve fee
 
   const hasMnemonic = activeWallet?.mnemonic;
 
