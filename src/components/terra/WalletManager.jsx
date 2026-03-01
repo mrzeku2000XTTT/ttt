@@ -85,7 +85,7 @@ function BackupSeedSheet({ wallet, onClose }) {
 }
 
 // ── Import Wallet Sheet ──────────────────────────────────────────────────────
-function ImportWalletSheet({ onClose, onImported, onBalanceUpdate }) {
+function ImportWalletSheet({ onClose, onImported }) {
   const [mnemonic, setMnemonic] = useState("");
   const [label, setLabel] = useState("");
   const [loading, setLoading] = useState(false);
@@ -121,11 +121,6 @@ function ImportWalletSheet({ onClose, onImported, onBalanceUpdate }) {
 
       console.log(`[ImportWallet] Selected address: ${bestAddress.slice(0,10)}... at index ${bestIndex}`);
       onImported({ address: bestAddress, mnemonic: mnemonic.trim(), label: label || `Wallet ${Date.now()}`, addressIndex: bestIndex });
-      // Refresh balance after import
-      if (onBalanceUpdate) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        onBalanceUpdate();
-      }
       onClose();
     } catch (err) {
       setError(err.message || "Failed to import wallet.");
@@ -284,7 +279,7 @@ function WalletCards({ wallets, activeIdx, onChangeIdx, balances, prices, loadin
           <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginBottom: 16 }}>
             {wallet.label || `Wallet ${activeIdx + 1}`}
           </div>
-          {wallet.address && balances[wallet.address] === undefined ? (
+          {loading ? (
             <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 26, fontWeight: 600 }}>...</div>
           ) : (
             <>

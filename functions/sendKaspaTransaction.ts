@@ -63,39 +63,25 @@ Deno.serve(async (req) => {
     const outputs = [{ address: normalizedToAddress, amount: amountSompi }];
     if (change > 0) outputs.push({ address: normalizedFromAddress, amount: change });
 
-    // 6. Build transaction for Kaspa network
-    // Kaspa transaction format expects: inputs with scriptPublicKey, outputs
-    const txIns = selectedUtxos.map((u, idx) => ({
-      previousOutpoint: {
-        transactionId: u.outpoint.transactionId,
-        index: u.outpoint.index,
-      },
-      signatureScript: '', // Will be filled after signing
-    }));
-
-    const txOuts = outputs.map(o => ({
-      value: o.amount.toString(),
-      scriptPublicKey: {
-        version: 0,
-        script: o.address, // Kaspa expects address in script field for now
-      },
-    }));
-
-    // 7. Sign transaction with OKX SDK
+    // 6. Sign with OKX SDK
     const signResult = await wallet.signTransaction({
       data: { inputs, outputs, address: normalizedFromAddress, fee: FEE_SOMPI },
       privateKey,
     });
 
-    // Parse OKX result
+    // The OKX SDK may return a string or object
     const signed = typeof signResult === 'string' ? JSON.parse(signResult) : signResult;
-    const signedTx = signed.transaction || signed.tx || signed;
+    console.log('OKX sign result keys:', Object.keys(signed));
 
-    // 8. Submit to Kaspa API
+    // 7. Extract the raw transaction object and submit
+    // OKX SDK wraps result – handle both shapes
+    const rawTx = signed.transaction ?? signed.tx ?? signed;
+    console.log('rawTx keys:', Object.keys(rawTx));
+
     const submitRes = await fetch(`${KASPA_API}/transactions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(signedTx),
+      body: JSON.stringify({ transaction: rawTx, allowOrphan: false }),
     });
 
     const submitText = await submitRes.text();

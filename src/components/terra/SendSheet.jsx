@@ -238,10 +238,11 @@ export default function SendSheet({ onClose, activeWallet, onBalanceUpdate }) {
               {/* Recipient row */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
                 <div style={{ flex: 1, background: '#1c1c1e', border: `1px solid ${recipient.startsWith('kaspa:') ? 'rgba(52,199,89,0.4)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 12, padding: '13px 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, fontFamily: 'monospace', flexShrink: 0 }}>kaspa:</span>
                   <input
-                    placeholder="kaspa:q... recipient address"
-                    value={recipient}
-                    onChange={e => setRecipient(e.target.value)}
+                    placeholder="q... recipient address"
+                    value={recipient.startsWith('kaspa:') ? recipient.slice(6) : recipient}
+                    onChange={e => setRecipient(e.target.value ? 'kaspa:' + e.target.value : '')}
                     style={{ flex: 1, background: 'transparent', border: 'none', color: 'white', fontSize: 13, outline: 'none', fontFamily: 'monospace', padding: 0 }}
                   />
                 </div>

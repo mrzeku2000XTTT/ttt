@@ -11,7 +11,6 @@ import {
   Copy, AlertTriangle, Shield
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { createPageUrl } from "@/utils";
 
 const SF = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', sans-serif";
 const ACCENT = "#1a73e8";
@@ -226,11 +225,8 @@ export default function TerraPage() {
       const priceRes = await base44.functions.invoke('getKaspaPrice', {});
       const price = priceRes?.data?.price || priceRes?.data?.usd || null;
       setKasPrice(price);
-      
-      // End loading—balance will fetch in background
-      setLoading(false);
 
-      // Fetch balances for all wallets (non-blocking)
+      // Fetch balances for all wallets
       if (stored.length > 0) {
         const balMap = {};
         await Promise.all(stored.map(async (w) => {
@@ -249,8 +245,8 @@ export default function TerraPage() {
       }
     } catch (err) {
       console.log('Terra load error:', err);
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   const addWallet = (w) => {
@@ -286,13 +282,6 @@ export default function TerraPage() {
 
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: '#000', fontFamily: SF, overflow: 'hidden' }}>
-      {/* Top Header with TTT Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
-        <a href={createPageUrl('Categories')} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: 24, fontWeight: 900, textDecoration: 'none', letterSpacing: '-1px' }}>
-          TTT
-        </a>
-      </div>
-
       {/* Scrollable Content */}
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 16 }}>
         {tab === "home" && (
@@ -494,9 +483,9 @@ export default function TerraPage() {
             onClose={() => setShowImport(false)}
             onImported={(w) => {
               addWallet(w);
+              setTimeout(() => loadData(), 500);
               setTab("home");
             }}
-            onBalanceUpdate={loadData}
           />
         )}
         {showDelete && activeWallet && (
