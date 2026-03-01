@@ -159,6 +159,139 @@ function RequestSheet({ onClose }) {
   );
 }
 
+function CreateWalletModal({ onClose, onCreated }) {
+  const [step, setStep] = useState("confirm"); // confirm | loading | reveal | backup
+  const [wallet, setWallet] = useState(null);
+  const [wordCount, setWordCount] = useState(12);
+  const [copied, setCopied] = useState(false);
+  const [backupConfirmed, setBackupConfirmed] = useState(false);
+
+  const generate = async () => {
+    setStep("loading");
+    const res = await base44.functions.invoke('createKaspaWallet', { wordCount });
+    setWallet(res.data);
+    setStep("reveal");
+  };
+
+  const copyMnemonic = () => {
+    navigator.clipboard.writeText(wallet.mnemonic);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const finish = () => {
+    onCreated(wallet);
+    onClose();
+  };
+
+  return (
+    <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+      transition={{ type: "spring", damping: 28, stiffness: 300 }}
+      style={{ position: 'fixed', inset: 0, background: '#0a0a0a', zIndex: 200, display: 'flex', flexDirection: 'column', fontFamily: SF }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}><X size={20} /></button>
+        <span style={{ color: 'white', fontWeight: 600, fontSize: 16 }}>Create Wallet</span>
+        <div style={{ width: 20 }} />
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px' }}>
+        {step === "confirm" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div style={{ textAlign: 'center', padding: '20px 0' }}>
+              <div style={{ width: 72, height: 72, borderRadius: 36, background: '#1a2a4a', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <Shield size={32} color={ACCENT} />
+              </div>
+              <div style={{ color: 'white', fontSize: 22, fontWeight: 700, marginBottom: 8 }}>New Kaspa Wallet</div>
+              <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, lineHeight: 1.6 }}>
+                A new wallet with a recovery phrase will be generated. Keep it safe — it's the only way to recover your funds.
+              </div>
+            </div>
+
+            <div style={{ background: '#1c1c1e', borderRadius: 16, padding: '16px', border: '1px solid rgba(255,165,0,0.2)' }}>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <AlertTriangle size={18} color="#ff9500" style={{ flexShrink: 0, marginTop: 2 }} />
+                <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, lineHeight: 1.6 }}>
+                  Never share your recovery phrase with anyone. Terra will never ask for it. Store it offline in a safe place.
+                </div>
+              </div>
+            </div>
+
+            <div style={{ background: '#1c1c1e', borderRadius: 14, padding: '16px', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, marginBottom: 12 }}>Recovery phrase length</div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                {[12, 24].map(n => (
+                  <button key={n} onClick={() => setWordCount(n)}
+                    style={{ flex: 1, padding: '10px 0', borderRadius: 10, border: `1px solid ${wordCount === n ? ACCENT : 'rgba(255,255,255,0.1)'}`, background: wordCount === n ? 'rgba(26,115,232,0.15)' : 'transparent', color: wordCount === n ? ACCENT : 'rgba(255,255,255,0.5)', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+                    {n} words
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button onClick={generate}
+              style={{ background: ACCENT, color: 'white', border: 'none', borderRadius: 14, padding: '16px', fontSize: 16, fontWeight: 600, cursor: 'pointer', fontFamily: SF }}>
+              Generate Wallet
+            </button>
+          </motion.div>
+        )}
+
+        {step === "loading" && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 300, gap: 16 }}>
+            <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
+              <RefreshCw size={36} color={ACCENT} />
+            </motion.div>
+            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 15 }}>Generating secure wallet...</div>
+          </div>
+        )}
+
+        {step === "reveal" && wallet && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ color: 'white', fontSize: 18, fontWeight: 700, marginBottom: 4 }}>Your Recovery Phrase</div>
+              <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>Write these {wordCount} words down in order</div>
+            </div>
+
+            <div style={{ background: '#1c1c1e', borderRadius: 16, padding: '20px', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                {wallet.mnemonic.split(' ').map((word, i) => (
+                  <div key={i} style={{ background: '#2c2c2e', borderRadius: 8, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10, minWidth: 14 }}>{i + 1}</span>
+                    <span style={{ color: 'white', fontSize: 13, fontWeight: 500 }}>{word}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button onClick={copyMnemonic}
+              style={{ background: '#2c2c2e', color: copied ? '#34c759' : 'rgba(255,255,255,0.8)', border: 'none', borderRadius: 12, padding: '12px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: SF, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <Copy size={16} />
+              {copied ? "Copied!" : "Copy to clipboard"}
+            </button>
+
+            <div style={{ background: '#1c1c1e', borderRadius: 14, padding: '16px', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, marginBottom: 4 }}>Your Kaspa Address</div>
+              <div style={{ color: 'white', fontSize: 12, fontFamily: 'monospace', wordBreak: 'break-all' }}>{wallet.address}</div>
+            </div>
+
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }}>
+              <input type="checkbox" checked={backupConfirmed} onChange={e => setBackupConfirmed(e.target.checked)}
+                style={{ marginTop: 2, width: 18, height: 18, accentColor: ACCENT }} />
+              <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, lineHeight: 1.5 }}>
+                I have written down my recovery phrase and stored it safely. I understand that losing it means losing access to my funds.
+              </span>
+            </label>
+
+            <button onClick={finish} disabled={!backupConfirmed}
+              style={{ background: backupConfirmed ? ACCENT : '#2c2c2e', color: 'white', border: 'none', borderRadius: 14, padding: '16px', fontSize: 16, fontWeight: 600, cursor: backupConfirmed ? 'pointer' : 'default', fontFamily: SF }}>
+              Done — Open Wallet
+            </button>
+          </motion.div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
 export default function TerraPage() {
   const [tab, setTab] = useState("home");
   const [balanceHidden, setBalanceHidden] = useState(false);
