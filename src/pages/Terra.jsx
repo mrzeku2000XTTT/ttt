@@ -57,8 +57,8 @@ function SendMoneySheet({ onClose }) {
       style={{
         position: 'fixed', inset: 0, background: '#0a0a0a', zIndex: 200,
         display: 'flex', flexDirection: 'column', fontFamily: SF,
-        top: 'calc(var(--sat,0px) + 7.5rem)',
-        bottom: 'calc(env(safe-area-inset-bottom,0px) + 4rem)',
+        top: 0,
+        bottom: 0,
       }}
     >
       {/* Header */}
