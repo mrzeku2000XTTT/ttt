@@ -250,6 +250,18 @@ function CreateWalletModal({ onClose, onCreated }) {
           </div>
         )}
 
+        {step === "error" && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 300, gap: 16, padding: '0 20px' }}>
+            <AlertTriangle size={36} color="#ff9500" />
+            <div style={{ color: 'white', fontSize: 17, fontWeight: 700 }}>Something went wrong</div>
+            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, textAlign: 'center' }}>Failed to generate wallet. Please try again.</div>
+            <button onClick={() => setStep("confirm")}
+              style={{ background: ACCENT, color: 'white', border: 'none', borderRadius: 14, padding: '14px 32px', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: SF }}>
+              Try Again
+            </button>
+          </div>
+        )}
+
         {step === "reveal" && wallet && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <div style={{ textAlign: 'center' }}>
