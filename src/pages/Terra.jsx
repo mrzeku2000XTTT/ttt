@@ -464,7 +464,7 @@ export default function TerraPage() {
             </div>
 
             {/* Create Wallet CTA — shown when no wallet connected */}
-            {!loading && !walletAddress && (
+            {!loading && wallets.length === 0 && (
               <div style={{ margin: '0 16px 20px', background: '#0d0d0d', borderRadius: 18, padding: '24px', border: '1px solid rgba(26,115,232,0.2)', textAlign: 'center' }}>
                 <div style={{ color: 'white', fontSize: 17, fontWeight: 700, marginBottom: 6 }}>No Wallet Connected</div>
                 <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, marginBottom: 18, lineHeight: 1.5 }}>
