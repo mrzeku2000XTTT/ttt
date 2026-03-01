@@ -107,9 +107,7 @@ function ImportWalletSheet({ onClose, onImported, onBalanceUpdate }) {
       for (let i = 0; i < 5; i++) {
         const res = await base44.functions.invoke('deriveKaspaAddress', { mnemonic: mnemonic.trim(), addressIndex: i });
         if (res.data?.error) throw new Error(res.data.error);
-        let addr = res.data.address;
-        // Ensure kaspa: prefix
-        addr = addr.startsWith('kaspa:') ? addr : `kaspa:${addr}`;
+        const addr = res.data.address;
 
         const balRes = await base44.functions.invoke('getKaspaBalance', { address: addr });
         const bal = balRes?.data?.balanceKAS ?? 0;
