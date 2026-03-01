@@ -112,11 +112,14 @@ function ImportWalletSheet({ onClose, onImported }) {
         const balRes = await base44.functions.invoke('getKaspaBalance', { address: addr });
         const bal = balRes?.data?.balanceKAS ?? 0;
 
+        console.log(`[ImportWallet] Index ${i}: ${addr.slice(0,10)}... balance: ${bal} KAS`);
+
         if (bestAddress === null) { bestAddress = addr; bestIndex = i; }
         if (bal > bestBalance) { bestBalance = bal; bestAddress = addr; bestIndex = i; }
         if (bal > 0) break; // found a funded address, stop scanning
       }
 
+      console.log(`[ImportWallet] Selected address: ${bestAddress.slice(0,10)}... at index ${bestIndex}`);
       onImported({ address: bestAddress, mnemonic: mnemonic.trim(), label: label || `Wallet ${Date.now()}`, addressIndex: bestIndex });
       onClose();
     } catch (err) {
