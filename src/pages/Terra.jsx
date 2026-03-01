@@ -11,6 +11,7 @@ import {
   Copy, AlertTriangle, Shield
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { createPageUrl } from "@/utils";
 
 const SF = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', sans-serif";
 const ACCENT = "#1a73e8";
