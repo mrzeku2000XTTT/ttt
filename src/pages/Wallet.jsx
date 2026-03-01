@@ -122,7 +122,6 @@ export default function WalletPage() {
   const [needsIframe, setNeedsIframe] = useState(false);
   const [toast, setToast] = useState(null); // New toast state
   const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const [activeTab, setActiveTab] = useState('wallet'); // wallet or card
 
   const showToast = (message, type = 'success', duration = 3000) => {
     setToast({ message, type });
