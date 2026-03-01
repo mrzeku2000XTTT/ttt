@@ -224,8 +224,15 @@ export default function TerraPage() {
         const balMap = {};
         await Promise.all(stored.map(async (w) => {
           if (!w.address) return;
-          const balRes = await base44.functions.invoke('getKaspaBalance', { address: w.address });
-          balMap[w.address] = balRes?.data?.balanceKAS ?? balRes?.data?.balance ?? balRes?.data?.kaspa ?? 0;
+          try {
+            const balRes = await base44.functions.invoke('getKaspaBalance', { address: w.address });
+            const bal = balRes?.data?.balanceKAS ?? balRes?.data?.balance ?? balRes?.data?.kaspa ?? 0;
+            console.log(`[Terra] Balance for ${w.address.slice(0, 10)}...: ${bal} KAS`);
+            balMap[w.address] = bal;
+          } catch (e) {
+            console.error(`[Terra] Failed to fetch balance for ${w.address}:`, e);
+            balMap[w.address] = 0;
+          }
         }));
         setBalances(balMap);
       }
