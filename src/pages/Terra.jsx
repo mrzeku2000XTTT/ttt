@@ -476,7 +476,8 @@ export default function TerraPage() {
             onClose={() => setShowImport(false)}
             onImported={(w) => {
               addWallet(w);
-              setTimeout(() => loadData(), 100);
+              setTimeout(() => loadData(), 500);
+              setTab("home");
             }}
           />
         )}
