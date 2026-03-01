@@ -35,11 +35,16 @@ Deno.serve(async (req) => {
     if (amountSompi <= 0) return Response.json({ error: 'Invalid amount' }, { status: 400 });
 
     // 1. Derive private key
-    const wallet = new KaspaWallet();
-    const privateKey = await wallet.getDerivedPrivateKey({
-      mnemonic: mnemonic.trim(),
-      hdPath: "m/44'/111111'/0'/0/0",
-    });
+    let wallet, privateKey;
+    try {
+     wallet = new KaspaWallet();
+     privateKey = await wallet.getDerivedPrivateKey({
+       mnemonic: mnemonic.trim(),
+       hdPath: "m/44'/111111'/0'/0/0",
+     });
+    } catch (e) {
+     throw new Error(`Failed to derive private key: ${e.message}`);
+    }
 
     // 2. Fetch UTXOs
     const utxoRes = await fetch(`${KASPA_API}/addresses/${normalizedFromAddress}/utxos`);
