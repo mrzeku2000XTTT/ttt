@@ -312,39 +312,68 @@ function CreateWalletModal({ onClose, onCreated }) {
   );
 }
 
+// LocalStorage helpers for multi-wallet
+function loadStoredWallets() {
+  try { return JSON.parse(localStorage.getItem('terra_wallets') || '[]'); } catch { return []; }
+}
+function saveStoredWallets(wallets) {
+  localStorage.setItem('terra_wallets', JSON.stringify(wallets));
+}
+
 export default function TerraPage() {
   const [tab, setTab] = useState("home");
   const [balanceHidden, setBalanceHidden] = useState(false);
   const [sheet, setSheet] = useState(null);
   const [showCreateWallet, setShowCreateWallet] = useState(false);
-  const [kasBalance, setKasBalance] = useState(null);
   const [kasPrice, setKasPrice] = useState(null);
-  const [walletAddress, setWalletAddress] = useState(null);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Multi-wallet state
+  const [wallets, setWallets] = useState([]); // [{address, mnemonic, label}]
+  const [activeWalletIdx, setActiveWalletIdx] = useState(0);
+  const [balances, setBalances] = useState({}); // {address: balance}
+
+  // Wallet menu/sheets state
+  const [showWalletMenu, setShowWalletMenu] = useState(false);
+  const [showBackup, setShowBackup] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+
+  useEffect(() => { loadData(); }, []);
+
+  const activeWallet = wallets[activeWalletIdx] || null;
+  const walletAddress = activeWallet?.address || null;
 
   const loadData = async () => {
     setLoading(true);
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
-      const addr = currentUser?.created_wallet_address || currentUser?.kaspa_address;
-      setWalletAddress(addr);
+
+      // Load wallets: start from localStorage, seed from user profile
+      let stored = loadStoredWallets();
+      const profileAddr = currentUser?.created_wallet_address || currentUser?.kaspa_address;
+      if (profileAddr && !stored.find(w => w.address === profileAddr)) {
+        stored = [{ address: profileAddr, mnemonic: '', label: 'Main Wallet' }, ...stored];
+        saveStoredWallets(stored);
+      }
+      setWallets(stored);
 
       // Fetch KAS price
       const priceRes = await base44.functions.invoke('getKaspaPrice', {});
       const price = priceRes?.data?.price || priceRes?.data?.usd || null;
       setKasPrice(price);
 
-      // Fetch balance if wallet address exists
-      if (addr) {
-        const balRes = await base44.functions.invoke('getKaspaBalance', { address: addr });
-        const bal = balRes?.data?.balance ?? balRes?.data?.kaspa ?? null;
-        setKasBalance(bal);
+      // Fetch balances for all wallets
+      if (stored.length > 0) {
+        const balMap = {};
+        await Promise.all(stored.map(async (w) => {
+          if (!w.address) return;
+          const balRes = await base44.functions.invoke('getKaspaBalance', { address: w.address });
+          balMap[w.address] = balRes?.data?.balance ?? balRes?.data?.kaspa ?? 0;
+        }));
+        setBalances(balMap);
       }
     } catch (err) {
       console.log('Terra load error:', err);
@@ -352,7 +381,29 @@ export default function TerraPage() {
     setLoading(false);
   };
 
-  const kasBalanceNum = parseFloat(kasBalance) || 0;
+  const addWallet = (w) => {
+    const newWallet = { address: w.address, mnemonic: w.mnemonic || '', label: w.label || `Wallet ${wallets.length + 1}` };
+    const updated = [...wallets, newWallet];
+    setWallets(updated);
+    saveStoredWallets(updated);
+    setActiveWalletIdx(updated.length - 1);
+    // save primary to user profile if first
+    if (wallets.length === 0) {
+      base44.auth.updateMe({ created_wallet_address: w.address }).catch(() => {});
+    }
+  };
+
+  const deleteActiveWallet = () => {
+    const updated = wallets.filter((_, i) => i !== activeWalletIdx);
+    setWallets(updated);
+    saveStoredWallets(updated);
+    setActiveWalletIdx(Math.max(0, activeWalletIdx - 1));
+    if (updated.length === 0) {
+      base44.auth.updateMe({ created_wallet_address: '' }).catch(() => {});
+    }
+  };
+
+  const kasBalanceNum = parseFloat(balances[walletAddress]) || 0;
   const kasPriceNum = parseFloat(kasPrice) || 0;
   const usdValue = kasBalanceNum * kasPriceNum;
 
