@@ -50,7 +50,7 @@ export default function ReceiveSheet({ address, onClose, onSuccess }) {
 
     pollRef.current = setInterval(async () => {
       const r = await base44.functions.invoke('getKaspaBalance', { address });
-      const current = parseFloat(r?.data?.balance ?? r?.data?.kaspa ?? 0);
+      const current = parseFloat(r?.data?.balanceKAS ?? r?.data?.balance ?? r?.data?.kaspa ?? 0);
       if (current > initial) {
         clearInterval(pollRef.current);
         setReceived(true);
