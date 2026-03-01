@@ -410,7 +410,7 @@ export default function TerraPage() {
                 <ChevronRight size={18} color="rgba(255,255,255,0.3)" />
               </div>
             ))}
-            {walletAddress && user && (
+            {walletAddress && (
               <div style={{ marginTop: 24 }}>
                 <TerraCard walletAddress={walletAddress} user={user} />
               </div>
