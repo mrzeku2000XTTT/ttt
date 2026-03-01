@@ -181,16 +181,16 @@ export default function SendSheet({ onClose, activeWallet }) {
   };
 
   const handleScan = (raw) => {
-    setShowScanner(false);
-    const parsed = parseKaspaQR(raw);
-    if (parsed) {
-      setRecipient(parsed.address);
-      if (parsed.amount) setAmount(parsed.amount);
-    } else if (raw.trim().startsWith('kaspa:')) {
-      setRecipient(raw.trim());
-    } else {
-      setErrorMsg('Invalid QR code. Expected a Kaspa address.');
-    }
+   setShowScanner(false);
+   const parsed = parseKaspaQR(raw);
+   if (parsed) {
+     setRecipient(parsed.address.startsWith('kaspa:') ? parsed.address : 'kaspa:' + parsed.address);
+     if (parsed.amount) setAmount(parsed.amount);
+   } else if (raw.trim().startsWith('kaspa:')) {
+     setRecipient(raw.trim());
+   } else {
+     setErrorMsg('Invalid QR code. Expected a Kaspa address.');
+   }
   };
 
   const handleSend = async () => {
@@ -233,12 +233,15 @@ export default function SendSheet({ onClose, activeWallet }) {
               style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '20px' }}>
               {/* Recipient row */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-                <input
-                  placeholder="kaspa:q... recipient address"
-                  value={recipient}
-                  onChange={e => setRecipient(e.target.value)}
-                  style={{ flex: 1, background: '#1c1c1e', border: `1px solid ${recipient.startsWith('kaspa:') ? 'rgba(52,199,89,0.4)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 12, padding: '13px 14px', color: 'white', fontSize: 13, outline: 'none', fontFamily: 'monospace' }}
-                />
+                <div style={{ flex: 1, background: '#1c1c1e', border: `1px solid ${recipient.startsWith('kaspa:') ? 'rgba(52,199,89,0.4)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 12, padding: '13px 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, fontFamily: 'monospace', flexShrink: 0 }}>kaspa:</span>
+                  <input
+                    placeholder="q... recipient address"
+                    value={recipient.startsWith('kaspa:') ? recipient.slice(6) : recipient}
+                    onChange={e => setRecipient(e.target.value ? 'kaspa:' + e.target.value : '')}
+                    style={{ flex: 1, background: 'transparent', border: 'none', color: 'white', fontSize: 13, outline: 'none', fontFamily: 'monospace', padding: 0 }}
+                  />
+                </div>
                 <button onClick={() => setShowScanner(true)}
                   style={{ background: '#1c1c1e', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '0 14px', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, fontSize: 13 }}>
                   <ScanLine size={18} />
