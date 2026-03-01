@@ -26,18 +26,21 @@ Deno.serve(async (req) => {
       {
         name: 'Kaspa.org API',
         url: `https://api.kaspa.org/addresses/${cleanAddress}/balance`,
-        parser: (data) => ({
-          balanceSompi: parseInt(data.balance || '0'),
-          balanceKAS: parseInt(data.balance || '0') / 100000000
-        })
+        // API returns { "address": "kaspa:...", "balance": 12345678 } in sompi
+        parser: (data) => {
+          const sompi = typeof data.balance === 'number' ? data.balance : parseInt(data.balance ?? '0');
+          return { balanceSompi: sompi, balanceKAS: sompi / 100000000 };
+        }
       },
       {
-        name: 'Kas.fyi API',
-        url: `https://api.kas.fyi/address/${cleanAddress.replace('kaspa:', '')}/balance`,
-        parser: (data) => ({
-          balanceSompi: parseInt(data.balance || '0'),
-          balanceKAS: parseInt(data.balance || '0') / 100000000
-        })
+        name: 'Kaspa.org UTXOs',
+        url: `https://api.kaspa.org/addresses/${cleanAddress}/utxos`,
+        // Fallback: sum UTXOs if balance endpoint fails
+        parser: (data) => {
+          const utxos = Array.isArray(data) ? data : [];
+          const sompi = utxos.reduce((acc, u) => acc + parseInt(u?.utxoEntry?.amount ?? 0), 0);
+          return { balanceSompi: sompi, balanceKAS: sompi / 100000000 };
+        }
       }
     ];
 
