@@ -253,23 +253,9 @@ export default function TerraPage() {
       style={{
         position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column',
         background: '#000', fontFamily: SF, overflow: 'hidden',
-        top: 'calc(var(--sat,0px) + 7.5rem)',
-        bottom: 'calc(env(safe-area-inset-bottom,0px) + 4rem)',
+        top: 0,
+        bottom: 0,
       }}
-    >
-      {/* Top Bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
-            <img src={TERRA_LOGO} alt="Terra" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: '50% 40%' }} />
-          </div>
-          <span style={{ color: 'white', fontWeight: 700, fontSize: 17, letterSpacing: 0.5 }}>Terra</span>
-        </div>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}><Bell size={20} /></button>
-          <button style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}><Settings size={20} /></button>
-        </div>
-      </div>
 
       {/* Scrollable Content */}
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 16 }}>
