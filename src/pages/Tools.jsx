@@ -257,7 +257,13 @@ export default function ToolsPage() {
                       }}
                       className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-white hover:bg-white/10 transition-all"
                     >
-                      <Icon className="w-5 h-5" />
+                      {app.customImg ? (
+                        <div className="w-5 h-5 rounded overflow-hidden flex-shrink-0 bg-black">
+                          <img src={app.customImg} alt={app.name} className="w-full h-full object-cover" style={app.blendScreen ? { mixBlendMode: 'screen' } : { objectPosition: '50% 35%' }} />
+                        </div>
+                      ) : (
+                        <Icon className="w-5 h-5" />
+                      )}
                       <span className="text-sm">{app.name}</span>
                     </button>
                   );
