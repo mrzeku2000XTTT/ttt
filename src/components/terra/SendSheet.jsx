@@ -164,7 +164,7 @@ function parseKaspaQR(raw) {
 }
 
 // ── Main SendSheet ───────────────────────────────────────────────────────────
-export default function SendSheet({ onClose, activeWallet }) {
+export default function SendSheet({ onClose, activeWallet, onBalanceUpdate }) {
   const [step, setStep] = useState('input'); // input | confirm | sending | done | error
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
@@ -207,6 +207,10 @@ export default function SendSheet({ onClose, activeWallet }) {
       if (res.data?.error) throw new Error(res.data.error);
       setTxId(res.data.txId || '');
       setStep('done');
+      // Refresh balance after successful transaction
+      if (onBalanceUpdate) {
+        setTimeout(() => onBalanceUpdate(), 2000);
+      }
     } catch (err) {
       setErrorMsg(err.message || 'Transaction failed');
       setStep('error');
