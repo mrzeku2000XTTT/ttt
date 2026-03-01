@@ -474,7 +474,10 @@ export default function TerraPage() {
         {showImport && (
           <ImportWalletSheet
             onClose={() => setShowImport(false)}
-            onImported={(w) => addWallet(w)}
+            onImported={(w) => {
+              addWallet(w);
+              setTimeout(() => loadData(), 100);
+            }}
           />
         )}
         {showDelete && activeWallet && (
