@@ -283,7 +283,7 @@ function WalletCards({ wallets, activeIdx, onChangeIdx, balances, prices, loadin
           <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginBottom: 16 }}>
             {wallet.label || `Wallet ${activeIdx + 1}`}
           </div>
-          {loading ? (
+          {wallet.address && balances[wallet.address] === undefined ? (
             <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 26, fontWeight: 600 }}>...</div>
           ) : (
             <>
