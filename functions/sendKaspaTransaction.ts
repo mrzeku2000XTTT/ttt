@@ -12,6 +12,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    // Ensure addresses have kaspa: prefix
+    const normalizedFromAddress = fromAddress.startsWith('kaspa:') ? fromAddress : `kaspa:${fromAddress}`;
+    const normalizedToAddress = toAddress.startsWith('kaspa:') ? toAddress : `kaspa:${toAddress}`;
+
     const amountSompi = Math.round(parseFloat(amountKas) * 1e8);
     if (amountSompi <= 0) return Response.json({ error: 'Invalid amount' }, { status: 400 });
 
@@ -23,7 +27,7 @@ Deno.serve(async (req) => {
     });
 
     // 2. Fetch UTXOs
-    const utxoRes = await fetch(`${KASPA_API}/addresses/${fromAddress}/utxos`);
+    const utxoRes = await fetch(`${KASPA_API}/addresses/${normalizedFromAddress}/utxos`);
     if (!utxoRes.ok) {
       const txt = await utxoRes.text();
       throw new Error(`Failed to fetch UTXOs: ${utxoRes.status} ${txt}`);
@@ -51,17 +55,17 @@ Deno.serve(async (req) => {
     const inputs = selectedUtxos.map(u => ({
       txId: u.outpoint.transactionId,
       vOut: u.outpoint.index,
-      address: fromAddress,
+      address: normalizedFromAddress,
       amount: Number(u.utxoEntry.amount),
     }));
 
     // 5. Build outputs
-    const outputs = [{ address: toAddress, amount: amountSompi }];
-    if (change > 0) outputs.push({ address: fromAddress, amount: change });
+    const outputs = [{ address: normalizedToAddress, amount: amountSompi }];
+    if (change > 0) outputs.push({ address: normalizedFromAddress, amount: change });
 
     // 6. Sign with OKX SDK
     const signResult = await wallet.signTransaction({
-      data: { inputs, outputs, address: fromAddress, fee: FEE_SOMPI },
+      data: { inputs, outputs, address: normalizedFromAddress, fee: FEE_SOMPI },
       privateKey,
     });
 
