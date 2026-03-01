@@ -6,10 +6,25 @@ const FEE_SOMPI = 10000; // 0.0001 KAS minimum fee
 
 Deno.serve(async (req) => {
   try {
-    const { mnemonic, fromAddress, toAddress, amountKas } = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch (e) {
+      return Response.json({ error: 'Invalid JSON request body' }, { status: 400 });
+    }
+    
+    const { mnemonic, fromAddress, toAddress, amountKas } = body;
 
     if (!mnemonic || !fromAddress || !toAddress || !amountKas) {
-      return Response.json({ error: 'Missing required fields' }, { status: 400 });
+      return Response.json({ error: 'Missing required fields: mnemonic, fromAddress, toAddress, amountKas' }, { status: 400 });
+    }
+    
+    if (typeof amountKas !== 'number' || amountKas <= 0) {
+      return Response.json({ error: 'amountKas must be a positive number' }, { status: 400 });
+    }
+    
+    if (typeof mnemonic !== 'string' || mnemonic.trim().split(/\s+/).length < 12) {
+      return Response.json({ error: 'Invalid mnemonic phrase' }, { status: 400 });
     }
 
     // Ensure addresses have kaspa: prefix
