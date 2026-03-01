@@ -425,12 +425,23 @@ export default function Layout({ children, currentPageName }) {
         <nav className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-xl border-b border-white/10" style={{ paddingTop: 'var(--sat, 0px)' }}>
           <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 sm:py-3">
             <div className="flex items-center justify-between gap-3">
-              <Link 
-                to={createPageUrl("Home")}
-                className="flex items-center gap-2 group flex-shrink-0"
-              >
-                <span className="text-white font-black text-2xl sm:text-3xl tracking-tight">TTT</span>
-              </Link>
+              <div className="flex items-center gap-3">
+                {showBackButton && (
+                  <button
+                    onClick={handleBackToCategories}
+                    className="hidden lg:flex items-center justify-center w-9 h-9 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white"
+                    title="Back to Categories"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+                )}
+                <Link 
+                  to={createPageUrl("Home")}
+                  className="flex items-center gap-2 group flex-shrink-0"
+                >
+                  <span className="text-white font-black text-2xl sm:text-3xl tracking-tight">TTT</span>
+                </Link>
+              </div>
 
               <div className="hidden lg:flex items-center gap-2 flex-1 overflow-x-auto scrollbar-hide">
                 <div className="flex items-center gap-2 min-w-max">
@@ -590,6 +601,15 @@ export default function Layout({ children, currentPageName }) {
               </div>
 
               <div className="lg:hidden flex items-center gap-1.5">
+                {showBackButton && (
+                  <button
+                    onClick={handleBackToCategories}
+                    className="h-9 w-9 p-0 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 hover:text-white"
+                    title="Back"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+                )}
                 <Link to={createPageUrl("Countdown")}>
                   <Button
                     variant="ghost"
