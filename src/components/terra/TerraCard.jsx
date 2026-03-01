@@ -18,9 +18,16 @@ export default function TerraCard({ walletAddress, user }) {
   const [transactions, setTransactions] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
 
-  // Initialize card on mount
+  // Initialize card on mount and set up auto-refresh
   useEffect(() => {
     initializeCard();
+    
+    // Auto-refresh every 10 seconds
+    const interval = setInterval(() => {
+      initializeCard();
+    }, 10000);
+    
+    return () => clearInterval(interval);
   }, [walletAddress]);
 
   const initializeCard = async () => {
