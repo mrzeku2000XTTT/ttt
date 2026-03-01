@@ -369,17 +369,32 @@ export default function TerraPage() {
         {tab === "wallet" && (
           <div style={{ padding: '16px 16px 0' }}>
             <h2 style={{ color: 'white', fontSize: 22, fontWeight: 700, marginBottom: 20 }}>Wallet</h2>
-            <div style={{ background: '#0d0d0d', borderRadius: 20, padding: '24px', marginBottom: 16, border: '1px solid rgba(255,255,255,0.07)', position: 'relative', overflow: 'hidden', minHeight: 140 }}>
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(26,115,232,0.15) 0%, transparent 60%)', pointerEvents: 'none' }} />
-              <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginBottom: 8 }}>Terra Wallet</div>
-              <div style={{ color: 'white', fontSize: 26, fontWeight: 700, marginBottom: 4 }}>
-                {loading ? "..." : `${kasBalanceNum.toLocaleString("en-US", { maximumFractionDigits: 2 })} KAS`}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+              <div style={{ background: '#0d0d0d', borderRadius: 20, padding: '24px', border: '1px solid rgba(255,255,255,0.07)', position: 'relative', overflow: 'hidden', minHeight: 140 }}>
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(26,115,232,0.15) 0%, transparent 60%)', pointerEvents: 'none' }} />
+                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginBottom: 8 }}>Terra</div>
+                <div style={{ color: 'white', fontSize: 20, fontWeight: 700, marginBottom: 4 }}>
+                  {loading ? "..." : `${kasBalanceNum.toLocaleString("en-US", { maximumFractionDigits: 2 })} KAS`}
+                </div>
+                <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11 }}>
+                  {loading ? "" : displayUsd}
+                </div>
+                <div style={{ position: 'absolute', bottom: 16, right: 16 }}>
+                  <CreditCard size={24} color="rgba(255,255,255,0.15)" />
+                </div>
               </div>
-              <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13 }}>
-                {loading ? "" : displayUsd}
-              </div>
-              <div style={{ position: 'absolute', bottom: 20, right: 20 }}>
-                <CreditCard size={32} color="rgba(255,255,255,0.15)" />
+              <div style={{ background: '#0d0d0d', borderRadius: 20, padding: '24px', border: '1px solid rgba(255,255,255,0.07)', position: 'relative', overflow: 'hidden', minHeight: 140 }}>
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(76,175,80,0.15) 0%, transparent 60%)', pointerEvents: 'none' }} />
+                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginBottom: 8 }}>TUsd</div>
+                <div style={{ color: 'white', fontSize: 20, fontWeight: 700, marginBottom: 4 }}>
+                  {loading ? "..." : `${kasBalanceNum.toLocaleString("en-US", { maximumFractionDigits: 2 })} TUSD`}
+                </div>
+                <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11 }}>
+                  1:1 pegged
+                </div>
+                <div style={{ position: 'absolute', bottom: 16, right: 16 }}>
+                  <CreditCard size={24} color="rgba(255,255,255,0.15)" />
+                </div>
               </div>
             </div>
             <div style={{ background: '#0d0d0d', borderRadius: 14, padding: '14px 18px', marginBottom: 16, border: '1px solid rgba(255,255,255,0.06)' }}>
@@ -398,25 +413,6 @@ export default function TerraPage() {
                 <ChevronRight size={18} color="rgba(255,255,255,0.3)" />
               </div>
             ))}
-          </div>
-        )}
-
-        {tab === "tusd" && (
-          <div style={{ padding: '16px 16px 0' }}>
-            <h2 style={{ color: 'white', fontSize: 22, fontWeight: 700, marginBottom: 20 }}>TUsd</h2>
-            <div style={{ background: '#0d0d0d', borderRadius: 20, padding: '24px', marginBottom: 16, border: '1px solid rgba(255,255,255,0.07)', position: 'relative', overflow: 'hidden', minHeight: 140 }}>
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(76,175,80,0.15) 0%, transparent 60%)', pointerEvents: 'none' }} />
-              <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginBottom: 8 }}>TUsd Balance (1:1 KAS)</div>
-              <div style={{ color: 'white', fontSize: 26, fontWeight: 700, marginBottom: 4 }}>
-                {loading ? "..." : `${kasBalanceNum.toLocaleString("en-US", { maximumFractionDigits: 2 })} TUSD`}
-              </div>
-              <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13 }}>
-                Pegged 1:1 to your KAS balance
-              </div>
-              <div style={{ position: 'absolute', bottom: 20, right: 20 }}>
-                <CreditCard size={32} color="rgba(255,255,255,0.15)" />
-              </div>
-            </div>
           </div>
         )}
 
@@ -449,7 +445,6 @@ export default function TerraPage() {
         {[
           { id: "home", icon: <Home size={22} />, label: "Home" },
           { id: "wallet", icon: <Wallet size={22} />, label: "Wallet" },
-          { id: "tusd", icon: <Wallet size={22} />, label: "TUsd" },
           { id: "scan", icon: <Scan size={22} />, label: "Scan", action: () => setSheet("send") },
           { id: "history", icon: <History size={22} />, label: "Activity" },
           { id: "profile", icon: <User size={22} />, label: "Profile" },

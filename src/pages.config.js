@@ -247,6 +247,7 @@ import Taiwo from './pages/Taiwo';
 import TapToTip from './pages/TapToTip';
 import TemplateBuilder from './pages/TemplateBuilder';
 import Terms from './pages/Terms';
+import Terra from './pages/Terra';
 import TestJobAPI from './pages/TestJobAPI';
 import TestKaspaAPI from './pages/TestKaspaAPI';
 import TestZelcore from './pages/TestZelcore';
@@ -272,6 +273,7 @@ import VibeSetup from './pages/VibeSetup';
 import VibeWallet from './pages/VibeWallet';
 import VoxInvicta from './pages/VoxInvicta';
 import Waitlist from './pages/Waitlist';
+import Wallet from './pages/Wallet';
 import Window from './pages/Window';
 import WorkerTask from './pages/WorkerTask';
 import X from './pages/X';
@@ -281,8 +283,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import Wallet from './pages/Wallet';
-import Terra from './pages/Terra';
 import __Layout from './Layout.jsx';
 
 
@@ -487,6 +487,7 @@ export const PAGES = {
     "TapToTip": TapToTip,
     "TemplateBuilder": TemplateBuilder,
     "Terms": Terms,
+    "Terra": Terra,
     "TestJobAPI": TestJobAPI,
     "TestKaspaAPI": TestKaspaAPI,
     "TestZelcore": TestZelcore,
@@ -512,6 +513,7 @@ export const PAGES = {
     "VibeWallet": VibeWallet,
     "VoxInvicta": VoxInvicta,
     "Waitlist": Waitlist,
+    "Wallet": Wallet,
     "Window": Window,
     "WorkerTask": WorkerTask,
     "X": X,
@@ -521,8 +523,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "Wallet": Wallet,
-    "Terra": Terra,
 }
 
 export const pagesConfig = {
