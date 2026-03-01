@@ -296,6 +296,7 @@ export default function TerraPage() {
   const [tab, setTab] = useState("home");
   const [balanceHidden, setBalanceHidden] = useState(false);
   const [sheet, setSheet] = useState(null);
+  const [showCreateWallet, setShowCreateWallet] = useState(false);
   const [kasBalance, setKasBalance] = useState(null);
   const [kasPrice, setKasPrice] = useState(null);
   const [walletAddress, setWalletAddress] = useState(null);
