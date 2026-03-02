@@ -434,13 +434,14 @@ export default function RufzeitKHome() {
                   )}
                 </div>
                 <button
-                  onClick={() => startCall(u)}
-                  disabled={calling === u.id}
-                  className="flex items-center gap-2 bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 text-black font-bold rounded-xl px-4 py-2 transition-colors flex-shrink-0"
-                >
-                  {calling === u.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Video className="w-4 h-4" />}
-                  <span className="text-sm">Call</span>
-                </button>
+                   onClick={() => startCall(u)}
+                   disabled={calling === u.id || (callCredits < 1 && !hasBypass)}
+                   title={callCredits < 1 && !hasBypass ? "Need credits or bypass code" : ""}
+                   className="flex items-center gap-2 bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold rounded-xl px-4 py-2 transition-colors flex-shrink-0"
+                 >
+                   {calling === u.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Video className="w-4 h-4" />}
+                   <span className="text-sm">Call</span>
+                 </button>
               </motion.div>
             ))}
           </div>
