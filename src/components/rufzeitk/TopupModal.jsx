@@ -81,7 +81,8 @@ export default function TopupModal({ onClose, onSuccess }) {
       }
       localStorage.setItem(BYPASS_KEY, "true");
       setBypassSuccess(true);
-      setTimeout(() => { onSuccess(0); onClose(); }, 1500);
+      console.log("Bypass code applied! BYPASS_KEY set to true");
+      setTimeout(() => { console.log("Calling onSuccess with bypass"); onSuccess(0); onClose(); }, 1500);
     } catch {
       setBypassError("Failed to verify code. Try again.");
     }
