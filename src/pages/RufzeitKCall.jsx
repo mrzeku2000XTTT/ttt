@@ -82,6 +82,24 @@ export default function RufzeitKCall() {
         });
 
         setLoading(false);
+
+        // Deduct 1 credit per minute if caller
+        if (role === "caller" && me) {
+          creditTimerRef.current = setInterval(async () => {
+            setMinutesUsed(prev => prev + 1);
+            setCredits(prev => {
+              const newCredits = Math.max(0, prev - 1);
+              // Update in DB
+              base44.entities.RufzeitKUser.filter({ email: me.email }).then(users => {
+                if (users.length > 0) {
+                  base44.entities.RufzeitKUser.update(users[0].id, { call_credits: newCredits });
+                }
+              }).catch(() => {});
+              if (newCredits <= 0) handleHangup();
+              return newCredits;
+            });
+          }, 60000); // every 60 seconds
+        }
       };
       document.head.appendChild(script);
     } catch (err) {
