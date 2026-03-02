@@ -1,21 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Video, Phone, PhoneCall, Wallet, RefreshCw, User, LogIn } from "lucide-react";
+import { Video, Phone, PhoneCall, Wallet, RefreshCw, User, LogIn, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function RufzeitKHome() {
   const navigate = useNavigate();
+  const pollRef = useRef(null);
   const [user, setUser] = useState(null);
   const [users, setUsers] = useState([]);
   const [kaspaAddress, setKaspaAddress] = useState("");
   const [manualAddress, setManualAddress] = useState("");
   const [loading, setLoading] = useState(true);
-  const [calling, setCalling] = useState(null);
+  const [calling, setCalling] = useState(null); // userId being called
+  const [callStatus, setCallStatus] = useState(null); // { sessionId, targetName, status: 'ringing'|'declined'|'missed' }
   const [incomingCall, setIncomingCall] = useState(null);
   const [connectingWallet, setConnectingWallet] = useState(false);
   const [showManualInput, setShowManualInput] = useState(false);
@@ -26,60 +27,24 @@ export default function RufzeitKHome() {
 
   useEffect(() => {
     if (!user) return;
-
-    // Upsert this user into RufzeitKUser so they appear to others
     upsertRufzeitKUser(user);
-
-    // Load other users
     loadUsers();
 
-    // Poll for incoming calls every 3 seconds
-    const interval = setInterval(checkIncomingCalls, 3000);
+    // Poll for incoming + call status every 4 seconds (reduce rate limit hits)
+    pollRef.current = setInterval(() => {
+      checkIncomingCalls();
+      if (callStatus?.status === "ringing") checkCallAccepted();
+    }, 4000);
 
-    // Mark offline on exit
     const handleUnload = () => markOffline();
     window.addEventListener("beforeunload", handleUnload);
 
     return () => {
-      clearInterval(interval);
+      clearInterval(pollRef.current);
       window.removeEventListener("beforeunload", handleUnload);
       markOffline();
     };
-  }, [user]);
-
-  const upsertRufzeitKUser = async (me) => {
-    try {
-      const existing = await base44.entities.RufzeitKUser.filter({ email: me.email });
-      if (existing.length > 0) {
-        await base44.entities.RufzeitKUser.update(existing[0].id, {
-          is_online: true,
-          last_seen: new Date().toISOString(),
-          full_name: me.full_name || "",
-          kaspa_address: me.kaspa_address || existing[0].kaspa_address || ""
-        });
-      } else {
-        await base44.entities.RufzeitKUser.create({
-          email: me.email,
-          full_name: me.full_name || "",
-          kaspa_address: me.kaspa_address || "",
-          is_online: true,
-          last_seen: new Date().toISOString()
-        });
-      }
-    } catch (err) {
-      console.error("Failed to upsert RufzeitKUser:", err);
-    }
-  };
-
-  const markOffline = async () => {
-    if (!user) return;
-    try {
-      const existing = await base44.entities.RufzeitKUser.filter({ email: user.email });
-      if (existing.length > 0) {
-        await base44.entities.RufzeitKUser.update(existing[0].id, { is_online: false });
-      }
-    } catch {}
-  };
+  }, [user, callStatus]);
 
   const loadUser = async () => {
     setLoading(true);
@@ -93,13 +58,38 @@ export default function RufzeitKHome() {
     setLoading(false);
   };
 
+  const upsertRufzeitKUser = async (me) => {
+    try {
+      const existing = await base44.entities.RufzeitKUser.filter({ email: me.email });
+      const data = {
+        is_online: true,
+        last_seen: new Date().toISOString(),
+        full_name: me.full_name || "",
+        kaspa_address: me.kaspa_address || ""
+      };
+      if (existing.length > 0) {
+        await base44.entities.RufzeitKUser.update(existing[0].id, data);
+      } else {
+        await base44.entities.RufzeitKUser.create({ email: me.email, ...data });
+      }
+    } catch {}
+  };
+
+  const markOffline = async () => {
+    if (!user) return;
+    try {
+      const existing = await base44.entities.RufzeitKUser.filter({ email: user.email });
+      if (existing.length > 0) {
+        await base44.entities.RufzeitKUser.update(existing[0].id, { is_online: false });
+      }
+    } catch {}
+  };
+
   const loadUsers = async () => {
     try {
-      const allUsers = await base44.entities.RufzeitKUser.list();
-      setUsers(allUsers.filter(u => u.email !== user?.email));
-    } catch (err) {
-      console.error("Failed to load users", err);
-    }
+      const all = await base44.entities.RufzeitKUser.list();
+      setUsers(all.filter(u => u.email !== user?.email));
+    } catch {}
   };
 
   const checkIncomingCalls = async () => {
@@ -109,10 +99,25 @@ export default function RufzeitKHome() {
         receiver_email: user.email,
         status: "pending"
       });
-      if (pending.length > 0) {
-        setIncomingCall(pending[0]);
-      } else {
-        setIncomingCall(null);
+      setIncomingCall(pending.length > 0 ? pending[0] : null);
+    } catch {}
+  };
+
+  const checkCallAccepted = async () => {
+    if (!callStatus?.sessionId) return;
+    try {
+      const sessions = await base44.entities.CallSession.filter({ id: callStatus.sessionId });
+      if (sessions.length > 0) {
+        const s = sessions[0];
+        if (s.status === "active") {
+          // Receiver accepted — join the call
+          clearInterval(pollRef.current);
+          navigate(createPageUrl(`RufzeitKCall?room=${s.room_name}&role=caller`));
+        } else if (s.status === "declined") {
+          setCallStatus({ ...callStatus, status: "declined" });
+          setCalling(null);
+          setTimeout(() => setCallStatus(null), 3000);
+        }
       }
     } catch {}
   };
@@ -125,12 +130,13 @@ export default function RufzeitKHome() {
         const address = accounts[0];
         await base44.auth.updateMe({ kaspa_address: address });
         setKaspaAddress(address);
-        setUser(prev => ({ ...prev, kaspa_address: address }));
+        const updated = { ...user, kaspa_address: address };
+        setUser(updated);
+        upsertRufzeitKUser(updated);
       } else {
         setShowManualInput(true);
       }
-    } catch (err) {
-      console.error("Kasware connect failed:", err);
+    } catch {
       setShowManualInput(true);
     }
     setConnectingWallet(false);
@@ -141,16 +147,17 @@ export default function RufzeitKHome() {
     const addr = manualAddress.trim();
     await base44.auth.updateMe({ kaspa_address: addr });
     setKaspaAddress(addr);
-    const updatedUser = { ...user, kaspa_address: addr };
-    setUser(updatedUser);
+    const updated = { ...user, kaspa_address: addr };
+    setUser(updated);
     setShowManualInput(false);
     setManualAddress("");
-    // Sync to RufzeitKUser
-    upsertRufzeitKUser(updatedUser);
+    upsertRufzeitKUser(updated);
   };
 
   const startCall = async (targetUser) => {
+    if (calling) return;
     setCalling(targetUser.id);
+
     try {
       const res = await base44.functions.invoke("createJitsiRoom", {
         caller_email: user.email,
@@ -158,8 +165,7 @@ export default function RufzeitKHome() {
       });
       const roomName = res.data.room_name;
 
-      // Create call session
-      await base44.entities.CallSession.create({
+      const session = await base44.entities.CallSession.create({
         caller_email: user.email,
         receiver_email: targetUser.email,
         caller_kaspa_address: kaspaAddress || "",
@@ -168,17 +174,33 @@ export default function RufzeitKHome() {
         status: "pending"
       });
 
-      // Navigate to call page
-      navigate(createPageUrl(`RufzeitKCall?room=${roomName}&role=caller`));
+      setCallStatus({
+        sessionId: session.id,
+        targetName: targetUser.full_name || targetUser.email,
+        roomName,
+        status: "ringing"
+      });
     } catch (err) {
       console.error("Failed to start call:", err);
+      setCalling(null);
+    }
+  };
+
+  const cancelCall = async () => {
+    if (callStatus?.sessionId) {
+      await base44.entities.CallSession.update(callStatus.sessionId, { status: "missed" }).catch(() => {});
     }
     setCalling(null);
+    setCallStatus(null);
   };
 
   const acceptCall = async () => {
     if (!incomingCall) return;
-    await base44.entities.CallSession.update(incomingCall.id, { status: "active", started_at: new Date().toISOString() });
+    await base44.entities.CallSession.update(incomingCall.id, {
+      status: "active",
+      started_at: new Date().toISOString()
+    });
+    setIncomingCall(null);
     navigate(createPageUrl(`RufzeitKCall?room=${incomingCall.room_name}&role=receiver`));
   };
 
@@ -201,6 +223,11 @@ export default function RufzeitKHome() {
   if (!user) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-6 p-6">
+        <img
+          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/7a9ae8d5f_image.png"
+          alt="RufzeitK"
+          className="w-24 h-24 rounded-3xl shadow-2xl"
+        />
         <div className="text-center">
           <h1 className="text-5xl font-black text-white mb-2">RufzeitK</h1>
           <p className="text-white/50 text-lg">One-on-one encrypted video calls</p>
@@ -218,90 +245,170 @@ export default function RufzeitKHome() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Incoming call overlay */}
+
+      {/* ===== INCOMING CALL OVERLAY ===== */}
       <AnimatePresence>
         {incomingCall && (
           <motion.div
-            initial={{ opacity: 0, y: -100 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -100 }}
-            className="fixed top-0 left-0 right-0 z-[999] bg-gradient-to-b from-green-900 to-black p-6 flex flex-col items-center gap-4 shadow-2xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[999] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center gap-6"
           >
-            <div className="text-white/60 text-sm">Incoming call from</div>
-            <div className="text-white font-bold text-xl">{incomingCall.caller_email}</div>
+            <motion.div
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+              className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white text-4xl font-black shadow-[0_0_60px_rgba(6,182,212,0.5)]"
+            >
+              {(incomingCall.caller_email || "?")[0].toUpperCase()}
+            </motion.div>
+
+            <div className="text-white/50 text-sm">Incoming call from</div>
+            <div className="text-white font-bold text-2xl">{incomingCall.caller_email}</div>
             {incomingCall.caller_kaspa_address && (
-              <div className="text-green-400 text-xs font-mono">{shortAddr(incomingCall.caller_kaspa_address)}</div>
+              <div className="text-cyan-400 text-xs font-mono bg-cyan-500/10 px-3 py-1 rounded-full">
+                {shortAddr(incomingCall.caller_kaspa_address)}
+              </div>
             )}
-            <div className="flex gap-4">
-              <button onClick={declineCall} className="w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center transition-colors">
-                <Phone className="w-7 h-7 text-white rotate-[135deg]" />
-              </button>
-              <button onClick={acceptCall} className="w-16 h-16 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center transition-colors animate-pulse">
-                <PhoneCall className="w-7 h-7 text-white" />
-              </button>
+
+            <div className="flex gap-8 mt-4">
+              <div className="flex flex-col items-center gap-2">
+                <button
+                  onClick={declineCall}
+                  className="w-18 h-18 w-[72px] h-[72px] rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center transition-colors shadow-lg"
+                >
+                  <Phone className="w-7 h-7 text-white rotate-[135deg]" />
+                </button>
+                <span className="text-white/40 text-xs">Decline</span>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <button
+                  onClick={acceptCall}
+                  className="w-[72px] h-[72px] rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center transition-colors shadow-lg shadow-green-500/30"
+                >
+                  <PhoneCall className="w-7 h-7 text-white" />
+                </button>
+                <span className="text-white/40 text-xs">Accept</span>
+              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Header */}
-      <div className="p-6 border-b border-white/10">
-        <div className="max-w-lg mx-auto">
-          <h1 className="text-4xl font-black text-white mb-1">RufzeitK</h1>
-          <p className="text-white/40 text-sm">One-on-one video calls · Powered by Kaspa</p>
-
-          {/* Wallet Status */}
-          <div className="mt-4">
-            {kaspaAddress ? (
-              <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-3">
-                <Wallet className="w-4 h-4 text-green-400 flex-shrink-0" />
-                <div>
-                  <div className="text-green-400 text-xs font-semibold">Kaspa Wallet Connected</div>
-                  <div className="text-white/50 text-xs font-mono">{shortAddr(kaspaAddress)}</div>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <button
-                  onClick={connectKasware}
-                  disabled={connectingWallet}
-                  className="w-full flex items-center justify-center gap-2 bg-cyan-500/20 border border-cyan-500/40 rounded-xl px-4 py-3 text-cyan-300 hover:bg-cyan-500/30 transition-colors"
+      {/* ===== CALLING / RINGING OVERLAY ===== */}
+      <AnimatePresence>
+        {callStatus && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[998] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center gap-6"
+          >
+            {callStatus.status === "ringing" && (
+              <>
+                <motion.div
+                  animate={{ scale: [1, 1.08, 1] }}
+                  transition={{ repeat: Infinity, duration: 1.2 }}
+                  className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center text-white text-4xl font-black shadow-[0_0_60px_rgba(6,182,212,0.4)]"
                 >
-                  {connectingWallet ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Wallet className="w-4 h-4" />}
-                  <span className="text-sm font-semibold">
-                    {window.kasware ? "Connect Kasware Wallet" : "Enter Kaspa Address"}
-                  </span>
-                </button>
-                <AnimatePresence>
-                  {showManualInput && (
+                  {(callStatus.targetName || "?")[0].toUpperCase()}
+                </motion.div>
+                <div className="text-white font-bold text-2xl">{callStatus.targetName}</div>
+                <div className="text-white/50 text-sm">Calling...</div>
+                <div className="flex gap-1 mt-2">
+                  {[0, 0.2, 0.4].map((delay, i) => (
                     <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="flex gap-2"
-                    >
-                      <Input
-                        value={manualAddress}
-                        onChange={e => setManualAddress(e.target.value)}
-                        placeholder="kaspa:qr..."
-                        className="bg-white/5 border-white/10 text-white placeholder:text-white/30 text-sm"
-                      />
-                      <Button onClick={saveManualAddress} size="sm" className="bg-cyan-500 hover:bg-cyan-600 text-black font-bold whitespace-nowrap">
-                        Save
-                      </Button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                      key={i}
+                      className="w-2 h-2 rounded-full bg-cyan-400"
+                      animate={{ opacity: [0.3, 1, 0.3] }}
+                      transition={{ repeat: Infinity, duration: 1.2, delay }}
+                    />
+                  ))}
+                </div>
+                <button
+                  onClick={cancelCall}
+                  className="mt-6 w-[72px] h-[72px] rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center transition-colors"
+                >
+                  <PhoneOff className="w-7 h-7 text-white" />
+                </button>
+                <span className="text-white/40 text-xs">Cancel</span>
+              </>
             )}
+            {callStatus.status === "declined" && (
+              <>
+                <X className="w-16 h-16 text-red-500" />
+                <div className="text-white font-bold text-xl">{callStatus.targetName}</div>
+                <div className="text-red-400 text-sm">Call declined</div>
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ===== HEADER ===== */}
+      <div className="p-6 border-b border-white/10">
+        <div className="max-w-lg mx-auto flex items-center gap-4 mb-4">
+          <img
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/7a9ae8d5f_image.png"
+            alt="RufzeitK"
+            className="w-12 h-12 rounded-2xl"
+          />
+          <div>
+            <h1 className="text-2xl font-black text-white leading-none">RufzeitK</h1>
+            <p className="text-white/40 text-xs">One-on-one video calls · Kaspa</p>
           </div>
+        </div>
+
+        <div className="max-w-lg mx-auto">
+          {kaspaAddress ? (
+            <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-3">
+              <Wallet className="w-4 h-4 text-green-400 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="text-green-400 text-xs font-semibold">Wallet Connected</div>
+                <div className="text-white/50 text-xs font-mono truncate">{kaspaAddress}</div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <button
+                onClick={connectKasware}
+                disabled={connectingWallet}
+                className="w-full flex items-center justify-center gap-2 bg-cyan-500/20 border border-cyan-500/40 rounded-xl px-4 py-3 text-cyan-300 hover:bg-cyan-500/30 transition-colors"
+              >
+                {connectingWallet ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Wallet className="w-4 h-4" />}
+                <span className="text-sm font-semibold">Connect Kaspa Wallet</span>
+              </button>
+              <AnimatePresence>
+                {showManualInput && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="flex gap-2"
+                  >
+                    <Input
+                      value={manualAddress}
+                      onChange={e => setManualAddress(e.target.value)}
+                      placeholder="kaspa:qr..."
+                      className="bg-white/5 border-white/10 text-white placeholder:text-white/30 text-sm"
+                    />
+                    <Button onClick={saveManualAddress} size="sm" className="bg-cyan-500 hover:bg-cyan-600 text-black font-bold whitespace-nowrap">
+                      Save
+                    </Button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Users List */}
+      {/* ===== USERS LIST ===== */}
       <div className="max-w-lg mx-auto p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-white/60 text-sm font-semibold uppercase tracking-wider">Users</h2>
+          <h2 className="text-white/60 text-sm font-semibold uppercase tracking-wider">
+            Users ({users.length})
+          </h2>
           <button onClick={loadUsers} className="text-white/30 hover:text-white/60 transition-colors">
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -320,43 +427,37 @@ export default function RufzeitKHome() {
                 key={u.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/8 transition-all"
+                className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-4"
               >
-                {/* Avatar */}
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0 text-white font-bold text-lg">
-                  {(u.full_name || u.email || "?")[0].toUpperCase()}
+                <div className="relative flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg">
+                    {(u.full_name || u.email || "?")[0].toUpperCase()}
+                  </div>
+                  {u.is_online && (
+                    <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-green-400 border-2 border-black" />
+                  )}
                 </div>
 
-                {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-white font-semibold text-sm truncate">
-                      {u.full_name || u.email}
-                    </span>
-                    {u.is_online && (
-                      <span className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0 animate-pulse" />
-                    )}
+                  <div className="text-white font-semibold text-sm truncate">
+                    {u.full_name || u.email}
                   </div>
                   {u.kaspa_address ? (
                     <div className="text-green-400/70 text-xs font-mono truncate mt-0.5">
                       {shortAddr(u.kaspa_address)}
                     </div>
                   ) : (
-                    <div className="text-white/30 text-xs mt-0.5">No wallet connected</div>
+                    <div className="text-white/30 text-xs mt-0.5">No wallet</div>
                   )}
+                  {u.is_online && <div className="text-green-400 text-[10px] mt-0.5">● Online</div>}
                 </div>
 
-                {/* Call Button */}
                 <button
                   onClick={() => startCall(u)}
-                  disabled={calling === u.id}
-                  className="flex items-center gap-2 bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 text-black font-bold rounded-xl px-4 py-2 transition-colors flex-shrink-0"
+                  disabled={!!calling}
+                  className="flex items-center gap-2 bg-cyan-500 hover:bg-cyan-600 disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold rounded-xl px-4 py-2.5 transition-colors flex-shrink-0"
                 >
-                  {calling === u.id ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Video className="w-4 h-4" />
-                  )}
+                  <Video className="w-4 h-4" />
                   <span className="text-sm">Call</span>
                 </button>
               </motion.div>
@@ -365,5 +466,15 @@ export default function RufzeitKHome() {
         )}
       </div>
     </div>
+  );
+}
+
+// need this import for hangup overlay
+function PhoneOff({ className }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.42 19.42 0 0 1 4.26 9.05a2 2 0 0 1 2-2.18h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11z"></path>
+      <line x1="23" y1="1" x2="1" y2="23"></line>
+    </svg>
   );
 }
