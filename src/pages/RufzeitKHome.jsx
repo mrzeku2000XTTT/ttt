@@ -138,11 +138,15 @@ export default function RufzeitKHome() {
 
   const saveManualAddress = async () => {
     if (!manualAddress.trim()) return;
-    await base44.auth.updateMe({ kaspa_address: manualAddress.trim() });
-    setKaspaAddress(manualAddress.trim());
-    setUser(prev => ({ ...prev, kaspa_address: manualAddress.trim() }));
+    const addr = manualAddress.trim();
+    await base44.auth.updateMe({ kaspa_address: addr });
+    setKaspaAddress(addr);
+    const updatedUser = { ...user, kaspa_address: addr };
+    setUser(updatedUser);
     setShowManualInput(false);
     setManualAddress("");
+    // Sync to RufzeitKUser
+    upsertRufzeitKUser(updatedUser);
   };
 
   const startCall = async (targetUser) => {
