@@ -408,5 +408,18 @@ export default function RufzeitKHome() {
         )}
       </div>
     </div>
+
+    {/* Top Up Modal */}
+    <AnimatePresence>
+      {showTopup && (
+        <TopupModal
+          onClose={() => setShowTopup(false)}
+          onSuccess={(credits) => {
+            setCallCredits(prev => prev + credits);
+            setShowTopup(false);
+          }}
+        />
+      )}
+    </AnimatePresence>
   );
 }
