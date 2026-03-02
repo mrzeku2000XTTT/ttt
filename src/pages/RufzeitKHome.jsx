@@ -529,8 +529,11 @@ export default function RufzeitKHome() {
         <TopupModal
           onClose={() => setShowTopup(false)}
           onSuccess={(credits) => {
+            console.log("TopupModal onSuccess called with credits:", credits);
+            const bypassActive = localStorage.getItem(BYPASS_KEY) === "true";
+            console.log("Setting hasBypass to:", bypassActive);
             setCallCredits(prev => prev + credits);
-            setHasBypass(localStorage.getItem(BYPASS_KEY) === "true");
+            setHasBypass(bypassActive);
             setShowTopup(false);
           }}
           kaspaAddress={identity?.kaspaAddress}
