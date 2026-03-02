@@ -304,7 +304,7 @@ export default function AgentYingChat() {
                     </div>
                   )}
 
-                  <div className="flex gap-1.5 md:gap-2">
+                  <div className="flex gap-1 sm:gap-1.5 md:gap-2">
                     <input
                       type="file"
                       accept="image/*"
