@@ -43,9 +43,11 @@ export default function RufzeitKHome() {
       try { setIdentity(JSON.parse(saved)); } catch {}
     }
     setHasBypass(localStorage.getItem(BYPASS_KEY) === "true");
-    // Check if user is admin
-    base44.auth.me().then(u => { if (u?.role === "admin") setIsAdmin(true); }).catch(() => {});
-    setLoading(false);
+    // Check if user is admin — wait for result before clearing loading
+    base44.auth.me()
+      .then(u => { if (u?.role === "admin") setIsAdmin(true); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
