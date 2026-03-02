@@ -24,9 +24,8 @@ export default function RufzeitKCall() {
   useEffect(() => {
     init();
     return () => {
-      if (apiRef.current) {
-        apiRef.current.dispose();
-      }
+      if (apiRef.current) apiRef.current.dispose();
+      if (creditTimerRef.current) clearInterval(creditTimerRef.current);
     };
   }, []);
 
