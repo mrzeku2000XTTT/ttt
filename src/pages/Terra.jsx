@@ -386,15 +386,64 @@ export default function TerraPage() {
               </div>
             )}
 
-            {/* Empty State for Transactions */}
+            {/* Recent Activity on Home */}
             <div style={{ margin: '0 16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
                 <span style={{ color: 'white', fontWeight: 600, fontSize: 16 }}>Recent Activity</span>
+                {walletAddress && (
+                  <button onClick={loadTransactions} disabled={loadingTx}
+                    style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: 4 }}>
+                    <RefreshCw size={14} />
+                  </button>
+                )}
               </div>
-              <div style={{ background: '#0d0d0d', borderRadius: 18, padding: '32px 16px', border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
-                <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: 14 }}>No transactions yet</div>
-                <div style={{ color: 'rgba(255,255,255,0.15)', fontSize: 12, marginTop: 6 }}>Send or receive KAS to see activity</div>
-              </div>
+              {loadingTx ? (
+                <div style={{ background: '#0d0d0d', borderRadius: 18, padding: '28px 16px', border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
+                  <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>Loading transactions...</div>
+                </div>
+              ) : transactions.length === 0 ? (
+                <div style={{ background: '#0d0d0d', borderRadius: 18, padding: '32px 16px', border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
+                  <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: 14 }}>No transactions yet</div>
+                  <div style={{ color: 'rgba(255,255,255,0.15)', fontSize: 12, marginTop: 6 }}>Send or receive KAS to see activity</div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {transactions.slice(0, 5).map((tx, idx) => {
+                    const dateStr = tx.timestamp
+                      ? new Date(tx.timestamp).toLocaleString("en-US", { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                      : null;
+                    const short = tx.counterpartyAddress
+                      ? `${tx.counterpartyAddress.slice(0, 12)}...${tx.counterpartyAddress.slice(-6)}`
+                      : null;
+                    return (
+                      <div key={idx} style={{ background: '#0d0d0d', borderRadius: 14, padding: '12px 14px', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 18, flexShrink: 0, background: tx.type === 'receive' ? 'rgba(52,199,89,0.2)' : 'rgba(255,59,48,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {tx.type === 'receive' ? <ArrowDownLeft size={17} color="#34c759" /> : <ArrowUpRight size={17} color="#ff3b30" />}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                            <span style={{ color: 'white', fontSize: 13, fontWeight: 600 }}>
+                              {tx.type === 'receive' ? '+' : '-'}{tx.amount.toLocaleString("en-US", { maximumFractionDigits: 4 })} KAS
+                            </span>
+                            {dateStr && <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10 }}>{dateStr}</span>}
+                          </div>
+                          {short && (
+                            <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11, marginTop: 2 }}>
+                              {tx.type === 'receive' ? 'From' : 'To'}: <span style={{ fontFamily: 'monospace' }}>{short}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {transactions.length > 5 && (
+                    <button onClick={() => setTab('history')}
+                      style={{ background: 'none', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '10px', color: 'rgba(255,255,255,0.4)', fontSize: 13, cursor: 'pointer', fontFamily: SF }}>
+                      View all {transactions.length} transactions →
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}
