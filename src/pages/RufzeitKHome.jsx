@@ -529,6 +529,7 @@ export default function RufzeitKHome() {
           onClose={() => setShowTopup(false)}
           onSuccess={(credits) => {
             setCallCredits(prev => prev + credits);
+            setHasBypass(localStorage.getItem(BYPASS_KEY) === "true");
             setShowTopup(false);
           }}
           kaspaAddress={identity?.kaspaAddress}
