@@ -142,7 +142,7 @@ export default function RufzeitKHome() {
   };
 
   const startCall = async (targetUser) => {
-    if (callCredits < 1) { setShowTopup(true); return; }
+    if (callCredits < 1 && !hasBypass) { setShowTopup(true); return; }
     setCalling(targetUser.id);
     try {
       const res = await base44.functions.invoke("createJitsiRoom", {
