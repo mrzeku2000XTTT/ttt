@@ -133,7 +133,7 @@ export default function AgentYingChat() {
         className={`fixed z-[60] bg-black/95 backdrop-blur-xl border-2 border-cyan-500/30 rounded-2xl shadow-2xl flex flex-col
           ${isMinimized 
             ? 'right-4 md:right-6 bottom-4 md:bottom-6 w-[calc(100vw-2rem)] md:w-80 h-14' 
-            : 'inset-4 md:inset-auto md:right-6 md:bottom-6 md:w-96 md:h-[600px]'
+            : 'inset-2 sm:inset-4 md:inset-auto md:right-6 md:bottom-6 md:w-96 md:h-[600px]'
           }`}
         style={{ maxHeight: isMinimized ? '56px' : 'calc(100vh - 2rem)' }}
       >
