@@ -226,8 +226,8 @@ export default function AgentYingChat() {
                 {/* Messages */}
                  <div className="flex-1 overflow-y-auto p-1.5 sm:p-2 md:p-3 space-y-1.5 sm:space-y-2 md:space-y-3">
                   {chatMessages.length === 0 && (
-                    <div className="text-center py-6 md:py-8">
-                      <Brain className="w-10 h-10 md:w-12 md:h-12 text-cyan-400/50 mx-auto mb-2 md:mb-3" />
+                    <div className="text-center py-4 sm:py-6 md:py-8">
+                      <Brain className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-cyan-400/50 mx-auto mb-1.5 sm:mb-2 md:mb-3" />
                       <p className="text-white font-semibold text-xs md:text-sm mb-2">Ask Agent Ying!</p>
                       <div className="space-y-1 text-[10px] md:text-xs text-gray-400">
                         <p>👁️ Upload images</p>
