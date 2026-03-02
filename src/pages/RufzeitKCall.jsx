@@ -12,6 +12,7 @@ export default function RufzeitKCall() {
   const apiRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [callSession, setCallSession] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   const urlParams = new URLSearchParams(window.location.search);
   const roomName = urlParams.get("room");
