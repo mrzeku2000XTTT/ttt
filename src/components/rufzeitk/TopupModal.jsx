@@ -128,6 +128,34 @@ export default function TopupModal({ onClose, onSuccess }) {
             >
               Pay {amount} KAS
             </button>
+
+            {/* Bypass code section */}
+            <div className="mt-4 pt-4 border-t border-white/10">
+              <p className="text-white/30 text-xs mb-2 flex items-center gap-1"><Key className="w-3 h-3" /> Have a bypass code?</p>
+              {bypassSuccess ? (
+                <div className="flex items-center gap-2 text-green-400 text-sm font-semibold justify-center py-2">
+                  <CheckCircle className="w-4 h-4" /> Bypass activated!
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    value={bypassCode}
+                    onChange={e => { setBypassCode(e.target.value); setBypassError(""); }}
+                    placeholder="Enter code..."
+                    className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/20 outline-none focus:border-white/30"
+                    onKeyDown={e => e.key === "Enter" && applyBypassCode()}
+                  />
+                  <button
+                    onClick={applyBypassCode}
+                    disabled={bypassLoading || !bypassCode.trim()}
+                    className="bg-white/10 hover:bg-white/20 disabled:opacity-40 text-white text-sm font-bold px-4 rounded-lg transition-colors"
+                  >
+                    {bypassLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : "Apply"}
+                  </button>
+                </div>
+              )}
+              {bypassError && <p className="text-red-400 text-xs mt-1">{bypassError}</p>}
+            </div>
           </>
         )}
 
