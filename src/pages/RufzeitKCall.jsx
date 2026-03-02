@@ -138,6 +138,8 @@ export default function RufzeitKCall() {
       apiRef.current.dispose();
       apiRef.current = null;
     }
+    if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current);
+    if (creditTimerRef.current) clearInterval(creditTimerRef.current);
     if (callSession) {
       await base44.entities.CallSession.update(callSession.id, {
         status: "ended",
@@ -145,6 +147,12 @@ export default function RufzeitKCall() {
       }).catch(() => {});
     }
     navigate(createPageUrl("RufzeitKHome"));
+  };
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   return (
