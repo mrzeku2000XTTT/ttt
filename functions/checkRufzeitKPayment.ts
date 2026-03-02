@@ -5,8 +5,10 @@ const PAYMENT_ADDRESS = "kaspa:qqfk829q3wf6cyy9al4tzfc67x5spwatzc0g8fkexgrdve33s
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { amount_kas, since_timestamp, kaspa_address } = await req.json();
-    
+    const user = await base44.auth.me();
+    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { amount_kas, since_timestamp } = await req.json();
     if (!amount_kas || !since_timestamp) {
       return Response.json({ error: 'amount_kas and since_timestamp required' }, { status: 400 });
     }
@@ -33,17 +35,15 @@ Deno.serve(async (req) => {
           const tolerance = expectedSompi * 0.02; // 2% tolerance
 
           if (diff <= tolerance) {
+            // Payment found — add credits to user
+            const existing = await base44.asServiceRole.entities.RufzeitKUser.filter({ email: user.email });
             const creditMinutes = Math.floor(amount_kas); // 1 KAS = 1 minute
-            
-            // Update credits for user (works for logged-in and non-logged-in)
-            if (kaspa_address) {
-              const existing = await base44.asServiceRole.entities.RufzeitKUser.filter({ kaspa_address: kaspa_address });
-              if (existing.length > 0) {
-                const currentCredits = existing[0].call_credits || 0;
-                await base44.asServiceRole.entities.RufzeitKUser.update(existing[0].id, {
-                  call_credits: currentCredits + creditMinutes
-                });
-              }
+
+            if (existing.length > 0) {
+              const currentCredits = existing[0].call_credits || 0;
+              await base44.asServiceRole.entities.RufzeitKUser.update(existing[0].id, {
+                call_credits: currentCredits + creditMinutes
+              });
             }
 
             return Response.json({

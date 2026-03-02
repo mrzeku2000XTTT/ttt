@@ -6,7 +6,7 @@ import QRCode from "qrcode";
 const PAYMENT_ADDRESS = "kaspa:qqfk829q3wf6cyy9al4tzfc67x5spwatzc0g8fkexgrdve33sdh6s2nyh3car";
 const BYPASS_KEY = "rufzeitk_bypass";
 
-export default function TopupModal({ onClose, onSuccess, kaspaAddress }) {
+export default function TopupModal({ onClose, onSuccess }) {
   const [amount, setAmount] = useState(10);
   const [step, setStep] = useState("select"); // select | awaiting | confirmed
   const [qrDataUrl, setQrDataUrl] = useState("");
@@ -43,8 +43,7 @@ export default function TopupModal({ onClose, onSuccess, kaspaAddress }) {
     try {
       const res = await base44.functions.invoke("checkRufzeitKPayment", {
         amount_kas: amt,
-        since_timestamp: ts,
-        kaspa_address: kaspaAddress
+        since_timestamp: ts
       });
       if (res.data?.success) {
         clearInterval(pollRef.current);
@@ -54,9 +53,7 @@ export default function TopupModal({ onClose, onSuccess, kaspaAddress }) {
           onClose();
         }, 2500);
       }
-    } catch (err) {
-      console.error("Payment check error:", err);
-    }
+    } catch {}
     setChecking(false);
   };
 
