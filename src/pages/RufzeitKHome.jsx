@@ -45,8 +45,14 @@ export default function RufzeitKHome() {
     setHasBypass(localStorage.getItem(BYPASS_KEY) === "true");
     // Check if user is admin — wait for result before clearing loading
     base44.auth.me()
-      .then(u => { if (u?.role === "admin") setIsAdmin(true); })
-      .catch(() => {})
+      .then(u => { 
+        console.log("Auth user:", u); 
+        if (u?.role === "admin") { 
+          console.log("Admin detected!"); 
+          setIsAdmin(true); 
+        }
+      })
+      .catch(err => { console.log("Auth error:", err); })
       .finally(() => setLoading(false));
   }, []);
 
