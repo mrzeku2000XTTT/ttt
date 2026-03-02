@@ -395,6 +395,19 @@ export default function RufzeitKHome() {
     </div>
 
     <AnimatePresence>
+      {showBypass && (
+        <BypassCodeModal
+          onClose={() => setShowBypass(false)}
+          onSuccess={() => {
+            localStorage.setItem(BYPASS_KEY, "true");
+            setHasBypass(true);
+            setShowBypass(false);
+          }}
+        />
+      )}
+    </AnimatePresence>
+
+    <AnimatePresence>
       {showTopup && (
         <TopupModal
           onClose={() => setShowTopup(false)}
