@@ -219,6 +219,8 @@ import RegisterBusiness from './pages/RegisterBusiness';
 import RegisterCreditCode from './pages/RegisterCreditCode';
 import RegisterTTTID from './pages/RegisterTTTID';
 import Resonance from './pages/Resonance';
+import RufzeitKCall from './pages/RufzeitKCall';
+import RufzeitKHome from './pages/RufzeitKHome';
 import SIMPLE from './pages/SIMPLE';
 import SSHManager from './pages/SSHManager';
 import SWAN from './pages/SWAN';
@@ -283,8 +285,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import RufzeitKCall from './pages/RufzeitKCall';
-import RufzeitKHome from './pages/RufzeitKHome';
 import __Layout from './Layout.jsx';
 
 
@@ -461,6 +461,8 @@ export const PAGES = {
     "RegisterCreditCode": RegisterCreditCode,
     "RegisterTTTID": RegisterTTTID,
     "Resonance": Resonance,
+    "RufzeitKCall": RufzeitKCall,
+    "RufzeitKHome": RufzeitKHome,
     "SIMPLE": SIMPLE,
     "SSHManager": SSHManager,
     "SWAN": SWAN,
@@ -525,8 +527,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "RufzeitKCall": RufzeitKCall,
-    "RufzeitKHome": RufzeitKHome,
 }
 
 export const pagesConfig = {

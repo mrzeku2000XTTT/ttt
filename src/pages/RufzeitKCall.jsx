@@ -81,14 +81,19 @@ export default function RufzeitKCall() {
           startWithVideoMuted: false,
           prejoinPageEnabled: false,
           disableDeepLinking: true,
-          enableNoisyMicDetection: false
+          enableNoisyMicDetection: false,
+          disableAudioLevels: false,
+          enableLayerSuspension: true,
+          p2p: { enabled: true }
         },
         interfaceConfigOverwrite: {
-          TOOLBAR_BUTTONS: [],
           SHOW_JITSI_WATERMARK: false,
           SHOW_BRAND_WATERMARK: false,
           SHOW_POWERED_BY: false,
-          MOBILE_APP_PROMO: false
+          MOBILE_APP_PROMO: false,
+          TOOLBAR_BUTTONS: [
+            "microphone", "camera", "hangup", "fullscreen", "fodeviceselection", "settings"
+          ]
         }
       };
 
