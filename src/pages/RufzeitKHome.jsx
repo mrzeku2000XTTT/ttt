@@ -4,9 +4,9 @@ import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Video, Phone, PhoneCall, Wallet, RefreshCw, User, LogIn, WalletMinimal, X } from "lucide-react";
+import { Video, Phone, PhoneCall, Wallet, RefreshCw, User, LogIn, X, Clock, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import TopupModal from "@/components/rufzeitk/TopupModal";
 
 export default function RufzeitKHome() {
   const navigate = useNavigate();
