@@ -317,7 +317,7 @@ export default function AgentYingChat() {
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 h-9 md:h-10 w-9 md:w-10 p-0"
+                        className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 h-8 sm:h-9 md:h-10 w-8 sm:w-9 md:w-10 p-0"
                         disabled={isChatting}
                         asChild
                       >
