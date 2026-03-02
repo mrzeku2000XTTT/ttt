@@ -339,7 +339,7 @@ export default function AgentYingChat() {
                       onClick={handleChat}
                       disabled={isChatting || (!chatInput.trim() && !selectedImage)}
                       size="sm"
-                      className="bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/30 h-9 md:h-10 w-9 md:w-10 p-0"
+                       className="bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/30 h-8 sm:h-9 md:h-10 w-8 sm:w-9 md:w-10 p-0"
                     >
                       <Send className="w-4 h-4 md:w-4.5 md:h-4.5" strokeWidth={2} />
                     </Button>
