@@ -27,8 +27,8 @@ export default function RufzeitKHome() {
   useEffect(() => {
     if (!user) return;
 
-    // Mark user as online
-    base44.auth.updateMe({ is_online: true }).catch(() => {});
+    // Upsert this user into RufzeitKUser so they appear to others
+    upsertRufzeitKUser(user);
 
     // Load other users
     loadUsers();
@@ -37,15 +37,49 @@ export default function RufzeitKHome() {
     const interval = setInterval(checkIncomingCalls, 3000);
 
     // Mark offline on exit
-    const handleUnload = () => base44.auth.updateMe({ is_online: false }).catch(() => {});
+    const handleUnload = () => markOffline();
     window.addEventListener("beforeunload", handleUnload);
 
     return () => {
       clearInterval(interval);
       window.removeEventListener("beforeunload", handleUnload);
-      base44.auth.updateMe({ is_online: false }).catch(() => {});
+      markOffline();
     };
   }, [user]);
+
+  const upsertRufzeitKUser = async (me) => {
+    try {
+      const existing = await base44.entities.RufzeitKUser.filter({ email: me.email });
+      if (existing.length > 0) {
+        await base44.entities.RufzeitKUser.update(existing[0].id, {
+          is_online: true,
+          last_seen: new Date().toISOString(),
+          full_name: me.full_name || "",
+          kaspa_address: me.kaspa_address || existing[0].kaspa_address || ""
+        });
+      } else {
+        await base44.entities.RufzeitKUser.create({
+          email: me.email,
+          full_name: me.full_name || "",
+          kaspa_address: me.kaspa_address || "",
+          is_online: true,
+          last_seen: new Date().toISOString()
+        });
+      }
+    } catch (err) {
+      console.error("Failed to upsert RufzeitKUser:", err);
+    }
+  };
+
+  const markOffline = async () => {
+    if (!user) return;
+    try {
+      const existing = await base44.entities.RufzeitKUser.filter({ email: user.email });
+      if (existing.length > 0) {
+        await base44.entities.RufzeitKUser.update(existing[0].id, { is_online: false });
+      }
+    } catch {}
+  };
 
   const loadUser = async () => {
     setLoading(true);
