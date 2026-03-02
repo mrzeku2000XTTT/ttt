@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Video, Phone, PhoneCall, Wallet, RefreshCw, User, X, Clock, Plus, CheckCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import TopupModal from "@/components/rufzeitk/TopupModal";
+import BypassCodeModal from "@/components/rufzeitk/BypassCodeModal";
 
 const LOCAL_KEY = "rufzeitk_identity";
+const BYPASS_KEY = "rufzeitk_bypass";
 
 export default function RufzeitKHome() {
   const navigate = useNavigate();
