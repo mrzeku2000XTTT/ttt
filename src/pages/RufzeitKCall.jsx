@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
-import { PhoneOff, RefreshCw, Copy, Check } from "lucide-react";
+import { PhoneOff, RefreshCw, Copy, Check, Clock } from "lucide-react";
 
 const APP_ID = "vpaas-magic-cookie-6d8ee8df5feb4465a4186740b0dd5b55";
 
@@ -15,7 +15,9 @@ export default function RufzeitKCall() {
   const [copied, setCopied] = useState(false);
   const [minutesUsed, setMinutesUsed] = useState(0);
   const [credits, setCredits] = useState(0);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const creditTimerRef = useRef(null);
+  const elapsedTimerRef = useRef(null);
 
   const urlParams = new URLSearchParams(window.location.search);
   const roomName = urlParams.get("room");
