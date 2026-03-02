@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { RefreshCw, X, CheckCircle, QrCode, Copy, Check } from "lucide-react";
+import { RefreshCw, X, CheckCircle, Copy, Check, Key } from "lucide-react";
 import QRCode from "qrcode";
 
 const PAYMENT_ADDRESS = "kaspa:qqfk829q3wf6cyy9al4tzfc67x5spwatzc0g8fkexgrdve33sdh6s2nyh3car";
+const BYPASS_KEY = "rufzeitk_bypass";
 
 export default function TopupModal({ onClose, onSuccess }) {
   const [amount, setAmount] = useState(10);
@@ -13,6 +14,10 @@ export default function TopupModal({ onClose, onSuccess }) {
   const [checking, setChecking] = useState(false);
   const [sinceTimestamp, setSinceTimestamp] = useState(null);
   const pollRef = useRef(null);
+  const [bypassCode, setBypassCode] = useState("");
+  const [bypassError, setBypassError] = useState("");
+  const [bypassLoading, setBypassLoading] = useState(false);
+  const [bypassSuccess, setBypassSuccess] = useState(false);
 
   useEffect(() => {
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
