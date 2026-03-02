@@ -263,8 +263,26 @@ export default function RufzeitKHome() {
           <h1 className="text-4xl font-black text-white mb-1">RufzeitK</h1>
           <p className="text-white/40 text-sm">One-on-one video calls · Powered by Kaspa</p>
 
+          {/* Credits Balance */}
+          {kaspaAddress && (
+            <div className="mt-4 flex items-center gap-3 bg-cyan-500/10 border border-cyan-500/30 rounded-xl px-4 py-3">
+              <Clock className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+              <div className="flex-1">
+                <div className="text-cyan-400 text-xs font-semibold">Call Credits</div>
+                <div className="text-white font-black text-lg leading-none">{callCredits} <span className="text-white/40 text-xs font-normal">minutes</span></div>
+              </div>
+              <button
+                onClick={() => setShowTopup(true)}
+                className="flex items-center gap-1.5 bg-cyan-500 hover:bg-cyan-600 text-black font-bold text-xs rounded-lg px-3 py-2 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Top Up
+              </button>
+            </div>
+          )}
+
           {/* Wallet Status */}
-          <div className="mt-4">
+          <div className="mt-3">
             {kaspaAddress ? (
               <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-3">
                 <Wallet className="w-4 h-4 text-green-400 flex-shrink-0" />
