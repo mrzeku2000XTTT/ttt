@@ -63,6 +63,31 @@ export default function TopupModal({ onClose, onSuccess }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const applyBypassCode = async () => {
+    if (!bypassCode.trim()) return;
+    setBypassLoading(true);
+    setBypassError("");
+    try {
+      const results = await base44.entities.RufzeitKBypassCode.filter({ code: bypassCode.trim(), is_active: true });
+      if (results.length === 0) { setBypassError("Invalid or expired code."); setBypassLoading(false); return; }
+      const codeRecord = results[0];
+      if (codeRecord.uses_remaining !== -1 && codeRecord.uses_remaining <= 0) {
+        setBypassError("This code has no uses remaining.");
+        setBypassLoading(false);
+        return;
+      }
+      if (codeRecord.uses_remaining !== -1) {
+        await base44.entities.RufzeitKBypassCode.update(codeRecord.id, { uses_remaining: codeRecord.uses_remaining - 1 });
+      }
+      localStorage.setItem(BYPASS_KEY, "true");
+      setBypassSuccess(true);
+      setTimeout(() => { onSuccess(0); onClose(); }, 1500);
+    } catch {
+      setBypassError("Failed to verify code. Try again.");
+    }
+    setBypassLoading(false);
+  };
+
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
       <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-sm p-6 relative">
