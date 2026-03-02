@@ -28,6 +28,7 @@ export default function RufzeitKCall() {
     return () => {
       if (apiRef.current) apiRef.current.dispose();
       if (creditTimerRef.current) clearInterval(creditTimerRef.current);
+      if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current);
     };
   }, []);
 
