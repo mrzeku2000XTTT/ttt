@@ -29,7 +29,8 @@ export default function RufzeitKCall() {
 
   const init = async () => {
     try {
-      const me = await base44.auth.me();
+      let me = null;
+      try { me = await base44.auth.me(); } catch {}
 
       if (roomName) {
         const sessions = await base44.entities.CallSession.filter({ room_name: roomName });
