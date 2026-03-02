@@ -309,15 +309,36 @@ export default function RufzeitKHome() {
             <Clock className="w-4 h-4 text-cyan-400 flex-shrink-0" />
             <div className="flex-1">
               <div className="text-cyan-400 text-xs font-semibold">Call Credits</div>
-              <div className="text-white font-black text-lg leading-none">{callCredits} <span className="text-white/40 text-xs font-normal">minutes</span></div>
+              {hasBypass ? (
+                <div className="text-yellow-400 font-bold text-sm">Bypass Active ✓</div>
+              ) : (
+                <div className="text-white font-black text-lg leading-none">{callCredits} <span className="text-white/40 text-xs font-normal">minutes</span></div>
+              )}
             </div>
-            <button
-              onClick={() => setShowTopup(true)}
-              className="flex items-center gap-1.5 bg-cyan-500 hover:bg-cyan-600 text-black font-bold text-xs rounded-lg px-3 py-2 transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Top Up
-            </button>
+            <div className="flex gap-2">
+              {!hasBypass && (
+                <button
+                  onClick={() => setShowTopup(true)}
+                  className="flex items-center gap-1.5 bg-cyan-500 hover:bg-cyan-600 text-black font-bold text-xs rounded-lg px-3 py-2 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Top Up
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  if (hasBypass) {
+                    localStorage.removeItem(BYPASS_KEY);
+                    setHasBypass(false);
+                  } else {
+                    setShowBypass(true);
+                  }
+                }}
+                className={`flex items-center gap-1 text-xs rounded-lg px-3 py-2 font-bold transition-colors ${hasBypass ? "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30" : "bg-white/10 text-white/50 hover:bg-white/20"}`}
+              >
+                {hasBypass ? "Remove" : "Code"}
+              </button>
+            </div>
           </div>
         </div>
       </div>
