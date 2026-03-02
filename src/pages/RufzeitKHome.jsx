@@ -234,6 +234,7 @@ export default function RufzeitKHome() {
   }
 
   return (
+    <>
     <div className="min-h-screen bg-black text-white">
       {/* Incoming call overlay */}
       <AnimatePresence>
