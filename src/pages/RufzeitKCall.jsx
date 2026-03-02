@@ -110,7 +110,18 @@ export default function RufzeitKCall() {
       {/* Hangup bar */}
       {!loading && (
         <div className="flex items-center justify-center gap-4 bg-black px-6 py-4 border-t border-white/10">
-          <span className="text-white/40 text-xs font-mono truncate max-w-xs">{roomName}</span>
+          <button
+            onClick={() => {
+              const joinUrl = `${window.location.origin}${window.location.pathname}#/RufzeitKCall?room=${roomName}&role=receiver`;
+              navigator.clipboard.writeText(joinUrl);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            }}
+            className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white rounded-full px-4 py-2 text-sm transition-colors"
+          >
+            {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+            <span>{copied ? "Copied!" : "Copy Invite Link"}</span>
+          </button>
           <button
             onClick={handleHangup}
             className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-full px-6 py-3 transition-colors"
