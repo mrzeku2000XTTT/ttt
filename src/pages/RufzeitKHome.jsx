@@ -33,8 +33,8 @@ export default function RufzeitKHome() {
     // Load other users
     loadUsers();
 
-    // Poll for incoming calls every 3 seconds
-    const interval = setInterval(checkIncomingCalls, 3000);
+    // Poll for incoming calls every 8 seconds (avoid rate limits)
+    const interval = setInterval(checkIncomingCalls, 8000);
 
     // Mark offline on exit
     const handleUnload = () => markOffline();
