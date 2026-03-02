@@ -188,6 +188,29 @@ export default function RufzeitKHome() {
 
   const shortAddr = (addr) => addr ? `${addr.slice(0, 10)}...${addr.slice(-6)}` : "";
 
+  const generateBypassCode = async () => {
+    setGeneratingCode(true);
+    setGeneratedCode(null);
+    const code = Math.random().toString(36).slice(2, 10).toUpperCase();
+    try {
+      await base44.entities.RufzeitKBypassCode.create({
+        code,
+        label: codeLabel || "Generated",
+        is_active: true,
+        uses_remaining: codeUses
+      });
+      setGeneratedCode(code);
+    } catch {}
+    setGeneratingCode(false);
+  };
+
+  const copyCode = () => {
+    if (!generatedCode) return;
+    navigator.clipboard.writeText(generatedCode);
+    setCodeCopied(true);
+    setTimeout(() => setCodeCopied(false), 2000);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
