@@ -224,7 +224,7 @@ export default function AgentYingChat() {
               {/* Right: Chat Interface */}
               <div className="flex-1 flex flex-col min-w-0">
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-2 md:p-3 space-y-2 md:space-y-3">
+                 <div className="flex-1 overflow-y-auto p-1.5 sm:p-2 md:p-3 space-y-1.5 sm:space-y-2 md:space-y-3">
                   {chatMessages.length === 0 && (
                     <div className="text-center py-6 md:py-8">
                       <Brain className="w-10 h-10 md:w-12 md:h-12 text-cyan-400/50 mx-auto mb-2 md:mb-3" />
