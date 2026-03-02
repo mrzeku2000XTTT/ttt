@@ -4,7 +4,7 @@ import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Video, Phone, PhoneCall, Wallet, RefreshCw, User, LogIn, X } from "lucide-react";
+import { Video, Phone, PhoneCall, PhoneOff, Wallet, RefreshCw, User, LogIn, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function RufzeitKHome() {
