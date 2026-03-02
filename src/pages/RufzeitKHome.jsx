@@ -263,10 +263,18 @@ export default function RufzeitKHome() {
             {kaspaAddress ? (
               <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-3">
                 <Wallet className="w-4 h-4 text-green-400 flex-shrink-0" />
-                <div>
+                <div className="flex-1 min-w-0">
                   <div className="text-green-400 text-xs font-semibold">Kaspa Wallet Connected</div>
-                  <div className="text-white/50 text-xs font-mono">{shortAddr(kaspaAddress)}</div>
+                  <div className="text-white/50 text-xs font-mono truncate">{shortAddr(kaspaAddress)}</div>
                 </div>
+                <button
+                  onClick={disconnectWallet}
+                  className="ml-2 flex items-center gap-1 text-red-400/70 hover:text-red-400 text-xs transition-colors flex-shrink-0"
+                  title="Disconnect wallet"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  <span>Disconnect</span>
+                </button>
               </div>
             ) : (
               <div className="space-y-2">
