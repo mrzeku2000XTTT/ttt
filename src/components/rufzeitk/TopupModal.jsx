@@ -6,7 +6,7 @@ import QRCode from "qrcode";
 const PAYMENT_ADDRESS = "kaspa:qqfk829q3wf6cyy9al4tzfc67x5spwatzc0g8fkexgrdve33sdh6s2nyh3car";
 const BYPASS_KEY = "rufzeitk_bypass";
 
-export default function TopupModal({ onClose, onSuccess }) {
+export default function TopupModal({ onClose, onSuccess, kaspaAddress }) {
   const [amount, setAmount] = useState(10);
   const [step, setStep] = useState("select"); // select | awaiting | confirmed
   const [qrDataUrl, setQrDataUrl] = useState("");
