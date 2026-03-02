@@ -160,15 +160,29 @@ export default function RufzeitKHome() {
   };
 
   const startCall = async (targetUser) => {
-    console.log("Start call - credits:", callCredits, "hasBypass:", hasBypass);
-    if (callCredits < 1 && !hasBypass) { console.log("Need credits or bypass!"); setShowTopup(true); return; }
+    console.log("Start call - identity:", identity, "credits:", callCredits, "hasBypass:", hasBypass);
+    setCallError("");
+    
+    if (!identity?.kaspaAddress) { setCallError("No wallet connected"); return; }
+    if (!identity?.rufUserId) { setCallError("User not registered. Refresh page."); return; }
+    if (callCredits < 1 && !hasBypass) { setShowTopup(true); return; }
+    
     setCalling(targetUser.id);
     try {
+      console.log("Invoking createJitsiRoom...");
       const res = await base44.functions.invoke("createJitsiRoom", {
         caller_email: identity.kaspaAddress,
         receiver_email: targetUser.kaspa_address || targetUser.email
       });
+      console.log("JitsiRoom response:", res);
+      
+      if (!res?.data?.room_name) {
+        throw new Error("No room name returned from server");
+      }
+      
       const roomName = res.data.room_name;
+      console.log("Creating call session with room:", roomName);
+      
       await base44.entities.CallSession.create({
         caller_email: identity.kaspaAddress,
         receiver_email: targetUser.kaspa_address || targetUser.email,
@@ -177,11 +191,14 @@ export default function RufzeitKHome() {
         room_name: roomName,
         status: "pending"
       });
+      
+      console.log("Call session created, navigating...");
       navigate(createPageUrl(`RufzeitKCall?room=${roomName}&role=caller`));
     } catch (err) {
       console.error("Failed to start call:", err);
+      setCallError(`Error: ${err.message || "Failed to start call"}`);
+      setCalling(null);
     }
-    setCalling(null);
   };
 
   const acceptCall = async () => {
