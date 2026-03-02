@@ -205,7 +205,7 @@ export default function TerraPage() {
   useEffect(() => { loadData(); }, []);
 
   useEffect(() => {
-    if (tab === "history" && walletAddress) {
+    if ((tab === "history" || tab === "home") && walletAddress) {
       loadTransactions();
     }
   }, [tab, walletAddress]);
