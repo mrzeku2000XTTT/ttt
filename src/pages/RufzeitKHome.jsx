@@ -33,11 +33,9 @@ export default function RufzeitKHome() {
   useEffect(() => {
     const saved = localStorage.getItem(LOCAL_KEY);
     if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setIdentity(parsed);
-      } catch {}
+      try { setIdentity(JSON.parse(saved)); } catch {}
     }
+    setHasBypass(localStorage.getItem(BYPASS_KEY) === "true");
     setLoading(false);
   }, []);
 
