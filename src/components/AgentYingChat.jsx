@@ -287,7 +287,7 @@ export default function AgentYingChat() {
                 </div>
 
                 {/* Input */}
-                <div className="border-t border-cyan-500/30 p-2 md:p-3 bg-black/50" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.5rem)' }}>
+                 <div className="border-t border-cyan-500/30 p-1.5 sm:p-2 md:p-3 bg-black/50" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.5rem)' }}>
                   {selectedImage && (
                     <div className="mb-2 relative">
                       <img
