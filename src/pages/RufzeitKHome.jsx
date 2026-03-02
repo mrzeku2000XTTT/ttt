@@ -188,6 +188,14 @@ export default function RufzeitKHome() {
     setIncomingCall(null);
   };
 
+  const disconnectWallet = async () => {
+    await base44.auth.updateMe({ kaspa_address: "" });
+    setKaspaAddress("");
+    const updatedUser = { ...user, kaspa_address: "" };
+    setUser(updatedUser);
+    upsertRufzeitKUser(updatedUser);
+  };
+
   const shortAddr = (addr) => addr ? `${addr.slice(0, 10)}...${addr.slice(-6)}` : "";
 
   if (loading) {
