@@ -66,7 +66,7 @@ export default function RufzeitKCall() {
   const jitsiUrl = `https://meet.jit.si/${roomName}#userInfo.displayName="${displayName}"&config.prejoinPageEnabled=false&config.startWithAudioMuted=false&config.startWithVideoMuted=false&config.disableDeepLinking=true`;
 
   return (
-    <div className="fixed inset-0 bg-black flex flex-col">
+    <div className="fixed inset-0 bg-black flex flex-col" style={{ zIndex: 9999 }}>
       {/* Jitsi iframe - full Jitsi UI with all native controls */}
       <iframe
         src={jitsiUrl}
