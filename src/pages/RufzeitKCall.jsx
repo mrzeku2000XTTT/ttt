@@ -88,6 +88,11 @@ export default function RufzeitKCall() {
           readyToClose: handleHangup
         });
 
+        // Start elapsed timer immediately
+        elapsedTimerRef.current = setInterval(() => {
+          setElapsedSeconds(prev => prev + 1);
+        }, 1000);
+
         setLoading(false);
 
         // Deduct 1 credit per minute if caller (when other user joins)
