@@ -4,180 +4,158 @@ import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Video, Phone, PhoneCall, Wallet, RefreshCw, User, LogIn, X, Clock, Plus } from "lucide-react";
+import { Video, Phone, PhoneCall, Wallet, RefreshCw, User, X, Clock, Plus, CheckCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import TopupModal from "@/components/rufzeitk/TopupModal";
 
+const LOCAL_KEY = "rufzeitk_identity";
+
 export default function RufzeitKHome() {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+  const [identity, setIdentity] = useState(null); // { kaspaAddress, displayName, rufUserId }
   const [users, setUsers] = useState([]);
-  const [kaspaAddress, setKaspaAddress] = useState("");
-  const [manualAddress, setManualAddress] = useState("");
   const [loading, setLoading] = useState(true);
   const [calling, setCalling] = useState(null);
   const [incomingCall, setIncomingCall] = useState(null);
-  const [connectingWallet, setConnectingWallet] = useState(false);
-  const [showManualInput, setShowManualInput] = useState(false);
   const [callCredits, setCallCredits] = useState(0);
   const [showTopup, setShowTopup] = useState(false);
 
+  // Setup form
+  const [setupAddress, setSetupAddress] = useState("");
+  const [setupName, setSetupName] = useState("");
+  const [connecting, setConnecting] = useState(false);
+  const [setupError, setSetupError] = useState("");
+
   useEffect(() => {
-    loadUser();
+    const saved = localStorage.getItem(LOCAL_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setIdentity(parsed);
+      } catch {}
+    }
+    setLoading(false);
   }, []);
 
   useEffect(() => {
-    if (!user) return;
-
-    // Upsert this user into RufzeitKUser so they appear to others
-    upsertRufzeitKUser(user);
-
-    // Load other users
-    loadUsers();
-
-    // Poll for incoming calls every 8 seconds (avoid rate limits)
+    if (!identity) return;
+    registerAndLoad();
     const interval = setInterval(checkIncomingCalls, 8000);
-
-    // Mark offline on exit
     const handleUnload = () => markOffline();
     window.addEventListener("beforeunload", handleUnload);
-
     return () => {
       clearInterval(interval);
       window.removeEventListener("beforeunload", handleUnload);
       markOffline();
     };
-  }, [user]);
+  }, [identity]);
 
-  const upsertRufzeitKUser = async (me) => {
+  const registerAndLoad = async () => {
+    if (!identity) return;
     try {
-      const existing = await base44.entities.RufzeitKUser.filter({ email: me.email });
+      const existing = await base44.entities.RufzeitKUser.filter({ kaspa_address: identity.kaspaAddress });
       if (existing.length > 0) {
         await base44.entities.RufzeitKUser.update(existing[0].id, {
           is_online: true,
           last_seen: new Date().toISOString(),
-          full_name: me.full_name || "",
-          kaspa_address: me.kaspa_address || existing[0].kaspa_address || ""
+          full_name: identity.displayName
         });
+        setCallCredits(existing[0].call_credits || 0);
+        setIdentity(prev => ({ ...prev, rufUserId: existing[0].id }));
       } else {
-        await base44.entities.RufzeitKUser.create({
-          email: me.email,
-          full_name: me.full_name || "",
-          kaspa_address: me.kaspa_address || "",
+        const created = await base44.entities.RufzeitKUser.create({
+          email: identity.kaspaAddress, // use address as unique key
+          full_name: identity.displayName,
+          kaspa_address: identity.kaspaAddress,
           is_online: true,
-          last_seen: new Date().toISOString()
+          last_seen: new Date().toISOString(),
+          call_credits: 0
         });
+        setIdentity(prev => ({ ...prev, rufUserId: created.id }));
       }
     } catch (err) {
-      console.error("Failed to upsert RufzeitKUser:", err);
+      console.error("Failed to register:", err);
     }
+    loadUsers();
   };
 
   const markOffline = async () => {
-    if (!user) return;
+    if (!identity?.rufUserId) return;
     try {
-      const existing = await base44.entities.RufzeitKUser.filter({ email: user.email });
-      if (existing.length > 0) {
-        await base44.entities.RufzeitKUser.update(existing[0].id, { is_online: false });
-      }
+      await base44.entities.RufzeitKUser.update(identity.rufUserId, { is_online: false });
     } catch {}
-  };
-
-  const loadUser = async () => {
-    setLoading(true);
-    try {
-      const me = await base44.auth.me();
-      setUser(me);
-      setKaspaAddress(me.kaspa_address || "");
-      // Load credits
-      const rufUsers = await base44.entities.RufzeitKUser.filter({ email: me.email });
-      if (rufUsers.length > 0) setCallCredits(rufUsers[0].call_credits || 0);
-    } catch {
-      setUser(null);
-    }
-    setLoading(false);
   };
 
   const loadUsers = async () => {
     try {
       const allUsers = await base44.entities.RufzeitKUser.list();
-      setUsers(allUsers.filter(u => u.email !== user?.email));
-    } catch (err) {
-      console.error("Failed to load users", err);
-    }
+      setUsers(allUsers.filter(u => u.kaspa_address !== identity?.kaspaAddress));
+    } catch {}
   };
 
   const checkIncomingCalls = async () => {
-    if (!user) return;
+    if (!identity) return;
     try {
       const pending = await base44.entities.CallSession.filter({
-        receiver_email: user.email,
+        receiver_email: identity.kaspaAddress,
         status: "pending"
       });
-      if (pending.length > 0) {
-        setIncomingCall(pending[0]);
-      } else {
-        setIncomingCall(null);
-      }
+      setIncomingCall(pending.length > 0 ? pending[0] : null);
     } catch {}
   };
 
   const connectKasware = async () => {
-    setConnectingWallet(true);
+    setConnecting(true);
+    setSetupError("");
     try {
       if (window.kasware) {
         const accounts = await window.kasware.requestAccounts();
-        const address = accounts[0];
-        await base44.auth.updateMe({ kaspa_address: address });
-        setKaspaAddress(address);
-        setUser(prev => ({ ...prev, kaspa_address: address }));
+        setSetupAddress(accounts[0]);
       } else {
-        setShowManualInput(true);
+        setSetupError("Kasware wallet not found. Please enter your address manually.");
       }
     } catch (err) {
-      console.error("Kasware connect failed:", err);
-      setShowManualInput(true);
+      setSetupError("Could not connect Kasware. Enter address manually.");
     }
-    setConnectingWallet(false);
+    setConnecting(false);
   };
 
-  const saveManualAddress = async () => {
-    if (!manualAddress.trim()) return;
-    const addr = manualAddress.trim();
-    await base44.auth.updateMe({ kaspa_address: addr });
-    setKaspaAddress(addr);
-    const updatedUser = { ...user, kaspa_address: addr };
-    setUser(updatedUser);
-    setShowManualInput(false);
-    setManualAddress("");
-    // Sync to RufzeitKUser
-    upsertRufzeitKUser(updatedUser);
+  const saveIdentity = async () => {
+    const addr = setupAddress.trim();
+    const name = setupName.trim();
+    if (!addr) { setSetupError("Please enter a Kaspa address."); return; }
+    if (!name) { setSetupError("Please enter a display name."); return; }
+    if (!addr.startsWith("kaspa:")) { setSetupError("Address must start with 'kaspa:'"); return; }
+    const id = { kaspaAddress: addr, displayName: name, rufUserId: null };
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(id));
+    setIdentity(id);
+  };
+
+  const disconnect = () => {
+    markOffline();
+    localStorage.removeItem(LOCAL_KEY);
+    setIdentity(null);
+    setUsers([]);
+    setCallCredits(0);
   };
 
   const startCall = async (targetUser) => {
-    if (callCredits < 1) {
-      setShowTopup(true);
-      return;
-    }
+    if (callCredits < 1) { setShowTopup(true); return; }
     setCalling(targetUser.id);
     try {
       const res = await base44.functions.invoke("createJitsiRoom", {
-        caller_email: user.email,
-        receiver_email: targetUser.email
+        caller_email: identity.kaspaAddress,
+        receiver_email: targetUser.kaspa_address || targetUser.email
       });
       const roomName = res.data.room_name;
-
-      // Create call session
       await base44.entities.CallSession.create({
-        caller_email: user.email,
-        receiver_email: targetUser.email,
-        caller_kaspa_address: kaspaAddress || "",
+        caller_email: identity.kaspaAddress,
+        receiver_email: targetUser.kaspa_address || targetUser.email,
+        caller_kaspa_address: identity.kaspaAddress,
         receiver_kaspa_address: targetUser.kaspa_address || "",
         room_name: roomName,
         status: "pending"
       });
-
-      // Navigate to call page
       navigate(createPageUrl(`RufzeitKCall?room=${roomName}&role=caller`));
     } catch (err) {
       console.error("Failed to start call:", err);
@@ -197,14 +175,6 @@ export default function RufzeitKHome() {
     setIncomingCall(null);
   };
 
-  const disconnectWallet = async () => {
-    await base44.auth.updateMe({ kaspa_address: "" });
-    setKaspaAddress("");
-    const updatedUser = { ...user, kaspa_address: "" };
-    setUser(updatedUser);
-    upsertRufzeitKUser(updatedUser);
-  };
-
   const shortAddr = (addr) => addr ? `${addr.slice(0, 10)}...${addr.slice(-6)}` : "";
 
   if (loading) {
@@ -215,20 +185,74 @@ export default function RufzeitKHome() {
     );
   }
 
-  if (!user) {
+  // Setup screen (no login required)
+  if (!identity) {
     return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-6 p-6">
-        <div className="text-center">
-          <h1 className="text-5xl font-black text-white mb-2">RufzeitK</h1>
-          <p className="text-white/50 text-lg">One-on-one encrypted video calls</p>
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6">
+        <div className="w-full max-w-sm space-y-6">
+          <div className="text-center">
+            <h1 className="text-5xl font-black text-white mb-2">RufzeitK</h1>
+            <p className="text-white/50">One-on-one video calls · Powered by Kaspa</p>
+          </div>
+
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4">
+            <h2 className="text-white font-bold text-lg">Connect Your Wallet</h2>
+
+            <button
+              onClick={connectKasware}
+              disabled={connecting}
+              className="w-full flex items-center justify-center gap-2 bg-cyan-500/20 border border-cyan-500/40 rounded-xl px-4 py-3 text-cyan-300 hover:bg-cyan-500/30 transition-colors"
+            >
+              {connecting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Wallet className="w-4 h-4" />}
+              <span className="font-semibold text-sm">
+                {window.kasware ? "Connect Kasware" : "Auto-detect Kasware"}
+              </span>
+            </button>
+
+            <div className="relative flex items-center">
+              <div className="flex-1 h-px bg-white/10" />
+              <span className="px-3 text-white/30 text-xs">or enter manually</span>
+              <div className="flex-1 h-px bg-white/10" />
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-white/50 text-xs mb-1 block">Kaspa Address</label>
+                <Input
+                  value={setupAddress}
+                  onChange={e => setSetupAddress(e.target.value)}
+                  placeholder="kaspa:qr..."
+                  className="bg-white/5 border-white/10 text-white placeholder:text-white/20 text-sm"
+                />
+                {setupAddress.startsWith("kaspa:") && (
+                  <div className="flex items-center gap-1 mt-1 text-green-400 text-xs">
+                    <CheckCircle className="w-3 h-3" /> Valid address
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="text-white/50 text-xs mb-1 block">Display Name</label>
+                <Input
+                  value={setupName}
+                  onChange={e => setSetupName(e.target.value)}
+                  placeholder="Your name"
+                  className="bg-white/5 border-white/10 text-white placeholder:text-white/20 text-sm"
+                />
+              </div>
+            </div>
+
+            {setupError && (
+              <p className="text-red-400 text-xs">{setupError}</p>
+            )}
+
+            <Button
+              onClick={saveIdentity}
+              className="w-full bg-cyan-500 hover:bg-cyan-600 text-black font-bold"
+            >
+              Enter RufzeitK
+            </Button>
+          </div>
         </div>
-        <Button
-          onClick={() => base44.auth.redirectToLogin(createPageUrl("RufzeitKHome"))}
-          className="bg-cyan-500 hover:bg-cyan-600 text-black font-bold px-8 py-3 text-lg"
-        >
-          <LogIn className="w-5 h-5 mr-2" />
-          Login to Start Calling
-        </Button>
       </div>
     );
   }
@@ -246,10 +270,7 @@ export default function RufzeitKHome() {
             className="fixed top-0 left-0 right-0 z-[999] bg-gradient-to-b from-green-900 to-black p-6 flex flex-col items-center gap-4 shadow-2xl"
           >
             <div className="text-white/60 text-sm">Incoming call from</div>
-            <div className="text-white font-bold text-xl">{incomingCall.caller_email}</div>
-            {incomingCall.caller_kaspa_address && (
-              <div className="text-green-400 text-xs font-mono">{shortAddr(incomingCall.caller_kaspa_address)}</div>
-            )}
+            <div className="text-white font-bold text-xl">{incomingCall.caller_kaspa_address ? shortAddr(incomingCall.caller_kaspa_address) : incomingCall.caller_email}</div>
             <div className="flex gap-4">
               <button onClick={declineCall} className="w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center transition-colors">
                 <Phone className="w-7 h-7 text-white rotate-[135deg]" />
@@ -268,76 +289,33 @@ export default function RufzeitKHome() {
           <h1 className="text-4xl font-black text-white mb-1">RufzeitK</h1>
           <p className="text-white/40 text-sm">One-on-one video calls · Powered by Kaspa</p>
 
-          {/* Credits Balance */}
-          {kaspaAddress && (
-            <div className="mt-4 flex items-center gap-3 bg-cyan-500/10 border border-cyan-500/30 rounded-xl px-4 py-3">
-              <Clock className="w-4 h-4 text-cyan-400 flex-shrink-0" />
-              <div className="flex-1">
-                <div className="text-cyan-400 text-xs font-semibold">Call Credits</div>
-                <div className="text-white font-black text-lg leading-none">{callCredits} <span className="text-white/40 text-xs font-normal">minutes</span></div>
-              </div>
-              <button
-                onClick={() => setShowTopup(true)}
-                className="flex items-center gap-1.5 bg-cyan-500 hover:bg-cyan-600 text-black font-bold text-xs rounded-lg px-3 py-2 transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Top Up
-              </button>
+          {/* Identity card */}
+          <div className="mt-4 flex items-center gap-3 bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-3">
+            <Wallet className="w-4 h-4 text-green-400 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-green-400 text-xs font-semibold">{identity.displayName}</div>
+              <div className="text-white/50 text-xs font-mono truncate">{shortAddr(identity.kaspaAddress)}</div>
             </div>
-          )}
+            <button onClick={disconnect} className="flex items-center gap-1 text-red-400/70 hover:text-red-400 text-xs transition-colors flex-shrink-0">
+              <X className="w-3.5 h-3.5" />
+              <span>Leave</span>
+            </button>
+          </div>
 
-          {/* Wallet Status */}
-          <div className="mt-3">
-            {kaspaAddress ? (
-              <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-3">
-                <Wallet className="w-4 h-4 text-green-400 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-green-400 text-xs font-semibold">Kaspa Wallet Connected</div>
-                  <div className="text-white/50 text-xs font-mono truncate">{shortAddr(kaspaAddress)}</div>
-                </div>
-                <button
-                  onClick={disconnectWallet}
-                  className="ml-2 flex items-center gap-1 text-red-400/70 hover:text-red-400 text-xs transition-colors flex-shrink-0"
-                  title="Disconnect wallet"
-                >
-                  <X className="w-3.5 h-3.5" />
-                  <span>Disconnect</span>
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <button
-                  onClick={connectKasware}
-                  disabled={connectingWallet}
-                  className="w-full flex items-center justify-center gap-2 bg-cyan-500/20 border border-cyan-500/40 rounded-xl px-4 py-3 text-cyan-300 hover:bg-cyan-500/30 transition-colors"
-                >
-                  {connectingWallet ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Wallet className="w-4 h-4" />}
-                  <span className="text-sm font-semibold">
-                    {window.kasware ? "Connect Kasware Wallet" : "Enter Kaspa Address"}
-                  </span>
-                </button>
-                <AnimatePresence>
-                  {showManualInput && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="flex gap-2"
-                    >
-                      <Input
-                        value={manualAddress}
-                        onChange={e => setManualAddress(e.target.value)}
-                        placeholder="kaspa:qr..."
-                        className="bg-white/5 border-white/10 text-white placeholder:text-white/30 text-sm"
-                      />
-                      <Button onClick={saveManualAddress} size="sm" className="bg-cyan-500 hover:bg-cyan-600 text-black font-bold whitespace-nowrap">
-                        Save
-                      </Button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
+          {/* Credits Balance */}
+          <div className="mt-3 flex items-center gap-3 bg-cyan-500/10 border border-cyan-500/30 rounded-xl px-4 py-3">
+            <Clock className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+            <div className="flex-1">
+              <div className="text-cyan-400 text-xs font-semibold">Call Credits</div>
+              <div className="text-white font-black text-lg leading-none">{callCredits} <span className="text-white/40 text-xs font-normal">minutes</span></div>
+            </div>
+            <button
+              onClick={() => setShowTopup(true)}
+              className="flex items-center gap-1.5 bg-cyan-500 hover:bg-cyan-600 text-black font-bold text-xs rounded-lg px-3 py-2 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Top Up
+            </button>
           </div>
         </div>
       </div>
@@ -345,7 +323,7 @@ export default function RufzeitKHome() {
       {/* Users List */}
       <div className="max-w-lg mx-auto p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-white/60 text-sm font-semibold uppercase tracking-wider">Users</h2>
+          <h2 className="text-white/60 text-sm font-semibold uppercase tracking-wider">Online Users</h2>
           <button onClick={loadUsers} className="text-white/30 hover:text-white/60 transition-colors">
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -364,43 +342,26 @@ export default function RufzeitKHome() {
                 key={u.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/8 transition-all"
+                className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-4 transition-all"
               >
-                {/* Avatar */}
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0 text-white font-bold text-lg">
-                  {(u.full_name || u.email || "?")[0].toUpperCase()}
+                  {(u.full_name || u.kaspa_address || "?")[0].toUpperCase()}
                 </div>
-
-                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-white font-semibold text-sm truncate">
-                      {u.full_name || u.email}
-                    </span>
-                    {u.is_online && (
-                      <span className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0 animate-pulse" />
-                    )}
+                    <span className="text-white font-semibold text-sm truncate">{u.full_name || shortAddr(u.kaspa_address)}</span>
+                    {u.is_online && <span className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0 animate-pulse" />}
                   </div>
-                  {u.kaspa_address ? (
-                    <div className="text-green-400/70 text-xs font-mono truncate mt-0.5">
-                      {shortAddr(u.kaspa_address)}
-                    </div>
-                  ) : (
-                    <div className="text-white/30 text-xs mt-0.5">No wallet connected</div>
+                  {u.kaspa_address && (
+                    <div className="text-green-400/70 text-xs font-mono truncate mt-0.5">{shortAddr(u.kaspa_address)}</div>
                   )}
                 </div>
-
-                {/* Call Button */}
                 <button
                   onClick={() => startCall(u)}
                   disabled={calling === u.id}
                   className="flex items-center gap-2 bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 text-black font-bold rounded-xl px-4 py-2 transition-colors flex-shrink-0"
                 >
-                  {calling === u.id ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Video className="w-4 h-4" />
-                  )}
+                  {calling === u.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Video className="w-4 h-4" />}
                   <span className="text-sm">Call</span>
                 </button>
               </motion.div>
@@ -410,7 +371,6 @@ export default function RufzeitKHome() {
       </div>
     </div>
 
-    {/* Top Up Modal */}
     <AnimatePresence>
       {showTopup && (
         <TopupModal
@@ -419,6 +379,8 @@ export default function RufzeitKHome() {
             setCallCredits(prev => prev + credits);
             setShowTopup(false);
           }}
+          kaspaAddress={identity?.kaspaAddress}
+          rufUserId={identity?.rufUserId}
         />
       )}
     </AnimatePresence>
