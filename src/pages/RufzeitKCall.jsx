@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
-import { PhoneOff, RefreshCw, Copy, Check, Clock } from "lucide-react";
+import { PhoneOff, RefreshCw, Copy, Check } from "lucide-react";
 
 const APP_ID = "vpaas-magic-cookie-6d8ee8df5feb4465a4186740b0dd5b55";
 
@@ -15,9 +15,7 @@ export default function RufzeitKCall() {
   const [copied, setCopied] = useState(false);
   const [minutesUsed, setMinutesUsed] = useState(0);
   const [credits, setCredits] = useState(0);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const creditTimerRef = useRef(null);
-  const elapsedTimerRef = useRef(null);
 
   const urlParams = new URLSearchParams(window.location.search);
   const roomName = urlParams.get("room");
@@ -28,7 +26,6 @@ export default function RufzeitKCall() {
     return () => {
       if (apiRef.current) apiRef.current.dispose();
       if (creditTimerRef.current) clearInterval(creditTimerRef.current);
-      if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current);
     };
   }, []);
 
@@ -88,11 +85,6 @@ export default function RufzeitKCall() {
           readyToClose: handleHangup
         });
 
-        // Start elapsed timer immediately
-        elapsedTimerRef.current = setInterval(() => {
-          setElapsedSeconds(prev => prev + 1);
-        }, 1000);
-
         setLoading(false);
 
         // Deduct 1 credit per minute if caller (when other user joins)
@@ -138,8 +130,6 @@ export default function RufzeitKCall() {
       apiRef.current.dispose();
       apiRef.current = null;
     }
-    if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current);
-    if (creditTimerRef.current) clearInterval(creditTimerRef.current);
     if (callSession) {
       await base44.entities.CallSession.update(callSession.id, {
         status: "ended",
@@ -147,12 +137,6 @@ export default function RufzeitKCall() {
       }).catch(() => {});
     }
     navigate(createPageUrl("RufzeitKHome"));
-  };
-
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -172,10 +156,6 @@ export default function RufzeitKCall() {
       {/* Hangup bar */}
       {!loading && (
         <div className="flex items-center justify-center gap-4 bg-black px-6 py-4 border-t border-white/10 flex-wrap">
-          <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-sm">
-            <Clock className="w-4 h-4 text-white/40" />
-            <span className="text-white font-mono font-bold">{formatTime(elapsedSeconds)}</span>
-          </div>
           {role === "caller" && (
             <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-sm">
               <span className="text-cyan-400 font-bold">{credits}</span>
