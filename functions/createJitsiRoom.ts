@@ -2,13 +2,11 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { caller_email, receiver_email } = await req.json();
+    
+    if (!caller_email || !receiver_email) {
+      return Response.json({ error: 'caller_email and receiver_email required' }, { status: 400 });
+    }
 
     // Generate a unique room name based on participants + timestamp
     const timestamp = Date.now();
