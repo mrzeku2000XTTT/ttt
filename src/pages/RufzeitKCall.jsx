@@ -47,6 +47,14 @@ export default function RufzeitKCall() {
         }
       }
 
+      // Load user credits
+      if (me) {
+        try {
+          const rufUsers = await base44.entities.RufzeitKUser.filter({ email: me.email });
+          if (rufUsers.length > 0) setCredits(rufUsers[0].call_credits || 0);
+        } catch {}
+      }
+
       // Load JaaS external API script
       const script = document.createElement("script");
       script.src = `https://8x8.vc/${APP_ID}/external_api.js`;
