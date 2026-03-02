@@ -332,7 +332,7 @@ export default function AgentYingChat() {
                       onChange={(e) => setChatInput(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleChat()}
                       placeholder="Ask..."
-                      className="flex-1 bg-white/5 border-cyan-500/30 text-white placeholder:text-gray-600 h-9 md:h-10 text-xs md:text-sm"
+                      className="flex-1 bg-white/5 border-cyan-500/30 text-white placeholder:text-gray-600 h-8 sm:h-9 md:h-10 text-[10px] sm:text-xs md:text-sm"
                       disabled={isChatting}
                     />
                     <Button
