@@ -439,6 +439,69 @@ export default function RufzeitKHome() {
       </div>
     </div>
 
+    {/* Admin Code Generator Panel */}
+    <AnimatePresence>
+      {showAdminPanel && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-zinc-900 border border-yellow-500/30 rounded-2xl w-full max-w-sm p-6 relative"
+          >
+            <button onClick={() => { setShowAdminPanel(false); setGeneratedCode(null); }} className="absolute top-4 right-4 text-white/40 hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-2 mb-4">
+              <Key className="w-5 h-5 text-yellow-400" />
+              <h2 className="text-white font-bold text-lg">Generate Bypass Code</h2>
+            </div>
+
+            <div className="space-y-3 mb-4">
+              <div>
+                <label className="text-white/40 text-xs mb-1 block">Label (who it's for)</label>
+                <input
+                  value={codeLabel}
+                  onChange={e => setCodeLabel(e.target.value)}
+                  placeholder="e.g. John's free trial"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/20 outline-none focus:border-yellow-500/50"
+                />
+              </div>
+              <div>
+                <label className="text-white/40 text-xs mb-1 block">Uses (-1 = unlimited)</label>
+                <input
+                  type="number"
+                  value={codeUses}
+                  onChange={e => setCodeUses(parseInt(e.target.value) || -1)}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-yellow-500/50"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={generateBypassCode}
+              disabled={generatingCode}
+              className="w-full bg-yellow-500 hover:bg-yellow-600 disabled:opacity-50 text-black font-bold py-3 rounded-xl transition-colors mb-4"
+            >
+              {generatingCode ? <RefreshCw className="w-4 h-4 animate-spin mx-auto" /> : "Generate Code"}
+            </button>
+
+            {generatedCode && (
+              <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 flex items-center gap-3">
+                <div className="flex-1">
+                  <div className="text-green-400 text-xs mb-1">Your bypass code:</div>
+                  <div className="text-white font-black text-2xl tracking-widest">{generatedCode}</div>
+                </div>
+                <button onClick={copyCode} className="text-white/50 hover:text-white transition-colors">
+                  {codeCopied ? <Check className="w-5 h-5 text-green-400" /> : <Copy className="w-5 h-5" />}
+                </button>
+              </div>
+            )}
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+
     <AnimatePresence>
       {showBypass && (
         <BypassCodeModal
