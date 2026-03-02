@@ -171,8 +171,8 @@ export default function AgentYingChat() {
           <>
             {/* Content Area */}
             <div className="flex-1 flex overflow-hidden">
-              {/* Left: Stats - Hidden on mobile when chat is active */}
-              <div className={`${chatMessages.length > 0 ? 'hidden md:flex' : 'flex'} w-24 md:w-28 border-r border-cyan-500/30 p-2 overflow-y-auto bg-black/30 flex-col`}>
+              {/* Left: Stats - Hidden on small mobile when chat is active */}
+              <div className={`${chatMessages.length > 0 ? 'hidden sm:flex' : 'flex'} w-20 sm:w-24 md:w-28 border-r border-cyan-500/30 p-2 overflow-y-auto bg-black/30 flex-col`}>
                 {isLoadingKnowledge ? (
                   <div className="text-center py-4">
                     <Loader2 className="w-4 h-4 text-cyan-400 animate-spin mx-auto" />
