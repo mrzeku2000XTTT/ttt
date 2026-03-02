@@ -95,7 +95,7 @@ export default function RufzeitKHome() {
 
   const loadUsers = async () => {
     try {
-      const allUsers = await base44.entities.User.list();
+      const allUsers = await base44.entities.RufzeitKUser.list();
       setUsers(allUsers.filter(u => u.email !== user?.email));
     } catch (err) {
       console.error("Failed to load users", err);
