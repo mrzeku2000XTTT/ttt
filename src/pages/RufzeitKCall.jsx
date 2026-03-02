@@ -30,10 +30,14 @@ export default function RufzeitKCall() {
   }, []);
 
   const init = async () => {
+    // Load identity from localStorage (no login required)
+    let identity = null;
     try {
-      let me = null;
-      try { me = await base44.auth.me(); } catch {}
+      const saved = localStorage.getItem("rufzeitk_identity");
+      if (saved) identity = JSON.parse(saved);
+    } catch {}
 
+    try {
       if (roomName) {
         const sessions = await base44.entities.CallSession.filter({ room_name: roomName });
         if (sessions.length > 0) {
@@ -47,10 +51,10 @@ export default function RufzeitKCall() {
         }
       }
 
-      // Load user credits
-      if (me) {
+      // Load user credits from RufzeitKUser by kaspa address
+      if (identity?.kaspaAddress) {
         try {
-          const rufUsers = await base44.entities.RufzeitKUser.filter({ email: me.email });
+          const rufUsers = await base44.entities.RufzeitKUser.filter({ kaspa_address: identity.kaspaAddress });
           if (rufUsers.length > 0) setCredits(rufUsers[0].call_credits || 0);
         } catch {}
       }
@@ -66,8 +70,8 @@ export default function RufzeitKCall() {
           roomName: jaasRoomName,
           parentNode: containerRef.current,
           userInfo: {
-            displayName: me?.full_name || me?.email || "User",
-            email: me?.email || ""
+            displayName: identity?.displayName || identity?.kaspaAddress || "User",
+            email: identity?.kaspaAddress || ""
           },
           configOverwrite: {
             startWithAudioMuted: false,
@@ -84,13 +88,12 @@ export default function RufzeitKCall() {
         setLoading(false);
 
         // Deduct 1 credit per minute if caller
-        if (role === "caller" && me) {
+        if (role === "caller" && identity?.kaspaAddress) {
           creditTimerRef.current = setInterval(async () => {
             setMinutesUsed(prev => prev + 1);
             setCredits(prev => {
               const newCredits = Math.max(0, prev - 1);
-              // Update in DB
-              base44.entities.RufzeitKUser.filter({ email: me.email }).then(users => {
+              base44.entities.RufzeitKUser.filter({ kaspa_address: identity.kaspaAddress }).then(users => {
                 if (users.length > 0) {
                   base44.entities.RufzeitKUser.update(users[0].id, { call_credits: newCredits });
                 }
@@ -98,7 +101,7 @@ export default function RufzeitKCall() {
               if (newCredits <= 0) handleHangup();
               return newCredits;
             });
-          }, 60000); // every 60 seconds
+          }, 60000);
         }
       };
       document.head.appendChild(script);
