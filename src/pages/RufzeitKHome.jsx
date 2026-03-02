@@ -23,6 +23,13 @@ export default function RufzeitKHome() {
   const [showTopup, setShowTopup] = useState(false);
   const [showBypass, setShowBypass] = useState(false);
   const [hasBypass, setHasBypass] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [codeLabel, setCodeLabel] = useState("");
+  const [codeUses, setCodeUses] = useState(-1);
+  const [generatedCode, setGeneratedCode] = useState(null);
+  const [codeCopied, setCodeCopied] = useState(false);
+  const [generatingCode, setGeneratingCode] = useState(false);
 
   // Setup form
   const [setupAddress, setSetupAddress] = useState("");
