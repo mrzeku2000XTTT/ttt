@@ -344,7 +344,7 @@ export default function AgentYingChat() {
                       <Send className="w-4 h-4 md:w-4.5 md:h-4.5" strokeWidth={2} />
                     </Button>
                   </div>
-                  <p className="text-[9px] md:text-[10px] text-gray-500 mt-1 md:mt-1.5">
+                  <p className="text-[8px] sm:text-[9px] md:text-[10px] text-gray-500 mt-0.5 sm:mt-1 md:mt-1.5">
                     👁️ Vision • 💬 Memory
                   </p>
                 </div>
