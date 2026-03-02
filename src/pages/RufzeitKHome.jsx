@@ -415,14 +415,26 @@ export default function RufzeitKHome() {
         </div>
       </div>
 
+      {/* Error message */}
+      {callError && (
+        <div className="max-w-lg mx-auto p-6 pb-0">
+          <div className="bg-red-500/20 border border-red-500/50 rounded-xl px-4 py-3 text-red-300 text-sm flex items-center justify-between">
+            <span>{callError}</span>
+            <button onClick={() => setCallError("")} className="text-red-300 hover:text-red-200">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Users List */}
       <div className="max-w-lg mx-auto p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-white/60 text-sm font-semibold uppercase tracking-wider">Online Users</h2>
-          <button onClick={loadUsers} className="text-white/30 hover:text-white/60 transition-colors">
-            <RefreshCw className="w-4 h-4" />
-          </button>
-        </div>
+       <div className="flex items-center justify-between mb-4">
+         <h2 className="text-white/60 text-sm font-semibold uppercase tracking-wider">Online Users</h2>
+         <button onClick={loadUsers} className="text-white/30 hover:text-white/60 transition-colors">
+           <RefreshCw className="w-4 h-4" />
+         </button>
+       </div>
 
         {users.length === 0 ? (
           <div className="text-center py-16 text-white/30">
