@@ -12,16 +12,25 @@ Deno.serve(async (req) => {
     }
 
     const expectedSompi = Math.round(amount_kas * 1e8);
+    const maxAge = 600000; // 10 minutes max age
+    const now = Date.now();
+
+    // Reject if request is too old
+    if (now - since_timestamp > maxAge) {
+      return Response.json({ success: false, status: 'expired' });
+    }
 
     const response = await fetch(
-      `https://api.kaspa.org/addresses/${PAYMENT_ADDRESS}/full-transactions?limit=20&resolve_previous_outpoints=light`,
+      `https://api.kaspa.org/addresses/${PAYMENT_ADDRESS}/full-transactions?limit=50&resolve_previous_outpoints=light`,
       { headers: { 'Accept': 'application/json' }, signal: AbortSignal.timeout(10000) }
     );
 
     if (!response.ok) throw new Error(`Kaspa API error: ${response.status}`);
 
     const transactions = await response.json();
+    let foundTx = null;
 
+    // Find the FIRST matching transaction after since_timestamp
     for (const tx of (Array.isArray(transactions) ? transactions : [])) {
       const txTime = tx.block_time ? tx.block_time * 1000 : 0;
       if (txTime < since_timestamp) continue;
@@ -33,28 +42,33 @@ Deno.serve(async (req) => {
           const tolerance = expectedSompi * 0.02; // 2% tolerance
 
           if (diff <= tolerance) {
-            const creditMinutes = Math.floor(amount_kas); // 1 KAS = 1 minute
-            
-            // Update credits for user (works for logged-in and non-logged-in)
-            if (kaspa_address) {
-              const existing = await base44.asServiceRole.entities.RufzeitKUser.filter({ kaspa_address: kaspa_address });
-              if (existing.length > 0) {
-                const currentCredits = existing[0].call_credits || 0;
-                await base44.asServiceRole.entities.RufzeitKUser.update(existing[0].id, {
-                  call_credits: currentCredits + creditMinutes
-                });
-              }
-            }
-
-            return Response.json({
-              success: true,
-              tx_id: tx.transaction_id,
-              credits_added: creditMinutes,
-              amount_kas: receivedSompi / 1e8
-            });
+            foundTx = { tx, receivedSompi, txTime };
+            break; // Use the first matching tx
           }
         }
       }
+      if (foundTx) break; // Stop after first match
+    }
+
+    if (foundTx) {
+      const creditMinutes = Math.floor(amount_kas);
+      
+      if (kaspa_address) {
+        const existing = await base44.asServiceRole.entities.RufzeitKUser.filter({ kaspa_address: kaspa_address });
+        if (existing.length > 0) {
+          const currentCredits = existing[0].call_credits || 0;
+          await base44.asServiceRole.entities.RufzeitKUser.update(existing[0].id, {
+            call_credits: currentCredits + creditMinutes
+          });
+        }
+      }
+
+      return Response.json({
+        success: true,
+        tx_id: foundTx.tx.transaction_id,
+        credits_added: creditMinutes,
+        amount_kas: foundTx.receivedSompi / 1e8
+      });
     }
 
     return Response.json({ success: false, status: 'pending' });
