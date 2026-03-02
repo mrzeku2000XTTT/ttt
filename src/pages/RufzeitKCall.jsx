@@ -87,22 +87,36 @@ export default function RufzeitKCall() {
 
         setLoading(false);
 
-        // Deduct 1 credit per minute if caller
-        if (role === "caller" && identity?.kaspaAddress) {
-          creditTimerRef.current = setInterval(async () => {
-            setMinutesUsed(prev => prev + 1);
-            setCredits(prev => {
-              const newCredits = Math.max(0, prev - 1);
-              base44.entities.RufzeitKUser.filter({ kaspa_address: identity.kaspaAddress }).then(users => {
-                if (users.length > 0) {
-                  base44.entities.RufzeitKUser.update(users[0].id, { call_credits: newCredits });
-                }
-              }).catch(() => {});
-              if (newCredits <= 0) handleHangup();
-              return newCredits;
+        // Deduct 1 credit per minute if caller (when other user joins)
+          let participantCount = 1;
+          if (role === "caller" && apiRef.current) {
+            apiRef.current.addEventListeners({
+              participantJoined: () => {
+                participantCount = 2;
+                console.log("Participant joined, starting credit deduction");
+                if (!creditTimerRef.current) startCreditTimer();
+              },
+              participantLeft: () => {
+                participantCount = 1;
+              }
             });
-          }, 60000);
-        }
+          }
+
+          const startCreditTimer = () => {
+            creditTimerRef.current = setInterval(async () => {
+              setMinutesUsed(prev => prev + 1);
+              setCredits(prev => {
+                const newCredits = Math.max(0, prev - 1);
+                base44.entities.RufzeitKUser.filter({ kaspa_address: identity.kaspaAddress }).then(users => {
+                  if (users.length > 0) {
+                    base44.entities.RufzeitKUser.update(users[0].id, { call_credits: newCredits });
+                  }
+                }).catch(() => {});
+                if (newCredits <= 0) handleHangup();
+                return newCredits;
+              });
+            }, 60000);
+          };
       };
       document.head.appendChild(script);
     } catch (err) {
