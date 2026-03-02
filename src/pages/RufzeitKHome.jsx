@@ -320,8 +320,21 @@ export default function RufzeitKHome() {
       {/* Header */}
       <div className="p-6 border-b border-white/10">
         <div className="max-w-lg mx-auto">
-          <h1 className="text-4xl font-black text-white mb-1">RufzeitK</h1>
-          <p className="text-white/40 text-sm">One-on-one video calls · Powered by Kaspa</p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-4xl font-black text-white mb-1">RufzeitK</h1>
+              <p className="text-white/40 text-sm">One-on-one video calls · Powered by Kaspa</p>
+            </div>
+            {isAdmin && (
+              <button
+                onClick={() => setShowAdminPanel(true)}
+                className="flex items-center gap-1.5 bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/20 rounded-xl px-3 py-2 text-xs font-bold transition-colors"
+              >
+                <Key className="w-3.5 h-3.5" />
+                Gen Code
+              </button>
+            )}
+          </div>
 
           {/* Identity card */}
           <div className="mt-4 flex items-center gap-3 bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-3">
