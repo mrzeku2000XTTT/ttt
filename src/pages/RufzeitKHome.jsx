@@ -422,5 +422,6 @@ export default function RufzeitKHome() {
         />
       )}
     </AnimatePresence>
+    </>
   );
 }
