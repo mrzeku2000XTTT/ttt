@@ -283,6 +283,8 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
+import RufzeitKHome from './pages/RufzeitKHome';
+import RufzeitKCall from './pages/RufzeitKCall';
 import __Layout from './Layout.jsx';
 
 
@@ -523,6 +525,8 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
+    "RufzeitKHome": RufzeitKHome,
+    "RufzeitKCall": RufzeitKCall,
 }
 
 export const pagesConfig = {
