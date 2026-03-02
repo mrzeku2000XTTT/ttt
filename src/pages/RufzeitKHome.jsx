@@ -89,6 +89,9 @@ export default function RufzeitKHome() {
       const me = await base44.auth.me();
       setUser(me);
       setKaspaAddress(me.kaspa_address || "");
+      // Load credits
+      const rufUsers = await base44.entities.RufzeitKUser.filter({ email: me.email });
+      if (rufUsers.length > 0) setCallCredits(rufUsers[0].call_credits || 0);
     } catch {
       setUser(null);
     }
