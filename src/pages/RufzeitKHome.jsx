@@ -19,6 +19,8 @@ export default function RufzeitKHome() {
   const [incomingCall, setIncomingCall] = useState(null);
   const [connectingWallet, setConnectingWallet] = useState(false);
   const [showManualInput, setShowManualInput] = useState(false);
+  const [callCredits, setCallCredits] = useState(0);
+  const [showTopup, setShowTopup] = useState(false);
 
   useEffect(() => {
     loadUser();
