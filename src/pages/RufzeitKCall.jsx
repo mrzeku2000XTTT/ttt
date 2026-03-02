@@ -138,7 +138,7 @@ export default function RufzeitKCall() {
 
       {/* Hangup bar */}
       {!loading && (
-        <div className="flex items-center justify-center gap-4 bg-black px-6 py-4 border-t border-white/10">
+        <div className="flex items-center justify-center gap-4 bg-black px-6 py-4 border-t border-white/10 flex-wrap">
           <button
             onClick={() => {
               const joinUrl = `${window.location.origin}/#/RufzeitKCall?room=${roomName}&role=receiver`;
