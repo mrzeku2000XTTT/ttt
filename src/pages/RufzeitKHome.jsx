@@ -30,6 +30,7 @@ export default function RufzeitKHome() {
   const [generatedCode, setGeneratedCode] = useState(null);
   const [codeCopied, setCodeCopied] = useState(false);
   const [generatingCode, setGeneratingCode] = useState(false);
+  const [callError, setCallError] = useState("");
 
   // Setup form
   const [setupAddress, setSetupAddress] = useState("");
