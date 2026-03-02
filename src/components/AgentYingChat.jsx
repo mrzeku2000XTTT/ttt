@@ -259,7 +259,7 @@ export default function AgentYingChat() {
                             />
                           </div>
                         )}
-                        <p className="text-white text-[11px] md:text-xs leading-relaxed whitespace-pre-wrap break-words">
+                        <p className="text-white text-[10px] sm:text-[11px] md:text-xs leading-relaxed whitespace-pre-wrap break-words">
                           {msg.content}
                         </p>
                         {msg.savedToHiveMind && (
