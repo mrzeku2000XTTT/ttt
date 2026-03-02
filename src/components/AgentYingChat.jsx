@@ -249,7 +249,7 @@ export default function AgentYingChat() {
                           <Brain className="w-3 h-3 md:w-4 md:h-4 text-cyan-400" strokeWidth={2} />
                         </div>
                       )}
-                      <div className={`max-w-[80%] md:max-w-[75%] ${msg.role === 'user' ? 'bg-white/10 border-white/20' : 'bg-cyan-500/10 border-cyan-500/30'} border rounded-xl p-2 md:p-3`}>
+                      <div className={`max-w-[85%] sm:max-w-[80%] md:max-w-[75%] ${msg.role === 'user' ? 'bg-white/10 border-white/20' : 'bg-cyan-500/10 border-cyan-500/30'} border rounded-xl p-1.5 sm:p-2 md:p-3`}>
                         {msg.image && (
                           <div className="mb-2 rounded-lg overflow-hidden border border-white/20">
                             <img
