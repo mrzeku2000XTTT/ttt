@@ -470,32 +470,47 @@ export default function TerraPage() {
                </div>
              ) : (
                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                 {transactions.map((tx, idx) => (
-                   <div key={idx} style={{ background: '#0d0d0d', borderRadius: 14, padding: '14px', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                       <div style={{ width: 40, height: 40, borderRadius: 20, background: tx.type === 'receive' ? 'rgba(52,199,89,0.2)' : 'rgba(255,59,48,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                         {tx.type === 'receive' ? (
-                           <ArrowDownLeft size={20} color="#34c759" />
-                         ) : (
-                           <ArrowUpRight size={20} color="#ff3b30" />
-                         )}
-                       </div>
-                       <div style={{ flex: 1 }}>
-                         <div style={{ color: 'white', fontSize: 14, fontWeight: 500 }}>
-                           {tx.type === 'receive' ? 'Received' : 'Sent'} {tx.amount.toLocaleString("en-US", { maximumFractionDigits: 2 })} KAS
+                 {transactions.map((tx, idx) => {
+                   const dateStr = tx.timestamp
+                     ? new Date(tx.timestamp).toLocaleString("en-US", { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                     : null;
+                   const short = tx.counterpartyAddress
+                     ? `${tx.counterpartyAddress.slice(0, 12)}...${tx.counterpartyAddress.slice(-6)}`
+                     : null;
+                   return (
+                     <div key={idx} style={{ background: '#0d0d0d', borderRadius: 14, padding: '14px', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+                         <div style={{ width: 40, height: 40, borderRadius: 20, flexShrink: 0, background: tx.type === 'receive' ? 'rgba(52,199,89,0.2)' : 'rgba(255,59,48,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                           {tx.type === 'receive' ? (
+                             <ArrowDownLeft size={20} color="#34c759" />
+                           ) : (
+                             <ArrowUpRight size={20} color="#ff3b30" />
+                           )}
                          </div>
-                         <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, fontFamily: 'monospace', marginTop: 2, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                           {tx.id}
+                         <div style={{ flex: 1, minWidth: 0 }}>
+                           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
+                             <span style={{ color: 'white', fontSize: 14, fontWeight: 600 }}>
+                               {tx.type === 'receive' ? '+' : '-'}{tx.amount.toLocaleString("en-US", { maximumFractionDigits: 4 })} KAS
+                             </span>
+                             {dateStr && <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11, flexShrink: 0 }}>{dateStr}</span>}
+                           </div>
+                           {short && (
+                             <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, marginTop: 3 }}>
+                               {tx.type === 'receive' ? 'From' : 'To'}: <span style={{ fontFamily: 'monospace' }}>{short}</span>
+                             </div>
+                           )}
+                           <div style={{ color: 'rgba(255,255,255,0.2)', fontSize: 10, fontFamily: 'monospace', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                             {tx.id}
+                           </div>
                          </div>
                        </div>
+                       <button onClick={() => navigator.clipboard.writeText(tx.id)}
+                         style={{ background: '#1c1c1e', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', borderRadius: 8, padding: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginLeft: 8 }}>
+                         <Copy size={16} />
+                       </button>
                      </div>
-                     <button onClick={() => {
-                       navigator.clipboard.writeText(tx.id);
-                     }} style={{ background: '#1c1c1e', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', borderRadius: 8, padding: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                       <Copy size={16} />
-                     </button>
-                   </div>
-                 ))}
+                   );
+                 })}
                </div>
              )}
            </div>
