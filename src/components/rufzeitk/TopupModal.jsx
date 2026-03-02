@@ -43,7 +43,8 @@ export default function TopupModal({ onClose, onSuccess, kaspaAddress }) {
     try {
       const res = await base44.functions.invoke("checkRufzeitKPayment", {
         amount_kas: amt,
-        since_timestamp: ts
+        since_timestamp: ts,
+        kaspa_address: kaspaAddress
       });
       if (res.data?.success) {
         clearInterval(pollRef.current);
@@ -53,7 +54,9 @@ export default function TopupModal({ onClose, onSuccess, kaspaAddress }) {
           onClose();
         }, 2500);
       }
-    } catch {}
+    } catch (err) {
+      console.error("Payment check error:", err);
+    }
     setChecking(false);
   };
 
