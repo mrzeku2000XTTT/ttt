@@ -21,6 +21,8 @@ export default function RufzeitKHome() {
   const [incomingCall, setIncomingCall] = useState(null);
   const [callCredits, setCallCredits] = useState(0);
   const [showTopup, setShowTopup] = useState(false);
+  const [showBypass, setShowBypass] = useState(false);
+  const [hasBypass, setHasBypass] = useState(false);
 
   // Setup form
   const [setupAddress, setSetupAddress] = useState("");
