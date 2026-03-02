@@ -179,10 +179,20 @@ export default function TopupModal({ onClose, onSuccess }) {
               <span className="truncate">{PAYMENT_ADDRESS}</span>
             </button>
 
-            <div className="flex items-center justify-center gap-2 text-white/40 text-sm">
+            <div className="flex items-center justify-center gap-2 text-white/40 text-sm mb-4">
               <RefreshCw className={`w-4 h-4 ${checking ? "animate-spin" : ""}`} />
               <span>Waiting for payment...</span>
             </div>
+
+            <button
+              onClick={() => {
+                clearInterval(pollRef.current);
+                setStep("select");
+              }}
+              className="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-2 rounded-xl transition-colors text-sm"
+            >
+              Cancel
+            </button>
           </>
         )}
 
