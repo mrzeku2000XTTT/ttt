@@ -113,18 +113,24 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
   };
 
   const signLocally = async (privateKey, txObj) => {
-    // Sign locally using the imported private key
-    // For now, return a placeholder - actual signing would use Kaspa crypto library
-    setSigningStatus("Signing locally...");
+    // Sign locally using the imported private key (native signing for mobile)
+    setSigningStatus("Signing transaction...");
     
-    // In production, you'd use: kaspa.signTransaction(txObj, privateKey)
-    // For MVP, we'll store the unsigned tx and mark it for frontend-only signing
-    return JSON.stringify({
-      unsigned: txObj,
-      signed_by: fromAddress,
-      timestamp: new Date().toISOString(),
-      needs_broadcast: true
-    });
+    try {
+      // Invoke backend function to sign the transaction with private key
+      const res = await base44.functions.invoke("signKaspaTransaction", {
+        privateKey: privateKey,
+        transaction: txObj,
+      });
+      
+      if (res.data?.error) throw new Error(res.data.error);
+      if (!res.data?.signedTx) throw new Error("No signed transaction returned");
+      
+      setSigningStatus("Signature obtained!");
+      return res.data.signedTx;
+    } catch (err) {
+      throw new Error(`Native signing failed: ${err.message}`);
+    }
   };
 
   const requestUserSignature = async () => {
