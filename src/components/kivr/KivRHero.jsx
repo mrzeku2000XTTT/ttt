@@ -16,29 +16,16 @@ export default function KivRHero() {
         transition={{ duration: 0.6, ease: "easeOut" }}
         className="relative z-10 mb-4"
       >
-        <div className="w-24 h-24 rounded-[28px] flex items-center justify-center relative"
+        <div className="w-24 h-24 rounded-[28px] overflow-hidden relative"
           style={{
-            background: "linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))",
-            border: "1px solid rgba(255,90,20,0.4)",
-            boxShadow: "0 0 40px rgba(255,90,20,0.3), inset 0 1px 0 rgba(255,255,255,0.1)"
+            boxShadow: "0 0 40px rgba(255,90,20,0.4), 0 0 80px rgba(255,90,20,0.15)"
           }}>
-          {/* K + waveform icon */}
-          <div className="relative flex items-center justify-center">
-            <span className="text-white font-black text-4xl" style={{ textShadow: "0 0 20px rgba(255,90,20,0.8)" }}>K</span>
-            <div className="absolute -bottom-2 flex items-center gap-0.5">
-              {[2, 4, 3, 5, 3, 4, 2].map((h, i) => (
-                <motion.div key={i}
-                  animate={{ scaleY: [1, 1.8, 1] }}
-                  transition={{ repeat: Infinity, duration: 0.8 + i * 0.1, delay: i * 0.1 }}
-                  className="w-0.5 rounded-full"
-                  style={{ height: h * 2, background: "rgba(255,90,20,0.8)" }}
-                />
-              ))}
-            </div>
-          </div>
-          <div className="absolute bottom-2 right-2">
-            <Mic size={10} color="rgba(255,255,255,0.6)" />
-          </div>
+          <img
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a3f7bbc81_IMG_1275.jpg"
+            alt="KivR Logo"
+            className="w-full h-full object-cover"
+            style={{ objectPosition: "center 20%" }}
+          />
         </div>
       </motion.div>
 
