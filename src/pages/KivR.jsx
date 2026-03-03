@@ -209,10 +209,6 @@ export default function KivRPage() {
               background: `linear-gradient(135deg, ${ORANGE}, #e04000)`,
               boxShadow: `0 8px 32px rgba(255,90,20,0.5)`,
             }}
-            style={{
-              background: `linear-gradient(135deg, ${ORANGE}, #e04000)`,
-              boxShadow: `0 8px 32px rgba(255,90,20,0.5)`,
-            }}
             whileHover={{ scale: 1.07 }}
             whileTap={{ scale: 0.95 }}
           >
