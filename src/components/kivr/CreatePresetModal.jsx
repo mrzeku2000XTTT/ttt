@@ -74,10 +74,65 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
     return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
   };
 
+  const buildUnsignedTransaction = async () => {
+    // Build a basic unsigned transaction object for user signing
+    return {
+      inputs: [],
+      outputs: [{ address: toAddress, amount: Math.round(parseFloat(amount) * 1e8) }],
+      change_address: fromAddress,
+      fee_rate: 1,
+      metadata: {
+        label: label || `Pay ${parseFloat(amount)} KAS`,
+        from: fromAddress,
+        to: toAddress,
+        amount: parseFloat(amount),
+      }
+    };
+  };
+
+  const requestUserSignature = async () => {
+    setSigningStatus("Awaiting signature...");
+    try {
+      // Check if Kasware is available
+      if (!window.kasware) {
+        throw new Error("Kasware not available. Import wallet instead.");
+      }
+
+      const txObj = await buildUnsignedTransaction();
+      
+      // Request signature from Kasware (this triggers user action)
+      setSigningStatus("Check your Kasware wallet...");
+      const signResult = await window.kasware.signTransaction({
+        transaction: txObj,
+        fee: 1000, // 1000 sompi minimum
+      });
+
+      if (!signResult?.signedTransaction) {
+        throw new Error("No signed transaction returned from Kasware");
+      }
+
+      setSigningStatus("Signature obtained!");
+      return signResult.signedTransaction;
+    } catch (err) {
+      setError(`Signing failed: ${err.message}`);
+      setSigningStatus("");
+      return null;
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     setError("");
+    setSigningStatus("");
+
     try {
+      // Request user signature
+      const signedTxHex = await requestUserSignature();
+      if (!signedTxHex) {
+        setSaving(false);
+        return;
+      }
+
       const pinHash = await hashPin(pin);
       await base44.entities.KivRTransaction.create({
         from_address: fromAddress,
@@ -87,6 +142,7 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
         phone_number: phone,
         pin_hash: pinHash,
         slot_number: parseInt(slot),
+        signed_tx_hex: signedTxHex, // Store the signed transaction
         status: "active",
         uses_remaining: 1,
       });
@@ -95,6 +151,7 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
       setError("Failed to save preset. Try again.");
     }
     setSaving(false);
+    setSigningStatus("");
   };
 
   const stepLabels = ["Payment Info", "IVR Setup", "Confirm"];
