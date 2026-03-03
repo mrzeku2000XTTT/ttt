@@ -115,13 +115,11 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
     return signResult.signedTransaction;
   };
 
-  const signLocally = async (privateKey, txObj) => {
-    // Show native signing modal
+  const signLocally = (privateKey, txObj) => {
+    // Show native signing modal - returns promise when user signs
     return new Promise((resolve, reject) => {
       setTxToSign(txObj);
       setShowSigningModal(true);
-      
-      // Store resolve/reject for when modal completes
       window._signingPromise = { resolve, reject };
     });
   };
