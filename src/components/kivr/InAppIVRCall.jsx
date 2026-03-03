@@ -354,14 +354,22 @@ export default function InAppIVRCall({ connectedAddress, presets, onClose }) {
               style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)" }}>
               <input
                 autoFocus
-                type="password" inputMode="numeric" maxLength={8}
+                type="tel"
+                inputMode="numeric"
+                maxLength={8}
                 placeholder="Type PIN…"
                 value={pinInput}
-                onChange={e => setPinInput(e.target.value.replace(/\D/g, ""))}
+                onChange={e => {
+                  const val = e.target.value.replace(/\D/g, "");
+                  setPinInput(val);
+                }}
                 onKeyDown={e => { if (e.key === "Enter") handlePinSubmit(); }}
                 className="flex-1 bg-transparent text-white text-sm outline-none font-mono tracking-widest"
+                style={{ WebkitUserSelect: "text", userSelect: "text" }}
               />
-              <button onClick={handlePinSubmit} disabled={pinInput.length < 4}
+              <button
+                onPointerDown={e => { e.preventDefault(); handlePinSubmit(); }}
+                disabled={pinInput.length < 4}
                 className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all"
                 style={{
                   background: pinInput.length >= 4 ? ORANGE : "rgba(255,255,255,0.07)",
