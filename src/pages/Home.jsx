@@ -383,7 +383,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-black">
+    <div className="min-h-screen w-screen overflow-hidden bg-black relative">
       {/* Water Background */}
       <div className="absolute inset-0">
         <img
