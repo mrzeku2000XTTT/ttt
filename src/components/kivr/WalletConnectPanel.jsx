@@ -386,7 +386,7 @@ function WalletManagePanel({ wallets, activeAddress, onSwitch, onDisconnect, onR
 }
 
 // ── Balance display ────────────────────────────────────────────────────────────
-function WalletBalance({ address }) {
+function WalletBalance({ address, refreshKey }) {
   const [balance, setBalance] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -405,7 +405,7 @@ function WalletBalance({ address }) {
     fetchBalance();
     const iv = setInterval(fetchBalance, 15000);
     return () => clearInterval(iv);
-  }, [address]);
+  }, [address, refreshKey]);
 
   if (balance === null && !loading) return null;
 
