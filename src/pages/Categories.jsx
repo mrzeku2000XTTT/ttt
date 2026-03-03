@@ -39,7 +39,8 @@ import {
   Moon,
   Eye,
   LayoutGrid,
-  FileText
+  FileText,
+  Phone
 } from "lucide-react";
 import EncryptedNotepad from "@/components/feed/EncryptedNotepad";
 import AppIconGenerator from "@/components/categories/AppIconGenerator";
@@ -217,7 +218,7 @@ export default function CategoriesPage() {
       Video, Camera, ImageIcon, Users, MessageSquare, Bot, Brain, 
       ArrowUpDown, Wallet, ShoppingCart, ShoppingBag, Shield, Network,
       Gamepad2, TrendingUp, AlertTriangle, History, Settings, User, Crown,
-      Activity, Terminal, Briefcase, Gift, BookOpen, Flame, Moon, Wrench, Eye, LayoutGrid, FileText
+      Activity, Terminal, Briefcase, Gift, BookOpen, Flame, Moon, Wrench, Eye, LayoutGrid, FileText, Phone
     };
     return icons[iconName] || Users;
   };
@@ -409,6 +410,7 @@ export default function CategoriesPage() {
       { id: "articles", name: "Articles", icon: "FileText", path: "Articles" },
       { id: "bmtuniv", name: "BMT Univ", icon: "BookOpen", path: "BMTUniv" },
       { id: "llmscraper", name: "LLM Miner", icon: "Terminal", path: "LLMScraper" },
+      { id: "kivr", name: "KivR", icon: "Phone", path: "KivR" },
       { id: "calculator", name: "Calculator", icon: "Activity", path: "Calculator" },
       ...(isAdmin ? [
         { id: "arcade", name: "Arcade", icon: "Gamepad2", path: "Arcade" },
