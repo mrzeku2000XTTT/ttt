@@ -18,9 +18,8 @@ export default function WalletConnectPanel({ connectedAddress, onConnect }) {
   const navigate = useNavigate();
   const [mode, setMode] = useState(null); // null | 'manual' | 'create'
   const [address, setAddress] = useState("");
-  const [creating, setCreating] = useState(false);
   const [newWallet, setNewWallet] = useState(null);
-  const [step, setStep] = useState("options"); // options | reveal | done
+  const [step, setStep] = useState("options"); // options | loading | reveal | error
   const [copied, setCopied] = useState(false);
   const [wordCount, setWordCount] = useState(12);
   const [confirmed, setConfirmed] = useState(false);
