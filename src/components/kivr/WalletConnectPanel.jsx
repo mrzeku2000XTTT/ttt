@@ -385,6 +385,52 @@ function WalletManagePanel({ wallets, activeAddress, onSwitch, onDisconnect, onR
   );
 }
 
+// ── Balance display ────────────────────────────────────────────────────────────
+function WalletBalance({ address }) {
+  const [balance, setBalance] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const fetchBalance = async () => {
+    if (!address) return;
+    setLoading(true);
+    try {
+      const res = await base44.functions.invoke("getKaspaBalance", { address });
+      const bal = res.data?.balance ?? res.data?.data?.balance ?? null;
+      if (bal !== null) setBalance(parseFloat(bal));
+    } catch {}
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchBalance();
+    const iv = setInterval(fetchBalance, 15000);
+    return () => clearInterval(iv);
+  }, [address]);
+
+  if (balance === null && !loading) return null;
+
+  return (
+    <div className="mx-4 mb-3 rounded-2xl px-4 py-3 flex items-center justify-between"
+      style={{ background: "rgba(255,90,20,0.08)", border: "1px solid rgba(255,90,20,0.2)" }}>
+      <div>
+        <p className="text-xs mb-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>Wallet Balance</p>
+        {loading && balance === null ? (
+          <p className="text-sm text-white/40">Loading…</p>
+        ) : (
+          <p className="text-xl font-black" style={{ color: ORANGE }}>
+            {balance !== null ? balance.toLocaleString("en-US", { maximumFractionDigits: 4 }) : "—"} <span className="text-sm font-semibold">KAS</span>
+          </p>
+        )}
+      </div>
+      <button onClick={fetchBalance} disabled={loading}
+        className="p-2 rounded-xl"
+        style={{ background: "rgba(255,90,20,0.1)" }}>
+        <RefreshCw size={14} color={ORANGE} className={loading ? "animate-spin" : ""} />
+      </button>
+    </div>
+  );
+}
+
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function WalletConnectPanel({ connectedAddress, onConnect }) {
   const [wallets, setWallets] = useState(() => loadWallets());
