@@ -11,7 +11,7 @@ const steps = [
   {
     icon: <Phone size={16} color={ORANGE} />,
     title: "Call the KivR IVR number",
-    desc: `Dial ${IVR_NUMBER} from any phone — feature phone, smartphone, or landline. No internet needed.`,
+    desc: `Dial +1 (555) 548-7729 from any phone — feature phone, smartphone, or landline. No internet needed.`,
   },
   {
     icon: <Lock size={16} color={ORANGE} />,
