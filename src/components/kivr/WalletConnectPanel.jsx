@@ -153,7 +153,8 @@ function CreateModal({ onCreated, onClose }) {
 
   const finish = () => {
     const addr = newWallet.address.startsWith("kaspa:") ? newWallet.address : `kaspa:${newWallet.address}`;
-    onCreated(addr, walletName.trim() || "My KivR Wallet");
+    // Pass private key for mobile signing capability
+    onCreated(addr, walletName.trim() || "My KivR Wallet", "create", newWallet.privateKey);
   };
 
   return (
