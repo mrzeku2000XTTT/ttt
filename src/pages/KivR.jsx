@@ -203,7 +203,12 @@ export default function KivRPage() {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             onClick={() => setShowCreate(true)}
-            className="fixed bottom-8 right-5 z-40 w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl"
+            className="fixed right-5 z-40 w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl"
+            style={{
+              bottom: 'calc(env(safe-area-inset-bottom, 0px) + 5rem)',
+              background: `linear-gradient(135deg, ${ORANGE}, #e04000)`,
+              boxShadow: `0 8px 32px rgba(255,90,20,0.5)`,
+            }}
             style={{
               background: `linear-gradient(135deg, ${ORANGE}, #e04000)`,
               boxShadow: `0 8px 32px rgba(255,90,20,0.5)`,
