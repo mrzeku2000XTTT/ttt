@@ -1,45 +1,7 @@
-/**
- * KivR IVR Backend
- * 
- * This backend function is called by Asterisk AGI scripts via HTTP.
- * 
- * ASTERISK AGI SETUP (dialplan in extensions.conf):
- * 
- *   [kivr-ivr]
- *   exten => _X.,1,Answer()
- *   same  => n,AGI(agi://your-server/agi/kivr.agi)
- *   ; OR use EAGI over HTTP via curl:
- *   same  => n,AGI(eagi://localhost/agi-bin/kivr_bridge.sh)
- * 
- * SIMPLER APPROACH - Asterisk calls this HTTP endpoint directly via AGI script:
- * 
- *   kivr_bridge.sh (on Asterisk server):
- *   #!/bin/bash
- *   CALLERID=$(agi_callerid from stdin)
- *   curl -X POST https://<your-base44-fn-url>/ \
- *     -H "Content-Type: application/json" \
- *     -d "{\"action\":\"$1\",\"phone\":\"$2\",\"pin\":\"$3\",\"slot\":\"$4\"}"
- * 
- * ENDPOINTS / actions:
- *   POST / { action: "get_presets", phone: "+1234567890", pin: "1234" }
- *     -> returns list of active presets for IVR menu
- * 
- *   POST / { action: "broadcast", phone: "+1234567890", pin: "1234", slot: 1 }
- *     -> validates PIN, broadcasts the pre-signed tx, returns txid
- * 
- *   POST / { action: "verify_pin", phone: "+1234567890", pin: "1234" }
- *     -> returns { valid: true/false }
- * 
- * KASPA BROADCAST API:
- *   POST https://api.kaspa.org/transactions
- *   Body: { transaction: { ... } }  (raw tx hex or object)
- */
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
 const KASPA_API = 'https://api.kaspa.org';
 
-// Simple PIN hash using Web Crypto (SHA-256)
 async function hashPin(pin) {
   const encoder = new TextEncoder();
   const data = encoder.encode(pin + '_kivr_salt_2024');
@@ -48,14 +10,11 @@ async function hashPin(pin) {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Normalize phone number for consistent matching
 function normalizePhone(phone) {
   return phone.replace(/\D/g, '');
 }
 
-// Broadcast a raw signed transaction to Kaspa network
 async function broadcastTransaction(signedTxHex) {
-  // The Kaspa REST API accepts hex-encoded transactions
   const res = await fetch(`${KASPA_API}/transactions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -68,12 +27,10 @@ async function broadcastTransaction(signedTxHex) {
   }
 
   const data = await res.json();
-  // API returns { transactionId: "..." } or { txid: "..." }
   return data.transactionId || data.txid || data.id || null;
 }
 
 Deno.serve(async (req) => {
-  // Allow CORS for Asterisk AGI HTTP requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       headers: {
@@ -91,7 +48,6 @@ Deno.serve(async (req) => {
     if (!action) {
       return Response.json({ error: 'Missing action' }, { status: 400 });
     }
-
     if (!phone) {
       return Response.json({ error: 'Missing phone number' }, { status: 400 });
     }
@@ -99,55 +55,35 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const normalizedPhone = normalizePhone(phone);
 
-    // ── ACTION: verify_pin ──────────────────────────────────────────────────
+    // verify_pin
     if (action === 'verify_pin') {
       if (!pin) return Response.json({ valid: false, error: 'Missing PIN' });
-
       const pinHash = await hashPin(pin);
-
-      // Find any active preset for this phone with matching PIN
       const presets = await base44.asServiceRole.entities.KivRTransaction.filter({
         phone_number: normalizedPhone,
         status: 'active',
       });
-
       if (!presets || presets.length === 0) {
         return Response.json({ valid: false, error: 'No active presets for this number' });
       }
-
-      // Check PIN against the stored hash (all presets for same phone share a PIN)
-      const preset = presets[0];
-      const valid = preset.pin_hash === pinHash;
-
+      const valid = presets[0].pin_hash === pinHash;
       return Response.json({ valid, preset_count: valid ? presets.length : 0 });
     }
 
-    // ── ACTION: get_presets ─────────────────────────────────────────────────
+    // get_presets
     if (action === 'get_presets') {
       if (!pin) return Response.json({ error: 'Missing PIN' }, { status: 400 });
-
       const pinHash = await hashPin(pin);
-
       const presets = await base44.asServiceRole.entities.KivRTransaction.filter({
         phone_number: normalizedPhone,
         status: 'active',
       });
-
       if (!presets || presets.length === 0) {
-        return Response.json({ 
-          valid: false,
-          error: 'No active presets found for this phone number',
-          presets: []
-        });
+        return Response.json({ valid: false, error: 'No active presets found', presets: [] });
       }
-
-      // Validate PIN
-      const pinValid = presets[0].pin_hash === pinHash;
-      if (!pinValid) {
+      if (presets[0].pin_hash !== pinHash) {
         return Response.json({ valid: false, error: 'Invalid PIN', presets: [] });
       }
-
-      // Return safe preset info for IVR menu (no private data)
       const safePresets = presets
         .filter(p => p.uses_remaining !== 0)
         .sort((a, b) => (a.slot_number || 9) - (b.slot_number || 9))
@@ -155,71 +91,45 @@ Deno.serve(async (req) => {
           slot: p.slot_number,
           label: p.label || `Preset ${p.slot_number}`,
           amount: p.amount,
-          to_address_short: p.to_address
-            ? `${p.to_address.slice(0, 6)}...${p.to_address.slice(-4)}`
-            : 'unknown',
+          to_address_short: p.to_address ? `${p.to_address.slice(0, 6)}...${p.to_address.slice(-4)}` : 'unknown',
           uses_remaining: p.uses_remaining,
           id: p.id,
         }));
-
       return Response.json({ valid: true, presets: safePresets });
     }
 
-    // ── ACTION: broadcast ───────────────────────────────────────────────────
+    // broadcast
     if (action === 'broadcast') {
       if (!pin) return Response.json({ error: 'Missing PIN' }, { status: 400 });
       if (!slot) return Response.json({ error: 'Missing slot number' }, { status: 400 });
-
       const pinHash = await hashPin(pin);
       const slotNum = parseInt(slot, 10);
-
-      // Find the specific preset
       const presets = await base44.asServiceRole.entities.KivRTransaction.filter({
         phone_number: normalizedPhone,
         status: 'active',
         slot_number: slotNum,
       });
-
       if (!presets || presets.length === 0) {
-        return Response.json({
-          success: false,
-          error: `No active preset in slot ${slotNum} for this phone number`,
-        });
+        return Response.json({ success: false, error: `No active preset in slot ${slotNum}` });
       }
-
       const preset = presets[0];
-
-      // Validate PIN
       if (preset.pin_hash !== pinHash) {
         return Response.json({ success: false, error: 'Invalid PIN' });
       }
-
-      // Check uses remaining
       if (preset.uses_remaining === 0) {
         return Response.json({ success: false, error: 'This preset has been used up' });
       }
-
-      // Check signed tx exists
       if (!preset.signed_tx_hex) {
-        return Response.json({
-          success: false,
-          error: 'No signed transaction found for this preset. Please recreate it.',
-        });
+        return Response.json({ success: false, error: 'No signed transaction found. Please recreate this preset.' });
       }
 
-      // Broadcast the pre-signed transaction to Kaspa network
       let txId;
       try {
         txId = await broadcastTransaction(preset.signed_tx_hex);
       } catch (broadcastErr) {
-        console.error('Broadcast failed:', broadcastErr.message);
-        return Response.json({
-          success: false,
-          error: `Broadcast failed: ${broadcastErr.message}`,
-        });
+        return Response.json({ success: false, error: `Broadcast failed: ${broadcastErr.message}` });
       }
 
-      // Update preset: decrement uses, mark txid, set status if fully used
       const newUses = preset.uses_remaining === -1 ? -1 : preset.uses_remaining - 1;
       const newStatus = newUses === 0 ? 'used' : 'active';
 
@@ -244,7 +154,6 @@ Deno.serve(async (req) => {
     return Response.json({ error: `Unknown action: ${action}` }, { status: 400 });
 
   } catch (error) {
-    console.error('KivR IVR error:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
