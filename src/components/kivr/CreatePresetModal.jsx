@@ -361,7 +361,7 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
             <button onClick={handleNext}
               className="flex-1 py-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2"
               style={{ background: ORANGE }}>
-              Sign with Kasware <Key size={14} />
+              Sign Transaction <Key size={14} />
             </button>
           ) : (
             <button onClick={handleSave} disabled={saving}
