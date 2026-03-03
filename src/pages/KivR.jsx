@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, RefreshCw, ArrowLeft, Phone, Mic } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -66,7 +65,6 @@ export default function KivRPage() {
         fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
       }}
     >
-      {/* Background ambient */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full opacity-20"
           style={{ background: "radial-gradient(ellipse, rgba(255,90,20,0.5) 0%, transparent 65%)" }} />
@@ -74,7 +72,6 @@ export default function KivRPage() {
           style={{ background: "radial-gradient(circle, rgba(255,90,20,0.4) 0%, transparent 70%)" }} />
       </div>
 
-      {/* Header */}
       <div className="sticky top-0 z-40 flex items-center justify-between px-4 py-3"
         style={{
           background: "rgba(0,0,0,0.8)",
@@ -110,21 +107,16 @@ export default function KivRPage() {
         </button>
       </div>
 
-      {/* Scrollable content */}
       <div className="relative z-10 max-w-lg mx-auto pb-32">
-        {/* Hero */}
         <KivRHero />
 
-        {/* Wallet connect */}
         <WalletConnectPanel
           connectedAddress={connectedAddress}
           onConnect={setConnectedAddress}
         />
 
-        {/* How it works (only show if no wallet yet) */}
         {!connectedAddress && <HowItWorksSection />}
 
-        {/* Presets section */}
         {connectedAddress && (
           <div className="mx-4">
             <div className="flex items-center justify-between mb-3">
@@ -172,11 +164,9 @@ export default function KivRPage() {
           </div>
         )}
 
-        {/* IVR setup guide + test panel */}
         <IVRSetupGuide connectedAddress={connectedAddress} presetCount={activePresets.length} />
       </div>
 
-      {/* FAB — Create Preset */}
       <AnimatePresence>
         {connectedAddress && (
           <motion.button
@@ -198,7 +188,6 @@ export default function KivRPage() {
         )}
       </AnimatePresence>
 
-      {/* Create preset modal */}
       <AnimatePresence>
         {showCreate && (
           <CreatePresetModal
