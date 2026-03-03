@@ -115,7 +115,7 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
   const signLocally = async (privateKey, txObj) => {
     // Sign locally using the imported private key
     // For now, return a placeholder - actual signing would use Kaspa crypto library
-    setSigningStatus("Signing locally...";
+    setSigningStatus("Signing locally...");
     
     // In production, you'd use: kaspa.signTransaction(txObj, privateKey)
     // For MVP, we'll store the unsigned tx and mark it for frontend-only signing
