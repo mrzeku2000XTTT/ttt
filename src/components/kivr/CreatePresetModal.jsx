@@ -134,13 +134,13 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
 
       let signedTx;
       
-      // Try Kasware first (desktop), then local signing (mobile)
-      if (window.kasware) {
-        signedTx = await signWithKasware(txObj);
-      } else if (privateKey) {
+      // Use native signing (works on mobile and desktop)
+      if (privateKey) {
         signedTx = await signLocally(privateKey, txObj);
+      } else if (window.kasware) {
+        signedTx = await signWithKasware(txObj);
       } else {
-        throw new Error("No signing method available. Use Kasware or import wallet.");
+        throw new Error("No wallet found. Import or create a wallet first.");
       }
 
       setSigningStatus("Signature obtained!");
