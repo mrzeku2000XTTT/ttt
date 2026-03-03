@@ -237,7 +237,7 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
           </div>
         )}
 
-        {/* Step 3: Confirm */}
+        {/* Step 3: Review */}
         {step === 3 && (
           <div className="space-y-4">
             <div className="rounded-2xl p-4 space-y-3"
@@ -265,8 +265,33 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
               style={{ background: "rgba(255,165,0,0.08)", border: "1px solid rgba(255,165,0,0.2)" }}>
               <AlertTriangle size={12} color="#ff9500" className="flex-shrink-0 mt-0.5" />
               <span style={{ color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>
-                Your private key never leaves your device. Only the transaction intent is stored.
+                Next, you'll sign this transaction with Kasware. Your private key never leaves your device.
               </span>
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Signing */}
+        {step === 4 && (
+          <div className="space-y-4">
+            <div className="flex flex-col items-center justify-center py-8 gap-4">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center"
+                style={{ background: "rgba(255,90,20,0.15)" }}>
+                <Key size={24} color={ORANGE} />
+              </div>
+              <div className="text-center">
+                <p className="text-white font-bold mb-1">Signing Transaction</p>
+                <p className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>
+                  {signingStatus || "Requesting Kasware signature..."}
+                </p>
+              </div>
+              {signingStatus === "Signature obtained!" && (
+                <div className="text-xs px-3 py-2 rounded-lg flex items-center gap-2"
+                  style={{ background: "rgba(52,199,89,0.1)", border: "1px solid rgba(52,199,89,0.3)", color: "#34c759" }}>
+                  <CheckCircle size={12} />
+                  Signature received!
+                </div>
+              )}
             </div>
           </div>
         )}
