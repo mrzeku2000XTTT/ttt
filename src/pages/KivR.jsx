@@ -171,45 +171,8 @@ export default function KivRPage() {
           </div>
         )}
 
-        {/* IVR info card */}
-        <div className="mx-4 mt-4 rounded-2xl p-4 space-y-3"
-          style={{
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,90,20,0.2)",
-            backdropFilter: "blur(16px)"
-          }}>
-          <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: "rgba(255,90,20,0.15)" }}>
-              <Phone size={16} color={ORANGE} />
-            </div>
-            <div>
-              <p className="text-white text-sm font-semibold mb-1">IVR Phone Number</p>
-              <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.4)" }}>
-                Powered by Asterisk AGI. Call the KivR number from any phone — feature phone, smartphone, or landline. Enter your PIN, press your slot (1–9) to broadcast your pre-signed Kaspa transaction. Non-custodial: your keys never leave your device.
-              </p>
-            </div>
-          </div>
-          <div className="rounded-xl p-3 space-y-2" style={{ background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.06)" }}>
-            <p className="text-xs font-semibold" style={{ color: ORANGE }}>Asterisk AGI Integration Plan</p>
-            {[
-              { step: "1", text: "Self-hosted Asterisk PBX with a SIP trunk (e.g. Twilio, VoIP.ms) receives the inbound call" },
-              { step: "2", text: "extensions.conf routes call → AGI script (Python/Node) via AGI() application" },
-              { step: "3", text: "AGI reads DTMF: GET DATA prompt to collect PIN digits, then slot number" },
-              { step: "4", text: "AGI calls KivR backend API → looks up preset by phone number + PIN hash + slot" },
-              { step: "5", text: "If matched, AGI calls Kaspa broadcast endpoint with pre-stored signed tx hex" },
-              { step: "6", text: "Asterisk plays confirmation (text-to-speech: 'Payment of X KAS sent')" },
-            ].map(({ step, text }) => (
-              <div key={step} className="flex gap-2 items-start">
-                <span className="text-xs font-bold flex-shrink-0 w-4" style={{ color: ORANGE }}>{step}.</span>
-                <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.4)" }}>{text}</p>
-              </div>
-            ))}
-          </div>
-          <p className="text-xs font-mono text-center" style={{ color: "rgba(255,90,20,0.6)" }}>
-            Backend: Asterisk AGI + FastAGI · Kaspa node RPC · KivR API
-          </p>
-        </div>
+        {/* IVR setup guide + test panel */}
+        <IVRSetupGuide connectedAddress={connectedAddress} presetCount={activePresets.length} />
       </div>
 
       {/* FAB — Create Preset */}
