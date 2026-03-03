@@ -173,6 +173,7 @@ import KaspaTTT from './pages/KaspaTTT';
 import Kasplore from './pages/Kasplore';
 import Kehinde from './pages/Kehinde';
 import Keystone from './pages/Keystone';
+import KivR from './pages/KivR';
 import KnowledgeBase from './pages/KnowledgeBase';
 import Kolade from './pages/Kolade';
 import Konekt from './pages/Konekt';
@@ -184,8 +185,8 @@ import Landing from './pages/Landing';
 import LearnMore from './pages/LearnMore';
 import Learning from './pages/Learning';
 import Life from './pages/Life';
-import LinkChecker from './pages/LinkChecker';
 import Lobby from './pages/Lobby';
+import LinkChecker from './pages/LinkChecker';
 import MMN from './pages/MMN';
 import MODZ from './pages/MODZ';
 import MODZHub from './pages/MODZHub';
@@ -285,7 +286,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import KivR from './pages/KivR';
 import __Layout from './Layout.jsx';
 
 
@@ -416,6 +416,7 @@ export const PAGES = {
     "Kasplore": Kasplore,
     "Kehinde": Kehinde,
     "Keystone": Keystone,
+    "KivR": KivR,
     "KnowledgeBase": KnowledgeBase,
     "Kolade": Kolade,
     "Konekt": Konekt,
@@ -427,8 +428,8 @@ export const PAGES = {
     "LearnMore": LearnMore,
     "Learning": Learning,
     "Life": Life,
-    "LinkChecker": LinkChecker,
     "Lobby": Lobby,
+    "LinkChecker": LinkChecker,
     "MMN": MMN,
     "MODZ": MODZ,
     "MODZHub": MODZHub,
@@ -528,7 +529,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "KivR": KivR,
 }
 
 export const pagesConfig = {
