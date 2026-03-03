@@ -277,7 +277,7 @@ export default function InAppIVRCall({ connectedAddress, presets, onClose }) {
         }}
       >
         {/* Header */}
-        <div className="px-5 pt-5 pb-4 text-center flex-shrink-0"
+        <div className="px-5 pt-5 pb-3 text-center flex-shrink-0"
           style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
           <div className="relative w-14 h-14 rounded-full mx-auto mb-2 flex items-center justify-center"
             style={{
@@ -296,6 +296,15 @@ export default function InAppIVRCall({ connectedAddress, presets, onClose }) {
           <p className="text-xs mt-0.5 font-medium" style={{ color: isActive ? ORANGE : "rgba(255,255,255,0.3)" }}>
             {phaseLabel}
           </p>
+          {connectedAddress && (
+            <div className="mt-2 mx-2 rounded-xl px-3 py-1.5 flex items-center justify-center gap-1.5"
+              style={{ background: "rgba(255,90,20,0.08)", border: "1px solid rgba(255,90,20,0.2)" }}>
+              <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "#34c759" }} />
+              <span className="text-xs font-mono truncate" style={{ color: "rgba(255,255,255,0.5)" }}>
+                {connectedAddress.slice(0, 14)}…{connectedAddress.slice(-8)}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Transcript */}
