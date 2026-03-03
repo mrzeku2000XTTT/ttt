@@ -125,17 +125,23 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
   };
 
   const requestUserSignature = async () => {
-    setSigningStatus("Awaiting signature...");
     try {
       const txObj = await buildUnsignedTransaction();
       const privateKey = getPrivateKeyForWallet();
+
+      console.log("Private key found:", !!privateKey);
+      console.log("Kasware available:", !!window.kasware);
 
       let signedTx;
       
       // Use native signing (works on mobile and desktop)
       if (privateKey) {
+        console.log("Using native signing");
+        setSigningStatus("Signing with your wallet...");
         signedTx = await signLocally(privateKey, txObj);
       } else if (window.kasware) {
+        console.log("Using Kasware");
+        setSigningStatus("Check your Kasware wallet...");
         signedTx = await signWithKasware(txObj);
       } else {
         throw new Error("No wallet found. Import or create a wallet first.");
@@ -144,7 +150,7 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
       setSigningStatus("Signature obtained!");
       return signedTx;
     } catch (err) {
-      setError(`Signing failed: ${err.message}`);
+      setError(`${err.message}`);
       setSigningStatus("");
       return null;
     }
