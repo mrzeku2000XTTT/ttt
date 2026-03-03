@@ -41,6 +41,8 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [signingStatus, setSigningStatus] = useState("");
+  const [showSigningModal, setShowSigningModal] = useState(false);
+  const [txToSign, setTxToSign] = useState(null);
 
   const validateStep1 = () => {
     if (!toAddress.startsWith("kaspa:")) return "Recipient must be a valid kaspa: address";
