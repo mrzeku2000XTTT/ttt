@@ -120,8 +120,8 @@ export default function KivRPage() {
           onConnect={setConnectedAddress}
         />
 
-        {/* How it works */}
-        <HowItWorksSection />
+        {/* How it works (only show if no wallet yet) */}
+        {!connectedAddress && <HowItWorksSection />}
 
         {/* Presets section */}
         {connectedAddress && (
