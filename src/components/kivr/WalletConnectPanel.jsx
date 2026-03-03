@@ -441,11 +441,13 @@ export default function WalletConnectPanel({ connectedAddress, onConnect, refres
   // Persist wallets
   useEffect(() => { saveWallets(wallets); }, [wallets]);
 
-  const addAndConnect = (address, name, source = "manual") => {
+  const addAndConnect = (address, name, source = "manual", privateKey = null) => {
     setWallets(prev => {
       const exists = prev.find(w => w.address === address);
       if (exists) return prev.map(w => w.address === address ? { ...w, name } : w);
-      return [...prev, { address, name, source }];
+      const newWallet = { address, name, source };
+      if (privateKey) newWallet.privateKey = privateKey; // Store encrypted key for mobile signing
+      return [...prev, newWallet];
     });
     onConnect(address);
     setModal(null);
