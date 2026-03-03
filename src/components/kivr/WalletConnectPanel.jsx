@@ -211,13 +211,13 @@ export default function WalletConnectPanel({ connectedAddress, onConnect }) {
         {mode === "create" && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 overflow-y-auto"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
             style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)" }}
           >
             <motion.div
-              initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
-              className="w-full max-w-sm rounded-3xl p-6 space-y-4 my-4"
-              style={{ background: "#0f0f0f", border: "1px solid rgba(255,255,255,0.1)" }}
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-sm rounded-3xl p-6 space-y-4 overflow-y-auto"
+              style={{ background: "#0f0f0f", border: "1px solid rgba(255,255,255,0.1)", maxHeight: "90vh" }}
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-white font-bold text-lg">Create Kaspa Wallet</h3>
