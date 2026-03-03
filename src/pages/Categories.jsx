@@ -149,7 +149,7 @@ export default function CategoriesPage() {
       { id: "articles", name: "Articles", icon: "FileText", path: "Articles" },
       { id: "bmtuniv", name: "BMT Univ", icon: "BookOpen", path: "BMTUniv" },
       { id: "llmscraper", name: "LLM Miner", icon: "Terminal", path: "LLMScraper" },
-      { id: "kivr", name: "KivR", icon: "Phone", path: "KivR" },
+      { id: "kivr", name: "KivR", icon: "Phone", path: "KivR", customIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a3f7bbc81_IMG_1275.jpg" },
       ];
 
     // Public apps available to everyone
@@ -410,7 +410,7 @@ export default function CategoriesPage() {
       { id: "articles", name: "Articles", icon: "FileText", path: "Articles" },
       { id: "bmtuniv", name: "BMT Univ", icon: "BookOpen", path: "BMTUniv" },
       { id: "llmscraper", name: "LLM Miner", icon: "Terminal", path: "LLMScraper" },
-      { id: "kivr", name: "KivR", icon: "Phone", path: "KivR" },
+      { id: "kivr", name: "KivR", icon: "Phone", path: "KivR", customIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a3f7bbc81_IMG_1275.jpg" },
       { id: "calculator", name: "Calculator", icon: "Activity", path: "Calculator" },
       ...(isAdmin ? [
         { id: "arcade", name: "Arcade", icon: "Gamepad2", path: "Arcade" },
