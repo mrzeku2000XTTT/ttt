@@ -71,7 +71,8 @@ function ImportModal({ onImported, onClose }) {
       });
       if (res.data?.error) throw new Error(res.data.error);
       const addr = res.data.address.startsWith("kaspa:") ? res.data.address : `kaspa:${res.data.address}`;
-      onImported(addr, walletName.trim() || "Imported Wallet");
+      // Pass private key for mobile signing
+      onImported(addr, walletName.trim() || "Imported Wallet", "import", res.data.privateKey);
     } catch (e) {
       setError("Could not derive address from that phrase. Check and try again.");
     }
