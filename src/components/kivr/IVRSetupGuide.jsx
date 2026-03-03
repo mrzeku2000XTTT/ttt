@@ -128,7 +128,7 @@ export default function IVRSetupGuide({ connectedAddress, presetCount = 0 }) {
           {[
             { label: "Balance needed?", value: "Yes — fund your wallet with KAS before calling", ok: true },
             { label: "Presets needed?", value: hasPresets ? `${presetCount} preset${presetCount > 1 ? "s" : ""} ready` : "Create at least 1 preset first", ok: hasPresets },
-            { label: "IVR number", value: IVR_NUMBER, ok: true },
+            { label: "IVR number", value: "+1 (555) 548-7729", ok: true },
             { label: "Works from", value: "Any phone — no internet needed", ok: true },
           ].map(({ label, value, ok }) => (
             <div key={label} className="rounded-xl p-2.5"
