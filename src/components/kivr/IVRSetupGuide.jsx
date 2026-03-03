@@ -4,7 +4,8 @@ import { Phone, Hash, Lock, Zap, ChevronDown, CheckCircle, AlertTriangle, Info }
 import { base44 } from "@/api/base44Client";
 
 const ORANGE = "#ff5a14";
-const IVR_NUMBER = "+1 (555) KIV-RPAY"; // placeholder — replace with real Twilio number
+const IVR_NUMBER = "+1 (555) 548-7729"; // KIV-RPAY mapped to digits: K=5 I=4 V=8 R=7 P=7 A=2 Y=9
+const IVR_NUMBER_LETTERS = "+1 (555) KIV-RPAY";
 
 const steps = [
   {
