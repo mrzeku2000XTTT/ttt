@@ -92,6 +92,7 @@ export default function AppStorePage() {
     { name: "Xùnhuà", icon: "Link2", path: "Xunhua", category: "Creative", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/21e345685_9541BAAA-657B-4CEB-8046-05643663293C.png", circular: true },
     { name: "Terra", icon: "Link2", path: "Terra", category: "Tools", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/46832045f_IMG_1195.jpg" },
     { name: "RufzeitK", icon: "Link2", path: "RufzeitKHome", category: "Communication", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/7a9ae8d5f_image.png", circular: true },
+    { name: "KivR", icon: "Link2", path: "KivR", category: "Finance", defaultIcon: "https://ui-avatars.com/api/?name=K&size=128&background=ff5a14&color=ffffff&bold=true&font-size=0.6" },
     ];
 
   const getIconComponent = (iconName) => {

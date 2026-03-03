@@ -148,6 +148,7 @@ export default function CategoriesPage() {
       { id: "articles", name: "Articles", icon: "FileText", path: "Articles" },
       { id: "bmtuniv", name: "BMT Univ", icon: "BookOpen", path: "BMTUniv" },
       { id: "llmscraper", name: "LLM Miner", icon: "Terminal", path: "LLMScraper" },
+      { id: "kivr", name: "KivR", icon: "Phone", path: "KivR" },
       ];
 
     // Public apps available to everyone
