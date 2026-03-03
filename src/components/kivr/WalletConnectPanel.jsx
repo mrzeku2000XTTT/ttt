@@ -483,7 +483,7 @@ export default function WalletConnectPanel({ connectedAddress, onConnect }) {
   if (connectedAddress && wallets.length > 0) {
     return (
       <>
-        <WalletBalance address={connectedAddress} />
+        <WalletBalance address={connectedAddress} refreshKey={props.refreshKey} />
         <WalletManagePanel
           wallets={wallets}
           activeAddress={connectedAddress}
