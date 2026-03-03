@@ -113,6 +113,7 @@ export default function KivRPage() {
         <WalletConnectPanel
           connectedAddress={connectedAddress}
           onConnect={setConnectedAddress}
+          refreshKey={presets.length}
         />
 
         {!connectedAddress && <HowItWorksSection />}
