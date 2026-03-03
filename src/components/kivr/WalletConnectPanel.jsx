@@ -223,7 +223,7 @@ export default function WalletConnectPanel({ connectedAddress, onConnect }) {
                 <button onClick={() => setMode(null)}><X size={18} color="rgba(255,255,255,0.4)" /></button>
               </div>
 
-              {step === "options" && !newWallet && (
+              {step === "options" && (
                 <>
                   <div className="flex items-start gap-3 rounded-xl p-3"
                     style={{ background: "rgba(255,165,0,0.08)", border: "1px solid rgba(255,165,0,0.2)" }}>
@@ -248,16 +248,36 @@ export default function WalletConnectPanel({ connectedAddress, onConnect }) {
                       ))}
                     </div>
                   </div>
-                  {error && <p className="text-xs" style={{ color: "#ff3b30" }}>{error}</p>}
                   <button
                     onClick={createWallet}
-                    disabled={creating}
                     className="w-full py-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2"
-                    style={{ background: ORANGE, opacity: creating ? 0.7 : 1 }}
+                    style={{ background: ORANGE }}
                   >
-                    {creating ? <><RefreshCw size={14} className="animate-spin" /> Generating...</> : "Generate Wallet"}
+                    Generate Wallet
                   </button>
                 </>
+              )}
+
+              {step === "loading" && (
+                <div className="flex flex-col items-center justify-center py-10 gap-4">
+                  <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
+                    <RefreshCw size={36} color={ORANGE} />
+                  </motion.div>
+                  <p className="text-sm" style={{ color: "rgba(255,255,255,0.5)" }}>Generating secure wallet...</p>
+                </div>
+              )}
+
+              {step === "error" && (
+                <div className="flex flex-col items-center justify-center py-8 gap-4">
+                  <AlertTriangle size={36} color="#ff9500" />
+                  <p className="text-white font-bold">Generation failed</p>
+                  <p className="text-xs text-center" style={{ color: "rgba(255,255,255,0.4)" }}>Could not create wallet. Please try again.</p>
+                  <button onClick={() => { setStep("options"); setError(""); }}
+                    className="w-full py-3 rounded-xl text-white font-bold text-sm"
+                    style={{ background: ORANGE }}>
+                    Try Again
+                  </button>
+                </div>
               )}
 
               {step === "reveal" && newWallet && (
