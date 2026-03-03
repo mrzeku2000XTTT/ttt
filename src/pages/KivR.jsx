@@ -213,6 +213,16 @@ export default function KivRPage() {
       </AnimatePresence>
 
       <AnimatePresence>
+        {showCall && (
+          <InAppIVRCall
+            connectedAddress={connectedAddress}
+            presets={presets}
+            onClose={() => setShowCall(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {showCreate && (
           <CreatePresetModal
             fromAddress={connectedAddress}
