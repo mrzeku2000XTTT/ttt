@@ -54,8 +54,9 @@ export default function WalletConnectPanel({ connectedAddress, onConnect }) {
   };
 
   const finishCreate = () => {
-    const addr = `kaspa:${newWallet.address}`;
-    onConnect(addr.startsWith("kaspa:") ? addr : `kaspa:${addr}`);
+    // address from backend is already stripped of kaspa: prefix
+    const addr = newWallet.address.startsWith("kaspa:") ? newWallet.address : `kaspa:${newWallet.address}`;
+    onConnect(addr);
     setMode(null);
     setStep("options");
     setNewWallet(null);
