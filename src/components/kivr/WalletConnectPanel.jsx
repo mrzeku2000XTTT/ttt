@@ -497,8 +497,8 @@ export default function WalletConnectPanel({ connectedAddress, onConnect, refres
           onAdd={setModal}
         />
         <AnimatePresence>
-          {modal === "create" && <CreateModal onCreated={(a, n) => addAndConnect(a, n, "create")} onClose={() => setModal(null)} />}
-          {modal === "import" && <ImportModal onImported={(a, n) => addAndConnect(a, n, "import")} onClose={() => setModal(null)} />}
+          {modal === "create" && <CreateModal onCreated={(a, n, s, pk) => addAndConnect(a, n, s, pk)} onClose={() => setModal(null)} />}
+          {modal === "import" && <ImportModal onImported={(a, n, s, pk) => addAndConnect(a, n, s, pk)} onClose={() => setModal(null)} />}
           {modal === "manual" && <ManualModal onConnect={(a, n) => addAndConnect(a, n, "manual")} onClose={() => setModal(null)} />}
         </AnimatePresence>
       </>
