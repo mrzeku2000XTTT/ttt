@@ -6,10 +6,18 @@ import { KaspaWallet } from 'npm:@okxweb3/coin-kaspa@2.4.9';
 Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
-    const strength = body.wordCount === 24 ? 256 : 128;
 
-    // 1. Generate mnemonic
-    const mnemonic = bip39.generateMnemonic(wordlist, strength);
+    // Support import mode — use provided mnemonic instead of generating one
+    let mnemonic;
+    if (body.importMode && body.mnemonic) {
+      mnemonic = body.mnemonic.trim();
+      if (!bip39.validateMnemonic(mnemonic, wordlist)) {
+        return Response.json({ error: 'Invalid mnemonic phrase' }, { status: 400 });
+      }
+    } else {
+      const strength = body.wordCount === 24 ? 256 : 128;
+      mnemonic = bip39.generateMnemonic(wordlist, strength);
+    }
 
     // 2. Derive private key using OKX Kaspa SDK (matches Kaspium)
     const wallet = new KaspaWallet();
