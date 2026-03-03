@@ -10,6 +10,7 @@ import WalletConnectPanel from "@/components/kivr/WalletConnectPanel";
 import PresetCard from "@/components/kivr/PresetCard";
 import CreatePresetModal from "@/components/kivr/CreatePresetModal";
 import HowItWorksSection from "@/components/kivr/HowItWorksSection";
+import IVRSetupGuide from "@/components/kivr/IVRSetupGuide";
 
 const ORANGE = "#ff5a14";
 
