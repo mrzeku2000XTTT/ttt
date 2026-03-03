@@ -12,9 +12,15 @@ export default function SigningModal({
   onSigned, 
   onCancel 
 }) {
-  const [status, setStatus] = useState("confirming"); // confirming -> signing -> signed -> error
+  const [status, setStatus] = useState("confirming");
   const [error, setError] = useState("");
   const [signedTx, setSignedTx] = useState(null);
+
+  useEffect(() => {
+    if (isOpen && status === "confirming") {
+      setError("");
+    }
+  }, [isOpen]);
 
   const signTransaction = async () => {
     setStatus("signing");
