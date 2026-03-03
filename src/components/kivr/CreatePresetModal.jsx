@@ -63,6 +63,8 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
       const err = validateStep2();
       if (err) { setError(err); return; }
       setStep(3);
+    } else if (step === 3) {
+      setStep(4);
     }
   };
 
