@@ -23,6 +23,7 @@ export default function KivRPage() {
   const [presets, setPresets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [showCall, setShowCall] = useState(false);
 
   useEffect(() => {
     if (connectedAddress) {
