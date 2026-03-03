@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle, AlertTriangle, Loader2, Lock } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 
 const ORANGE = "#ff5a14";
 
