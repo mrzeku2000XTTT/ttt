@@ -220,7 +220,7 @@ export default function WalletConnectPanel({ connectedAddress, onConnect }) {
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-white font-bold text-lg">Create Kaspa Wallet</h3>
-                <button onClick={() => setMode(null)}><X size={18} color="rgba(255,255,255,0.4)" /></button>
+                <button onClick={() => { setMode(null); setStep("options"); setNewWallet(null); setError(""); setConfirmed(false); }}><X size={18} color="rgba(255,255,255,0.4)" /></button>
               </div>
 
               {step === "options" && (
