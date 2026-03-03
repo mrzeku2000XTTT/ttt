@@ -18,47 +18,29 @@ export default function SigningModal({
   const signTransaction = async () => {
     setStatus("signing");
     try {
-      // Import tweetnacl for Ed25519 signing (Kaspa uses Ed25519)
-      const nacl = await import('npm:tweetnacl@1.1.2');
-      
-      // Derive key pair from private key
-      // Private key should be 32 bytes for Ed25519
-      const privateKeyBytes = privateKey.startsWith('0x') 
-        ? Buffer.from(privateKey.slice(2), 'hex')
-        : Buffer.from(privateKey, 'hex');
-
-      if (privateKeyBytes.length !== 32) {
-        throw new Error('Invalid private key length');
+      if (!privateKey) {
+        throw new Error('No private key available');
       }
 
-      // Create keypair from secret key
-      const keyPair = nacl.sign.keyPair.fromSecretKey(privateKeyBytes);
+      // Call backend to sign transaction (handles Ed25519 signing securely)
+      const res = await base44.functions.invoke("signKaspaTransaction", {
+        privateKey: privateKey,
+        transaction: transaction,
+      });
 
-      // Create transaction message to sign
-      const txMessage = JSON.stringify(transaction);
-      const messageBytes = new TextEncoder().encode(txMessage);
+      if (res.data?.error) throw new Error(res.data.error);
+      if (!res.data?.signedTx) throw new Error("No signed transaction returned");
 
-      // Sign the message
-      const signature = nacl.sign.detached(messageBytes, keyPair.secretKey);
-      
-      // Create signed transaction object
-      const signed = {
-        ...transaction,
-        signature: Buffer.from(signature).toString('hex'),
-        publicKey: Buffer.from(keyPair.publicKey).toString('hex'),
-        signedAt: new Date().toISOString(),
-      };
-
-      setSignedTx(JSON.stringify(signed));
+      setSignedTx(res.data.signedTx);
       setStatus("signed");
       
       // Auto-confirm after 1.5 seconds
       setTimeout(() => {
-        onSigned(JSON.stringify(signed));
+        onSigned(res.data.signedTx);
       }, 1500);
 
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Signing failed");
       setStatus("error");
     }
   };
