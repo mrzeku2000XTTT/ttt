@@ -40,7 +40,7 @@ export default function WalletConnectPanel({ connectedAddress, onConnect }) {
   };
 
   const createWallet = async () => {
-    setCreating(true);
+    setStep("loading");
     setError("");
     try {
       const res = await base44.functions.invoke("createKaspaWallet", { wordCount });
@@ -48,9 +48,9 @@ export default function WalletConnectPanel({ connectedAddress, onConnect }) {
       setNewWallet(res.data);
       setStep("reveal");
     } catch (err) {
+      setStep("error");
       setError("Failed to generate wallet. Try again.");
     }
-    setCreating(false);
   };
 
   const finishCreate = () => {
