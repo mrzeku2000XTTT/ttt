@@ -304,7 +304,7 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
               style={{ background: "rgba(255,165,0,0.08)", border: "1px solid rgba(255,165,0,0.2)" }}>
               <AlertTriangle size={12} color="#ff9500" className="flex-shrink-0 mt-0.5" />
               <span style={{ color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>
-                Next, you'll sign this transaction with Kasware. Your private key never leaves your device.
+                Next, we'll sign this transaction securely. Your private key never leaves your device.
               </span>
             </div>
           </div>
