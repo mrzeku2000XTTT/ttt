@@ -171,6 +171,27 @@ export default function KivRPage() {
       </div>
 
       <AnimatePresence>
+        {connectedAddress && activePresets.length > 0 && (
+          <motion.button
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            onClick={() => setShowCall(true)}
+            className="fixed left-5 z-40 w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl"
+            style={{
+              bottom: 'calc(env(safe-area-inset-bottom, 0px) + 5rem)',
+              background: `linear-gradient(135deg, #1a6e2e, #0f4a1e)`,
+              boxShadow: `0 8px 32px rgba(52,199,89,0.4)`,
+            }}
+            whileHover={{ scale: 1.07 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Phone size={22} color="white" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {connectedAddress && (
           <motion.button
             initial={{ scale: 0, opacity: 0 }}
