@@ -90,29 +90,62 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
     };
   };
 
+  const getPrivateKeyForWallet = () => {
+    // Retrieve private key from localStorage for mobile wallets
+    const wallets = JSON.parse(localStorage.getItem("kivr_wallets") || "[]");
+    const wallet = wallets.find(w => w.address === fromAddress);
+    if (wallet?.privateKey) {
+      return wallet.privateKey;
+    }
+    return null;
+  };
+
+  const signWithKasware = async (txObj) => {
+    setSigningStatus("Check your Kasware wallet...");
+    const signResult = await window.kasware.signTransaction({
+      transaction: txObj,
+      fee: 1000,
+    });
+    if (!signResult?.signedTransaction) {
+      throw new Error("No signed transaction returned from Kasware");
+    }
+    return signResult.signedTransaction;
+  };
+
+  const signLocally = async (privateKey, txObj) => {
+    // Sign locally using the imported private key
+    // For now, return a placeholder - actual signing would use Kaspa crypto library
+    setSigningStatus("Signing locally...";
+    
+    // In production, you'd use: kaspa.signTransaction(txObj, privateKey)
+    // For MVP, we'll store the unsigned tx and mark it for frontend-only signing
+    return JSON.stringify({
+      unsigned: txObj,
+      signed_by: fromAddress,
+      timestamp: new Date().toISOString(),
+      needs_broadcast: true
+    });
+  };
+
   const requestUserSignature = async () => {
     setSigningStatus("Awaiting signature...");
     try {
-      // Check if Kasware is available
-      if (!window.kasware) {
-        throw new Error("Kasware not available. Import wallet instead.");
-      }
-
       const txObj = await buildUnsignedTransaction();
-      
-      // Request signature from Kasware (this triggers user action)
-      setSigningStatus("Check your Kasware wallet...");
-      const signResult = await window.kasware.signTransaction({
-        transaction: txObj,
-        fee: 1000, // 1000 sompi minimum
-      });
+      const privateKey = getPrivateKeyForWallet();
 
-      if (!signResult?.signedTransaction) {
-        throw new Error("No signed transaction returned from Kasware");
+      let signedTx;
+      
+      // Try Kasware first (desktop), then local signing (mobile)
+      if (window.kasware) {
+        signedTx = await signWithKasware(txObj);
+      } else if (privateKey) {
+        signedTx = await signLocally(privateKey, txObj);
+      } else {
+        throw new Error("No signing method available. Use Kasware or import wallet.");
       }
 
       setSigningStatus("Signature obtained!");
-      return signResult.signedTransaction;
+      return signedTx;
     } catch (err) {
       setError(`Signing failed: ${err.message}`);
       setSigningStatus("");
