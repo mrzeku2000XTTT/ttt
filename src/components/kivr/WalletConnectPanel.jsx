@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Wallet, Plus, Key, Check, AlertTriangle, RefreshCw, Copy, Shield, X,
-  ExternalLink, Download, ChevronDown, LogOut, Edit3, Eye, EyeOff, Users
+  ExternalLink, Download, ChevronDown, LogOut, Edit3, Eye, EyeOff
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
@@ -285,7 +285,7 @@ function ManualModal({ onConnect, onClose }) {
 }
 
 // ── Wallet management panel (when connected) ───────────────────────────────────
-function WalletManagePanel({ wallets, activeAddress, onSwitch, onDisconnect, onRename, onAdd, onViewContacts }) {
+function WalletManagePanel({ wallets, activeAddress, onSwitch, onDisconnect, onRename, onAdd }) {
   const [open, setOpen] = useState(false);
   const [renaming, setRenaming] = useState(null);
   const [newName, setNewName] = useState("");
@@ -363,7 +363,7 @@ function WalletManagePanel({ wallets, activeAddress, onSwitch, onDisconnect, onR
             ))}
 
             {/* Add wallet options */}
-            <div className="px-4 py-3 flex gap-2 flex-wrap">
+            <div className="px-4 py-3 flex gap-2">
               <button onClick={() => { onAdd("create"); setOpen(false); }}
                 className="flex-1 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5"
                 style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)" }}>
@@ -378,11 +378,6 @@ function WalletManagePanel({ wallets, activeAddress, onSwitch, onDisconnect, onR
                 className="flex-1 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5"
                 style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)" }}>
                 <Key size={12} /> Address
-              </button>
-              <button onClick={() => { onViewContacts(); setOpen(false); }}
-                className="flex-1 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5"
-                style={{ background: "rgba(255,90,20,0.12)", border: "1px solid rgba(255,90,20,0.25)", color: "#ff5a14" }}>
-                <Users size={12} /> Contacts
               </button>
             </div>
           </motion.div>
@@ -439,7 +434,7 @@ function WalletBalance({ address, refreshKey }) {
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
-export default function WalletConnectPanel({ connectedAddress, onConnect, refreshKey, onViewContacts }) {
+export default function WalletConnectPanel({ connectedAddress, onConnect, refreshKey }) {
   const props = { refreshKey };
   const [wallets, setWallets] = useState(() => loadWallets());
   const [modal, setModal] = useState(null); // null | 'create' | 'import' | 'manual' | 'kasware'
@@ -506,7 +501,6 @@ export default function WalletConnectPanel({ connectedAddress, onConnect, refres
           onDisconnect={disconnectWallet}
           onRename={renameWallet}
           onAdd={setModal}
-          onViewContacts={onViewContacts || (() => {})}
         />
         <AnimatePresence>
           {modal === "create" && <CreateModal onCreated={(a, n, s, pk) => addAndConnect(a, n, s, pk)} onClose={() => setModal(null)} />}

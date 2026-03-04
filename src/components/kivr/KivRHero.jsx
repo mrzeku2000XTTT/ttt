@@ -23,8 +23,8 @@ export default function KivRHero() {
           <img
             src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a3f7bbc81_IMG_1275.jpg"
             alt="KivR Logo"
-            className="w-full h-full object-contain"
-            style={{ background: "#1a0a00" }}
+            className="w-full h-full object-cover"
+            style={{ objectPosition: "center 20%" }}
           />
         </div>
       </motion.div>
