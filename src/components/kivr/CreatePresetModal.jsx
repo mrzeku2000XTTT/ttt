@@ -73,98 +73,10 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
     return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
   };
 
-  const buildUnsignedTransaction = async () => {
-    // Build a basic unsigned transaction object for user signing
-    return {
-      inputs: [],
-      outputs: [{ address: toAddress, amount: Math.round(parseFloat(amount) * 1e8) }],
-      change_address: fromAddress,
-      fee_rate: 1,
-      metadata: {
-        label: label || `Pay ${parseFloat(amount)} KAS`,
-        from: fromAddress,
-        to: toAddress,
-        amount: parseFloat(amount),
-      }
-    };
-  };
-
-  const getPrivateKeyForWallet = () => {
-    // Retrieve private key from localStorage for mobile wallets
-    const wallets = JSON.parse(localStorage.getItem("kivr_wallets") || "[]");
-    const wallet = wallets.find(w => w.address === fromAddress);
-    if (wallet?.privateKey) {
-      return wallet.privateKey;
-    }
-    return null;
-  };
-
-  const signWithKasware = async (txObj) => {
-    setSigningStatus("Check your Kasware wallet...");
-    const signResult = await window.kasware.signTransaction({
-      transaction: txObj,
-      fee: 1000,
-    });
-    if (!signResult?.signedTransaction) {
-      throw new Error("No signed transaction returned from Kasware");
-    }
-    return signResult.signedTransaction;
-  };
-
-  const signLocally = (privateKey, txObj) => {
-    // Show native signing modal - returns promise when user signs
-    return new Promise((resolve, reject) => {
-      setTxToSign(txObj);
-      setShowSigningModal(true);
-      window._signingPromise = { resolve, reject };
-    });
-  };
-
-  const requestUserSignature = async () => {
-    try {
-      const txObj = await buildUnsignedTransaction();
-      const privateKey = getPrivateKeyForWallet();
-
-      console.log("Private key found:", !!privateKey);
-      console.log("Kasware available:", !!window.kasware);
-
-      let signedTx;
-      
-      // Use native signing (works on mobile and desktop)
-      if (privateKey) {
-        console.log("Using native signing");
-        setSigningStatus("Signing with your wallet...");
-        signedTx = await signLocally(privateKey, txObj);
-      } else if (window.kasware) {
-        console.log("Using Kasware");
-        setSigningStatus("Check your Kasware wallet...");
-        signedTx = await signWithKasware(txObj);
-      } else {
-        throw new Error("No wallet found. Import or create a wallet first.");
-      }
-
-      setSigningStatus("Signature obtained!");
-      return signedTx;
-    } catch (err) {
-      setError(`${err.message}`);
-      setSigningStatus("");
-      return null;
-    }
-  };
-
   const handleSave = async () => {
     setSaving(true);
     setError("");
-    setSigningStatus("");
-
     try {
-      // Request user signature
-      const signedTxHex = await requestUserSignature();
-      if (!signedTxHex) {
-        setSaving(false);
-        return;
-      }
-
       const pinHash = await hashPin(pin);
       await base44.entities.KivRTransaction.create({
         from_address: fromAddress,
@@ -174,7 +86,6 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
         phone_number: phone,
         pin_hash: pinHash,
         slot_number: parseInt(slot),
-        signed_tx_hex: signedTxHex, // Store the signed transaction
         status: "active",
         uses_remaining: 1,
       });
@@ -183,7 +94,6 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
       setError("Failed to save preset. Try again.");
     }
     setSaving(false);
-    setSigningStatus("");
   };
 
   const stepLabels = ["Payment Info", "IVR Setup", "Confirm"];
