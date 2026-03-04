@@ -335,16 +335,24 @@ export default function WalletPage() {
     setError(null);
     try {
       const res = await base44.functions.invoke('hashPin', { pin });
-      if (res.data?.success) {
-        await base44.auth.updateMe({ wallet_pin_hash: res.data.hash });
-        setPinSet(true);
-        setShowPinSetup(false);
-        setUser(u => ({ ...u, wallet_pin_hash: res.data.hash }));
-        showToast('PIN set!', 'success');
-        setPin(''); setConfirmPin('');
-      }
-    } catch { setError('Failed to set PIN'); }
-    finally { setIsSettingPin(false); }
+      const hash = res.data?.hash;
+      if (!hash) throw new Error('Hash not returned');
+      // Store PIN hash locally always (works for non-logged-in too)
+      localStorage.setItem('ttt_wallet_pin_hash', hash);
+      // Also save to user profile if logged in
+      try {
+        await base44.auth.updateMe({ wallet_pin_hash: hash });
+        setUser(u => ({ ...u, wallet_pin_hash: hash }));
+      } catch { /* not logged in, local storage is enough */ }
+      setPinSet(true);
+      setShowPinSetup(false);
+      showToast('PIN set!', 'success');
+      setPin(''); setConfirmPin('');
+    } catch (e) {
+      setError(e?.message || 'Failed to set PIN');
+    } finally {
+      setIsSettingPin(false);
+    }
   };
 
   const handleSealWallet = async () => {
