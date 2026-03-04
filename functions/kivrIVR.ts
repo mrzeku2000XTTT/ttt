@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const { action, phone, pin, slot } = body;
+    const { action, phone, pin, slot, privateKey } = body;
 
     if (!action) return Response.json({ error: 'Missing action' }, { status: 400 });
     if (!phone) return Response.json({ error: 'Missing identifier (phone or wallet address)' }, { status: 400 });
