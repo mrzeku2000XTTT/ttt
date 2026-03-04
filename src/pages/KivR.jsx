@@ -122,6 +122,9 @@ export default function KivRPage() {
           connectedAddress={connectedAddress}
           onConnect={setConnectedAddress}
           refreshKey={presets.length}
+          onViewContacts={() => {
+            document.getElementById("kivr-contacts-section")?.scrollIntoView({ behavior: "smooth" });
+          }}
         />
 
         {!connectedAddress && <HowItWorksSection />}
