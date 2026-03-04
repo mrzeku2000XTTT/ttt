@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, AlertTriangle, CheckCircle, Loader2, Phone, Hash, Tag, ArrowRight, Key } from "lucide-react";
+import { motion } from "framer-motion";
+import { X, AlertTriangle, CheckCircle, Loader2, Phone, Hash, Tag, ArrowRight } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import SigningModal from "./SigningModal";
 
 const ORANGE = "#ff5a14";
 const GLASS = {
