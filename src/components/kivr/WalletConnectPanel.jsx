@@ -439,7 +439,7 @@ function WalletBalance({ address, refreshKey }) {
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
-export default function WalletConnectPanel({ connectedAddress, onConnect, refreshKey }) {
+export default function WalletConnectPanel({ connectedAddress, onConnect, refreshKey, onViewContacts }) {
   const props = { refreshKey };
   const [wallets, setWallets] = useState(() => loadWallets());
   const [modal, setModal] = useState(null); // null | 'create' | 'import' | 'manual' | 'kasware'
