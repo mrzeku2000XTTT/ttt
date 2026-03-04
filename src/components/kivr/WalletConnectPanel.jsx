@@ -144,7 +144,7 @@ function CreateModal({ onCreated, onClose }) {
       if (res.data?.error) throw new Error(res.data.error);
       setNewWallet(res.data);
       setStep("reveal");
-    } catch { setStep("error"); }
+    } catch (e) { setError(e?.message || "Generation failed"); setStep("error"); }
   };
 
   const copyMnemonic = () => {
