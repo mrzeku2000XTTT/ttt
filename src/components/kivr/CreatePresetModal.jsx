@@ -208,6 +208,9 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
         {step === 1 && (
           <div className="space-y-4">
             <InputField label="Recipient Address" value={toAddress} onChange={setToAddress} placeholder="kaspa:q..." />
+            {toAddress.startsWith("kaspa:") && (
+              <SaveContactInline fromAddress={fromAddress} toAddress={toAddress} defaultAmount={amount} />
+            )}
             <InputField label="Amount (KAS)" value={amount} onChange={setAmount} placeholder="e.g. 100" type="number" />
             <InputField label="Label (optional)" value={label} onChange={setLabel} placeholder="e.g. Pay Merchant A" />
           </div>
