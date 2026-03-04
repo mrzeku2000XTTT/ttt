@@ -10,6 +10,7 @@ export default function InAppIVRCall({ connectedAddress, presets, onClose }) {
   const [transcript, setTranscript] = useState([]);
   const [listening, setListening] = useState(false);
   const [muted, setMuted] = useState(false);
+  const [speakSupported, setSpeakSupported] = useState(false);
   const [pin, setPin] = useState("");
   const [pinInput, setPinInput] = useState("");
   const [slotPresets, setSlotPresets] = useState([]);
