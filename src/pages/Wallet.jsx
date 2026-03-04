@@ -221,6 +221,7 @@ export default function WalletPage() {
         const localAddr = localStorage.getItem('ttt_wallet_address');
         if (localAddr) {
           setAddress(localAddr);
+          setPinSet(!!localStorage.getItem('ttt_wallet_pin_hash'));
           startBalancePolling(localAddr);
         }
       }
