@@ -73,13 +73,9 @@ export default function InAppIVRCall({ connectedAddress, presets, contacts = [],
   const recognitionRef = useRef(null);
   const transcriptRef = useRef(null);
   const phaseRef = useRef("idle");
-  const pendingContactRef = useRef(null);
-  const pendingAmountRef = useRef("");
 
   useEffect(() => { mutedRef.current = muted; }, [muted]);
   useEffect(() => { phaseRef.current = phase; }, [phase]);
-  useEffect(() => { pendingContactRef.current = pendingContact; }, [pendingContact]);
-  useEffect(() => { pendingAmountRef.current = pendingAmount; }, [pendingAmount]);
 
   useEffect(() => {
     if (transcriptRef.current) transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
@@ -423,18 +419,18 @@ export default function InAppIVRCall({ connectedAddress, presets, contacts = [],
   };
 
   const handleContactTap = async (contact) => {
-    // Stop any active speech recognition to avoid it interfering
-    if (recognitionRef.current) { try { recognitionRef.current.abort(); } catch {} }
     setPendingContact(contact);
     setTranscript(prev => [...prev, { role: "user", text: contact.contact_name }]);
     if (contact.default_amount) {
       setPendingAmount(contact.default_amount.toString());
-      await speak(`Paying ${contact.contact_name}, ${contact.default_amount} KAS. Type your PIN below to confirm.`);
+      await speak(`Paying ${contact.contact_name}, ${contact.default_amount} KAS. Say your PIN to confirm.`);
       setPhase("awaiting_contact_pin");
+      listenForContactPinOrAmount(contact, contact.default_amount.toString());
     } else {
       setAwaitingContactAmount(true);
-      await speak(`How much KAS to send to ${contact.contact_name}? Type amount below.`);
+      await speak(`How much KAS to send to ${contact.contact_name}?`);
       setPhase("awaiting_contact_amount");
+      listenForAmount(contact);
     }
   };
 
@@ -600,8 +596,7 @@ export default function InAppIVRCall({ connectedAddress, presets, contacts = [],
                     setTranscript(prev => [...prev, { role: "user", text: val }]);
                     setTextInput("");
                     // route through the same logic as speech
-                    const currentPhase = phaseRef.current;
-                    if (currentPhase === "awaiting_intent") {
+                    if (phase === "awaiting_intent") {
                       const contact = findContact(val);
                       if (contact) { handleContactTap(contact); return; }
                       const digits = extractDigits(val);
@@ -613,28 +608,21 @@ export default function InAppIVRCall({ connectedAddress, presets, contacts = [],
                         });
                         return;
                       }
-                    } else if (currentPhase === "awaiting_pin") {
+                    } else if (phase === "awaiting_pin") {
                       const digits = extractDigits(val);
                       if (digits.length >= 4) verifyPin(digits, presets.filter(p => p.status === "active"));
-                    } else if (currentPhase === "awaiting_contact_pin") {
-                      const c = pendingContactRef.current;
-                      const a = pendingAmountRef.current;
-                      if (c) {
-                        const digits = extractDigits(val);
-                        if (digits.length >= 4) verifyContactPin(c, digits, a);
+                    } else if (phase === "awaiting_contact_pin" && pendingContact) {
+                      const digits = extractDigits(val);
+                      if (digits.length >= 4) verifyContactPin(pendingContact, digits, pendingAmount);
+                    } else if (phase === "awaiting_contact_amount" && pendingContact) {
+                      const amt = parseFloat(val);
+                      if (amt > 0) {
+                        setPendingAmount(amt.toString());
+                        speak(`Sending ${amt} KAS to ${pendingContact.contact_name}. Say or type your PIN to confirm.`).then(() => {
+                          setPhase("awaiting_contact_pin");
+                        });
                       }
-                    } else if (currentPhase === "awaiting_contact_amount") {
-                      const c = pendingContactRef.current;
-                      if (c) {
-                        const amt = parseFloat(val);
-                        if (amt > 0) {
-                          setPendingAmount(amt.toString());
-                          speak(`Sending ${amt} KAS to ${c.contact_name}. Type your PIN to confirm.`).then(() => {
-                            setPhase("awaiting_contact_pin");
-                          });
-                        }
-                      }
-                    } else if (currentPhase === "slot_selection") {
+                    } else if (phase === "slot_selection") {
                       const digits = extractDigits(val);
                       const slotNum = parseInt(digits[0]);
                       if (slotNum >= 1 && slotNum <= 9) {
@@ -656,8 +644,7 @@ export default function InAppIVRCall({ connectedAddress, presets, contacts = [],
                     const val = textInput.trim();
                     setTranscript(prev => [...prev, { role: "user", text: val }]);
                     setTextInput("");
-                    const cp = phaseRef.current;
-                    if (cp === "awaiting_intent") {
+                    if (phase === "awaiting_intent") {
                       const contact = findContact(val);
                       if (contact) { handleContactTap(contact); return; }
                       const digits = extractDigits(val);
@@ -668,28 +655,21 @@ export default function InAppIVRCall({ connectedAddress, presets, contacts = [],
                         });
                         return;
                       }
-                    } else if (cp === "awaiting_pin") {
+                    } else if (phase === "awaiting_pin") {
                       const digits = extractDigits(val);
                       if (digits.length >= 4) verifyPin(digits, presets.filter(p => p.status === "active"));
-                    } else if (cp === "awaiting_contact_pin") {
-                      const c = pendingContactRef.current;
-                      const a = pendingAmountRef.current;
-                      if (c) {
-                        const digits = extractDigits(val);
-                        if (digits.length >= 4) verifyContactPin(c, digits, a);
+                    } else if (phase === "awaiting_contact_pin" && pendingContact) {
+                      const digits = extractDigits(val);
+                      if (digits.length >= 4) verifyContactPin(pendingContact, digits, pendingAmount);
+                    } else if (phase === "awaiting_contact_amount" && pendingContact) {
+                      const amt = parseFloat(val);
+                      if (amt > 0) {
+                        setPendingAmount(amt.toString());
+                        speak(`Sending ${amt} KAS to ${pendingContact.contact_name}. Type your PIN to confirm.`).then(() => {
+                          setPhase("awaiting_contact_pin");
+                        });
                       }
-                    } else if (cp === "awaiting_contact_amount") {
-                      const c = pendingContactRef.current;
-                      if (c) {
-                        const amt = parseFloat(val);
-                        if (amt > 0) {
-                          setPendingAmount(amt.toString());
-                          speak(`Sending ${amt} KAS to ${c.contact_name}. Type your PIN to confirm.`).then(() => {
-                            setPhase("awaiting_contact_pin");
-                          });
-                        }
-                      }
-                    } else if (cp === "slot_selection") {
+                    } else if (phase === "slot_selection") {
                       const digits = extractDigits(val);
                       const slotNum = parseInt(digits[0]);
                       if (slotNum >= 1 && slotNum <= 9) {
