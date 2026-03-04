@@ -437,6 +437,22 @@ export default function InAppIVRCall({ connectedAddress, presets, onClose }) {
           </div>
         )}
 
+        {/* Tap to speak — shown when in a voice-input phase and not currently listening */}
+        {speakSupported && !listening && ["awaiting_pin", "slot_selection"].includes(phase) && (
+          <div className="px-4 pb-2 flex-shrink-0">
+            <button
+              onClick={() => {
+                if (phase === "awaiting_pin") listenForPin(presets.filter(p => p.status === "active"));
+                else if (phase === "slot_selection") listenForSlot(pin, slotPresets);
+              }}
+              className="w-full py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all active:scale-95"
+              style={{ background: "rgba(255,90,20,0.15)", border: "1px solid rgba(255,90,20,0.35)", color: ORANGE }}
+            >
+              <Mic size={14} /> Tap to Speak
+            </button>
+          </div>
+        )}
+
         {/* Controls */}
         <div className="px-5 py-4 flex items-center justify-center gap-5 flex-shrink-0"
           style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
@@ -444,10 +460,10 @@ export default function InAppIVRCall({ connectedAddress, presets, onClose }) {
           <button onClick={() => setMuted(m => !m)}
             className="w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-90"
             style={{
-              background: muted ? "rgba(255,59,48,0.15)" : "rgba(255,255,255,0.08)",
-              border: `1px solid ${muted ? "rgba(255,59,48,0.4)" : "rgba(255,255,255,0.12)"}`
+              background: muted ? "rgba(255,59,48,0.15)" : listening ? "rgba(255,90,20,0.2)" : "rgba(255,255,255,0.08)",
+              border: `1px solid ${muted ? "rgba(255,59,48,0.4)" : listening ? `1px solid ${ORANGE}` : "rgba(255,255,255,0.12)"}`
             }}>
-            {muted ? <MicOff size={18} color="#ff3b30" /> : <Mic size={18} color="rgba(255,255,255,0.65)" />}
+            {muted ? <MicOff size={18} color="#ff3b30" /> : <Mic size={18} color={listening ? ORANGE : "rgba(255,255,255,0.65)"} />}
           </button>
 
           {/* Main button */}
