@@ -168,16 +168,22 @@ Deno.serve(async (req) => {
 
       let txId;
 
-      // Try pre-signed tx first
-      if (preset.signed_tx_hex) {
-        txId = await broadcastSigned(preset.signed_tx_hex);
-      } else {
-        // Fall back to sending via the sendKaspaTransaction function
-        try {
-          txId = await sendViaFunction(base44, preset.from_address, preset.to_address, preset.amount);
-        } catch (sendErr) {
-          return Response.json({ success: false, error: `Transaction failed: ${sendErr.message}` });
-        }
+      if (!privateKey) {
+        return Response.json({ success: false, error: 'No private key provided. Import your wallet to send transactions.' });
+      }
+
+      // Send transaction using private key via sendKaspaTransaction function
+      try {
+        const res = await base44.asServiceRole.functions.invoke('sendKaspaTransaction', {
+          fromAddress: preset.from_address,
+          toAddress: preset.to_address,
+          amountKas: preset.amount,
+          privateKey: privateKey,
+        });
+        if (res?.error) throw new Error(res.error);
+        txId = res?.txId || res?.txid || res?.transaction_id || 'sent';
+      } catch (sendErr) {
+        return Response.json({ success: false, error: `Transaction failed: ${sendErr.message}` });
       }
 
       const newUses = preset.uses_remaining === -1 ? -1 : preset.uses_remaining - 1;
