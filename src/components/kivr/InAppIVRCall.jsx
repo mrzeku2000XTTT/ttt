@@ -66,6 +66,8 @@ export default function InAppIVRCall({ connectedAddress, presets, contacts = [],
   const [pendingAmount, setPendingAmount] = useState("");
   const [amountInput, setAmountInput] = useState("");
   const [awaitingContactAmount, setAwaitingContactAmount] = useState(false);
+  const [textInput, setTextInput] = useState("");
+  const [micPermission, setMicPermission] = useState("unknown"); // unknown | granted | denied
 
   const mutedRef = useRef(false);
   const recognitionRef = useRef(null);
