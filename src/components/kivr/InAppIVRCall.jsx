@@ -404,8 +404,9 @@ export default function InAppIVRCall({ connectedAddress, presets, contacts = [],
       await speak(`Success! ${chosen.amount} KAS sent for ${chosen.label}.`);
       setPhase("done");
     } else {
-      setError(res.data?.error || "Unknown error");
-      await speak(`Transaction failed: ${res.data?.error}`);
+      const msg = res.data?.error || res.data?.message || JSON.stringify(res.data) || "Transaction failed";
+      setError(msg);
+      await speak(`Transaction failed: ${msg}`);
       setPhase("error");
     }
   };
