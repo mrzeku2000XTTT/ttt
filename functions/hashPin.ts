@@ -3,17 +3,6 @@ import { crypto } from "https://deno.land/std@0.177.0/crypto/mod.ts";
 
 Deno.serve(async (req) => {
     try {
-        const base44 = createClientFromRequest(req);
-        
-        // Authenticate user
-        const user = await base44.auth.me();
-        if (!user) {
-            return Response.json({ 
-                success: false,
-                error: 'Unauthorized' 
-            }, { status: 401 });
-        }
-
         const { pin } = await req.json();
         
         if (!pin || pin.length !== 6 || !/^\d+$/.test(pin)) {
