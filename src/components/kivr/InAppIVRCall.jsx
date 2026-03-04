@@ -115,7 +115,17 @@ export default function InAppIVRCall({ connectedAddress, presets, contacts = [],
     });
   }, []);
 
-  const startListening = useCallback((onResult) => {
+  const requestMicAndListen = useCallback(async (onResult) => {
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+      setMicPermission("granted");
+    } catch {
+      setMicPermission("denied");
+    }
+    startListeningInternal(onResult);
+  }, []);
+
+  const startListeningInternal = useCallback((onResult) => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) { setListening(false); return; }
     if (recognitionRef.current) { try { recognitionRef.current.abort(); } catch {} }
@@ -128,10 +138,17 @@ export default function InAppIVRCall({ connectedAddress, presets, contacts = [],
       setTranscript(prev => [...prev, { role: "user", text: said }]);
       onResult(said);
     };
-    rec.onerror = () => setListening(false);
+    rec.onerror = (e) => {
+      setListening(false);
+      if (e.error === "not-allowed") setMicPermission("denied");
+    };
     recognitionRef.current = rec;
     rec.start();
   }, []);
+
+  const startListening = useCallback((onResult) => {
+    startListeningInternal(onResult);
+  }, [startListeningInternal]);
 
   const extractDigits = (text) => {
     const fromNumbers = text.replace(/[^0-9]/g, "");
