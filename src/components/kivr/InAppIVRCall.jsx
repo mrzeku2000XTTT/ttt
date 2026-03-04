@@ -419,18 +419,18 @@ export default function InAppIVRCall({ connectedAddress, presets, contacts = [],
   };
 
   const handleContactTap = async (contact) => {
+    // Stop any active speech recognition to avoid it interfering
+    if (recognitionRef.current) { try { recognitionRef.current.abort(); } catch {} }
     setPendingContact(contact);
     setTranscript(prev => [...prev, { role: "user", text: contact.contact_name }]);
     if (contact.default_amount) {
       setPendingAmount(contact.default_amount.toString());
-      await speak(`Paying ${contact.contact_name}, ${contact.default_amount} KAS. Say your PIN to confirm.`);
+      await speak(`Paying ${contact.contact_name}, ${contact.default_amount} KAS. Type your PIN below to confirm.`);
       setPhase("awaiting_contact_pin");
-      listenForContactPinOrAmount(contact, contact.default_amount.toString());
     } else {
       setAwaitingContactAmount(true);
-      await speak(`How much KAS to send to ${contact.contact_name}?`);
+      await speak(`How much KAS to send to ${contact.contact_name}? Type amount below.`);
       setPhase("awaiting_contact_amount");
-      listenForAmount(contact);
     }
   };
 
