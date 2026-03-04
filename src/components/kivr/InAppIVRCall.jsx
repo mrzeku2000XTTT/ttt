@@ -60,12 +60,15 @@ export default function InAppIVRCall({ connectedAddress, presets, onClose }) {
       utt.pitch = 1;
       utt.volume = 1;
 
-      // Pick a good voice if available
+      // Pick a female voice preferentially
       const voices = window.speechSynthesis.getVoices();
-      const preferred = voices.find(v =>
-        v.lang.startsWith("en") && (v.name.includes("Samantha") || v.name.includes("Google") || v.name.includes("Natural"))
-      ) || voices.find(v => v.lang.startsWith("en"));
+      const femaleKeywords = ["Samantha", "Victoria", "Karen", "Moira", "Tessa", "Fiona", "Zira", "Susan", "female", "Female"];
+      const preferred =
+        voices.find(v => v.lang.startsWith("en") && femaleKeywords.some(k => v.name.includes(k))) ||
+        voices.find(v => v.lang.startsWith("en-US") && v.name.toLowerCase().includes("google") && v.name.toLowerCase().includes("us")) ||
+        voices.find(v => v.lang.startsWith("en"));
       if (preferred) utt.voice = preferred;
+      utt.pitch = 1.15; // slightly higher pitch for feminine tone
 
       utt.onend = resolve;
       utt.onerror = resolve;
