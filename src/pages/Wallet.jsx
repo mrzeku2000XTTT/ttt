@@ -134,6 +134,9 @@ export default function WalletPage() {
   };
 
   // ── Send KAS via Terra Protocol (sendKaspaTransaction) ────────────────────
+  const [sendMnemonic, setSendMnemonic] = useState('');
+  const [showMnemonicInput, setShowMnemonicInput] = useState(false);
+
   const handleSend = async () => {
     if (!sendTo.trim() || !sendAmount || parseFloat(sendAmount) <= 0) {
       showToast('Enter a valid address and amount', 'error');
@@ -141,24 +144,38 @@ export default function WalletPage() {
     }
     // Retrieve stored private key
     const storedPK = localStorage.getItem('ttt_wallet_pk');
-    if (!storedPK) {
-      showToast('No private key found. Please re-import your wallet.', 'error');
+    if (!storedPK && !sendMnemonic.trim()) {
+      setShowMnemonicInput(true);
       return;
     }
     setIsSending(true);
     try {
-      const res = await base44.functions.invoke('sendKaspaTransaction', {
-        privateKey: storedPK,
+      const payload = {
         fromAddress: address,
         toAddress: sendTo.trim(),
         amountKas: parseFloat(sendAmount),
-      });
+      };
+      if (storedPK) {
+        payload.privateKey = storedPK;
+      } else {
+        // Derive PK from mnemonic, also cache it
+        const pkRes = await base44.functions.invoke('createKaspaWallet', {
+          mnemonic: sendMnemonic.trim(),
+          wordCount: sendMnemonic.trim().split(/\s+/).length,
+          importMode: true,
+        });
+        if (pkRes.data?.error) throw new Error('Invalid seed phrase');
+        payload.privateKey = pkRes.data.privateKey;
+        localStorage.setItem('ttt_wallet_pk', pkRes.data.privateKey);
+      }
+      const res = await base44.functions.invoke('sendKaspaTransaction', payload);
       if (res.data?.error) throw new Error(res.data.error);
       showToast(`Sent! TX: ${String(res.data.txId).slice(0, 16)}...`, 'success');
       setShowSend(false);
       setSendTo('');
       setSendAmount('');
-      // Refresh balance after send
+      setSendMnemonic('');
+      setShowMnemonicInput(false);
       setTimeout(() => fetchBalance(address), 3000);
     } catch (e) {
       showToast(e?.message || 'Send failed', 'error');
