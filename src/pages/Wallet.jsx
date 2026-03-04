@@ -401,6 +401,62 @@ export default function WalletPage() {
         )}
       </AnimatePresence>
 
+      {/* Send Modal */}
+      <AnimatePresence>
+        {showSend && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+            onClick={() => !isSending && setShowSend(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 w-full max-w-md space-y-4"
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-white font-bold text-lg">Send KAS</h3>
+                <button onClick={() => setShowSend(false)} disabled={isSending} className="text-gray-400 hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-1.5 block">Recipient Address</label>
+                <Input
+                  value={sendTo}
+                  onChange={e => setSendTo(e.target.value)}
+                  placeholder="kaspa:q..."
+                  className="bg-black border-zinc-800 text-white font-mono text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-1.5 block">Amount (KAS)</label>
+                <Input
+                  type="number"
+                  value={sendAmount}
+                  onChange={e => setSendAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="bg-black border-zinc-800 text-white"
+                />
+                {kaspaBalance && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Available: {kaspaBalance.balanceKAS.toFixed(4)} KAS
+                    <button onClick={() => setSendAmount(String(Math.max(0, kaspaBalance.balanceKAS - 0.0001).toFixed(8)))} className="ml-2 text-cyan-400 hover:text-cyan-300">Max</button>
+                  </p>
+                )}
+              </div>
+              <Button
+                onClick={handleSend}
+                disabled={isSending || !sendTo.trim() || !sendAmount}
+                className="w-full bg-white text-black hover:bg-gray-200 h-12"
+              >
+                {isSending ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Sending...</> : <><Send className="w-4 h-4 mr-2" />Send KAS</>}
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
