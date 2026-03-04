@@ -380,7 +380,7 @@ function WalletManagePanel({ wallets, activeAddress, onSwitch, onDisconnect, onR
                 style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)" }}>
                 <Key size={12} /> Address
               </button>
-              <button onClick={() => { onViewContacts(); setOpen(false); }}
+              <button onClick={() => { if (onViewContacts) onViewContacts(); setOpen(false); }}
                 className="flex-1 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5"
                 style={{ background: "rgba(255,90,20,0.12)", border: "1px solid rgba(255,90,20,0.25)", color: "#ff5a14" }}>
                 <Users size={12} /> Contacts
