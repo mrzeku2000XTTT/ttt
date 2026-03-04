@@ -107,10 +107,16 @@ export default function WalletPage() {
     setIsFetchingBalance(true);
     try {
       const res = await base44.functions.invoke('getKaspaBalance', { address: addr });
-      const bal = res.data?.balance ?? res.data?.data?.balance ?? null;
-      if (bal !== null) setKaspaBalance({ balanceKAS: parseFloat(bal) });
-      else setKaspaBalance({ balanceKAS: 0 });
-    } catch {
+      console.log('[Wallet] balance response:', JSON.stringify(res.data));
+      // Backend returns { success, balanceKAS, balanceSompi }
+      const balKAS = res.data?.balanceKAS;
+      if (typeof balKAS === 'number') {
+        setKaspaBalance({ balanceKAS: balKAS });
+      } else {
+        setKaspaBalance({ balanceKAS: 0 });
+      }
+    } catch (e) {
+      console.error('[Wallet] balance fetch error:', e);
       setKaspaBalance({ balanceKAS: 0 });
     } finally {
       setIsFetchingBalance(false);
