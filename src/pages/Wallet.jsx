@@ -280,6 +280,7 @@ export default function WalletPage() {
       setAddress(fullAddr);
       setShowMnemonic(false);
       setImportMnemonic('');
+      if (pk) localStorage.setItem('ttt_wallet_pk', pk);
       await saveWallet(fullAddr, words.length);
       startBalancePolling(fullAddr);
       setShowPinSetup(true);
