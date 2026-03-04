@@ -177,14 +177,16 @@ export default function KivRPage() {
         )}
 
         {connectedAddress && (
-          <ContactsList
-            contacts={contacts}
-            onAdd={() => setShowAddContact(true)}
-            onDelete={async (id) => {
-              await base44.entities.KivRContact.delete(id);
-              loadPresets();
-            }}
-          />
+          <div id="kivr-contacts-section">
+            <ContactsList
+              contacts={contacts}
+              onAdd={() => setShowAddContact(true)}
+              onDelete={async (id) => {
+                await base44.entities.KivRContact.delete(id);
+                loadPresets();
+              }}
+            />
+          </div>
         )}
 
         <IVRSetupGuide connectedAddress={connectedAddress} presetCount={activePresets.length} />
