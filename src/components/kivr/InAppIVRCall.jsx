@@ -31,6 +31,12 @@ export default function InAppIVRCall({ connectedAddress, presets, onClose }) {
     }
   }, [transcript]);
 
+  // Check speech support
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    setSpeakSupported(!!SpeechRecognition);
+  }, []);
+
   // Auto-start on mount
   useEffect(() => {
     const timer = setTimeout(() => startCall(), 300);
