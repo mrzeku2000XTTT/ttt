@@ -43,10 +43,12 @@ export default function KivRPage() {
     if (!connectedAddress) return;
     setLoading(true);
     try {
-      const all = await base44.entities.KivRTransaction.filter({
-        from_address: connectedAddress,
-      });
+      const [all, allContacts] = await Promise.all([
+        base44.entities.KivRTransaction.filter({ from_address: connectedAddress }),
+        base44.entities.KivRContact.filter({ from_address: connectedAddress }),
+      ]);
       setPresets(all.sort((a, b) => (a.slot_number || 9) - (b.slot_number || 9)));
+      setContacts(allContacts);
     } catch (err) {
       console.error("Failed to load presets:", err);
     }
