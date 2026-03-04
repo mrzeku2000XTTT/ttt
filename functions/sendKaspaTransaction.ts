@@ -67,6 +67,7 @@ Deno.serve(async (req) => {
     if (change > 0) outputs.push({ address: normalizedFromAddress, amount: change });
 
     // 6. Sign with OKX SDK
+    const wallet = new KaspaWallet();
     const signResult = await wallet.signTransaction({
       data: { inputs, outputs, address: normalizedFromAddress, fee: FEE_SOMPI },
       privateKey,
