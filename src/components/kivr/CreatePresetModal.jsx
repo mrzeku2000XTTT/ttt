@@ -237,17 +237,11 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
               style={{ background: ORANGE }}>
               Next <ArrowRight size={14} />
             </button>
-          ) : step === 3 ? (
-            <button onClick={handleNext}
-              className="flex-1 py-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2"
-              style={{ background: ORANGE }}>
-              Sign Transaction <Key size={14} />
-            </button>
           ) : (
             <button onClick={handleSave} disabled={saving}
               className="flex-1 py-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 transition-opacity"
               style={{ background: "#34c759", opacity: saving ? 0.7 : 1 }}>
-              {saving ? <><Loader2 size={14} className="animate-spin" /> Saving...</> : <><CheckCircle size={14} /> Complete</>}
+              {saving ? <><Loader2 size={14} className="animate-spin" /> Saving...</> : <><CheckCircle size={14} /> Save Preset</>}
             </button>
           )}
         </div>
