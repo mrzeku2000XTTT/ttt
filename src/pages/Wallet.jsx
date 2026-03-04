@@ -190,21 +190,14 @@ export default function WalletPage() {
     try {
       try {
         const currentUser = await base44.auth.me();
-        if (currentUser && currentUser.role === 'admin') {
+        if (currentUser) {
           setUser(currentUser);
-          if (currentUser.created_wallet_address) {
-            setAddress(currentUser.created_wallet_address);
+          const savedAddr = currentUser.created_wallet_address || localStorage.getItem('ttt_wallet_address');
+          if (savedAddr) {
+            setAddress(savedAddr);
             setPinSet(!!currentUser.wallet_pin_hash);
-            checkIfSealed(currentUser.created_wallet_address, currentUser);
-            startBalancePolling(currentUser.created_wallet_address);
-          }
-        } else if (currentUser) {
-          // Non-admin: still allow wallet usage
-          setUser(currentUser);
-          const localAddr = localStorage.getItem('ttt_wallet_address');
-          if (localAddr) {
-            setAddress(localAddr);
-            startBalancePolling(localAddr);
+            checkIfSealed(savedAddr, currentUser);
+            startBalancePolling(savedAddr);
           }
         }
       } catch {
