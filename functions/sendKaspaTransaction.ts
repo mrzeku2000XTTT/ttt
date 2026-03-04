@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 2. Fetch UTXOs
+    // 2. Fetch UTXOs (private key is now set above)
     const utxoRes = await fetch(`${KASPA_API}/addresses/${normalizedFromAddress}/utxos`);
     if (!utxoRes.ok) {
       const txt = await utxoRes.text();
