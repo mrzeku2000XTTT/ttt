@@ -41,11 +41,14 @@ function toErrMsg(e) {
 async function sendKaspaTransactionDirect(fromAddress, toAddress, amountKas, privateKey) {
   const amountSompi = Math.round(parseFloat(amountKas) * 1e8);
 
-  const normalizedFrom = fromAddress.startsWith('kaspa:') ? fromAddress : `kaspa:${fromAddress}`;
-  const normalizedTo = toAddress.startsWith('kaspa:') ? toAddress : `kaspa:${toAddress}`;
+  // API calls need kaspa: prefix; OKX SDK wants NO prefix
+  const apiFrom = fromAddress.startsWith('kaspa:') ? fromAddress : `kaspa:${fromAddress}`;
+  const apiTo = toAddress.startsWith('kaspa:') ? toAddress : `kaspa:${toAddress}`;
+  const sdkFrom = apiFrom.replace('kaspa:', '');
+  const sdkTo = apiTo.replace('kaspa:', '');
 
   // 1. Fetch UTXOs
-  const utxoRes = await fetch(`${KASPA_API}/addresses/${normalizedFrom}/utxos`);
+  const utxoRes = await fetch(`${KASPA_API}/addresses/${apiFrom}/utxos`);
   if (!utxoRes.ok) throw new Error(`Failed to fetch UTXOs: ${utxoRes.status}`);
   const utxos = await utxoRes.json();
   if (!Array.isArray(utxos) || utxos.length === 0) throw new Error('No UTXOs available — wallet may have zero balance.');
@@ -66,22 +69,22 @@ async function sendKaspaTransactionDirect(fromAddress, toAddress, amountKas, pri
 
   const change = totalIn - amountSompi - FEE_SOMPI;
 
-  // 3. Build inputs/outputs for OKX SDK
+  // 3. Build inputs/outputs — OKX SDK uses addresses WITHOUT kaspa: prefix
   const inputs = selected.map(u => ({
     txId: u.outpoint.transactionId,
     vOut: u.outpoint.index,
-    address: normalizedFrom,
+    address: sdkFrom,
     amount: Number(u.utxoEntry.amount),
   }));
-  const outputs = [{ address: normalizedTo, amount: amountSompi }];
-  if (change > 0) outputs.push({ address: normalizedFrom, amount: change });
+  const outputs = [{ address: sdkTo, amount: amountSompi }];
+  if (change > 0) outputs.push({ address: sdkFrom, amount: change });
 
   // 4. Sign
   let signResult;
   try {
     const wallet = new KaspaWallet();
     signResult = await wallet.signTransaction({
-      data: { inputs, outputs, address: normalizedFrom, fee: FEE_SOMPI },
+      data: { inputs, outputs, address: sdkFrom, fee: FEE_SOMPI },
       privateKey,
     });
   } catch (signErr) {
