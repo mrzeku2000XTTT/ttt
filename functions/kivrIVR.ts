@@ -30,6 +30,13 @@ async function findPresets(base44, identifier) {
   return presets || [];
 }
 
+function toErrMsg(e) {
+  if (!e) return 'Unknown error';
+  if (typeof e === 'string') return e;
+  if (e.message) return e.message;
+  try { return JSON.stringify(e); } catch { return String(e); }
+}
+
 // Sign and broadcast a Kaspa transaction directly (no sub-function call)
 async function sendKaspaTransactionDirect(fromAddress, toAddress, amountKas, privateKey) {
   const amountSompi = Math.round(parseFloat(amountKas) * 1e8);
@@ -41,7 +48,7 @@ async function sendKaspaTransactionDirect(fromAddress, toAddress, amountKas, pri
   const utxoRes = await fetch(`${KASPA_API}/addresses/${normalizedFrom}/utxos`);
   if (!utxoRes.ok) throw new Error(`Failed to fetch UTXOs: ${utxoRes.status}`);
   const utxos = await utxoRes.json();
-  if (!utxos || utxos.length === 0) throw new Error('No UTXOs available. Insufficient balance.');
+  if (!Array.isArray(utxos) || utxos.length === 0) throw new Error('No UTXOs available — wallet may have zero balance.');
 
   // 2. Greedy UTXO selection
   const needed = amountSompi + FEE_SOMPI;
@@ -70,11 +77,17 @@ async function sendKaspaTransactionDirect(fromAddress, toAddress, amountKas, pri
   if (change > 0) outputs.push({ address: normalizedFrom, amount: change });
 
   // 4. Sign
-  const wallet = new KaspaWallet();
-  const signResult = await wallet.signTransaction({
-    data: { inputs, outputs, address: normalizedFrom, fee: FEE_SOMPI },
-    privateKey,
-  });
+  let signResult;
+  try {
+    const wallet = new KaspaWallet();
+    signResult = await wallet.signTransaction({
+      data: { inputs, outputs, address: normalizedFrom, fee: FEE_SOMPI },
+      privateKey,
+    });
+  } catch (signErr) {
+    throw new Error(`Signing failed: ${toErrMsg(signErr)}`);
+  }
+
   const signed = typeof signResult === 'string' ? JSON.parse(signResult) : signResult;
   const rawTx = signed.transaction ?? signed.tx ?? signed;
 
@@ -85,10 +98,12 @@ async function sendKaspaTransactionDirect(fromAddress, toAddress, amountKas, pri
     body: JSON.stringify({ transaction: rawTx, allowOrphan: false }),
   });
   const submitText = await submitRes.text();
-  if (!submitRes.ok) throw new Error(`Submit failed (${submitRes.status}): ${submitText.slice(0, 200)}`);
+  if (!submitRes.ok) throw new Error(`Broadcast failed (${submitRes.status}): ${submitText.slice(0, 300)}`);
   let submitData;
-  try { submitData = JSON.parse(submitText); } catch { submitData = submitText; }
-  return submitData.transactionId || submitData.txid || submitData;
+  try { submitData = JSON.parse(submitText); } catch { submitData = { raw: submitText }; }
+  const txId = submitData.transactionId || submitData.txid;
+  if (!txId) throw new Error(`Broadcast returned no txId. Response: ${submitText.slice(0, 200)}`);
+  return txId;
 }
 
 Deno.serve(async (req) => {
