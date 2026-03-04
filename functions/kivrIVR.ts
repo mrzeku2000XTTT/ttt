@@ -125,35 +125,9 @@ Deno.serve(async (req) => {
     const { action, phone, pin, slot, privateKey } = body;
 
     if (!action) return Response.json({ error: 'Missing action' }, { status: 400 });
+    if (!phone) return Response.json({ error: 'Missing identifier (phone or wallet address)' }, { status: 400 });
 
     const base44 = createClientFromRequest(req);
-
-    // broadcast_contact does NOT use phone — handle it first
-    if (action === 'broadcast_contact') {
-      const { from_address, to_address, amount, privateKey: pk } = body;
-      if (!from_address) return Response.json({ success: false, error: 'Missing from_address' });
-      if (!to_address) return Response.json({ success: false, error: 'Missing to_address' });
-      if (!amount) return Response.json({ success: false, error: 'Missing amount' });
-      if (!pk) return Response.json({ success: false, error: 'No private key provided. Import your wallet.' });
-
-      let txId;
-      try {
-        txId = await sendKaspaTransactionDirect(from_address, to_address, amount, pk);
-      } catch (sendErr) {
-        return Response.json({ success: false, error: `Transaction failed: ${sendErr.message}` });
-      }
-
-      return Response.json({
-        success: true,
-        tx_id: txId,
-        amount,
-        to_address,
-        message: `Successfully sent ${amount} KAS`,
-      });
-    }
-
-    // All other actions require phone/identifier
-    if (!phone) return Response.json({ error: 'Missing identifier (phone or wallet address)' }, { status: 400 });
 
     // ── verify_pin ─────────────────────────────────────────────────────────
     if (action === 'verify_pin') {
@@ -243,6 +217,30 @@ Deno.serve(async (req) => {
         from_address: preset.from_address,
         uses_remaining: newUses,
         message: `Successfully sent ${preset.amount} KAS to ${preset.to_address}`,
+      });
+    }
+
+    // ── broadcast_contact ──────────────────────────────────────────────────
+    if (action === 'broadcast_contact') {
+      const { from_address, to_address, amount, privateKey } = body;
+      if (!from_address) return Response.json({ success: false, error: 'Missing from_address' });
+      if (!to_address) return Response.json({ success: false, error: 'Missing to_address' });
+      if (!amount) return Response.json({ success: false, error: 'Missing amount' });
+      if (!privateKey) return Response.json({ success: false, error: 'No private key provided. Import your wallet.' });
+
+      let txId;
+      try {
+        txId = await sendKaspaTransactionDirect(from_address, to_address, amount, privateKey);
+      } catch (sendErr) {
+        return Response.json({ success: false, error: `Transaction failed: ${sendErr.message}` });
+      }
+
+      return Response.json({
+        success: true,
+        tx_id: txId,
+        amount,
+        to_address,
+        message: `Successfully sent ${amount} KAS`,
       });
     }
 
