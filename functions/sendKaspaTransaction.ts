@@ -6,9 +6,9 @@ const FEE_SOMPI = 10000; // 0.0001 KAS minimum fee
 
 Deno.serve(async (req) => {
   try {
-    const { mnemonic, fromAddress, toAddress, amountKas } = await req.json();
+    const { mnemonic, privateKey: inputPrivateKey, fromAddress, toAddress, amountKas } = await req.json();
 
-    if (!mnemonic || !fromAddress || !toAddress || !amountKas) {
+    if ((!mnemonic && !inputPrivateKey) || !fromAddress || !toAddress || !amountKas) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -19,12 +19,15 @@ Deno.serve(async (req) => {
     const amountSompi = Math.round(parseFloat(amountKas) * 1e8);
     if (amountSompi <= 0) return Response.json({ error: 'Invalid amount' }, { status: 400 });
 
-    // 1. Derive private key
-    const wallet = new KaspaWallet();
-    const privateKey = await wallet.getDerivedPrivateKey({
-      mnemonic: mnemonic.trim(),
-      hdPath: "m/44'/111111'/0'/0/0",
-    });
+    // 1. Get private key — either directly or derive from mnemonic
+    let privateKey = inputPrivateKey;
+    if (!privateKey) {
+      const wallet = new KaspaWallet();
+      privateKey = await wallet.getDerivedPrivateKey({
+        mnemonic: mnemonic.trim(),
+        hdPath: "m/44'/111111'/0'/0/0",
+      });
+    }
 
     // 2. Fetch UTXOs
     const utxoRes = await fetch(`${KASPA_API}/addresses/${normalizedFromAddress}/utxos`);
