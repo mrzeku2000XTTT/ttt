@@ -234,6 +234,7 @@ export default function KivRPage() {
           <InAppIVRCall
             connectedAddress={connectedAddress}
             presets={presets}
+            contacts={contacts}
             onClose={() => setShowCall(false)}
           />
         )}
