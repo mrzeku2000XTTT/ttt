@@ -30,71 +30,65 @@ async function findPresets(base44, identifier) {
   return presets || [];
 }
 
-// Build and broadcast a Kaspa transaction via REST API
-async function sendKaspaTransaction(fromAddress, toAddress, amountKas) {
-  const sompi = Math.round(amountKas * 1e8);
+// Sign and broadcast a Kaspa transaction directly (no sub-function call)
+async function sendKaspaTransactionDirect(fromAddress, toAddress, amountKas, privateKey) {
+  const amountSompi = Math.round(parseFloat(amountKas) * 1e8);
 
-  // 1. Get UTXOs for sender
-  const utxoRes = await fetch(`${KASPA_API}/addresses/${fromAddress}/utxos`);
+  const normalizedFrom = fromAddress.startsWith('kaspa:') ? fromAddress : `kaspa:${fromAddress}`;
+  const normalizedTo = toAddress.startsWith('kaspa:') ? toAddress : `kaspa:${toAddress}`;
+
+  // 1. Fetch UTXOs
+  const utxoRes = await fetch(`${KASPA_API}/addresses/${normalizedFrom}/utxos`);
   if (!utxoRes.ok) throw new Error(`Failed to fetch UTXOs: ${utxoRes.status}`);
   const utxos = await utxoRes.json();
   if (!utxos || utxos.length === 0) throw new Error('No UTXOs available. Insufficient balance.');
 
-  // 2. Build transaction via kaspa API transaction builder
-  const txPayload = {
-    inputs: [],
-    outputs: [{ address: toAddress, amount: sompi }],
-    change_address: fromAddress,
-    fee_rate: 1,
-  };
-
-  let totalInput = 0;
+  // 2. Greedy UTXO selection
+  const needed = amountSompi + FEE_SOMPI;
+  let totalIn = 0;
+  const selected = [];
+  utxos.sort((a, b) => Number(b.utxoEntry.amount) - Number(a.utxoEntry.amount));
   for (const utxo of utxos) {
-    txPayload.inputs.push({
-      previous_outpoint: {
-        transaction_id: utxo.outpoint.transactionId,
-        index: utxo.outpoint.index,
-      },
-      sequence: 0,
-      sig_op_count: 1,
-    });
-    totalInput += utxo.utxoEntry.amount;
-    if (totalInput >= sompi + 10000) break; // include a small fee buffer
+    if (totalIn >= needed) break;
+    selected.push(utxo);
+    totalIn += Number(utxo.utxoEntry.amount);
+  }
+  if (totalIn < needed) {
+    throw new Error(`Insufficient balance. Need ${(needed / 1e8).toFixed(4)} KAS, have ${(totalIn / 1e8).toFixed(4)} KAS`);
   }
 
-  if (totalInput < sompi) {
-    throw new Error(`Insufficient balance. Have ${totalInput / 1e8} KAS, need ${amountKas} KAS.`);
-  }
+  const change = totalIn - amountSompi - FEE_SOMPI;
 
-  // 3. Submit transaction — note: without private key we can't sign here server-side
-  // The preset must have been pre-signed. If not, return a helpful error.
-  throw new Error('SERVER_SIGN_REQUIRED');
-}
+  // 3. Build inputs/outputs for OKX SDK
+  const inputs = selected.map(u => ({
+    txId: u.outpoint.transactionId,
+    vOut: u.outpoint.index,
+    address: normalizedFrom,
+    amount: Number(u.utxoEntry.amount),
+  }));
+  const outputs = [{ address: normalizedTo, amount: amountSompi }];
+  if (change > 0) outputs.push({ address: normalizedFrom, amount: change });
 
-// Direct broadcast of pre-signed hex
-async function broadcastSigned(signedTxHex) {
-  const res = await fetch(`${KASPA_API}/transactions`, {
+  // 4. Sign
+  const wallet = new KaspaWallet();
+  const signResult = await wallet.signTransaction({
+    data: { inputs, outputs, address: normalizedFrom, fee: FEE_SOMPI },
+    privateKey,
+  });
+  const signed = typeof signResult === 'string' ? JSON.parse(signResult) : signResult;
+  const rawTx = signed.transaction ?? signed.tx ?? signed;
+
+  // 5. Broadcast
+  const submitRes = await fetch(`${KASPA_API}/transactions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ transaction: signedTxHex }),
+    body: JSON.stringify({ transaction: rawTx, allowOrphan: false }),
   });
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Broadcast failed (${res.status}): ${errText}`);
-  }
-  const data = await res.json();
-  return data.transactionId || data.txid || data.id || null;
-}
-
-// Use the sendKaspaTransaction backend function to actually send
-async function sendViaFunction(base44, fromAddress, toAddress, amountKas) {
-  const res = await base44.asServiceRole.functions.invoke('sendKaspaTransaction', {
-    from_address: fromAddress,
-    to_address: toAddress,
-    amount: amountKas,
-  });
-  if (res?.error) throw new Error(res.error);
-  return res?.txid || res?.transaction_id || res?.tx_id || 'sent';
+  const submitText = await submitRes.text();
+  if (!submitRes.ok) throw new Error(`Submit failed (${submitRes.status}): ${submitText.slice(0, 200)}`);
+  let submitData;
+  try { submitData = JSON.parse(submitText); } catch { submitData = submitText; }
+  return submitData.transactionId || submitData.txid || submitData;
 }
 
 Deno.serve(async (req) => {
