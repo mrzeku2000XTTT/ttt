@@ -6,107 +6,81 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Copy, Eye, EyeOff, Loader2, CheckCircle2, Lock, ArrowLeft, Shield, RefreshCw, X, AlertTriangle } from "lucide-react";
+import {
+  Copy, Eye, EyeOff, Loader2, CheckCircle2, Shield,
+  ArrowLeft, RefreshCw, X, AlertTriangle
+} from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion, AnimatePresence } from "framer-motion";
 
-const REPLIT_BASE_URL = 'https://3997eddf-54b0-4dd7-bd11-b6322df14705-00-2nohbenfxyfz4.spock.replit.dev';
+// ── Toast ──────────────────────────────────────────────────────────────────────
+const Toast = ({ message, type, onClose }) => (
+  <motion.div
+    initial={{ opacity: 0, x: 100, scale: 0.8 }}
+    animate={{ opacity: 1, x: 0, scale: 1 }}
+    exit={{ opacity: 0, x: 100, scale: 0.8 }}
+    className="fixed bottom-6 right-6 z-[9999] max-w-xs"
+  >
+    <div className={`bg-black/95 backdrop-blur-xl border ${type === 'success' ? 'border-green-500/30' : 'border-red-500/30'} rounded-lg p-3 shadow-2xl`}>
+      <div className="flex items-start gap-2">
+        <span className="text-lg flex-shrink-0">{type === 'success' ? '✅' : '❌'}</span>
+        <p className="text-white text-xs flex-1 leading-relaxed">{message}</p>
+        <button onClick={onClose} className="text-white/60 hover:text-white flex-shrink-0">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  </motion.div>
+);
 
-const Toast = ({ message, type, onClose }) => {
-  const bgColor = type === 'success' ? 'bg-black/95' : 'bg-black/95';
-  const borderColor = type === 'success' ? 'border-green-500/30' : 'border-red-500/30';
-  const icon = type === 'success' ? '✅' : '❌';
-  
-  return (
+// ── Confirm Modal ──────────────────────────────────────────────────────────────
+const ConfirmModal = ({ title, message, onConfirm, onCancel }) => (
+  <motion.div
+    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+    className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+    onClick={onCancel}
+  >
     <motion.div
-      initial={{ opacity: 0, x: 100, scale: 0.8 }}
-      animate={{ opacity: 1, x: 0, scale: 1 }}
-      exit={{ opacity: 0, x: 100, scale: 0.8 }}
-      className="fixed bottom-6 right-6 z-[9999] max-w-xs"
+      initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+      onClick={e => e.stopPropagation()}
+      className="bg-black border border-red-500/30 rounded-xl p-6 max-w-md w-full shadow-2xl"
     >
-      <div className={`${bgColor} backdrop-blur-xl border ${borderColor} rounded-lg p-3 shadow-2xl`}>
-        <div className="flex items-start gap-2">
-          <span className="text-lg flex-shrink-0">{icon}</span>
-          <div className="flex-1 min-w-0">
-            <p className="text-white text-xs leading-relaxed">
-              {message}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-white/60 hover:text-white transition-colors flex-shrink-0"
-          >
-            <X className="w-4 h-4" />
-          </button>
+      <div className="flex items-start gap-3 mb-4">
+        <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+          <AlertTriangle className="w-5 h-5 text-red-400" />
+        </div>
+        <div className="flex-1">
+          <h3 className="text-white font-bold text-lg mb-1">{title}</h3>
+          <p className="text-gray-400 text-sm">{message}</p>
         </div>
       </div>
+      <div className="flex gap-3">
+        <Button onClick={onCancel} className="flex-1 bg-white/5 border border-white/10 text-white hover:bg-white/10">Cancel</Button>
+        <Button onClick={onConfirm} className="flex-1 bg-red-500 hover:bg-red-600 text-white">Clear Wallet</Button>
+      </div>
     </motion.div>
-  );
-};
+  </motion.div>
+);
 
-const ConfirmModal = ({ title, message, onConfirm, onCancel }) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-      onClick={onCancel}
-    >
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        onClick={(e) => e.stopPropagation()}
-        className="bg-black border border-red-500/30 rounded-xl p-6 max-w-md w-full shadow-2xl"
-      >
-        <div className="flex items-start gap-3 mb-4">
-          <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-            <AlertTriangle className="w-5 h-5 text-red-400" />
-          </div>
-          <div className="flex-1">
-            <h3 className="text-white font-bold text-lg mb-1">{title}</h3>
-            <p className="text-gray-400 text-sm">{message}</p>
-          </div>
-        </div>
-        
-        <div className="flex gap-3">
-          <Button
-            onClick={onCancel}
-            className="flex-1 bg-white/5 border border-white/10 text-white hover:bg-white/10"
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={onConfirm}
-            className="flex-1 bg-red-500 hover:bg-red-600 text-white"
-          >
-            Clear Wallet
-          </Button>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-};
-
+// ── Main Page ──────────────────────────────────────────────────────────────────
 export default function WalletPage() {
   const navigate = useNavigate();
-  const iframeRef = useRef(null);
-  
+
   const [mode, setMode] = useState('create');
   const [wordCount, setWordCount] = useState(12);
   const [importMnemonic, setImportMnemonic] = useState('');
+  const [showImportPhrase, setShowImportPhrase] = useState(false);
   const [mnemonic, setMnemonic] = useState(null);
+  const [privateKey, setPrivateKey] = useState(null);
   const [address, setAddress] = useState(null);
   const [kaspaBalance, setKaspaBalance] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [showMnemonic, setShowMnemonic] = useState(false);
-  const [showBalance, setShowBalance] = useState(false);
+  const [showBalance, setShowBalance] = useState(true);
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [copiedPhrase, setCopiedPhrase] = useState(false);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null); // This state will eventually be removed/replaced by toast
   const [user, setUser] = useState(null);
   const [kasPrice, setKasPrice] = useState(null);
   const [showPinSetup, setShowPinSetup] = useState(false);
@@ -115,445 +89,246 @@ export default function WalletPage() {
   const [isSettingPin, setIsSettingPin] = useState(false);
   const [pinSet, setPinSet] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [iframeReady, setIframeReady] = useState(false);
   const [isSealing, setIsSealing] = useState(false);
   const [isSealed, setIsSealed] = useState(false);
   const [isFetchingBalance, setIsFetchingBalance] = useState(false);
-  const [needsIframe, setNeedsIframe] = useState(false);
-  const [toast, setToast] = useState(null); // New toast state
+  const [toast, setToast] = useState(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const balanceIntervalRef = useRef(null);
 
   const showToast = (message, type = 'success', duration = 3000) => {
     setToast({ message, type });
-    if (duration > 0) {
-      setTimeout(() => setToast(null), duration);
-    }
+    if (duration > 0) setTimeout(() => setToast(null), duration);
   };
 
-  const loadData = async () => {
-    try {
-      // Admin-only check
-      try {
-        const currentUser = await base44.auth.me();
-        
-        if (!currentUser || currentUser.role !== 'admin') {
-          setIsLoading(false);
-          return;
-        }
-        
-        setUser(currentUser);
-        
-        if (currentUser.created_wallet_address) {
-          setAddress(currentUser.created_wallet_address);
-          setPinSet(!!currentUser.wallet_pin_hash);
-          checkIfSealed(currentUser.created_wallet_address, currentUser);
-        }
-      } catch (err) {
-        // User not logged in - check for local wallet
-        const localWallet = localStorage.getItem('ttt_wallet_address');
-        if (localWallet) {
-          setAddress(localWallet);
-          setUser({ created_wallet_address: localWallet });
-        }
-      }
-      
-      try {
-        const priceRes = await base44.functions.invoke('getKaspaPrice');
-        setKasPrice(priceRes.data?.price || 0.05);
-      } catch (err) {
-        setKasPrice(0.05);
-      }
-    } catch (err) {
-      console.error('Load error:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const checkIfSealed = async (walletAddress, currentUser) => {
-    if (!currentUser?.email) {
-      setIsSealed(false);
-      return;
-    }
-    
-    try {
-      const sealed = await base44.entities.SealedWallet.filter({
-        wallet_address: walletAddress,
-        is_active: true,
-        created_by: currentUser.email
-      });
-      setIsSealed(sealed.length > 0);
-    } catch (err) {
-      setIsSealed(false);
-    }
-  };
-
-  const fetchBalanceDirectly = async (addr) => {
+  // ── Balance fetching via Terra Protocol (getKaspaBalance) ──────────────────
+  const fetchBalance = async (addr) => {
     if (!addr) return;
-
-    console.log('💰 Fetching balance');
     setIsFetchingBalance(true);
-
     try {
-      const response = await fetch(`${REPLIT_BASE_URL}/balance/${encodeURIComponent(addr)}`, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' }
-      });
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      const data = await response.json();
-
-      if (data.success && data.balanceKAS !== undefined) {
-        setKaspaBalance({ balanceKAS: Number(data.balanceKAS) });
-        setShowBalance(true);
-      } else {
-        setKaspaBalance({ balanceKAS: 0 });
-        setShowBalance(true);
-      }
-    } catch (err) {
-      console.error('Balance fetch failed:', err);
+      const res = await base44.functions.invoke('getKaspaBalance', { address: addr });
+      const bal = res.data?.balance ?? res.data?.data?.balance ?? null;
+      if (bal !== null) setKaspaBalance({ balanceKAS: parseFloat(bal) });
+      else setKaspaBalance({ balanceKAS: 0 });
+    } catch {
       setKaspaBalance({ balanceKAS: 0 });
-      setShowBalance(true);
     } finally {
       setIsFetchingBalance(false);
     }
   };
 
-  const toggleBalanceVisibility = () => {
-    if (!showBalance && kaspaBalance === null) {
-      fetchBalanceDirectly(address);
-    } else {
-      setShowBalance(!showBalance);
+  // Poll balance every 15 seconds when wallet is connected
+  const startBalancePolling = (addr) => {
+    if (balanceIntervalRef.current) clearInterval(balanceIntervalRef.current);
+    fetchBalance(addr);
+    balanceIntervalRef.current = setInterval(() => fetchBalance(addr), 15000);
+  };
+
+  const stopBalancePolling = () => {
+    if (balanceIntervalRef.current) {
+      clearInterval(balanceIntervalRef.current);
+      balanceIntervalRef.current = null;
     }
   };
 
-  const handleWalletCreated = async (wallet) => {
-    console.log('✅ Wallet created');
-    setMnemonic(wallet.mnemonic);
-    setAddress(wallet.address);
-    setShowMnemonic(true);
-    
-    const wc = wallet.mnemonic.split(' ').filter(w => w).length;
-    await saveWallet(wallet.address, wc);
-    await fetchBalanceDirectly(wallet.address);
-    
-    setShowPinSetup(true);
-    showToast('Wallet and profile created!', 'success'); // Replaced setSuccess
-    setIsCreating(false);
-  };
+  useEffect(() => {
+    return () => stopBalancePolling();
+  }, []);
 
-  const handleWalletImported = async (wallet) => {
-    console.log('✅ Wallet imported');
-    setMnemonic(wallet.mnemonic);
-    setAddress(wallet.address);
-    setShowMnemonic(true);
-    
-    await saveWallet(wallet.address, wallet.wordCount);
-    await fetchBalanceDirectly(wallet.address);
-    
-    setShowPinSetup(true);
-    showToast('Wallet and profile imported!', 'success'); // Replaced setSuccess
-    setIsImporting(false);
-    setImportMnemonic('');
-  };
-
-  const saveWallet = async (addr, wc) => {
+  // ── Load user + price ──────────────────────────────────────────────────────
+  const loadData = async () => {
     try {
-      // Save to localStorage for non-logged-in users
-      localStorage.setItem('ttt_wallet_address', addr);
-      
-      // Try to save to user profile if logged in
       try {
         const currentUser = await base44.auth.me();
-        if (!currentUser) {
-          console.log('Wallet saved locally only');
-          return;
-        }
-      
-      console.log('💾 [Wallet] Saving wallet for:', currentUser.email);
-      
-      const existingWallets = currentUser.created_wallets || [];
-      const walletExists = existingWallets.some(w => w.address === addr);
-      
-      const updates = { 
-        created_wallet_address: addr,
-        username: currentUser.username || currentUser.email.split('@')[0]
-      };
-      
-      if (!walletExists) {
-        updates.created_wallets = [...existingWallets, { 
-          address: addr, 
-          wordCount: wc,
-          createdAt: new Date().toISOString(),
-          balance: 0,
-          userId: currentUser.email
-        }];
-      }
-      
-      await base44.auth.updateMe(updates);
-      setUser({ ...currentUser, ...updates });
-      console.log('✅ [Wallet] User data updated successfully');
-
-      // Only create profile if user is logged in
-      if (currentUser.email) {
-        const zkId = addr.slice(-10).toUpperCase();
-        const agentZKId = `ZK-${zkId}`;
-        
-        // Use existing username if available, otherwise create truncated one
-        const existingUsername = currentUser.username || `Agent-${addr.substring(0, 10)}`;
-        
-        console.log('🤖 [Wallet] Updating Agent ZK Profile...');
-        
-        try {
-          // Check for ANY existing profile by user email
-          const existingProfilesByEmail = await base44.entities.AgentZKProfile.filter({
-            user_email: currentUser.email
-          });
-
-          const profileData = {
-            user_email: currentUser.email,
-            wallet_address: addr,
-            ttt_wallet_address: addr,
-            agent_zk_id: agentZKId,
-            username: existingUsername,
-            bio: existingProfilesByEmail.length > 0 ? existingProfilesByEmail[0].bio : 'TTT Wallet User - Kaspa Network',
-            role: existingProfilesByEmail.length > 0 ? existingProfilesByEmail[0].role : 'Other',
-            skills: existingProfilesByEmail.length > 0 ? existingProfilesByEmail[0].skills : ['Kaspa', 'Web3', 'TTT Wallet'],
-            agent_zk_photo: existingProfilesByEmail.length > 0 ? existingProfilesByEmail[0].agent_zk_photo : `https://ui-avatars.com/api/?name=${encodeURIComponent(existingUsername)}&size=400&background=0ea5e9&color=fff&bold=true`,
-            is_public: true,
-            is_hireable: existingProfilesByEmail.length > 0 ? existingProfilesByEmail[0].is_hireable : true,
-            availability: existingProfilesByEmail.length > 0 ? existingProfilesByEmail[0].availability : 'available',
-            verification_count: existingProfilesByEmail.length > 0 ? existingProfilesByEmail[0].verification_count : 0,
-            last_active: new Date().toISOString(),
-            social_links: existingProfilesByEmail.length > 0 ? existingProfilesByEmail[0].social_links : {},
-            portfolio: existingProfilesByEmail.length > 0 ? existingProfilesByEmail[0].portfolio : [],
-            work_type: existingProfilesByEmail.length > 0 ? existingProfilesByEmail[0].work_type : ['worker']
-          };
-
-          if (existingProfilesByEmail.length > 0) {
-            // Update existing profile with new wallet
-            await base44.entities.AgentZKProfile.update(existingProfilesByEmail[0].id, profileData);
-            console.log(`✅ [Wallet] Profile updated with new wallet`);
-          } else {
-            // Create new profile
-            await base44.entities.AgentZKProfile.create(profileData);
-            console.log(`✅ [Wallet] Profile created`);
+        if (currentUser && currentUser.role === 'admin') {
+          setUser(currentUser);
+          if (currentUser.created_wallet_address) {
+            setAddress(currentUser.created_wallet_address);
+            setPinSet(!!currentUser.wallet_pin_hash);
+            checkIfSealed(currentUser.created_wallet_address, currentUser);
+            startBalancePolling(currentUser.created_wallet_address);
           }
-
-        } catch (err) {
-          console.error(`❌ [Wallet] Profile error:`, err);
+        } else if (currentUser) {
+          // Non-admin: still allow wallet usage
+          setUser(currentUser);
+          const localAddr = localStorage.getItem('ttt_wallet_address');
+          if (localAddr) {
+            setAddress(localAddr);
+            startBalancePolling(localAddr);
+          }
+        }
+      } catch {
+        const localAddr = localStorage.getItem('ttt_wallet_address');
+        if (localAddr) {
+          setAddress(localAddr);
+          startBalancePolling(localAddr);
         }
       }
 
-      } catch (authErr) {
-        console.log('User not logged in, wallet saved locally only');
+      try {
+        const priceRes = await base44.functions.invoke('getKaspaPrice');
+        setKasPrice(priceRes.data?.price || 0.05);
+      } catch {
+        setKasPrice(0.05);
       }
-
-    } catch (err) {
-      console.error('💥 [Wallet] Save Error:', err);
-      setError('Failed to save wallet');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleCreateWallet = () => {
-    setNeedsIframe(true);
+  useEffect(() => { loadData(); }, []);
+
+  const checkIfSealed = async (walletAddress, currentUser) => {
+    if (!currentUser?.email) return;
+    try {
+      const sealed = await base44.entities.SealedWallet.filter({
+        wallet_address: walletAddress, is_active: true, created_by: currentUser.email
+      });
+      setIsSealed(sealed.length > 0);
+    } catch { setIsSealed(false); }
+  };
+
+  // ── Create Wallet via Terra Protocol ──────────────────────────────────────
+  const handleCreateWallet = async () => {
     setIsCreating(true);
     setError(null);
-    
-    if (iframeReady && iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.postMessage({ 
-        type: 'createWallet', 
-        wordCount: wordCount,
-        userId: user?.email || 'anonymous_' + Date.now()
-      }, '*');
+    try {
+      const res = await base44.functions.invoke('createKaspaWallet', { wordCount });
+      if (res.data?.error) throw new Error(res.data.error);
+      const { address: addr, mnemonic: phrase, privateKey: pk } = res.data;
+      const fullAddr = addr.startsWith('kaspa:') ? addr : `kaspa:${addr}`;
+      setMnemonic(phrase);
+      setPrivateKey(pk);
+      setAddress(fullAddr);
+      setShowMnemonic(true);
+      await saveWallet(fullAddr, wordCount);
+      startBalancePolling(fullAddr);
+      setShowPinSetup(true);
+      showToast('Wallet created!', 'success');
+    } catch (e) {
+      setError(e?.message || 'Failed to create wallet');
+    } finally {
+      setIsCreating(false);
     }
   };
 
-  const handleImportWallet = () => {
-    if (!importMnemonic.trim()) {
-      setError('Enter seed phrase');
-      return;
-    }
-
-    const words = importMnemonic.trim().toLowerCase().split(/\s+/).filter(w => w);
-    
+  // ── Import Wallet via Terra Protocol ──────────────────────────────────────
+  const handleImportWallet = async () => {
+    const words = importMnemonic.trim().split(/\s+/);
     if (words.length !== 12 && words.length !== 24) {
       setError('Must be 12 or 24 words');
       return;
     }
-
-    setNeedsIframe(true);
     setIsImporting(true);
     setError(null);
-    
-    if (iframeReady && iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.postMessage({ 
-        type: 'importWallet', 
-        mnemonic: words.join(' '),
-        userId: user?.email || 'anonymous_' + Date.now()
-      }, '*');
+    try {
+      const res = await base44.functions.invoke('createKaspaWallet', {
+        mnemonic: importMnemonic.trim(),
+        wordCount: words.length,
+        importMode: true,
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      const { address: addr, mnemonic: phrase, privateKey: pk } = res.data;
+      const fullAddr = addr.startsWith('kaspa:') ? addr : `kaspa:${addr}`;
+      setMnemonic(phrase || importMnemonic.trim());
+      setPrivateKey(pk);
+      setAddress(fullAddr);
+      setShowMnemonic(false);
+      setImportMnemonic('');
+      await saveWallet(fullAddr, words.length);
+      startBalancePolling(fullAddr);
+      setShowPinSetup(true);
+      showToast('Wallet imported!', 'success');
+    } catch (e) {
+      setError(e?.message || 'Could not derive address. Check your phrase and try again.');
+    } finally {
+      setIsImporting(false);
     }
   };
 
-  const handleSetPin = async () => {
-    if (pin.length !== 6 || pin !== confirmPin) {
-      setError('PINs must match');
-      return;
-    }
+  const saveWallet = async (addr, wc) => {
+    localStorage.setItem('ttt_wallet_address', addr);
+    try {
+      const currentUser = await base44.auth.me();
+      if (!currentUser) return;
+      const existingWallets = currentUser.created_wallets || [];
+      const walletExists = existingWallets.some(w => w.address === addr);
+      const updates = {
+        created_wallet_address: addr,
+        username: currentUser.username || currentUser.email.split('@')[0]
+      };
+      if (!walletExists) {
+        updates.created_wallets = [...existingWallets, {
+          address: addr, wordCount: wc, createdAt: new Date().toISOString(), balance: 0, userId: currentUser.email
+        }];
+      }
+      await base44.auth.updateMe(updates);
+      setUser(u => ({ ...u, ...updates }));
+    } catch { /* not logged in */ }
+  };
 
+  const handleSetPin = async () => {
+    if (pin.length !== 6 || pin !== confirmPin) { setError('PINs must match'); return; }
     setIsSettingPin(true);
     setError(null);
-
     try {
       const res = await base44.functions.invoke('hashPin', { pin });
       if (res.data?.success) {
         await base44.auth.updateMe({ wallet_pin_hash: res.data.hash });
         setPinSet(true);
         setShowPinSetup(false);
-        setUser({ ...user, wallet_pin_hash: res.data.hash });
-        showToast('PIN set successfully!', 'success'); // Replaced setSuccess
-        setPin('');
-        setConfirmPin('');
+        setUser(u => ({ ...u, wallet_pin_hash: res.data.hash }));
+        showToast('PIN set!', 'success');
+        setPin(''); setConfirmPin('');
       }
-    } catch (err) {
-      setError('Failed to set PIN');
-    } finally {
-      setIsSettingPin(false);
-    }
+    } catch { setError('Failed to set PIN'); }
+    finally { setIsSettingPin(false); }
   };
 
   const handleSealWallet = async () => {
-    if (!address || !mnemonic || !pinSet || !user) {
-      setError('Missing requirements');
-      return;
-    }
-
+    if (!address || !mnemonic || !pinSet || !user) { setError('Missing requirements'); return; }
     setIsSealing(true);
     setError(null);
-
     try {
-      const message = `I am sealing my TTT Wallet.\n\nAddress: ${address}\nBalance: ${kaspaBalance?.balanceKAS || 0} KAS\nTimestamp: ${Date.now()}\nWord Count: ${wordCount} words\n\nThis is my TTT Wallet Seal.`;
-
+      const message = `I am sealing my TTT Wallet.\n\nAddress: ${address}\nTimestamp: ${Date.now()}\n\nThis is my TTT Wallet Seal.`;
       const encoder = new TextEncoder();
       const data = encoder.encode(message + mnemonic);
-      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const signature = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
       await base44.entities.SealedWallet.create({
-        wallet_address: address,
-        seal_signature: signature,
-        seal_message: message,
-        sealed_date: new Date().toISOString(),
-        balance_at_seal: kaspaBalance?.balanceKAS || 0,
-        mnemonic_word_count: wordCount,
-        is_active: true
+        wallet_address: address, seal_signature: signature, seal_message: message,
+        sealed_date: new Date().toISOString(), balance_at_seal: kaspaBalance?.balanceKAS || 0,
+        mnemonic_word_count: (mnemonic?.split(' ').length || 12), is_active: true
       });
-
       setIsSealed(true);
-      showToast('Wallet sealed successfully!', 'success'); // Replaced setSuccess
-    } catch (err) {
-      setError('Seal failed');
-    } finally {
-      setIsSealing(false);
-    }
+      showToast('Wallet sealed!', 'success');
+    } catch { setError('Seal failed'); }
+    finally { setIsSealing(false); }
   };
 
   const copyAddress = async () => {
-    try {
-      await navigator.clipboard.writeText(address);
-      setCopiedAddress(true);
-      setTimeout(() => setCopiedAddress(false), 2000);
-    } catch (err) {
-      console.error('Copy failed');
-    }
+    await navigator.clipboard.writeText(address);
+    setCopiedAddress(true);
+    setTimeout(() => setCopiedAddress(false), 2000);
   };
 
   const copyPhrase = async () => {
-    try {
-      await navigator.clipboard.writeText(mnemonic);
-      setCopiedPhrase(true);
-      setTimeout(() => setCopiedPhrase(false), 2000);
-    } catch (err) {
-      console.error('Copy failed');
-    }
+    await navigator.clipboard.writeText(mnemonic);
+    setCopiedPhrase(true);
+    setTimeout(() => setCopiedPhrase(false), 2000);
   };
 
   const clearWallet = async () => {
     try {
-      // Try to clear from user profile if logged in
-      try {
-        await base44.auth.updateMe({ 
-          created_wallet_address: null, 
-          wallet_pin_hash: null 
-        });
-      } catch (err) {
-        // User not logged in, skip profile update
-      }
-      
-      // Clear localStorage regardless of login status
+      try { await base44.auth.updateMe({ created_wallet_address: null, wallet_pin_hash: null }); } catch { }
       localStorage.removeItem('ttt_wallet_address');
-      localStorage.removeItem('vibe_address');
-      localStorage.removeItem('vibe_connection_id');
-      localStorage.removeItem('vibe_connection_code');
-      
-      // Reset state
-      setAddress(null);
-      setMnemonic(null);
-      setIsSealed(false);
-      setPinSet(false);
-      setKaspaBalance(null);
-      setShowBalance(false);
-      setShowClearConfirm(false);
+      stopBalancePolling();
+      setAddress(null); setMnemonic(null); setPrivateKey(null);
+      setIsSealed(false); setPinSet(false); setKaspaBalance(null);
+      setShowBalance(true); setShowClearConfirm(false);
       showToast('Wallet cleared', 'success');
-    } catch (err) {
-      setError('Clear failed');
-      setShowClearConfirm(false);
-    }
+    } catch { setError('Clear failed'); setShowClearConfirm(false); }
   };
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    const handleMessage = (event) => {
-      if (!event.data?.type) return;
-      if (event.data.userId && event.data.userId.includes('_zk')) return;
-
-      if (event.data.type === 'kaspaPOSReady') {
-        console.log('✅ Iframe ready');
-        setIframeReady(true);
-        
-        if (isCreating && iframeRef.current?.contentWindow) {
-          iframeRef.current.contentWindow.postMessage({ 
-            type: 'createWallet', 
-            wordCount: wordCount,
-            userId: user?.email
-          }, '*');
-        } else if (isImporting && iframeRef.current?.contentWindow) {
-          const words = importMnemonic.trim().toLowerCase().split(/\s+/).filter(w => w);
-          iframeRef.current.contentWindow.postMessage({ 
-            type: 'importWallet', 
-            mnemonic: words.join(' '),
-            userId: user?.email
-          }, '*');
-        }
-      } else if (event.data.type === 'walletCreated' && event.data.wallet) {
-        handleWalletCreated(event.data.wallet);
-      } else if (event.data.type === 'walletImported' && event.data.address) {
-        handleWalletImported({
-          address: event.data.address,
-          mnemonic: importMnemonic,
-          wordCount: importMnemonic.trim().split(/\s+/).filter(w => w).length
-        });
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [importMnemonic, isCreating, isImporting, wordCount, user]);
 
   if (isLoading) {
     return (
@@ -563,67 +338,32 @@ export default function WalletPage() {
     );
   }
 
-  // Admin-only access
-  if (!user || user.role !== 'admin') {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
-        <div className="backdrop-blur-xl bg-white/5 border border-red-500/30 rounded-2xl p-8 max-w-md text-center">
-          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertTriangle className="w-8 h-8 text-red-400" />
-          </div>
-          <h2 className="text-xl font-bold text-white mb-2">Admin Access Only</h2>
-          <p className="text-gray-400 text-sm">
-            TTT Wallet is restricted to administrators only.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-
-
   return (
     <div className="min-h-screen bg-black p-4">
       <AnimatePresence>
-        {toast && (
-          <Toast
-            message={toast.message}
-            type={toast.type}
-            onClose={() => setToast(null)}
-          />
-        )}
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       </AnimatePresence>
-
       <AnimatePresence>
         {showClearConfirm && (
           <ConfirmModal
             title="Clear Wallet?"
-            message="⚠️ Make sure you've backed up your seed phrase! This action cannot be undone."
+            message="⚠️ Make sure you've backed up your seed phrase! This cannot be undone."
             onConfirm={clearWallet}
             onCancel={() => setShowClearConfirm(false)}
           />
         )}
       </AnimatePresence>
 
-      {needsIframe && (
-        <iframe 
-          ref={iframeRef} 
-          src={REPLIT_BASE_URL} 
-          style={{ display: 'none' }}
-          title="Wallet"
-        />
-      )}
-
       <div className="max-w-4xl mx-auto">
+        {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-white">TTT WALLET</h1>
-            <p className="text-gray-400 text-sm">{user?.username || user?.email || 'Anonymous User'}</p>
+            <p className="text-gray-400 text-sm">{user?.username || user?.email || 'TTT'}</p>
           </div>
           {address && (
             <Button onClick={() => setShowClearConfirm(true)} variant="outline" className="bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Clear
+              <ArrowLeft className="w-4 h-4 mr-2" />Clear
             </Button>
           )}
         </div>
@@ -634,21 +374,18 @@ export default function WalletPage() {
           </div>
         )}
 
+        {/* No wallet — create/import */}
         {!address ? (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <Button 
-                onClick={() => setMode('create')} 
+              <Button
+                onClick={() => { setMode('create'); setError(null); }}
                 className={mode === 'create' ? 'bg-white text-black' : 'bg-zinc-900 text-gray-400 border border-zinc-800'}
-              >
-                Create New
-              </Button>
-              <Button 
-                onClick={() => setMode('import')} 
+              >Create New</Button>
+              <Button
+                onClick={() => { setMode('import'); setError(null); }}
                 className={mode === 'import' ? 'bg-white text-black' : 'bg-zinc-900 text-gray-400 border border-zinc-800'}
-              >
-                Import Existing
-              </Button>
+              >Import Existing</Button>
             </div>
 
             {mode === 'create' && (
@@ -656,7 +393,7 @@ export default function WalletPage() {
                 <Card className="bg-zinc-950 border-zinc-800">
                   <CardContent className="p-6">
                     <label className="text-sm text-gray-400 mb-2 block">Seed Phrase Length</label>
-                    <Select value={wordCount.toString()} onValueChange={(v) => setWordCount(parseInt(v))}>
+                    <Select value={wordCount.toString()} onValueChange={v => setWordCount(parseInt(v))}>
                       <SelectTrigger className="bg-black border-zinc-800 text-white">
                         <SelectValue />
                       </SelectTrigger>
@@ -667,186 +404,148 @@ export default function WalletPage() {
                     </Select>
                   </CardContent>
                 </Card>
-                <Button 
-                  onClick={handleCreateWallet} 
-                  disabled={isCreating} 
-                  className="w-full bg-white text-black hover:bg-gray-200 h-12"
-                >
-                  {isCreating ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    'Create Wallet'
-                  )}
+                <Button onClick={handleCreateWallet} disabled={isCreating} className="w-full bg-white text-black hover:bg-gray-200 h-12">
+                  {isCreating ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Creating...</> : 'Create Wallet'}
                 </Button>
               </>
             )}
 
             {mode === 'import' && (
               <>
-                <Textarea 
-                  value={importMnemonic} 
-                  onChange={(e) => setImportMnemonic(e.target.value)} 
-                  placeholder="Enter seed phrase (12 or 24 words)..."
-                  className="bg-zinc-950 border-zinc-800 text-white font-mono min-h-[120px]"
-                  rows={4}
-                />
-                <Button 
-                  onClick={handleImportWallet} 
-                  disabled={isImporting || !importMnemonic.trim()} 
+                <div className="relative">
+                  <Textarea
+                    value={importMnemonic}
+                    onChange={e => setImportMnemonic(e.target.value)}
+                    placeholder="Enter seed phrase (12 or 24 words)..."
+                    className="bg-zinc-950 border-zinc-800 text-white font-mono min-h-[120px] pr-10"
+                    style={{ WebkitTextSecurity: showImportPhrase ? 'none' : 'disc' }}
+                    rows={4}
+                  />
+                  <button
+                    onClick={() => setShowImportPhrase(s => !s)}
+                    className="absolute top-3 right-3 text-gray-400 hover:text-white"
+                  >
+                    {showImportPhrase ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <Button
+                  onClick={handleImportWallet}
+                  disabled={isImporting || !importMnemonic.trim()}
                   className="w-full bg-white text-black hover:bg-gray-200 h-12"
                 >
-                  {isImporting ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Importing...
-                    </>
-                  ) : (
-                    'Import Wallet'
-                  )}
+                  {isImporting ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Importing...</> : 'Import Wallet'}
                 </Button>
               </>
             )}
           </div>
         ) : (
+          /* Wallet connected */
           <div className="space-y-4">
             <Card className="bg-zinc-950 border-zinc-800">
               <CardContent className="p-6">
+                {/* Balance row */}
                 <div className="flex items-center justify-between mb-4">
                   <div className="text-sm text-gray-500">Balance</div>
-                  <button 
-                    onClick={toggleBalanceVisibility}
-                    disabled={isFetchingBalance}
-                    className="text-gray-400 hover:text-white transition-colors disabled:opacity-50"
-                    title={showBalance ? "Hide balance" : "Show balance"}
-                  >
-                    {isFetchingBalance ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : showBalance ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => fetchBalance(address)}
+                      disabled={isFetchingBalance}
+                      className="text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+                      title="Refresh balance"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${isFetchingBalance ? 'animate-spin' : ''}`} />
+                    </button>
+                    <button
+                      onClick={() => setShowBalance(s => !s)}
+                      className="text-gray-400 hover:text-white transition-colors"
+                    >
+                      {showBalance ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="text-4xl font-bold text-white mb-2">
-                  {showBalance && kaspaBalance?.balanceKAS !== null && kaspaBalance?.balanceKAS !== undefined ? (
+                  {isFetchingBalance && kaspaBalance === null ? (
+                    <span className="text-gray-500 text-2xl">Loading...</span>
+                  ) : showBalance && kaspaBalance !== null ? (
                     <>{kaspaBalance.balanceKAS.toFixed(8)} KAS</>
                   ) : (
                     <span className="text-gray-700">••••••••</span>
                   )}
                 </div>
+
                 {showBalance && kasPrice && kaspaBalance && (
                   <div className="text-xl text-gray-500 mb-4">
-                    ≈ ${((kaspaBalance?.balanceKAS || 0) * kasPrice).toFixed(2)} USD
+                    ≈ ${((kaspaBalance.balanceKAS || 0) * kasPrice).toFixed(2)} USD
                   </div>
                 )}
-                
+
+                {/* Address */}
                 <div className="bg-black border border-zinc-800 rounded-lg p-3 mb-4">
                   <div className="flex items-center justify-between gap-2">
                     <code className="text-cyan-400 text-sm break-all flex-1">{address}</code>
                     <Button onClick={copyAddress} size="sm" variant="ghost" className="shrink-0">
-                      {copiedAddress ? (
-                        <CheckCircle2 className="w-4 h-4 text-green-400" />
-                      ) : (
-                        <Copy className="w-4 h-4" />
-                      )}
+                      {copiedAddress ? <CheckCircle2 className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
                     </Button>
                   </div>
                 </div>
 
+                {/* Actions */}
                 <div className="grid grid-cols-2 gap-3 mb-4">
-                  <Button 
-                    onClick={() => navigate(createPageUrl("Receive"))} 
-                    className="bg-zinc-950 border border-zinc-800 text-white hover:bg-zinc-900"
-                  >
+                  <Button onClick={() => navigate(createPageUrl("Receive"))} className="bg-zinc-950 border border-zinc-800 text-white hover:bg-zinc-900">
                     Receive
                   </Button>
-                  <Button 
-                    onClick={() => navigate(createPageUrl("Bridge"))} 
-                    className="bg-white text-black hover:bg-gray-200"
-                  >
+                  <Button onClick={() => navigate(createPageUrl("Bridge"))} className="bg-white text-black hover:bg-gray-200">
                     Send
                   </Button>
                 </div>
 
+                {/* Seal */}
                 {pinSet && !isSealed && mnemonic && (
-                  <Button 
-                    onClick={handleSealWallet} 
-                    disabled={isSealing} 
-                    className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold"
-                  >
-                    {isSealing ? (
-                      <>
-                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        Sealing...
-                      </>
-                    ) : (
-                      <>
-                        <Shield className="w-5 h-5 mr-2" />
-                        Seal Wallet
-                      </>
-                    )}
+                  <Button onClick={handleSealWallet} disabled={isSealing} className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold">
+                    {isSealing ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Sealing...</> : <><Shield className="w-5 h-5 mr-2" />Seal Wallet</>}
                   </Button>
                 )}
 
                 {isSealed && (
-                  <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle2 className="w-6 h-6 text-green-400" />
-                      <div>
-                        <div className="text-sm font-semibold text-green-300">✅ Sealed!</div>
-                        <div className="text-xs text-green-400 mt-1">Stamped</div>
-                      </div>
+                  <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 flex items-center gap-3">
+                    <CheckCircle2 className="w-6 h-6 text-green-400" />
+                    <div>
+                      <div className="text-sm font-semibold text-green-300">✅ Sealed!</div>
+                      <div className="text-xs text-green-400 mt-1">Stamped</div>
                     </div>
                   </div>
                 )}
               </CardContent>
             </Card>
 
+            {/* PIN Setup */}
             {showPinSetup && !pinSet && (
               <Card className="bg-yellow-500/10 border-yellow-500/30">
                 <CardContent className="p-6 space-y-4">
                   <h3 className="text-white font-bold">Set PIN</h3>
-                  <Input 
-                    type="password" 
-                    inputMode="numeric"
-                    maxLength={6} 
-                    value={pin} 
-                    onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))} 
-                    placeholder="6 digits" 
-                    className="bg-black border-zinc-800 text-white text-center text-lg"
+                  <Input
+                    type="password" inputMode="numeric" maxLength={6}
+                    value={pin} onChange={e => setPin(e.target.value.replace(/\D/g, ''))}
+                    placeholder="6 digits" className="bg-black border-zinc-800 text-white text-center text-lg"
                   />
-                  <Input 
-                    type="password" 
-                    inputMode="numeric"
-                    maxLength={6} 
-                    value={confirmPin} 
-                    onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ''))} 
-                    placeholder="Confirm" 
-                    className="bg-black border-zinc-800 text-white text-center text-lg"
+                  <Input
+                    type="password" inputMode="numeric" maxLength={6}
+                    value={confirmPin} onChange={e => setConfirmPin(e.target.value.replace(/\D/g, ''))}
+                    placeholder="Confirm" className="bg-black border-zinc-800 text-white text-center text-lg"
                   />
-                  <Button 
-                    onClick={handleSetPin} 
-                    disabled={isSettingPin || pin.length !== 6 || pin !== confirmPin} 
+                  <Button
+                    onClick={handleSetPin}
+                    disabled={isSettingPin || pin.length !== 6 || pin !== confirmPin}
                     className="w-full bg-yellow-500 text-black hover:bg-yellow-600"
                   >
-                    {isSettingPin ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Setting...
-                      </>
-                    ) : (
-                      'Set PIN'
-                    )}
+                    {isSettingPin ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Setting...</> : 'Set PIN'}
                   </Button>
                 </CardContent>
               </Card>
             )}
 
+            {/* Seed Phrase */}
             {mnemonic && (
               <Card className="bg-zinc-950 border-zinc-800">
                 <CardHeader className="border-b border-zinc-800">
@@ -855,14 +554,10 @@ export default function WalletPage() {
                     <div className="flex gap-2">
                       {showMnemonic && (
                         <Button onClick={copyPhrase} size="sm" variant="ghost">
-                          {copiedPhrase ? (
-                            <CheckCircle2 className="w-4 h-4 text-green-400" />
-                          ) : (
-                            <Copy className="w-4 h-4" />
-                          )}
+                          {copiedPhrase ? <CheckCircle2 className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
                         </Button>
                       )}
-                      <Button onClick={() => setShowMnemonic(!showMnemonic)} size="sm" variant="ghost">
+                      <Button onClick={() => setShowMnemonic(s => !s)} size="sm" variant="ghost">
                         {showMnemonic ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </Button>
                     </div>
@@ -879,9 +574,7 @@ export default function WalletPage() {
                         ))}
                       </div>
                       <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-                        <p className="text-xs text-red-300">
-                          ⚠️ Save securely. Never share.
-                        </p>
+                        <p className="text-xs text-red-300">⚠️ Save securely. Never share.</p>
                       </div>
                     </>
                   ) : (
