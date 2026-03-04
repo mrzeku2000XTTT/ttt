@@ -664,22 +664,146 @@ export default function InAppIVRCall({ connectedAddress, presets, contacts = [],
           </div>
         )}
 
-        {/* Tap to speak */}
-        {speakSupported && !listening && ["awaiting_intent", "awaiting_pin", "awaiting_contact_pin", "awaiting_contact_amount", "slot_selection"].includes(phase) && (
+        {/* Universal text input — always visible during active phases */}
+        {["awaiting_intent", "awaiting_pin", "awaiting_contact_pin", "awaiting_contact_amount", "slot_selection"].includes(phase) && (
           <div className="px-4 pb-2 flex-shrink-0">
-            <button
-              onClick={() => {
-                if (phase === "awaiting_intent") listenForIntent();
-                else if (phase === "awaiting_pin") listenForPin(presets.filter(p => p.status === "active"));
-                else if (phase === "awaiting_contact_amount" && pendingContact) listenForAmount(pendingContact);
-                else if (phase === "awaiting_contact_pin" && pendingContact) listenForContactPinOrAmount(pendingContact, pendingAmount);
-                else if (phase === "slot_selection") listenForSlot(pin, slotPresets);
-              }}
-              className="w-full py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all active:scale-95"
-              style={{ background: "rgba(255,90,20,0.15)", border: "1px solid rgba(255,90,20,0.35)", color: ORANGE }}
-            >
-              <Mic size={14} /> Tap to Speak
-            </button>
+            <div className="flex items-center gap-2 rounded-xl px-3 py-2"
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <input
+                type="text"
+                placeholder={
+                  phase === "awaiting_pin" || phase === "awaiting_contact_pin" ? "Type PIN or speak…" :
+                  phase === "awaiting_contact_amount" ? "Type amount or speak…" :
+                  "Type a name, slot, or speak…"
+                }
+                value={textInput}
+                onChange={e => setTextInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === "Enter" && textInput.trim()) {
+                    const val = textInput.trim();
+                    setTranscript(prev => [...prev, { role: "user", text: val }]);
+                    setTextInput("");
+                    // route through the same logic as speech
+                    if (phase === "awaiting_intent") {
+                      const contact = findContact(val);
+                      if (contact) { handleContactTap(contact); return; }
+                      const digits = extractDigits(val);
+                      const slotNum = parseInt(digits[0]);
+                      if (slotNum >= 1 && slotNum <= 9) {
+                        speak("Please enter your PIN to continue.").then(() => {
+                          setPhase("awaiting_pin");
+                          listenForPin(presets.filter(p => p.status === "active"));
+                        });
+                        return;
+                      }
+                    } else if (phase === "awaiting_pin") {
+                      const digits = extractDigits(val);
+                      if (digits.length >= 4) verifyPin(digits, presets.filter(p => p.status === "active"));
+                    } else if (phase === "awaiting_contact_pin" && pendingContact) {
+                      const digits = extractDigits(val);
+                      if (digits.length >= 4) verifyContactPin(pendingContact, digits, pendingAmount);
+                    } else if (phase === "awaiting_contact_amount" && pendingContact) {
+                      const amt = parseFloat(val);
+                      if (amt > 0) {
+                        setPendingAmount(amt.toString());
+                        speak(`Sending ${amt} KAS to ${pendingContact.contact_name}. Say or type your PIN to confirm.`).then(() => {
+                          setPhase("awaiting_contact_pin");
+                        });
+                      }
+                    } else if (phase === "slot_selection") {
+                      const digits = extractDigits(val);
+                      const slotNum = parseInt(digits[0]);
+                      if (slotNum >= 1 && slotNum <= 9) {
+                        const chosen = slotPresets.find(p => p.slot === slotNum);
+                        if (chosen) triggerSlot(pin, slotNum, chosen);
+                      }
+                    }
+                  }
+                }}
+                className="flex-1 bg-transparent text-white text-sm outline-none"
+                style={{ WebkitUserSelect: "text", userSelect: "text" }}
+              />
+              <button
+                onClick={() => {
+                  if (textInput.trim()) {
+                    // fire Enter logic
+                    const event = new KeyboardEvent('keydown', { key: 'Enter' });
+                    // Just reuse same handler inline
+                    const val = textInput.trim();
+                    setTranscript(prev => [...prev, { role: "user", text: val }]);
+                    setTextInput("");
+                    if (phase === "awaiting_intent") {
+                      const contact = findContact(val);
+                      if (contact) { handleContactTap(contact); return; }
+                      const digits = extractDigits(val);
+                      const slotNum = parseInt(digits[0]);
+                      if (slotNum >= 1 && slotNum <= 9) {
+                        speak("Please enter your PIN to continue.").then(() => {
+                          setPhase("awaiting_pin");
+                        });
+                        return;
+                      }
+                    } else if (phase === "awaiting_pin") {
+                      const digits = extractDigits(val);
+                      if (digits.length >= 4) verifyPin(digits, presets.filter(p => p.status === "active"));
+                    } else if (phase === "awaiting_contact_pin" && pendingContact) {
+                      const digits = extractDigits(val);
+                      if (digits.length >= 4) verifyContactPin(pendingContact, digits, pendingAmount);
+                    } else if (phase === "awaiting_contact_amount" && pendingContact) {
+                      const amt = parseFloat(val);
+                      if (amt > 0) {
+                        setPendingAmount(amt.toString());
+                        speak(`Sending ${amt} KAS to ${pendingContact.contact_name}. Type your PIN to confirm.`).then(() => {
+                          setPhase("awaiting_contact_pin");
+                        });
+                      }
+                    } else if (phase === "slot_selection") {
+                      const digits = extractDigits(val);
+                      const slotNum = parseInt(digits[0]);
+                      if (slotNum >= 1 && slotNum <= 9) {
+                        const chosen = slotPresets.find(p => p.slot === slotNum);
+                        if (chosen) triggerSlot(pin, slotNum, chosen);
+                      }
+                    }
+                  }
+                }}
+                className="text-xs px-2 py-1.5 rounded-lg font-semibold flex-shrink-0"
+                style={{ background: textInput.trim() ? ORANGE : "rgba(255,255,255,0.07)", color: textInput.trim() ? "white" : "rgba(255,255,255,0.3)" }}>
+                Send
+              </button>
+              {/* Mic button — requests permission on desktop */}
+              {speakSupported && (
+                <button
+                  onClick={() => {
+                    requestMicAndListen((said) => {
+                      if (phase === "awaiting_intent") listenForIntent();
+                      else if (phase === "awaiting_pin") listenForPin(presets.filter(p => p.status === "active"));
+                      else if (phase === "awaiting_contact_amount" && pendingContact) listenForAmount(pendingContact);
+                      else if (phase === "awaiting_contact_pin" && pendingContact) listenForContactPinOrAmount(pendingContact, pendingAmount);
+                      else if (phase === "slot_selection") listenForSlot(pin, slotPresets);
+                    });
+                    // Immediately trigger the correct listener
+                    setTimeout(() => {
+                      if (phase === "awaiting_intent") listenForIntent();
+                      else if (phase === "awaiting_pin") listenForPin(presets.filter(p => p.status === "active"));
+                      else if (phase === "awaiting_contact_amount" && pendingContact) listenForAmount(pendingContact);
+                      else if (phase === "awaiting_contact_pin" && pendingContact) listenForContactPinOrAmount(pendingContact, pendingAmount);
+                      else if (phase === "slot_selection") listenForSlot(pin, slotPresets);
+                    }, 200);
+                  }}
+                  title="Click to enable microphone"
+                  className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90"
+                  style={{
+                    background: listening ? "rgba(255,90,20,0.25)" : micPermission === "denied" ? "rgba(255,59,48,0.15)" : "rgba(255,255,255,0.08)",
+                    border: `1px solid ${listening ? ORANGE : micPermission === "denied" ? "#ff3b30" : "rgba(255,255,255,0.15)"}`,
+                  }}>
+                  {micPermission === "denied" ? <MicOff size={13} color="#ff3b30" /> : <Mic size={13} color={listening ? ORANGE : "rgba(255,255,255,0.6)"} />}
+                </button>
+              )}
+            </div>
+            {micPermission === "denied" && (
+              <p className="text-center text-xs mt-1" style={{ color: "#ff3b30" }}>Mic blocked — type your response above</p>
+            )}
           </div>
         )}
 
