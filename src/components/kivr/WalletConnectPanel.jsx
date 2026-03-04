@@ -74,7 +74,7 @@ function ImportModal({ onImported, onClose }) {
       // Pass private key for mobile signing
       onImported(addr, walletName.trim() || "Imported Wallet", "import", res.data.privateKey);
     } catch (e) {
-      setError("Could not derive address from that phrase. Check and try again.");
+      setError(e?.message || "Could not derive address from that phrase. Check and try again.");
     }
     setLoading(false);
   };
