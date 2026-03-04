@@ -123,7 +123,9 @@ export default function KivRPage() {
           onConnect={setConnectedAddress}
           refreshKey={presets.length}
           onViewContacts={() => {
-            document.getElementById("kivr-contacts-section")?.scrollIntoView({ behavior: "smooth" });
+            setTimeout(() => {
+              document.getElementById("kivr-contacts-section")?.scrollIntoView({ behavior: "smooth" });
+            }, 100);
           }}
         />
 
