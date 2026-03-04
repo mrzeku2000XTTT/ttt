@@ -625,22 +625,19 @@ export default function FeedPage() {
   };
 
   const handleOpenTipModal = (post) => {
-    if (!kaswareWallet.connected) {
-      setError('Please connect Kasware wallet to send tips');
-      connectKasware();
+    const tttWallet = user?.created_wallet_address || localStorage.getItem('ttt_wallet_address');
+    if (!kaswareWallet.connected && !tttWallet) {
+      setError('Please connect a wallet to send tips');
       return;
     }
-
     if (!post.author_wallet_address) {
       setError('Post author needs a wallet to receive tips');
       return;
     }
-
     if (post.created_by === user?.email) {
       setError('You cannot tip your own post');
       return;
     }
-
     setTippingPost(post);
     setShowTipModal(true);
     setTipAmount('');
