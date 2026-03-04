@@ -96,6 +96,12 @@ export default function WalletPage() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const balanceIntervalRef = useRef(null);
 
+  // Send modal state
+  const [showSend, setShowSend] = useState(false);
+  const [sendTo, setSendTo] = useState('');
+  const [sendAmount, setSendAmount] = useState('');
+  const [isSending, setIsSending] = useState(false);
+
   const showToast = (message, type = 'success', duration = 3000) => {
     setToast({ message, type });
     if (duration > 0) setTimeout(() => setToast(null), duration);
