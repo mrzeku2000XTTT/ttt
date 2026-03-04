@@ -198,15 +198,25 @@ export default function InAppIVRCall({ connectedAddress, presets, onClose }) {
     });
   };
 
+  const getPrivateKey = () => {
+    try {
+      const wallets = JSON.parse(localStorage.getItem("kivr_wallets") || "[]");
+      const wallet = wallets.find(w => w.address === connectedAddress);
+      return wallet?.privateKey || null;
+    } catch { return null; }
+  };
+
   const triggerSlot = async (pinDigits, slotNum, chosen) => {
     setPhase("broadcasting");
     await speak(`Sending ${chosen.amount} KAS for ${chosen.label}…`);
     try {
+      const privateKey = getPrivateKey();
       const res = await base44.functions.invoke("kivrIVR", {
         action: "broadcast",
         phone: connectedAddress,
         pin: pinDigits,
         slot: slotNum,
+        privateKey: privateKey || undefined,
       });
       if (res.data?.success) {
         setResult(res.data);
