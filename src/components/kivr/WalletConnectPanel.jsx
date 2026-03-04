@@ -446,9 +446,14 @@ export default function WalletConnectPanel({ connectedAddress, onConnect, refres
   const addAndConnect = (address, name, source = "manual", privateKey = null) => {
     setWallets(prev => {
       const exists = prev.find(w => w.address === address);
-      if (exists) return prev.map(w => w.address === address ? { ...w, name } : w);
+      if (exists) {
+        return prev.map(w => w.address === address
+          ? { ...w, name, ...(privateKey ? { privateKey, source } : {}) }
+          : w
+        );
+      }
       const newWallet = { address, name, source };
-      if (privateKey) newWallet.privateKey = privateKey; // Store encrypted key for mobile signing
+      if (privateKey) newWallet.privateKey = privateKey;
       return [...prev, newWallet];
     });
     onConnect(address);
