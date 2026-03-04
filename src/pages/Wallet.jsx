@@ -102,6 +102,11 @@ export default function WalletPage() {
   const [sendTo, setSendTo] = useState('');
   const [sendAmount, setSendAmount] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [showQRScanner, setShowQRScanner] = useState(false);
+
+  // Receive/Request QR state
+  const [requestAmount, setRequestAmount] = useState('');
+  const [showReceiveQR, setShowReceiveQR] = useState(false);
 
   const showToast = (message, type = 'success', duration = 3000) => {
     setToast({ message, type });
