@@ -394,6 +394,7 @@ export default function WalletPage() {
       try { await base44.auth.updateMe({ created_wallet_address: null, wallet_pin_hash: null }); } catch { }
       localStorage.removeItem('ttt_wallet_address');
       localStorage.removeItem('ttt_wallet_pk');
+      localStorage.removeItem('ttt_wallet_pin_hash');
       stopBalancePolling();
       setAddress(null); setMnemonic(null); setPrivateKey(null);
       setIsSealed(false); setPinSet(false); setKaspaBalance(null);
