@@ -122,9 +122,13 @@ Deno.serve(async (req) => {
     const { action, phone, pin, slot, privateKey } = body;
 
     if (!action) return Response.json({ error: 'Missing action' }, { status: 400 });
-    if (!phone) return Response.json({ error: 'Missing identifier (phone or wallet address)' }, { status: 400 });
 
     const base44 = createClientFromRequest(req);
+
+    // broadcast_contact doesn't need phone/identifier
+    if (action !== 'broadcast_contact' && !phone) {
+      return Response.json({ error: 'Missing identifier (phone or wallet address)' }, { status: 400 });
+    }
 
     // ── verify_pin ─────────────────────────────────────────────────────────
     if (action === 'verify_pin') {
