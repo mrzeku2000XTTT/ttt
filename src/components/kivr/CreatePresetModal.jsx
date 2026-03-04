@@ -36,12 +36,9 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
   const [phone, setPhone] = useState("");
   const [pin, setPin] = useState("");
   const [slot, setSlot] = useState("1");
-  const [step, setStep] = useState(1); // 1 = payment info, 2 = IVR setup, 3 = review, 4 = signing
+  const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [signingStatus, setSigningStatus] = useState("");
-  const [showSigningModal, setShowSigningModal] = useState(false);
-  const [txToSign, setTxToSign] = useState(null);
 
   const validateStep1 = () => {
     if (!toAddress.startsWith("kaspa:")) return "Recipient must be a valid kaspa: address";
