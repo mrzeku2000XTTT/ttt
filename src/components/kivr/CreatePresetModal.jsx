@@ -63,7 +63,7 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
       if (err) { setError(err); return; }
       setStep(3);
     } else if (step === 3) {
-      setStep(4);
+      handleSave();
     }
   };
 
