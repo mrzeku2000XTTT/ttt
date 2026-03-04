@@ -212,7 +212,7 @@ export default function WalletPage() {
           const savedAddr = currentUser.created_wallet_address || localStorage.getItem('ttt_wallet_address');
           if (savedAddr) {
             setAddress(savedAddr);
-            setPinSet(!!currentUser.wallet_pin_hash);
+            setPinSet(!!(currentUser.wallet_pin_hash || localStorage.getItem('ttt_wallet_pin_hash')));
             checkIfSealed(savedAddr, currentUser);
             startBalancePolling(savedAddr);
           }
