@@ -105,24 +105,6 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
       style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(10px)" }}
       onClick={onClose}
     >
-      <SigningModal
-        isOpen={showSigningModal}
-        transaction={txToSign}
-        privateKey={getPrivateKeyForWallet()}
-        onSigned={(signedTx) => {
-          setShowSigningModal(false);
-          if (window._signingPromise) {
-            window._signingPromise.resolve(signedTx);
-          }
-        }}
-        onCancel={() => {
-          setShowSigningModal(false);
-          if (window._signingPromise) {
-            window._signingPromise.reject(new Error("User cancelled signing"));
-          }
-        }}
-      />
-
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
         onClick={e => e.stopPropagation()}
