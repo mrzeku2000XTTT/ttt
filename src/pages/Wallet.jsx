@@ -682,8 +682,8 @@ export default function WalletPage() {
 
                 {/* Actions */}
                 <div className="grid grid-cols-2 gap-3 mb-4">
-                  <Button onClick={() => navigate(createPageUrl("Receive"))} className="bg-zinc-950 border border-zinc-800 text-white hover:bg-zinc-900">
-                    Receive
+                  <Button onClick={() => setShowReceiveQR(true)} className="bg-zinc-950 border border-zinc-800 text-white hover:bg-zinc-900">
+                    <Download className="w-4 h-4 mr-2" />Receive
                   </Button>
                   <Button onClick={() => setShowSend(true)} className="bg-white text-black hover:bg-gray-200">
                     Send
