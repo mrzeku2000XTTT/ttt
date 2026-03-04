@@ -113,8 +113,6 @@ export default function WalletPage() {
     setIsFetchingBalance(true);
     try {
       const res = await base44.functions.invoke('getKaspaBalance', { address: addr });
-      console.log('[Wallet] balance response:', JSON.stringify(res.data));
-      // Backend returns { success, balanceKAS, balanceSompi }
       const balKAS = res.data?.balanceKAS;
       if (typeof balKAS === 'number') {
         setKaspaBalance({ balanceKAS: balKAS });
@@ -123,9 +121,43 @@ export default function WalletPage() {
       }
     } catch (e) {
       console.error('[Wallet] balance fetch error:', e);
-      setKaspaBalance({ balanceKAS: 0 });
+      setKaspaBalance(prev => prev ?? { balanceKAS: 0 });
     } finally {
       setIsFetchingBalance(false);
+    }
+  };
+
+  // ── Send KAS via Terra Protocol (sendKaspaTransaction) ────────────────────
+  const handleSend = async () => {
+    if (!sendTo.trim() || !sendAmount || parseFloat(sendAmount) <= 0) {
+      showToast('Enter a valid address and amount', 'error');
+      return;
+    }
+    // Retrieve stored private key
+    const storedPK = localStorage.getItem('ttt_wallet_pk');
+    if (!storedPK) {
+      showToast('No private key found. Please re-import your wallet.', 'error');
+      return;
+    }
+    setIsSending(true);
+    try {
+      const res = await base44.functions.invoke('sendKaspaTransaction', {
+        privateKey: storedPK,
+        fromAddress: address,
+        toAddress: sendTo.trim(),
+        amountKas: parseFloat(sendAmount),
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      showToast(`Sent! TX: ${String(res.data.txId).slice(0, 16)}...`, 'success');
+      setShowSend(false);
+      setSendTo('');
+      setSendAmount('');
+      // Refresh balance after send
+      setTimeout(() => fetchBalance(address), 3000);
+    } catch (e) {
+      showToast(e?.message || 'Send failed', 'error');
+    } finally {
+      setIsSending(false);
     }
   };
 
