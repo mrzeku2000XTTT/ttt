@@ -168,16 +168,14 @@ Deno.serve(async (req) => {
         return Response.json({ success: false, error: 'No private key provided. Import your wallet to send transactions.' });
       }
 
-      // Send transaction using private key via sendKaspaTransaction function
+      // Sign and broadcast directly (no sub-function hop to avoid 502 timeout)
       try {
-        const res = await base44.asServiceRole.functions.invoke('sendKaspaTransaction', {
-          fromAddress: preset.from_address,
-          toAddress: preset.to_address,
-          amountKas: preset.amount,
-          privateKey: privateKey,
-        });
-        if (res?.error) throw new Error(res.error);
-        txId = res?.txId || res?.txid || res?.transaction_id || 'sent';
+        txId = await sendKaspaTransactionDirect(
+          preset.from_address,
+          preset.to_address,
+          preset.amount,
+          privateKey
+        );
       } catch (sendErr) {
         return Response.json({ success: false, error: `Transaction failed: ${sendErr.message}` });
       }
