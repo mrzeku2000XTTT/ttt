@@ -73,6 +73,8 @@ export default function InAppIVRCall({ connectedAddress, presets, contacts = [],
   const recognitionRef = useRef(null);
   const transcriptRef = useRef(null);
   const phaseRef = useRef("idle");
+  const pendingContactRef = useRef(null);
+  const pendingAmountRef = useRef("");
 
   useEffect(() => { mutedRef.current = muted; }, [muted]);
   useEffect(() => { phaseRef.current = phase; }, [phase]);
