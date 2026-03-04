@@ -34,6 +34,7 @@ Deno.serve(async (req) => {
 
     return Response.json({
       address: cleanAddress,
+      privateKey,
       mnemonic,
       derivationPath: "m/44'/111111'/0'/0/0",
     });
