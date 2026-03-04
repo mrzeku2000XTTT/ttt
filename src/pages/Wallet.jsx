@@ -245,6 +245,7 @@ export default function WalletPage() {
       setPrivateKey(pk);
       setAddress(fullAddr);
       setShowMnemonic(true);
+      if (pk) localStorage.setItem('ttt_wallet_pk', pk);
       await saveWallet(fullAddr, wordCount);
       startBalancePolling(fullAddr);
       setShowPinSetup(true);
