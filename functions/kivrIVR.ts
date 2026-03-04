@@ -223,7 +223,7 @@ Deno.serve(async (req) => {
 
     // ── broadcast_contact ──────────────────────────────────────────────────
     if (action === 'broadcast_contact') {
-      const { from_address, to_address, amount, privateKey } = body;
+      const { from_address, to_address, amount } = body;
       if (!from_address) return Response.json({ success: false, error: 'Missing from_address' });
       if (!to_address) return Response.json({ success: false, error: 'Missing to_address' });
       if (!amount) return Response.json({ success: false, error: 'Missing amount' });
