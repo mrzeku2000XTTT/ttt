@@ -598,7 +598,7 @@ export default function WalletPage() {
                   <Button onClick={() => navigate(createPageUrl("Receive"))} className="bg-zinc-950 border border-zinc-800 text-white hover:bg-zinc-900">
                     Receive
                   </Button>
-                  <Button onClick={() => navigate(createPageUrl("Bridge"))} className="bg-white text-black hover:bg-gray-200">
+                  <Button onClick={() => setShowSend(true)} className="bg-white text-black hover:bg-gray-200">
                     Send
                   </Button>
                 </div>
