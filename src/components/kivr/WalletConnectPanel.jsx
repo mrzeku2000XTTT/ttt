@@ -506,6 +506,7 @@ export default function WalletConnectPanel({ connectedAddress, onConnect, refres
           onDisconnect={disconnectWallet}
           onRename={renameWallet}
           onAdd={setModal}
+          onViewContacts={onViewContacts || (() => {})}
         />
         <AnimatePresence>
           {modal === "create" && <CreateModal onCreated={(a, n, s, pk) => addAndConnect(a, n, s, pk)} onClose={() => setModal(null)} />}
