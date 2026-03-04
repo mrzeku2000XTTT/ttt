@@ -210,7 +210,8 @@ function CreateModal({ onCreated, onClose }) {
         <div className="flex flex-col items-center justify-center py-8 gap-4">
           <AlertTriangle size={36} color="#ff9500" />
           <p className="text-white font-bold">Generation failed</p>
-          <button onClick={() => setStep("options")}
+          {error && <p className="text-xs text-center px-2" style={{ color: "#ff3b30" }}>{error}</p>}
+          <button onClick={() => { setStep("options"); setError(""); }}
             className="w-full py-3 rounded-xl text-white font-bold text-sm"
             style={{ background: ORANGE }}>Try Again</button>
         </div>
