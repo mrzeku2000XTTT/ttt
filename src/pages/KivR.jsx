@@ -23,9 +23,11 @@ export default function KivRPage() {
     return localStorage.getItem("kivr_wallet") || null;
   });
   const [presets, setPresets] = useState([]);
+  const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [showCall, setShowCall] = useState(false);
+  const [showAddContact, setShowAddContact] = useState(false);
 
   useEffect(() => {
     if (connectedAddress) {
