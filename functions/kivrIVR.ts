@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const { action, phone, pin, slot, privateKey } = body;
+    const { action, phone, pin, slot, privateKey, from_address, to_address, amount } = body;
 
     if (!action) return Response.json({ error: 'Missing action' }, { status: 400 });
 
@@ -223,7 +223,6 @@ Deno.serve(async (req) => {
 
     // ── broadcast_contact ──────────────────────────────────────────────────
     if (action === 'broadcast_contact') {
-      const { from_address, to_address, amount } = body;
       if (!from_address) return Response.json({ success: false, error: 'Missing from_address' });
       if (!to_address) return Response.json({ success: false, error: 'Missing to_address' });
       if (!amount) return Response.json({ success: false, error: 'Missing amount' });
