@@ -357,7 +357,7 @@ export default function WalletPage() {
   };
 
   const handleSealWallet = async () => {
-    if (!address || !mnemonic || !pinSet || !user) { setError('Missing requirements'); return; }
+    if (!address || !mnemonic || !pinSet) { setError('Missing requirements'); return; }
     setIsSealing(true);
     setError(null);
     try {
