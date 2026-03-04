@@ -285,7 +285,7 @@ function ManualModal({ onConnect, onClose }) {
 }
 
 // ── Wallet management panel (when connected) ───────────────────────────────────
-function WalletManagePanel({ wallets, activeAddress, onSwitch, onDisconnect, onRename, onAdd }) {
+function WalletManagePanel({ wallets, activeAddress, onSwitch, onDisconnect, onRename, onAdd, onViewContacts }) {
   const [open, setOpen] = useState(false);
   const [renaming, setRenaming] = useState(null);
   const [newName, setNewName] = useState("");
