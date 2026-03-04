@@ -1,6 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
+import { KaspaWallet } from 'npm:@okxweb3/coin-kaspa@2.4.9';
 
 const KASPA_API = 'https://api.kaspa.org';
+const FEE_SOMPI = 10000;
 
 async function hashPin(pin) {
   const encoder = new TextEncoder();
