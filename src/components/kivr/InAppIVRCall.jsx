@@ -201,9 +201,15 @@ export default function InAppIVRCall({ connectedAddress, presets, onClose }) {
   const getPrivateKey = () => {
     try {
       const wallets = JSON.parse(localStorage.getItem("kivr_wallets") || "[]");
+      console.log("[KivR] wallets in storage:", wallets.map(w => ({ address: w.address, hasKey: !!w.privateKey })));
+      console.log("[KivR] looking for address:", connectedAddress);
       const wallet = wallets.find(w => w.address === connectedAddress);
+      console.log("[KivR] found wallet:", wallet ? { address: wallet.address, hasKey: !!wallet.privateKey } : null);
       return wallet?.privateKey || null;
-    } catch { return null; }
+    } catch (e) {
+      console.error("[KivR] getPrivateKey error:", e);
+      return null;
+    }
   };
 
   const triggerSlot = async (pinDigits, slotNum, chosen) => {
