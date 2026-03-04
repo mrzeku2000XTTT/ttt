@@ -322,14 +322,15 @@ export default function InAppIVRCall({ connectedAddress, presets, contacts = [],
         await speak(`Done! ${amount} KAS sent to ${contact.contact_name} successfully.`);
         setPhase("done");
       } else {
-        const msg = res.data?.error || "Unknown error";
+        const msg = res.data?.error || res.data?.message || JSON.stringify(res.data) || "Transaction failed";
         setError(msg);
         await speak(`Payment failed: ${msg}`);
         setPhase("error");
       }
     } catch (e) {
-      setError(e.message);
-      await speak("An error occurred. Please try again.");
+      const msg = e?.message || e?.toString() || "Unexpected error";
+      setError(msg);
+      await speak(`An error occurred: ${msg}`);
       setPhase("error");
     }
   };
