@@ -78,6 +78,8 @@ export default function InAppIVRCall({ connectedAddress, presets, contacts = [],
 
   useEffect(() => { mutedRef.current = muted; }, [muted]);
   useEffect(() => { phaseRef.current = phase; }, [phase]);
+  useEffect(() => { pendingContactRef.current = pendingContact; }, [pendingContact]);
+  useEffect(() => { pendingAmountRef.current = pendingAmount; }, [pendingAmount]);
 
   useEffect(() => {
     if (transcriptRef.current) transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
