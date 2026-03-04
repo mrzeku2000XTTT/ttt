@@ -241,16 +241,6 @@ export default function KivRPage() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {showAddContact && (
-          <AddContactModal
-            fromAddress={connectedAddress}
-            onClose={() => setShowAddContact(false)}
-            onCreated={() => { setShowAddContact(false); loadPresets(); }}
-          />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
         {showCreate && (
           <CreatePresetModal
             fromAddress={connectedAddress}
