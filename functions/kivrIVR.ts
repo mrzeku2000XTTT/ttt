@@ -30,18 +30,28 @@ async function findPresets(base44, identifier) {
   return presets || [];
 }
 
+function toErrMsg(e) {
+  if (!e) return 'Unknown error';
+  if (typeof e === 'string') return e;
+  if (e.message) return e.message;
+  try { return JSON.stringify(e); } catch { return String(e); }
+}
+
 // Sign and broadcast a Kaspa transaction directly (no sub-function call)
 async function sendKaspaTransactionDirect(fromAddress, toAddress, amountKas, privateKey) {
   const amountSompi = Math.round(parseFloat(amountKas) * 1e8);
 
-  const normalizedFrom = fromAddress.startsWith('kaspa:') ? fromAddress : `kaspa:${fromAddress}`;
-  const normalizedTo = toAddress.startsWith('kaspa:') ? toAddress : `kaspa:${toAddress}`;
+  // API calls need kaspa: prefix; OKX SDK wants NO prefix
+  const apiFrom = fromAddress.startsWith('kaspa:') ? fromAddress : `kaspa:${fromAddress}`;
+  const apiTo = toAddress.startsWith('kaspa:') ? toAddress : `kaspa:${toAddress}`;
+  const sdkFrom = apiFrom.replace('kaspa:', '');
+  const sdkTo = apiTo.replace('kaspa:', '');
 
   // 1. Fetch UTXOs
-  const utxoRes = await fetch(`${KASPA_API}/addresses/${normalizedFrom}/utxos`);
+  const utxoRes = await fetch(`${KASPA_API}/addresses/${apiFrom}/utxos`);
   if (!utxoRes.ok) throw new Error(`Failed to fetch UTXOs: ${utxoRes.status}`);
   const utxos = await utxoRes.json();
-  if (!utxos || utxos.length === 0) throw new Error('No UTXOs available. Insufficient balance.');
+  if (!Array.isArray(utxos) || utxos.length === 0) throw new Error('No UTXOs available — wallet may have zero balance.');
 
   // 2. Greedy UTXO selection
   const needed = amountSompi + FEE_SOMPI;
@@ -59,22 +69,28 @@ async function sendKaspaTransactionDirect(fromAddress, toAddress, amountKas, pri
 
   const change = totalIn - amountSompi - FEE_SOMPI;
 
-  // 3. Build inputs/outputs for OKX SDK
+  // 3. Build inputs/outputs — OKX SDK uses addresses WITHOUT kaspa: prefix
   const inputs = selected.map(u => ({
     txId: u.outpoint.transactionId,
     vOut: u.outpoint.index,
-    address: normalizedFrom,
+    address: sdkFrom,
     amount: Number(u.utxoEntry.amount),
   }));
-  const outputs = [{ address: normalizedTo, amount: amountSompi }];
-  if (change > 0) outputs.push({ address: normalizedFrom, amount: change });
+  const outputs = [{ address: sdkTo, amount: amountSompi }];
+  if (change > 0) outputs.push({ address: sdkFrom, amount: change });
 
   // 4. Sign
-  const wallet = new KaspaWallet();
-  const signResult = await wallet.signTransaction({
-    data: { inputs, outputs, address: normalizedFrom, fee: FEE_SOMPI },
-    privateKey,
-  });
+  let signResult;
+  try {
+    const wallet = new KaspaWallet();
+    signResult = await wallet.signTransaction({
+      data: { inputs, outputs, address: sdkFrom, fee: FEE_SOMPI },
+      privateKey,
+    });
+  } catch (signErr) {
+    throw new Error(`Signing failed: ${toErrMsg(signErr)}`);
+  }
+
   const signed = typeof signResult === 'string' ? JSON.parse(signResult) : signResult;
   const rawTx = signed.transaction ?? signed.tx ?? signed;
 
@@ -85,10 +101,12 @@ async function sendKaspaTransactionDirect(fromAddress, toAddress, amountKas, pri
     body: JSON.stringify({ transaction: rawTx, allowOrphan: false }),
   });
   const submitText = await submitRes.text();
-  if (!submitRes.ok) throw new Error(`Submit failed (${submitRes.status}): ${submitText.slice(0, 200)}`);
+  if (!submitRes.ok) throw new Error(`Broadcast failed (${submitRes.status}): ${submitText.slice(0, 300)}`);
   let submitData;
-  try { submitData = JSON.parse(submitText); } catch { submitData = submitText; }
-  return submitData.transactionId || submitData.txid || submitData;
+  try { submitData = JSON.parse(submitText); } catch { submitData = { raw: submitText }; }
+  const txId = submitData.transactionId || submitData.txid;
+  if (!txId) throw new Error(`Broadcast returned no txId. Response: ${submitText.slice(0, 200)}`);
+  return txId;
 }
 
 Deno.serve(async (req) => {
@@ -107,9 +125,35 @@ Deno.serve(async (req) => {
     const { action, phone, pin, slot, privateKey } = body;
 
     if (!action) return Response.json({ error: 'Missing action' }, { status: 400 });
-    if (!phone) return Response.json({ error: 'Missing identifier (phone or wallet address)' }, { status: 400 });
 
     const base44 = createClientFromRequest(req);
+
+    // broadcast_contact does NOT use phone — handle it first
+    if (action === 'broadcast_contact') {
+      const { from_address, to_address, amount, privateKey: pk } = body;
+      if (!from_address) return Response.json({ success: false, error: 'Missing from_address' });
+      if (!to_address) return Response.json({ success: false, error: 'Missing to_address' });
+      if (!amount) return Response.json({ success: false, error: 'Missing amount' });
+      if (!pk) return Response.json({ success: false, error: 'No private key provided. Import your wallet.' });
+
+      let txId;
+      try {
+        txId = await sendKaspaTransactionDirect(from_address, to_address, amount, pk);
+      } catch (sendErr) {
+        return Response.json({ success: false, error: `Transaction failed: ${sendErr.message}` });
+      }
+
+      return Response.json({
+        success: true,
+        tx_id: txId,
+        amount,
+        to_address,
+        message: `Successfully sent ${amount} KAS`,
+      });
+    }
+
+    // All other actions require phone/identifier
+    if (!phone) return Response.json({ error: 'Missing identifier (phone or wallet address)' }, { status: 400 });
 
     // ── verify_pin ─────────────────────────────────────────────────────────
     if (action === 'verify_pin') {

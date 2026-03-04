@@ -1,7 +1,81 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { X, AlertTriangle, CheckCircle, Loader2, Phone, Hash, Tag, ArrowRight } from "lucide-react";
+import { X, AlertTriangle, CheckCircle, Loader2, Phone, Hash, Tag, ArrowRight, UserPlus, Check } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+
+async function hashPin(p) {
+  const enc = new TextEncoder();
+  const buf = await crypto.subtle.digest("SHA-256", enc.encode(p + "_kivr_salt_2024"));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+function SaveContactInline({ fromAddress, toAddress, defaultAmount }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [pin, setPinVal] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [err, setErr] = useState("");
+
+  if (!toAddress.startsWith("kaspa:")) return null;
+
+  const handleSave = async () => {
+    if (!name.trim()) { setErr("Name required."); return; }
+    if (pin.length < 4) { setErr("PIN must be 4+ digits."); return; }
+    setSaving(true); setErr("");
+    try {
+      const ph = await hashPin(pin);
+      await base44.entities.KivRContact.create({
+        from_address: fromAddress,
+        contact_name: name.trim(),
+        kaspa_address: toAddress,
+        default_amount: defaultAmount ? parseFloat(defaultAmount) : undefined,
+        pin_hash: ph,
+      });
+      setSaved(true); setOpen(false);
+    } catch { setErr("Failed to save. Try again."); }
+    setSaving(false);
+  };
+
+  if (saved) return (
+    <div className="flex items-center gap-1.5 text-xs" style={{ color: "#34c759" }}>
+      <Check size={12} /> Saved as contact
+    </div>
+  );
+
+  return (
+    <div>
+      <button onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl transition-all"
+        style={{ background: "rgba(255,90,20,0.1)", border: "1px solid rgba(255,90,20,0.25)", color: "#ff5a14" }}>
+        <UserPlus size={12} /> Save as Contact
+      </button>
+      {open && (
+        <div className="mt-2 space-y-2 rounded-xl p-3" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <input
+            autoFocus value={name} onChange={e => setName(e.target.value)}
+            placeholder='Contact name (e.g. "Bills")'
+            className="w-full rounded-lg px-3 py-2 text-white text-xs outline-none"
+            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}
+          />
+          <input
+            type="password" inputMode="numeric" maxLength={8}
+            value={pin} onChange={e => setPinVal(e.target.value.replace(/\D/g, ""))}
+            placeholder="Voice PIN (4+ digits)"
+            className="w-full rounded-lg px-3 py-2 text-white text-xs font-mono outline-none"
+            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}
+          />
+          {err && <p className="text-xs" style={{ color: "#ff3b30" }}>{err}</p>}
+          <button onClick={handleSave} disabled={saving}
+            className="w-full py-2 rounded-lg text-white text-xs font-bold"
+            style={{ background: saving ? "rgba(255,90,20,0.4)" : "#ff5a14" }}>
+            {saving ? "Saving…" : "Save Contact"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const ORANGE = "#ff5a14";
 const GLASS = {
@@ -65,12 +139,6 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
     } else if (step === 3) {
       handleSave();
     }
-  };
-
-  const hashPin = async (p) => {
-    const enc = new TextEncoder();
-    const buf = await crypto.subtle.digest("SHA-256", enc.encode(p + "_kivr_salt_2024"));
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
   };
 
   const handleSave = async () => {
@@ -140,6 +208,9 @@ export default function CreatePresetModal({ fromAddress, onClose, onCreated }) {
         {step === 1 && (
           <div className="space-y-4">
             <InputField label="Recipient Address" value={toAddress} onChange={setToAddress} placeholder="kaspa:q..." />
+            {toAddress.startsWith("kaspa:") && (
+              <SaveContactInline fromAddress={fromAddress} toAddress={toAddress} defaultAmount={amount} />
+            )}
             <InputField label="Amount (KAS)" value={amount} onChange={setAmount} placeholder="e.g. 100" type="number" />
             <InputField label="Label (optional)" value={label} onChange={setLabel} placeholder="e.g. Pay Merchant A" />
           </div>

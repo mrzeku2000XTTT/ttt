@@ -12,6 +12,8 @@ import CreatePresetModal from "@/components/kivr/CreatePresetModal";
 import HowItWorksSection from "@/components/kivr/HowItWorksSection";
 import IVRSetupGuide from "@/components/kivr/IVRSetupGuide";
 import InAppIVRCall from "@/components/kivr/InAppIVRCall";
+import ContactsList from "@/components/kivr/ContactsList";
+import AddContactModal from "@/components/kivr/AddContactModal";
 
 const ORANGE = "#ff5a14";
 
@@ -21,9 +23,11 @@ export default function KivRPage() {
     return localStorage.getItem("kivr_wallet") || null;
   });
   const [presets, setPresets] = useState([]);
+  const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [showCall, setShowCall] = useState(false);
+  const [showAddContact, setShowAddContact] = useState(false);
 
   useEffect(() => {
     if (connectedAddress) {
@@ -39,10 +43,12 @@ export default function KivRPage() {
     if (!connectedAddress) return;
     setLoading(true);
     try {
-      const all = await base44.entities.KivRTransaction.filter({
-        from_address: connectedAddress,
-      });
+      const [all, allContacts] = await Promise.all([
+        base44.entities.KivRTransaction.filter({ from_address: connectedAddress }),
+        base44.entities.KivRContact.filter({ from_address: connectedAddress }),
+      ]);
       setPresets(all.sort((a, b) => (a.slot_number || 9) - (b.slot_number || 9)));
+      setContacts(allContacts);
     } catch (err) {
       console.error("Failed to load presets:", err);
     }
@@ -116,6 +122,9 @@ export default function KivRPage() {
           connectedAddress={connectedAddress}
           onConnect={setConnectedAddress}
           refreshKey={presets.length}
+          onViewContacts={() => {
+            document.getElementById("kivr-contacts-section")?.scrollIntoView({ behavior: "smooth" });
+          }}
         />
 
         {!connectedAddress && <HowItWorksSection />}
@@ -167,6 +176,19 @@ export default function KivRPage() {
           </div>
         )}
 
+        {connectedAddress && (
+          <div id="kivr-contacts-section">
+            <ContactsList
+              contacts={contacts}
+              onAdd={() => setShowAddContact(true)}
+              onDelete={async (id) => {
+                await base44.entities.KivRContact.delete(id);
+                loadPresets();
+              }}
+            />
+          </div>
+        )}
+
         <IVRSetupGuide connectedAddress={connectedAddress} presetCount={activePresets.length} />
       </div>
 
@@ -212,11 +234,20 @@ export default function KivRPage() {
         )}
       </AnimatePresence>
 
+      {showAddContact && (
+        <AddContactModal
+          fromAddress={connectedAddress}
+          onClose={() => setShowAddContact(false)}
+          onCreated={() => { setShowAddContact(false); loadPresets(); }}
+        />
+      )}
+
       <AnimatePresence>
         {showCall && (
           <InAppIVRCall
             connectedAddress={connectedAddress}
             presets={presets}
+            contacts={contacts}
             onClose={() => setShowCall(false)}
           />
         )}
