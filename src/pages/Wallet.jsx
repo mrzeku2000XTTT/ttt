@@ -407,6 +407,74 @@ export default function WalletPage() {
         )}
       </AnimatePresence>
 
+      {/* QR Scanner */}
+      <AnimatePresence>
+        {showQRScanner && (
+          <QRScanner
+            onScan={({ address, amount }) => {
+              setSendTo(address);
+              if (amount) setSendAmount(amount);
+              setShowQRScanner(false);
+            }}
+            onClose={() => setShowQRScanner(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Receive / Request QR Modal */}
+      <AnimatePresence>
+        {showReceiveQR && address && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+            onClick={() => setShowReceiveQR(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 w-full max-w-sm space-y-4"
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-white font-bold text-lg">Receive / Request</h3>
+                <button onClick={() => setShowReceiveQR(false)} className="text-gray-400 hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              {/* QR Code display */}
+              <div className="flex justify-center">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
+                    requestAmount ? `${address}?amount=${requestAmount}` : address
+                  )}`}
+                  alt="Kaspa QR"
+                  className="rounded-xl border border-zinc-700"
+                />
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-gray-500 font-mono break-all">{address}</p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-1.5 block">Request Amount (optional)</label>
+                <Input
+                  type="number"
+                  value={requestAmount}
+                  onChange={e => setRequestAmount(e.target.value)}
+                  placeholder="0.00 KAS"
+                  className="bg-black border-zinc-800 text-white text-center"
+                />
+                {requestAmount && <p className="text-xs text-center text-cyan-400 mt-1">QR encodes {requestAmount} KAS request</p>}
+              </div>
+              <Button
+                onClick={() => { navigator.clipboard.writeText(requestAmount ? `${address}?amount=${requestAmount}` : address); showToast('Copied!', 'success'); }}
+                className="w-full bg-zinc-800 text-white hover:bg-zinc-700"
+              >
+                <Copy className="w-4 h-4 mr-2" /> Copy Address{requestAmount ? ' + Amount' : ''}
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Send Modal */}
       <AnimatePresence>
         {showSend && (
@@ -428,12 +496,22 @@ export default function WalletPage() {
               </div>
               <div>
                 <label className="text-xs text-gray-400 mb-1.5 block">Recipient Address</label>
-                <Input
-                  value={sendTo}
-                  onChange={e => setSendTo(e.target.value)}
-                  placeholder="kaspa:q..."
-                  className="bg-black border-zinc-800 text-white font-mono text-sm"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    value={sendTo}
+                    onChange={e => setSendTo(e.target.value)}
+                    placeholder="kaspa:q..."
+                    className="bg-black border-zinc-800 text-white font-mono text-sm flex-1"
+                  />
+                  <Button
+                    onClick={() => setShowQRScanner(true)}
+                    variant="outline"
+                    className="border-zinc-700 bg-black text-gray-300 hover:bg-zinc-800 px-3"
+                    title="Scan QR"
+                  >
+                    <QrCode className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
               <div>
                 <label className="text-xs text-gray-400 mb-1.5 block">Amount (KAS)</label>
@@ -447,7 +525,10 @@ export default function WalletPage() {
                 {kaspaBalance && (
                   <p className="text-xs text-gray-500 mt-1">
                     Available: {kaspaBalance.balanceKAS.toFixed(4)} KAS
-                    <button onClick={() => setSendAmount(String(Math.max(0, kaspaBalance.balanceKAS - 0.0001).toFixed(8)))} className="ml-2 text-cyan-400 hover:text-cyan-300">Max</button>
+                    <button
+                      onClick={() => setSendAmount(String(Math.max(0, kaspaBalance.balanceKAS - 0.0001).toFixed(8)))}
+                      className="ml-2 text-cyan-400 hover:text-cyan-300 font-semibold"
+                    >Max</button>
                   </p>
                 )}
               </div>
