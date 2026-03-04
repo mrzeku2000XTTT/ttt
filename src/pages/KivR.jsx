@@ -12,6 +12,8 @@ import CreatePresetModal from "@/components/kivr/CreatePresetModal";
 import HowItWorksSection from "@/components/kivr/HowItWorksSection";
 import IVRSetupGuide from "@/components/kivr/IVRSetupGuide";
 import InAppIVRCall from "@/components/kivr/InAppIVRCall";
+import ContactsList from "@/components/kivr/ContactsList";
+import AddContactModal from "@/components/kivr/AddContactModal";
 
 const ORANGE = "#ff5a14";
 

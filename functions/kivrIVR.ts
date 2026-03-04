@@ -202,6 +202,30 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ── broadcast_contact ──────────────────────────────────────────────────
+    if (action === 'broadcast_contact') {
+      const { from_address, to_address, amount, privateKey } = body;
+      if (!from_address) return Response.json({ success: false, error: 'Missing from_address' });
+      if (!to_address) return Response.json({ success: false, error: 'Missing to_address' });
+      if (!amount) return Response.json({ success: false, error: 'Missing amount' });
+      if (!privateKey) return Response.json({ success: false, error: 'No private key provided. Import your wallet.' });
+
+      let txId;
+      try {
+        txId = await sendKaspaTransactionDirect(from_address, to_address, amount, privateKey);
+      } catch (sendErr) {
+        return Response.json({ success: false, error: `Transaction failed: ${sendErr.message}` });
+      }
+
+      return Response.json({
+        success: true,
+        tx_id: txId,
+        amount,
+        to_address,
+        message: `Successfully sent ${amount} KAS`,
+      });
+    }
+
     return Response.json({ error: `Unknown action: ${action}` }, { status: 400 });
 
   } catch (error) {
