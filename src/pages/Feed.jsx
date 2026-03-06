@@ -3144,160 +3144,33 @@ export default function FeedPage() {
 
       <AnimatePresence>
         {showTipModal && tippingPost && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
-            onClick={() => {
-              setShowTipModal(false);
-              setTippingPost(null);
-              setTipAmount('');
+          <FeedTipModal
+            tippingPost={tippingPost}
+            user={user}
+            kaswareWallet={kaswareWallet}
+            onClose={() => { setShowTipModal(false); setTippingPost(null); setTipAmount(''); }}
+            onSuccess={({ tipAmountValue, txId, ticker, tippingPost: tp, tipTokenType: ttype, tipKrc20Ticker: ttick }) => {
+              // Update local posts state
+              if (ttype === 'KRC20') {
+                setPosts(posts.map(p => {
+                  if (p.id === tp.id) {
+                    const cur = p.krc20_tips_received || {};
+                    return { ...p, krc20_tips_received: { ...cur, [ttick.toUpperCase()]: (cur[ttick.toUpperCase()] || 0) + tipAmountValue } };
+                  }
+                  return p;
+                }));
+              } else {
+                setPosts(posts.map(p => p.id === tp.id ? { ...p, tips_received: (p.tips_received || 0) + tipAmountValue } : p));
+              }
+              // Show notification
+              const notification = document.createElement('div');
+              notification.className = 'fixed right-4 bg-black/95 backdrop-blur-xl border border-white/20 text-white rounded-xl p-4 shadow-2xl z-[1000] max-w-xs';
+              notification.style.top = 'calc(var(--sat, 0px) + 8rem)';
+              notification.innerHTML = `<div class="flex items-center gap-2 mb-2"><span class="text-sm">✓</span><h3 class="font-bold text-sm">Tip sent!</h3></div><p class="text-xs text-white/60">${tipAmountValue} ${ticker} → ${tp.author_name}</p><button onclick="this.parentElement.remove()" class="mt-2 w-full bg-white/5 rounded-lg py-1 text-xs border border-white/10">OK</button>`;
+              document.body.appendChild(notification);
+              setTimeout(() => notification.remove(), 5000);
             }}
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-black border border-white/20 rounded-xl w-full max-w-md p-6"
-            >
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-lg flex items-center justify-center">
-                    <DollarSign className="w-5 h-5 text-green-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-white font-bold text-lg">Send Tip</h3>
-                    <p className="text-white/60 text-sm">to {tippingPost.author_name}</p>
-                  </div>
-                </div>
-                <Button
-                  onClick={() => {
-                    setShowTipModal(false);
-                    setTippingPost(null);
-                    setTipAmount('');
-                  }}
-                  variant="ghost"
-                  size="sm"
-                  className="text-white/60 hover:text-white"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
-
-              <div className="space-y-4">
-                <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-                  <div className="text-xs text-white/60 mb-1">Recipient Wallet</div>
-                   <div className="text-white font-mono text-sm break-all">
-                     {tippingPost.author_wallet_address}
-                   </div>
-                  </div>
-
-                  <div>
-                   <div className="flex gap-2 mb-3">
-                     <Button
-                       onClick={() => {
-                         setTipTokenType("KAS");
-                         setTipKrc20Ticker("");
-                       }}
-                       variant={tipTokenType === "KAS" ? "default" : "outline"}
-                       size="sm"
-                       className={tipTokenType === "KAS" ? "bg-green-600 hover:bg-green-700" : "border-white/20 text-white/60 hover:bg-white/10"}
-                     >
-                       KAS
-                     </Button>
-                     <Button
-                       onClick={() => setTipTokenType("KRC20")}
-                       size="sm"
-                       className={tipTokenType === "KRC20" ? "bg-purple-600 hover:bg-purple-700 text-white" : "bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white"}
-                     >
-                       KRC-20
-                     </Button>
-                   </div>
-
-                   <label className="text-sm text-white/60 mb-2 block">
-                      Tip Amount {tipTokenType === "KRC20" ? `(${tipKrc20Ticker || "Tokens"})` : "(KAS)"}
-                    </label>
-                   <Input
-                     type="number"
-                     step="0.01"
-                     min="0.01"
-                     value={tipAmount}
-                     onChange={(e) => setTipAmount(e.target.value)}
-                     placeholder={tipTokenType === "KRC20" ? "Amount of tokens" : "0.5"}
-                     className="bg-white/5 border-white/10 text-white text-lg text-center h-14"
-                     autoFocus
-                   />
-
-                   {tipTokenType === "KRC20" && (
-                     <div className="mt-3">
-                       <label className="text-sm text-white/60 mb-2 block">Token Ticker</label>
-                       <Input
-                         type="text"
-                         value={tipKrc20Ticker}
-                         onChange={(e) => setTipKrc20Ticker(e.target.value.toUpperCase())}
-                         placeholder="e.g., KSPR, LEGEND"
-                         className="bg-white/5 border-white/10 text-white text-center h-10 font-semibold"
-                       />
-                     </div>
-                   )}
-
-                   {tipTokenType === "KAS" && (
-                     <div className="flex gap-2 mt-2">
-                        {['0.5', '1', '5', '10'].map(amount => (
-                          <Button
-                            key={amount}
-                            onClick={() => setTipAmount(amount)}
-                            size="sm"
-                            className="flex-1 bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white"
-                          >
-                            {amount} KAS
-                          </Button>
-                        ))}
-                      </div>
-                   )}
-                  </div>
-
-                <Button
-                   onClick={handleSendTip}
-                   disabled={isSendingTip || !tipAmount || parseFloat(tipAmount) <= 0 || (tipTokenType === "KRC20" && !tipKrc20Ticker.trim())}
-                   className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 h-12 text-white font-bold"
-                 >
-                   {isSendingTip ? (
-                     <>
-                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                       Sending {tipTokenType === "KRC20" ? tipKrc20Ticker : "KAS"}...
-                     </>
-                   ) : (
-                     <>
-                       <Wallet className="w-5 h-5 mr-2" />
-                       Send {tipAmount} {tipTokenType === "KRC20" ? tipKrc20Ticker : "KAS"}
-                     </>
-                   )}
-                 </Button>
-
-                <div className="space-y-2">
-                   <div className="bg-white/5 border border-white/10 rounded-lg p-3">
-                     <div className="flex items-start gap-2">
-                       <Sparkles className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
-                       <p className="text-xs text-white/60">
-                         Tips are sent directly from your Kasware wallet to the creator's wallet instantly.
-                       </p>
-                     </div>
-                   </div>
-                   <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
-                     <div className="flex items-start gap-2">
-                       <AlertCircle className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
-                       <p className="text-xs text-blue-300">
-                         ⚠️ Must have minimum 5 KAS in your wallet to prevent storage mass errors. Ensure sufficient funds before sending tips.
-                       </p>
-                     </div>
-                   </div>
-                 </div>
-              </div>
-            </motion.div>
-          </motion.div>
+          />
         )}
       </AnimatePresence>
 
