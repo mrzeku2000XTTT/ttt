@@ -257,7 +257,7 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
               onChange={e => setTipAmount(e.target.value)}
               placeholder="0.5"
               className="bg-white/5 border-white/10 text-white text-lg text-center h-14"
-              autoFocus
+              autoFocus={false}
             />
             {tipTokenType === 'KAS' && (
               <div className="flex gap-2 mt-2">
