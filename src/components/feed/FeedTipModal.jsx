@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { DollarSign, Wallet, Loader2, X, Sparkles, AlertCircle, Smartphone } from "lucide-react";
 
 const isMobileDevice = () => {
