@@ -287,17 +287,28 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
             )}
           </div>
 
-          {/* Mnemonic input for TTT wallet when no private key cached */}
-          {sendMethod === 'ttt' && (showMnemonicInput || !tttPrivateKey) && (
+          {/* PIN verification for TTT wallet */}
+          {sendMethod === 'ttt' && hasPinSet && !pinVerified && (
             <div>
-              <label className="text-xs text-yellow-400 mb-1.5 block">⚠️ Enter seed phrase to authorize</label>
-              <Textarea
-                value={tipMnemonic}
-                onChange={e => setTipMnemonic(e.target.value)}
-                placeholder="word1 word2 word3 ..."
-                className="bg-black border-yellow-500/40 text-white font-mono text-sm min-h-[70px]"
-                rows={3}
-              />
+              <label className="text-xs text-white/60 mb-1.5 block">Enter your wallet PIN to authorize</label>
+              <div className="flex gap-2">
+                <Input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={tipPin}
+                  onChange={e => { setTipPin(e.target.value.replace(/\D/g, '')); setPinError(''); }}
+                  placeholder="6-digit PIN"
+                  className="bg-white/5 border-white/10 text-white text-center tracking-widest"
+                />
+                <Button onClick={verifyPin} size="sm" className="bg-cyan-600 hover:bg-cyan-700 text-white px-4">Verify</Button>
+              </div>
+              {pinError && <p className="text-xs text-red-400 mt-1">{pinError}</p>}
+            </div>
+          )}
+          {sendMethod === 'ttt' && hasPinSet && pinVerified && (
+            <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-2 text-xs text-green-400 flex items-center gap-2">
+              <span>✓</span> PIN verified — ready to send
             </div>
           )}
 
