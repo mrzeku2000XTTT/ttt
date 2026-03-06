@@ -60,12 +60,12 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
       return;
     }
 
-    // TTT wallet needs PIN verification if private key cached, or PIN to unlock
-    if (sendMethod === 'ttt' && !tttPrivateKey) {
-      setTipError('No wallet private key found. Please re-import your wallet.');
+    // TTT wallet: need either cached PK or mnemonic as fallback
+    if (sendMethod === 'ttt' && !tttPrivateKey && !tipMnemonic.trim()) {
+      setTipError('Enter your seed phrase to authorize on this device.');
       return;
     }
-    if (sendMethod === 'ttt' && hasPinSet && !pinVerified) {
+    if (sendMethod === 'ttt' && tttPrivateKey && hasPinSet && !pinVerified) {
       setTipError('Please verify your PIN first.');
       return;
     }
