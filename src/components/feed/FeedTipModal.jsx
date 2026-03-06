@@ -24,8 +24,22 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
   const tttPrivateKey = localStorage.getItem('ttt_wallet_pk');
   const defaultMethod = mobile && tttWalletAddress ? 'ttt' : 'kasware';
   const [sendMethod, setSendMethod] = useState(defaultMethod);
-  const [tipMnemonic, setTipMnemonic] = useState('');
-  const [showMnemonicInput, setShowMnemonicInput] = useState(false);
+  const [tipPin, setTipPin] = useState('');
+  const [pinVerified, setPinVerified] = useState(false);
+  const [pinError, setPinError] = useState('');
+  const pinHash = localStorage.getItem('ttt_wallet_pin_hash');
+  const hasPinSet = !!pinHash;
+
+  const verifyPin = async () => {
+    if (tipPin.length !== 6) { setPinError('Enter 6-digit PIN'); return; }
+    const res = await base44.functions.invoke('hashPin', { pin: tipPin });
+    if (res.data?.hash === pinHash) {
+      setPinVerified(true);
+      setPinError('');
+    } else {
+      setPinError('Incorrect PIN');
+    }
+  };
 
   const handleSend = async () => {
     if (!tipAmount || isNaN(parseFloat(tipAmount)) || parseFloat(tipAmount) <= 0) {
