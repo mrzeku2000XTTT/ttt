@@ -77,8 +77,7 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
       if (sendMethod === 'ttt') {
         // Use Terra Protocol (TTT wallet backend)
         const res = await base44.functions.invoke('sendKaspaTransaction', {
-          privateKey: tttPrivateKey || undefined,
-          mnemonic: !tttPrivateKey ? tipMnemonic.trim() : undefined,
+          privateKey: tttPrivateKey,
           fromAddress: tttWalletAddress,
           toAddress: tippingPost.author_wallet_address,
           amountKas: tipAmountValue,
