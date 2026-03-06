@@ -38,13 +38,16 @@ Deno.serve(async (req) => {
     const utxos = await utxoRes.json();
     if (!utxos || utxos.length === 0) throw new Error('No UTXOs. Your balance may be 0 or unconfirmed.');
 
-    // 3. Greedy UTXO selection
+    // 3. Greedy UTXO selection — prefer largest UTXOs first to minimize storage mass
+    // Max ~80 UTXOs to stay well under the 100000 storage mass limit
+    const MAX_UTXOS = 80;
     const needed = amountSompi + FEE_SOMPI;
     let totalIn = 0;
     const selectedUtxos = [];
     utxos.sort((a, b) => Number(b.utxoEntry.amount) - Number(a.utxoEntry.amount));
     for (const utxo of utxos) {
       if (totalIn >= needed) break;
+      if (selectedUtxos.length >= MAX_UTXOS) break;
       selectedUtxos.push(utxo);
       totalIn += Number(utxo.utxoEntry.amount);
     }
