@@ -24,7 +24,7 @@ import MatrixGridBackground from "@/components/feed/MatrixGridBackground";
 import BoxingGame from "@/components/feed/BoxingGame";
 import StampModal from "@/components/feed/StampModal";
 import KaspaWalletHeader from "@/components/KaspaWalletHeader";
-
+import FeedTipModal from "@/components/feed/FeedTipModal";
 export default function FeedPage() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
