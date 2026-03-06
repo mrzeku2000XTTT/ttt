@@ -26,8 +26,12 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
   const [tipPin, setTipPin] = useState('');
   const [pinVerified, setPinVerified] = useState(false);
   const [pinError, setPinError] = useState('');
+  const [tipMnemonic, setTipMnemonic] = useState('');
+  const [showMnemonicFallback, setShowMnemonicFallback] = useState(false);
   const pinHash = localStorage.getItem('ttt_wallet_pin_hash');
   const hasPinSet = !!pinHash;
+  // tttPrivateKey may be null on a different device even if wallet address exists in profile
+  const tttPrivateKeyMissing = !tttPrivateKey && sendMethod === 'ttt';
 
   const verifyPin = async () => {
     if (tipPin.length !== 6) { setPinError('Enter 6-digit PIN'); return; }
