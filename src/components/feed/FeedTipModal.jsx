@@ -295,8 +295,8 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
             )}
           </div>
 
-          {/* PIN verification for TTT wallet */}
-          {sendMethod === 'ttt' && hasPinSet && !pinVerified && (
+          {/* Case 1: PK exists on this device — verify with PIN */}
+          {sendMethod === 'ttt' && tttPrivateKey && hasPinSet && !pinVerified && (
             <div>
               <label className="text-xs text-white/60 mb-1.5 block">Enter your wallet PIN to authorize</label>
               <div className="flex gap-2">
@@ -308,15 +308,33 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
                   onChange={e => { setTipPin(e.target.value.replace(/\D/g, '')); setPinError(''); }}
                   placeholder="6-digit PIN"
                   className="bg-white/5 border-white/10 text-white text-center tracking-widest"
+                  autoFocus={false}
                 />
                 <Button onClick={verifyPin} size="sm" className="bg-cyan-600 hover:bg-cyan-700 text-white px-4">Verify</Button>
               </div>
               {pinError && <p className="text-xs text-red-400 mt-1">{pinError}</p>}
             </div>
           )}
-          {sendMethod === 'ttt' && hasPinSet && pinVerified && (
+          {sendMethod === 'ttt' && tttPrivateKey && hasPinSet && pinVerified && (
             <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-2 text-xs text-green-400 flex items-center gap-2">
               <span>✓</span> PIN verified — ready to send
+            </div>
+          )}
+
+          {/* Case 2: No PK on this device — require seed phrase */}
+          {sendMethod === 'ttt' && !tttPrivateKey && (
+            <div className="space-y-2">
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-xs text-yellow-300">
+                ⚠️ Wallet key not found on this device. Enter your seed phrase to authorize.
+              </div>
+              <textarea
+                value={tipMnemonic}
+                onChange={e => setTipMnemonic(e.target.value)}
+                placeholder="word1 word2 word3 ..."
+                className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white font-mono text-sm min-h-[70px] resize-none outline-none focus:border-cyan-500/50"
+                rows={3}
+                autoFocus={false}
+              />
             </div>
           )}
 
