@@ -684,7 +684,7 @@ export default function HomePage() {
           </div>
 
         {/* Buttons - Vertical Stack Centered - Higher Position */}
-        <div className="flex flex-col items-center gap-4 mb-16 mt-40 md:mt-60 lg:mt-80">
+        <div className="flex flex-col items-center gap-4 mb-16 mt-40 md:mt-60 lg:mt-80 landscape:mt-4">
           {/* Claim Agent ZK Button - Centered */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
