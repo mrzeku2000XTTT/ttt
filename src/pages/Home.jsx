@@ -506,7 +506,7 @@ export default function HomePage() {
       </AnimatePresence>
 
       {/* Main Content - Centered but Lower */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center pt-48 md:pt-20" style={{ zIndex: 10 }}>
+      <div className="absolute inset-0 flex flex-col items-center justify-center pt-48 md:pt-20 landscape:pt-4" style={{ zIndex: 10 }}>
         {/* Top UNCHAIN HUMANITY - Darker */}
         <motion.div
           initial={{ opacity: 0, y: -50 }}
