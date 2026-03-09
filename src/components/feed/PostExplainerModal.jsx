@@ -9,6 +9,7 @@ export default function PostExplainerModal({ post, onClose, currentUser }) {
   const [isLoading, setIsLoading] = useState(true);
   const [rateLimitError, setRateLimitError] = useState(null);
   const [queriesUsed, setQueriesUsed] = useState(0);
+  const [mediaUrls, setMediaUrls] = useState([]);
 
   useEffect(() => {
     if (post) {
