@@ -21,18 +21,19 @@ export default function PostExplainerModal({ post, onClose, currentUser }) {
     setIsLoading(true);
     setRateLimitError(null);
     
-    // Define mediaUrls at function scope
-    const mediaUrls = [];
+    const urls = [];
     if (post.image_url) {
-      mediaUrls.push(post.image_url);
+      urls.push(post.image_url);
     }
     if (post.media_files?.length > 0) {
       post.media_files.forEach(file => {
         if (file.url && file.type?.startsWith('image/')) {
-          mediaUrls.push(file.url);
+          urls.push(file.url);
         }
       });
     }
+    setMediaUrls(urls);
+    const mediaUrls = urls;
     
     try {
       // Check rate limit for non-admins
