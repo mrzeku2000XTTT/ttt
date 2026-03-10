@@ -29,21 +29,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Verify the private key actually matches fromAddress before proceeding
-    try {
-      const { address: derivedAddress } = await wallet.getNewAddress({ privateKey });
-      const normalizedDerived = derivedAddress.startsWith('kaspa:') ? derivedAddress : `kaspa:${derivedAddress}`;
-      if (normalizedDerived !== normalizedFromAddress) {
-        return Response.json({
-          error: `Key mismatch: the private key does not match the fromAddress. Expected ${normalizedFromAddress}, key produces ${normalizedDerived}. Please re-enter your seed phrase.`,
-          key_mismatch: true,
-        }, { status: 400 });
-      }
-    } catch (e) {
-      // If address derivation fails, proceed anyway — signing will fail at network level
-      console.warn('Could not verify key/address match:', e.message);
-    }
-
     // 2. Fetch UTXOs (private key is now set above)
     const utxoRes = await fetch(`${KASPA_API}/addresses/${normalizedFromAddress}/utxos`);
     if (!utxoRes.ok) {
