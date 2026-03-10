@@ -47,7 +47,8 @@ const FEATURES = [
 
 export default function SilverScriptPage() {
   const [copiedIndex, setCopiedIndex] = useState(null);
-  const [expandedExample, setExpandedExample] = useState(0);
+  const [expandedExample, setExpandedExample] = useState(1); // default to TransferWithTimeout
+  const [activeTab, setActiveTab] = useState("examples"); // "examples" | "tester"
 
   const copyCode = (code, index) => {
     navigator.clipboard.writeText(code);
