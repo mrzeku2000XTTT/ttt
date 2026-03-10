@@ -197,6 +197,15 @@ export default function SilverScriptPage() {
               <TimelockTester />
             </div>
           )}
+
+          {activeTab === "sandbox" && (
+            <div>
+              <div className="mb-4 p-3 bg-white/3 border border-white/10 rounded-lg text-white/40 text-xs">
+                Write or edit SilverScript contracts. Choose a template, edit in the browser, and run a local syntax analysis to catch common issues before compiling with <code className="text-white/60">silverc</code>.
+              </div>
+              <SilverScriptSandbox />
+            </div>
+          )}
         </section>
 
         {/* Get Started */}
