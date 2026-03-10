@@ -181,9 +181,22 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
 
     } catch (err) {
       console.error('Tip failed:', err);
-      if (err.message?.includes('User reject')) setTipError('Transaction cancelled');
-      else if (err.message?.includes('storage mass')) setTipError('⚠️ Storage mass error: Consolidate UTXOs in your wallet settings.');
-      else setTipError('Failed to send tip: ' + err.message);
+      // Extract actual error message from axios response if available
+      const errMsg = err.response?.data?.error || err.message || 'Unknown error';
+      const isKeyMismatch = err.response?.data?.key_mismatch;
+      if (isKeyMismatch) {
+        localStorage.removeItem('ttt_wallet_pk');
+        setTipError('Wallet key mismatch — your cached key is outdated. Please re-enter your seed phrase.');
+      } else if (errMsg?.includes('User reject')) {
+        setTipError('Transaction cancelled');
+      } else if (errMsg?.includes('storage mass')) {
+        setTipError('⚠️ Storage mass error: Consolidate UTXOs in your wallet settings.');
+      } else if (errMsg?.includes('signature') || errMsg?.includes('false stack')) {
+        localStorage.removeItem('ttt_wallet_pk');
+        setTipError('Signature failed — your cached key may be outdated. Please re-enter your seed phrase.');
+      } else {
+        setTipError('Failed to send tip: ' + errMsg);
+      }
     } finally {
       setIsSendingTip(false);
     }
