@@ -27,6 +27,28 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
   const [tipKrc20Ticker, setTipKrc20Ticker] = useState("PACMAN");
   const [tipError, setTipError] = useState('');
 
+  // TTT wallet tip state
+  const tttWalletAddress = currentUser?.created_wallet_address || localStorage.getItem('ttt_wallet_address');
+  const tttPrivateKey = localStorage.getItem('ttt_wallet_pk');
+  const pinHash = localStorage.getItem('ttt_wallet_pin_hash');
+  const hasPinSet = !!pinHash;
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '') || (typeof window !== 'undefined' && window.innerWidth < 768);
+  const [sendMethod, setSendMethod] = useState(isMobile && tttWalletAddress ? 'ttt' : 'kasware');
+  const [tipPin, setTipPin] = useState('');
+  const [pinVerified, setPinVerified] = useState(false);
+  const [pinError, setPinError] = useState('');
+
+  const verifyTipPin = async () => {
+    if (tipPin.length !== 6) { setPinError('Enter 6-digit PIN'); return; }
+    const res = await base44.functions.invoke('hashPin', { pin: tipPin });
+    if (res.data?.hash === pinHash) {
+      setPinVerified(true);
+      setPinError('');
+    } else {
+      setPinError('Incorrect PIN');
+    }
+  };
+
   useEffect(() => {
     loadComments();
     if (currentUser) {
