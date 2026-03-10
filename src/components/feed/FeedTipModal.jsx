@@ -182,9 +182,8 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
         setTipError('Transaction cancelled');
       } else if (errMsg.includes('storage mass')) {
         setTipError('⚠️ Storage mass error: Consolidate UTXOs in your wallet settings.');
-      } else if (errMsg.includes('false stack') || errMsg.includes('signature') || errMsg.includes('Key mismatch')) {
-        localStorage.removeItem('ttt_wallet_pk');
-        setTipError('Signature failed — wallet key outdated. Please re-enter your seed phrase below.');
+      } else if (errMsg.includes('false stack') || errMsg.includes('signature')) {
+        setTipError('Transaction rejected by network. Please go to your Wallet page and re-seal your wallet, then try again.');
       } else {
         setTipError(errMsg);
       }
