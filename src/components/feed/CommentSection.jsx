@@ -602,12 +602,15 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
     } catch (err) {
       console.error('Failed to send tip:', err);
 
-      if (err.message?.includes('User reject')) {
+      const errMsg = err.response?.data?.error || err.message || 'Unknown error';
+      if (errMsg.includes('User reject')) {
         setTipError('Transaction cancelled');
-      } else if (err.message?.includes('storage mass') || err.message?.includes('Storage mass')) {
-        setTipError('⚠️ Storage mass error: Your wallet has too many small UTXOs. Go to your wallet settings and use the "Consolidate" or "Compound" button to merge UTXOs, then try again.');
+      } else if (errMsg.includes('storage mass') || errMsg.includes('Storage mass')) {
+        setTipError('⚠️ Storage mass error: Consolidate UTXOs in your wallet settings.');
+      } else if (errMsg.includes('false stack') || errMsg.includes('signature')) {
+        setTipError("It's been a while — just to make sure it's you, please reimport your wallet on the Wallet page by tapping Clear and re-entering your seed phrase.");
       } else {
-        setTipError('Failed to send tip: ' + err.message);
+        setTipError('Failed to send tip: ' + errMsg);
       }
     } finally {
       setIsSendingTip(false);
