@@ -441,6 +441,10 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
     if (!tipAmount || isNaN(parseFloat(tipAmount)) || parseFloat(tipAmount) <= 0) {
       return;
     }
+    if (sendMethod === 'ttt' && hasPinSet && !pinVerified) {
+      setTipError('Please verify your PIN first.');
+      return;
+    }
 
     setIsSendingTip(true);
     setTipError('');
@@ -449,8 +453,18 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
       let txId;
       const tipAmountValue = parseFloat(tipAmount);
 
-      if (tipTokenType === "KRC20" && tipKrc20Ticker.trim()) {
-        // Send KRC-20 token using signKRC20Transaction
+      if (sendMethod === 'ttt') {
+        const res = await base44.functions.invoke('sendKaspaTransaction', {
+          fromAddress: tttWalletAddress,
+          toAddress: tipModal.author_wallet_address,
+          amountKas: tipAmountValue,
+          privateKey: tttPrivateKey,
+        });
+        if (!res.data?.success || res.data?.error) {
+          throw new Error(res.data?.error || 'Transaction failed');
+        }
+        txId = res.data?.txId || 'ttt-tx';
+      } else if (tipTokenType === "KRC20" && tipKrc20Ticker.trim()) {
         const krc20Data = {
           p: "krc-20",
           op: "transfer",
@@ -458,22 +472,12 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
           amt: (tipAmountValue * Math.pow(10, 8)).toString(),
           to: tipModal.author_wallet_address
         };
-        
-        const inscribeJsonString = JSON.stringify(krc20Data);
-        
         txId = await window.kasware.signKRC20Transaction(
-          inscribeJsonString,
-          4,
-          tipModal.author_wallet_address,
-          0.0002 // KAS fee (standard network rate)
+          JSON.stringify(krc20Data), 4, tipModal.author_wallet_address, 0.0002
         );
       } else {
-        // Send KAS
         const amountSompi = Math.floor(tipAmountValue * 100000000);
-        txId = await window.kasware.sendKaspa(
-          tipModal.author_wallet_address,
-          amountSompi
-        );
+        txId = await window.kasware.sendKaspa(tipModal.author_wallet_address, amountSompi);
       }
 
       const tipAmountKAS = tipAmountValue;
