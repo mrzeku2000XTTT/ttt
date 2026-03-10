@@ -107,7 +107,8 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('sendKaspaTransaction error:', error.message);
-    return Response.json({ error: error.message }, { status: 500 });
+    const msg = error?.message || String(error) || 'Unknown error';
+    console.error('sendKaspaTransaction error:', msg);
+    return Response.json({ error: msg }, { status: 500 });
   }
 });
