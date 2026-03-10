@@ -1054,14 +1054,12 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                   <div className="flex items-start gap-2">
                     <Sparkles className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
                     <p className="text-xs text-white/60">
-                      Tips are sent directly from your Kasware wallet to the creator's wallet instantly.
+                      {sendMethod === 'ttt' ? 'Sent natively via your TTT Wallet — no Kasware needed.' : 'Tips are sent directly from your Kasware wallet instantly.'}
                     </p>
                   </div>
                   <div className="flex items-start gap-2">
-                    <Sparkles className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-white/60">
-                      💡 Keep at least 5 KAS in your wallet to avoid transaction errors.
-                    </p>
+                    <AlertCircle className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-blue-300">Keep at least 5 KAS in your wallet to prevent storage mass errors.</p>
                   </div>
                 </div>
               </div>
