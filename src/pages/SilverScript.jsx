@@ -114,38 +114,78 @@ export default function SilverScriptPage() {
           </div>
         </section>
 
-        {/* Code Examples */}
+        {/* Tab switcher */}
         <section>
-          <h2 className="text-2xl font-bold text-white mb-6">Contract Examples</h2>
-          <div className="space-y-3">
-            {EXAMPLES.map((example, i) => (
-              <div key={i} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-                <button
-                  onClick={() => setExpandedExample(expandedExample === i ? null : i)}
-                  className="w-full flex items-center justify-between p-4 text-left hover:bg-white/5 transition-colors"
-                >
-                  <div>
-                    <div className="text-white font-semibold text-sm">{example.title}</div>
-                    <div className="text-white/40 text-xs mt-0.5">{example.description}</div>
-                  </div>
-                  {expandedExample === i ? <ChevronUp className="w-4 h-4 text-white/40 flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-white/40 flex-shrink-0" />}
-                </button>
-                {expandedExample === i && (
-                  <div className="border-t border-white/10 relative">
-                    <button
-                      onClick={() => copyCode(example.code, i)}
-                      className="absolute top-3 right-3 z-10 w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors"
-                    >
-                      {copiedIndex === i ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-white/60" />}
-                    </button>
-                    <pre className="p-4 overflow-x-auto text-sm">
-                      <code className="text-cyan-300 font-mono leading-relaxed">{example.code}</code>
-                    </pre>
-                  </div>
-                )}
-              </div>
-            ))}
+          <div className="flex gap-2 mb-6">
+            <button
+              onClick={() => setActiveTab("examples")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${
+                activeTab === "examples"
+                  ? "bg-cyan-500/20 border-cyan-500/40 text-cyan-300"
+                  : "bg-white/5 border-white/10 text-white/50 hover:text-white/80"
+              }`}
+            >
+              <Code className="w-4 h-4" /> Contract Examples
+            </button>
+            <button
+              onClick={() => setActiveTab("tester")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${
+                activeTab === "tester"
+                  ? "bg-cyan-500/20 border-cyan-500/40 text-cyan-300"
+                  : "bg-white/5 border-white/10 text-white/50 hover:text-white/80"
+              }`}
+            >
+              <FlaskConical className="w-4 h-4" /> Timelock Tester
+              <span className="text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded">LIVE</span>
+            </button>
           </div>
+
+          {activeTab === "examples" && (
+            <div className="space-y-3">
+              {EXAMPLES.map((example, i) => (
+                <div key={i} className={`border rounded-xl overflow-hidden ${example.highlight ? "bg-cyan-500/5 border-cyan-500/20" : "bg-white/5 border-white/10"}`}>
+                  <button
+                    onClick={() => setExpandedExample(expandedExample === i ? null : i)}
+                    className="w-full flex items-center justify-between p-4 text-left hover:bg-white/5 transition-colors"
+                  >
+                    <div>
+                      <div className="text-white font-semibold text-sm flex items-center gap-2">
+                        {example.title}
+                        {example.highlight && (
+                          <span className="text-[10px] bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded">TIMELOCK</span>
+                        )}
+                      </div>
+                      <div className="text-white/40 text-xs mt-0.5">{example.description}</div>
+                    </div>
+                    {expandedExample === i ? <ChevronUp className="w-4 h-4 text-white/40 flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-white/40 flex-shrink-0" />}
+                  </button>
+                  {expandedExample === i && (
+                    <div className="border-t border-white/10 relative">
+                      <button
+                        onClick={() => copyCode(example.code, i)}
+                        className="absolute top-3 right-3 z-10 w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors"
+                      >
+                        {copiedIndex === i ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-white/60" />}
+                      </button>
+                      <pre className="p-4 overflow-x-auto text-sm">
+                        <code className="text-cyan-300 font-mono leading-relaxed">{example.code}</code>
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {activeTab === "tester" && (
+            <div>
+              <div className="mb-4 p-3 bg-cyan-500/5 border border-cyan-500/20 rounded-lg text-cyan-300/70 text-xs">
+                Interactive simulation of the <span className="text-cyan-300 font-semibold">TransferWithTimeout</span> contract from <code className="bg-black/40 px-1 rounded">transfer_with_timeout.sil</code>. 
+                Set constructor args, simulate tx.time, choose an entrypoint, and run the script execution trace.
+              </div>
+              <TimelockTester />
+            </div>
+          )}
         </section>
 
         {/* Get Started */}
