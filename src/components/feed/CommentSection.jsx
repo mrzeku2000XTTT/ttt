@@ -1000,6 +1000,32 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                   </div>
                 </div>
 
+                {/* PIN verification for TTT wallet */}
+                {sendMethod === 'ttt' && tttPrivateKey && hasPinSet && !pinVerified && (
+                  <div>
+                    <label className="text-xs text-white/60 mb-1.5 block">Enter your wallet PIN to authorize</label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="password"
+                        inputMode="numeric"
+                        maxLength={6}
+                        value={tipPin}
+                        onChange={e => { setTipPin(e.target.value.replace(/\D/g, '')); setPinError(''); }}
+                        placeholder="6-digit PIN"
+                        className="bg-white/5 border-white/10 text-white text-center tracking-widest"
+                        autoFocus={false}
+                      />
+                      <Button onClick={verifyTipPin} size="sm" className="bg-cyan-600 hover:bg-cyan-700 text-white px-4">Verify</Button>
+                    </div>
+                    {pinError && <p className="text-xs text-red-400 mt-1">{pinError}</p>}
+                  </div>
+                )}
+                {sendMethod === 'ttt' && tttPrivateKey && hasPinSet && pinVerified && (
+                  <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-2 text-xs text-green-400 flex items-center gap-2">
+                    <span>✓</span> PIN verified — ready to send
+                  </div>
+                )}
+
                 {tipError && (
                   <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
                     <p className="text-xs text-red-400">{tipError}</p>
