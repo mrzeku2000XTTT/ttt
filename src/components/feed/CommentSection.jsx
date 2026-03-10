@@ -876,17 +876,14 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
-            onClick={() => {
-              setTipModal(null);
-              setTipAmount('');
-            }}
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-black border border-white/20 rounded-xl w-full max-w-md p-6"
+            onClick={() => { setTipModal(null); setTipAmount(''); setTipPin(''); setPinVerified(false); }}
+                          >
+                            <motion.div
+                              initial={{ scale: 0.9, y: 20 }}
+                              animate={{ scale: 1, y: 0 }}
+                              exit={{ scale: 0.9, y: 20 }}
+                              onClick={(e) => e.stopPropagation()}
+                              className="bg-black border border-white/20 rounded-xl w-full max-w-md p-6"
             >
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
