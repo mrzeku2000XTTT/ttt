@@ -896,15 +896,12 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                   </div>
                 </div>
                 <Button
-                  onClick={() => {
-                    setTipModal(null);
-                    setTipAmount('');
-                  }}
-                  variant="ghost"
-                  size="sm"
-                  className="text-white/60 hover:text-white"
+                 onClick={() => { setTipModal(null); setTipAmount(''); setTipPin(''); setPinVerified(false); }}
+                 variant="ghost"
+                 size="sm"
+                 className="text-white/60 hover:text-white"
                 >
-                  <X className="w-5 h-5" />
+                 <X className="w-5 h-5" />
                 </Button>
               </div>
 
