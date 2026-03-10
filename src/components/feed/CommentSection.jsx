@@ -483,8 +483,9 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
       const tipAmountKAS = tipAmountValue;
 
       // Record tip transaction
+      const senderWallet = sendMethod === 'ttt' ? tttWalletAddress : (currentUser?.created_wallet_address || '');
       await base44.entities.TipTransaction.create({
-        sender_wallet: currentUser?.created_wallet_address || '',
+        sender_wallet: senderWallet,
         sender_email: currentUser?.email || null,
         sender_name: currentUser?.username || 'Anonymous',
         recipient_wallet: tipModal.author_wallet_address,
