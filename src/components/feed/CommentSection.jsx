@@ -913,6 +913,25 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                   </div>
                 </div>
 
+                {/* Send Method */}
+                {isMobile && tttWalletAddress && (
+                  <div>
+                    <div className="text-xs text-white/50 mb-2">Send via</div>
+                    <div className="flex gap-2">
+                      <Button onClick={() => setSendMethod('ttt')} size="sm"
+                        className={`flex-1 flex items-center gap-1 ${sendMethod === 'ttt' ? 'bg-cyan-600 hover:bg-cyan-700 text-white' : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'}`}>
+                        <Smartphone className="w-3 h-3" /> TTT Wallet
+                      </Button>
+                      {(window.kasware) && (
+                        <Button onClick={() => setSendMethod('kasware')} size="sm"
+                          className={`flex-1 ${sendMethod === 'kasware' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'}`}>
+                          Kasware
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex gap-2 mb-4">
                   <Button
                     onClick={() => setTipTokenType("KAS")}
@@ -925,17 +944,19 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                   >
                     KAS
                   </Button>
-                  <Button
-                    onClick={() => setTipTokenType("KRC20")}
-                    variant="ghost"
-                    className={`flex-1 ${
-                      tipTokenType === "KRC20"
-                        ? "bg-white/10 text-white border border-white/20"
-                        : "bg-black text-white/40 border border-white/10"
-                    }`}
-                  >
-                    KRC-20
-                  </Button>
+                  {sendMethod === 'kasware' && (
+                    <Button
+                      onClick={() => setTipTokenType("KRC20")}
+                      variant="ghost"
+                      className={`flex-1 ${
+                        tipTokenType === "KRC20"
+                          ? "bg-white/10 text-white border border-white/20"
+                          : "bg-black text-white/40 border border-white/10"
+                      }`}
+                    >
+                      KRC-20
+                    </Button>
+                  )}
                 </div>
 
                 {tipTokenType === "KRC20" && (
