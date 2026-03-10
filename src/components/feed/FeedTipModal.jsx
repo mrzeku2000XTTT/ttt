@@ -90,7 +90,13 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
           txPayload.mnemonic = tipMnemonic.trim();
         }
         const res = await base44.functions.invoke('sendKaspaTransaction', txPayload);
-        if (res.data?.error) throw new Error(res.data.error);
+        if (res.data?.error) {
+          // If key mismatch detected, clear the stale cached key
+          if (res.data?.key_mismatch) {
+            localStorage.removeItem('ttt_wallet_pk');
+          }
+          throw new Error(res.data.error);
+        }
         txId = res.data?.txId || 'ttt-tx';
       } else {
         // Kasware
