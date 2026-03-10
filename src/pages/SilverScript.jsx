@@ -139,6 +139,16 @@ export default function SilverScriptPage() {
               <FlaskConical className="w-4 h-4" /> Timelock Tester
               <span className="text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded">LIVE</span>
             </button>
+            <button
+              onClick={() => setActiveTab("sandbox")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${
+                activeTab === "sandbox"
+                  ? "bg-cyan-500/20 border-cyan-500/40 text-cyan-300"
+                  : "bg-white/5 border-white/10 text-white/50 hover:text-white/80"
+              }`}
+            >
+              <Code2 className="w-4 h-4" /> Sandbox
+            </button>
           </div>
 
           {activeTab === "examples" && (
