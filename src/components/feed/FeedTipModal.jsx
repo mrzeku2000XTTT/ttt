@@ -177,7 +177,7 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
 
     } catch (err) {
       console.error('Tip failed:', err);
-      const errMsg = err.message || 'Unknown error';
+      const errMsg = err.response?.data?.error || err.message || 'Unknown error';
       if (errMsg.includes('User reject')) {
         setTipError('Transaction cancelled');
       } else if (errMsg.includes('storage mass')) {
