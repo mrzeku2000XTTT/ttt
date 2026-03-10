@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Heart, Send, Loader2, Trash2, DollarSign, X, Wallet, Sparkles, CornerDownRight } from "lucide-react";
+import { Heart, Send, Loader2, Trash2, DollarSign, X, Wallet, Sparkles, CornerDownRight, Smartphone, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 
 export default function CommentSection({ postId, currentUser, onCommentAdded }) {
