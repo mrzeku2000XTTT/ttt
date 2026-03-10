@@ -48,8 +48,8 @@ export default function SilverScriptPage() {
         }} />
         <div className="relative max-w-5xl mx-auto px-4 py-16 text-center">
           <div className="flex items-center justify-center gap-3 mb-6">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-slate-700 to-cyan-900 border border-cyan-500/30 flex items-center justify-center shadow-[0_0_40px_rgba(6,182,212,0.2)]">
-              <span className="text-2xl font-black text-cyan-300">SS</span>
+            <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-[0_0_40px_rgba(6,182,212,0.2)]">
+              <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e8d0baae0_IMG_0166.png" alt="SilverScript Logo" className="w-full h-full object-cover" />
             </div>
           </div>
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-yellow-500/10 border border-yellow-500/30 rounded-full text-yellow-400 text-xs font-semibold mb-4">
