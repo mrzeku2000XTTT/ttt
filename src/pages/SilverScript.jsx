@@ -171,7 +171,7 @@ export default function SilverScriptPage() {
                 </div>
               </div>
             ))}
-            <div className="text-center text-white/40 text-xs pt-2">🎯 Target: <span className="text-white/60 font-semibold">May 5, 2026 Covenant Hardfork</span></div>
+            <div className="text-center text-white/40 text-xs pt-2">Target: <span className="text-white/60 font-semibold">May 5, 2026 Covenant Hardfork</span></div>
           </div>
         </section>
 
@@ -180,12 +180,12 @@ export default function SilverScriptPage() {
           <h2 className="text-2xl font-bold text-white mb-4">Resources</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
-              { label: "GitHub Repo", url: "https://github.com/kaspanet/silverscript", icon: "🐙" },
-              { label: "Tutorial", url: "https://github.com/kaspanet/silverscript/blob/master/TUTORIAL.md", icon: "📖" },
-              { label: "KasMedia Article", url: "https://kasmedia.com/article/hail-the-silverscript", icon: "📰" },
+              { label: "GitHub Repo", url: "https://github.com/kaspanet/silverscript" },
+              { label: "Tutorial", url: "https://github.com/kaspanet/silverscript/blob/master/TUTORIAL.md" },
+              { label: "KasMedia Article", url: "https://kasmedia.com/article/hail-the-silverscript" },
             ].map((link, i) => (
               <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl transition-all group">
-                <span className="text-xl">{link.icon}</span>
+                <ExternalLink className="w-4 h-4 text-cyan-400 flex-shrink-0" />
                 <span className="text-white/80 group-hover:text-white text-sm font-medium transition-colors">{link.label}</span>
                 <ExternalLink className="w-3.5 h-3.5 text-white/30 group-hover:text-white/60 ml-auto transition-colors" />
               </a>
