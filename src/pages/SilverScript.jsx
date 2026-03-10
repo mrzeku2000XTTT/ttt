@@ -1,23 +1,40 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { ExternalLink, Code, BookOpen, Terminal, Zap, Shield, Layers, Copy, Check, ChevronDown, ChevronUp } from "lucide-react";
+import { ExternalLink, Code, BookOpen, Terminal, Zap, Shield, Layers, Copy, Check, ChevronDown, ChevronUp, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import TimelockTester from "@/components/silverscript/TimelockTester";
 
 const EXAMPLES = [
   {
-    title: "Simple Vault",
-    description: "Lock funds that can only be spent by the owner after a timelock",
-    code: `contract Vault(pubkey owner, int lockTime) {\n  function spend(sig ownerSig, int currentTime) {\n    require(checkSig(ownerSig, owner));\n    require(currentTime >= lockTime);\n  }\n}`,
+    title: "P2PKH — Pay to Public Key Hash",
+    description: "Standard spend: verify the public key matches the stored hash, then check signature",
+    code: `pragma silverscript ^0.1.0;\n\ncontract P2PKH(byte[32] pkh) {\n    entrypoint function spend(pubkey pk, sig s) {\n        require(blake2b(pk) == pkh);\n        require(checkSig(s, pk));\n    }\n}`,
   },
   {
-    title: "Multi-Sig",
-    description: "Require 2-of-3 signatures to spend funds",
-    code: `contract MultiSig(pubkey pk1, pubkey pk2, pubkey pk3) {\n  function spend(sig s1, sig s2) {\n    require(checkMultiSig([s1, s2], [pk1, pk2, pk3]));\n  }\n}`,
+    title: "Transfer with Timeout",
+    description: "Recipient can spend anytime; sender can reclaim after tx.time >= timeout (timelock)",
+    code: `pragma silverscript ^0.1.0;\n\ncontract TransferWithTimeout(\n    pubkey sender,\n    pubkey recipient,\n    int timeout\n) {\n    entrypoint function transfer(sig recipientSig) {\n        require(checkSig(recipientSig, recipient));\n    }\n\n    entrypoint function timeout(sig senderSig) {\n        require(checkSig(senderSig, sender));\n        require(tx.time >= timeout);\n    }\n}`,
+    highlight: true,
   },
   {
-    title: "HTLC (Conditional Payment)",
-    description: "Release funds when a secret hash preimage is revealed",
-    code: `contract HTLC(pubkey sender, pubkey receiver, bytes32 secretHash) {\n  function claim(sig receiverSig, bytes secret) {\n    require(checkSig(receiverSig, receiver));\n    require(sha256(secret) == secretHash);\n  }\n\n  function refund(sig senderSig, int expiry) {\n    require(checkSig(senderSig, sender));\n    require(tx.time >= expiry);\n  }\n}`,
+    title: "2-of-3 MultiSig",
+    description: "Require any 2 signatures out of 3 registered public keys",
+    code: `pragma silverscript ^0.1.0;\n\ncontract MultiSig(pubkey pk1, pubkey pk2, pubkey pk3) {\n    entrypoint function spend(sig s1, sig s2) {\n        require(checkMultiSig([s1, s2], [pk1, pk2, pk3]));\n    }\n}`,
+  },
+  {
+    title: "Token Split",
+    description: "Split one input into N outputs using bounded loops and yield",
+    code: `pragma silverscript ^0.1.0;\n\ncontract Token(int max_outs) {\n    entrypoint function split(\n        pubkey owner_pk, sig s,\n        int in_amount, int num_outs,\n        pubkey recipient_pk\n    ) {\n        require(checkSig(s, owner_pk));\n        for(i, 0, max_outs) {\n            if (i < num_outs) {\n                int out_amount = in_amount / num_outs;\n                byte[] out_amount_bytes = OpNum2Bin(out_amount, 8);\n                yield(out_amount_bytes + recipient_pk);\n            }\n        }\n    }\n}`,
+  },
+  {
+    title: "Covenant — Introspect tx.version",
+    description: "Enforce a specific transaction version on spending",
+    code: `pragma silverscript ^0.1.0;\n\ncontract Covenant(int requiredVersion) {\n    entrypoint function spend() {\n        require(tx.version == requiredVersion);\n        require(this.activeScriptPubKey == 0x00);\n    }\n}`,
+  },
+  {
+    title: "On-Chain Announcement",
+    description: "Write arbitrary data to chain via OP_RETURN output with change back",
+    code: `pragma silverscript ^0.1.0;\n\ncontract Announcement() {\n    entrypoint function announce() {\n        byte[] msg = new LockingBytecodeNullData([\n            27906,\n            byte[]('A contract may not injure a human being...')\n        ]);\n        require(tx.outputs[0].value == 0);\n        require(tx.outputs[0].scriptPubKey == msg);\n        int minerFee = 1000;\n        int change = tx.inputs[this.activeInputIndex].value - minerFee;\n        if (change >= minerFee) {\n            require(tx.outputs[1].scriptPubKey ==\n                tx.inputs[this.activeInputIndex].scriptPubKey);\n            require(tx.outputs[1].value == change);\n        }\n    }\n}`,
   },
 ];
 
