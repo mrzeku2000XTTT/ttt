@@ -183,7 +183,7 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
       } else if (errMsg.includes('storage mass')) {
         setTipError('⚠️ Storage mass error: Consolidate UTXOs in your wallet settings.');
       } else if (errMsg.includes('false stack') || errMsg.includes('signature')) {
-        setTipError('Transaction rejected by network. Please go to your Wallet page and re-seal your wallet, then try again.');
+        setTipError("It's been a while — just to make sure it's you, please reimport your wallet on the Wallet page by tapping Clear and re-entering your seed phrase.");
       } else {
         setTipError(errMsg);
       }
