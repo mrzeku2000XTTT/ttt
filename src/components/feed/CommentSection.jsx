@@ -567,6 +567,8 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
 
       setTipModal(null);
       setTipAmount('');
+      setTipPin('');
+      setPinVerified(false);
 
       // Reload tips to update display
       await loadCommenterTips();
