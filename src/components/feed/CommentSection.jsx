@@ -500,7 +500,6 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
       });
 
       // Track comment tip stats - SENDER (by email OR wallet)
-      const senderWallet = currentUser?.created_wallet_address || '';
       const senderIdentifier = currentUser?.email || senderWallet;
 
       if (senderIdentifier) {
