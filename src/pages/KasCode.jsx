@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { MonitorDot, X, Plus, Play, Terminal, FileText, ChevronRight, ChevronDown, Copy, Check, Menu, Wand2, Code2, Bot } from "lucide-react";
 import { createPageUrl } from "@/utils";
-import { Link } from "react-router-dom";
-import KasAgentChat from "@/components/silverscript/KasAgentChat";
+import { Link, useNavigate } from "react-router-dom";
 
 // ─── Contract Templates with constructor args ───────────────────────────────
 // ─── Arg help text ───────────────────────────────────────────────────────────
