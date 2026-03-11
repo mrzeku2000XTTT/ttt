@@ -73,6 +73,31 @@ function ContractCodeBlock({ code, fileName, onLoadToEditor }) {
     window.open(base + txHash.trim(), '_blank');
   };
 
+  const handleDeploy = async () => {
+    if (!deployAddress.trim() || !deployPK.trim()) {
+      setDeployError('Wallet address and private key are required.');
+      return;
+    }
+    setIsDeploying(true);
+    setDeployError(null);
+    setDeployResult(null);
+    try {
+      const res = await base44.functions.invoke('deployKaspaContract', {
+        contractCode: code,
+        contractName: contractName || fileName,
+        fromAddress: deployAddress.trim(),
+        privateKey: deployPK.trim(),
+        network: deployNetwork,
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      setDeployResult(res.data);
+    } catch (e) {
+      setDeployError(e?.message || 'Deployment failed');
+    } finally {
+      setIsDeploying(false);
+    }
+  };
+
   return (
     <div className="mt-2 rounded-lg border border-zinc-700 overflow-hidden">
       {/* File header */}
