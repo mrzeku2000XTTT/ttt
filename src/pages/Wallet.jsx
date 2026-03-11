@@ -270,7 +270,18 @@ export default function WalletPage() {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadData();
+    // Handle Siri Shortcut URL params
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('action') === 'send') {
+      const to = params.get('to');
+      const amt = params.get('amount');
+      if (to) setSendTo(to);
+      if (amt) setSendAmount(amt);
+      setShowSend(true);
+    }
+  }, []);
 
   const checkIfSealed = async (walletAddress, currentUser) => {
     if (!currentUser?.email) return;
