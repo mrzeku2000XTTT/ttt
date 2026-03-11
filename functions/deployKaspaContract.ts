@@ -60,13 +60,13 @@ Deno.serve(async (req) => {
         const contractAddress = normalizeAddress(rawContractAddr, network);
         const normalizedFrom = normalizeAddress(fromAddress, network);
 
-        // 4. Fetch UTXOs
+        // 4. Fetch UTXOs from address
         const utxoRes = await fetch(`${KASPA_API}/addresses/${normalizedFrom}/utxos`);
         if (!utxoRes.ok) throw new Error(`Failed to fetch UTXOs: ${utxoRes.status}`);
         const utxos = await utxoRes.json();
         if (!utxos?.length) {
-            const faucetHint = network === 'testnet' ? ' Get testnet KAS at https://faucet.kaspanet.io' : '';
-            throw new Error(`No UTXOs found. Fund your wallet first.${faucetHint}`);
+            const faucetHint = network === 'testnet' ? ' Get testnet TKAS from: https://faucet.kaspanet.io' : '';
+            throw new Error(`No UTXOs found for ${normalizedFrom}. Fund wallet first.${faucetHint}`);
         }
 
         const needed = DEPLOY_SOMPI + FEE_SOMPI;
