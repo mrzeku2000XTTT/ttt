@@ -121,6 +121,46 @@ function HighlightedLine({ line, num }) {
   );
 }
 
+// ─── TX Explorer Input ───────────────────────────────────────────────────────
+function TxExplorerInput() {
+  const [txHash, setTxHash] = useState('');
+  const isValid = /^[0-9a-fA-F]{64}$/.test(txHash.trim());
+
+  const openMainnet = () => window.open(`https://explorer.kaspa.org/txs/${txHash.trim()}`, '_blank');
+  const openTestnet = () => window.open(`https://explorer-tn12.kaspa.org/txs/${txHash.trim()}`, '_blank');
+
+  return (
+    <div className="space-y-1.5">
+      <input
+        value={txHash}
+        onChange={e => setTxHash(e.target.value.trim())}
+        placeholder="Paste TX hash (64 hex chars)..."
+        className="w-full bg-zinc-800 text-zinc-100 text-[10px] px-2 py-1.5 rounded border border-zinc-700 outline-none focus:border-cyan-600 font-mono"
+      />
+      {txHash && !isValid && (
+        <p className="text-yellow-500 text-[9px]">TX hash should be 64 hex characters</p>
+      )}
+      <div className="flex gap-1.5">
+        <button
+          onClick={openTestnet}
+          disabled={!isValid}
+          className="flex-1 px-2 py-1.5 bg-cyan-800/60 hover:bg-cyan-700/70 disabled:opacity-30 text-cyan-200 text-[10px] rounded border border-cyan-700/40 transition-colors"
+        >
+          Testnet-12 Explorer
+        </button>
+        <button
+          onClick={openMainnet}
+          disabled={!isValid}
+          className="flex-1 px-2 py-1.5 bg-zinc-700/60 hover:bg-zinc-600/70 disabled:opacity-30 text-zinc-200 text-[10px] rounded border border-zinc-600/40 transition-colors"
+        >
+          Mainnet Explorer
+        </button>
+      </div>
+      <p className="text-zinc-700 text-[9px]">How to get TX hash: deploy contract with <span className="text-cyan-700 font-mono">silverc compile file.sil</span>, broadcast tx, copy hash from terminal output.</p>
+    </div>
+  );
+}
+
 // ─── Create Contract Modal ────────────────────────────────────────────────────
 function CreateContractModal({ onClose, onCreate }) {
   const [step, setStep] = useState(0); // 0=pick template, 1=fill args
