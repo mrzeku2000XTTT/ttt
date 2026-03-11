@@ -97,8 +97,6 @@ export default function KasCodeIDE() {
   const [deployError, setDeployError] = useState(null);
   const [showDeployPanel, setShowDeployPanel] = useState(false);
   const [deployNetwork, setDeployNetwork] = useState('testnet');
-  const [deployPK, setDeployPK] = useState(() => localStorage.getItem('ttt_wallet_pk') || '');
-  const [deployAddress, setDeployAddress] = useState(() => localStorage.getItem('ttt_wallet_address') || '');
   const [compiledSuccess, setCompiledSuccess] = useState(false);
 
   const openFile = (name) => {
