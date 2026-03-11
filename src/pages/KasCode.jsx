@@ -438,12 +438,8 @@ export default function KasCodePage() {
         <div className="flex-1" />
         {/* kasAgent button */}
         <button
-          onClick={() => setShowAgent(p => !p)}
-          className={`flex items-center gap-1 px-2 py-1 text-[10px] rounded font-semibold transition-colors flex-shrink-0 ${
-            showAgent
-              ? 'bg-cyan-600 text-white border border-cyan-500'
-              : 'bg-zinc-800 hover:bg-zinc-700 text-cyan-400 border border-zinc-700'
-          }`}
+          onClick={() => navigate(createPageUrl('KasAgent'))}
+          className="flex items-center gap-1 px-2 py-1 text-[10px] rounded font-semibold transition-colors flex-shrink-0 bg-zinc-800 hover:bg-zinc-700 text-cyan-400 border border-zinc-700"
         >
           <Bot className="w-3 h-3" />
           <span>kasAgent</span>
