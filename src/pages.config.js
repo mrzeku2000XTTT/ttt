@@ -156,6 +156,7 @@ import KWSuccess from './pages/KWSuccess';
 import KaShop from './pages/KaShop';
 import KaSkool from './pages/KaSkool';
 import KaSkoolProfile from './pages/KaSkoolProfile';
+import KasCode from './pages/KasCode';
 import KasCompute from './pages/KasCompute';
 import KasFans from './pages/KasFans';
 import KasLens from './pages/KasLens';
@@ -185,8 +186,8 @@ import Landing from './pages/Landing';
 import LearnMore from './pages/LearnMore';
 import Learning from './pages/Learning';
 import Life from './pages/Life';
-import Lobby from './pages/Lobby';
 import LinkChecker from './pages/LinkChecker';
+import Lobby from './pages/Lobby';
 import MMN from './pages/MMN';
 import MODZ from './pages/MODZ';
 import MODZHub from './pages/MODZHub';
@@ -288,7 +289,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import KasCode from './pages/KasCode';
 import __Layout from './Layout.jsx';
 
 
@@ -402,6 +402,7 @@ export const PAGES = {
     "KaShop": KaShop,
     "KaSkool": KaSkool,
     "KaSkoolProfile": KaSkoolProfile,
+    "KasCode": KasCode,
     "KasCompute": KasCompute,
     "KasFans": KasFans,
     "KasLens": KasLens,
@@ -431,8 +432,8 @@ export const PAGES = {
     "LearnMore": LearnMore,
     "Learning": Learning,
     "Life": Life,
-    "Lobby": Lobby,
     "LinkChecker": LinkChecker,
+    "Lobby": Lobby,
     "MMN": MMN,
     "MODZ": MODZ,
     "MODZHub": MODZHub,
@@ -534,7 +535,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "KasCode": KasCode,
 }
 
 export const pagesConfig = {
