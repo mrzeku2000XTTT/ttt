@@ -33,6 +33,15 @@ TIME UNITS:
   Use: days (e.g. "7 days" = 604800 seconds)
   1 KAS = 100,000,000 sompi
 
+DATE & TIME HANDLING:
+  When a user specifies a specific date and/or time (e.g. "March 15 2027 at 9pm", "2027-06-01 14:30 UTC"), you MUST:
+  1. Convert that exact date+time to a Unix timestamp (seconds since Jan 1 1970 UTC)
+  2. Use that integer directly as the constructor argument (e.g. int unlockTime = 1805090400)
+  3. Show the user the exact Unix timestamp you used and confirm the date/time it represents
+  4. If the user gives a timezone (e.g. CST = UTC-6), account for it in your conversion
+  5. If only a date is given with no time, default to 00:00:00 UTC on that date
+  Always show: "Unlocks at: [original date/time] = Unix timestamp [value]" in your explanation.
+
 SCRIPT HELPERS:
   new ScriptPubKeyP2PK(pubkey pk) - creates a standard P2PK locking script (byte[34])
 
