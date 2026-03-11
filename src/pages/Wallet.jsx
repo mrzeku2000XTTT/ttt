@@ -741,17 +741,13 @@ export default function WalletPage() {
              <p className="text-gray-400 text-sm">{user?.username || user?.email || 'TTT'}</p>
            </div>
            <div className="flex items-center gap-3">
-             {/* Testnet Toggle */}
+             {/* Switch to Testnet */}
              <button
-               onClick={() => setIsTestnet(!isTestnet)}
-               className={`flex items-center gap-2 px-3 py-2 rounded-lg font-semibold text-sm transition-all ${
-                 isTestnet
-                   ? 'bg-yellow-500/20 border border-yellow-500/50 text-yellow-400'
-                   : 'bg-zinc-900 border border-zinc-800 text-gray-400 hover:bg-zinc-800'
-               }`}
+               onClick={() => navigate(createPageUrl('WalletTestnet'))}
+               className={`flex items-center gap-2 px-3 py-2 rounded-lg font-semibold text-sm transition-all bg-zinc-900 border border-zinc-800 text-gray-400 hover:bg-zinc-800`}
              >
                <Radio className="w-4 h-4" />
-               {isTestnet ? 'TESTNET' : 'Mainnet'}
+               Testnet
              </button>
              {address && (
                <Button onClick={() => setShowClearConfirm(true)} variant="outline" className="bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800">
