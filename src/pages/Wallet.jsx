@@ -152,7 +152,24 @@ export default function WalletPage() {
     if (!addr) return;
     setIsFetchingBalance(true);
     try {
-      const res = await base44.functions.invoke('getKaspaBalance', { address: addr });
+      // Normalize address to appropriate network prefix
+      let apiAddr = addr;
+      if (isTestnet) {
+        // For testnet, ensure kaspatest: prefix
+        if (apiAddr.startsWith('kaspa:')) {
+          apiAddr = apiAddr.replace('kaspa:', 'kaspatest:');
+        } else if (!apiAddr.startsWith('kaspatest:')) {
+          apiAddr = `kaspatest:${apiAddr}`;
+        }
+      } else {
+        // For mainnet, ensure kaspa: prefix
+        if (apiAddr.startsWith('kaspatest:')) {
+          apiAddr = apiAddr.replace('kaspatest:', 'kaspa:');
+        } else if (!apiAddr.startsWith('kaspa:')) {
+          apiAddr = `kaspa:${apiAddr}`;
+        }
+      }
+      const res = await base44.functions.invoke('getKaspaBalance', { address: apiAddr, network: isTestnet ? 'testnet' : 'mainnet' });
       const balKAS = res.data?.balanceKAS;
       if (typeof balKAS === 'number') {
         setKaspaBalance({ balanceKAS: balKAS });
