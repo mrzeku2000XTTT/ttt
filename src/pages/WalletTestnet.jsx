@@ -151,13 +151,7 @@ export default function WalletTestnetPage() {
     if (!addr) return;
     setIsFetchingBalance(true);
     try {
-      let apiAddr = addr;
-      if (apiAddr.startsWith('kaspa:')) {
-        apiAddr = apiAddr.replace('kaspa:', 'kaspatest:');
-      } else if (!apiAddr.startsWith('kaspatest:')) {
-        apiAddr = `kaspatest:${apiAddr}`;
-      }
-      const res = await base44.functions.invoke('getKaspaBalance', { address: apiAddr, network: 'testnet' });
+      const res = await base44.functions.invoke('getKaspaBalance', { address: addr, network: 'testnet' });
       const balKAS = res.data?.balanceKAS;
       if (typeof balKAS === 'number') {
         setKaspaBalance({ balanceKAS: balKAS });
@@ -201,6 +195,7 @@ export default function WalletTestnetPage() {
           mnemonic: sendMnemonic.trim(),
           wordCount: sendMnemonic.trim().split(/\s+/).length,
           importMode: true,
+          network: 'testnet',
         });
         if (pkRes.data?.error) throw new Error('Invalid seed phrase');
         payload.privateKey = pkRes.data.privateKey;
@@ -300,17 +295,16 @@ export default function WalletTestnetPage() {
     setIsCreating(true);
     setError(null);
     try {
-      const res = await base44.functions.invoke('createKaspaWallet', { wordCount });
+      const res = await base44.functions.invoke('createKaspaWallet', { wordCount, network: 'testnet' });
       if (res.data?.error) throw new Error(res.data.error);
       const { address: addr, mnemonic: phrase, privateKey: pk } = res.data;
-      const fullAddr = addr.startsWith('kaspa:') ? addr : `kaspa:${addr}`;
       setMnemonic(phrase);
       setPrivateKey(pk);
-      setAddress(fullAddr);
+      setAddress(addr);
       setShowMnemonic(true);
       if (pk) localStorage.setItem('ttt_wallet_testnet_pk', pk);
-      await saveWallet(fullAddr, wordCount);
-      startBalancePolling(fullAddr);
+      await saveWallet(addr, wordCount);
+      startBalancePolling(addr);
       setShowPinSetup(true);
       showToast('Testnet wallet created!', 'success');
     } catch (e) {
@@ -333,18 +327,18 @@ export default function WalletTestnetPage() {
         mnemonic: importMnemonic.trim(),
         wordCount: words.length,
         importMode: true,
+        network: 'testnet',
       });
       if (res.data?.error) throw new Error(res.data.error);
       const { address: addr, mnemonic: phrase, privateKey: pk } = res.data;
-      const fullAddr = addr.startsWith('kaspa:') ? addr : `kaspa:${addr}`;
       setMnemonic(phrase || importMnemonic.trim());
       setPrivateKey(pk);
-      setAddress(fullAddr);
+      setAddress(addr);
       setShowMnemonic(false);
       setImportMnemonic('');
       if (pk) localStorage.setItem('ttt_wallet_testnet_pk', pk);
-      await saveWallet(fullAddr, words.length);
-      startBalancePolling(fullAddr);
+      await saveWallet(addr, words.length);
+      startBalancePolling(addr);
       setShowPinSetup(true);
       showToast('Testnet wallet imported!', 'success');
     } catch (e) {
