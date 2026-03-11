@@ -147,10 +147,14 @@ export default function KasCodeIDE() {
         { type: 'success', text: `> ✓ Compilation successful` },
         { type: 'info', text: `> Contract: ${contractMatch?.[1] || 'unknown'}` },
         ...(entrypoints.length > 0 ? [{ type: 'info', text: `> Entrypoints: ${entrypoints.join(', ')}` }] : []),
-        { type: 'success', text: `> Ready for Kaspa Testnet-12` },
+        { type: 'success', text: `> Ready for deployment` },
       ]);
+      setCompiledSuccess(true);
+      setDeployResult(null);
+      setDeployError(null);
     } else {
       setCompilerOutput([{ type: 'error', text: '> ✗ Compilation failed' }, ...errors]);
+      setCompiledSuccess(false);
     }
     setIsCompiling(false);
   };
