@@ -60,7 +60,7 @@ export default function SilverScriptPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black text-white w-full overflow-x-hidden">
       {/* Hero */}
       <div className="relative overflow-hidden border-b border-white/10">
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-black to-cyan-950 opacity-80" />
@@ -119,7 +119,7 @@ export default function SilverScriptPage() {
 
         {/* Tab switcher */}
         <section>
-          <div className="flex gap-2 mb-6">
+          <div className="flex flex-wrap gap-2 mb-6">
             <button
               onClick={() => setActiveTab("examples")}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${
