@@ -333,6 +333,7 @@ export default function KasCodePage() {
   const [activePanel, setActivePanel] = useState('editor');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showSnippets, setShowSnippets] = useState(false);
+  const [showAgent, setShowAgent] = useState(false);
   const textareaRef = useRef(null);
 
   const openFile = (name) => {
