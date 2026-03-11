@@ -198,6 +198,7 @@ export default function TerraPage() {
   const [showBackup, setShowBackup] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [showPublicKey, setShowPublicKey] = useState(false);
 
   const activeWallet = wallets[activeWalletIdx] || null;
   const walletAddress = activeWallet?.address || null;
