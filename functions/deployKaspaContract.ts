@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
 
         const change = totalIn - DEPLOY_SOMPI - FEE_SOMPI;
 
-        // 5. Build + sign transaction
+        // 5. Build + sign transaction using TTT native wallet public key
         const inputs = selected.map(u => ({
             txId: u.outpoint.transactionId,
             vOut: u.outpoint.index,
@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
 
         const signResult = await wallet.signTransaction({
             data: { inputs, outputs, address: normalizedFrom, fee: FEE_SOMPI },
-            privateKey: signingPK,
+            publicKey: fromPublicKey, // Use TTT wallet's native public key
         });
         const signed = typeof signResult === 'string' ? JSON.parse(signResult) : signResult;
         const rawTx = signed.transaction ?? signed.tx ?? signed;
