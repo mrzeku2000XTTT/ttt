@@ -651,6 +651,9 @@ export default function TerraPage() {
             onDeleted={deleteActiveWallet}
           />
         )}
+        {showPublicKey && activeWallet && (
+          <ShowPublicKeySheet wallet={activeWallet} onClose={() => setShowPublicKey(false)} />
+        )}
       </AnimatePresence>
     </div>
   );
