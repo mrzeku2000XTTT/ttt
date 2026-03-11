@@ -614,6 +614,7 @@ export default function TerraPage() {
             onBackup={() => setShowBackup(true)}
             onImport={() => setShowImport(true)}
             onDelete={() => setShowDelete(true)}
+            onShowPublicKey={() => setShowPublicKey(true)}
           />
         )}
         {showBackup && activeWallet?.mnemonic && (
