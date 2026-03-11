@@ -569,14 +569,25 @@ export default function KasCodePage() {
             </div>
             <div className="flex-1 overflow-auto px-2 py-1.5 space-y-0.5" style={{ fontFamily: "'Fira Code', Consolas, monospace" }}>
               {compilerOutput.map((line, i) => (
-                <div key={i} className={`text-[10px] ${
-                  line.type === 'error' ? 'text-red-400' :
-                  line.type === 'success' ? 'text-emerald-400' :
-                  line.type === 'warn' ? 'text-yellow-400' :
-                  'text-zinc-500'
-                }`}>{line.text}</div>
+                line.type === 'explorer' ? null : (
+                  <div key={i} className={`text-[10px] ${
+                    line.type === 'error' ? 'text-red-400' :
+                    line.type === 'success' ? 'text-emerald-400' :
+                    line.type === 'warn' ? 'text-yellow-400' :
+                    'text-zinc-500'
+                  }`}>{line.text}</div>
+                )
               ))}
               {isCompiling && <div className="text-[10px] text-cyan-500 animate-pulse">▮ Analyzing...</div>}
+              {compiledContractName && !isCompiling && (
+                <div className="mt-2 p-2 bg-zinc-900 border border-zinc-700 rounded-lg space-y-1.5">
+                  <div className="text-[9px] text-zinc-500 uppercase tracking-wider font-bold">🔗 Verify on Blockchain</div>
+                  <div className="text-[10px] text-zinc-400 leading-relaxed">
+                    After deploying with <span className="text-cyan-400 font-mono">silverc</span>, paste your TX hash below to verify on Kaspa explorer:
+                  </div>
+                  <TxExplorerInput />
+                </div>
+              )}
             </div>
           </div>
         </div>
