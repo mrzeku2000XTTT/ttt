@@ -238,7 +238,7 @@ function ShowPublicKeySheet({ wallet, onClose }) {
     setLoading(false);
   };
 
-  React.useEffect(() => { fetchPublicKey(); }, []);
+  useEffect(() => { fetchPublicKey(); }, []);
 
   const copy = () => {
     if (!publicKey) return;
