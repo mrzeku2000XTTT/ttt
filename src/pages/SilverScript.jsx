@@ -218,6 +218,15 @@ export default function SilverScriptPage() {
               <SilverScriptSandbox />
             </div>
           )}
+
+          {activeTab === "kascode" && (
+            <div>
+              <div className="mb-4 p-3 bg-cyan-500/5 border border-cyan-500/20 rounded-lg text-cyan-300/70 text-xs">
+                <span className="font-semibold text-cyan-300">KasCode IDE</span> — Full SilverScript development environment. Double-click code to edit, use snippets from the sidebar, and compile to check for errors.
+              </div>
+              <KasCodeIDE />
+            </div>
+          )}
         </section>
 
         {/* Get Started */}
