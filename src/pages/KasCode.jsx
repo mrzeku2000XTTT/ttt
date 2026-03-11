@@ -334,8 +334,19 @@ export default function KasCodePage() {
   const [activePanel, setActivePanel] = useState('editor');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showSnippets, setShowSnippets] = useState(false);
-  const [showAgent, setShowAgent] = useState(false);
   const textareaRef = useRef(null);
+
+  // Pick up any contract loaded from kasAgent page
+  useEffect(() => {
+    const pending = localStorage.getItem('kasagent_pending_contract');
+    if (pending) {
+      try {
+        const { fileName, code } = JSON.parse(pending);
+        handleCreateContract(fileName, code);
+      } catch {}
+      localStorage.removeItem('kasagent_pending_contract');
+    }
+  }, []);
 
   const openFile = (name) => {
     if (!openTabs.includes(name)) setOpenTabs(prev => [...prev, name]);
