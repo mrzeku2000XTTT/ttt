@@ -300,16 +300,19 @@ export default function WalletTestnetPage() {
       const res = await base44.functions.invoke('createKaspaWallet', { wordCount, network: 'testnet' });
       if (res.data?.error) throw new Error(res.data.error);
       const { address: addr, mnemonic: phrase, privateKey: pk } = res.data;
+      console.log('Wallet created:', { addr, phrase: phrase?.substring(0, 20) + '...', network: 'testnet' });
       setMnemonic(phrase);
       setPrivateKey(pk);
       setAddress(addr);
       setShowMnemonic(true);
       if (pk) localStorage.setItem('ttt_wallet_testnet_pk', pk);
-      await saveWallet(addr, wordCount);
+      localStorage.setItem('ttt_wallet_testnet_address', addr);
+      localStorage.setItem('ttt_wallet_testnet_mnemonic', phrase || '');
       startBalancePolling(addr);
       setShowPinSetup(true);
       showToast('Testnet wallet created!', 'success');
     } catch (e) {
+      console.error('Create wallet error:', e);
       setError(e?.message || 'Failed to create wallet');
     } finally {
       setIsCreating(false);
@@ -333,17 +336,20 @@ export default function WalletTestnetPage() {
       });
       if (res.data?.error) throw new Error(res.data.error);
       const { address: addr, mnemonic: phrase, privateKey: pk } = res.data;
+      console.log('Wallet imported:', { addr, network: 'testnet' });
       setMnemonic(phrase || importMnemonic.trim());
       setPrivateKey(pk);
       setAddress(addr);
       setShowMnemonic(false);
       setImportMnemonic('');
       if (pk) localStorage.setItem('ttt_wallet_testnet_pk', pk);
-      await saveWallet(addr, words.length);
+      localStorage.setItem('ttt_wallet_testnet_address', addr);
+      localStorage.setItem('ttt_wallet_testnet_mnemonic', phrase || importMnemonic.trim());
       startBalancePolling(addr);
       setShowPinSetup(true);
       showToast('Testnet wallet imported!', 'success');
     } catch (e) {
+      console.error('Import wallet error:', e);
       setError(e?.message || 'Could not derive address. Check your phrase and try again.');
     } finally {
       setIsImporting(false);
@@ -351,8 +357,7 @@ export default function WalletTestnetPage() {
   };
 
   const saveWallet = async (addr, wc) => {
-    localStorage.setItem('ttt_wallet_testnet_address', addr);
-    localStorage.setItem('ttt_wallet_testnet_mnemonic', mnemonic || '');
+    // Already saved in handleCreateWallet/handleImportWallet
   };
 
   const handleSetPin = async () => {
