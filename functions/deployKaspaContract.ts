@@ -96,18 +96,21 @@ Deno.serve(async (req) => {
         const change = totalIn - DEPLOY_SOMPI - FEE_SOMPI;
 
         // 5. Build + sign transaction
+        // Always use kaspa: prefix for signing (OKX SDK requirement)
+        const signingAddress = fromAddress.startsWith('kaspa') ? fromAddress : `kaspa:${fromAddress}`;
         const inputs = selected.map(u => ({
             txId: u.outpoint.transactionId,
             vOut: u.outpoint.index,
-            // OKX SDK always uses kaspa: for signing regardless of network
-            address: fromAddress.startsWith('kaspa') ? fromAddress : `kaspa:${fromAddress}`,
+            address: signingAddress,
             amount: Number(u.utxoEntry.amount),
         }));
+        
+        // Use proper network-specific format for outputs
         const outputs = [{ address: contractAddress, amount: DEPLOY_SOMPI }];
-        if (change > 0) outputs.push({ address: normalizedFrom, amount: change });
+        if (change > 0) outputs.push({ address: signingAddress, amount: change });
 
         const signResult = await wallet.signTransaction({
-            data: { inputs, outputs, address: normalizedFrom, fee: FEE_SOMPI },
+            data: { inputs, outputs, address: signingAddress, fee: FEE_SOMPI },
             privateKey: privateKey,
         });
         const signed = typeof signResult === 'string' ? JSON.parse(signResult) : signResult;
