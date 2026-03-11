@@ -413,7 +413,7 @@ export default function KasCodePage() {
   const lines = currentCode.split('\n');
 
   return (
-    <div className="bg-zinc-950 text-white flex flex-col overflow-hidden" style={{ height: '100dvh' }}>
+    <div className="bg-zinc-950 text-white flex flex-col overflow-hidden" style={{ height: '100dvh', maxHeight: '100dvh' }}>
       {/* ── Top Bar ─────────────────────────────────────────────── */}
       <div className="flex items-center h-9 bg-zinc-900 border-b border-zinc-800 px-2 gap-2 flex-shrink-0">
         <Link to={createPageUrl('SilverScript')} className="text-zinc-600 hover:text-zinc-300 text-[10px] flex-shrink-0">
