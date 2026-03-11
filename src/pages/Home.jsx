@@ -27,6 +27,7 @@ export default function HomePage() {
   const [isConnectingWallet, setIsConnectingWallet] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(null);
   const messagesEndRef = React.useRef(null);
 
   useEffect(() => {
