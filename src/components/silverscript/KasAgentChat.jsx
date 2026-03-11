@@ -158,45 +158,119 @@ function ContractCodeBlock({ code, fileName, onLoadToEditor }) {
         </div>
       )}
 
-      {/* Deploy + Explorer section */}
+      {/* Deploy section */}
       {compiled === 'success' && (
         <div className="px-3 py-2.5 border-t border-zinc-700 bg-zinc-900/80 space-y-2">
-          <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setShowDeployForm(p => !p)}
+            className="w-full flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+          >
             <Rocket className="w-3 h-3 text-cyan-400" />
-            <span className="text-[10px] text-zinc-300 font-semibold">Deploy & View on Explorer</span>
-          </div>
-          <div className="text-[10px] text-zinc-600 leading-relaxed">
-            Deploy via CLI: <span className="text-cyan-700 font-mono">silverc compile {fileName}</span>
-            <br />Then paste TX hash to open in explorer:
-          </div>
-          <input
-            value={txHash}
-            onChange={e => setTxHash(e.target.value.trim())}
-            placeholder="Paste TX hash (64 hex chars)..."
-            className="w-full bg-zinc-800 text-zinc-100 text-[10px] px-2 py-1.5 rounded border border-zinc-700 outline-none focus:border-cyan-600 font-mono"
-            style={{ fontSize: '14px' }}
-          />
-          {txHash && !isValidTx && (
-            <p className="text-yellow-500 text-[9px]">TX hash must be 64 hex characters</p>
+            <span className="text-[10px] text-zinc-300 font-semibold flex-1 text-left">Deploy to Blockchain</span>
+            <span className="text-[9px] text-zinc-600">{showDeployForm ? '▲' : '▼'}</span>
+          </button>
+
+          {showDeployForm && (
+            <div className="space-y-2">
+              {/* Network selector */}
+              <div className="flex gap-1.5">
+                {['testnet', 'mainnet'].map(net => (
+                  <button
+                    key={net}
+                    onClick={() => setDeployNetwork(net)}
+                    className={`flex-1 py-1 text-[10px] rounded border transition-colors font-semibold ${
+                      deployNetwork === net
+                        ? net === 'mainnet' ? 'bg-orange-600/30 border-orange-500/60 text-orange-300' : 'bg-cyan-700/30 border-cyan-600/60 text-cyan-300'
+                        : 'bg-zinc-800 border-zinc-700 text-zinc-500 hover:text-zinc-300'
+                    }`}
+                  >
+                    {net === 'testnet' ? 'Testnet-12' : '⚠️ Mainnet'}
+                  </button>
+                ))}
+              </div>
+
+              {/* From address */}
+              <div>
+                <label className="text-[9px] text-zinc-500 block mb-0.5">Your Kaspa Address</label>
+                <input
+                  value={deployAddress}
+                  onChange={e => setDeployAddress(e.target.value.trim())}
+                  placeholder="kaspa:q..."
+                  className="w-full bg-zinc-800 text-zinc-200 text-[10px] px-2 py-1.5 rounded border border-zinc-700 outline-none focus:border-cyan-600 font-mono"
+                  style={{ fontSize: '14px' }}
+                />
+              </div>
+
+              {/* Private key */}
+              <div>
+                <label className="text-[9px] text-zinc-500 block mb-0.5">Private Key (stays on device)</label>
+                <input
+                  type="password"
+                  value={deployPK}
+                  onChange={e => setDeployPK(e.target.value.trim())}
+                  placeholder="Your wallet private key..."
+                  className="w-full bg-zinc-800 text-zinc-200 text-[10px] px-2 py-1.5 rounded border border-zinc-700 outline-none focus:border-cyan-600 font-mono"
+                  style={{ fontSize: '14px' }}
+                />
+                <p className="text-[9px] text-zinc-600 mt-0.5">Auto-loaded from TTT Wallet if available</p>
+              </div>
+
+              {/* Deploy error */}
+              {deployError && (
+                <div className="flex items-start gap-1.5 bg-red-950/40 border border-red-800/40 rounded px-2 py-1.5">
+                  <AlertCircle className="w-3 h-3 text-red-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-[10px] text-red-300">{deployError}</p>
+                </div>
+              )}
+
+              {/* Deploy result */}
+              {deployResult && (
+                <div className="bg-emerald-950/40 border border-emerald-700/40 rounded px-2 py-2 space-y-1">
+                  <p className="text-[10px] text-emerald-400 font-semibold">✓ Deployed to {deployResult.network}!</p>
+                  <div className="text-[9px] text-zinc-400 font-mono break-all">
+                    <span className="text-zinc-600">TX: </span>{deployResult.txHash}
+                  </div>
+                  <div className="text-[9px] text-zinc-400 font-mono break-all">
+                    <span className="text-zinc-600">Contract Address: </span>{deployResult.contractAddress}
+                  </div>
+                  <button
+                    onClick={() => window.open(deployResult.explorerUrl, '_blank')}
+                    className="flex items-center gap-1 text-[10px] text-cyan-400 hover:text-cyan-300 transition-colors mt-1"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    View on Explorer
+                  </button>
+                </div>
+              )}
+
+              {/* Deploy button */}
+              {!deployResult && (
+                <button
+                  onClick={handleDeploy}
+                  disabled={isDeploying || !deployAddress.trim() || !deployPK.trim()}
+                  className={`w-full flex items-center justify-center gap-1.5 py-2 rounded text-[10px] font-bold transition-colors disabled:opacity-40 ${
+                    deployNetwork === 'mainnet'
+                      ? 'bg-orange-600 hover:bg-orange-500 text-white'
+                      : 'bg-cyan-700 hover:bg-cyan-600 text-white'
+                  }`}
+                >
+                  {isDeploying ? (
+                    <><Loader2 className="w-3 h-3 animate-spin" />Deploying...</>
+                  ) : (
+                    <><Rocket className="w-3 h-3" />Deploy to {deployNetwork === 'mainnet' ? 'Mainnet' : 'Testnet-12'}</>
+                  )}
+                </button>
+              )}
+              {deployResult && (
+                <button
+                  onClick={() => { setDeployResult(null); setDeployError(null); }}
+                  className="w-full py-1.5 text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors"
+                >
+                  Deploy Again
+                </button>
+              )}
+            </div>
           )}
-          <div className="flex gap-1.5">
-            <button
-              onClick={() => openExplorer('testnet')}
-              disabled={!isValidTx}
-              className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-cyan-800/60 hover:bg-cyan-700/70 disabled:opacity-30 text-cyan-200 text-[10px] rounded border border-cyan-700/40 transition-colors"
-            >
-              <ExternalLink className="w-3 h-3" />
-              Testnet-12
-            </button>
-            <button
-              onClick={() => openExplorer('mainnet')}
-              disabled={!isValidTx}
-              className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-zinc-700/60 hover:bg-zinc-600/70 disabled:opacity-30 text-zinc-200 text-[10px] rounded border border-zinc-600/40 transition-colors"
-            >
-              <ExternalLink className="w-3 h-3" />
-              Mainnet
-            </button>
-          </div>
         </div>
       )}
     </div>
