@@ -337,9 +337,22 @@ export default function KasCodeIDE() {
               disabled={isCompiling || !activeTab}
               className="flex items-center gap-1.5 px-3 py-1 bg-cyan-700 hover:bg-cyan-600 disabled:opacity-40 text-white text-xs rounded transition-colors"
             >
-              <Play className="w-3 h-3" />
+              {isCompiling ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
               {isCompiling ? 'Compiling...' : '▶ Compile'}
             </button>
+            {compiledSuccess && !isCompiling && (
+              <button
+                onClick={() => setShowDeployPanel(p => !p)}
+                className={`flex items-center gap-1.5 px-3 py-1 text-xs rounded transition-colors border ${
+                  showDeployPanel
+                    ? 'bg-emerald-700/40 border-emerald-600/50 text-emerald-300'
+                    : 'bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-white'
+                }`}
+              >
+                <Rocket className="w-3 h-3" />
+                {isDeploying ? 'Deploying...' : 'Deploy'}
+              </button>
+            )}
             {activeTab && (
               <button
                 onClick={() => setEditMode(p => !p)}
@@ -356,6 +369,73 @@ export default function KasCodeIDE() {
               <span className="text-cyan-700">SilverScript</span>
             </div>
           </div>
+
+          {/* Deploy Panel */}
+          {showDeployPanel && compiledSuccess && (
+            <div className="bg-zinc-900 border-t border-zinc-700 px-3 py-2 space-y-2 flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <Rocket className="w-3.5 h-3.5 text-cyan-400" />
+                <span className="text-xs font-bold text-zinc-200">Deploy to Kaspa</span>
+                <div className="flex gap-1 ml-auto">
+                  {['testnet', 'mainnet'].map(net => (
+                    <button
+                      key={net}
+                      onClick={() => setDeployNetwork(net)}
+                      className={`px-2 py-0.5 text-[10px] rounded border font-semibold transition-colors ${
+                        deployNetwork === net
+                          ? net === 'mainnet' ? 'bg-orange-600/30 border-orange-500/50 text-orange-300' : 'bg-cyan-700/30 border-cyan-600/50 text-cyan-300'
+                          : 'border-zinc-700 text-zinc-500 hover:text-zinc-300'
+                      }`}
+                    >
+                      {net === 'testnet' ? 'Testnet-12' : '⚠️ Mainnet'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  value={deployAddress}
+                  onChange={e => setDeployAddress(e.target.value.trim())}
+                  placeholder="kaspa:q... (your address)"
+                  className="bg-zinc-800 text-zinc-200 text-[10px] px-2 py-1.5 rounded border border-zinc-700 outline-none focus:border-cyan-600 font-mono"
+                  style={{ fontSize: '13px' }}
+                />
+                <input
+                  type="password"
+                  value={deployPK}
+                  onChange={e => setDeployPK(e.target.value.trim())}
+                  placeholder="Private key..."
+                  className="bg-zinc-800 text-zinc-200 text-[10px] px-2 py-1.5 rounded border border-zinc-700 outline-none focus:border-cyan-600 font-mono"
+                  style={{ fontSize: '13px' }}
+                />
+              </div>
+              {deployError && (
+                <div className="flex items-center gap-1.5 text-[10px] text-red-400">
+                  <AlertCircle className="w-3 h-3" />{deployError}
+                </div>
+              )}
+              {deployResult ? (
+                <div className="bg-emerald-950/40 border border-emerald-700/30 rounded px-2 py-1.5 space-y-1">
+                  <p className="text-[10px] text-emerald-400 font-semibold">✓ Deployed to {deployResult.network}!</p>
+                  <p className="text-[9px] text-zinc-400 font-mono break-all">TX: {deployResult.txHash}</p>
+                  <p className="text-[9px] text-zinc-400 font-mono break-all">Contract: {deployResult.contractAddress}</p>
+                  <button onClick={() => window.open(deployResult.explorerUrl, '_blank')} className="flex items-center gap-1 text-[10px] text-cyan-400 hover:text-cyan-300">
+                    <ExternalLink className="w-3 h-3" />View on Explorer
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleDeploy}
+                  disabled={isDeploying || !deployAddress.trim() || !deployPK.trim()}
+                  className={`w-full flex items-center justify-center gap-1.5 py-1.5 rounded text-xs font-bold transition-colors disabled:opacity-40 ${
+                    deployNetwork === 'mainnet' ? 'bg-orange-600 hover:bg-orange-500' : 'bg-cyan-700 hover:bg-cyan-600'
+                  } text-white`}
+                >
+                  {isDeploying ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Deploying...</> : <><Rocket className="w-3.5 h-3.5" />Deploy to {deployNetwork === 'mainnet' ? 'Mainnet' : 'Testnet-12'}</>}
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Compiler Output */}
           <div className="h-28 bg-black border-t border-zinc-800 flex flex-col flex-shrink-0">
