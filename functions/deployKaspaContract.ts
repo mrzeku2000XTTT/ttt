@@ -94,7 +94,8 @@ Deno.serve(async (req) => {
         const inputs = selected.map(u => ({
             txId: u.outpoint.transactionId,
             vOut: u.outpoint.index,
-            address: normalizedFrom,
+            // OKX SDK always uses kaspa: for signing regardless of network
+            address: fromAddress.startsWith('kaspa') ? fromAddress : `kaspa:${fromAddress}`,
             amount: Number(u.utxoEntry.amount),
         }));
         const outputs = [{ address: contractAddress, amount: DEPLOY_SOMPI }];
