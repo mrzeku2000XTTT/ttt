@@ -826,12 +826,15 @@ export default function WalletPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="grid grid-cols-3 gap-3 mb-4">
                   <Button onClick={() => setShowReceiveQR(true)} className="bg-zinc-950 border border-zinc-800 text-white hover:bg-zinc-900">
                     <Download className="w-4 h-4 mr-2" />Receive
                   </Button>
                   <Button onClick={() => setShowSend(true)} className="bg-white text-black hover:bg-gray-200">
                     Send
+                  </Button>
+                  <Button onClick={() => setShowContacts(true)} className="bg-zinc-950 border border-cyan-500/30 text-cyan-400 hover:bg-zinc-900">
+                    <UserCheck className="w-4 h-4 mr-2" />Contacts
                   </Button>
                 </div>
 
