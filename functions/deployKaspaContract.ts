@@ -5,6 +5,20 @@ const KASPA_APIS = {
     testnet: 'https://api-tn12.kaspa.org',
     mainnet: 'https://api.kaspa.org',
 };
+
+// Testnet uses "kaspatest:" prefix, mainnet uses "kaspa:"
+function normalizeAddress(addr, network) {
+    if (network === 'testnet') {
+        if (!addr.startsWith('kaspatest:')) {
+            // Strip any kaspa: prefix then add kaspatest:
+            const raw = addr.replace(/^kaspa:/, '');
+            return `kaspatest:${raw}`;
+        }
+        return addr;
+    }
+    if (!addr.startsWith('kaspa:')) return `kaspa:${addr}`;
+    return addr;
+}
 const DEPLOY_SOMPI = 100000; // 0.001 KAS funds the contract address
 const FEE_SOMPI = 10000;
 
