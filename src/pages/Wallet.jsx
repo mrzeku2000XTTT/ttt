@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Copy, Eye, EyeOff, Loader2, CheckCircle2, Shield,
-  ArrowLeft, RefreshCw, X, AlertTriangle, Send, QrCode, Download, Key, UserCheck
+  ArrowLeft, RefreshCw, X, AlertTriangle, Send, QrCode, Download, Key, UserCheck, Smartphone
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion, AnimatePresence } from "framer-motion";
