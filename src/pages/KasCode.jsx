@@ -1,54 +1,101 @@
-import React, { useState } from "react";
-import { MonitorDot, X, Plus, Play, Terminal, FileText, ChevronRight, ChevronDown, Copy, Check, Menu } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { MonitorDot, X, Plus, Play, Terminal, FileText, ChevronRight, ChevronDown, Copy, Check, Menu, Wand2, Code2 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
 
-const INITIAL_FILES = {
-  "welcome.sil": `pragma silverscript ^0.1.0;\n\n// Welcome to KasCode IDE\n// Your SilverScript development environment\n\ncontract Welcome() {\n    entrypoint function hello(pubkey pk, sig s) {\n        require(checkSig(s, pk));\n    }\n}`,
-  "timelock-vault.sil": `pragma silverscript ^0.1.0;\n\ncontract TimelockVault(\n    pubkey owner,\n    int unlockTime\n) {\n    // Owner can withdraw after unlockTime\n    entrypoint function withdraw(sig ownerSig) {\n        require(checkSig(ownerSig, owner));\n        require(tx.time >= unlockTime);\n    }\n\n    // Emergency reclaim after 365 days\n    entrypoint function emergency(sig ownerSig) {\n        require(checkSig(ownerSig, owner));\n        require(this.age >= 365 days);\n    }\n}`,
-  "recurring-payment.sil": `pragma silverscript ^0.1.0;\n\ncontract RecurringPayment(\n    pubkey sender,\n    pubkey recipient,\n    int amount,\n    int period\n) {\n    entrypoint function pay(sig senderSig) {\n        require(checkSig(senderSig, sender));\n        require(tx.outputs[0].value == amount);\n        byte[34] recipientScript = new ScriptPubKeyP2PK(recipient);\n        require(tx.outputs[0].scriptPubKey == recipientScript);\n        require(this.age >= period);\n    }\n}`,
-  "freelancecontract.sil": `pragma silverscript ^0.1.0;\n\n// FreelanceContract\n// Payroll / Freelance Contract — locks funds for work\n// With arbitration support and timeout protection.\n\ncontract FreelanceContract() {\n    pubkey constant clientKey = 0xca1b0ba58ccd6267fe983aa9b58cc1789ef44b92b19e6ee77b690ea77e8491;\n    pubkey constant workerKey = 0x9b06f468e74cb4904e4258c5edaa028451d5e4a4e5040e80888f7b8b5a4e5f;\n    pubkey constant arbiterKey = 0x8125983f2b2021b29c39de4a91d3206932279eb795ac81b7b0ae73c0ca316e;\n\n    // Path A: Mutual Release (happy path)\n    entrypoint function release(sig clientSig, sig workerSig) {\n        require(checkSig(clientSig, clientKey));\n        require(checkSig(workerSig, workerKey));\n        byte[34] workerScript = new ScriptPubKeyP2PK(workerKey);\n        require(tx.outputs[0].scriptPubKey == workerScript);\n    }\n\n    // Path B: Refund by Arbitration\n    entrypoint function refund(sig clientSig, sig arbiterSig) {\n        require(checkSig(clientSig, clientKey));\n        require(checkSig(arbiterSig, arbiterKey));\n        byte[34] clientScript = new ScriptPubKeyP2PK(clientKey);\n        require(tx.outputs[0].scriptPubKey == clientScript);\n    }\n\n    // Path C: Payout by Arbitration\n    entrypoint function arbitrate(sig workerSig, sig arbiterSig) {\n        require(checkSig(workerSig, workerKey));\n        require(checkSig(arbiterSig, arbiterKey));\n        byte[34] workerScript = new ScriptPubKeyP2PK(workerKey);\n        require(tx.outputs[0].scriptPubKey == workerScript);\n    }\n\n    // Path D: Timeout Reclaim\n    entrypoint function reclaim(sig clientSig) {\n        require(checkSig(clientSig, clientKey));\n        require(this.age >= 30 days);\n        byte[34] clientScript = new ScriptPubKeyP2PK(clientKey);\n        require(tx.outputs[0].scriptPubKey == clientScript);\n    }\n}`
-};
-
-const SNIPPETS = [
-  { name: "Start Here", code: `pragma silverscript ^0.1.0;\n\ncontract MyContract() {\n    entrypoint function spend(pubkey pk, sig s) {\n        require(checkSig(s, pk));\n    }\n}` },
-  { name: "Empty Contract", code: `contract MyContract() {\n\n}` },
-  { name: "Constant Value", code: `int constant FEE = 1000;\npubkey constant ownerKey = 0x...;` },
-  { name: "Require (Assert)", code: `require(checkSig(s, pk));` },
-  { name: "Who Can Spend", code: `entrypoint function spend(pubkey pk, sig s) {\n    require(blake2b(pk) == pkh);\n    require(checkSig(s, pk));\n}` },
-  { name: "Who Can't Spend", code: `require(tx.time >= lockTime);\nrequire(this.age >= 7 days);` },
-  { name: "Where Does It Go", code: `byte[34] script = new ScriptPubKeyP2PK(recipient);\nrequire(tx.outputs[0].scriptPubKey == script);\nrequire(tx.outputs[0].value == amount);` },
-  { name: "Complete Contracts", code: `// See FILES panel for complete contracts` },
+// ─── Contract Templates with constructor args ───────────────────────────────
+const CONTRACT_TEMPLATES = [
+  {
+    id: "p2pkh",
+    name: "Pay to Public Key Hash",
+    desc: "Standard spend: verify key hash then signature",
+    args: [{ name: "pkh", type: "byte[32]", placeholder: "0xabc123..." }],
+    generate: (a) =>
+`pragma silverscript ^0.1.0;\n\ncontract P2PKH(byte[32] pkh) {\n    entrypoint function spend(pubkey pk, sig s) {\n        require(blake2b(pk) == pkh);\n        require(checkSig(s, pk));\n    }\n}`,
+  },
+  {
+    id: "timelock",
+    name: "Time-Locked Vault",
+    desc: "Owner withdraws after a specific time",
+    args: [
+      { name: "owner", type: "pubkey", placeholder: "0x..." },
+      { name: "unlockTime", type: "int", placeholder: "1700000000" },
+    ],
+    generate: (a) =>
+`pragma silverscript ^0.1.0;\n\ncontract TimelockVault(\n    pubkey owner,\n    int unlockTime\n) {\n    entrypoint function withdraw(sig ownerSig) {\n        require(checkSig(ownerSig, owner));\n        require(tx.time >= unlockTime);\n    }\n\n    entrypoint function emergency(sig ownerSig) {\n        require(checkSig(ownerSig, owner));\n        require(this.age >= 365 days);\n    }\n}`,
+  },
+  {
+    id: "escrow",
+    name: "Two-Party Escrow",
+    desc: "Buyer + seller with arbiter dispute resolution",
+    args: [
+      { name: "buyer", type: "pubkey", placeholder: "0x..." },
+      { name: "seller", type: "pubkey", placeholder: "0x..." },
+      { name: "arbiter", type: "pubkey", placeholder: "0x..." },
+      { name: "timeout", type: "int", placeholder: "30 (days)" },
+    ],
+    generate: (a) =>
+`pragma silverscript ^0.1.0;\n\ncontract Escrow(\n    pubkey buyer,\n    pubkey seller,\n    pubkey arbiter,\n    int timeout\n) {\n    entrypoint function release(sig buyerSig, sig sellerSig) {\n        require(checkSig(buyerSig, buyer));\n        require(checkSig(sellerSig, seller));\n        byte[34] sellerScript = new ScriptPubKeyP2PK(seller);\n        require(tx.outputs[0].scriptPubKey == sellerScript);\n    }\n\n    entrypoint function dispute(sig buyerSig, sig arbiterSig) {\n        require(checkSig(buyerSig, buyer));\n        require(checkSig(arbiterSig, arbiter));\n        byte[34] buyerScript = new ScriptPubKeyP2PK(buyer);\n        require(tx.outputs[0].scriptPubKey == buyerScript);\n    }\n\n    entrypoint function reclaim(sig buyerSig) {\n        require(checkSig(buyerSig, buyer));\n        require(this.age >= timeout days);\n    }\n}`,
+  },
+  {
+    id: "recurring",
+    name: "Recurring Payment",
+    desc: "Scheduled payments at a fixed interval",
+    args: [
+      { name: "sender", type: "pubkey", placeholder: "0x..." },
+      { name: "recipient", type: "pubkey", placeholder: "0x..." },
+      { name: "amount", type: "int", placeholder: "100000" },
+      { name: "period", type: "int", placeholder: "7 (days)" },
+    ],
+    generate: (a) =>
+`pragma silverscript ^0.1.0;\n\ncontract RecurringPayment(\n    pubkey sender,\n    pubkey recipient,\n    int amount,\n    int period\n) {\n    entrypoint function pay(sig senderSig) {\n        require(checkSig(senderSig, sender));\n        require(tx.outputs[0].value == amount);\n        byte[34] recipientScript = new ScriptPubKeyP2PK(recipient);\n        require(tx.outputs[0].scriptPubKey == recipientScript);\n        require(this.age >= period days);\n    }\n}`,
+  },
+  {
+    id: "multisig",
+    name: "2-of-3 MultiSig",
+    desc: "Any 2 of 3 keys can spend",
+    args: [
+      { name: "pk1", type: "pubkey", placeholder: "0x..." },
+      { name: "pk2", type: "pubkey", placeholder: "0x..." },
+      { name: "pk3", type: "pubkey", placeholder: "0x..." },
+    ],
+    generate: (a) =>
+`pragma silverscript ^0.1.0;\n\ncontract MultiSig(pubkey pk1, pubkey pk2, pubkey pk3) {\n    entrypoint function spend(sig s1, sig s2) {\n        require(checkMultiSig([s1, s2], [pk1, pk2, pk3]));\n    }\n}`,
+  },
+  {
+    id: "freelance",
+    name: "Freelance Contract",
+    desc: "Escrow with mutual release and arbitration",
+    args: [
+      { name: "clientKey", type: "pubkey", placeholder: "0x..." },
+      { name: "workerKey", type: "pubkey", placeholder: "0x..." },
+      { name: "arbiterKey", type: "pubkey", placeholder: "0x..." },
+    ],
+    generate: (a) =>
+`pragma silverscript ^0.1.0;\n\ncontract FreelanceContract(\n    pubkey clientKey,\n    pubkey workerKey,\n    pubkey arbiterKey\n) {\n    entrypoint function release(sig clientSig, sig workerSig) {\n        require(checkSig(clientSig, clientKey));\n        require(checkSig(workerSig, workerKey));\n        byte[34] workerScript = new ScriptPubKeyP2PK(workerKey);\n        require(tx.outputs[0].scriptPubKey == workerScript);\n    }\n\n    entrypoint function refund(sig clientSig, sig arbiterSig) {\n        require(checkSig(clientSig, clientKey));\n        require(checkSig(arbiterSig, arbiterKey));\n        byte[34] clientScript = new ScriptPubKeyP2PK(clientKey);\n        require(tx.outputs[0].scriptPubKey == clientScript);\n    }\n\n    entrypoint function reclaim(sig clientSig) {\n        require(checkSig(clientSig, clientKey));\n        require(this.age >= 30 days);\n    }\n}`,
+  },
 ];
 
-const BUG_TEMPLATES = [
-  { name: "Pay to Public Key", color: "bg-emerald-500" },
-  { name: "Time-Locked Vault", color: "bg-blue-500" },
-  { name: "Two-Party Escrow", color: "bg-emerald-500" },
-  { name: "Recurring Payment", color: "bg-emerald-500" },
-  { name: "Payroll / Freelance", color: "bg-emerald-500" },
-  { name: "Simple Covenant", color: "bg-emerald-500" },
-];
-
+// ─── Syntax Keywords ─────────────────────────────────────────────────────────
 const SIL_KEYWORDS = new Set([
   'pragma','silverscript','contract','entrypoint','function','require',
   'byte','pubkey','sig','int','bool','constant','new','if','else','for',
   'return','days','this','tx','true','false','inputs','outputs','time',
   'age','value','scriptPubKey','version','activeInputIndex','checkSig',
-  'blake2b','checkMultiSig'
+  'blake2b','checkMultiSig','ScriptPubKeyP2PK',
 ]);
 
-function renderHighlightedLine(line, lineNum) {
+function HighlightedLine({ line, num }) {
   const isComment = line.trim().startsWith('//');
   return (
-    <div key={lineNum} className="flex min-w-0 leading-6 hover:bg-white/[0.025] group">
-      <span className="inline-block w-8 sm:w-10 text-right pr-3 text-zinc-600 select-none text-xs flex-shrink-0 group-hover:text-zinc-500">
-        {lineNum}
+    <div className="flex min-w-0 leading-5 hover:bg-white/[0.02] group">
+      <span className="inline-block w-7 text-right pr-2 text-zinc-700 select-none text-[10px] flex-shrink-0 group-hover:text-zinc-600">
+        {num}
       </span>
       {isComment ? (
-        <span className="text-zinc-500 italic whitespace-pre text-xs sm:text-sm">{line}</span>
+        <span className="text-zinc-500 italic whitespace-pre text-[11px]">{line}</span>
       ) : (
-        <span className="whitespace-pre text-xs sm:text-sm">
+        <span className="whitespace-pre text-[11px]">
           {line.split(/(\b\w+\b|0x[0-9a-fA-F]+|"[^"]*"|'[^']*'|\d+)/).map((tok, i) => {
             if (SIL_KEYWORDS.has(tok)) return <span key={i} className="text-cyan-400">{tok}</span>;
             if (/^0x[0-9a-fA-F]+$/.test(tok)) return <span key={i} className="text-amber-400">{tok}</span>;
@@ -63,21 +110,170 @@ function renderHighlightedLine(line, lineNum) {
   );
 }
 
+// ─── Create Contract Modal ────────────────────────────────────────────────────
+function CreateContractModal({ onClose, onCreate }) {
+  const [step, setStep] = useState(0); // 0=pick template, 1=fill args
+  const [selected, setSelected] = useState(null);
+  const [argValues, setArgValues] = useState({});
+  const [contractName, setContractName] = useState('');
+
+  const tpl = selected !== null ? CONTRACT_TEMPLATES[selected] : null;
+
+  const handleCreate = () => {
+    const code = tpl.generate(argValues);
+    const name = (contractName || tpl.id) + '.sil';
+    onCreate(name, code);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="bg-zinc-900 border border-zinc-700 rounded-t-2xl sm:rounded-xl w-full sm:max-w-md max-h-[85vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <Wand2 className="w-4 h-4 text-cyan-400" />
+            <span className="text-sm font-semibold text-zinc-100">
+              {step === 0 ? 'New Contract' : tpl?.name}
+            </span>
+          </div>
+          <button onClick={onClose} className="text-zinc-600 hover:text-zinc-200">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4">
+          {step === 0 && (
+            <div className="space-y-2">
+              <p className="text-zinc-500 text-xs mb-3">Choose a contract template to get started:</p>
+              {CONTRACT_TEMPLATES.map((t, i) => (
+                <button
+                  key={t.id}
+                  onClick={() => { setSelected(i); setStep(1); setArgValues({}); setContractName(t.id); }}
+                  className="w-full text-left px-3 py-3 rounded-lg bg-zinc-800/50 hover:bg-zinc-700/60 border border-zinc-700/40 hover:border-cyan-700/50 transition-all"
+                >
+                  <div className="text-zinc-100 text-xs font-semibold">{t.name}</div>
+                  <div className="text-zinc-500 text-[10px] mt-0.5">{t.desc}</div>
+                </button>
+              ))}
+              <button
+                onClick={() => { setSelected(-1); setStep(1); setArgValues({}); setContractName('my-contract'); }}
+                className="w-full text-left px-3 py-3 rounded-lg bg-zinc-800/20 hover:bg-zinc-700/40 border border-dashed border-zinc-700 hover:border-cyan-700/40 transition-all"
+              >
+                <div className="text-zinc-400 text-xs font-semibold">+ Blank Contract</div>
+                <div className="text-zinc-600 text-[10px] mt-0.5">Start from scratch</div>
+              </button>
+            </div>
+          )}
+
+          {step === 1 && tpl && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-zinc-400 text-[10px] uppercase tracking-wider">File name</label>
+                <input
+                  value={contractName}
+                  onChange={e => setContractName(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ''))}
+                  className="w-full mt-1 bg-zinc-800 text-zinc-100 text-xs px-3 py-2 rounded-lg border border-zinc-700 outline-none focus:border-cyan-600"
+                  placeholder="my-contract"
+                />
+                <span className="text-zinc-600 text-[10px]">.sil will be appended</span>
+              </div>
+              {tpl.args.length > 0 && (
+                <>
+                  <p className="text-zinc-500 text-[10px] uppercase tracking-wider mt-2">Constructor Arguments</p>
+                  {tpl.args.map(arg => (
+                    <div key={arg.name}>
+                      <label className="text-zinc-400 text-[10px]">
+                        <span className="text-teal-400">{arg.type}</span> {arg.name}
+                      </label>
+                      <input
+                        value={argValues[arg.name] || ''}
+                        onChange={e => setArgValues(prev => ({ ...prev, [arg.name]: e.target.value }))}
+                        placeholder={arg.placeholder}
+                        className="w-full mt-1 bg-zinc-800 text-zinc-100 text-xs px-3 py-2 rounded-lg border border-zinc-700 outline-none focus:border-cyan-600 font-mono"
+                      />
+                    </div>
+                  ))}
+                </>
+              )}
+              {step === 1 && selected === -1 && (
+                <p className="text-zinc-500 text-[10px]">A blank contract template will be created for you to edit.</p>
+              )}
+            </div>
+          )}
+
+          {step === 1 && selected === -1 && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-zinc-400 text-[10px] uppercase tracking-wider">File name</label>
+                <input
+                  value={contractName}
+                  onChange={e => setContractName(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ''))}
+                  className="w-full mt-1 bg-zinc-800 text-zinc-100 text-xs px-3 py-2 rounded-lg border border-zinc-700 outline-none focus:border-cyan-600"
+                  placeholder="my-contract"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center gap-2 p-4 border-t border-zinc-800 flex-shrink-0">
+          {step === 1 && (
+            <button onClick={() => setStep(0)} className="px-3 py-2 text-xs text-zinc-400 hover:text-zinc-200 transition-colors">
+              ← Back
+            </button>
+          )}
+          <div className="flex-1" />
+          <button onClick={onClose} className="px-3 py-2 text-xs text-zinc-500 hover:text-zinc-300 transition-colors">Cancel</button>
+          {step === 1 && (
+            <button
+              onClick={handleCreate}
+              disabled={!contractName}
+              className="px-4 py-2 bg-cyan-700 hover:bg-cyan-600 disabled:opacity-40 text-white text-xs rounded-lg font-semibold transition-colors"
+            >
+              Create File
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main IDE ─────────────────────────────────────────────────────────────────
+const BLANK_CODE = `pragma silverscript ^0.1.0;\n\ncontract MyContract() {\n    entrypoint function spend(pubkey pk, sig s) {\n        require(checkSig(s, pk));\n    }\n}`;
+
+const SNIPPETS = [
+  { name: "checkSig", code: `require(checkSig(s, pk));` },
+  { name: "blake2b hash", code: `require(blake2b(pk) == pkh);` },
+  { name: "Time lock", code: `require(tx.time >= lockTime);` },
+  { name: "Age check", code: `require(this.age >= 7 days);` },
+  { name: "Output script", code: `byte[34] script = new ScriptPubKeyP2PK(recipient);\nrequire(tx.outputs[0].scriptPubKey == script);` },
+  { name: "Output value", code: `require(tx.outputs[0].value == amount);` },
+  { name: "MultiSig", code: `require(checkMultiSig([s1, s2], [pk1, pk2, pk3]));` },
+];
+
 export default function KasCodePage() {
-  const [files, setFiles] = useState({ ...INITIAL_FILES });
-  const [openTabs, setOpenTabs] = useState(['welcome.sil', 'timelock-vault.sil', 'recurring-payment.sil', 'freelancecontract.sil']);
-  const [activeTab, setActiveTab] = useState('freelancecontract.sil');
+  const [files, setFiles] = useState({
+    "welcome.sil": BLANK_CODE,
+    "timelock-vault.sil": `pragma silverscript ^0.1.0;\n\ncontract TimelockVault(\n    pubkey owner,\n    int unlockTime\n) {\n    entrypoint function withdraw(sig ownerSig) {\n        require(checkSig(ownerSig, owner));\n        require(tx.time >= unlockTime);\n    }\n\n    entrypoint function emergency(sig ownerSig) {\n        require(checkSig(ownerSig, owner));\n        require(this.age >= 365 days);\n    }\n}`,
+    "freelance.sil": `pragma silverscript ^0.1.0;\n\ncontract FreelanceContract(\n    pubkey clientKey,\n    pubkey workerKey,\n    pubkey arbiterKey\n) {\n    entrypoint function release(sig clientSig, sig workerSig) {\n        require(checkSig(clientSig, clientKey));\n        require(checkSig(workerSig, workerKey));\n        byte[34] workerScript = new ScriptPubKeyP2PK(workerKey);\n        require(tx.outputs[0].scriptPubKey == workerScript);\n    }\n\n    entrypoint function reclaim(sig clientSig) {\n        require(checkSig(clientSig, clientKey));\n        require(this.age >= 30 days);\n    }\n}`,
+  });
+  const [openTabs, setOpenTabs] = useState(['welcome.sil', 'timelock-vault.sil']);
+  const [activeTab, setActiveTab] = useState('welcome.sil');
   const [editMode, setEditMode] = useState(false);
   const [compilerOutput, setCompilerOutput] = useState([
     { type: 'info', text: '> silverc v0.1.0 ready' },
-    { type: 'info', text: '> Open a file and press Compile to analyze' },
+    { type: 'info', text: '> Press Compile to analyze' },
   ]);
   const [isCompiling, setIsCompiling] = useState(false);
-  const [expandSnippets, setExpandSnippets] = useState(true);
-  const [expandBugData, setExpandBugData] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [activePanel, setActivePanel] = useState('editor'); // 'editor' | 'output' on mobile
+  const [activePanel, setActivePanel] = useState('editor');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showSnippets, setShowSnippets] = useState(false);
+  const textareaRef = useRef(null);
 
   const openFile = (name) => {
     if (!openTabs.includes(name)) setOpenTabs(prev => [...prev, name]);
@@ -94,21 +290,19 @@ export default function KasCodePage() {
     if (activeTab === name) setActiveTab(newTabs[newTabs.length - 1] || '');
   };
 
-  const addNewFile = () => {
-    const idx = Object.keys(files).length + 1;
-    const name = `contract${idx}.sil`;
-    const starter = `pragma silverscript ^0.1.0;\n\ncontract MyContract${idx}() {\n    entrypoint function spend(pubkey pk, sig s) {\n        require(checkSig(s, pk));\n    }\n}`;
-    setFiles(prev => ({ ...prev, [name]: starter }));
-    setOpenTabs(prev => [...prev, name]);
+  const handleCreateContract = (name, code) => {
+    setFiles(prev => ({ ...prev, [name]: code }));
+    setOpenTabs(prev => prev.includes(name) ? prev : [...prev, name]);
     setActiveTab(name);
     setEditMode(true);
-    setSidebarOpen(false);
+    setActivePanel('editor');
   };
 
   const insertSnippet = (code) => {
     if (!activeTab) return;
-    setFiles(prev => ({ ...prev, [activeTab]: (prev[activeTab] || '') + '\n\n' + code }));
-    setSidebarOpen(false);
+    setFiles(prev => ({ ...prev, [activeTab]: (prev[activeTab] || '') + '\n' + code }));
+    setShowSnippets(false);
+    setEditMode(true);
   };
 
   const handleCompile = async () => {
@@ -116,20 +310,24 @@ export default function KasCodePage() {
     setIsCompiling(true);
     setActivePanel('output');
     setCompilerOutput([{ type: 'info', text: `> Compiling ${activeTab}...` }]);
-    await new Promise(r => setTimeout(r, 700));
+    await new Promise(r => setTimeout(r, 600));
     const code = files[activeTab] || '';
     const errors = [];
     if (!code.includes('pragma silverscript')) errors.push({ type: 'error', text: 'ERROR: Missing pragma declaration' });
     if (!code.includes('contract ')) errors.push({ type: 'error', text: 'ERROR: No contract definition found' });
+    if (!code.includes('entrypoint function')) errors.push({ type: 'warn', text: 'WARN: No entrypoint functions defined' });
     if ((code.match(/{/g) || []).length !== (code.match(/}/g) || []).length)
       errors.push({ type: 'error', text: 'ERROR: Mismatched braces' });
-    if (errors.length === 0) {
+    if (errors.filter(e => e.type === 'error').length === 0) {
       const contractMatch = code.match(/contract\s+(\w+)/);
       const entrypoints = [...code.matchAll(/entrypoint function\s+(\w+)/g)].map(m => m[1]);
+      const args = [...code.matchAll(/contract\s+\w+\(([^)]*)\)/g)].map(m => m[1]).filter(Boolean);
       setCompilerOutput([
         { type: 'success', text: `> ✓ Compilation successful` },
         { type: 'info', text: `> Contract: ${contractMatch?.[1] || 'unknown'}` },
+        ...(args[0] ? [{ type: 'info', text: `> Constructor args: ${args[0]}` }] : []),
         ...(entrypoints.length > 0 ? [{ type: 'info', text: `> Entrypoints: ${entrypoints.join(', ')}` }] : []),
+        ...(errors.filter(e => e.type === 'warn')),
         { type: 'success', text: `> Ready for Kaspa Testnet-12` },
       ]);
     } else {
@@ -146,243 +344,227 @@ export default function KasCodePage() {
   };
 
   const currentCode = files[activeTab] || '';
-  const lineCount = currentCode.split('\n').length;
+  const lines = currentCode.split('\n');
 
   return (
-    <div className="bg-black text-white flex flex-col" style={{ height: '100dvh' }}>
-      {/* Top Header Bar */}
-      <div className="flex items-center h-10 bg-zinc-900 border-b border-zinc-800 px-3 gap-2 flex-shrink-0">
-        <Link to={createPageUrl('SilverScript')} className="text-zinc-500 hover:text-zinc-200 transition-colors">
-          <span className="text-xs">← SilverScript</span>
+    <div className="bg-zinc-950 text-white flex flex-col overflow-hidden" style={{ height: '100dvh' }}>
+      {/* ── Top Bar ─────────────────────────────────────────────── */}
+      <div className="flex items-center h-9 bg-zinc-900 border-b border-zinc-800 px-2 gap-2 flex-shrink-0">
+        <Link to={createPageUrl('SilverScript')} className="text-zinc-600 hover:text-zinc-300 text-[10px] flex-shrink-0">
+          ← SS
         </Link>
-        <div className="h-3 w-px bg-zinc-700" />
-        <div className="flex items-center gap-1.5">
-          <MonitorDot className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="text-zinc-200 font-semibold text-xs tracking-wide">KasCode Studio</span>
-        </div>
-        <div className="hidden sm:flex items-center gap-3 ml-2">
-          {['File', 'Build', 'Compile', 'Contracts', 'Help'].map(m => (
-            <button key={m} className="text-zinc-500 hover:text-zinc-200 text-xs transition-colors">{m}</button>
-          ))}
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <span className="hidden sm:inline text-cyan-600 text-xs">v0.1.0</span>
-          <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded border border-yellow-500/20">Testnet-12</span>
-          {/* Mobile sidebar toggle */}
-          <button
-            onClick={() => setSidebarOpen(p => !p)}
-            className="sm:hidden flex items-center justify-center w-7 h-7 rounded bg-zinc-800 text-zinc-300"
-          >
-            <Menu className="w-4 h-4" />
-          </button>
-        </div>
+        <div className="h-3 w-px bg-zinc-800" />
+        <MonitorDot className="w-3 h-3 text-cyan-500 flex-shrink-0" />
+        <span className="text-zinc-200 font-semibold text-[11px] flex-shrink-0">KasCode</span>
+        <span className="text-[9px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded border border-yellow-500/20 flex-shrink-0">Testnet-12</span>
+        <div className="flex-1" />
+        {/* New Contract button always visible */}
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="flex items-center gap-1 px-2 py-1 bg-cyan-700/80 hover:bg-cyan-600 text-white text-[10px] rounded font-semibold transition-colors flex-shrink-0"
+        >
+          <Plus className="w-3 h-3" />
+          <span className="hidden sm:inline">New Contract</span>
+          <span className="sm:hidden">New</span>
+        </button>
+        <button
+          onClick={() => setSidebarOpen(p => !p)}
+          className="sm:hidden flex items-center justify-center w-7 h-7 rounded bg-zinc-800 text-zinc-400"
+        >
+          <Menu className="w-3.5 h-3.5" />
+        </button>
       </div>
 
-      {/* Main Layout */}
-      <div className="flex flex-1 overflow-hidden relative min-h-0">
+      {/* ── Body ────────────────────────────────────────────────── */}
+      <div className="flex flex-1 overflow-hidden min-h-0 relative">
 
-        {/* Mobile Sidebar Overlay */}
+        {/* Sidebar overlay (mobile) */}
         {sidebarOpen && (
-          <div
-            className="absolute inset-0 bg-black/60 z-30 sm:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
+          <div className="absolute inset-0 bg-black/70 z-30 sm:hidden" onClick={() => setSidebarOpen(false)} />
         )}
 
-        {/* Sidebar */}
+        {/* ── Sidebar ─────────────────────────────────────────── */}
         <div className={`
           absolute sm:relative z-40 sm:z-auto
-          w-52 sm:w-44 h-full
-          bg-zinc-900 border-r border-zinc-800
-          flex flex-col overflow-y-auto flex-shrink-0 text-xs
+          w-44 h-full bg-zinc-900 border-r border-zinc-800
+          flex flex-col overflow-y-auto flex-shrink-0
           transition-transform duration-200
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full sm:translate-x-0'}
         `}>
-          {/* FILES */}
-          <div className="px-2 pt-3 pb-1">
-            <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5 px-1">Files</div>
+          {/* Files */}
+          <div className="px-2 pt-2 pb-1">
+            <div className="text-[9px] font-bold text-zinc-600 uppercase tracking-wider mb-1 px-1">Files</div>
             {Object.keys(files).map(name => (
               <button
                 key={name}
                 onClick={() => openFile(name)}
-                className={`w-full text-left flex items-center gap-1.5 px-2 py-1.5 rounded transition-colors ${
-                  activeTab === name
-                    ? 'bg-zinc-700/70 text-zinc-100'
-                    : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/50'
+                className={`w-full text-left flex items-center gap-1 px-2 py-1.5 rounded text-[11px] transition-colors ${
+                  activeTab === name ? 'bg-zinc-700/70 text-zinc-100' : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/50'
                 }`}
               >
-                <FileText className="w-3 h-3 flex-shrink-0" />
+                <FileText className="w-2.5 h-2.5 flex-shrink-0" />
                 <span className="truncate">{name}</span>
               </button>
             ))}
-            <button
-              onClick={addNewFile}
-              className="w-full text-left flex items-center gap-1.5 px-2 py-1.5 text-zinc-600 hover:text-zinc-400 transition-colors mt-1 rounded hover:bg-zinc-800/50"
-            >
-              <Plus className="w-3 h-3" />
-              <span>New file</span>
-            </button>
           </div>
 
-          {/* SNIPPETS */}
-          <div className="px-2 pt-2 pb-1 border-t border-zinc-800/50 mt-1">
+          {/* Snippets */}
+          <div className="px-2 pt-1 pb-1 border-t border-zinc-800/60 mt-1">
             <button
-              onClick={() => setExpandSnippets(p => !p)}
-              className="w-full flex items-center gap-1 text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1 px-1 hover:text-zinc-400"
+              onClick={() => setShowSnippets(p => !p)}
+              className="w-full flex items-center gap-1 text-[9px] font-bold text-zinc-600 uppercase tracking-wider mb-1 px-1 hover:text-zinc-400"
             >
-              {expandSnippets ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+              {showSnippets ? <ChevronDown className="w-2.5 h-2.5" /> : <ChevronRight className="w-2.5 h-2.5" />}
               Snippets
             </button>
-            {expandSnippets && SNIPPETS.map(s => (
+            {showSnippets && SNIPPETS.map(s => (
               <button
                 key={s.name}
                 onClick={() => insertSnippet(s.code)}
-                className="w-full text-left flex items-center gap-1.5 px-2 py-1.5 text-zinc-500 hover:text-cyan-300 hover:bg-zinc-800/50 rounded transition-colors"
+                className="w-full text-left flex items-center gap-1 px-2 py-1 text-[10px] text-zinc-500 hover:text-cyan-300 hover:bg-zinc-800/50 rounded transition-colors"
               >
-                <span className="text-cyan-700 flex-shrink-0">•</span>
+                <span className="text-cyan-800 flex-shrink-0">›</span>
                 <span className="truncate">{s.name}</span>
               </button>
             ))}
           </div>
 
-          {/* BUG DATA */}
-          <div className="px-2 pt-2 pb-4 border-t border-zinc-800/50 mt-1">
-            <button
-              onClick={() => setExpandBugData(p => !p)}
-              className="w-full flex items-center gap-1 text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1 px-1 hover:text-zinc-400"
-            >
-              {expandBugData ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-              Bug Data
-            </button>
-            {expandBugData && BUG_TEMPLATES.map(b => (
-              <div key={b.name} className="flex items-center gap-2 px-2 py-1.5 text-zinc-500 rounded">
-                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${b.color}`} />
-                <span className="truncate">{b.name}</span>
-              </div>
+          {/* Templates quick-add */}
+          <div className="px-2 pt-1 pb-3 border-t border-zinc-800/60 mt-1">
+            <div className="text-[9px] font-bold text-zinc-600 uppercase tracking-wider mb-1 px-1">Templates</div>
+            {CONTRACT_TEMPLATES.map(t => (
+              <button
+                key={t.id}
+                onClick={() => handleCreateContract(t.id + '.sil', t.generate({}))}
+                className="w-full text-left flex items-center gap-1 px-2 py-1 text-[10px] text-zinc-500 hover:text-teal-300 hover:bg-zinc-800/50 rounded transition-colors"
+              >
+                <Code2 className="w-2.5 h-2.5 flex-shrink-0 text-teal-700" />
+                <span className="truncate">{t.name}</span>
+              </button>
             ))}
           </div>
         </div>
 
-        {/* Right: Editor + Output */}
+        {/* ── Editor + Output ──────────────────────────────────── */}
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-          {/* Tabs row */}
-          <div className="flex items-stretch bg-zinc-900/80 border-b border-zinc-800 overflow-x-auto flex-shrink-0 scrollbar-hide" style={{ minHeight: '2.25rem' }}>
+          {/* Tabs */}
+          <div className="flex items-stretch bg-zinc-900 border-b border-zinc-800 overflow-x-auto flex-shrink-0 scrollbar-hide h-8">
             {openTabs.map(tab => (
               <div
                 key={tab}
                 onClick={() => { setActiveTab(tab); setEditMode(false); setActivePanel('editor'); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs border-r border-zinc-800 cursor-pointer transition-colors flex-shrink-0 ${
+                className={`flex items-center gap-1 px-2 text-[10px] border-r border-zinc-800 cursor-pointer transition-colors flex-shrink-0 ${
                   activeTab === tab
                     ? 'bg-zinc-950 text-zinc-100 border-t-2 border-t-cyan-500'
                     : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50'
                 }`}
               >
-                <span className="max-w-[80px] sm:max-w-none truncate">{tab}</span>
+                <span className="max-w-[60px] truncate">{tab}</span>
                 <span
                   onClick={e => closeTab(e, tab)}
-                  className="flex items-center justify-center w-3.5 h-3.5 rounded hover:bg-zinc-600 text-zinc-600 hover:text-zinc-200 transition-colors flex-shrink-0"
+                  className="flex items-center justify-center w-3 h-3 rounded hover:bg-zinc-600 text-zinc-700 hover:text-zinc-200 flex-shrink-0"
                 >
-                  <X className="w-2.5 h-2.5" />
+                  <X className="w-2 h-2" />
                 </span>
               </div>
             ))}
-            <button onClick={addNewFile} className="px-2.5 text-zinc-600 hover:text-zinc-300 transition-colors flex-shrink-0">
-              <Plus className="w-3.5 h-3.5" />
+            <button onClick={() => setShowCreateModal(true)} className="px-2 text-zinc-700 hover:text-zinc-400 flex-shrink-0 flex items-center">
+              <Plus className="w-3 h-3" />
             </button>
             {/* Mobile panel toggle */}
             <div className="ml-auto flex sm:hidden items-center gap-1 px-2">
-              <button
-                onClick={() => setActivePanel('editor')}
-                className={`text-[10px] px-2 py-1 rounded ${activePanel === 'editor' ? 'bg-zinc-700 text-zinc-100' : 'text-zinc-600'}`}
-              >Code</button>
-              <button
-                onClick={() => setActivePanel('output')}
-                className={`text-[10px] px-2 py-1 rounded ${activePanel === 'output' ? 'bg-zinc-700 text-zinc-100' : 'text-zinc-600'}`}
-              >Output</button>
+              <button onClick={() => setActivePanel('editor')} className={`text-[9px] px-1.5 py-0.5 rounded ${activePanel === 'editor' ? 'bg-zinc-700 text-zinc-100' : 'text-zinc-600'}`}>Code</button>
+              <button onClick={() => setActivePanel('output')} className={`text-[9px] px-1.5 py-0.5 rounded ${activePanel === 'output' ? 'bg-zinc-700 text-zinc-100' : 'text-zinc-600'}`}>Out</button>
             </div>
           </div>
 
-          {/* Editor area */}
-          <div className={`flex-1 overflow-auto bg-zinc-950 relative ${activePanel === 'output' ? 'hidden sm:block' : ''}`}
-            onDoubleClick={() => !editMode && setEditMode(true)}>
+          {/* Code Editor */}
+          <div
+            className={`flex-1 overflow-auto bg-zinc-950 relative ${activePanel === 'output' ? 'hidden sm:block' : ''}`}
+            onClick={() => { if (!editMode) setEditMode(true); }}
+          >
             {activeTab && files[activeTab] !== undefined ? (
               editMode ? (
                 <textarea
+                  ref={textareaRef}
                   value={files[activeTab]}
                   onChange={e => setFiles(prev => ({ ...prev, [activeTab]: e.target.value }))}
-                  onBlur={() => setEditMode(false)}
-                  autoFocus
                   spellCheck={false}
-                  className="w-full h-full bg-transparent text-zinc-200 resize-none outline-none p-3 pl-12 font-mono text-xs sm:text-sm leading-6"
+                  autoFocus
+                  className="w-full h-full bg-transparent text-zinc-200 resize-none outline-none p-2 pl-10 font-mono text-[11px] leading-5"
                   style={{ fontFamily: "'Fira Code', Consolas, monospace" }}
                 />
               ) : (
-                <div className="p-3 overflow-x-auto" style={{ fontFamily: "'Fira Code', Consolas, monospace" }}>
-                  {currentCode.split('\n').map((line, i) => renderHighlightedLine(line, i + 1))}
-                  <div className="text-zinc-700 text-[10px] mt-4 select-none">Double-tap to edit</div>
+                <div className="p-2 overflow-x-auto cursor-text" style={{ fontFamily: "'Fira Code', Consolas, monospace" }}>
+                  {lines.map((line, i) => <HighlightedLine key={i} line={line} num={i + 1} />)}
+                  <div className="text-zinc-800 text-[9px] mt-2 select-none">Tap to edit</div>
                 </div>
               )
             ) : (
-              <div className="flex items-center justify-center h-full text-zinc-600 text-sm">
-                Open a file from the sidebar
+              <div className="flex flex-col items-center justify-center h-full text-zinc-600 text-xs gap-3">
+                <MonitorDot className="w-8 h-8 text-zinc-800" />
+                <span>Open a file or create a contract</span>
+                <button onClick={() => setShowCreateModal(true)} className="px-3 py-1.5 bg-cyan-800 hover:bg-cyan-700 text-white text-xs rounded">New Contract</button>
               </div>
             )}
           </div>
 
           {/* Action bar */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-zinc-900/90 border-t border-zinc-800 flex-shrink-0">
+          <div className="flex items-center gap-1.5 px-2 py-1.5 bg-zinc-900 border-t border-zinc-800 flex-shrink-0">
             <button
               onClick={handleCompile}
               disabled={isCompiling || !activeTab}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-700 hover:bg-cyan-600 active:bg-cyan-800 disabled:opacity-40 text-white text-xs rounded transition-colors font-semibold"
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-cyan-700 hover:bg-cyan-600 disabled:opacity-40 text-white text-[10px] rounded font-semibold transition-colors"
             >
-              <Play className="w-3 h-3" />
-              {isCompiling ? 'Compiling...' : 'Compile'}
+              <Play className="w-2.5 h-2.5" />
+              {isCompiling ? '...' : 'Compile'}
             </button>
             <button
               onClick={() => setEditMode(p => !p)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded transition-colors ${
-                editMode ? 'bg-cyan-900/60 text-cyan-300 border border-cyan-700/50' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-              }`}
+              className={`px-2.5 py-1.5 text-[10px] rounded transition-colors ${editMode ? 'bg-cyan-900/50 text-cyan-300 border border-cyan-700/50' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}`}
             >
-              {editMode ? '✎ Editing' : '✎ Edit'}
+              {editMode ? '✎ On' : '✎ Edit'}
             </button>
-            <button onClick={handleCopy} className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 text-xs rounded transition-colors">
-              {copied ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
-              {copied ? 'Copied' : 'Copy'}
+            <button onClick={handleCopy} className="flex items-center gap-1 px-2.5 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-[10px] rounded transition-colors">
+              {copied ? <Check className="w-2.5 h-2.5 text-green-400" /> : <Copy className="w-2.5 h-2.5" />}
             </button>
-            <div className="ml-auto hidden sm:flex items-center gap-3 text-xs text-zinc-600">
-              <span>{lineCount} lines</span>
-              <span>UTF-8</span>
-              <span className="text-cyan-700">SilverScript</span>
+            <div className="ml-auto hidden sm:flex items-center gap-2 text-[10px] text-zinc-700">
+              <span>{lines.length}L</span>
+              <span className="text-cyan-800">SilverScript</span>
             </div>
           </div>
 
           {/* Compiler Output */}
           <div className={`bg-black border-t border-zinc-800 flex flex-col flex-shrink-0 ${
-            activePanel === 'output' ? 'flex-1 sm:flex-none sm:h-32' : 'h-28 hidden sm:flex'
+            activePanel === 'output' ? 'flex-1 sm:flex-none sm:h-28' : 'h-24 hidden sm:flex'
           }`}>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900/80 border-b border-zinc-800/50 flex-shrink-0">
-              <Terminal className="w-3 h-3 text-zinc-600" />
-              <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider">Compiler Output</span>
-              <button
-                onClick={() => setActivePanel('editor')}
-                className="ml-auto sm:hidden text-zinc-600 hover:text-zinc-400 text-[10px]"
-              >← Back to code</button>
+            <div className="flex items-center gap-2 px-2 py-1 bg-zinc-900 border-b border-zinc-800/50 flex-shrink-0">
+              <Terminal className="w-3 h-3 text-zinc-700" />
+              <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-wider">Output</span>
+              <button onClick={() => setActivePanel('editor')} className="ml-auto sm:hidden text-zinc-600 hover:text-zinc-400 text-[9px]">← Code</button>
             </div>
-            <div className="flex-1 overflow-auto p-3 space-y-0.5" style={{ fontFamily: "'Fira Code', Consolas, monospace" }}>
+            <div className="flex-1 overflow-auto px-2 py-1.5 space-y-0.5" style={{ fontFamily: "'Fira Code', Consolas, monospace" }}>
               {compilerOutput.map((line, i) => (
-                <div key={i} className={`text-xs ${
+                <div key={i} className={`text-[10px] ${
                   line.type === 'error' ? 'text-red-400' :
                   line.type === 'success' ? 'text-emerald-400' :
+                  line.type === 'warn' ? 'text-yellow-400' :
                   'text-zinc-500'
                 }`}>{line.text}</div>
               ))}
-              {isCompiling && <div className="text-xs text-cyan-500 animate-pulse">▮ Analyzing...</div>}
+              {isCompiling && <div className="text-[10px] text-cyan-500 animate-pulse">▮ Analyzing...</div>}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Create Contract Modal */}
+      {showCreateModal && (
+        <CreateContractModal
+          onClose={() => setShowCreateModal(false)}
+          onCreate={handleCreateContract}
+        />
+      )}
     </div>
   );
 }
