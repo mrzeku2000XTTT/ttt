@@ -424,14 +424,25 @@ export default function KasCodePage() {
         <span className="text-zinc-200 font-semibold text-[11px] flex-shrink-0">KasCode</span>
         <span className="text-[9px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded border border-yellow-500/20 flex-shrink-0">Testnet-12</span>
         <div className="flex-1" />
+        {/* kasAgent button */}
+        <button
+          onClick={() => setShowAgent(p => !p)}
+          className={`flex items-center gap-1 px-2 py-1 text-[10px] rounded font-semibold transition-colors flex-shrink-0 ${
+            showAgent
+              ? 'bg-cyan-600 text-white border border-cyan-500'
+              : 'bg-zinc-800 hover:bg-zinc-700 text-cyan-400 border border-zinc-700'
+          }`}
+        >
+          <Bot className="w-3 h-3" />
+          <span>kasAgent</span>
+        </button>
         {/* New Contract button always visible */}
         <button
           onClick={() => setShowCreateModal(true)}
           className="flex items-center gap-1 px-2 py-1 bg-cyan-700/80 hover:bg-cyan-600 text-white text-[10px] rounded font-semibold transition-colors flex-shrink-0"
         >
           <Plus className="w-3 h-3" />
-          <span className="hidden sm:inline">New Contract</span>
-          <span className="sm:hidden">New</span>
+          <span className="hidden sm:inline">New</span>
         </button>
         <button
           onClick={() => setSidebarOpen(p => !p)}
