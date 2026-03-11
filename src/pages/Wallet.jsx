@@ -97,6 +97,34 @@ export default function WalletPage() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const balanceIntervalRef = useRef(null);
 
+  // Public Key modal state
+  const [showPublicKey, setShowPublicKey] = useState(false);
+  const [pubKeyData, setPubKeyData] = useState(null);
+  const [isFetchingPubKey, setIsFetchingPubKey] = useState(false);
+  const [copiedPubKey, setCopiedPubKey] = useState(false);
+  const [copiedExtPubKey, setCopiedExtPubKey] = useState(false);
+
+  const fetchPublicKey = async () => {
+    const mnemToUse = mnemonic || localStorage.getItem('ttt_wallet_mnemonic');
+    if (!mnemToUse) {
+      showToast('Seed phrase not available. Re-import wallet to use this feature.', 'error');
+      return;
+    }
+    setIsFetchingPubKey(true);
+    setShowPublicKey(true);
+    setPubKeyData(null);
+    try {
+      const res = await base44.functions.invoke('deriveKaspaAddress', { mnemonic: mnemToUse, addressIndex: 0 });
+      if (res.data?.error) throw new Error(res.data.error);
+      setPubKeyData({ publicKey: res.data.publicKey, extendedPublicKey: res.data.extendedPublicKey });
+    } catch (e) {
+      showToast(e?.message || 'Failed to fetch public key', 'error');
+      setShowPublicKey(false);
+    } finally {
+      setIsFetchingPubKey(false);
+    }
+  };
+
   // Send modal state
   const [showSend, setShowSend] = useState(false);
   const [sendTo, setSendTo] = useState('');
