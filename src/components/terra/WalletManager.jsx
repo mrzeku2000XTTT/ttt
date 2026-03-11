@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X, MoreHorizontal, Shield, Trash2, Download, Upload,
-  Copy, Check, Eye, EyeOff, AlertTriangle, ChevronRight, RefreshCw, Plus
+  Copy, Check, Eye, EyeOff, AlertTriangle, ChevronRight, RefreshCw, Plus, Key
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
