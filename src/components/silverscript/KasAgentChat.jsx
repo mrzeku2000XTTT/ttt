@@ -254,8 +254,13 @@ export default function KasAgentChat({ onLoadToEditor, onClose }) {
       content: m.role === 'user' ? m.content : (m.explanation || '') + (m.contractCode ? '\n```silverscript\n' + m.contractCode + '\n```' : ''),
     }));
 
+    // Prepend pubkey context to prompt if set
+    const enrichedPrompt = pubkey.trim()
+      ? `[My testnet pubkey: ${pubkey.trim()}]\n\n${prompt}`
+      : prompt;
+
     try {
-      const res = await base44.functions.invoke('kasAgent', { prompt, history });
+      const res = await base44.functions.invoke('kasAgent', { prompt: enrichedPrompt, history });
       const data = res.data;
       setMessages(prev => [...prev, {
         role: 'assistant',
