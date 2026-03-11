@@ -41,6 +41,10 @@ export default function Layout({ children, currentPageName }) {
   });
   
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentPageName]);
+
+  useEffect(() => {
     try {
       loadUser();
       checkSubscription();
