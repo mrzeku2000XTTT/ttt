@@ -255,6 +255,7 @@ import Terra from './pages/Terra';
 import TestJobAPI from './pages/TestJobAPI';
 import TestKaspaAPI from './pages/TestKaspaAPI';
 import TestZelcore from './pages/TestZelcore';
+import Tester from './pages/Tester';
 import TetrisBattle from './pages/TetrisBattle';
 import TheRealm from './pages/TheRealm';
 import TikTokWorkflow from './pages/TikTokWorkflow';
@@ -287,7 +288,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import Tester from './pages/Tester';
 import __Layout from './Layout.jsx';
 
 
@@ -500,6 +500,7 @@ export const PAGES = {
     "TestJobAPI": TestJobAPI,
     "TestKaspaAPI": TestKaspaAPI,
     "TestZelcore": TestZelcore,
+    "Tester": Tester,
     "TetrisBattle": TetrisBattle,
     "TheRealm": TheRealm,
     "TikTokWorkflow": TikTokWorkflow,
@@ -532,7 +533,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "Tester": Tester,
 }
 
 export const pagesConfig = {

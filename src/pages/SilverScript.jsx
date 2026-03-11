@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { ExternalLink, Code, BookOpen, Terminal, Zap, Shield, Layers, Copy, Check, ChevronDown, ChevronUp, FlaskConical, Code2 } from "lucide-react";
+import { ExternalLink, Code, BookOpen, Terminal, Zap, Shield, Layers, Copy, Check, ChevronDown, ChevronUp, FlaskConical, Code2, MonitorDot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TimelockTester from "@/components/silverscript/TimelockTester";
 import SilverScriptSandbox from "@/components/silverscript/SilverScriptSandbox";
+import KasCodeIDE from "@/components/silverscript/KasCodeIDE";
 
 const EXAMPLES = [
   {
