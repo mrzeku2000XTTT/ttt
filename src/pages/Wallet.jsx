@@ -872,6 +872,15 @@ export default function WalletPage() {
                   <Key className="w-4 h-4 mr-2 text-cyan-400" />Show Public Key
                 </Button>
 
+                {/* Siri Shortcuts */}
+                <Button
+                  onClick={() => setShowSiri(true)}
+                  variant="outline"
+                  className="w-full border-zinc-800 bg-zinc-950 text-gray-300 hover:bg-zinc-900 hover:text-white"
+                >
+                  <Smartphone className="w-4 h-4 mr-2 text-purple-400" />Siri Shortcuts
+                </Button>
+
                 {/* Seal */}
                 {pinSet && !isSealed && mnemonic && (
                   <Button onClick={handleSealWallet} disabled={isSealing} className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold">
