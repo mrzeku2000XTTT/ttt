@@ -21,8 +21,12 @@ const CONTRACT_TEMPLATES = [
     name: "Pay to Public Key Hash",
     desc: "Standard spend: verify key hash then signature",
     args: [{ name: "pkh", type: "byte[32]", placeholder: "0xabc123...", help: "32-byte blake2b hash of the owner's public key. In Kasware: copy your public key and run blake2b() on it." }],
-    generate: (a) =>
-`pragma silverscript ^0.1.0;\n\ncontract P2PKH(byte[32] pkh) {\n    entrypoint function spend(pubkey pk, sig s) {\n        require(blake2b(pk) == pkh);\n        require(checkSig(s, pk));\n    }\n}`,
+    generate: (a) => {
+      const v = a || {};
+      const c = v.pkh ? `    byte[32] constant pkh = ${v.pkh};\n\n` : '';
+      const p = v.pkh ? '' : 'byte[32] pkh';
+      return `pragma silverscript ^0.1.0;\n\ncontract P2PKH(${p}) {\n${c}    entrypoint function spend(pubkey pk, sig s) {\n        require(blake2b(pk) == pkh);\n        require(checkSig(s, pk));\n    }\n}`;
+    },
   },
   {
     id: "timelock",
@@ -32,8 +36,14 @@ const CONTRACT_TEMPLATES = [
       { name: "owner", type: "pubkey", placeholder: "0x02...", help: "Your Kaspa public key (33 bytes hex). In Kasware: tap your address → 'Export Public Key'. Starts with 02 or 03." },
       { name: "unlockTime", type: "int", placeholder: "1700000000", help: "Unix timestamp (seconds) for when funds unlock. Use epochconverter.com to convert a date. e.g. 1800000000 ≈ Jan 2027." },
     ],
-    generate: (a) =>
-`pragma silverscript ^0.1.0;\n\ncontract TimelockVault(\n    pubkey owner,\n    int unlockTime\n) {\n    entrypoint function withdraw(sig ownerSig) {\n        require(checkSig(ownerSig, owner));\n        require(tx.time >= unlockTime);\n    }\n\n    entrypoint function emergency(sig ownerSig) {\n        require(checkSig(ownerSig, owner));\n        require(this.age >= 365 days);\n    }\n}`,
+    generate: (a) => {
+      const v = a || {};
+      const params = [!v.owner && 'pubkey owner', !v.unlockTime && 'int unlockTime'].filter(Boolean).join(', ');
+      const c1 = v.owner ? `    pubkey constant owner = ${v.owner};\n` : '';
+      const c2 = v.unlockTime ? `    int constant unlockTime = ${v.unlockTime};\n` : '';
+      const consts = (c1 || c2) ? c1 + c2 + '\n' : '';
+      return `pragma silverscript ^0.1.0;\n\ncontract TimelockVault(${params}) {\n${consts}    entrypoint function withdraw(sig ownerSig) {\n        require(checkSig(ownerSig, owner));\n        require(tx.time >= unlockTime);\n    }\n\n    entrypoint function emergency(sig ownerSig) {\n        require(checkSig(ownerSig, owner));\n        require(this.age >= 365 days);\n    }\n}`;
+    },
   },
   {
     id: "escrow",
@@ -45,8 +55,15 @@ const CONTRACT_TEMPLATES = [
       { name: "arbiter", type: "pubkey", placeholder: "0x02...", help: "Trusted third-party public key for dispute resolution." },
       { name: "timeout", type: "int", placeholder: "30", help: "Number of days after which the buyer can reclaim funds if no release." },
     ],
-    generate: (a) =>
-`pragma silverscript ^0.1.0;\n\ncontract Escrow(\n    pubkey buyer,\n    pubkey seller,\n    pubkey arbiter,\n    int timeout\n) {\n    entrypoint function release(sig buyerSig, sig sellerSig) {\n        require(checkSig(buyerSig, buyer));\n        require(checkSig(sellerSig, seller));\n        byte[34] sellerScript = new ScriptPubKeyP2PK(seller);\n        require(tx.outputs[0].scriptPubKey == sellerScript);\n    }\n\n    entrypoint function dispute(sig buyerSig, sig arbiterSig) {\n        require(checkSig(buyerSig, buyer));\n        require(checkSig(arbiterSig, arbiter));\n        byte[34] buyerScript = new ScriptPubKeyP2PK(buyer);\n        require(tx.outputs[0].scriptPubKey == buyerScript);\n    }\n\n    entrypoint function reclaim(sig buyerSig) {\n        require(checkSig(buyerSig, buyer));\n        require(this.age >= timeout days);\n    }\n}`,
+    generate: (a) => {
+      const v = a || {};
+      const keys = ['buyer', 'seller', 'arbiter', 'timeout'];
+      const types = { buyer: 'pubkey', seller: 'pubkey', arbiter: 'pubkey', timeout: 'int' };
+      const params = keys.filter(k => !v[k]).map(k => `${types[k]} ${k}`).join(', ');
+      const constLines = keys.filter(k => v[k]).map(k => `    ${types[k]} constant ${k} = ${v[k]};`);
+      const consts = constLines.length ? constLines.join('\n') + '\n\n' : '';
+      return `pragma silverscript ^0.1.0;\n\ncontract Escrow(${params}) {\n${consts}    entrypoint function release(sig buyerSig, sig sellerSig) {\n        require(checkSig(buyerSig, buyer));\n        require(checkSig(sellerSig, seller));\n        byte[34] sellerScript = new ScriptPubKeyP2PK(seller);\n        require(tx.outputs[0].scriptPubKey == sellerScript);\n    }\n\n    entrypoint function dispute(sig buyerSig, sig arbiterSig) {\n        require(checkSig(buyerSig, buyer));\n        require(checkSig(arbiterSig, arbiter));\n        byte[34] buyerScript = new ScriptPubKeyP2PK(buyer);\n        require(tx.outputs[0].scriptPubKey == buyerScript);\n    }\n\n    entrypoint function reclaim(sig buyerSig) {\n        require(checkSig(buyerSig, buyer));\n        require(this.age >= timeout days);\n    }\n}`;
+    },
   },
   {
     id: "recurring",
@@ -58,8 +75,15 @@ const CONTRACT_TEMPLATES = [
       { name: "amount", type: "int", placeholder: "100000000", help: "Amount per payment in sompi. 1 KAS = 100,000,000 sompi." },
       { name: "period", type: "int", placeholder: "7", help: "How many days between each payment (e.g. 7 = weekly, 30 = monthly)." },
     ],
-    generate: (a) =>
-`pragma silverscript ^0.1.0;\n\ncontract RecurringPayment(\n    pubkey sender,\n    pubkey recipient,\n    int amount,\n    int period\n) {\n    entrypoint function pay(sig senderSig) {\n        require(checkSig(senderSig, sender));\n        require(tx.outputs[0].value == amount);\n        byte[34] recipientScript = new ScriptPubKeyP2PK(recipient);\n        require(tx.outputs[0].scriptPubKey == recipientScript);\n        require(this.age >= period days);\n    }\n}`,
+    generate: (a) => {
+      const v = a || {};
+      const keys = ['sender', 'recipient', 'amount', 'period'];
+      const types = { sender: 'pubkey', recipient: 'pubkey', amount: 'int', period: 'int' };
+      const params = keys.filter(k => !v[k]).map(k => `${types[k]} ${k}`).join(', ');
+      const constLines = keys.filter(k => v[k]).map(k => `    ${types[k]} constant ${k} = ${v[k]};`);
+      const consts = constLines.length ? constLines.join('\n') + '\n\n' : '';
+      return `pragma silverscript ^0.1.0;\n\ncontract RecurringPayment(${params}) {\n${consts}    entrypoint function pay(sig senderSig) {\n        require(checkSig(senderSig, sender));\n        require(tx.outputs[0].value == amount);\n        byte[34] recipientScript = new ScriptPubKeyP2PK(recipient);\n        require(tx.outputs[0].scriptPubKey == recipientScript);\n        require(this.age >= period days);\n    }\n}`;
+    },
   },
   {
     id: "multisig",
@@ -70,8 +94,14 @@ const CONTRACT_TEMPLATES = [
       { name: "pk2", type: "pubkey", placeholder: "0x02...", help: "Second signer's public key." },
       { name: "pk3", type: "pubkey", placeholder: "0x02...", help: "Third signer's public key. Any 2 of these 3 can spend." },
     ],
-    generate: (a) =>
-`pragma silverscript ^0.1.0;\n\ncontract MultiSig(pubkey pk1, pubkey pk2, pubkey pk3) {\n    entrypoint function spend(sig s1, sig s2) {\n        require(checkMultiSig([s1, s2], [pk1, pk2, pk3]));\n    }\n}`,
+    generate: (a) => {
+      const v = a || {};
+      const pks = ['pk1', 'pk2', 'pk3'];
+      const params = pks.filter(k => !v[k]).map(k => `pubkey ${k}`).join(', ');
+      const constLines = pks.filter(k => v[k]).map(k => `    pubkey constant ${k} = ${v[k]};`);
+      const consts = constLines.length ? constLines.join('\n') + '\n\n' : '';
+      return `pragma silverscript ^0.1.0;\n\ncontract MultiSig(${params}) {\n${consts}    entrypoint function spend(sig s1, sig s2) {\n        require(checkMultiSig([s1, s2], [pk1, pk2, pk3]));\n    }\n}`;
+    },
   },
   {
     id: "freelance",
@@ -82,8 +112,14 @@ const CONTRACT_TEMPLATES = [
       { name: "workerKey", type: "pubkey", placeholder: "0x02...", help: "Worker/freelancer's public key. They must share it with you." },
       { name: "arbiterKey", type: "pubkey", placeholder: "0x02...", help: "Trusted arbiter's public key for dispute resolution." },
     ],
-    generate: (a) =>
-`pragma silverscript ^0.1.0;\n\ncontract FreelanceContract(\n    pubkey clientKey,\n    pubkey workerKey,\n    pubkey arbiterKey\n) {\n    entrypoint function release(sig clientSig, sig workerSig) {\n        require(checkSig(clientSig, clientKey));\n        require(checkSig(workerSig, workerKey));\n        byte[34] workerScript = new ScriptPubKeyP2PK(workerKey);\n        require(tx.outputs[0].scriptPubKey == workerScript);\n    }\n\n    entrypoint function refund(sig clientSig, sig arbiterSig) {\n        require(checkSig(clientSig, clientKey));\n        require(checkSig(arbiterSig, arbiterKey));\n        byte[34] clientScript = new ScriptPubKeyP2PK(clientKey);\n        require(tx.outputs[0].scriptPubKey == clientScript);\n    }\n\n    entrypoint function reclaim(sig clientSig) {\n        require(checkSig(clientSig, clientKey));\n        require(this.age >= 30 days);\n    }\n}`,
+    generate: (a) => {
+      const v = a || {};
+      const keys = ['clientKey', 'workerKey', 'arbiterKey'];
+      const params = keys.filter(k => !v[k]).map(k => `pubkey ${k}`).join(', ');
+      const constLines = keys.filter(k => v[k]).map(k => `    pubkey constant ${k} = ${v[k]};`);
+      const consts = constLines.length ? constLines.join('\n') + '\n\n' : '';
+      return `pragma silverscript ^0.1.0;\n\ncontract FreelanceContract(${params}) {\n${consts}    entrypoint function release(sig clientSig, sig workerSig) {\n        require(checkSig(clientSig, clientKey));\n        require(checkSig(workerSig, workerKey));\n        byte[34] workerScript = new ScriptPubKeyP2PK(workerKey);\n        require(tx.outputs[0].scriptPubKey == workerScript);\n    }\n\n    entrypoint function refund(sig clientSig, sig arbiterSig) {\n        require(checkSig(clientSig, clientKey));\n        require(checkSig(arbiterSig, arbiterKey));\n        byte[34] clientScript = new ScriptPubKeyP2PK(clientKey);\n        require(tx.outputs[0].scriptPubKey == clientScript);\n    }\n\n    entrypoint function reclaim(sig clientSig) {\n        require(checkSig(clientSig, clientKey));\n        require(this.age >= 30 days);\n    }\n}`;
+    },
   },
 ];
 
@@ -162,11 +198,11 @@ function TxExplorerInput() {
 }
 
 // ─── Create Contract Modal ────────────────────────────────────────────────────
-function CreateContractModal({ onClose, onCreate }) {
-  const [step, setStep] = useState(0); // 0=pick template, 1=fill args
-  const [selected, setSelected] = useState(null);
+function CreateContractModal({ onClose, onCreate, initialIndex = null }) {
+  const [step, setStep] = useState(initialIndex !== null ? 1 : 0);
+  const [selected, setSelected] = useState(initialIndex);
   const [argValues, setArgValues] = useState({});
-  const [contractName, setContractName] = useState('');
+  const [contractName, setContractName] = useState(initialIndex !== null && initialIndex >= 0 ? CONTRACT_TEMPLATES[initialIndex].id : '');
 
   const tpl = selected !== null ? CONTRACT_TEMPLATES[selected] : null;
 
@@ -334,6 +370,7 @@ export default function KasCodePage() {
   const [activePanel, setActivePanel] = useState('editor');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showSnippets, setShowSnippets] = useState(false);
+  const [createModalInitialIndex, setCreateModalInitialIndex] = useState(null);
   const textareaRef = useRef(null);
 
   // Pick up any contract loaded from kasAgent page
@@ -517,10 +554,10 @@ export default function KasCodePage() {
           {/* Templates quick-add */}
           <div className="px-2 pt-1 pb-3 border-t border-zinc-800/60 mt-1">
             <div className="text-[9px] font-bold text-zinc-600 uppercase tracking-wider mb-1 px-1">Templates</div>
-            {CONTRACT_TEMPLATES.map(t => (
+            {CONTRACT_TEMPLATES.map((t, i) => (
               <button
                 key={t.id}
-                onClick={() => handleCreateContract(t.id + '.sil', t.generate({}))}
+                onClick={() => { setCreateModalInitialIndex(i); setShowCreateModal(true); setSidebarOpen(false); }}
                 className="w-full text-left flex items-center gap-1 px-2 py-1 text-[10px] text-zinc-500 hover:text-teal-300 hover:bg-zinc-800/50 rounded transition-colors"
               >
                 <Code2 className="w-2.5 h-2.5 flex-shrink-0 text-teal-700" />
@@ -659,8 +696,9 @@ export default function KasCodePage() {
       {/* Create Contract Modal */}
       {showCreateModal && (
         <CreateContractModal
-          onClose={() => setShowCreateModal(false)}
+          onClose={() => { setShowCreateModal(false); setCreateModalInitialIndex(null); }}
           onCreate={handleCreateContract}
+          initialIndex={createModalInitialIndex}
         />
       )}
     </div>
