@@ -590,6 +590,16 @@ export default function WalletPage() {
         )}
       </AnimatePresence>
 
+      {/* Contacts Modal */}
+      <AnimatePresence>
+        {showContacts && (
+          <ContactBook
+            onSelect={(addr) => { setSendTo(addr); setShowContacts(false); setShowSend(true); }}
+            onClose={() => setShowContacts(false)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Send Modal */}
       <AnimatePresence>
         {showSend && (
