@@ -636,6 +636,14 @@ export default function WalletPage() {
                   >
                     <QrCode className="w-4 h-4" />
                   </Button>
+                  <Button
+                    onClick={() => { setShowSend(false); setShowContacts(true); }}
+                    variant="outline"
+                    className="border-zinc-700 bg-black text-cyan-400 hover:bg-zinc-800 px-3"
+                    title="Contacts"
+                  >
+                    <UserCheck className="w-4 h-4" />
+                  </Button>
                 </div>
               </div>
               <div>
