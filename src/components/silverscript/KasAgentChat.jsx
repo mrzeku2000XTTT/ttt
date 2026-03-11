@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Bot, Send, X, Sparkles, ChevronDown, ChevronUp, Loader2, Copy, Check, FileCode, Play, ExternalLink, Rocket } from "lucide-react";
+import { Bot, Send, X, Sparkles, ChevronDown, ChevronUp, Loader2, Copy, Check, FileCode, Play, ExternalLink, Rocket, Key, ChevronRight } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const EXAMPLE_PROMPTS = [
