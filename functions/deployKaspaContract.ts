@@ -127,8 +127,9 @@ Deno.serve(async (req) => {
             contractHash,
             contractName: contractName || 'Contract',
             network,
-            deployAmount: DEPLOY_SOMPI / 1e8,
+            deployAmount: `${(DEPLOY_SOMPI / 1e8).toFixed(8)} TKAS` + (network === 'testnet' ? ' (testnet)' : ''),
             explorerUrl,
+            message: 'Contract deployed successfully to ' + (network === 'testnet' ? 'Kaspa Testnet-12' : 'Kaspa Mainnet'),
         });
 
     } catch (error) {
