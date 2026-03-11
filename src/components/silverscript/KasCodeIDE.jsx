@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
-import { X, Plus, Play, Terminal, FileText, ChevronRight, ChevronDown } from "lucide-react";
+import { X, Plus, Play, Terminal, FileText, ChevronRight, ChevronDown, Rocket, Loader2, ExternalLink, AlertCircle } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 
 const INITIAL_FILES = {
   "welcome.sil": `pragma silverscript ^0.1.0;\n\n// Welcome to KasCode IDE\n// Your SilverScript development environment\n\ncontract Welcome() {\n    entrypoint function hello(pubkey pk, sig s) {\n        require(checkSig(s, pk));\n    }\n}`,
