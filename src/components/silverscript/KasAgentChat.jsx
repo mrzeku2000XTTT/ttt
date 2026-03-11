@@ -18,6 +18,13 @@ function ContractCodeBlock({ code, fileName, onLoadToEditor }) {
   const [contractName, setContractName] = useState(null);
   const [txHash, setTxHash] = useState('');
   const [isCompiling, setIsCompiling] = useState(false);
+  const [isDeploying, setIsDeploying] = useState(false);
+  const [deployResult, setDeployResult] = useState(null);
+  const [deployError, setDeployError] = useState(null);
+  const [deployNetwork, setDeployNetwork] = useState('testnet');
+  const [deployPK, setDeployPK] = useState(() => localStorage.getItem('ttt_wallet_pk') || '');
+  const [deployAddress, setDeployAddress] = useState(() => localStorage.getItem('ttt_wallet_address') || '');
+  const [showDeployForm, setShowDeployForm] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(code);
