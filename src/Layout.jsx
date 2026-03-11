@@ -267,11 +267,13 @@ export default function Layout({ children, currentPageName }) {
 
   if (isHomePage || isLobbyPage || isEarthPage || isCountryDetailPage || isKonektPage || isArea51Page || isTheRealmPage || isTruthLandingPage || isUNIPage || isShiLLzPage || isOliviaAppsPage || isB44PromptsPage || isWindowPage || isImageHistoryPage || isKaSkoolPage || isKaSkoolProfilePage || isCoursesPage || isNextdoorPage || isFluxKmailPage || isTerraPage || isRufzeitKCallPage || isKasAgentPage) {
     return (
-      <React.Suspense fallback={<div className="min-h-screen bg-black" />}>
-        <VideoPlayerProvider>
-          {children}
-        </VideoPlayerProvider>
-      </React.Suspense>
+      <ErrorBoundary>
+        <React.Suspense fallback={<div className="min-h-screen bg-black" />}>
+          <VideoPlayerProvider>
+            {children}
+          </VideoPlayerProvider>
+        </React.Suspense>
+      </ErrorBoundary>
     );
   }
 
