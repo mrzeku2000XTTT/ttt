@@ -80,7 +80,10 @@ Deno.serve(async (req) => {
       ).join('\n') + '\n\n';
     }
 
-    const fullPrompt = `${SYSTEM_PROMPT}\n\n${contextMessages}User: ${prompt}\n\nkasAgent:`;
+    const nowUnix = Math.floor(Date.now() / 1000);
+    const nowISO = new Date().toISOString();
+    const timeContext = `CURRENT TIME: ${nowISO} (Unix: ${nowUnix})\n\n`;
+    const fullPrompt = `${SYSTEM_PROMPT}\n\n${timeContext}${contextMessages}User: ${prompt}\n\nkasAgent:`;
 
     const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: fullPrompt,
