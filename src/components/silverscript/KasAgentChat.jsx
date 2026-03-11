@@ -225,7 +225,7 @@ export default function KasAgentChat({ onLoadToEditor, onClose }) {
   const [loading, setLoading] = useState(false);
   const [showExamples, setShowExamples] = useState(true);
   const [pubkey, setPubkey] = useState(() => localStorage.getItem('kasagent_pubkey') || '');
-  const [showPubkeyInput, setShowPubkeyInput] = useState(true);
+  const [showPubkeyInput, setShowPubkeyInput] = useState(false);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
