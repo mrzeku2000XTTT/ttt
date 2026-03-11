@@ -533,7 +533,7 @@ export default function KasCodePage() {
 
 
         {/* ── Editor + Output ──────────────────────────────────── */}
-        <div className={`flex flex-col flex-1 min-w-0 overflow-hidden ${showAgent ? 'hidden sm:flex' : 'flex'}`}>
+        <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
           {/* Tabs */}
           <div className="flex items-stretch bg-zinc-900 border-b border-zinc-800 overflow-x-auto flex-shrink-0 scrollbar-hide h-8">
             {openTabs.map(tab => (
