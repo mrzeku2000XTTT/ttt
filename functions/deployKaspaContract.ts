@@ -34,23 +34,17 @@ Deno.serve(async (req) => {
         const user = await base44.auth.me();
         if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const { contractCode, contractName, fromAddress, privateKey, mnemonic, network = 'testnet' } = await req.json();
+        const { contractCode, contractName, fromAddress, fromPublicKey, network = 'testnet' } = await req.json();
 
-        if (!contractCode || !fromAddress || (!privateKey && !mnemonic)) {
-            return Response.json({ error: 'Missing required fields: contractCode, fromAddress, and privateKey or mnemonic' }, { status: 400 });
+        if (!contractCode || !fromAddress || !fromPublicKey) {
+            return Response.json({ error: 'Missing required fields: contractCode, fromAddress, and fromPublicKey (TTT native wallet)' }, { status: 400 });
         }
 
         const KASPA_API = KASPA_APIS[network] || KASPA_APIS.testnet;
         const wallet = new KaspaWallet();
 
-        // 1. Resolve signing private key
-        let signingPK = privateKey;
-        if (!signingPK && mnemonic) {
-            signingPK = await wallet.getDerivedPrivateKey({
-                mnemonic: mnemonic.trim(),
-                hdPath: "m/44'/111111'/0'/0/0",
-            });
-        }
+        // 1. Use the provided TTT wallet public key for signing (already derived by wallet)
+        const signingPK = fromPublicKey;
 
         // 2. Compute contract hash = SHA256(contractCode)
         //    This is the unique fingerprint / ID of the contract on-chain
