@@ -259,7 +259,9 @@ export default function WalletTestnetPage() {
       }
 
       try {
-        const priceRes = await base44.functions.invoke('getKaspaPrice');
+        const pricePromise = base44.functions.invoke('getKaspaPrice');
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000));
+        const priceRes = await Promise.race([pricePromise, timeoutPromise]);
         setKasPrice(priceRes.data?.price || 0.05);
       } catch {
         setKasPrice(0.05);
