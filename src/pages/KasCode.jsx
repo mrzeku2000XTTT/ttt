@@ -524,16 +524,7 @@ export default function KasCodePage() {
 
         {/* ── kasAgent Panel ───────────────────────────────────── */}
         {showAgent && (
-          <div className="sm:w-80 sm:flex-shrink-0 sm:border-r sm:border-zinc-800 sm:flex sm:flex-col sm:overflow-hidden sm:relative sm:z-auto hidden sm:flex bg-zinc-950" style={{ minHeight: 0 }}>
-            <KasAgentChat
-              onLoadToEditor={(name, code) => { handleCreateContract(name, code); }}
-              onClose={() => setShowAgent(false)}
-            />
-          </div>
-        )}
-        {/* Mobile full-screen kasAgent overlay */}
-        {showAgent && (
-          <div className="sm:hidden fixed inset-0 z-[999] bg-zinc-950 flex flex-col">
+          <div className="absolute inset-0 z-20 sm:relative sm:inset-auto sm:w-80 sm:flex-shrink-0 sm:border-r sm:border-zinc-800 flex flex-col overflow-hidden bg-zinc-950" style={{ minHeight: 0 }}>
             <KasAgentChat
               onLoadToEditor={(name, code) => { handleCreateContract(name, code); setShowAgent(false); }}
               onClose={() => setShowAgent(false)}
