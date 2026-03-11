@@ -523,6 +523,71 @@ export default function WalletPage() {
         )}
       </AnimatePresence>
 
+      {/* Public Key Modal */}
+      <AnimatePresence>
+        {showPublicKey && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+            onClick={() => setShowPublicKey(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 w-full max-w-sm space-y-4"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Key className="w-5 h-5 text-cyan-400" />
+                  <h3 className="text-white font-bold text-lg">Public Keys</h3>
+                </div>
+                <button onClick={() => setShowPublicKey(false)} className="text-gray-400 hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {isFetchingPubKey ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+                </div>
+              ) : pubKeyData ? (
+                <>
+                  <div className="space-y-1">
+                    <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Public Key (compressed, 33 bytes)</p>
+                    <div className="bg-black border border-zinc-800 rounded-lg p-3 flex items-start gap-2">
+                      <code className="text-cyan-400 text-xs break-all flex-1 font-mono">{pubKeyData.publicKey || 'N/A'}</code>
+                      <button
+                        onClick={async () => { await navigator.clipboard.writeText(pubKeyData.publicKey); setCopiedPubKey(true); setTimeout(() => setCopiedPubKey(false), 2000); }}
+                        className="shrink-0 text-gray-400 hover:text-white mt-0.5"
+                      >
+                        {copiedPubKey ? <CheckCircle2 className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {pubKeyData.extendedPublicKey && (
+                    <div className="space-y-1">
+                      <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Extended Public Key (xpub)</p>
+                      <div className="bg-black border border-zinc-800 rounded-lg p-3 flex items-start gap-2">
+                        <code className="text-purple-400 text-xs break-all flex-1 font-mono">{pubKeyData.extendedPublicKey}</code>
+                        <button
+                          onClick={async () => { await navigator.clipboard.writeText(pubKeyData.extendedPublicKey); setCopiedExtPubKey(true); setTimeout(() => setCopiedExtPubKey(false), 2000); }}
+                          className="shrink-0 text-gray-400 hover:text-white mt-0.5"
+                        >
+                          {copiedExtPubKey ? <CheckCircle2 className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="text-xs text-gray-600 text-center">These keys are safe to share for smart contract use</p>
+                </>
+              ) : null}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Send Modal */}
       <AnimatePresence>
         {showSend && (
