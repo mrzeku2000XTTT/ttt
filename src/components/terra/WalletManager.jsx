@@ -210,11 +210,113 @@ function DeleteConfirmSheet({ wallet, onClose, onDeleted }) {
   );
 }
 
+// ── Show Public Key Sheet ────────────────────────────────────────────────────
+function ShowPublicKeySheet({ wallet, onClose }) {
+  const [publicKey, setPublicKey] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  const fetchPublicKey = async () => {
+    if (!wallet?.mnemonic) {
+      setError("No seed phrase stored for this wallet. Import it using the seed phrase to view the public key.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await base44.functions.invoke('deriveKaspaAddress', {
+        mnemonic: wallet.mnemonic,
+        addressIndex: wallet.addressIndex ?? 0,
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      if (!res.data?.publicKey) throw new Error("Public key not returned.");
+      setPublicKey(res.data.publicKey);
+    } catch (err) {
+      setError(err.message || "Failed to derive public key.");
+    }
+    setLoading(false);
+  };
+
+  React.useEffect(() => { fetchPublicKey(); }, []);
+
+  const copy = () => {
+    if (!publicKey) return;
+    navigator.clipboard.writeText('0x' + publicKey);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+      transition={{ type: "spring", damping: 28, stiffness: 300 }}
+      style={{ position: 'fixed', inset: 0, background: '#0a0a0a', zIndex: 300, display: 'flex', flexDirection: 'column', fontFamily: SF }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}><X size={20} /></button>
+        <span style={{ color: 'white', fontWeight: 600, fontSize: 16 }}>Public Key</span>
+        <div style={{ width: 20 }} />
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ textAlign: 'center', padding: '16px 0' }}>
+          <div style={{ width: 64, height: 64, borderRadius: 32, background: 'rgba(26,115,232,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <Key size={28} color={ACCENT} />
+          </div>
+          <div style={{ color: 'white', fontSize: 17, fontWeight: 700, marginBottom: 6 }}>Wallet Public Key</div>
+          <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, lineHeight: 1.5 }}>
+            Your 33-byte compressed public key. Safe to share — use it in SilverScript smart contracts.
+          </div>
+        </div>
+
+        {loading && (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '20px 0' }}>
+            <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
+              <RefreshCw size={24} color={ACCENT} />
+            </motion.div>
+          </div>
+        )}
+
+        {error && (
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: 'rgba(255,59,48,0.1)', borderRadius: 12, padding: '14px', border: '1px solid rgba(255,59,48,0.2)' }}>
+            <AlertTriangle size={18} color="#ff3b30" style={{ flexShrink: 0, marginTop: 2 }} />
+            <span style={{ color: '#ff3b30', fontSize: 13, lineHeight: 1.5 }}>{error}</span>
+          </div>
+        )}
+
+        {publicKey && !loading && (
+          <>
+            <div style={{ background: '#1c1c1e', borderRadius: 16, padding: '18px', border: '1px solid rgba(26,115,232,0.2)' }}>
+              <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, marginBottom: 8 }}>Compressed Public Key (33 bytes)</div>
+              <div style={{ color: 'white', fontSize: 12, fontFamily: 'monospace', wordBreak: 'break-all', lineHeight: 1.7 }}>
+                0x{publicKey}
+              </div>
+            </div>
+            <button onClick={copy}
+              style={{ width: '100%', background: copied ? 'rgba(52,199,89,0.15)' : '#2c2c2e', color: copied ? '#34c759' : 'rgba(255,255,255,0.8)', border: `1px solid ${copied ? 'rgba(52,199,89,0.3)' : 'transparent'}`, borderRadius: 14, padding: '14px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: SF, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.2s' }}>
+              {copied ? <Check size={16} /> : <Copy size={16} />}
+              {copied ? "Copied!" : "Copy Public Key"}
+            </button>
+            <div style={{ background: '#1c1c1e', borderRadius: 12, padding: '12px 14px', border: '1px solid rgba(255,165,0,0.15)' }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                <Shield size={15} color="#ff9500" style={{ flexShrink: 0, marginTop: 2 }} />
+                <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, lineHeight: 1.5 }}>
+                  Your public key is safe to share. It cannot be used to access your funds. Only your private key or seed phrase can do that.
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
 // ── Wallet Menu Sheet ────────────────────────────────────────────────────────
-function WalletMenuSheet({ wallet, onClose, onBackup, onDelete, onImport }) {
+function WalletMenuSheet({ wallet, onClose, onBackup, onDelete, onImport, onShowPublicKey }) {
   const items = [
+    { icon: <Key size={20} color={ACCENT} />, label: "Show Public Key", sub: "View your 33-byte compressed public key", action: onShowPublicKey, color: 'rgba(26,115,232,0.1)' },
     { icon: <Download size={20} color="#34c759" />, label: "Backup Seed Phrase", sub: "View & copy your recovery words", action: onBackup, color: 'rgba(52,199,89,0.1)' },
-    { icon: <Upload size={20} color={ACCENT} />, label: "Import Another Wallet", sub: "Add a wallet using seed phrase", action: onImport, color: 'rgba(26,115,232,0.1)' },
+    { icon: <Upload size={20} color="#ff9500" />, label: "Import Another Wallet", sub: "Add a wallet using seed phrase", action: onImport, color: 'rgba(255,149,0,0.1)' },
     { icon: <Trash2 size={20} color="#ff3b30" />, label: "Delete Wallet", sub: "Remove this wallet from Terra", action: onDelete, color: 'rgba(255,59,48,0.1)' },
   ];
 
