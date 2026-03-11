@@ -205,6 +205,7 @@ export default function WalletPage() {
         fromAddress: address,
         toAddress: sendTo.trim(),
         amountKas: parseFloat(sendAmount),
+        network: isTestnet ? 'testnet' : 'mainnet',
       };
       if (storedPK) {
         payload.privateKey = storedPK;
