@@ -105,6 +105,7 @@ export default function WalletPage() {
   const [isFetchingPubKey, setIsFetchingPubKey] = useState(false);
   const [copiedPubKey, setCopiedPubKey] = useState(false);
   const [copiedExtPubKey, setCopiedExtPubKey] = useState(false);
+  const [isTestnet, setIsTestnet] = useState(false);
 
   const fetchPublicKey = async () => {
     const mnemToUse = mnemonic || localStorage.getItem('ttt_wallet_mnemonic');
