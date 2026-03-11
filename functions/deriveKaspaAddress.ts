@@ -25,7 +25,11 @@ Deno.serve(async (req) => {
       ? Array.from(child.publicKey).map(b => b.toString(16).padStart(2, '0')).join('')
       : null;
 
-    return Response.json({ address: cleanAddress, addressIndex: idx, publicKey });
+    // Extended public key at account level (m/44'/111111'/0')
+    const accountKey = root.derive(`m/44'/111111'/0'`);
+    const extendedPublicKey = accountKey.publicExtendedKey || null;
+
+    return Response.json({ address: cleanAddress, addressIndex: idx, publicKey, extendedPublicKey });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
