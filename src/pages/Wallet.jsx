@@ -13,6 +13,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion, AnimatePresence } from "framer-motion";
 import QRScanner from "@/components/wallet/QRScanner";
+import ContactBook from "@/components/wallet/ContactBook";
 
 // ── Toast ──────────────────────────────────────────────────────────────────────
 const Toast = ({ message, type, onClose }) => (
