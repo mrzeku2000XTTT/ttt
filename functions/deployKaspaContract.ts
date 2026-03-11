@@ -57,15 +57,6 @@ Deno.serve(async (req) => {
         const KASPA_API = KASPA_APIS[network] || KASPA_APIS.testnet;
         const wallet = new KaspaWallet();
 
-        // 1. Resolve signing private key
-        let signingPK = privateKey;
-        if (!signingPK && mnemonic) {
-            signingPK = await wallet.getDerivedPrivateKey({
-                mnemonic: mnemonic.trim(),
-                hdPath: "m/44'/111111'/0'/0/0",
-            });
-        }
-
         // 2. Compute contract hash = SHA256(contractCode)
         //    This is the unique fingerprint / ID of the contract on-chain
         const contractHash = await sha256Hex(contractCode);
