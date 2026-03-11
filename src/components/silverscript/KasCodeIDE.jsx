@@ -389,23 +389,7 @@ export default function KasCodeIDE() {
                   ))}
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  value={deployAddress}
-                  onChange={e => setDeployAddress(e.target.value.trim())}
-                  placeholder="kaspa:q... (your address)"
-                  className="bg-zinc-800 text-zinc-200 text-[10px] px-2 py-1.5 rounded border border-zinc-700 outline-none focus:border-cyan-600 font-mono"
-                  style={{ fontSize: '13px' }}
-                />
-                <input
-                  type="password"
-                  value={deployPK}
-                  onChange={e => setDeployPK(e.target.value.trim())}
-                  placeholder="Private key..."
-                  className="bg-zinc-800 text-zinc-200 text-[10px] px-2 py-1.5 rounded border border-zinc-700 outline-none focus:border-cyan-600 font-mono"
-                  style={{ fontSize: '13px' }}
-                />
-              </div>
+              <div className="text-[10px] text-zinc-400">Uses wallet from your Wallet page</div>
               {deployError && (
                 <div className="flex items-center gap-1.5 text-[10px] text-red-400">
                   <AlertCircle className="w-3 h-3" />{deployError}
@@ -423,7 +407,7 @@ export default function KasCodeIDE() {
               ) : (
                 <button
                   onClick={handleDeploy}
-                  disabled={isDeploying || !deployAddress.trim() || !deployPK.trim()}
+                  disabled={isDeploying}
                   className={`w-full flex items-center justify-center gap-1.5 py-1.5 rounded text-xs font-bold transition-colors disabled:opacity-40 ${
                     deployNetwork === 'mainnet' ? 'bg-orange-600 hover:bg-orange-500' : 'bg-cyan-700 hover:bg-cyan-600'
                   } text-white`}
