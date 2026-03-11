@@ -149,9 +149,9 @@ export default function KasCodePage() {
   const lineCount = currentCode.split('\n').length;
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
+    <div className="bg-black text-white flex flex-col" style={{ height: '100dvh' }}>
       {/* Top Header Bar */}
-      <div className="flex items-center h-10 bg-zinc-900 border-b border-zinc-800 px-3 gap-2 flex-shrink-0 sticky top-0 z-50">
+      <div className="flex items-center h-10 bg-zinc-900 border-b border-zinc-800 px-3 gap-2 flex-shrink-0">
         <Link to={createPageUrl('SilverScript')} className="text-zinc-500 hover:text-zinc-200 transition-colors">
           <span className="text-xs">← SilverScript</span>
         </Link>
@@ -179,25 +179,25 @@ export default function KasCodePage() {
       </div>
 
       {/* Main Layout */}
-      <div className="flex flex-1 overflow-hidden relative" style={{ height: 'calc(100vh - 2.5rem)' }}>
+      <div className="flex flex-1 overflow-hidden relative min-h-0">
 
         {/* Mobile Sidebar Overlay */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 bg-black/60 z-30 sm:hidden"
+            className="absolute inset-0 bg-black/60 z-30 sm:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
 
         {/* Sidebar */}
         <div className={`
-          fixed sm:relative z-40 sm:z-auto
+          absolute sm:relative z-40 sm:z-auto
           w-52 sm:w-44 h-full
           bg-zinc-900 border-r border-zinc-800
           flex flex-col overflow-y-auto flex-shrink-0 text-xs
           transition-transform duration-200
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full sm:translate-x-0'}
-        `} style={{ top: sidebarOpen ? '2.5rem' : undefined }}>
+        `}>
           {/* FILES */}
           <div className="px-2 pt-3 pb-1">
             <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5 px-1">Files</div>
