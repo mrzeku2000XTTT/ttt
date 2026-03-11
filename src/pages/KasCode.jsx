@@ -214,7 +214,7 @@ function CreateContractModal({ onClose, onCreate, initialIndex = null }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div className="fixed inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       <div className="bg-zinc-900 border border-zinc-700 rounded-t-2xl sm:rounded-xl w-full sm:max-w-md flex flex-col" style={{ maxHeight: 'calc(85vh - env(safe-area-inset-bottom, 0px) - 4rem)' }}>
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 flex-shrink-0">
