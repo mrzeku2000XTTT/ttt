@@ -19,8 +19,8 @@ function normalizeAddress(addr, network) {
     if (!addr.startsWith('kaspa:')) return `kaspa:${addr}`;
     return addr;
 }
-const DEPLOY_SOMPI = 100000; // 0.001 KAS funds the contract address
-const FEE_SOMPI = 10000;
+const DEPLOY_SOMPI = 1000000; // 0.01 KAS (10,000 satoshis) funds the contract address on testnet
+const FEE_SOMPI = 5000;     // 0.00005 KAS testnet fee
 
 async function sha256Hex(text) {
     const data = new TextEncoder().encode(text);
