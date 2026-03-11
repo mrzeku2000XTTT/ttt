@@ -604,6 +604,17 @@ export default function WalletPage() {
         )}
       </AnimatePresence>
 
+      {/* Siri Shortcuts Modal */}
+      <AnimatePresence>
+        {showSiri && (
+          <SiriShortcutsModal
+            walletAddress={address}
+            contacts={contacts}
+            onClose={() => setShowSiri(false)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Contacts Modal */}
       <AnimatePresence>
         {showContacts && (
