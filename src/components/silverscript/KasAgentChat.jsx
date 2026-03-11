@@ -215,7 +215,7 @@ export default function KasAgentChat({ onLoadToEditor, onClose }) {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      explanation: "Hey! I'm kasAgent 🤖 — your SilverScript contract AI. Tell me what you want your contract to do in plain English and I'll write it for you. Hit Compile then Deploy right here in chat.",
+      explanation: "Hey! I'm kasAgent 🤖 — your SilverScript contract AI.\n\nPaste your **testnet pubkey** above so I can use it in contracts. Then describe what you want in plain English and I'll write it for you.",
       contractCode: null,
       contractName: null,
       time: 'now',
@@ -224,8 +224,15 @@ export default function KasAgentChat({ onLoadToEditor, onClose }) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [showExamples, setShowExamples] = useState(true);
+  const [pubkey, setPubkey] = useState(() => localStorage.getItem('kasagent_pubkey') || '');
+  const [showPubkeyInput, setShowPubkeyInput] = useState(true);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
+
+  const savePubkey = (val) => {
+    setPubkey(val);
+    localStorage.setItem('kasagent_pubkey', val);
+  };
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
