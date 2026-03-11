@@ -158,8 +158,8 @@ export default function KasCodeIDE() {
   };
 
   const handleDeploy = async () => {
-    if (!activeTab || !deployAddress.trim() || !deployPK.trim()) {
-      setDeployError('Address and private key are required.');
+    if (!activeTab) {
+      setDeployError('Open a file to deploy.');
       return;
     }
     setIsDeploying(true);
@@ -171,8 +171,6 @@ export default function KasCodeIDE() {
       const res = await base44.functions.invoke('deployKaspaContract', {
         contractCode: code,
         contractName: contractMatch?.[1] || activeTab,
-        fromAddress: deployAddress.trim(),
-        privateKey: deployPK.trim(),
         network: deployNetwork,
       });
       if (res.data?.error) throw new Error(res.data.error);
@@ -183,8 +181,9 @@ export default function KasCodeIDE() {
         { type: 'info', text: `> Contract: ${res.data.contractAddress}` },
       ]);
     } catch (e) {
-      setDeployError(e?.message || 'Deploy failed');
-      setCompilerOutput(prev => [...prev, { type: 'error', text: `> ✗ Deploy failed: ${e?.message}` }]);
+      const msg = e?.message || 'Deploy failed';
+      setDeployError(msg);
+      setCompilerOutput(prev => [...prev, { type: 'error', text: `> ✗ Deploy failed: ${msg}` }]);
     } finally {
       setIsDeploying(false);
     }
