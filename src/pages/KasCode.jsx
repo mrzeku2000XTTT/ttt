@@ -313,6 +313,8 @@ const SNIPPETS = [
 ];
 
 export default function KasCodePage() {
+  const navigate = useNavigate();
+
   const [files, setFiles] = useState({
     "welcome.sil": BLANK_CODE,
     "timelock-vault.sil": `pragma silverscript ^0.1.0;\n\ncontract TimelockVault(\n    pubkey owner,\n    int unlockTime\n) {\n    entrypoint function withdraw(sig ownerSig) {\n        require(checkSig(ownerSig, owner));\n        require(tx.time >= unlockTime);\n    }\n\n    entrypoint function emergency(sig ownerSig) {\n        require(checkSig(ownerSig, owner));\n        require(this.age >= 365 days);\n    }\n}`,
