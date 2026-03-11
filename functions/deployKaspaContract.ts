@@ -63,9 +63,8 @@ Deno.serve(async (req) => {
         const rawContractAddr = typeof addrResult === 'string'
             ? addrResult
             : (addrResult?.address || addrResult?.addr || String(addrResult));
-        const contractAddress = rawContractAddr.startsWith('kaspa:') ? rawContractAddr : `kaspa:${rawContractAddr}`;
-
-        const normalizedFrom = fromAddress.startsWith('kaspa:') ? fromAddress : `kaspa:${fromAddress}`;
+        const contractAddress = normalizeAddress(rawContractAddr, network);
+        const normalizedFrom = normalizeAddress(fromAddress, network);
 
         // 4. Fetch UTXOs
         const utxoRes = await fetch(`${KASPA_API}/addresses/${normalizedFrom}/utxos`);
