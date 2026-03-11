@@ -92,6 +92,14 @@ export default function KasCodeIDE() {
   const [isCompiling, setIsCompiling] = useState(false);
   const [expandSnippets, setExpandSnippets] = useState(true);
   const [expandBugData, setExpandBugData] = useState(true);
+  const [isDeploying, setIsDeploying] = useState(false);
+  const [deployResult, setDeployResult] = useState(null);
+  const [deployError, setDeployError] = useState(null);
+  const [showDeployPanel, setShowDeployPanel] = useState(false);
+  const [deployNetwork, setDeployNetwork] = useState('testnet');
+  const [deployPK, setDeployPK] = useState(() => localStorage.getItem('ttt_wallet_pk') || '');
+  const [deployAddress, setDeployAddress] = useState(() => localStorage.getItem('ttt_wallet_address') || '');
+  const [compiledSuccess, setCompiledSuccess] = useState(false);
 
   const openFile = (name) => {
     if (!openTabs.includes(name)) setOpenTabs(prev => [...prev, name]);
