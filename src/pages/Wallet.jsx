@@ -716,18 +716,32 @@ export default function WalletPage() {
       </AnimatePresence>
 
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white">TTT WALLET</h1>
-            <p className="text-gray-400 text-sm">{user?.username || user?.email || 'TTT'}</p>
-          </div>
-          {address && (
-            <Button onClick={() => setShowClearConfirm(true)} variant="outline" className="bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800">
-              <ArrowLeft className="w-4 h-4 mr-2" />Clear
-            </Button>
-          )}
-        </div>
+         {/* Header */}
+         <div className="mb-8 flex items-center justify-between">
+           <div>
+             <h1 className="text-3xl font-bold text-white">TTT WALLET</h1>
+             <p className="text-gray-400 text-sm">{user?.username || user?.email || 'TTT'}</p>
+           </div>
+           <div className="flex items-center gap-3">
+             {/* Testnet Toggle */}
+             <button
+               onClick={() => setIsTestnet(!isTestnet)}
+               className={`flex items-center gap-2 px-3 py-2 rounded-lg font-semibold text-sm transition-all ${
+                 isTestnet
+                   ? 'bg-yellow-500/20 border border-yellow-500/50 text-yellow-400'
+                   : 'bg-zinc-900 border border-zinc-800 text-gray-400 hover:bg-zinc-800'
+               }`}
+             >
+               <Radio className="w-4 h-4" />
+               {isTestnet ? 'TESTNET' : 'Mainnet'}
+             </button>
+             {address && (
+               <Button onClick={() => setShowClearConfirm(true)} variant="outline" className="bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800">
+                 <ArrowLeft className="w-4 h-4 mr-2" />Clear
+               </Button>
+             )}
+           </div>
+         </div>
 
         {error && (
           <div className="mb-4 bg-red-500/10 border border-red-500/30 rounded-lg p-3">
