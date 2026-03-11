@@ -437,4 +437,4 @@ export default function WalletManager({ wallets, activeIdx, onChangeIdx, balance
   );
 }
 
-export { WalletMenuSheet, BackupSeedSheet, ImportWalletSheet, DeleteConfirmSheet };
+export { WalletMenuSheet, BackupSeedSheet, ImportWalletSheet, DeleteConfirmSheet, ShowPublicKeySheet };
