@@ -4,12 +4,23 @@ import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
 
 // ─── Contract Templates with constructor args ───────────────────────────────
+// ─── Arg help text ───────────────────────────────────────────────────────────
+const ARG_HELP = {
+  "pubkey": "A compressed Kaspa public key (33 bytes). Get it from your wallet — in Kasware: Settings → Export Public Key. Starts with 0x02 or 0x03.",
+  "byte[32]": "A 32-byte hash value in hex. For a public key hash, run blake2b(pubkey) or use a Kaspa explorer tool.",
+  "int": "An integer number. For timestamps use Unix time (e.g. 1700000000 = Nov 2023). For days/periods use plain numbers (e.g. 30 means 30 days).",
+  "int timeout": "Unix timestamp in seconds. Use an online converter like epochconverter.com to get the right value.",
+  "int unlockTime": "Unix timestamp when funds unlock. e.g. 1800000000 is ~2027. Use epochconverter.com.",
+  "int amount": "Amount in sompi (1 KAS = 100,000,000 sompi). e.g. 1 KAS = 100000000",
+  "int period": "Interval in days. e.g. 7 = weekly payments.",
+};
+
 const CONTRACT_TEMPLATES = [
   {
     id: "p2pkh",
     name: "Pay to Public Key Hash",
     desc: "Standard spend: verify key hash then signature",
-    args: [{ name: "pkh", type: "byte[32]", placeholder: "0xabc123..." }],
+    args: [{ name: "pkh", type: "byte[32]", placeholder: "0xabc123...", help: "32-byte blake2b hash of the owner's public key. In Kasware: copy your public key and run blake2b() on it." }],
     generate: (a) =>
 `pragma silverscript ^0.1.0;\n\ncontract P2PKH(byte[32] pkh) {\n    entrypoint function spend(pubkey pk, sig s) {\n        require(blake2b(pk) == pkh);\n        require(checkSig(s, pk));\n    }\n}`,
   },
@@ -18,8 +29,8 @@ const CONTRACT_TEMPLATES = [
     name: "Time-Locked Vault",
     desc: "Owner withdraws after a specific time",
     args: [
-      { name: "owner", type: "pubkey", placeholder: "0x..." },
-      { name: "unlockTime", type: "int", placeholder: "1700000000" },
+      { name: "owner", type: "pubkey", placeholder: "0x02...", help: "Your Kaspa public key (33 bytes hex). In Kasware: tap your address → 'Export Public Key'. Starts with 02 or 03." },
+      { name: "unlockTime", type: "int", placeholder: "1700000000", help: "Unix timestamp (seconds) for when funds unlock. Use epochconverter.com to convert a date. e.g. 1800000000 ≈ Jan 2027." },
     ],
     generate: (a) =>
 `pragma silverscript ^0.1.0;\n\ncontract TimelockVault(\n    pubkey owner,\n    int unlockTime\n) {\n    entrypoint function withdraw(sig ownerSig) {\n        require(checkSig(ownerSig, owner));\n        require(tx.time >= unlockTime);\n    }\n\n    entrypoint function emergency(sig ownerSig) {\n        require(checkSig(ownerSig, owner));\n        require(this.age >= 365 days);\n    }\n}`,
@@ -29,10 +40,10 @@ const CONTRACT_TEMPLATES = [
     name: "Two-Party Escrow",
     desc: "Buyer + seller with arbiter dispute resolution",
     args: [
-      { name: "buyer", type: "pubkey", placeholder: "0x..." },
-      { name: "seller", type: "pubkey", placeholder: "0x..." },
-      { name: "arbiter", type: "pubkey", placeholder: "0x..." },
-      { name: "timeout", type: "int", placeholder: "30 (days)" },
+      { name: "buyer", type: "pubkey", placeholder: "0x02...", help: "Buyer's Kaspa public key. Get from Kasware → Export Public Key." },
+      { name: "seller", type: "pubkey", placeholder: "0x02...", help: "Seller's Kaspa public key. Get from Kasware → Export Public Key." },
+      { name: "arbiter", type: "pubkey", placeholder: "0x02...", help: "Trusted third-party public key for dispute resolution." },
+      { name: "timeout", type: "int", placeholder: "30", help: "Number of days after which the buyer can reclaim funds if no release." },
     ],
     generate: (a) =>
 `pragma silverscript ^0.1.0;\n\ncontract Escrow(\n    pubkey buyer,\n    pubkey seller,\n    pubkey arbiter,\n    int timeout\n) {\n    entrypoint function release(sig buyerSig, sig sellerSig) {\n        require(checkSig(buyerSig, buyer));\n        require(checkSig(sellerSig, seller));\n        byte[34] sellerScript = new ScriptPubKeyP2PK(seller);\n        require(tx.outputs[0].scriptPubKey == sellerScript);\n    }\n\n    entrypoint function dispute(sig buyerSig, sig arbiterSig) {\n        require(checkSig(buyerSig, buyer));\n        require(checkSig(arbiterSig, arbiter));\n        byte[34] buyerScript = new ScriptPubKeyP2PK(buyer);\n        require(tx.outputs[0].scriptPubKey == buyerScript);\n    }\n\n    entrypoint function reclaim(sig buyerSig) {\n        require(checkSig(buyerSig, buyer));\n        require(this.age >= timeout days);\n    }\n}`,
@@ -42,10 +53,10 @@ const CONTRACT_TEMPLATES = [
     name: "Recurring Payment",
     desc: "Scheduled payments at a fixed interval",
     args: [
-      { name: "sender", type: "pubkey", placeholder: "0x..." },
-      { name: "recipient", type: "pubkey", placeholder: "0x..." },
-      { name: "amount", type: "int", placeholder: "100000" },
-      { name: "period", type: "int", placeholder: "7 (days)" },
+      { name: "sender", type: "pubkey", placeholder: "0x02...", help: "Sender's public key. Get from Kasware → Export Public Key." },
+      { name: "recipient", type: "pubkey", placeholder: "0x02...", help: "Recipient's public key. Ask recipient to share theirs." },
+      { name: "amount", type: "int", placeholder: "100000000", help: "Amount per payment in sompi. 1 KAS = 100,000,000 sompi." },
+      { name: "period", type: "int", placeholder: "7", help: "How many days between each payment (e.g. 7 = weekly, 30 = monthly)." },
     ],
     generate: (a) =>
 `pragma silverscript ^0.1.0;\n\ncontract RecurringPayment(\n    pubkey sender,\n    pubkey recipient,\n    int amount,\n    int period\n) {\n    entrypoint function pay(sig senderSig) {\n        require(checkSig(senderSig, sender));\n        require(tx.outputs[0].value == amount);\n        byte[34] recipientScript = new ScriptPubKeyP2PK(recipient);\n        require(tx.outputs[0].scriptPubKey == recipientScript);\n        require(this.age >= period days);\n    }\n}`,
@@ -55,9 +66,9 @@ const CONTRACT_TEMPLATES = [
     name: "2-of-3 MultiSig",
     desc: "Any 2 of 3 keys can spend",
     args: [
-      { name: "pk1", type: "pubkey", placeholder: "0x..." },
-      { name: "pk2", type: "pubkey", placeholder: "0x..." },
-      { name: "pk3", type: "pubkey", placeholder: "0x..." },
+      { name: "pk1", type: "pubkey", placeholder: "0x02...", help: "First signer's public key. Get from Kasware → Export Public Key." },
+      { name: "pk2", type: "pubkey", placeholder: "0x02...", help: "Second signer's public key." },
+      { name: "pk3", type: "pubkey", placeholder: "0x02...", help: "Third signer's public key. Any 2 of these 3 can spend." },
     ],
     generate: (a) =>
 `pragma silverscript ^0.1.0;\n\ncontract MultiSig(pubkey pk1, pubkey pk2, pubkey pk3) {\n    entrypoint function spend(sig s1, sig s2) {\n        require(checkMultiSig([s1, s2], [pk1, pk2, pk3]));\n    }\n}`,
@@ -67,9 +78,9 @@ const CONTRACT_TEMPLATES = [
     name: "Freelance Contract",
     desc: "Escrow with mutual release and arbitration",
     args: [
-      { name: "clientKey", type: "pubkey", placeholder: "0x..." },
-      { name: "workerKey", type: "pubkey", placeholder: "0x..." },
-      { name: "arbiterKey", type: "pubkey", placeholder: "0x..." },
+      { name: "clientKey", type: "pubkey", placeholder: "0x02...", help: "Client's public key (the one paying). Get from Kasware → Export Public Key." },
+      { name: "workerKey", type: "pubkey", placeholder: "0x02...", help: "Worker/freelancer's public key. They must share it with you." },
+      { name: "arbiterKey", type: "pubkey", placeholder: "0x02...", help: "Trusted arbiter's public key for dispute resolution." },
     ],
     generate: (a) =>
 `pragma silverscript ^0.1.0;\n\ncontract FreelanceContract(\n    pubkey clientKey,\n    pubkey workerKey,\n    pubkey arbiterKey\n) {\n    entrypoint function release(sig clientSig, sig workerSig) {\n        require(checkSig(clientSig, clientKey));\n        require(checkSig(workerSig, workerKey));\n        byte[34] workerScript = new ScriptPubKeyP2PK(workerKey);\n        require(tx.outputs[0].scriptPubKey == workerScript);\n    }\n\n    entrypoint function refund(sig clientSig, sig arbiterSig) {\n        require(checkSig(clientSig, clientKey));\n        require(checkSig(arbiterSig, arbiterKey));\n        byte[34] clientScript = new ScriptPubKeyP2PK(clientKey);\n        require(tx.outputs[0].scriptPubKey == clientScript);\n    }\n\n    entrypoint function reclaim(sig clientSig) {\n        require(checkSig(clientSig, clientKey));\n        require(this.age >= 30 days);\n    }\n}`,
