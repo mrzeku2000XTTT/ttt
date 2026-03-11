@@ -236,6 +236,7 @@ export default function Layout({ children, currentPageName }) {
   const isNextdoorPage = currentPageName === "Nextdoor";
   const isFluxKmailPage = currentPageName === "FluxKmail";
   const isTerraPage = currentPageName === "Terra";
+  const isKasAgentPage = currentPageName === "KasAgent";
   const isRufzeitKCallPage = currentPageName === "RufzeitKCall";
 
   if (isHomePage || isLobbyPage || isEarthPage || isCountryDetailPage || isKonektPage || isArea51Page || isTheRealmPage || isTruthLandingPage || isUNIPage || isShiLLzPage || isOliviaAppsPage || isB44PromptsPage || isWindowPage || isImageHistoryPage || isKaSkoolPage || isKaSkoolProfilePage || isCoursesPage || isNextdoorPage || isFluxKmailPage || isTerraPage || isRufzeitKCallPage) {

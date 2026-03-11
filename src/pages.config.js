@@ -156,6 +156,7 @@ import KWSuccess from './pages/KWSuccess';
 import KaShop from './pages/KaShop';
 import KaSkool from './pages/KaSkool';
 import KaSkoolProfile from './pages/KaSkoolProfile';
+import KasAgent from './pages/KasAgent';
 import KasCode from './pages/KasCode';
 import KasCompute from './pages/KasCompute';
 import KasFans from './pages/KasFans';
@@ -289,7 +290,6 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import KasAgent from './pages/KasAgent';
 import __Layout from './Layout.jsx';
 
 
@@ -403,6 +403,7 @@ export const PAGES = {
     "KaShop": KaShop,
     "KaSkool": KaSkool,
     "KaSkoolProfile": KaSkoolProfile,
+    "KasAgent": KasAgent,
     "KasCode": KasCode,
     "KasCompute": KasCompute,
     "KasFans": KasFans,
@@ -536,7 +537,6 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "KasAgent": KasAgent,
 }
 
 export const pagesConfig = {
