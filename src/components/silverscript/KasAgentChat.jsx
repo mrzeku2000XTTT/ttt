@@ -337,7 +337,7 @@ export default function KasAgentChat({ onLoadToEditor, onClose }) {
 
       {/* Input — always pinned to bottom */}
       <div className="px-3 py-2 bg-zinc-900 border-t border-zinc-800 flex-shrink-0">
-        <div className="flex items-end gap-2">
+        <div className="flex items-center gap-2">
           <textarea
             ref={inputRef}
             value={input}
@@ -346,19 +346,18 @@ export default function KasAgentChat({ onLoadToEditor, onClose }) {
               if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
             }}
             placeholder="Describe your contract..."
-            rows={2}
-            className="flex-1 bg-zinc-800 text-zinc-100 px-3 py-2 rounded-lg border border-zinc-700 outline-none focus:border-cyan-600 resize-none leading-relaxed placeholder-zinc-600"
-            style={{ fontSize: '16px' }}
+            rows={1}
+            className="flex-1 bg-zinc-800 text-zinc-100 px-3 py-2 rounded-xl border border-zinc-700 outline-none focus:border-cyan-600 resize-none placeholder-zinc-600"
+            style={{ fontSize: '16px', maxHeight: '80px' }}
           />
           <button
             onClick={() => sendMessage()}
             disabled={!input.trim() || loading}
-            className="flex items-center justify-center w-9 h-9 bg-cyan-700 hover:bg-cyan-600 disabled:opacity-30 text-white rounded-lg transition-colors flex-shrink-0"
+            className="flex items-center justify-center w-9 h-9 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-30 text-white rounded-xl transition-colors flex-shrink-0"
           >
-            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
         </div>
-        <p className="text-[9px] text-zinc-700 mt-1 px-1">Enter to send · Shift+Enter new line</p>
       </div>
     </div>
   );
