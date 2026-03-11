@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Copy, Eye, EyeOff, Loader2, CheckCircle2, Shield,
-  ArrowLeft, RefreshCw, X, AlertTriangle, Send, QrCode, Download, Key, UserCheck, Smartphone, Radio
+  ArrowLeft, RefreshCw, X, AlertTriangle, Send, QrCode, Download, Key, UserCheck, Smartphone
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion, AnimatePresence } from "framer-motion";
@@ -151,7 +151,7 @@ export default function WalletPage() {
     if (!addr) return;
     setIsFetchingBalance(true);
     try {
-      const res = await base44.functions.invoke('getKaspaBalance', { address: addr, network: 'mainnet' });
+      const res = await base44.functions.invoke('getKaspaBalance', { address: addr });
       const balKAS = res.data?.balanceKAS;
       if (typeof balKAS === 'number') {
         setKaspaBalance({ balanceKAS: balKAS });
@@ -187,7 +187,6 @@ export default function WalletPage() {
         fromAddress: address,
         toAddress: sendTo.trim(),
         amountKas: parseFloat(sendAmount),
-        network: 'mainnet',
       };
       if (storedPK) {
         payload.privateKey = storedPK;
@@ -261,9 +260,7 @@ export default function WalletPage() {
       }
 
       try {
-        const pricePromise = base44.functions.invoke('getKaspaPrice');
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000));
-        const priceRes = await Promise.race([pricePromise, timeoutPromise]);
+        const priceRes = await base44.functions.invoke('getKaspaPrice');
         setKasPrice(priceRes.data?.price || 0.05);
       } catch {
         setKasPrice(0.05);
@@ -718,28 +715,18 @@ export default function WalletPage() {
       </AnimatePresence>
 
       <div className="max-w-4xl mx-auto">
-         {/* Header */}
-         <div className="mb-8 flex items-center justify-between">
-           <div>
-             <h1 className="text-3xl font-bold text-white">TTT WALLET</h1>
-             <p className="text-gray-400 text-sm">{user?.username || user?.email || 'TTT'}</p>
-           </div>
-           <div className="flex items-center gap-3">
-             {/* Switch to Testnet */}
-             <button
-               onClick={() => navigate(createPageUrl('WalletTestnet'))}
-               className={`flex items-center gap-2 px-3 py-2 rounded-lg font-semibold text-sm transition-all bg-zinc-900 border border-zinc-800 text-gray-400 hover:bg-zinc-800`}
-             >
-               <Radio className="w-4 h-4" />
-               Testnet
-             </button>
-             {address && (
-               <Button onClick={() => setShowClearConfirm(true)} variant="outline" className="bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800">
-                 <ArrowLeft className="w-4 h-4 mr-2" />Clear
-               </Button>
-             )}
-           </div>
-         </div>
+        {/* Header */}
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white">TTT WALLET</h1>
+            <p className="text-gray-400 text-sm">{user?.username || user?.email || 'TTT'}</p>
+          </div>
+          {address && (
+            <Button onClick={() => setShowClearConfirm(true)} variant="outline" className="bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800">
+              <ArrowLeft className="w-4 h-4 mr-2" />Clear
+            </Button>
+          )}
+        </div>
 
         {error && (
           <div className="mb-4 bg-red-500/10 border border-red-500/30 rounded-lg p-3">

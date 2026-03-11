@@ -19,8 +19,8 @@ function normalizeAddress(addr, network) {
     if (!addr.startsWith('kaspa:')) return `kaspa:${addr}`;
     return addr;
 }
-const DEPLOY_SOMPI = 1000000; // 0.01 KAS (10,000 satoshis) funds the contract address on testnet
-const FEE_SOMPI = 5000;     // 0.00005 KAS testnet fee
+const DEPLOY_SOMPI = 100000; // 0.001 KAS funds the contract address
+const FEE_SOMPI = 10000;
 
 async function sha256Hex(text) {
     const data = new TextEncoder().encode(text);
@@ -34,17 +34,23 @@ Deno.serve(async (req) => {
         const user = await base44.auth.me();
         if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const { contractCode, contractName, fromAddress, fromPublicKey, network = 'testnet' } = await req.json();
+        const { contractCode, contractName, fromAddress, privateKey, mnemonic, network = 'testnet' } = await req.json();
 
-        if (!contractCode || !fromAddress || !fromPublicKey) {
-            return Response.json({ error: 'Missing required fields: contractCode, fromAddress, and fromPublicKey (TTT native wallet)' }, { status: 400 });
+        if (!contractCode || !fromAddress || (!privateKey && !mnemonic)) {
+            return Response.json({ error: 'Missing required fields: contractCode, fromAddress, and privateKey or mnemonic' }, { status: 400 });
         }
 
         const KASPA_API = KASPA_APIS[network] || KASPA_APIS.testnet;
         const wallet = new KaspaWallet();
 
-        // 1. Use the provided TTT wallet public key for signing (already derived by wallet)
-        const signingPK = fromPublicKey;
+        // 1. Resolve signing private key
+        let signingPK = privateKey;
+        if (!signingPK && mnemonic) {
+            signingPK = await wallet.getDerivedPrivateKey({
+                mnemonic: mnemonic.trim(),
+                hdPath: "m/44'/111111'/0'/0/0",
+            });
+        }
 
         // 2. Compute contract hash = SHA256(contractCode)
         //    This is the unique fingerprint / ID of the contract on-chain
@@ -60,13 +66,13 @@ Deno.serve(async (req) => {
         const contractAddress = normalizeAddress(rawContractAddr, network);
         const normalizedFrom = normalizeAddress(fromAddress, network);
 
-        // 4. Fetch UTXOs from address
+        // 4. Fetch UTXOs
         const utxoRes = await fetch(`${KASPA_API}/addresses/${normalizedFrom}/utxos`);
         if (!utxoRes.ok) throw new Error(`Failed to fetch UTXOs: ${utxoRes.status}`);
         const utxos = await utxoRes.json();
         if (!utxos?.length) {
-            const faucetHint = network === 'testnet' ? ' Get testnet TKAS from: https://faucet.kaspanet.io' : '';
-            throw new Error(`No UTXOs found for ${normalizedFrom}. Fund wallet first.${faucetHint}`);
+            const faucetHint = network === 'testnet' ? ' Get testnet KAS at https://faucet.kaspanet.io' : '';
+            throw new Error(`No UTXOs found. Fund your wallet first.${faucetHint}`);
         }
 
         const needed = DEPLOY_SOMPI + FEE_SOMPI;
@@ -84,7 +90,7 @@ Deno.serve(async (req) => {
 
         const change = totalIn - DEPLOY_SOMPI - FEE_SOMPI;
 
-        // 5. Build + sign transaction using TTT native wallet public key
+        // 5. Build + sign transaction
         const inputs = selected.map(u => ({
             txId: u.outpoint.transactionId,
             vOut: u.outpoint.index,
@@ -97,7 +103,7 @@ Deno.serve(async (req) => {
 
         const signResult = await wallet.signTransaction({
             data: { inputs, outputs, address: normalizedFrom, fee: FEE_SOMPI },
-            publicKey: fromPublicKey, // Use TTT wallet's native public key
+            privateKey: signingPK,
         });
         const signed = typeof signResult === 'string' ? JSON.parse(signResult) : signResult;
         const rawTx = signed.transaction ?? signed.tx ?? signed;
@@ -127,9 +133,8 @@ Deno.serve(async (req) => {
             contractHash,
             contractName: contractName || 'Contract',
             network,
-            deployAmount: `${(DEPLOY_SOMPI / 1e8).toFixed(8)} TKAS` + (network === 'testnet' ? ' (testnet)' : ''),
+            deployAmount: DEPLOY_SOMPI / 1e8,
             explorerUrl,
-            message: 'Contract deployed successfully to ' + (network === 'testnet' ? 'Kaspa Testnet-12' : 'Kaspa Mainnet'),
         });
 
     } catch (error) {

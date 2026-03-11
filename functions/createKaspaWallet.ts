@@ -15,7 +15,6 @@ async function getWallet() {
 Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
-    const network = body.network || 'mainnet';
 
     let mnemonic;
     if (body.importMode && body.mnemonic) {
@@ -35,21 +34,13 @@ Deno.serve(async (req) => {
     });
 
     const { address } = await wallet.getNewAddress({ privateKey });
-    
-    // Add network prefix
-    let finalAddress = address.startsWith('kaspa:') ? address.slice(6) : address;
-    if (network === 'testnet') {
-      finalAddress = `kaspatest:${finalAddress}`;
-    } else {
-      finalAddress = `kaspa:${finalAddress}`;
-    }
+    const cleanAddress = address.startsWith('kaspa:') ? address.slice(6) : address;
 
     return Response.json({
-      address: finalAddress,
+      address: cleanAddress,
       privateKey,
       mnemonic,
       derivationPath: "m/44'/111111'/0'/0/0",
-      network,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
