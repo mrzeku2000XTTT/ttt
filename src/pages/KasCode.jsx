@@ -530,17 +530,7 @@ export default function KasCodePage() {
           </div>
         </div>
 
-        {/* ── kasAgent Panel ───────────────────────────────────── */}
-        {showAgent && (
-          <div className="w-full sm:w-80 flex-shrink-0 border-r border-zinc-800 flex flex-col overflow-hidden absolute sm:relative inset-0 sm:inset-auto z-20 sm:z-auto bg-zinc-950" style={{ minHeight: 0 }}>
-            <KasAgentChat
-              onLoadToEditor={(name, code) => {
-                handleCreateContract(name, code);
-              }}
-              onClose={() => setShowAgent(false)}
-            />
-          </div>
-        )}
+
 
         {/* ── Editor + Output ──────────────────────────────────── */}
         <div className={`flex flex-col flex-1 min-w-0 overflow-hidden ${showAgent ? 'hidden sm:flex' : 'flex'}`}>
