@@ -151,17 +151,12 @@ export default function SilverScriptPage() {
             >
               <Code2 className="w-4 h-4" /> Sandbox
             </button>
-            <button
-              onClick={() => setActiveTab("kascode")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${
-                activeTab === "kascode"
-                  ? "bg-cyan-500/20 border-cyan-500/40 text-cyan-300"
-                  : "bg-white/5 border-white/10 text-white/50 hover:text-white/80"
-              }`}
-            >
-              <MonitorDot className="w-4 h-4" /> KasCode
-              <span className="text-[10px] bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded">IDE</span>
-            </button>
+            <Link to={createPageUrl("KasCode")}>
+              <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all bg-white/5 border-white/10 text-white/50 hover:text-white/80 hover:bg-white/10">
+                <MonitorDot className="w-4 h-4" /> KasCode
+                <span className="text-[10px] bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded">IDE</span>
+              </button>
+            </Link>
           </div>
 
           {activeTab === "examples" && (
