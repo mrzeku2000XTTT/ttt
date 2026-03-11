@@ -1,3 +1,5 @@
+import * as bip39 from 'npm:@scure/bip39@1.3.0';
+import { HDKey } from 'npm:@scure/bip32@1.4.0';
 import { KaspaWallet } from 'npm:@okxweb3/coin-kaspa@2.4.9';
 
 Deno.serve(async (req) => {
@@ -8,17 +10,22 @@ Deno.serve(async (req) => {
     const wallet = new KaspaWallet();
     const idx = addressIndex ?? 0;
 
-    // Derive address at the requested index (receive path)
     const privateKey = await wallet.getDerivedPrivateKey({
       mnemonic: mnemonic.trim(),
       hdPath: `m/44'/111111'/0'/0/${idx}`,
     });
     const { address } = await wallet.getNewAddress({ privateKey });
-    
-    // Strip kaspa: prefix if present to ensure consistency
     const cleanAddress = address.startsWith('kaspa:') ? address.slice(6) : address;
 
-    return Response.json({ address: cleanAddress, addressIndex: idx });
+    // Derive compressed public key (33 bytes) from mnemonic using bip32
+    const seed = await bip39.mnemonicToSeed(mnemonic.trim());
+    const root = HDKey.fromMasterSeed(seed);
+    const child = root.derive(`m/44'/111111'/0'/0/${idx}`);
+    const publicKey = child.publicKey
+      ? Array.from(child.publicKey).map(b => b.toString(16).padStart(2, '0')).join('')
+      : null;
+
+    return Response.json({ address: cleanAddress, addressIndex: idx, publicKey });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
