@@ -302,6 +302,37 @@ export default function KasAgentChat({ onLoadToEditor, onClose }) {
         </button>
       </div>
 
+      {/* Testnet Pubkey Banner */}
+      <div className="border-b border-zinc-800 bg-zinc-900/80">
+        <button
+          onClick={() => setShowPubkeyInput(p => !p)}
+          className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-zinc-800/40 transition-colors"
+        >
+          <Key className="w-3 h-3 text-yellow-500 flex-shrink-0" />
+          <span className="text-[10px] text-zinc-400 flex-1">
+            {pubkey.trim() ? (
+              <span className="text-yellow-400 font-mono truncate block">🔑 {pubkey.slice(0, 16)}…{pubkey.slice(-8)}</span>
+            ) : (
+              <span className="text-zinc-500">Paste testnet pubkey (used in all contracts)</span>
+            )}
+          </span>
+          <ChevronRight className={`w-3 h-3 text-zinc-600 transition-transform ${showPubkeyInput ? 'rotate-90' : ''}`} />
+        </button>
+        {showPubkeyInput && (
+          <div className="px-3 pb-2 space-y-1">
+            <input
+              value={pubkey}
+              onChange={e => savePubkey(e.target.value.trim())}
+              placeholder="02abc123... (33-byte compressed pubkey)"
+              className="w-full bg-zinc-800 text-yellow-300 text-[10px] px-2 py-1.5 rounded border border-zinc-700 outline-none focus:border-yellow-600 font-mono placeholder-zinc-600"
+              style={{ fontSize: '14px' }}
+              spellCheck={false}
+            />
+            <p className="text-[9px] text-zinc-600">Saved locally · kasAgent will hardcode it into generated contracts</p>
+          </div>
+        )}
+      </div>
+
       {/* Messages — flex-1 so it fills space, min-h-0 so it can shrink */}
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 min-h-0">
         {messages.map((msg, i) => (
