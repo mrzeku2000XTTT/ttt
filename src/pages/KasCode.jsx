@@ -192,17 +192,24 @@ function CreateContractModal({ onClose, onCreate }) {
               {tpl.args.length > 0 && (
                 <>
                   <p className="text-zinc-500 text-[10px] uppercase tracking-wider mt-2">Constructor Arguments</p>
+                  <div className="p-2 bg-zinc-800/40 rounded-lg border border-zinc-700/30 text-[10px] text-zinc-500 mb-2">
+                    💡 These values are locked into the contract when deployed. Make sure they're correct — they cannot be changed after.
+                  </div>
                   {tpl.args.map(arg => (
-                    <div key={arg.name}>
-                      <label className="text-zinc-400 text-[10px]">
-                        <span className="text-teal-400">{arg.type}</span> {arg.name}
+                    <div key={arg.name} className="space-y-1">
+                      <label className="text-zinc-400 text-[10px] flex items-center gap-1">
+                        <span className="text-teal-400 font-mono">{arg.type}</span>
+                        <span className="text-zinc-300">{arg.name}</span>
                       </label>
                       <input
                         value={argValues[arg.name] || ''}
                         onChange={e => setArgValues(prev => ({ ...prev, [arg.name]: e.target.value }))}
                         placeholder={arg.placeholder}
-                        className="w-full mt-1 bg-zinc-800 text-zinc-100 text-xs px-3 py-2 rounded-lg border border-zinc-700 outline-none focus:border-cyan-600 font-mono"
+                        className="w-full bg-zinc-800 text-zinc-100 text-xs px-3 py-2 rounded-lg border border-zinc-700 outline-none focus:border-cyan-600 font-mono"
                       />
+                      {arg.help && (
+                        <p className="text-zinc-600 text-[10px] leading-relaxed px-1">{arg.help}</p>
+                      )}
                     </div>
                   ))}
                 </>
@@ -279,6 +286,7 @@ export default function KasCodePage() {
     { type: 'info', text: '> Press Compile to analyze' },
   ]);
   const [isCompiling, setIsCompiling] = useState(false);
+  const [compiledContractName, setCompiledContractName] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [activePanel, setActivePanel] = useState('editor');
@@ -320,6 +328,7 @@ export default function KasCodePage() {
     if (!activeTab) return;
     setIsCompiling(true);
     setActivePanel('output');
+    setCompiledContractName(null);
     setCompilerOutput([{ type: 'info', text: `> Compiling ${activeTab}...` }]);
     await new Promise(r => setTimeout(r, 600));
     const code = files[activeTab] || '';
@@ -333,15 +342,19 @@ export default function KasCodePage() {
       const contractMatch = code.match(/contract\s+(\w+)/);
       const entrypoints = [...code.matchAll(/entrypoint function\s+(\w+)/g)].map(m => m[1]);
       const args = [...code.matchAll(/contract\s+\w+\(([^)]*)\)/g)].map(m => m[1]).filter(Boolean);
+      const name = contractMatch?.[1] || 'unknown';
+      setCompiledContractName(name);
       setCompilerOutput([
         { type: 'success', text: `> ✓ Compilation successful` },
-        { type: 'info', text: `> Contract: ${contractMatch?.[1] || 'unknown'}` },
-        ...(args[0] ? [{ type: 'info', text: `> Constructor args: ${args[0]}` }] : []),
+        { type: 'info', text: `> Contract: ${name}` },
+        ...(args[0] ? [{ type: 'info', text: `> Args: ${args[0]}` }] : []),
         ...(entrypoints.length > 0 ? [{ type: 'info', text: `> Entrypoints: ${entrypoints.join(', ')}` }] : []),
         ...(errors.filter(e => e.type === 'warn')),
         { type: 'success', text: `> Ready for Kaspa Testnet-12` },
+        { type: 'explorer', text: `> To deploy: use silverc CLI, then verify TX on explorer` },
       ]);
     } else {
+      setCompiledContractName(null);
       setCompilerOutput([{ type: 'error', text: '> ✗ Compilation failed' }, ...errors]);
     }
     setIsCompiling(false);
