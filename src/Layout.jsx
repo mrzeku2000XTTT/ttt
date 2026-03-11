@@ -940,5 +940,6 @@ export default function Layout({ children, currentPageName }) {
       </React.Suspense>
       </VideoPlayerProvider>
       </React.Suspense>
+      </ErrorBoundary>
       );
       }
