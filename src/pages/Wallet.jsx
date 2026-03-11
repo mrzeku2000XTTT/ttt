@@ -132,6 +132,7 @@ export default function WalletPage() {
   const [sendAmount, setSendAmount] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
+  const [showContacts, setShowContacts] = useState(false);
 
   // Receive/Request QR state
   const [requestAmount, setRequestAmount] = useState('');
