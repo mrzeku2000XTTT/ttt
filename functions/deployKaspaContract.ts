@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
 
         const signResult = await wallet.signTransaction({
             data: { inputs, outputs, address: normalizedFrom, fee: FEE_SOMPI },
-            privateKey: signingPK,
+            privateKey: privateKey,
         });
         const signed = typeof signResult === 'string' ? JSON.parse(signResult) : signResult;
         const rawTx = signed.transaction ?? signed.tx ?? signed;
