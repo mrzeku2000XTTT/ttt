@@ -159,6 +159,39 @@ export default function KasCodeIDE() {
     setIsCompiling(false);
   };
 
+  const handleDeploy = async () => {
+    if (!activeTab || !deployAddress.trim() || !deployPK.trim()) {
+      setDeployError('Address and private key are required.');
+      return;
+    }
+    setIsDeploying(true);
+    setDeployError(null);
+    setDeployResult(null);
+    const code = files[activeTab] || '';
+    const contractMatch = code.match(/contract\s+(\w+)/);
+    try {
+      const res = await base44.functions.invoke('deployKaspaContract', {
+        contractCode: code,
+        contractName: contractMatch?.[1] || activeTab,
+        fromAddress: deployAddress.trim(),
+        privateKey: deployPK.trim(),
+        network: deployNetwork,
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      setDeployResult(res.data);
+      setCompilerOutput(prev => [
+        ...prev,
+        { type: 'success', text: `> ✓ Deployed! TX: ${res.data.txHash}` },
+        { type: 'info', text: `> Contract: ${res.data.contractAddress}` },
+      ]);
+    } catch (e) {
+      setDeployError(e?.message || 'Deploy failed');
+      setCompilerOutput(prev => [...prev, { type: 'error', text: `> ✗ Deploy failed: ${e?.message}` }]);
+    } finally {
+      setIsDeploying(false);
+    }
+  };
+
   return (
     <div
       className="flex flex-col bg-zinc-950 text-zinc-300 rounded-xl overflow-hidden border border-zinc-800"
