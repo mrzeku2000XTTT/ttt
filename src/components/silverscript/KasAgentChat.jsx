@@ -272,7 +272,7 @@ export default function KasAgentChat({ onLoadToEditor, onClose }) {
   };
 
   return (
-    <div className="flex flex-col bg-zinc-950" style={{ height: '100%', minHeight: 0 }}>
+    <div className="flex flex-col bg-zinc-950" style={{ height: '100%', minHeight: 0, overflow: 'hidden' }}>
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2 bg-zinc-900 border-b border-zinc-800 flex-shrink-0">
         <div className="w-5 h-5 rounded-full bg-cyan-800/60 border border-cyan-600/40 flex items-center justify-center">
