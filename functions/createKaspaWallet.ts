@@ -2,7 +2,7 @@ import * as bip39 from 'npm:@scure/bip39@1.3.0';
 import { wordlist } from 'npm:@scure/bip39@1.3.0/wordlists/english';
 import { HDKey } from 'npm:@scure/bip32@1.4.0';
 import { KaspaWallet } from 'npm:@okxweb3/coin-kaspa@2.4.9';
-import { bech32m } from 'npm:@scure/base@1.1.5/bech32';
+import { bech32m } from 'npm:@scure/base@1.1.5';
 
 let walletInstance = null;
 
