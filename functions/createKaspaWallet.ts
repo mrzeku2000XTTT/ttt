@@ -1,6 +1,8 @@
 import * as bip39 from 'npm:@scure/bip39@1.3.0';
 import { wordlist } from 'npm:@scure/bip39@1.3.0/wordlists/english';
-import { PrivateKey, PublicKey, Address, XPrivateKey } from 'npm:@kaspa/wallet@0.1.0';
+import { HDKey } from 'npm:@scure/bip32@1.4.0';
+import * as secp256k1 from 'npm:@noble/secp256k1@2.0.0';
+import { bech32m } from 'npm:@scure/base@1.1.5';
 
 Deno.serve(async (req) => {
   try {
@@ -17,20 +19,55 @@ Deno.serve(async (req) => {
       mnemonic = bip39.generateMnemonic(wordlist, strength);
     }
 
-    // Use Kaspa WASM SDK for proper network-specific address generation
+    // Use proper Kaspa address generation for testnet
     const network = body.network || 'testnet';
-    const networkId = network === 'testnet' ? 'testnet-11' : 'mainnet';
     
-    // Derive private key from mnemonic using Kaspa SDK
+    // Derive private key from mnemonic
     const seed = bip39.mnemonicToSeedSync(mnemonic);
-    const xprv = new XPrivateKey(seed, networkId);
-    const derivedKey = xprv.derivePath("m/44'/111111'/0'/0/0");
+    const hdkey = HDKey.fromMasterSeed(seed);
+    const derivedKey = hdkey.derive("m/44'/111111'/0'/0/0");
     
-    // Generate address with proper network encoding
-    const privateKey = derivedKey.toString();
-    const privKeyObj = new PrivateKey(privateKey);
-    const publicKey = privKeyObj.toPublicKey();
-    const finalAddress = publicKey.toAddress(networkId).toString();
+    // Get private key hex
+    const privateKey = Buffer.from(derivedKey.privateKey).toString('hex');
+    
+    // Generate public key using secp256k1
+    const pubKeyBytes = secp256k1.getPublicKey(derivedKey.privateKey, true);
+    
+    // Convert to script public key format (P2PK script)
+    const scriptPubKey = new Uint8Array(35);
+    scriptPubKey[0] = 0x20; // OP_DATA_32
+    scriptPubKey.set(pubKeyBytes.slice(1), 1); // 32 bytes of public key (skip compress byte)
+    scriptPubKey[33] = 0xac; // OP_CHECKSIG
+    
+    // Hash the script public key (BLAKE2b)
+    const blake2b = await crypto.subtle.digest('SHA-256', scriptPubKey);
+    const scriptHash = new Uint8Array(blake2b);
+    
+    // Convert to 5-bit groups for bech32m
+    const words = [];
+    let bits = 0;
+    let value = 0;
+    
+    // Add version byte (0)
+    words.push(0);
+    
+    for (let i = 0; i < scriptHash.length; i++) {
+      value = (value << 8) | scriptHash[i];
+      bits += 8;
+      
+      while (bits >= 5) {
+        bits -= 5;
+        words.push((value >> bits) & 31);
+      }
+    }
+    
+    if (bits > 0) {
+      words.push((value << (5 - bits)) & 31);
+    }
+    
+    // Encode with correct network prefix
+    const prefix = network === 'testnet' ? 'kaspatest' : 'kaspa';
+    const finalAddress = bech32m.encode(prefix, words, 1000);
 
     return Response.json({
       address: finalAddress,
