@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Bot, Send, X, Sparkles, ChevronDown, ChevronUp, Loader2, Copy, Check, FileCode, Play, ExternalLink, Rocket, Key, ChevronRight, AlertCircle } from "lucide-react";
+import { Bot, Send, X, Sparkles, ChevronDown, ChevronUp, Loader2, Copy, Check, FileCode, Play, ExternalLink, Rocket, Key, ChevronRight, AlertCircle, Wallet, Plus, Download, Eye, EyeOff } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const EXAMPLE_PROMPTS = [
@@ -11,7 +11,7 @@ const EXAMPLE_PROMPTS = [
   "Build a dead man's switch: send KAS to backup if not accessed in 1 year",
 ];
 
-function ContractCodeBlock({ code, fileName, onLoadToEditor }) {
+function ContractCodeBlock({ code, fileName, onLoadToEditor, walletAddress, walletPrivateKey }) {
   const [copied, setCopied] = useState(false);
   const [compiled, setCompiled] = useState(null);
   const [compileOutput, setCompileOutput] = useState([]);
@@ -71,33 +71,22 @@ function ContractCodeBlock({ code, fileName, onLoadToEditor }) {
     window.open(base + txHash.trim(), '_blank');
   };
 
-  const handleDeploy = async () => {
+  const handleDeploy = async (walletAddress, walletPrivateKey) => {
     setIsDeploying(true);
     setDeployError(null);
     setDeployResult(null);
     try {
-      // Get credentials from localStorage (set by Wallet page)
-      const fromAddress = localStorage.getItem('ttt_wallet_address');
-      const privateKey = localStorage.getItem('ttt_wallet_pk');
-      
-      if (!fromAddress || !privateKey) {
-        throw new Error('NO_WALLET: Set up your wallet on the Wallet page first');
-      }
-
       const res = await base44.functions.invoke('deployKaspaContract', {
         contractCode: code,
         contractName: contractName || fileName,
         network: deployNetwork,
-        fromAddress,
-        privateKey,
+        fromAddress: walletAddress,
+        privateKey: walletPrivateKey,
       });
       if (res.data?.error) throw new Error(res.data.error);
       setDeployResult(res.data);
     } catch (e) {
-      const msg = e?.message || 'Deployment failed';
-      setDeployError(msg.includes('NO_WALLET') 
-        ? 'No wallet configured. Please set up your wallet on the Wallet page first.'
-        : msg);
+      setDeployError(e?.message || 'Deployment failed');
     } finally {
       setIsDeploying(false);
     }
@@ -194,11 +183,20 @@ function ContractCodeBlock({ code, fileName, onLoadToEditor }) {
                 ))}
               </div>
 
-              {/* Info */}
-              <div className="flex items-start gap-1.5 bg-cyan-950/20 border border-cyan-800/30 rounded px-2 py-1.5">
-                <AlertCircle className="w-3 h-3 text-cyan-400 flex-shrink-0 mt-0.5" />
-                <p className="text-[10px] text-cyan-300">Uses your wallet from the Wallet page. Set up your wallet there first.</p>
-              </div>
+              {/* Wallet status */}
+              {!walletAddress ? (
+                <div className="flex items-start gap-1.5 bg-red-950/40 border border-red-800/40 rounded px-2 py-1.5">
+                  <AlertCircle className="w-3 h-3 text-red-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-[10px] text-red-300">No wallet configured. Set up your kasAgent wallet below.</p>
+                </div>
+              ) : (
+                <div className="flex items-start gap-1.5 bg-emerald-950/20 border border-emerald-800/30 rounded px-2 py-1.5">
+                  <Wallet className="w-3 h-3 text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-[10px] text-emerald-300 font-mono">{walletAddress.slice(0, 12)}...{walletAddress.slice(-6)}</p>
+                  </div>
+                </div>
+              )}
 
               {/* Deploy error */}
               {deployError && (
@@ -231,8 +229,8 @@ function ContractCodeBlock({ code, fileName, onLoadToEditor }) {
               {/* Deploy button */}
               {!deployResult && (
                 <button
-                  onClick={handleDeploy}
-                  disabled={isDeploying}
+                  onClick={() => handleDeploy(walletAddress, walletPrivateKey)}
+                  disabled={isDeploying || !walletAddress || !walletPrivateKey}
                   className={`w-full flex items-center justify-center gap-1.5 py-2 rounded text-[10px] font-bold transition-colors disabled:opacity-40 ${
                     deployNetwork === 'mainnet'
                       ? 'bg-orange-600 hover:bg-orange-500 text-white'
@@ -262,7 +260,7 @@ function ContractCodeBlock({ code, fileName, onLoadToEditor }) {
   );
 }
 
-function ChatMessage({ msg, onLoadToEditor }) {
+function ChatMessage({ msg, onLoadToEditor, walletAddress, walletPrivateKey }) {
   return (
     <div className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
       {msg.role === 'assistant' && (
@@ -287,6 +285,8 @@ function ChatMessage({ msg, onLoadToEditor }) {
                 code={msg.contractCode}
                 fileName={msg.contractName || 'contract.sil'}
                 onLoadToEditor={onLoadToEditor}
+                walletAddress={walletAddress}
+                walletPrivateKey={walletPrivateKey}
               />
             )}
             {msg.error && (
@@ -306,7 +306,7 @@ export default function KasAgentChat({ onLoadToEditor, onClose }) {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      explanation: "Hey! I'm kasAgent 🤖 — your SilverScript contract AI.\n\nPaste your **testnet pubkey** above so I can use it in contracts. Then describe what you want in plain English and I'll write it for you.",
+      explanation: "Hey! I'm kasAgent 🤖 — your SilverScript contract AI.\n\nSet up your kasAgent wallet below, then describe what you want in plain English and I'll write + deploy it for you.",
       contractCode: null,
       contractName: null,
       time: 'now',
@@ -320,9 +320,92 @@ export default function KasAgentChat({ onLoadToEditor, onClose }) {
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
+  // kasAgent wallet state (Terra Protocol)
+  const [walletAddress, setWalletAddress] = useState(() => localStorage.getItem('kasagent_wallet_address') || '');
+  const [walletPrivateKey, setWalletPrivateKey] = useState(() => localStorage.getItem('kasagent_wallet_pk') || '');
+  const [showWalletSetup, setShowWalletSetup] = useState(false);
+  const [walletMode, setWalletMode] = useState('create');
+  const [wordCount, setWordCount] = useState(12);
+  const [mnemonic, setMnemonic] = useState('');
+  const [importMnemonic, setImportMnemonic] = useState('');
+  const [showMnemonic, setShowMnemonic] = useState(false);
+  const [isCreatingWallet, setIsCreatingWallet] = useState(false);
+  const [walletError, setWalletError] = useState(null);
+
   const savePubkey = (val) => {
     setPubkey(val);
     localStorage.setItem('kasagent_pubkey', val);
+  };
+
+  const handleCreateWallet = async () => {
+    setIsCreatingWallet(true);
+    setWalletError(null);
+    try {
+      const res = await base44.functions.invoke('createKaspaWallet', { wordCount });
+      if (res.data?.error) throw new Error(res.data.error);
+      const { address, mnemonic: phrase, privateKey } = res.data;
+      const fullAddr = address.startsWith('kaspa:') ? address : `kaspa:${address}`;
+      
+      setMnemonic(phrase);
+      setWalletAddress(fullAddr);
+      setWalletPrivateKey(privateKey);
+      setShowMnemonic(true);
+      
+      localStorage.setItem('kasagent_wallet_address', fullAddr);
+      localStorage.setItem('kasagent_wallet_pk', privateKey);
+      localStorage.setItem('kasagent_wallet_mnemonic', phrase);
+      
+      // Auto-extract pubkey
+      const pkRes = await base44.functions.invoke('deriveKaspaAddress', { mnemonic: phrase, addressIndex: 0 });
+      if (pkRes.data?.publicKey) {
+        savePubkey(pkRes.data.publicKey);
+      }
+    } catch (e) {
+      setWalletError(e?.message || 'Failed to create wallet');
+    } finally {
+      setIsCreatingWallet(false);
+    }
+  };
+
+  const handleImportWallet = async () => {
+    const words = importMnemonic.trim().split(/\s+/);
+    if (words.length !== 12 && words.length !== 24) {
+      setWalletError('Must be 12 or 24 words');
+      return;
+    }
+    setIsCreatingWallet(true);
+    setWalletError(null);
+    try {
+      const res = await base44.functions.invoke('createKaspaWallet', {
+        mnemonic: importMnemonic.trim(),
+        wordCount: words.length,
+        importMode: true,
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      const { address, privateKey } = res.data;
+      const fullAddr = address.startsWith('kaspa:') ? address : `kaspa:${address}`;
+      
+      setWalletAddress(fullAddr);
+      setWalletPrivateKey(privateKey);
+      setMnemonic(importMnemonic.trim());
+      setImportMnemonic('');
+      
+      localStorage.setItem('kasagent_wallet_address', fullAddr);
+      localStorage.setItem('kasagent_wallet_pk', privateKey);
+      localStorage.setItem('kasagent_wallet_mnemonic', importMnemonic.trim());
+      
+      // Auto-extract pubkey
+      const pkRes = await base44.functions.invoke('deriveKaspaAddress', { mnemonic: importMnemonic.trim(), addressIndex: 0 });
+      if (pkRes.data?.publicKey) {
+        savePubkey(pkRes.data.publicKey);
+      }
+      
+      setShowWalletSetup(false);
+    } catch (e) {
+      setWalletError(e?.message || 'Import failed');
+    } finally {
+      setIsCreatingWallet(false);
+    }
   };
 
   useEffect(() => {
@@ -424,10 +507,138 @@ export default function KasAgentChat({ onLoadToEditor, onClose }) {
         )}
       </div>
 
+      {/* kasAgent Wallet Banner */}
+      <div className="border-b border-zinc-800 bg-zinc-900/80">
+        <button
+          onClick={() => setShowWalletSetup(p => !p)}
+          className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-zinc-800/40 transition-colors"
+        >
+          <Wallet className="w-3 h-3 text-emerald-500 flex-shrink-0" />
+          <span className="text-[10px] text-zinc-400 flex-1">
+            {walletAddress ? (
+              <span className="text-emerald-400 font-mono truncate block">💼 {walletAddress.slice(0, 12)}...{walletAddress.slice(-6)}</span>
+            ) : (
+              <span className="text-zinc-500">Create or import kasAgent wallet (Terra Protocol)</span>
+            )}
+          </span>
+          <ChevronRight className={`w-3 h-3 text-zinc-600 transition-transform ${showWalletSetup ? 'rotate-90' : ''}`} />
+        </button>
+        {showWalletSetup && (
+          <div className="px-3 pb-3 space-y-2">
+            {!walletAddress ? (
+              <>
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={() => setWalletMode('create')}
+                    className={`flex-1 py-1.5 text-[10px] rounded transition-colors font-semibold ${
+                      walletMode === 'create' ? 'bg-emerald-700/30 text-emerald-300' : 'bg-zinc-800 text-zinc-500'
+                    }`}
+                  >
+                    Create New
+                  </button>
+                  <button
+                    onClick={() => setWalletMode('import')}
+                    className={`flex-1 py-1.5 text-[10px] rounded transition-colors font-semibold ${
+                      walletMode === 'import' ? 'bg-emerald-700/30 text-emerald-300' : 'bg-zinc-800 text-zinc-500'
+                    }`}
+                  >
+                    Import
+                  </button>
+                </div>
+
+                {walletMode === 'create' && (
+                  <div className="space-y-2">
+                    <select
+                      value={wordCount}
+                      onChange={e => setWordCount(parseInt(e.target.value))}
+                      className="w-full bg-zinc-800 text-white text-[10px] px-2 py-1.5 rounded border border-zinc-700"
+                    >
+                      <option value={12}>12 words</option>
+                      <option value={24}>24 words</option>
+                    </select>
+                    <button
+                      onClick={handleCreateWallet}
+                      disabled={isCreatingWallet}
+                      className="w-full py-1.5 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 text-white text-[10px] rounded font-bold transition-colors"
+                    >
+                      {isCreatingWallet ? <><Loader2 className="w-3 h-3 animate-spin inline mr-1" />Creating...</> : <><Plus className="w-3 h-3 inline mr-1" />Create Wallet</>}
+                    </button>
+                  </div>
+                )}
+
+                {walletMode === 'import' && (
+                  <div className="space-y-2">
+                    <textarea
+                      value={importMnemonic}
+                      onChange={e => setImportMnemonic(e.target.value)}
+                      placeholder="Enter seed phrase (12 or 24 words)"
+                      className="w-full bg-zinc-800 text-white text-[10px] px-2 py-1.5 rounded border border-zinc-700 font-mono min-h-[60px]"
+                      style={{ fontSize: '14px' }}
+                    />
+                    <button
+                      onClick={handleImportWallet}
+                      disabled={isCreatingWallet || !importMnemonic.trim()}
+                      className="w-full py-1.5 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 text-white text-[10px] rounded font-bold transition-colors"
+                    >
+                      {isCreatingWallet ? <><Loader2 className="w-3 h-3 animate-spin inline mr-1" />Importing...</> : <><Download className="w-3 h-3 inline mr-1" />Import Wallet</>}
+                    </button>
+                  </div>
+                )}
+
+                {walletError && (
+                  <div className="text-[10px] text-red-400 bg-red-950/40 border border-red-800/40 rounded px-2 py-1">
+                    {walletError}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="space-y-2">
+                <div className="bg-emerald-950/20 border border-emerald-800/30 rounded px-2 py-1.5">
+                  <p className="text-[10px] text-emerald-300 font-mono break-all">{walletAddress}</p>
+                </div>
+                {mnemonic && (
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] text-zinc-600 uppercase tracking-wider font-bold">Seed Phrase</span>
+                      <button
+                        onClick={() => setShowMnemonic(p => !p)}
+                        className="text-zinc-600 hover:text-zinc-400"
+                      >
+                        {showMnemonic ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                      </button>
+                    </div>
+                    {showMnemonic && (
+                      <div className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1.5">
+                        <p className="text-[9px] text-yellow-300 font-mono break-all">{mnemonic}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <button
+                  onClick={() => {
+                    if (confirm('Clear kasAgent wallet? Make sure you saved your seed phrase!')) {
+                      setWalletAddress('');
+                      setWalletPrivateKey('');
+                      setMnemonic('');
+                      localStorage.removeItem('kasagent_wallet_address');
+                      localStorage.removeItem('kasagent_wallet_pk');
+                      localStorage.removeItem('kasagent_wallet_mnemonic');
+                    }
+                  }}
+                  className="w-full py-1 text-[10px] text-red-400 hover:text-red-300 transition-colors"
+                >
+                  Clear Wallet
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Messages — flex-1 so it fills space, min-h-0 so it can shrink */}
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 min-h-0">
         {messages.map((msg, i) => (
-          <ChatMessage key={i} msg={msg} onLoadToEditor={onLoadToEditor} />
+          <ChatMessage key={i} msg={msg} onLoadToEditor={onLoadToEditor} walletAddress={walletAddress} walletPrivateKey={walletPrivateKey} />
         ))}
 
         {loading && (
