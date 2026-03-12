@@ -2,6 +2,7 @@ import * as bip39 from 'npm:@scure/bip39@1.3.0';
 import { wordlist } from 'npm:@scure/bip39@1.3.0/wordlists/english';
 import { HDKey } from 'npm:@scure/bip32@1.4.0';
 import { KaspaWallet } from 'npm:@okxweb3/coin-kaspa@2.4.9';
+import { bech32 } from 'npm:bech32@2.0.0';
 
 let walletInstance = null;
 
@@ -10,6 +11,28 @@ async function getWallet() {
     walletInstance = new KaspaWallet();
   }
   return walletInstance;
+}
+
+// Properly encode address with correct network prefix and checksum
+function encodeKaspaAddress(publicKeyHash, network) {
+  // Remove any existing prefix
+  const cleanHash = publicKeyHash.replace(/^(kaspa|kaspatest|kaspasim|kaspadev):/, '');
+  
+  // Decode the bech32 address to get the raw data
+  try {
+    const decoded = bech32.decode(cleanHash, 1000);
+    const words = decoded.words;
+    
+    // Re-encode with the correct prefix
+    const prefix = network === 'testnet' ? 'kaspatest' : 'kaspa';
+    const encoded = bech32.encode(prefix, words, 1000);
+    
+    return encoded;
+  } catch (e) {
+    // If decode fails, the hash might already be in the correct format
+    const prefix = network === 'testnet' ? 'kaspatest' : 'kaspa';
+    return `${prefix}:${cleanHash}`;
+  }
 }
 
 Deno.serve(async (req) => {
