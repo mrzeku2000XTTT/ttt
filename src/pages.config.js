@@ -281,6 +281,7 @@ import VibeWallet from './pages/VibeWallet';
 import VoxInvicta from './pages/VoxInvicta';
 import Waitlist from './pages/Waitlist';
 import Wallet from './pages/Wallet';
+import WalletTestnet from './pages/WalletTestnet';
 import Window from './pages/Window';
 import WorkerTask from './pages/WorkerTask';
 import X from './pages/X';
@@ -528,6 +529,7 @@ export const PAGES = {
     "VoxInvicta": VoxInvicta,
     "Waitlist": Waitlist,
     "Wallet": Wallet,
+    "WalletTestnet": WalletTestnet,
     "Window": Window,
     "WorkerTask": WorkerTask,
     "X": X,

@@ -686,12 +686,12 @@ export default function CategoriesPage() {
 
         {/* Apps Grid with Drag & Drop */}
         <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="apps" direction="horizontal">
+          <Droppable droppableId="apps">
             {(provided) => (
               <div
                 {...provided.droppableProps}
                 ref={provided.innerRef}
-                className="flex-1 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 content-start overflow-y-auto pb-20"
+                className="flex-1 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-10 gap-3 content-start overflow-y-auto pb-20"
               >
                 {filteredApps.map((app, index) => {
                   const Icon = getIconComponent(app.icon);
