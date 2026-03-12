@@ -744,16 +744,16 @@ export default function CategoriesPage() {
                              {/* Enhanced spotlight effect on hover */}
                              <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-24 h-40 bg-gradient-to-t from-cyan-400/40 via-cyan-500/20 to-transparent opacity-0 group-hover:opacity-100 blur-2xl transition-opacity duration-300 pointer-events-none" />
 
-<div className={`w-12 h-12 rounded-2xl ${
-  app.blackOnBlack 
-    ? 'bg-black border-black'
-    : `bg-black/60 backdrop-blur-md border border-white/20 group-hover:border-cyan-400/40 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] ${
-        isHovered ? 'border-cyan-400 shadow-[0_0_30px_rgba(6,182,212,0.6)] scale-110' : ''
-      }`
+<div className={`w-16 h-16 rounded-2xl ${
+app.blackOnBlack 
+? 'bg-black border-black'
+: `bg-black/60 backdrop-blur-md border border-white/20 group-hover:border-cyan-400/40 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] ${
+isHovered ? 'border-cyan-400 shadow-[0_0_30px_rgba(6,182,212,0.6)] scale-110' : ''
+}`
 } flex items-center justify-center relative overflow-hidden transition-all duration-300 ${
-  snapshot.isDragging ? 'shadow-2xl border-white/30' : ''
+snapshot.isDragging ? 'shadow-2xl border-white/30' : ''
 }`}>
-  {app.isGroup ? (
+{app.isGroup ? (
     <div className="relative w-full h-full flex items-center justify-center">
       <div className="absolute inset-0 grid grid-cols-2 gap-0.5 p-1">
         {groups[app.id]?.apps.slice(0, 4).map((appId, idx) => {
