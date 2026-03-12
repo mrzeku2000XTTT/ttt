@@ -691,7 +691,8 @@ export default function CategoriesPage() {
               <div
                 {...provided.droppableProps}
                 ref={provided.innerRef}
-                className="flex-1 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-10 gap-3 content-start overflow-y-auto pb-20"
+                className="flex-1 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-10 gap-3 content-start overflow-y-auto pb-20 select-none"
+                style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
               >
                 {filteredApps.map((app, index) => {
                   const Icon = getIconComponent(app.icon);
