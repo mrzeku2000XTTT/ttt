@@ -34,7 +34,8 @@ Deno.serve(async (req) => {
         const user = await base44.auth.me();
         if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const { contractCode, contractName, network = 'testnet' } = await req.json();
+        const body = await req.json();
+        const { contractCode, contractName, network = 'testnet', fromAddress: providedAddress, privateKey: providedPrivateKey } = body;
 
         if (!contractCode) {
             return Response.json({ error: 'Contract code required' }, { status: 400 });
