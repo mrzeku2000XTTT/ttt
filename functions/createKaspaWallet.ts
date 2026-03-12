@@ -57,12 +57,10 @@ Deno.serve(async (req) => {
     });
 
     const { address } = await wallet.getNewAddress({ privateKey });
-    const cleanAddress = address.startsWith('kaspa:') ? address.slice(6) : address;
     
-    // Apply network prefix based on requested network
+    // Apply network prefix with proper bech32 encoding
     const network = body.network || 'testnet';
-    const prefix = network === 'testnet' ? 'kaspatest' : 'kaspa';
-    const finalAddress = `${prefix}:${cleanAddress}`;
+    const finalAddress = encodeKaspaAddress(address, network);
 
     return Response.json({
       address: finalAddress,
