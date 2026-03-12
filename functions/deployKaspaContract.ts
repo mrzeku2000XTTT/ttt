@@ -1,23 +1,28 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 import { KaspaWallet } from 'npm:@okxweb3/coin-kaspa@2.4.9';
+import { bech32m } from 'npm:bech32@2.0.0';
 
 const KASPA_APIS = {
     testnet: 'https://api-tn12.kaspa.org',
     mainnet: 'https://api.kaspa.org',
 };
 
-// Testnet uses "kaspatest:" prefix, mainnet uses "kaspa:"
+// Properly re-encode address with correct network prefix and checksum
 function normalizeAddress(addr, network) {
-    if (network === 'testnet') {
-        if (!addr.startsWith('kaspatest:')) {
-            // Strip any kaspa: prefix then add kaspatest:
-            const raw = addr.replace(/^kaspa:/, '');
-            return `kaspatest:${raw}`;
-        }
-        return addr;
+    // Extract the data payload from the address
+    let decoded;
+    try {
+        // Remove any existing prefix
+        const addrWithoutPrefix = addr.replace(/^(kaspa|kaspatest|kaspasim|kaspadev):/, '');
+        decoded = bech32m.decode(addrWithoutPrefix, 1000);
+    } catch (e) {
+        // If decode fails, try with the full address
+        decoded = bech32m.decode(addr, 1000);
     }
-    if (!addr.startsWith('kaspa:')) return `kaspa:${addr}`;
-    return addr;
+    
+    // Re-encode with the correct network prefix
+    const prefix = network === 'testnet' ? 'kaspatest' : 'kaspa';
+    return bech32m.encode(prefix, decoded.words, 1000);
 }
 const DEPLOY_SOMPI = 100000; // 0.001 KAS funds the contract address
 const FEE_SOMPI = 10000;
