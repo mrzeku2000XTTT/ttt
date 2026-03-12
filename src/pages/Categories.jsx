@@ -614,7 +614,7 @@ export default function CategoriesPage() {
                           whileTap={{ scale: 0.95 }}
                           className="flex flex-col items-center gap-1"
                         >
-                          <div className={`w-14 h-14 rounded-2xl ${
+                          <div className={`w-16 h-16 rounded-2xl ${
                             app.blackOnBlack 
                               ? 'bg-black border-black'
                               : 'bg-black/60 backdrop-blur-md border border-white/20'
@@ -626,7 +626,7 @@ export default function CategoriesPage() {
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <Icon className={`w-7 h-7 ${app.blackOnBlack ? 'text-black' : 'text-white/90'}`} strokeWidth={1.5} />
+                              <Icon className={`w-8 h-8 ${app.blackOnBlack ? 'text-black' : 'text-white/90'}`} strokeWidth={1.5} />
                             )}
                             {app.premium && (
                               <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-yellow-500/90 rounded-full flex items-center justify-center">
@@ -634,7 +634,7 @@ export default function CategoriesPage() {
                               </div>
                             )}
                           </div>
-                          <span className="text-white/90 text-[9px] font-medium text-center line-clamp-1 w-full px-0.5">
+                          <span className="text-white/90 text-[11px] font-medium text-center line-clamp-1 w-full px-0.5 mt-0.5">
                             {app.name}
                           </span>
                         </motion.div>
