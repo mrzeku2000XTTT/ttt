@@ -22,8 +22,6 @@ function ContractCodeBlock({ code, fileName, onLoadToEditor }) {
   const [deployResult, setDeployResult] = useState(null);
   const [deployError, setDeployError] = useState(null);
   const [deployNetwork, setDeployNetwork] = useState('testnet');
-  const [deployPK, setDeployPK] = useState(() => localStorage.getItem('ttt_wallet_pk') || '');
-  const [deployAddress, setDeployAddress] = useState(() => localStorage.getItem('ttt_wallet_address') || '');
   const [showDeployForm, setShowDeployForm] = useState(false);
 
   const handleCopy = () => {
@@ -74,10 +72,6 @@ function ContractCodeBlock({ code, fileName, onLoadToEditor }) {
   };
 
   const handleDeploy = async () => {
-    if (!deployAddress.trim() || !deployPK.trim()) {
-      setDeployError('Wallet address and private key are required.');
-      return;
-    }
     setIsDeploying(true);
     setDeployError(null);
     setDeployResult(null);
@@ -85,14 +79,15 @@ function ContractCodeBlock({ code, fileName, onLoadToEditor }) {
       const res = await base44.functions.invoke('deployKaspaContract', {
         contractCode: code,
         contractName: contractName || fileName,
-        fromAddress: deployAddress.trim(),
-        privateKey: deployPK.trim(),
         network: deployNetwork,
       });
       if (res.data?.error) throw new Error(res.data.error);
       setDeployResult(res.data);
     } catch (e) {
-      setDeployError(e?.message || 'Deployment failed');
+      const msg = e?.message || 'Deployment failed';
+      setDeployError(msg.includes('NO_WALLET') 
+        ? 'No wallet configured. Please set up your wallet on the Wallet page first.'
+        : msg);
     } finally {
       setIsDeploying(false);
     }
@@ -189,30 +184,10 @@ function ContractCodeBlock({ code, fileName, onLoadToEditor }) {
                 ))}
               </div>
 
-              {/* From address */}
-              <div>
-                <label className="text-[9px] text-zinc-500 block mb-0.5">Your Kaspa Address</label>
-                <input
-                  value={deployAddress}
-                  onChange={e => setDeployAddress(e.target.value.trim())}
-                  placeholder="kaspa:q..."
-                  className="w-full bg-zinc-800 text-zinc-200 text-[10px] px-2 py-1.5 rounded border border-zinc-700 outline-none focus:border-cyan-600 font-mono"
-                  style={{ fontSize: '14px' }}
-                />
-              </div>
-
-              {/* Private key */}
-              <div>
-                <label className="text-[9px] text-zinc-500 block mb-0.5">Private Key (stays on device)</label>
-                <input
-                  type="password"
-                  value={deployPK}
-                  onChange={e => setDeployPK(e.target.value.trim())}
-                  placeholder="Your wallet private key..."
-                  className="w-full bg-zinc-800 text-zinc-200 text-[10px] px-2 py-1.5 rounded border border-zinc-700 outline-none focus:border-cyan-600 font-mono"
-                  style={{ fontSize: '14px' }}
-                />
-                <p className="text-[9px] text-zinc-600 mt-0.5">Auto-loaded from TTT Wallet if available</p>
+              {/* Info */}
+              <div className="flex items-start gap-1.5 bg-cyan-950/20 border border-cyan-800/30 rounded px-2 py-1.5">
+                <AlertCircle className="w-3 h-3 text-cyan-400 flex-shrink-0 mt-0.5" />
+                <p className="text-[10px] text-cyan-300">Uses your wallet from the Wallet page. Set up your wallet there first.</p>
               </div>
 
               {/* Deploy error */}
@@ -247,7 +222,7 @@ function ContractCodeBlock({ code, fileName, onLoadToEditor }) {
               {!deployResult && (
                 <button
                   onClick={handleDeploy}
-                  disabled={isDeploying || !deployAddress.trim() || !deployPK.trim()}
+                  disabled={isDeploying}
                   className={`w-full flex items-center justify-center gap-1.5 py-2 rounded text-[10px] font-bold transition-colors disabled:opacity-40 ${
                     deployNetwork === 'mainnet'
                       ? 'bg-orange-600 hover:bg-orange-500 text-white'
