@@ -345,15 +345,14 @@ export default function KasAgentChat({ onLoadToEditor, onClose }) {
       const res = await base44.functions.invoke('createKaspaWallet', { wordCount, network: walletNetwork });
       if (res.data?.error) throw new Error(res.data.error);
       const { address, mnemonic: phrase, privateKey } = res.data;
-      const prefix = walletNetwork === 'testnet' ? 'kaspatest:' : 'kaspa:';
-      const fullAddr = address.startsWith('kaspa') ? address : `${prefix}${address}`;
       
+      // Address comes from backend with correct network prefix already
       setMnemonic(phrase);
-      setWalletAddress(fullAddr);
+      setWalletAddress(address);
       setWalletPrivateKey(privateKey);
       setShowMnemonic(true);
       
-      localStorage.setItem('kasagent_wallet_address', fullAddr);
+      localStorage.setItem('kasagent_wallet_address', address);
       localStorage.setItem('kasagent_wallet_pk', privateKey);
       localStorage.setItem('kasagent_wallet_mnemonic', phrase);
       localStorage.setItem('kasagent_wallet_network', walletNetwork);
@@ -387,15 +386,14 @@ export default function KasAgentChat({ onLoadToEditor, onClose }) {
       });
       if (res.data?.error) throw new Error(res.data.error);
       const { address, privateKey } = res.data;
-      const prefix = walletNetwork === 'testnet' ? 'kaspatest:' : 'kaspa:';
-      const fullAddr = address.startsWith('kaspa') ? address : `${prefix}${address}`;
       
-      setWalletAddress(fullAddr);
+      // Address comes from backend with correct network prefix already
+      setWalletAddress(address);
       setWalletPrivateKey(privateKey);
       setMnemonic(importMnemonic.trim());
       setImportMnemonic('');
       
-      localStorage.setItem('kasagent_wallet_address', fullAddr);
+      localStorage.setItem('kasagent_wallet_address', address);
       localStorage.setItem('kasagent_wallet_pk', privateKey);
       localStorage.setItem('kasagent_wallet_mnemonic', importMnemonic.trim());
       localStorage.setItem('kasagent_wallet_network', walletNetwork);
