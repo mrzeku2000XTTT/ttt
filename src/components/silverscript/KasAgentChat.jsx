@@ -323,6 +323,7 @@ export default function KasAgentChat({ onLoadToEditor, onClose }) {
   // kasAgent wallet state (Terra Protocol)
   const [walletAddress, setWalletAddress] = useState(() => localStorage.getItem('kasagent_wallet_address') || '');
   const [walletPrivateKey, setWalletPrivateKey] = useState(() => localStorage.getItem('kasagent_wallet_pk') || '');
+  const [walletNetwork, setWalletNetwork] = useState(() => localStorage.getItem('kasagent_wallet_network') || 'testnet');
   const [showWalletSetup, setShowWalletSetup] = useState(false);
   const [walletMode, setWalletMode] = useState('create');
   const [wordCount, setWordCount] = useState(12);
@@ -341,10 +342,11 @@ export default function KasAgentChat({ onLoadToEditor, onClose }) {
     setIsCreatingWallet(true);
     setWalletError(null);
     try {
-      const res = await base44.functions.invoke('createKaspaWallet', { wordCount });
+      const res = await base44.functions.invoke('createKaspaWallet', { wordCount, network: walletNetwork });
       if (res.data?.error) throw new Error(res.data.error);
       const { address, mnemonic: phrase, privateKey } = res.data;
-      const fullAddr = address.startsWith('kaspa:') ? address : `kaspa:${address}`;
+      const prefix = walletNetwork === 'testnet' ? 'kaspatest:' : 'kaspa:';
+      const fullAddr = address.startsWith('kaspa') ? address : `${prefix}${address}`;
       
       setMnemonic(phrase);
       setWalletAddress(fullAddr);
@@ -354,9 +356,10 @@ export default function KasAgentChat({ onLoadToEditor, onClose }) {
       localStorage.setItem('kasagent_wallet_address', fullAddr);
       localStorage.setItem('kasagent_wallet_pk', privateKey);
       localStorage.setItem('kasagent_wallet_mnemonic', phrase);
+      localStorage.setItem('kasagent_wallet_network', walletNetwork);
       
       // Auto-extract pubkey
-      const pkRes = await base44.functions.invoke('deriveKaspaAddress', { mnemonic: phrase, addressIndex: 0 });
+      const pkRes = await base44.functions.invoke('deriveKaspaAddress', { mnemonic: phrase, addressIndex: 0, network: walletNetwork });
       if (pkRes.data?.publicKey) {
         savePubkey(pkRes.data.publicKey);
       }
@@ -380,10 +383,12 @@ export default function KasAgentChat({ onLoadToEditor, onClose }) {
         mnemonic: importMnemonic.trim(),
         wordCount: words.length,
         importMode: true,
+        network: walletNetwork,
       });
       if (res.data?.error) throw new Error(res.data.error);
       const { address, privateKey } = res.data;
-      const fullAddr = address.startsWith('kaspa:') ? address : `kaspa:${address}`;
+      const prefix = walletNetwork === 'testnet' ? 'kaspatest:' : 'kaspa:';
+      const fullAddr = address.startsWith('kaspa') ? address : `${prefix}${address}`;
       
       setWalletAddress(fullAddr);
       setWalletPrivateKey(privateKey);
@@ -393,9 +398,10 @@ export default function KasAgentChat({ onLoadToEditor, onClose }) {
       localStorage.setItem('kasagent_wallet_address', fullAddr);
       localStorage.setItem('kasagent_wallet_pk', privateKey);
       localStorage.setItem('kasagent_wallet_mnemonic', importMnemonic.trim());
+      localStorage.setItem('kasagent_wallet_network', walletNetwork);
       
       // Auto-extract pubkey
-      const pkRes = await base44.functions.invoke('deriveKaspaAddress', { mnemonic: importMnemonic.trim(), addressIndex: 0 });
+      const pkRes = await base44.functions.invoke('deriveKaspaAddress', { mnemonic: importMnemonic.trim(), addressIndex: 0, network: walletNetwork });
       if (pkRes.data?.publicKey) {
         savePubkey(pkRes.data.publicKey);
       }
@@ -527,6 +533,25 @@ export default function KasAgentChat({ onLoadToEditor, onClose }) {
           <div className="px-3 pb-3 space-y-2">
             {!walletAddress ? (
               <>
+                <div className="flex gap-1.5 mb-2">
+                  <button
+                    onClick={() => setWalletNetwork('testnet')}
+                    className={`flex-1 py-1.5 text-[10px] rounded transition-colors font-semibold ${
+                      walletNetwork === 'testnet' ? 'bg-cyan-700/30 border border-cyan-600/60 text-cyan-300' : 'bg-zinc-800 text-zinc-500'
+                    }`}
+                  >
+                    Testnet
+                  </button>
+                  <button
+                    onClick={() => setWalletNetwork('mainnet')}
+                    className={`flex-1 py-1.5 text-[10px] rounded transition-colors font-semibold ${
+                      walletNetwork === 'mainnet' ? 'bg-orange-600/30 border border-orange-500/60 text-orange-300' : 'bg-zinc-800 text-zinc-500'
+                    }`}
+                  >
+                    ⚠️ Mainnet
+                  </button>
+                </div>
+
                 <div className="flex gap-1.5">
                   <button
                     onClick={() => setWalletMode('create')}
@@ -623,6 +648,7 @@ export default function KasAgentChat({ onLoadToEditor, onClose }) {
                       localStorage.removeItem('kasagent_wallet_address');
                       localStorage.removeItem('kasagent_wallet_pk');
                       localStorage.removeItem('kasagent_wallet_mnemonic');
+                      localStorage.removeItem('kasagent_wallet_network');
                     }
                   }}
                   className="w-full py-1 text-[10px] text-red-400 hover:text-red-300 transition-colors"
