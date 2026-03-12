@@ -451,7 +451,7 @@ export default function CategoriesPage() {
   );
 
   return (
-    <div className="min-h-screen overflow-hidden bg-black">
+    <div className="min-h-screen overflow-hidden bg-black select-none" style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}>
       {/* Background */}
       {backgroundImage ? (
         isVideo ? (
