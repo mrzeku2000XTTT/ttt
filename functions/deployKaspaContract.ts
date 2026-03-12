@@ -67,8 +67,15 @@ Deno.serve(async (req) => {
         const normalizedFrom = normalizeAddress(fromAddress, network);
 
         // 4. Fetch UTXOs
-        console.log('Fetching UTXOs for:', normalizedFrom, 'from API:', KASPA_API);
-        const utxoRes = await fetch(`${KASPA_API}/addresses/${normalizedFrom}/utxos`);
+        // For testnet, the API might expect address without prefix
+        const apiAddress = network === 'testnet' && normalizedFrom.startsWith('kaspatest:')
+            ? normalizedFrom.substring(10) // Remove kaspatest: prefix
+            : normalizedFrom.startsWith('kaspa:')
+            ? normalizedFrom.substring(6) // Remove kaspa: prefix
+            : normalizedFrom;
+        
+        console.log('Fetching UTXOs for:', apiAddress, 'from API:', KASPA_API);
+        const utxoRes = await fetch(`${KASPA_API}/addresses/${apiAddress}/utxos`);
         if (!utxoRes.ok) {
             const errText = await utxoRes.text();
             console.error('UTXO fetch failed:', utxoRes.status, errText);
