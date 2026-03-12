@@ -18,31 +18,29 @@ Deno.serve(async (req) => {
 
     const network = body.network || 'testnet';
     
-    // Use Terra Protocol API for proper address generation
-    const terraEndpoint = network === 'testnet' 
-      ? 'https://api.terraprotocol.io/v1/kaspa/testnet/wallet/derive'
-      : 'https://api.terraprotocol.io/v1/kaspa/mainnet/wallet/derive';
+    // Use kaspa-wasm library for proper address derivation
+    const { PrivateKey, PublicKey, Address, NetworkType } = await import('npm:kaspa-wasm@0.13.2');
+    await (await import('npm:kaspa-wasm@0.13.2')).default();
     
-    const terraRes = await fetch(terraEndpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        mnemonic,
-        derivationPath: "m/44'/111111'/0'/0/0"
-      })
-    });
+    // Derive private key from mnemonic using kaspa-wasm
+    const kaspaNetwork = network === 'testnet' ? NetworkType.Testnet : NetworkType.Mainnet;
     
-    if (!terraRes.ok) {
-      throw new Error('Terra Protocol derivation failed');
-    }
+    // Convert mnemonic to seed
+    const seed = bip39.mnemonicToSeedSync(mnemonic);
     
-    const terraData = await terraRes.json();
-    const finalAddress = terraData.address;
-    const privateKey = terraData.privateKey;
-
+    // Derive Kaspa private key at standard path
+    const { XPrv } = await import('npm:kaspa-wasm@0.13.2');
+    const xprv = new XPrv(seed);
+    const derivedKey = xprv.derivePath("m/44'/111111'/0'/0/0");
+    
+    // Get address from derived key
+    const privateKey = derivedKey.toPrivateKey();
+    const publicKey = privateKey.toPublicKey();
+    const address = publicKey.toAddress(kaspaNetwork);
+    
     return Response.json({
-      address: finalAddress,
-      privateKey,
+      address: address.toString(),
+      privateKey: privateKey.toString(),
       mnemonic,
       derivationPath: "m/44'/111111'/0'/0/0",
       network,
