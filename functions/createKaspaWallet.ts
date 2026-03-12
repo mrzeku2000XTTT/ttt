@@ -35,12 +35,18 @@ Deno.serve(async (req) => {
 
     const { address } = await wallet.getNewAddress({ privateKey });
     const cleanAddress = address.startsWith('kaspa:') ? address.slice(6) : address;
+    
+    // Apply network prefix based on requested network
+    const network = body.network || 'testnet';
+    const prefix = network === 'testnet' ? 'kaspatest' : 'kaspa';
+    const finalAddress = `${prefix}:${cleanAddress}`;
 
     return Response.json({
-      address: cleanAddress,
+      address: finalAddress,
       privateKey,
       mnemonic,
       derivationPath: "m/44'/111111'/0'/0/0",
+      network,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
