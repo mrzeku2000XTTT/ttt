@@ -2,7 +2,7 @@ import * as bip39 from 'npm:@scure/bip39@1.3.0';
 import { wordlist } from 'npm:@scure/bip39@1.3.0/wordlists/english';
 import { HDKey } from 'npm:@scure/bip32@1.4.0';
 import { KaspaWallet } from 'npm:@okxweb3/coin-kaspa@2.4.9';
-import { bech32 } from 'npm:bech32@2.0.0';
+import { bech32m } from 'npm:@scure/base@1.1.5/bech32';
 
 let walletInstance = null;
 
@@ -13,25 +13,27 @@ async function getWallet() {
   return walletInstance;
 }
 
-// Properly encode address with correct network prefix and checksum
-function encodeKaspaAddress(publicKeyHash, network) {
-  // Remove any existing prefix
-  const cleanHash = publicKeyHash.replace(/^(kaspa|kaspatest|kaspasim|kaspadev):/, '');
-  
-  // Decode the bech32 address to get the raw data
+// Properly encode Kaspa address with correct network prefix and checksum
+// Kaspa uses bech32m encoding (not bech32)
+function encodeKaspaAddress(addressStr, network) {
   try {
-    const decoded = bech32.decode(cleanHash, 1000);
-    const words = decoded.words;
+    // Remove any existing prefix (kaspa: or kaspatest:)
+    const withoutPrefix = addressStr.replace(/^(kaspa|kaspatest|kaspasim|kaspadev):/, '');
     
-    // Re-encode with the correct prefix
+    // Decode the bech32m address to get the raw data
+    const decoded = bech32m.decode(withoutPrefix, 1000);
+    
+    // Re-encode with the correct network prefix
     const prefix = network === 'testnet' ? 'kaspatest' : 'kaspa';
-    const encoded = bech32.encode(prefix, words, 1000);
+    const encoded = bech32m.encode(prefix, decoded.words, 1000);
     
     return encoded;
   } catch (e) {
-    // If decode fails, the hash might already be in the correct format
+    console.error('Failed to re-encode address:', e);
+    // Fallback - just replace prefix (will have wrong checksum but shows the error)
+    const withoutPrefix = addressStr.replace(/^(kaspa|kaspatest|kaspasim|kaspadev):/, '');
     const prefix = network === 'testnet' ? 'kaspatest' : 'kaspa';
-    return `${prefix}:${cleanHash}`;
+    return `${prefix}:${withoutPrefix}`;
   }
 }
 
