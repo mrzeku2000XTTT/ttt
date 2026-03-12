@@ -35,24 +35,19 @@ Deno.serve(async (req) => {
         if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
         const body = await req.json();
-        const { contractCode, contractName, network = 'testnet', fromAddress: providedAddress, privateKey: providedPrivateKey } = body;
+        const { contractCode, contractName, network = 'testnet', fromAddress, privateKey } = body;
 
         if (!contractCode) {
             return Response.json({ error: 'Contract code required' }, { status: 400 });
         }
 
-        // Get wallet credentials from request body (passed from frontend localStorage)
-        const { fromAddress: providedAddress, privateKey: providedPrivateKey } = await req.json();
-        
-        if (!providedAddress || !providedPrivateKey) {
+        // Validate wallet credentials from request
+        if (!fromAddress || !privateKey) {
             return Response.json({ 
                 error: 'No wallet configured. Please set up your wallet on the Wallet page first.',
                 code: 'NO_WALLET'
             }, { status: 401 });
         }
-
-        const fromAddress = providedAddress;
-        const privateKey = providedPrivateKey;
 
         const KASPA_API = KASPA_APIS[network] || KASPA_APIS.testnet;
         const wallet = new KaspaWallet();
