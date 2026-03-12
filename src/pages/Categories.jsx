@@ -836,7 +836,7 @@ snapshot.isDragging ? 'shadow-2xl border-white/30' : ''
                               {/* Enhanced spotlight effect on hover */}
                               <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-24 h-40 bg-gradient-to-t from-cyan-400/40 via-cyan-500/20 to-transparent opacity-0 group-hover:opacity-100 blur-2xl transition-opacity duration-300 pointer-events-none" />
 
-                              <div className={`w-12 h-12 rounded-2xl ${
+                              <div className={`w-16 h-16 rounded-2xl ${
                                 app.blackOnBlack 
                                   ? 'bg-black border-black'
                                   : `bg-black/60 backdrop-blur-md border border-white/20 group-hover:border-cyan-400/40 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] ${
