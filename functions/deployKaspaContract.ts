@@ -40,19 +40,18 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Contract code required' }, { status: 400 });
         }
 
-        // Get from user's stored wallet (no manual input needed)
-        const storedWallet = await base44.auth.updateMe({});
-        const walletData = user.kaspa_wallet_data ? JSON.parse(user.kaspa_wallet_data) : null;
+        // Get wallet credentials from request body (passed from frontend localStorage)
+        const { fromAddress: providedAddress, privateKey: providedPrivateKey } = await req.json();
         
-        if (!walletData || !walletData.address || !walletData.privateKey) {
+        if (!providedAddress || !providedPrivateKey) {
             return Response.json({ 
                 error: 'No wallet configured. Please set up your wallet on the Wallet page first.',
                 code: 'NO_WALLET'
             }, { status: 401 });
         }
 
-        const fromAddress = walletData.address;
-        const privateKey = walletData.privateKey;
+        const fromAddress = providedAddress;
+        const privateKey = providedPrivateKey;
 
         const KASPA_API = KASPA_APIS[network] || KASPA_APIS.testnet;
         const wallet = new KaspaWallet();
