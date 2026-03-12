@@ -699,41 +699,6 @@ export default function CategoriesPage() {
                   const isLocked = app.premium && !isPremium && !isAdmin;
                   const isHovered = hoverTarget === app.id;
 
-                  const handleTouchStart = (e) => {
-                    const timer = setTimeout(() => {
-                      setDraggedApp(app);
-                    }, 500);
-                    setLongPressTimer(timer);
-                  };
-
-                  const handleTouchEnd = () => {
-                    if (longPressTimer) {
-                      clearTimeout(longPressTimer);
-                      setLongPressTimer(null);
-                    }
-                    if (draggedApp && hoverTarget && draggedApp.id !== hoverTarget) {
-                      if (app.isGroup && draggedApp.id !== app.id) {
-                        addToGroup(app.id, draggedApp.id);
-                      } else if (!draggedApp.isGroup && !app.isGroup && draggedApp.id !== app.id) {
-                        createGroup(draggedApp.id, app.id);
-                      }
-                    }
-                    setDraggedApp(null);
-                    setHoverTarget(null);
-                  };
-
-                  const handleTouchMove = (e) => {
-                    if (draggedApp) {
-                      const touch = e.touches[0];
-                      const element = document.elementFromPoint(touch.clientX, touch.clientY);
-                      const appElement = element?.closest('[data-app-id]');
-                      if (appElement) {
-                        const targetId = appElement.getAttribute('data-app-id');
-                        setHoverTarget(targetId);
-                      }
-                    }
-                  };
-
                   return (
                     <Draggable key={app.id} draggableId={app.id} index={index}>
                       {(provided, snapshot) => (
@@ -743,9 +708,6 @@ export default function CategoriesPage() {
                           {...provided.dragHandleProps}
                           className={isLocked ? 'opacity-40' : ''}
                           data-app-id={app.id}
-                          onTouchStart={handleTouchStart}
-                          onTouchEnd={handleTouchEnd}
-                          onTouchMove={handleTouchMove}
                         >
                           {app.isGroup ? (
                             <button
