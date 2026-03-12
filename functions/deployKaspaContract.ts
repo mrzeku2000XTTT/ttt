@@ -67,8 +67,13 @@ Deno.serve(async (req) => {
         const normalizedFrom = normalizeAddress(fromAddress, network);
 
         // 4. Fetch UTXOs
+        console.log('Fetching UTXOs for:', normalizedFrom, 'from API:', KASPA_API);
         const utxoRes = await fetch(`${KASPA_API}/addresses/${normalizedFrom}/utxos`);
-        if (!utxoRes.ok) throw new Error(`Failed to fetch UTXOs: ${utxoRes.status}`);
+        if (!utxoRes.ok) {
+            const errText = await utxoRes.text();
+            console.error('UTXO fetch failed:', utxoRes.status, errText);
+            throw new Error(`Failed to fetch UTXOs: ${utxoRes.status} - ${errText.slice(0, 100)}`);
+        }
         const utxos = await utxoRes.json();
         if (!utxos?.length) {
             const faucetHint = network === 'testnet' ? ' Get testnet KAS at https://faucet.kaspanet.io' : '';
