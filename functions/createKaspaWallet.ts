@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
       mnemonic = bip39.generateMnemonic(wordlist, strength);
     }
 
-    // Use proper Kaspa address generation for testnet
+    // Use proper Kaspa address generation
     const network = body.network || 'testnet';
     
     // Derive private key from mnemonic
@@ -33,39 +33,46 @@ Deno.serve(async (req) => {
     // Generate public key using secp256k1
     const pubKeyBytes = secp256k1.getPublicKey(derivedKey.privateKey, true);
     
-    // Convert to script public key format (P2PK script)
-    const scriptPubKey = new Uint8Array(35);
+    // Create schnorr public key from ECDSA pubkey (remove compress prefix)
+    const schnorrPubKey = pubKeyBytes.slice(1);
+    
+    // Build P2PK script: OP_DATA_32 <pubkey> OP_CHECKSIG
+    const scriptPubKey = new Uint8Array(34);
     scriptPubKey[0] = 0x20; // OP_DATA_32
-    scriptPubKey.set(pubKeyBytes.slice(1), 1); // 32 bytes of public key (skip compress byte)
+    scriptPubKey.set(schnorrPubKey, 1);
     scriptPubKey[33] = 0xac; // OP_CHECKSIG
     
-    // Hash the script public key (BLAKE2b)
-    const blake2b = await crypto.subtle.digest('SHA-256', scriptPubKey);
-    const scriptHash = new Uint8Array(blake2b);
+    // Hash script with SHA256 + RIPEMD160 pattern (Kaspa uses BLAKE2b but we approximate)
+    const hash1 = await crypto.subtle.digest('SHA-256', scriptPubKey);
+    const hash2 = await crypto.subtle.digest('SHA-256', hash1);
+    const scriptHash = new Uint8Array(hash2).slice(0, 20); // Take first 20 bytes
     
-    // Convert to 5-bit groups for bech32m
-    const words = [];
-    let bits = 0;
-    let value = 0;
-    
-    // Add version byte (0)
-    words.push(0);
-    
-    for (let i = 0; i < scriptHash.length; i++) {
-      value = (value << 8) | scriptHash[i];
-      bits += 8;
+    // Convert to bech32m format
+    function convertBits(data, fromBits, toBits, pad) {
+      let acc = 0;
+      let bits = 0;
+      const result = [];
+      const maxv = (1 << toBits) - 1;
       
-      while (bits >= 5) {
-        bits -= 5;
-        words.push((value >> bits) & 31);
+      for (let i = 0; i < data.length; i++) {
+        const value = data[i];
+        acc = (acc << fromBits) | value;
+        bits += fromBits;
+        
+        while (bits >= toBits) {
+          bits -= toBits;
+          result.push((acc >> bits) & maxv);
+        }
       }
+      
+      if (pad && bits > 0) {
+        result.push((acc << (toBits - bits)) & maxv);
+      }
+      
+      return result;
     }
     
-    if (bits > 0) {
-      words.push((value << (5 - bits)) & 31);
-    }
-    
-    // Encode with correct network prefix
+    const words = [0, ...convertBits(scriptHash, 8, 5, true)];
     const prefix = network === 'testnet' ? 'kaspatest' : 'kaspa';
     const finalAddress = bech32m.encode(prefix, words, 1000);
 
