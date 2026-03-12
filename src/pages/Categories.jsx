@@ -785,21 +785,21 @@ snapshot.isDragging ? 'shadow-2xl border-white/30' : ''
           className="w-full h-full object-cover"
         />
       ) : (
-        <Icon className={`w-6 h-6 ${app.blackOnBlack ? 'text-black' : 'text-white/90'}`} strokeWidth={1.5} />
-      )}
-    </>
-  )}
-  {app.premium && (
-    <div className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-yellow-500/90 rounded-full flex items-center justify-center">
-      <Crown className="w-2 h-2 text-black" />
-    </div>
-  )}
-</div>
-                              <span className="text-white/90 text-[9px] font-medium text-center line-clamp-1 w-full px-0.5">
-                                {app.name}
-                              </span>
-                              </motion.div>
-                              </button>
+        <Icon className={`w-8 h-8 ${app.blackOnBlack ? 'text-black' : 'text-white/90'}`} strokeWidth={1.5} />
+        )}
+        </>
+        )}
+        {app.premium && (
+        <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-yellow-500/90 rounded-full flex items-center justify-center">
+        <Crown className="w-2.5 h-2.5 text-black" />
+        </div>
+        )}
+        </div>
+                               <span className="text-white/90 text-[11px] font-medium text-center line-clamp-1 w-full px-0.5 mt-0.5">
+                                 {app.name}
+                               </span>
+                               </motion.div>
+                               </button>
                               ) : (
                               <Link
                               to={createPageUrl(app.path)}
