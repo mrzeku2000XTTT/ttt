@@ -55,21 +55,21 @@ Deno.serve(async (req) => {
         }
 
         const KASPA_API = KASPA_APIS[network] || KASPA_APIS.testnet;
-        const wallet = new KaspaWallet();
+        
+        // Use Kaspa SDK with proper network configuration
+        const networkType = network === 'testnet' ? kaspa.NetworkType.Testnet : kaspa.NetworkType.Mainnet;
 
         // 2. Compute contract hash = SHA256(contractCode)
-        //    This is the unique fingerprint / ID of the contract on-chain
         const contractHash = await sha256Hex(contractCode);
 
-        // 3. Derive a deterministic contract address from the hash
-        //    The contract hash (32 bytes) is used as the contract's secp256k1 private key seed,
-        //    giving a stable address that uniquely identifies this contract on-chain
-        const addrResult = await wallet.getNewAddress({ privateKey: contractHash });
-        const rawContractAddr = typeof addrResult === 'string'
-            ? addrResult
-            : (addrResult?.address || addrResult?.addr || String(addrResult));
-        const contractAddress = normalizeAddress(rawContractAddr, network);
-        const normalizedFrom = normalizeAddress(fromAddress, network);
+        // 3. Derive deterministic contract address using Kaspa SDK
+        const contractPrivKey = new kaspa.PrivateKey(contractHash);
+        const contractPubKey = contractPrivKey.toPublicKey();
+        const contractAddress = contractPubKey.toAddress(networkType).toString();
+        
+        // Convert user's address to proper format
+        const userAddress = new kaspa.Address(fromAddress);
+        const normalizedFrom = userAddress.toString();
 
         // 4. Fetch UTXOs - strip prefix, API might not want it
         const addressWithoutPrefix = normalizedFrom.replace(/^(kaspa|kaspatest|kaspasim|kaspadev):/, '');
@@ -101,26 +101,40 @@ Deno.serve(async (req) => {
 
         const change = totalIn - DEPLOY_SOMPI - FEE_SOMPI;
 
-        // 5. Build + sign transaction
-        // Always use kaspa: prefix for signing (OKX SDK requirement)
-        const signingAddress = fromAddress.startsWith('kaspa') ? fromAddress : `kaspa:${fromAddress}`;
-        const inputs = selected.map(u => ({
-            txId: u.outpoint.transactionId,
-            vOut: u.outpoint.index,
-            address: signingAddress,
-            amount: Number(u.utxoEntry.amount),
+        // 5. Build + sign transaction using Kaspa SDK
+        const userPrivKey = new kaspa.PrivateKey(privateKey);
+        
+        const tx = new kaspa.Transaction();
+        
+        // Add inputs
+        for (const u of selected) {
+            const input = new kaspa.Transaction.Input({
+                previousOutput: new kaspa.Transaction.Output.Point({
+                    transactionId: u.outpoint.transactionId,
+                    outputIndex: u.outpoint.index,
+                }),
+                signatureScript: new Uint8Array(0),
+                sequence: 0,
+            });
+            tx.addInput(input);
+        }
+        
+        // Add outputs
+        tx.addOutput(new kaspa.Transaction.Output({
+            value: BigInt(DEPLOY_SOMPI),
+            scriptPublicKey: contractPubKey.toScriptPublicKey(),
         }));
         
-        // Use proper network-specific format for outputs
-        const outputs = [{ address: contractAddress, amount: DEPLOY_SOMPI }];
-        if (change > 0) outputs.push({ address: signingAddress, amount: change });
-
-        const signResult = await wallet.signTransaction({
-            data: { inputs, outputs, address: signingAddress, fee: FEE_SOMPI },
-            privateKey: privateKey,
-        });
-        const signed = typeof signResult === 'string' ? JSON.parse(signResult) : signResult;
-        const rawTx = signed.transaction ?? signed.tx ?? signed;
+        if (change > 0) {
+            tx.addOutput(new kaspa.Transaction.Output({
+                value: BigInt(change),
+                scriptPublicKey: userAddress.toScriptPublicKey(),
+            }));
+        }
+        
+        // Sign transaction
+        tx.sign([userPrivKey]);
+        const rawTx = tx.toHex();
 
         // 6. Submit to network
         const submitRes = await fetch(`${KASPA_API}/transactions`, {
