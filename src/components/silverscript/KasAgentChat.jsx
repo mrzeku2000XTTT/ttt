@@ -76,10 +76,20 @@ function ContractCodeBlock({ code, fileName, onLoadToEditor }) {
     setDeployError(null);
     setDeployResult(null);
     try {
+      // Get credentials from localStorage (set by Wallet page)
+      const fromAddress = localStorage.getItem('ttt_wallet_address');
+      const privateKey = localStorage.getItem('ttt_wallet_pk');
+      
+      if (!fromAddress || !privateKey) {
+        throw new Error('NO_WALLET: Set up your wallet on the Wallet page first');
+      }
+
       const res = await base44.functions.invoke('deployKaspaContract', {
         contractCode: code,
         contractName: contractName || fileName,
         network: deployNetwork,
+        fromAddress,
+        privateKey,
       });
       if (res.data?.error) throw new Error(res.data.error);
       setDeployResult(res.data);
