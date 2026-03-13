@@ -15,25 +15,12 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Prompt is required' }, { status: 400 });
         }
 
-        const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY');
-        
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': anthropicApiKey,
-                'anthropic-version': '2023-06-01'
-            },
-            body: JSON.stringify({
-                model: 'claude-3-5-sonnet-20241022',
-                max_tokens: 2000,
-                messages: [{
-                    role: 'user',
-                    content: `You are a professional video script writer. Create an engaging explainer video script based on this prompt: "${prompt}"
+        const result = await base44.integrations.Core.InvokeLLM({
+            prompt: `You are a professional video script writer. Create an engaging explainer video script based on this prompt: "${prompt}"
 
 The video should be approximately ${duration} seconds long.
 
-Return a JSON object with this structure:
+Return a JSON object with this EXACT structure:
 {
   "script": "full narration script",
   "scenes": [
@@ -47,26 +34,29 @@ Return a JSON object with this structure:
   "title": "catchy video title"
 }
 
-Make it professional, engaging, and perfect for a landing page explainer video.`
-                }]
-            })
+Make it professional, engaging, and perfect for a landing page explainer video.`,
+            response_json_schema: {
+                type: "object",
+                properties: {
+                    script: { type: "string" },
+                    scenes: {
+                        type: "array",
+                        items: {
+                            type: "object",
+                            properties: {
+                                scene_number: { type: "number" },
+                                description: { type: "string" },
+                                narration: { type: "string" },
+                                duration: { type: "number" }
+                            }
+                        }
+                    },
+                    title: { type: "string" }
+                }
+            }
         });
 
-        const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(`Anthropic API error: ${data.error?.message || response.status}`);
-        }
-        
-        const content = data.content?.[0]?.text;
-        
-        if (!content) {
-            throw new Error('No content in Anthropic response');
-        }
-        
-        // Extract JSON from the response
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        const scriptData = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(content);
+        const scriptData = result;
 
         return Response.json({
             success: true,
