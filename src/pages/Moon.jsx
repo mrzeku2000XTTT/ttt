@@ -143,19 +143,22 @@ export default function Moon() {
         voice_id: currentVideo.voice_id
       });
 
-      if (result.data.success) {
+      const responseData = result.data;
+
+      if (responseData && responseData.success) {
         const updated = await base44.entities.MoonVideo.update(currentVideo.id, {
-          voice_url: result.data.voice_url,
+          voice_url: responseData.voice_url,
           status: "voice_generated"
         });
 
         setCurrentVideo(updated);
-        toast.success("Voiceover generated!");
+        toast.success("Video complete! 🎉");
         setStage("completed");
       } else {
-        throw new Error(result.data.error);
+        throw new Error(responseData?.error || "Unknown error");
       }
     } catch (error) {
+      console.error("Voice generation error:", error);
       toast.error("Failed to generate voice: " + error.message);
     } finally {
       setLoading(false);
