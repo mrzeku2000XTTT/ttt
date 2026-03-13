@@ -278,23 +278,43 @@ export default function Moon() {
           <div className="max-w-6xl mx-auto">
             {/* Progress Bar */}
             <div className="mb-8">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-400">Progress</span>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-2xl font-bold">{currentVideo.title}</h2>
+                  <p className="text-sm text-gray-400 mt-1">
+                    {stage === "review_script" && "📝 Review Script"}
+                    {stage === "generating_images" && "🎨 Generating Visuals..."}
+                    {stage === "review_storyboard" && "🖼️ Review Storyboard"}
+                    {stage === "generating_voice" && "🎤 Generating Voice..."}
+                    {stage === "completed" && "✅ Video Complete"}
+                  </p>
+                </div>
                 <Button onClick={startNewVideo} variant="outline" size="sm">
                   New Video
                 </Button>
               </div>
               <div className="flex gap-2">
-                {["script", "storyboard", "images", "voice", "completed"].map((s) => (
-                  <div
-                    key={s}
-                    className={`flex-1 h-2 rounded-full ${
-                      stage === s || myVideos.find(v => v.id === currentVideo.id)?.status.includes(s)
-                        ? "bg-cyan-500"
-                        : "bg-gray-700"
-                    }`}
-                  />
-                ))}
+                {[
+                  { key: "script", label: "Script" },
+                  { key: "storyboard", label: "Storyboard" },
+                  { key: "graphics", label: "Graphics" },
+                  { key: "voice", label: "Voice" },
+                  { key: "video", label: "Video" }
+                ].map((s, idx) => {
+                  const isActive = 
+                    (idx === 0 && (stage.includes("script") || stage !== "draft")) ||
+                    (idx === 1 && (stage.includes("storyboard") || stage.includes("voice") || stage === "completed")) ||
+                    (idx === 2 && (stage.includes("storyboard") || stage.includes("voice") || stage === "completed")) ||
+                    (idx === 3 && (stage.includes("voice") || stage === "completed")) ||
+                    (idx === 4 && stage === "completed");
+                  
+                  return (
+                    <div key={s.key} className="flex-1">
+                      <div className={`h-2 rounded-full ${isActive ? "bg-gradient-to-r from-cyan-500 to-blue-500" : "bg-gray-700"}`} />
+                      <p className="text-[10px] text-gray-500 mt-1 text-center">{s.label}</p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
