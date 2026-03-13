@@ -400,18 +400,48 @@ export default function Moon() {
 
             {/* Step 5: Completion */}
             {stage === "completed" && (
-              <Card className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-cyan-500 p-8 mt-6 text-center">
-                <Video className="w-16 h-16 text-cyan-400 mx-auto mb-4" />
-                <h3 className="text-2xl font-bold mb-2">Video Ready!</h3>
-                <p className="text-gray-400 mb-6">Your AI-generated video is complete</p>
+              <Card className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-cyan-500 p-8">
+                <div className="text-center mb-8">
+                  <Video className="w-20 h-20 text-cyan-400 mx-auto mb-4" />
+                  <h3 className="text-3xl font-bold mb-2">🎉 Your Video is Ready!</h3>
+                  <p className="text-gray-400">Professional explainer video generated in minutes</p>
+                </div>
+
+                {/* Preview */}
+                <div className="bg-black/50 rounded-lg p-6 mb-6">
+                  <h4 className="text-lg font-bold mb-4">Preview</h4>
+                  
+                  {/* Storyboard Preview */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                    {currentVideo.storyboard.slice(0, 4).map((scene, idx) => (
+                      <div key={idx} className="aspect-video bg-gray-800 rounded-lg overflow-hidden">
+                        {scene.image_url && (
+                          <img src={scene.image_url} alt={`Scene ${idx + 1}`} className="w-full h-full object-cover" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Audio Player */}
+                  {currentVideo.voice_url && (
+                    <div>
+                      <h5 className="text-sm text-gray-400 mb-2">Voiceover</h5>
+                      <audio controls src={currentVideo.voice_url} className="w-full" />
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex gap-4 justify-center">
-                  <Button className="bg-cyan-500 hover:bg-cyan-600">
+                  <Button className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600">
                     <Download className="w-4 h-4 mr-2" />
-                    Download
+                    Download Video
                   </Button>
                   <Button variant="outline">
                     <Play className="w-4 h-4 mr-2" />
-                    Preview
+                    Full Preview
+                  </Button>
+                  <Button variant="outline" onClick={startNewVideo}>
+                    Create Another
                   </Button>
                 </div>
               </Card>
