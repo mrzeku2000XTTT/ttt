@@ -329,14 +329,22 @@ export default function Moon() {
                   <p className="text-gray-300 whitespace-pre-wrap leading-relaxed">{currentVideo.script}</p>
                 </div>
                 <div className="flex gap-4 justify-end">
-                  <Button variant="outline" onClick={() => setStage("draft")}>
+                  <Button variant="outline" onClick={startNewVideo}>
                     ← Back to Edit
                   </Button>
                   <Button 
                     onClick={generateImages}
+                    disabled={loading}
                     className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
                   >
-                    Approve & Generate Storyboard →
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      "Approve & Generate Storyboard →"
+                    )}
                   </Button>
                 </div>
               </Card>
@@ -381,9 +389,17 @@ export default function Moon() {
                   </Button>
                   <Button 
                     onClick={generateVoice}
+                    disabled={loading}
                     className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
                   >
-                    Approve & Generate Voice →
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      "Approve & Generate Voice →"
+                    )}
                   </Button>
                 </div>
               </Card>
