@@ -53,7 +53,16 @@ Make it professional, engaging, and perfect for a landing page explainer video.`
         });
 
         const data = await response.json();
-        const content = data.content[0].text;
+        
+        if (!response.ok) {
+            throw new Error(`Anthropic API error: ${data.error?.message || response.status}`);
+        }
+        
+        const content = data.content?.[0]?.text;
+        
+        if (!content) {
+            throw new Error('No content in Anthropic response');
+        }
         
         // Extract JSON from the response
         const jsonMatch = content.match(/\{[\s\S]*\}/);
