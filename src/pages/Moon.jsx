@@ -398,34 +398,7 @@ export default function Moon() {
               </Card>
             )}
 
-            {/* Voice & Video Controls */}
-            <Card className="bg-gray-900/50 border-gray-800 p-6 mt-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <Mic className="w-6 h-6 text-cyan-400" />
-                  <div>
-                    <h3 className="font-bold">Voiceover & Audio</h3>
-                    {currentVideo.voice_url && (
-                      <audio controls src={currentVideo.voice_url} className="mt-2" />
-                    )}
-                  </div>
-                </div>
-                {stage === "voice" && !loading && !currentVideo.voice_url && (
-                  <Button onClick={generateVoice}>
-                    <Mic className="w-4 h-4 mr-2" />
-                    Generate Voice
-                  </Button>
-                )}
-                {loading && stage === "voice" && (
-                  <div className="flex items-center gap-2 text-cyan-400">
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Generating voiceover...
-                  </div>
-                )}
-              </div>
-            </Card>
-
-            {/* Completion */}
+            {/* Step 5: Completion */}
             {stage === "completed" && (
               <Card className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-cyan-500 p-8 mt-6 text-center">
                 <Video className="w-16 h-16 text-cyan-400 mx-auto mb-4" />
