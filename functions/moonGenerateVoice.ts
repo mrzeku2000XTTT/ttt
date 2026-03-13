@@ -6,16 +6,17 @@ Deno.serve(async (req) => {
         const user = await base44.auth.me();
 
         if (!user) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
+            return Response.json({ success: false, error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { script } = await req.json();
+        const { storyboard } = await req.json();
 
-        if (!script) {
-            return Response.json({ error: 'Script is required' }, { status: 400 });
+        if (!storyboard || !Array.isArray(storyboard)) {
+            return Response.json({ success: false, error: 'Storyboard array is required' }, { status: 400 });
         }
 
-        // Use ElevenLabs for reliable TTS
+        console.log('Generating voice for', storyboard.length, 'scenes');
+
         const apiKey = Deno.env.get('ELEVENLABS_API_KEY');
         if (!apiKey) {
             return Response.json({ 
@@ -24,39 +25,51 @@ Deno.serve(async (req) => {
             }, { status: 500 });
         }
 
-        const ttsResponse = await fetch('https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM', {
-            method: 'POST',
-            headers: {
-                'Accept': 'audio/mpeg',
-                'Content-Type': 'application/json',
-                'xi-api-key': apiKey
-            },
-            body: JSON.stringify({
-                text: script,
-                model_id: 'eleven_turbo_v2_5',
-                voice_settings: {
-                    stability: 0.5,
-                    similarity_boost: 0.75
-                }
-            })
-        });
+        // Generate voice for each scene
+        const scenesWithVoice = [];
+        
+        for (const scene of storyboard) {
+            console.log(`Processing scene ${scene.scene_number}: ${scene.narration}`);
+            
+            const ttsResponse = await fetch('https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'audio/mpeg',
+                    'Content-Type': 'application/json',
+                    'xi-api-key': apiKey
+                },
+                body: JSON.stringify({
+                    text: scene.narration,
+                    model_id: 'eleven_turbo_v2_5',
+                    voice_settings: {
+                        stability: 0.5,
+                        similarity_boost: 0.75
+                    }
+                })
+            });
 
-        if (!ttsResponse.ok) {
-            const error = await ttsResponse.text();
-            return Response.json({ 
-                success: false,
-                error: `ElevenLabs error: ${error}` 
-            }, { status: ttsResponse.status });
+            if (!ttsResponse.ok) {
+                const error = await ttsResponse.text();
+                console.error(`Scene ${scene.scene_number} TTS failed:`, error);
+                throw new Error(`ElevenLabs error: ${error}`);
+            }
+
+            const audioData = await ttsResponse.arrayBuffer();
+            const base64Audio = btoa(
+                new Uint8Array(audioData).reduce((data, byte) => data + String.fromCharCode(byte), '')
+            );
+
+            scenesWithVoice.push({
+                ...scene,
+                voice_url: `data:audio/mpeg;base64,${base64Audio}`
+            });
+
+            console.log(`Scene ${scene.scene_number} voice generated successfully`);
         }
-
-        const audioData = await ttsResponse.arrayBuffer();
-        const base64Audio = btoa(
-            new Uint8Array(audioData).reduce((data, byte) => data + String.fromCharCode(byte), '')
-        );
 
         return Response.json({
             success: true,
-            voice_url: `data:audio/mpeg;base64,${base64Audio}`
+            scenes: scenesWithVoice
         });
 
     } catch (error) {

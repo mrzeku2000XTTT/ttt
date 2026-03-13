@@ -129,20 +129,19 @@ export default function Moon() {
 
     try {
       const result = await base44.functions.invoke("moonGenerateVoice", {
-        script: currentVideo.script,
-        voice_id: currentVideo.voice_id
+        storyboard: currentVideo.storyboard
       });
 
       const responseData = result.data;
 
       if (responseData && responseData.success) {
         const updated = await base44.entities.MoonVideo.update(currentVideo.id, {
-          voice_url: responseData.voice_url,
+          storyboard: responseData.scenes,
           status: "voice_generated"
         });
 
         setCurrentVideo(updated);
-        toast.success("🎬 Video complete! Ready to export");
+        toast.success("🎬 Voiceover complete! Ready to export");
         setStage("completed");
       } else {
         throw new Error(responseData?.error || "Unknown error");
@@ -438,13 +437,16 @@ export default function Moon() {
                     ))}
                   </div>
 
-                  {/* Audio Player */}
-                  {currentVideo.voice_url && (
-                    <div>
-                      <h5 className="text-sm text-gray-400 mb-2">Voiceover</h5>
-                      <audio controls src={currentVideo.voice_url} className="w-full" />
-                    </div>
-                  )}
+                  {/* Audio Players */}
+                  <div className="space-y-3">
+                    <h5 className="text-sm text-gray-400 mb-2">Scene Voiceovers</h5>
+                    {currentVideo.storyboard.filter(s => s.voice_url).map((scene, idx) => (
+                      <div key={idx} className="bg-gray-800/50 rounded-lg p-3">
+                        <p className="text-xs text-cyan-400 mb-2">Scene {scene.scene_number}</p>
+                        <audio controls src={scene.voice_url} className="w-full h-8" />
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="flex gap-4 justify-center">
