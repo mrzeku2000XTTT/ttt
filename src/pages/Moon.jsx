@@ -125,7 +125,7 @@ export default function Moon() {
     if (!currentVideo) return;
 
     setLoading(true);
-    setStage("voice");
+    setStage("generating_voice");
 
     try {
       const result = await base44.functions.invoke("moonGenerateVoice", {
@@ -142,7 +142,7 @@ export default function Moon() {
         });
 
         setCurrentVideo(updated);
-        toast.success("Video complete! 🎉");
+        toast.success("🎬 Video complete! Ready to export");
         setStage("completed");
       } else {
         throw new Error(responseData?.error || "Unknown error");
@@ -150,6 +150,7 @@ export default function Moon() {
     } catch (error) {
       console.error("Voice generation error:", error);
       toast.error("Failed to generate voice: " + error.message);
+      setStage("review_storyboard");
     } finally {
       setLoading(false);
     }
