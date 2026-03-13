@@ -318,53 +318,85 @@ export default function Moon() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Script */}
-              <Card className="bg-gray-900/50 border-gray-800 p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Edit2 className="w-5 h-5 text-cyan-400" />
-                  <h3 className="text-xl font-bold">Script</h3>
+            {/* Step 1: Review Script */}
+            {stage === "review_script" && (
+              <Card className="bg-gray-900/50 border-gray-800 p-8">
+                <div className="flex items-center gap-2 mb-6">
+                  <Edit2 className="w-6 h-6 text-cyan-400" />
+                  <h3 className="text-2xl font-bold">Step 1: Review Your Script</h3>
                 </div>
-                <div className="bg-black/50 rounded-lg p-4 max-h-96 overflow-y-auto">
-                  <p className="text-gray-300 whitespace-pre-wrap">{currentVideo.script}</p>
+                <div className="bg-black/50 rounded-lg p-6 mb-6 max-h-96 overflow-y-auto">
+                  <p className="text-gray-300 whitespace-pre-wrap leading-relaxed">{currentVideo.script}</p>
+                </div>
+                <div className="flex gap-4 justify-end">
+                  <Button variant="outline" onClick={() => setStage("draft")}>
+                    ← Back to Edit
+                  </Button>
+                  <Button 
+                    onClick={generateImages}
+                    className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
+                  >
+                    Approve & Generate Storyboard →
+                  </Button>
                 </div>
               </Card>
+            )}
 
-              {/* Storyboard */}
-              <Card className="bg-gray-900/50 border-gray-800 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <ImageIcon className="w-5 h-5 text-cyan-400" />
-                    <h3 className="text-xl font-bold">Storyboard</h3>
-                  </div>
-                  {stage === "storyboard" && !loading && (
-                    <Button onClick={generateImages} size="sm">
-                      Generate Images
-                    </Button>
-                  )}
+            {/* Step 2: Generating Images */}
+            {stage === "generating_images" && (
+              <Card className="bg-gray-900/50 border-gray-800 p-8 text-center">
+                <Loader2 className="w-16 h-16 text-cyan-400 mx-auto mb-4 animate-spin" />
+                <h3 className="text-2xl font-bold mb-2">Creating Your Storyboard...</h3>
+                <p className="text-gray-400">AI is generating visuals for each scene</p>
+              </Card>
+            )}
+
+            {/* Step 3: Review Storyboard */}
+            {stage === "review_storyboard" && (
+              <Card className="bg-gray-900/50 border-gray-800 p-8">
+                <div className="flex items-center gap-2 mb-6">
+                  <ImageIcon className="w-6 h-6 text-cyan-400" />
+                  <h3 className="text-2xl font-bold">Step 2: Review Your Storyboard</h3>
                 </div>
-                <div className="space-y-4 max-h-96 overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 max-h-[500px] overflow-y-auto">
                   {currentVideo.storyboard.map((scene, idx) => (
                     <div key={idx} className="bg-black/50 rounded-lg p-4">
-                      <div className="flex items-start gap-4">
-                        <div className="w-24 h-24 bg-gray-800 rounded-lg flex items-center justify-center flex-shrink-0">
-                          {scene.image_url ? (
-                            <img src={scene.image_url} alt={`Scene ${scene.scene_number}`} className="w-full h-full object-cover rounded-lg" />
-                          ) : (
-                            <ImageIcon className="w-8 h-8 text-gray-600" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm text-gray-400 mb-1">Scene {scene.scene_number}</p>
-                          <p className="text-sm text-gray-300">{scene.description}</p>
-                          <p className="text-xs text-cyan-400 mt-2">{scene.duration}s</p>
-                        </div>
+                      <div className="aspect-video bg-gray-800 rounded-lg mb-3 overflow-hidden">
+                        {scene.image_url ? (
+                          <img src={scene.image_url} alt={`Scene ${scene.scene_number}`} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <ImageIcon className="w-12 h-12 text-gray-600" />
+                          </div>
+                        )}
                       </div>
+                      <p className="text-xs text-cyan-400 mb-2">Scene {scene.scene_number} • {scene.duration}s</p>
+                      <p className="text-sm text-gray-300">{scene.description}</p>
                     </div>
                   ))}
                 </div>
+                <div className="flex gap-4 justify-end">
+                  <Button variant="outline" onClick={() => setStage("review_script")}>
+                    ← Back to Script
+                  </Button>
+                  <Button 
+                    onClick={generateVoice}
+                    className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
+                  >
+                    Approve & Generate Voice →
+                  </Button>
+                </div>
               </Card>
-            </div>
+            )}
+
+            {/* Step 4: Generating Voice */}
+            {stage === "generating_voice" && (
+              <Card className="bg-gray-900/50 border-gray-800 p-8 text-center">
+                <Loader2 className="w-16 h-16 text-cyan-400 mx-auto mb-4 animate-spin" />
+                <h3 className="text-2xl font-bold mb-2">Generating Professional Voiceover...</h3>
+                <p className="text-gray-400">Adding voice and finishing touches</p>
+              </Card>
+            )}
 
             {/* Voice & Video Controls */}
             <Card className="bg-gray-900/50 border-gray-800 p-6 mt-6">
