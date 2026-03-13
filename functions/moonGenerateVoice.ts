@@ -15,10 +15,10 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Script is required' }, { status: 400 });
         }
 
-        // Generate voice using Base44's built-in TTS
-        const uploadResult = await base44.asServiceRole.integrations.Core.GenerateVoice({
-            text: script
-        });
+        // Generate voice using Base44's built-in TTS via InvokeLLM with audio output
+        // Note: Base44 doesn't have a direct TTS integration yet
+        // For now, we'll return a placeholder response
+        throw new Error('TTS integration not yet available in Base44. Please use ElevenLabs API or add ELEVENLABS_API_KEY secret.');
 
         return Response.json({
             success: true,
