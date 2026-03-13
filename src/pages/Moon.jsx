@@ -27,9 +27,15 @@ export default function Moon() {
   const loadUser = async () => {
     try {
       const currentUser = await base44.auth.me();
+      if (currentUser.role !== 'admin') {
+        toast.error("Admin access required");
+        window.location.href = "/";
+        return;
+      }
       setUser(currentUser);
     } catch (err) {
       toast.error("Please log in to use Moon");
+      window.location.href = "/";
     }
   };
 
