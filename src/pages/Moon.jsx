@@ -57,12 +57,14 @@ export default function Moon() {
         duration
       });
 
-      if (result.data.success) {
+      const responseData = result.data;
+
+      if (responseData && responseData.success) {
         const video = await base44.entities.MoonVideo.create({
-          title: result.data.title,
+          title: responseData.title,
           prompt,
-          script: result.data.script,
-          storyboard: result.data.scenes,
+          script: responseData.script,
+          storyboard: responseData.scenes,
           status: "script_generated",
           duration,
           brand_colors: brandColors,
@@ -70,12 +72,18 @@ export default function Moon() {
         });
 
         setCurrentVideo(video);
-        toast.success("Script generated!");
+        toast.success("Script generated! Generating images next...");
         setStage("storyboard");
+        
+        // Auto-generate images after script
+        setTimeout(() => {
+          generateImages();
+        }, 1000);
       } else {
-        throw new Error(result.data.error);
+        throw new Error(responseData?.error || "Unknown error");
       }
     } catch (error) {
+      console.error("Script generation error:", error);
       toast.error("Failed to generate script: " + error.message);
       setStage("draft");
     } finally {
