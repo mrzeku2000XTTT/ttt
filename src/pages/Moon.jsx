@@ -90,7 +90,7 @@ export default function Moon() {
     if (!currentVideo) return;
 
     setLoading(true);
-    setStage("images");
+    setStage("generating_images");
 
     try {
       const result = await base44.functions.invoke("moonGenerateImages", {
@@ -107,20 +107,15 @@ export default function Moon() {
         });
 
         setCurrentVideo(updated);
-        toast.success("Images generated! Generating voiceover...");
-        setStage("voice");
-        
-        // Auto-generate voice after images
-        setTimeout(() => {
-          generateVoice();
-        }, 1000);
+        toast.success("🎨 Storyboard visualized! Review and approve");
+        setStage("review_storyboard");
       } else {
         throw new Error(responseData?.error || "Unknown error");
       }
     } catch (error) {
       console.error("Image generation error:", error);
       toast.error("Failed to generate images: " + error.message);
-      setStage("storyboard");
+      setStage("review_script");
     } finally {
       setLoading(false);
     }
