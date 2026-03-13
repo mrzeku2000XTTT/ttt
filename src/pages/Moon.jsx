@@ -165,8 +165,8 @@ export default function Moon() {
   const loadVideo = (video) => {
     setCurrentVideo(video);
     setPrompt(video.prompt);
-    if (video.status === "script_generated") setStage("storyboard");
-    else if (video.status === "images_generated") setStage("voice");
+    if (video.status === "script_generated") setStage("review_script");
+    else if (video.status === "images_generated") setStage("review_storyboard");
     else if (video.status === "voice_generated") setStage("completed");
   };
 
