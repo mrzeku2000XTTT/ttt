@@ -72,13 +72,8 @@ export default function Moon() {
         });
 
         setCurrentVideo(video);
-        toast.success("Script generated! Generating images next...");
-        setStage("storyboard");
-        
-        // Auto-generate images after script
-        setTimeout(() => {
-          generateImages();
-        }, 1000);
+        toast.success("✅ Script generated! Review and approve to continue");
+        setStage("review_script");
       } else {
         throw new Error(responseData?.error || "Unknown error");
       }
