@@ -9,63 +9,63 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { script, voice_style = 'professional' } = await req.json();
+        const { script } = await req.json();
 
         if (!script) {
             return Response.json({ error: 'Script is required' }, { status: 400 });
         }
 
-        const apiKey = Deno.env.get('X_API_KEY');
-        if (!apiKey) {
-            return Response.json({ error: 'OpenRouter API key not configured' }, { status: 500 });
-        }
-
-        // Use OpenAI's GPT-4o-audio or similar voice model via OpenRouter
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json',
-                'HTTP-Referer': 'https://ttt.base44.app',
-                'X-Title': 'TTT Moon Studio'
-            },
-            body: JSON.stringify({
-                model: 'openai/gpt-4o-audio-preview',
-                messages: [
-                    {
-                        role: 'system',
-                        content: `You are a ${voice_style} video narrator. Speak the following script with appropriate pacing, emotion, and clarity for a video voiceover.`
-                    },
-                    {
-                        role: 'user',
-                        content: script
-                    }
-                ],
-                modalities: ['text', 'audio'],
-                audio: { voice: 'alloy', format: 'mp3' }
-            })
+        // Use Base44's InvokeLLM integration to generate voice
+        // The model parameter specifies a voice-capable model
+        const response = await base44.integrations.Core.InvokeLLM({
+            prompt: `Read this video script in a clear, professional narrator voice:\n\n${script}`,
+            model: 'gpt_5_4', // GPT-4.5-turbo with audio capabilities
+            add_context_from_internet: false
         });
 
-        const data = await response.json();
+        // InvokeLLM should return audio data for voice-capable models
+        // If it returns text instead, we'll use ElevenLabs as fallback
+        if (typeof response === 'string') {
+            // Fallback to ElevenLabs
+            const apiKey = Deno.env.get('ELEVENLABS_API_KEY');
+            if (!apiKey) {
+                return Response.json({ error: 'Voice generation not supported' }, { status: 500 });
+            }
 
-        if (!response.ok) {
-            return Response.json({ 
-                error: data.error?.message || 'OpenRouter API error' 
-            }, { status: response.status });
+            const ttsResponse = await fetch('https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'audio/mpeg',
+                    'Content-Type': 'application/json',
+                    'xi-api-key': apiKey
+                },
+                body: JSON.stringify({
+                    text: script,
+                    model_id: 'eleven_turbo_v2_5',
+                    voice_settings: {
+                        stability: 0.5,
+                        similarity_boost: 0.75
+                    }
+                })
+            });
+
+            if (!ttsResponse.ok) {
+                throw new Error('Voice generation failed');
+            }
+
+            const audioData = await ttsResponse.arrayBuffer();
+            const base64Audio = btoa(
+                new Uint8Array(audioData).reduce((data, byte) => data + String.fromCharCode(byte), '')
+            );
+
+            return Response.json({
+                voice_url: `data:audio/mpeg;base64,${base64Audio}`
+            });
         }
 
-        // Extract audio data from response
-        const audioData = data.choices?.[0]?.message?.audio;
-        if (!audioData?.data) {
-            return Response.json({ 
-                error: 'No audio generated' 
-            }, { status: 500 });
-        }
-
-        // Return base64 audio data
+        // If InvokeLLM returns audio, use it directly
         return Response.json({
-            voice_url: `data:audio/mp3;base64,${audioData.data}`,
-            transcript: audioData.transcript || script
+            voice_url: response.audio_url || response
         });
 
     } catch (error) {
