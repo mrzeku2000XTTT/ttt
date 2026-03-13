@@ -14,7 +14,7 @@ export default function Moon() {
   const [duration, setDuration] = useState(30);
   const [currentVideo, setCurrentVideo] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [stage, setStage] = useState("draft"); // draft, script, storyboard, images, voice, video
+  const [stage, setStage] = useState("draft"); // draft, script, review_script, generating_images, review_storyboard, generating_voice, completed
   const [myVideos, setMyVideos] = useState([]);
   const [brandColors, setBrandColors] = useState(["#06B6D4", "#0891B2", "#0E7490"]);
   const [voiceId, setVoiceId] = useState("EXAVITQu4vr4xnSDxMaL");
