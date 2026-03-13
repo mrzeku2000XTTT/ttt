@@ -94,6 +94,7 @@ export default function AppStorePage() {
     { name: "RufzeitK", icon: "Link2", path: "RufzeitKHome", category: "Communication", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/7a9ae8d5f_image.png", circular: true },
     { name: "KivR", icon: "Link2", path: "KivR", category: "Finance", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a3f7bbc81_IMG_1275.jpg", objectFit: "cover" },
     { name: "SilverScript", icon: "Link2", path: "SilverScript", category: "Dev Tools", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e8d0baae0_IMG_0166.png" },
+    { name: "Moon", icon: "Link2", path: "Moon", category: "AI", defaultIcon: "https://ui-avatars.com/api/?name=🌙+Moon&size=128&background=06b6d4&color=fff&bold=true&font-size=0.28", circular: true },
     ];
 
   const getIconComponent = (iconName) => {
