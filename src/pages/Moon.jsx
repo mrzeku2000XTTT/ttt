@@ -103,19 +103,27 @@ export default function Moon() {
         brand_colors: currentVideo.brand_colors
       });
 
-      if (result.data.success) {
+      const responseData = result.data;
+
+      if (responseData && responseData.success) {
         const updated = await base44.entities.MoonVideo.update(currentVideo.id, {
-          storyboard: result.data.scenes,
+          storyboard: responseData.scenes,
           status: "images_generated"
         });
 
         setCurrentVideo(updated);
-        toast.success("Images generated!");
+        toast.success("Images generated! Generating voiceover...");
         setStage("voice");
+        
+        // Auto-generate voice after images
+        setTimeout(() => {
+          generateVoice();
+        }, 1000);
       } else {
-        throw new Error(result.data.error);
+        throw new Error(responseData?.error || "Unknown error");
       }
     } catch (error) {
+      console.error("Image generation error:", error);
       toast.error("Failed to generate images: " + error.message);
       setStage("storyboard");
     } finally {
