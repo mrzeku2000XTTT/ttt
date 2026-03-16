@@ -7,7 +7,12 @@ import { DollarSign, Wallet, Loader2, X, Sparkles, AlertCircle, Smartphone } fro
 
 const isMobileDevice = () => {
   if (typeof window === 'undefined') return false;
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+  const ua = navigator.userAgent;
+  // Covers phones, iPads (including newer iPads that report as Mac), and Android tablets
+  const isTouchDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+  const isIPadPro = /Macintosh/i.test(ua) && navigator.maxTouchPoints > 1;
+  const isNarrowScreen = window.innerWidth < 1024;
+  return isTouchDevice || isIPadPro || isNarrowScreen;
 };
 
 export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose, onSuccess }) {
