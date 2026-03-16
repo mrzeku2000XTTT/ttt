@@ -32,7 +32,8 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
   const tttPrivateKey = localStorage.getItem('ttt_wallet_pk');
   const pinHash = localStorage.getItem('ttt_wallet_pin_hash');
   const hasPinSet = !!pinHash;
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '') || (typeof window !== 'undefined' && window.innerWidth < 768);
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1) || (typeof window !== 'undefined' && window.innerWidth < 1024);
   const [sendMethod, setSendMethod] = useState(isMobile && tttWalletAddress ? 'ttt' : 'kasware');
   const [tipPin, setTipPin] = useState('');
   const [pinVerified, setPinVerified] = useState(false);
