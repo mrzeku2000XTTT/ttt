@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
       mnemonic = bip39.generateMnemonic(wordlist, strength);
     }
 
-    const network = body.network || 'testnet';
+    const network = body.network || 'mainnet';
     
     // Standard Kaspa derivation: m/44'/111111'/0'/0/0
     const seed = bip39.mnemonicToSeedSync(mnemonic);
