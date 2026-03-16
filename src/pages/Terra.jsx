@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ProfileTab from "@/components/terra/ProfileTab";
-import WalletManager, { WalletMenuSheet, BackupSeedSheet, ImportWalletSheet, DeleteConfirmSheet, ShowPublicKeySheet } from "@/components/terra/WalletManager";
+import WalletManager, { WalletMenuSheet, BackupSeedSheet, ImportWalletSheet, DeleteConfirmSheet } from "@/components/terra/WalletManager";
 import ReceiveSheet from "@/components/terra/ReceiveSheet";
 import SendSheet from "@/components/terra/SendSheet";
 import { motion, AnimatePresence } from "framer-motion";
@@ -198,7 +198,6 @@ export default function TerraPage() {
   const [showBackup, setShowBackup] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
-  const [showPublicKey, setShowPublicKey] = useState(false);
 
   const activeWallet = wallets[activeWalletIdx] || null;
   const walletAddress = activeWallet?.address || null;
@@ -614,7 +613,6 @@ export default function TerraPage() {
             onBackup={() => setShowBackup(true)}
             onImport={() => setShowImport(true)}
             onDelete={() => setShowDelete(true)}
-            onShowPublicKey={() => setShowPublicKey(true)}
           />
         )}
         {showBackup && activeWallet?.mnemonic && (
@@ -650,9 +648,6 @@ export default function TerraPage() {
             onClose={() => setShowDelete(false)}
             onDeleted={deleteActiveWallet}
           />
-        )}
-        {showPublicKey && activeWallet && (
-          <ShowPublicKeySheet wallet={activeWallet} onClose={() => setShowPublicKey(false)} />
         )}
       </AnimatePresence>
     </div>

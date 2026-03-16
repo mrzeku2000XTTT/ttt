@@ -1,9 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { ExternalLink, Code, BookOpen, Terminal, Zap, Shield, Layers, Copy, Check, ChevronDown, ChevronUp, FlaskConical, Code2, MonitorDot } from "lucide-react";
+import { ExternalLink, Code, BookOpen, Terminal, Zap, Shield, Layers, Copy, Check, ChevronDown, ChevronUp, FlaskConical, Code2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
 import TimelockTester from "@/components/silverscript/TimelockTester";
 import SilverScriptSandbox from "@/components/silverscript/SilverScriptSandbox";
 
@@ -60,7 +58,7 @@ export default function SilverScriptPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white w-full overflow-x-hidden">
+    <div className="min-h-screen bg-black text-white">
       {/* Hero */}
       <div className="relative overflow-hidden border-b border-white/10">
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-black to-cyan-950 opacity-80" />
@@ -119,7 +117,7 @@ export default function SilverScriptPage() {
 
         {/* Tab switcher */}
         <section>
-          <div className="flex flex-wrap gap-2 mb-6">
+          <div className="flex gap-2 mb-6">
             <button
               onClick={() => setActiveTab("examples")}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${
@@ -151,12 +149,6 @@ export default function SilverScriptPage() {
             >
               <Code2 className="w-4 h-4" /> Sandbox
             </button>
-            <Link to={createPageUrl("KasCode")}>
-              <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all bg-white/5 border-white/10 text-white/50 hover:text-white/80 hover:bg-white/10">
-                <MonitorDot className="w-4 h-4" /> KasCode
-                <span className="text-[10px] bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded">IDE</span>
-              </button>
-            </Link>
           </div>
 
           {activeTab === "examples" && (
@@ -214,8 +206,6 @@ export default function SilverScriptPage() {
               <SilverScriptSandbox />
             </div>
           )}
-
-
         </section>
 
         {/* Get Started */}

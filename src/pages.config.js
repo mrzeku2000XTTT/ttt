@@ -156,8 +156,6 @@ import KWSuccess from './pages/KWSuccess';
 import KaShop from './pages/KaShop';
 import KaSkool from './pages/KaSkool';
 import KaSkoolProfile from './pages/KaSkoolProfile';
-import KasAgent from './pages/KasAgent';
-import KasCode from './pages/KasCode';
 import KasCompute from './pages/KasCompute';
 import KasFans from './pages/KasFans';
 import KasLens from './pages/KasLens';
@@ -187,8 +185,8 @@ import Landing from './pages/Landing';
 import LearnMore from './pages/LearnMore';
 import Learning from './pages/Learning';
 import Life from './pages/Life';
-import LinkChecker from './pages/LinkChecker';
 import Lobby from './pages/Lobby';
+import LinkChecker from './pages/LinkChecker';
 import MMN from './pages/MMN';
 import MODZ from './pages/MODZ';
 import MODZHub from './pages/MODZHub';
@@ -257,7 +255,6 @@ import Terra from './pages/Terra';
 import TestJobAPI from './pages/TestJobAPI';
 import TestKaspaAPI from './pages/TestKaspaAPI';
 import TestZelcore from './pages/TestZelcore';
-import Tester from './pages/Tester';
 import TetrisBattle from './pages/TetrisBattle';
 import TheRealm from './pages/TheRealm';
 import TikTokWorkflow from './pages/TikTokWorkflow';
@@ -281,7 +278,6 @@ import VibeWallet from './pages/VibeWallet';
 import VoxInvicta from './pages/VoxInvicta';
 import Waitlist from './pages/Waitlist';
 import Wallet from './pages/Wallet';
-import WalletTestnet from './pages/WalletTestnet';
 import Window from './pages/Window';
 import WorkerTask from './pages/WorkerTask';
 import X from './pages/X';
@@ -291,6 +287,7 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
+import Tester from './pages/Tester';
 import __Layout from './Layout.jsx';
 
 
@@ -404,8 +401,6 @@ export const PAGES = {
     "KaShop": KaShop,
     "KaSkool": KaSkool,
     "KaSkoolProfile": KaSkoolProfile,
-    "KasAgent": KasAgent,
-    "KasCode": KasCode,
     "KasCompute": KasCompute,
     "KasFans": KasFans,
     "KasLens": KasLens,
@@ -435,8 +430,8 @@ export const PAGES = {
     "LearnMore": LearnMore,
     "Learning": Learning,
     "Life": Life,
-    "LinkChecker": LinkChecker,
     "Lobby": Lobby,
+    "LinkChecker": LinkChecker,
     "MMN": MMN,
     "MODZ": MODZ,
     "MODZHub": MODZHub,
@@ -505,7 +500,6 @@ export const PAGES = {
     "TestJobAPI": TestJobAPI,
     "TestKaspaAPI": TestKaspaAPI,
     "TestZelcore": TestZelcore,
-    "Tester": Tester,
     "TetrisBattle": TetrisBattle,
     "TheRealm": TheRealm,
     "TikTokWorkflow": TikTokWorkflow,
@@ -529,7 +523,6 @@ export const PAGES = {
     "VoxInvicta": VoxInvicta,
     "Waitlist": Waitlist,
     "Wallet": Wallet,
-    "WalletTestnet": WalletTestnet,
     "Window": Window,
     "WorkerTask": WorkerTask,
     "X": X,
@@ -539,6 +532,7 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
+    "Tester": Tester,
 }
 
 export const pagesConfig = {

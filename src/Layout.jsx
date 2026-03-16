@@ -1,30 +1,4 @@
 import React, { useState, useEffect } from "react";
-
-class ErrorBoundary extends React.Component {
-  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
-  static getDerivedStateFromError(error) { return { hasError: true, error }; }
-  componentDidCatch(error, info) { console.error('App error caught by boundary:', error, info); }
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="min-h-screen bg-black flex items-center justify-center p-6">
-          <div className="text-center space-y-4 max-w-md">
-            <div className="text-4xl">⚠️</div>
-            <h2 className="text-white font-bold text-lg">Something went wrong</h2>
-            <p className="text-zinc-400 text-sm">{this.state.error?.message || 'An unexpected error occurred'}</p>
-            <button
-              onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload(); }}
-              className="px-4 py-2 bg-cyan-700 hover:bg-cyan-600 text-white rounded-lg text-sm font-semibold transition-colors"
-            >
-              Reload App
-            </button>
-          </div>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { ArrowUpDown, TrendingUp, Activity, LogOut, AlertCircle, Crown, User as UserIcon, Menu, X, Clock, Bot, Search, Users, Gamepad2, BarChart3, AlertTriangle, Settings, Bell, Briefcase, ShoppingBag, Brain, Shield, Wallet, Network, Key, MoreHorizontal, FileText, History, Download, ShoppingCart, Trophy, MessageSquare, LayoutGrid, ArrowLeft, BookOpen } from "lucide-react";
@@ -66,10 +40,6 @@ export default function Layout({ children, currentPageName }) {
     }
   });
   
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [currentPageName]);
-
   useEffect(() => {
     try {
       loadUser();
@@ -262,18 +232,15 @@ export default function Layout({ children, currentPageName }) {
   const isNextdoorPage = currentPageName === "Nextdoor";
   const isFluxKmailPage = currentPageName === "FluxKmail";
   const isTerraPage = currentPageName === "Terra";
-  const isKasAgentPage = currentPageName === "KasAgent";
   const isRufzeitKCallPage = currentPageName === "RufzeitKCall";
 
-  if (isHomePage || isLobbyPage || isEarthPage || isCountryDetailPage || isKonektPage || isArea51Page || isTheRealmPage || isTruthLandingPage || isUNIPage || isShiLLzPage || isOliviaAppsPage || isB44PromptsPage || isWindowPage || isImageHistoryPage || isKaSkoolPage || isKaSkoolProfilePage || isCoursesPage || isNextdoorPage || isFluxKmailPage || isTerraPage || isRufzeitKCallPage || isKasAgentPage) {
+  if (isHomePage || isLobbyPage || isEarthPage || isCountryDetailPage || isKonektPage || isArea51Page || isTheRealmPage || isTruthLandingPage || isUNIPage || isShiLLzPage || isOliviaAppsPage || isB44PromptsPage || isWindowPage || isImageHistoryPage || isKaSkoolPage || isKaSkoolProfilePage || isCoursesPage || isNextdoorPage || isFluxKmailPage || isTerraPage || isRufzeitKCallPage) {
     return (
-      <ErrorBoundary>
-        <React.Suspense fallback={<div className="min-h-screen bg-black" />}>
-          <VideoPlayerProvider>
-            {children}
-          </VideoPlayerProvider>
-        </React.Suspense>
-      </ErrorBoundary>
+      <React.Suspense fallback={<div className="min-h-screen bg-black" />}>
+        <VideoPlayerProvider>
+          {children}
+        </VideoPlayerProvider>
+      </React.Suspense>
     );
   }
 
@@ -349,7 +316,6 @@ export default function Layout({ children, currentPageName }) {
     : subNavItems;
 
   return (
-    <ErrorBoundary>
     <React.Suspense fallback={<div className="fixed inset-0 bg-black flex items-center justify-center z-[9999]"><div className="text-white">Loading...</div></div>}>
       <VideoPlayerProvider>
         <div className="min-h-screen bg-black">
@@ -940,6 +906,5 @@ export default function Layout({ children, currentPageName }) {
       </React.Suspense>
       </VideoPlayerProvider>
       </React.Suspense>
-      </ErrorBoundary>
       );
       }

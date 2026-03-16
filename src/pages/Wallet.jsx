@@ -8,13 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Copy, Eye, EyeOff, Loader2, CheckCircle2, Shield,
-  ArrowLeft, RefreshCw, X, AlertTriangle, Send, QrCode, Download, Key, UserCheck, Smartphone
+  ArrowLeft, RefreshCw, X, AlertTriangle, Send, QrCode, Download
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion, AnimatePresence } from "framer-motion";
 import QRScanner from "@/components/wallet/QRScanner";
-import ContactBook, { useContacts } from "@/components/wallet/ContactBook";
-import SiriShortcutsModal from "@/components/wallet/SiriShortcutsModal";
 
 // ── Toast ──────────────────────────────────────────────────────────────────────
 const Toast = ({ message, type, onClose }) => (
@@ -99,43 +97,12 @@ export default function WalletPage() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const balanceIntervalRef = useRef(null);
 
-  // Public Key modal state
-  const [showPublicKey, setShowPublicKey] = useState(false);
-  const [pubKeyData, setPubKeyData] = useState(null);
-  const [isFetchingPubKey, setIsFetchingPubKey] = useState(false);
-  const [copiedPubKey, setCopiedPubKey] = useState(false);
-  const [copiedExtPubKey, setCopiedExtPubKey] = useState(false);
-
-  const fetchPublicKey = async () => {
-    const mnemToUse = mnemonic || localStorage.getItem('ttt_wallet_mnemonic');
-    if (!mnemToUse) {
-      showToast('Seed phrase not available. Re-import wallet to use this feature.', 'error');
-      return;
-    }
-    setIsFetchingPubKey(true);
-    setShowPublicKey(true);
-    setPubKeyData(null);
-    try {
-      const res = await base44.functions.invoke('deriveKaspaAddress', { mnemonic: mnemToUse, addressIndex: 0 });
-      if (res.data?.error) throw new Error(res.data.error);
-      setPubKeyData({ publicKey: res.data.publicKey, extendedPublicKey: res.data.extendedPublicKey });
-    } catch (e) {
-      showToast(e?.message || 'Failed to fetch public key', 'error');
-      setShowPublicKey(false);
-    } finally {
-      setIsFetchingPubKey(false);
-    }
-  };
-
   // Send modal state
   const [showSend, setShowSend] = useState(false);
   const [sendTo, setSendTo] = useState('');
   const [sendAmount, setSendAmount] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
-  const [showContacts, setShowContacts] = useState(false);
-  const [showSiri, setShowSiri] = useState(false);
-  const { contacts } = useContacts();
 
   // Receive/Request QR state
   const [requestAmount, setRequestAmount] = useState('');
@@ -270,18 +237,7 @@ export default function WalletPage() {
     }
   };
 
-  useEffect(() => {
-    loadData();
-    // Handle Siri Shortcut URL params
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('action') === 'send') {
-      const to = params.get('to');
-      const amt = params.get('amount');
-      if (to) setSendTo(to);
-      if (amt) setSendAmount(amt);
-      setShowSend(true);
-    }
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const checkIfSealed = async (walletAddress, currentUser) => {
     if (!currentUser?.email) return;
@@ -539,92 +495,6 @@ export default function WalletPage() {
         )}
       </AnimatePresence>
 
-      {/* Public Key Modal */}
-      <AnimatePresence>
-        {showPublicKey && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-            onClick={() => setShowPublicKey(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              onClick={e => e.stopPropagation()}
-              className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 w-full max-w-sm space-y-4"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Key className="w-5 h-5 text-cyan-400" />
-                  <h3 className="text-white font-bold text-lg">Public Keys</h3>
-                </div>
-                <button onClick={() => setShowPublicKey(false)} className="text-gray-400 hover:text-white">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {isFetchingPubKey ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
-                </div>
-              ) : pubKeyData ? (
-                <>
-                  <div className="space-y-1">
-                    <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Public Key (compressed, 33 bytes)</p>
-                    <div className="bg-black border border-zinc-800 rounded-lg p-3 flex items-start gap-2">
-                      <code className="text-cyan-400 text-xs break-all flex-1 font-mono">{pubKeyData.publicKey || 'N/A'}</code>
-                      <button
-                        onClick={async () => { await navigator.clipboard.writeText(pubKeyData.publicKey); setCopiedPubKey(true); setTimeout(() => setCopiedPubKey(false), 2000); }}
-                        className="shrink-0 text-gray-400 hover:text-white mt-0.5"
-                      >
-                        {copiedPubKey ? <CheckCircle2 className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {pubKeyData.extendedPublicKey && (
-                    <div className="space-y-1">
-                      <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Extended Public Key (xpub)</p>
-                      <div className="bg-black border border-zinc-800 rounded-lg p-3 flex items-start gap-2">
-                        <code className="text-purple-400 text-xs break-all flex-1 font-mono">{pubKeyData.extendedPublicKey}</code>
-                        <button
-                          onClick={async () => { await navigator.clipboard.writeText(pubKeyData.extendedPublicKey); setCopiedExtPubKey(true); setTimeout(() => setCopiedExtPubKey(false), 2000); }}
-                          className="shrink-0 text-gray-400 hover:text-white mt-0.5"
-                        >
-                          {copiedExtPubKey ? <CheckCircle2 className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  <p className="text-xs text-gray-600 text-center">These keys are safe to share for smart contract use</p>
-                </>
-              ) : null}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Siri Shortcuts Modal */}
-      <AnimatePresence>
-        {showSiri && (
-          <SiriShortcutsModal
-            walletAddress={address}
-            contacts={contacts}
-            onClose={() => setShowSiri(false)}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Contacts Modal */}
-      <AnimatePresence>
-        {showContacts && (
-          <ContactBook
-            onSelect={(addr) => { setSendTo(addr); setShowContacts(false); setShowSend(true); }}
-            onClose={() => setShowContacts(false)}
-          />
-        )}
-      </AnimatePresence>
-
       {/* Send Modal */}
       <AnimatePresence>
         {showSend && (
@@ -660,14 +530,6 @@ export default function WalletPage() {
                     title="Scan QR"
                   >
                     <QrCode className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    onClick={() => { setShowSend(false); setShowContacts(true); }}
-                    variant="outline"
-                    className="border-zinc-700 bg-black text-cyan-400 hover:bg-zinc-800 px-3"
-                    title="Contacts"
-                  >
-                    <UserCheck className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
@@ -851,35 +713,14 @@ export default function WalletPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="grid grid-cols-2 gap-3 mb-4">
                   <Button onClick={() => setShowReceiveQR(true)} className="bg-zinc-950 border border-zinc-800 text-white hover:bg-zinc-900">
                     <Download className="w-4 h-4 mr-2" />Receive
                   </Button>
                   <Button onClick={() => setShowSend(true)} className="bg-white text-black hover:bg-gray-200">
                     Send
                   </Button>
-                  <Button onClick={() => setShowContacts(true)} className="bg-zinc-950 border border-cyan-500/30 text-cyan-400 hover:bg-zinc-900">
-                    <UserCheck className="w-4 h-4 mr-2" />Contacts
-                  </Button>
                 </div>
-
-                {/* Public Key Button */}
-                <Button
-                  onClick={fetchPublicKey}
-                  variant="outline"
-                  className="w-full border-zinc-800 bg-zinc-950 text-gray-300 hover:bg-zinc-900 hover:text-white"
-                >
-                  <Key className="w-4 h-4 mr-2 text-cyan-400" />Show Public Key
-                </Button>
-
-                {/* Siri Shortcuts */}
-                <Button
-                  onClick={() => setShowSiri(true)}
-                  variant="outline"
-                  className="w-full border-zinc-800 bg-zinc-950 text-gray-300 hover:bg-zinc-900 hover:text-white"
-                >
-                  <Smartphone className="w-4 h-4 mr-2 text-purple-400" />Siri Shortcuts
-                </Button>
 
                 {/* Seal */}
                 {pinSet && !isSealed && mnemonic && (

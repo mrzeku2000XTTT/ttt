@@ -451,7 +451,7 @@ export default function CategoriesPage() {
   );
 
   return (
-    <div className="min-h-screen overflow-hidden bg-black select-none" style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}>
+    <div className="min-h-screen overflow-hidden bg-black">
       {/* Background */}
       {backgroundImage ? (
         isVideo ? (
@@ -614,7 +614,7 @@ export default function CategoriesPage() {
                           whileTap={{ scale: 0.95 }}
                           className="flex flex-col items-center gap-1"
                         >
-                          <div className={`w-16 h-16 rounded-2xl ${
+                          <div className={`w-14 h-14 rounded-2xl ${
                             app.blackOnBlack 
                               ? 'bg-black border-black'
                               : 'bg-black/60 backdrop-blur-md border border-white/20'
@@ -626,7 +626,7 @@ export default function CategoriesPage() {
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <Icon className={`w-8 h-8 ${app.blackOnBlack ? 'text-black' : 'text-white/90'}`} strokeWidth={1.5} />
+                              <Icon className={`w-7 h-7 ${app.blackOnBlack ? 'text-black' : 'text-white/90'}`} strokeWidth={1.5} />
                             )}
                             {app.premium && (
                               <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-yellow-500/90 rounded-full flex items-center justify-center">
@@ -634,7 +634,7 @@ export default function CategoriesPage() {
                               </div>
                             )}
                           </div>
-                          <span className="text-white/90 text-[11px] font-medium text-center line-clamp-1 w-full px-0.5 mt-0.5">
+                          <span className="text-white/90 text-[9px] font-medium text-center line-clamp-1 w-full px-0.5">
                             {app.name}
                           </span>
                         </motion.div>
@@ -686,19 +686,53 @@ export default function CategoriesPage() {
 
         {/* Apps Grid with Drag & Drop */}
         <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="apps">
+          <Droppable droppableId="apps" direction="horizontal">
             {(provided) => (
               <div
                 {...provided.droppableProps}
                 ref={provided.innerRef}
-                className="flex-1 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-10 gap-3 content-start overflow-y-auto pb-20 select-none"
-                style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
+                className="flex-1 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 content-start overflow-y-auto pb-20"
               >
                 {filteredApps.map((app, index) => {
                   const Icon = getIconComponent(app.icon);
                   const isAdmin = user && user.role === 'admin';
                   const isLocked = app.premium && !isPremium && !isAdmin;
                   const isHovered = hoverTarget === app.id;
+
+                  const handleTouchStart = (e) => {
+                    const timer = setTimeout(() => {
+                      setDraggedApp(app);
+                    }, 500);
+                    setLongPressTimer(timer);
+                  };
+
+                  const handleTouchEnd = () => {
+                    if (longPressTimer) {
+                      clearTimeout(longPressTimer);
+                      setLongPressTimer(null);
+                    }
+                    if (draggedApp && hoverTarget && draggedApp.id !== hoverTarget) {
+                      if (app.isGroup && draggedApp.id !== app.id) {
+                        addToGroup(app.id, draggedApp.id);
+                      } else if (!draggedApp.isGroup && !app.isGroup && draggedApp.id !== app.id) {
+                        createGroup(draggedApp.id, app.id);
+                      }
+                    }
+                    setDraggedApp(null);
+                    setHoverTarget(null);
+                  };
+
+                  const handleTouchMove = (e) => {
+                    if (draggedApp) {
+                      const touch = e.touches[0];
+                      const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                      const appElement = element?.closest('[data-app-id]');
+                      if (appElement) {
+                        const targetId = appElement.getAttribute('data-app-id');
+                        setHoverTarget(targetId);
+                      }
+                    }
+                  };
 
                   return (
                     <Draggable key={app.id} draggableId={app.id} index={index}>
@@ -709,6 +743,9 @@ export default function CategoriesPage() {
                           {...provided.dragHandleProps}
                           className={isLocked ? 'opacity-40' : ''}
                           data-app-id={app.id}
+                          onTouchStart={handleTouchStart}
+                          onTouchEnd={handleTouchEnd}
+                          onTouchMove={handleTouchMove}
                         >
                           {app.isGroup ? (
                             <button
@@ -745,16 +782,16 @@ export default function CategoriesPage() {
                              {/* Enhanced spotlight effect on hover */}
                              <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-24 h-40 bg-gradient-to-t from-cyan-400/40 via-cyan-500/20 to-transparent opacity-0 group-hover:opacity-100 blur-2xl transition-opacity duration-300 pointer-events-none" />
 
-<div className={`w-16 h-16 rounded-2xl ${
-app.blackOnBlack 
-? 'bg-black border-black'
-: `bg-black/60 backdrop-blur-md border border-white/20 group-hover:border-cyan-400/40 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] ${
-isHovered ? 'border-cyan-400 shadow-[0_0_30px_rgba(6,182,212,0.6)] scale-110' : ''
-}`
+<div className={`w-12 h-12 rounded-2xl ${
+  app.blackOnBlack 
+    ? 'bg-black border-black'
+    : `bg-black/60 backdrop-blur-md border border-white/20 group-hover:border-cyan-400/40 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] ${
+        isHovered ? 'border-cyan-400 shadow-[0_0_30px_rgba(6,182,212,0.6)] scale-110' : ''
+      }`
 } flex items-center justify-center relative overflow-hidden transition-all duration-300 ${
-snapshot.isDragging ? 'shadow-2xl border-white/30' : ''
+  snapshot.isDragging ? 'shadow-2xl border-white/30' : ''
 }`}>
-{app.isGroup ? (
+  {app.isGroup ? (
     <div className="relative w-full h-full flex items-center justify-center">
       <div className="absolute inset-0 grid grid-cols-2 gap-0.5 p-1">
         {groups[app.id]?.apps.slice(0, 4).map((appId, idx) => {
@@ -786,21 +823,21 @@ snapshot.isDragging ? 'shadow-2xl border-white/30' : ''
           className="w-full h-full object-cover"
         />
       ) : (
-        <Icon className={`w-8 h-8 ${app.blackOnBlack ? 'text-black' : 'text-white/90'}`} strokeWidth={1.5} />
-        )}
-        </>
-        )}
-        {app.premium && (
-        <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-yellow-500/90 rounded-full flex items-center justify-center">
-        <Crown className="w-2.5 h-2.5 text-black" />
-        </div>
-        )}
-        </div>
-                               <span className="text-white/90 text-[11px] font-medium text-center line-clamp-1 w-full px-0.5 mt-0.5">
-                                 {app.name}
-                               </span>
-                               </motion.div>
-                               </button>
+        <Icon className={`w-6 h-6 ${app.blackOnBlack ? 'text-black' : 'text-white/90'}`} strokeWidth={1.5} />
+      )}
+    </>
+  )}
+  {app.premium && (
+    <div className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-yellow-500/90 rounded-full flex items-center justify-center">
+      <Crown className="w-2 h-2 text-black" />
+    </div>
+  )}
+</div>
+                              <span className="text-white/90 text-[9px] font-medium text-center line-clamp-1 w-full px-0.5">
+                                {app.name}
+                              </span>
+                              </motion.div>
+                              </button>
                               ) : (
                               <Link
                               to={createPageUrl(app.path)}
@@ -837,7 +874,7 @@ snapshot.isDragging ? 'shadow-2xl border-white/30' : ''
                               {/* Enhanced spotlight effect on hover */}
                               <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-24 h-40 bg-gradient-to-t from-cyan-400/40 via-cyan-500/20 to-transparent opacity-0 group-hover:opacity-100 blur-2xl transition-opacity duration-300 pointer-events-none" />
 
-                              <div className={`w-16 h-16 rounded-2xl ${
+                              <div className={`w-12 h-12 rounded-2xl ${
                                 app.blackOnBlack 
                                   ? 'bg-black border-black'
                                   : `bg-black/60 backdrop-blur-md border border-white/20 group-hover:border-cyan-400/40 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] ${
@@ -853,15 +890,15 @@ snapshot.isDragging ? 'shadow-2xl border-white/30' : ''
                                     className="w-full h-full object-cover"
                                   />
                                 ) : (
-                                  <Icon className={`w-8 h-8 ${app.blackOnBlack ? 'text-black' : 'text-white/90'}`} strokeWidth={1.5} />
-                                  )}
-                                  {app.premium && (
-                                  <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-yellow-500/90 rounded-full flex items-center justify-center">
-                                    <Crown className="w-2.5 h-2.5 text-black" />
+                                  <Icon className={`w-6 h-6 ${app.blackOnBlack ? 'text-black' : 'text-white/90'}`} strokeWidth={1.5} />
+                                )}
+                                {app.premium && (
+                                  <div className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-yellow-500/90 rounded-full flex items-center justify-center">
+                                    <Crown className="w-2 h-2 text-black" />
                                   </div>
-                                  )}
-                                  </div>
-                                  <span className="text-white/90 text-[11px] font-medium text-center line-clamp-1 w-full px-0.5 mt-0.5">
+                                )}
+                              </div>
+                              <span className="text-white/90 text-[9px] font-medium text-center line-clamp-1 w-full px-0.5">
                                 {app.name}
                               </span>
                               </motion.div>
