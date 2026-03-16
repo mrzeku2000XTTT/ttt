@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
     const words = convertBits(payload, 8, 5);
     const address = bech32mEncode(prefix, words);
     
-    const privateKeyHex = Buffer.from(derived.privateKey).toString('hex');
+    const privateKeyHex = Array.from(derived.privateKey).map(b => b.toString(16).padStart(2, '0')).join('');
     
     return Response.json({
       address,
