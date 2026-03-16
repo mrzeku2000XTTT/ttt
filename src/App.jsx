@@ -61,6 +61,7 @@ const AuthenticatedApp = () => {
           }
         />
       ))}
+      <Route path="/Hwork" element={<HworkPage />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
