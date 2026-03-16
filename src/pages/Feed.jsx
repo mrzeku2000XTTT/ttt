@@ -939,11 +939,8 @@ export default function FeedPage() {
     if (user) {
       walletAddress = user.created_wallet_address || walletAddress;
     }
-    
-    // Check manual address if no other wallet found
-    if (!walletAddress && manualKaspaAddress.trim()) {
-      walletAddress = manualKaspaAddress.trim();
-    }
+    if (!walletAddress) walletAddress = localStorage.getItem('ttt_wallet_address') || '';
+    if (!walletAddress && manualKaspaAddress.trim()) walletAddress = manualKaspaAddress.trim();
 
     // Allow if either wallet OR email exists
     if (!walletAddress && !userEmail) {
