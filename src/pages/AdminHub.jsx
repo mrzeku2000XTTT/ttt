@@ -6,6 +6,7 @@ import { Activity, Brain, Settings, FileText, Users, BarChart3, Shield, Network,
 
 const adminApps = [
   { name: "Hub", icon: Activity, path: "Hub", description: "Main admin dashboard", color: "from-cyan-500/20 to-blue-500/20", border: "border-cyan-500/30" },
+  { name: "TTT Visualizer", icon: Network, path: "TTT", description: "Network DAG Visualizer", color: "from-purple-500/20 to-pink-500/20", border: "border-purple-500/30" },
   { name: "AI Analytics", icon: Brain, path: "AIAnalytics", description: "AI usage & analytics", color: "from-purple-500/20 to-pink-500/20", border: "border-purple-500/30" },
   { name: "SSH Manager", icon: Settings, path: "SSHManager", description: "Manage SSH connections", color: "from-green-500/20 to-emerald-500/20", border: "border-green-500/30" },
   { name: "API Docs", icon: FileText, path: "APIDocumentation", description: "Internal API documentation", color: "from-yellow-500/20 to-orange-500/20", border: "border-yellow-500/30" },
