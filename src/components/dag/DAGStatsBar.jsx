@@ -1,5 +1,5 @@
 import React from "react";
-import { ArrowLeftRight, Box, Cpu, CircleDollarSign, Users, Pickaxe, Coins, Timer } from "lucide-react";
+import { Cpu, CircleDollarSign, Users, Pickaxe, Coins, Timer } from "lucide-react";
 
 export default function DAGStatsBar({ stats, isLive }) {
   return (
