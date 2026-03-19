@@ -73,9 +73,10 @@ export default function DAGVisualizerPage() {
         fetch(`${KASPA_API}/info/blockreward`).then((r) => r.json()).catch(() => null),
       ]);
 
-      const rawHashrate = typeof hashrateRes === "object"
-        ? (hashrateRes.hashrate ?? hashrateRes.networkHashesPerSecond ?? null)
-        : (typeof hashrateRes === "number" ? hashrateRes : null);
+      // API returns { hashrate: number } when stringOnly=false
+      const rawHashrate = hashrateRes
+        ? parseFloat(hashrateRes.hashrate ?? hashrateRes.networkHashesPerSecond ?? hashrateRes) || null
+        : null;
 
       // BPS from daaScore delta
       const currentDaa = parseInt(dagData.virtualDaaScore);
