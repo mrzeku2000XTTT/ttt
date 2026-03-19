@@ -22,6 +22,7 @@ export default function DAGVisualizerPage() {
   const [seenHashes] = useState(() => new Set());
   const [blockCount, setBlockCount] = useState(0);
   const [tps, setTps] = useState(null);
+  const [is3D, setIs3D] = useState(false);
 
   const lastFetchTimeRef = useRef(null);
   const lastBlockCountRef = useRef(0);
