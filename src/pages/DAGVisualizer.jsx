@@ -8,6 +8,15 @@ import { createPageUrl } from "@/utils";
 
 const KASPA_API = "https://api.kaspa.org";
 
+function formatHalving(ts) {
+  const ms = ts * 1000 - Date.now();
+  if (ms <= 0) return "Soon";
+  const d = Math.floor(ms / 86400000);
+  const h = Math.floor((ms % 86400000) / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  return `${d}d ${h}h ${m}m`;
+}
+
 const isMobileDevice = () =>
   /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
   (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1) ||
