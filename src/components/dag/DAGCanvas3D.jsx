@@ -359,22 +359,41 @@ export default function DAGCanvas3D({ blocks, isMobile }) {
 
     // Mouse drag
     const onDown = (e) => {
-      stateRef.current.drag = { active: true, lastX: e.clientX ?? e.touches?.[0]?.clientX, lastY: e.clientY ?? e.touches?.[0]?.clientY };
+      const touch = e.touches?.[0];
+      stateRef.current.drag = { active: true, lastX: touch ? touch.clientX : e.clientX, lastY: touch ? touch.clientY : e.clientY };
+      stateRef.current.pinchDist = null;
     };
     const onMove = (e) => {
       const s = stateRef.current;
+      // Pinch-to-zoom (2 fingers)
+      if (e.touches && e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (s.pinchDist !== null) {
+          const delta = s.pinchDist - dist;
+          s.zoom = Math.max(0.3, Math.min(5, s.zoom + delta * 0.005));
+        }
+        s.pinchDist = dist;
+        s.drag.active = false;
+        return;
+      }
       if (!s.drag.active) return;
-      const x = e.clientX ?? e.touches?.[0]?.clientX;
-      const y = e.clientY ?? e.touches?.[0]?.clientY;
+      const touch = e.touches?.[0];
+      const x = touch ? touch.clientX : e.clientX;
+      const y = touch ? touch.clientY : e.clientY;
       s.rotY += (x - s.drag.lastX) * 0.008;
       s.rotX += (y - s.drag.lastY) * 0.008;
       s.rotX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, s.rotX));
       s.drag.lastX = x;
       s.drag.lastY = y;
     };
-    const onUp = () => { stateRef.current.drag.active = false; };
+    const onUp = () => {
+      stateRef.current.drag.active = false;
+      stateRef.current.pinchDist = null;
+    };
     const onWheel = (e) => {
-      stateRef.current.zoom = Math.max(0.4, Math.min(3, stateRef.current.zoom + e.deltaY * 0.001));
+      stateRef.current.zoom = Math.max(0.3, Math.min(5, stateRef.current.zoom + e.deltaY * 0.002));
     };
 
     mount.addEventListener("mousedown", onDown);
@@ -382,7 +401,7 @@ export default function DAGCanvas3D({ blocks, isMobile }) {
     mount.addEventListener("mouseup", onUp);
     mount.addEventListener("mouseleave", onUp);
     mount.addEventListener("touchstart", onDown, { passive: true });
-    mount.addEventListener("touchmove", onMove, { passive: true });
+    mount.addEventListener("touchmove", onMove, { passive: false });
     mount.addEventListener("touchend", onUp);
     mount.addEventListener("wheel", onWheel, { passive: true });
 
