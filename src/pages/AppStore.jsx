@@ -99,7 +99,7 @@ export default function AppStorePage() {
     ];
 
   const getIconComponent = (iconName) => {
-    const icons = { Link2 };
+    const icons = { Link2, Shield };
     return icons[iconName] || Link2;
   };
 
