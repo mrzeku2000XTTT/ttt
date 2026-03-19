@@ -12,8 +12,6 @@ export default function DAGStatsBar({ stats, isLive }) {
 
       <div className="w-px h-4 bg-white/10 flex-shrink-0" />
 
-      <StatItem icon={<ArrowLeftRight className="w-3 h-3" />} label="TPS" value={stats.tps != null ? stats.tps.toLocaleString() : "—"} color="teal" />
-      <StatItem icon={<Box className="w-3 h-3" />} label="BPS" value={stats.bps != null ? stats.bps.toFixed(1) : "—"} color="teal" />
       <StatItem icon={<Cpu className="w-3 h-3" />} label="Hashrate" value={stats.hashrate ? formatHashrate(stats.hashrate) : "—"} color="teal" />
       <StatItem icon={<Users className="w-3 h-3" />} label="Nodes" value={stats.nodes ?? "—"} color="teal" />
       <StatItem icon={<Pickaxe className="w-3 h-3" />} label="Miners" value={stats.miners ?? "—"} color="teal" />
