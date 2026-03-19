@@ -186,7 +186,7 @@ export default function AppStorePage() {
                   whileTap={{ scale: 0.95 }}
                   className="flex flex-col items-center gap-2"
                 >
-                  <div className={`relative w-16 h-16 bg-white/5 backdrop-blur-xl border border-white/10 ${app.circular ? 'rounded-full' : 'rounded-xl'} flex items-center justify-center group-hover:bg-white/10 transition-all`}>
+                  <div className={`relative w-16 h-16 ${app.isBlack ? 'bg-black border-white/30' : 'bg-white/5 border-white/10'} backdrop-blur-xl border ${app.circular ? 'rounded-full' : 'rounded-xl'} flex items-center justify-center group-hover:bg-white/10 transition-all`}>
                     {app.premium && (
                       <Crown className="absolute -top-1 -right-1 w-3 h-3 text-yellow-400" />
                     )}
