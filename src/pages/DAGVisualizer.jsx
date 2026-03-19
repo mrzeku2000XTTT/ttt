@@ -204,43 +204,50 @@ export default function DAGVisualizerPage() {
   return (
     <div className="fixed inset-0 bg-black flex flex-col" style={{ fontFamily: "monospace" }}>
       {/* Top nav */}
-      <div className="flex items-center justify-between px-3 py-2 bg-black border-b border-teal-500/20 flex-shrink-0">
+      <div className="flex items-center justify-between px-2 py-2 bg-black border-b border-teal-500/20 flex-shrink-0">
         <div className="flex items-center gap-2">
-          <Link to={createPageUrl("AppStore")} className="text-white/40 hover:text-white transition-colors">
-            <ArrowLeft className="w-4 h-4" />
+          <Link
+            to={createPageUrl("AppStore")}
+            className="flex items-center justify-center w-10 h-10 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:text-white active:bg-white/10 transition-colors"
+            style={{ touchAction: "manipulation", minWidth: 40, minHeight: 40 }}
+          >
+            <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="flex items-center gap-1.5">
             <span className="text-teal-400 text-base">⬡</span>
-            <span className="text-teal-400 font-bold text-sm tracking-widest">DAG VISUALIZER</span>
+            <div>
+              <div className="text-teal-400 font-bold text-sm tracking-widest leading-none">DAG VISUALIZER</div>
+              <div className="text-white/30 text-[9px] font-mono">Kaspa Network • Live</div>
+            </div>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => setIs3D((v) => !v)}
-            className={`flex items-center gap-1 px-2.5 py-1.5 border rounded text-xs font-bold transition-colors min-w-[48px] justify-center ${
+            className={`flex items-center gap-1 px-3 py-2 border rounded-lg text-xs font-bold transition-colors min-w-[52px] justify-center ${
               is3D
                 ? "bg-teal-500/20 border-teal-500/60 text-teal-300"
                 : "bg-white/5 border-white/10 text-white/60 hover:text-white"
             }`}
-            style={{ touchAction: "manipulation" }}
+            style={{ touchAction: "manipulation", minHeight: 40 }}
           >
-            {is3D ? <Layers className="w-3 h-3 mr-1" /> : <Box className="w-3 h-3 mr-1" />}
+            {is3D ? <Layers className="w-3.5 h-3.5 mr-1" /> : <Box className="w-3.5 h-3.5 mr-1" />}
             {is3D ? "2D" : "3D"}
           </button>
           <button
             onClick={() => setPaused((p) => !p)}
-            className="flex items-center justify-center w-8 h-8 bg-white/5 border border-white/10 rounded text-white/60 hover:text-white transition-colors"
+            className="flex items-center justify-center w-10 h-10 bg-white/5 border border-white/10 rounded-lg text-white/60 hover:text-white transition-colors"
             style={{ touchAction: "manipulation" }}
           >
-            {paused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
+            {paused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
           </button>
           <button
             onClick={() => { fetchBlocks(); fetchStats(); }}
-            className="flex items-center justify-center w-8 h-8 bg-white/5 border border-white/10 rounded text-white/60 hover:text-white transition-colors"
+            className="flex items-center justify-center w-10 h-10 bg-white/5 border border-white/10 rounded-lg text-white/60 hover:text-white transition-colors"
             style={{ touchAction: "manipulation" }}
           >
-            <RefreshCw className="w-3 h-3" />
+            <RefreshCw className="w-4 h-4" />
           </button>
           <div className="hidden sm:flex items-center gap-1 text-xs">
             <span className="text-white/20">SEEN:</span>
