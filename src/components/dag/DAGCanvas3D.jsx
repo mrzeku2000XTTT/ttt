@@ -15,6 +15,7 @@ export default function DAGCanvas3D({ blocks, isMobile }) {
     seenIds: new Set(),
     time: 0,
     drag: { active: false, lastX: 0, lastY: 0 },
+    pinchDist: null,
     rotX: 0.3,
     rotY: 0,
     zoom: 1,
