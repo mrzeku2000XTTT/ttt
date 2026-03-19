@@ -118,6 +118,9 @@ export default function AppStorePage() {
       if (app.name === "Arh'tuun" && !isAdmin) {
         return false;
       }
+      if (app.adminOnly && !isAdmin) {
+        return false;
+      }
       return true;
     });
 
