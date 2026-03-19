@@ -55,6 +55,7 @@ import AYOMUIZ from './pages/AYOMUIZ';
 import AYOMUIZ2 from './pages/AYOMUIZ2';
 import AYOMUIZHub from './pages/AYOMUIZHub';
 import About from './pages/About';
+import AppStore from './pages/AppStore';
 import AgentFYE from './pages/AgentFYE';
 import AgentZK from './pages/AgentZK';
 import AgentZK2 from './pages/AgentZK2';
@@ -62,7 +63,6 @@ import AgentZKChat from './pages/AgentZKChat';
 import AgentZKDirectory from './pages/AgentZKDirectory';
 import AgentZKProfile from './pages/AgentZKProfile';
 import Analytics from './pages/Analytics';
-import AppStore from './pages/AppStore';
 import Arcade from './pages/Arcade';
 import Area51 from './pages/Area51';
 import Arhtuun from './pages/Arhtuun';
@@ -137,6 +137,7 @@ import Hercules from './pages/Hercules';
 import History from './pages/History';
 import Home from './pages/Home';
 import Hub from './pages/Hub';
+import Hwork from './pages/Hwork';
 import IOS from './pages/IOS';
 import IWork from './pages/IWork';
 import ImageHistory from './pages/ImageHistory';
@@ -185,8 +186,8 @@ import Landing from './pages/Landing';
 import LearnMore from './pages/LearnMore';
 import Learning from './pages/Learning';
 import Life from './pages/Life';
-import Lobby from './pages/Lobby';
 import LinkChecker from './pages/LinkChecker';
+import Lobby from './pages/Lobby';
 import MMN from './pages/MMN';
 import MODZ from './pages/MODZ';
 import MODZHub from './pages/MODZHub';
@@ -241,7 +242,6 @@ import St from './pages/St';
 import StateOfMind from './pages/StateOfMind';
 import Subscription from './pages/Subscription';
 import TD from './pages/TD';
-import TTT from './pages/TTT';
 import TTTAudit from './pages/TTTAudit';
 import TTTClassic from './pages/TTTClassic';
 import TTTIDProfile from './pages/TTTIDProfile';
@@ -255,6 +255,7 @@ import Terra from './pages/Terra';
 import TestJobAPI from './pages/TestJobAPI';
 import TestKaspaAPI from './pages/TestKaspaAPI';
 import TestZelcore from './pages/TestZelcore';
+import Tester from './pages/Tester';
 import TetrisBattle from './pages/TetrisBattle';
 import TheRealm from './pages/TheRealm';
 import TikTokWorkflow from './pages/TikTokWorkflow';
@@ -287,7 +288,8 @@ import ZKVault from './pages/ZKVault';
 import ZKWallet from './pages/ZKWallet';
 import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
-import Tester from './pages/Tester';
+import TTT from './pages/TTT';
+import DAGVisualizer from './pages/DAGVisualizer';
 import __Layout from './Layout.jsx';
 
 
@@ -300,6 +302,7 @@ export const PAGES = {
     "AYOMUIZ2": AYOMUIZ2,
     "AYOMUIZHub": AYOMUIZHub,
     "About": About,
+    "AppStore": AppStore,
     "AgentFYE": AgentFYE,
     "AgentZK": AgentZK,
     "AgentZK2": AgentZK2,
@@ -307,7 +310,6 @@ export const PAGES = {
     "AgentZKDirectory": AgentZKDirectory,
     "AgentZKProfile": AgentZKProfile,
     "Analytics": Analytics,
-    "AppStore": AppStore,
     "Arcade": Arcade,
     "Area51": Area51,
     "Arhtuun": Arhtuun,
@@ -382,6 +384,7 @@ export const PAGES = {
     "History": History,
     "Home": Home,
     "Hub": Hub,
+    "Hwork": Hwork,
     "IOS": IOS,
     "IWork": IWork,
     "ImageHistory": ImageHistory,
@@ -430,8 +433,8 @@ export const PAGES = {
     "LearnMore": LearnMore,
     "Learning": Learning,
     "Life": Life,
-    "Lobby": Lobby,
     "LinkChecker": LinkChecker,
+    "Lobby": Lobby,
     "MMN": MMN,
     "MODZ": MODZ,
     "MODZHub": MODZHub,
@@ -486,7 +489,6 @@ export const PAGES = {
     "StateOfMind": StateOfMind,
     "Subscription": Subscription,
     "TD": TD,
-    "TTT": TTT,
     "TTTAudit": TTTAudit,
     "TTTClassic": TTTClassic,
     "TTTIDProfile": TTTIDProfile,
@@ -500,6 +502,7 @@ export const PAGES = {
     "TestJobAPI": TestJobAPI,
     "TestKaspaAPI": TestKaspaAPI,
     "TestZelcore": TestZelcore,
+    "Tester": Tester,
     "TetrisBattle": TetrisBattle,
     "TheRealm": TheRealm,
     "TikTokWorkflow": TikTokWorkflow,
@@ -532,11 +535,12 @@ export const PAGES = {
     "ZKWallet": ZKWallet,
     "ZekuAI": ZekuAI,
     "Zelcore": Zelcore,
-    "Tester": Tester,
+    "TTT": TTT,
+    "DAGVisualizer": DAGVisualizer,
 }
 
 export const pagesConfig = {
-    mainPage: "Home",
+    mainPage: "AIAnalytics",
     Pages: PAGES,
     Layout: __Layout,
 };

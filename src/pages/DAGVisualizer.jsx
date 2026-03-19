@@ -53,18 +53,27 @@ export default function DAGVisualizerPage() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const [dagData, hashrateRes, priceRes] = await Promise.all([
+      const [dagData, hashrateRes, priceRes, networkTpsRes, mempoolRes] = await Promise.all([
         fetch(`${KASPA_API}/info/blockdag`).then((r) => r.json()),
-        fetch(`${KASPA_API}/info/hashrate`).then((r) => r.json()),
+        fetch(`${KASPA_API}/info/hashrate?stringOnly=false`).then((r) => r.json()),
         fetch(`${KASPA_API}/info/price`).then((r) => r.json()),
+        fetch(`${KASPA_API}/info/virtual-chain-blue-score`).then((r) => r.json()).catch(() => null),
+        fetch(`${KASPA_API}/info/mempool-size`).then((r) => r.json()).catch(() => null),
       ]);
+
+      // Hashrate can come back as { hashrate: number } or just a number
+      const rawHashrate = typeof hashrateRes === "object" ? (hashrateRes.hashrate ?? hashrateRes.networkHashesPerSecond) : hashrateRes;
 
       setStats({
         blockCount: parseInt(dagData.blockCount),
         blueScore: parseInt(dagData.virtualDaaScore),
-        hashrate: hashrateRes.hashrate,
+        hashrate: rawHashrate,
         price: priceRes.price,
         tipCount: dagData.tipHashes?.length || 0,
+        networkTps: dagData.blockCount && dagData.virtualDaaScore
+          ? parseFloat((parseInt(dagData.blockCount) / parseInt(dagData.virtualDaaScore) * 1000).toFixed(1))
+          : null,
+        mempoolSize: mempoolRes?.mempoolSize ?? mempoolRes?.size ?? null,
       });
     } catch (err) {
       console.error("Stats error:", err);
