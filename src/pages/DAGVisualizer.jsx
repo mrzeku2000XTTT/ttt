@@ -56,31 +56,43 @@ export default function DAGVisualizerPage() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const [dagData, hashrateRes, priceRes, mempoolRes] = await Promise.all([
+      const [dagData, hashrateRes, priceRes, coinSupplyRes, blockRewardRes] = await Promise.all([
         fetch(`${KASPA_API}/info/blockdag`).then((r) => r.json()),
         fetch(`${KASPA_API}/info/hashrate?stringOnly=false`).then((r) => r.json()),
         fetch(`${KASPA_API}/info/price`).then((r) => r.json()),
-        fetch(`${KASPA_API}/info/mempool-size`).then((r) => r.json()).catch(() => null),
+        fetch(`${KASPA_API}/info/coinsupply`).then((r) => r.json()).catch(() => null),
+        fetch(`${KASPA_API}/info/blockreward`).then((r) => r.json()).catch(() => null),
       ]);
 
-      // Hashrate: API returns { hashrate: <H/s as number> }
       const rawHashrate = typeof hashrateRes === "object"
         ? (hashrateRes.hashrate ?? hashrateRes.networkHashesPerSecond ?? null)
         : (typeof hashrateRes === "number" ? hashrateRes : null);
 
-      // Real BPS from DAG: measure daaScore delta over time
+      // BPS from daaScore delta
       const currentDaa = parseInt(dagData.virtualDaaScore);
       const now = Date.now();
-      let networkTps = null;
+      let bps = null;
       if (lastDaaScoreRef.current && lastDaaTimeRef.current) {
-        const daaElapsed = (now - lastDaaTimeRef.current) / 1000;
-        const daaDelta = currentDaa - lastDaaScoreRef.current;
-        if (daaElapsed > 0 && daaDelta > 0) {
-          networkTps = parseFloat((daaDelta / daaElapsed).toFixed(2));
+        const elapsed = (now - lastDaaTimeRef.current) / 1000;
+        const delta = currentDaa - lastDaaScoreRef.current;
+        if (elapsed > 0 && delta > 0) {
+          bps = parseFloat((delta / elapsed).toFixed(1));
         }
       }
       lastDaaScoreRef.current = currentDaa;
       lastDaaTimeRef.current = now;
+
+      // Circulating supply in KAS (API returns sompi: 1 KAS = 1e8 sompi)
+      const circulatingRaw = coinSupplyRes?.circulatingSupply ?? coinSupplyRes?.circulatingsupply ?? null;
+      const circulating = circulatingRaw ? circulatingRaw / 1e8 : null;
+
+      // Block reward in KAS
+      const blockReward = blockRewardRes?.blockreward ?? blockRewardRes?.blockReward ?? null;
+
+      // Next halving countdown
+      const halvingInfo = dagData.nextHalvingTimestamp
+        ? formatHalving(dagData.nextHalvingTimestamp)
+        : null;
 
       setStats((prev) => ({
         blockCount: parseInt(dagData.blockCount),
@@ -88,8 +100,10 @@ export default function DAGVisualizerPage() {
         hashrate: rawHashrate,
         price: priceRes.price,
         tipCount: dagData.tipHashes?.length || 0,
-        networkTps: networkTps ?? prev.networkTps ?? null,
-        mempoolSize: mempoolRes?.mempoolSize ?? mempoolRes?.size ?? null,
+        bps: bps ?? prev.bps ?? null,
+        circulating,
+        blockReward,
+        nextHalving: halvingInfo,
       }));
     } catch (err) {
       console.error("Stats error:", err);
