@@ -67,7 +67,7 @@ export default function DAGVisualizerPage() {
     try {
       const [dagData, hashrateRes, priceRes, coinSupplyRes, blockRewardRes] = await Promise.all([
         fetch(`${KASPA_API}/info/blockdag`).then((r) => r.json()),
-        fetch(`${KASPA_API}/info/hashrate?stringOnly=false`).then((r) => r.json()),
+        fetch(`${KASPA_API}/info/hashrate?stringOnly=false`).then((r) => r.json()).catch(() => null),
         fetch(`${KASPA_API}/info/price`).then((r) => r.json()),
         fetch(`${KASPA_API}/info/coinsupply`).then((r) => r.json()).catch(() => null),
         fetch(`${KASPA_API}/info/blockreward`).then((r) => r.json()).catch(() => null),
