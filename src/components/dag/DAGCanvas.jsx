@@ -203,6 +203,65 @@ export default function DAGCanvas({ blocks, isMobile }) {
     const MAX_BLOCKS = isMobile ? 60 : 150;
     if (s.blocks.length > MAX_BLOCKS) s.blocks = s.blocks.slice(-MAX_BLOCKS);
 
+    // ── Orbiting satellites ──────────────────────────────────────────────────
+    const SAT_COUNT = isMobile ? 4 : 7;
+    const orbitA = Math.min(W, H) * 0.28;
+    const orbitB = Math.min(W, H) * 0.17;
+    for (let i = 0; i < SAT_COUNT; i++) {
+      const baseAngle = (i / SAT_COUNT) * TWO_PI;
+      const speed = 0.35 + (i % 3) * 0.18;
+      const dir = i % 2 === 0 ? 1 : -1;
+      const a = baseAngle + s.time * speed * dir;
+      const sx = cx + Math.cos(a) * orbitA;
+      const sy = cy + Math.sin(a) * orbitB;
+      const isChainSat = i % 3 === 0;
+      const satR = isChainSat ? (isMobile ? 4 : 7) : (isMobile ? 3 : 5);
+      const satHue = isChainSat ? 160 : 200 + i * 15;
+      const satAlpha = 0.7 + 0.3 * Math.sin(s.time * 2.5 + i);
+
+      // Orbit trail
+      const trailSteps = isMobile ? 12 : 22;
+      for (let t = 1; t <= trailSteps; t++) {
+        const ta2 = a - dir * (t / trailSteps) * 0.7;
+        const tx = cx + Math.cos(ta2) * orbitA;
+        const ty = cy + Math.sin(ta2) * orbitB;
+        const tf = (1 - t / trailSteps) * 0.35 * satAlpha;
+        ctx.beginPath();
+        ctx.arc(tx, ty, satR * 0.4, 0, TWO_PI);
+        ctx.fillStyle = isChainSat ? `rgba(0,255,190,${tf})` : `rgba(0,160,255,${tf})`;
+        ctx.fill();
+      }
+
+      // Glow
+      const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, satR * 3);
+      sg.addColorStop(0, isChainSat ? `rgba(0,255,190,${0.5 * satAlpha})` : `rgba(0,160,255,${0.4 * satAlpha})`);
+      sg.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = sg;
+      ctx.beginPath();
+      ctx.arc(sx, sy, satR * 3, 0, TWO_PI);
+      ctx.fill();
+
+      // Body
+      ctx.globalAlpha = satAlpha;
+      ctx.beginPath();
+      ctx.arc(sx, sy, satR, 0, TWO_PI);
+      ctx.fillStyle = `hsl(${satHue},100%,65%)`;
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.5)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      // Ring around satellite (chain ones)
+      if (isChainSat) {
+        ctx.beginPath();
+        ctx.ellipse(sx, sy, satR * 2.2, satR * 0.8, a + Math.PI / 4, 0, TWO_PI);
+        ctx.strokeStyle = `rgba(0,255,190,${0.25 * satAlpha})`;
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+      }
+    }
+
     // ── Center portal core ───────────────────────────────────────────────────
     const coreSize = 6 + 3 * Math.sin(s.time * 5);
     const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreSize * 2);
