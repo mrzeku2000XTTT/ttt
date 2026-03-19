@@ -192,28 +192,30 @@ export default function DAGVisualizerPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setPaused((p) => !p)}
-            className="flex items-center gap-1 px-2 py-1 bg-white/5 border border-white/10 rounded text-white/60 hover:text-white text-xs transition-colors"
-          >
-            {paused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
-            <span className="hidden sm:inline">{paused ? "Resume" : "Pause"}</span>
-          </button>
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => setIs3D((v) => !v)}
-            className={`flex items-center gap-1 px-2 py-1 border rounded text-xs font-bold transition-colors ${
+            className={`flex items-center gap-1 px-2.5 py-1.5 border rounded text-xs font-bold transition-colors min-w-[48px] justify-center ${
               is3D
                 ? "bg-teal-500/20 border-teal-500/60 text-teal-300"
                 : "bg-white/5 border-white/10 text-white/60 hover:text-white"
             }`}
+            style={{ touchAction: "manipulation" }}
           >
-            {is3D ? <Layers className="w-3 h-3" /> : <Box className="w-3 h-3" />}
+            {is3D ? <Layers className="w-3 h-3 mr-1" /> : <Box className="w-3 h-3 mr-1" />}
             {is3D ? "2D" : "3D"}
           </button>
           <button
+            onClick={() => setPaused((p) => !p)}
+            className="flex items-center justify-center w-8 h-8 bg-white/5 border border-white/10 rounded text-white/60 hover:text-white transition-colors"
+            style={{ touchAction: "manipulation" }}
+          >
+            {paused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
+          </button>
+          <button
             onClick={() => { fetchBlocks(); fetchStats(); }}
-            className="p-1.5 bg-white/5 border border-white/10 rounded text-white/60 hover:text-white transition-colors"
+            className="flex items-center justify-center w-8 h-8 bg-white/5 border border-white/10 rounded text-white/60 hover:text-white transition-colors"
+            style={{ touchAction: "manipulation" }}
           >
             <RefreshCw className="w-3 h-3" />
           </button>
