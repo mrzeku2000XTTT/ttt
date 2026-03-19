@@ -51,30 +51,46 @@ export default function DAGVisualizerPage() {
     return data;
   }, []);
 
+  const lastDaaScoreRef = useRef(null);
+  const lastDaaTimeRef = useRef(null);
+
   const fetchStats = useCallback(async () => {
     try {
-      const [dagData, hashrateRes, priceRes, networkTpsRes, mempoolRes] = await Promise.all([
+      const [dagData, hashrateRes, priceRes, mempoolRes] = await Promise.all([
         fetch(`${KASPA_API}/info/blockdag`).then((r) => r.json()),
         fetch(`${KASPA_API}/info/hashrate?stringOnly=false`).then((r) => r.json()),
         fetch(`${KASPA_API}/info/price`).then((r) => r.json()),
-        fetch(`${KASPA_API}/info/virtual-chain-blue-score`).then((r) => r.json()).catch(() => null),
         fetch(`${KASPA_API}/info/mempool-size`).then((r) => r.json()).catch(() => null),
       ]);
 
-      // Hashrate can come back as { hashrate: number } or just a number
-      const rawHashrate = typeof hashrateRes === "object" ? (hashrateRes.hashrate ?? hashrateRes.networkHashesPerSecond) : hashrateRes;
+      // Hashrate: API returns { hashrate: <H/s as number> }
+      const rawHashrate = typeof hashrateRes === "object"
+        ? (hashrateRes.hashrate ?? hashrateRes.networkHashesPerSecond ?? null)
+        : (typeof hashrateRes === "number" ? hashrateRes : null);
 
-      setStats({
+      // Real BPS from DAG: measure daaScore delta over time
+      const currentDaa = parseInt(dagData.virtualDaaScore);
+      const now = Date.now();
+      let networkTps = null;
+      if (lastDaaScoreRef.current && lastDaaTimeRef.current) {
+        const daaElapsed = (now - lastDaaTimeRef.current) / 1000;
+        const daaDelta = currentDaa - lastDaaScoreRef.current;
+        if (daaElapsed > 0 && daaDelta > 0) {
+          networkTps = parseFloat((daaDelta / daaElapsed).toFixed(2));
+        }
+      }
+      lastDaaScoreRef.current = currentDaa;
+      lastDaaTimeRef.current = now;
+
+      setStats((prev) => ({
         blockCount: parseInt(dagData.blockCount),
-        blueScore: parseInt(dagData.virtualDaaScore),
+        blueScore: currentDaa,
         hashrate: rawHashrate,
         price: priceRes.price,
         tipCount: dagData.tipHashes?.length || 0,
-        networkTps: dagData.blockCount && dagData.virtualDaaScore
-          ? parseFloat((parseInt(dagData.blockCount) / parseInt(dagData.virtualDaaScore) * 1000).toFixed(1))
-          : null,
+        networkTps: networkTps ?? prev.networkTps ?? null,
         mempoolSize: mempoolRes?.mempoolSize ?? mempoolRes?.size ?? null,
-      });
+      }));
     } catch (err) {
       console.error("Stats error:", err);
     }
