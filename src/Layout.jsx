@@ -233,8 +233,9 @@ export default function Layout({ children, currentPageName }) {
   const isFluxKmailPage = currentPageName === "FluxKmail";
   const isTerraPage = currentPageName === "Terra";
   const isRufzeitKCallPage = currentPageName === "RufzeitKCall";
+  const isDAGVisualizerPage = currentPageName === "DAGVisualizer";
 
-  if (isHomePage || isLobbyPage || isEarthPage || isCountryDetailPage || isKonektPage || isArea51Page || isTheRealmPage || isTruthLandingPage || isUNIPage || isShiLLzPage || isOliviaAppsPage || isB44PromptsPage || isWindowPage || isImageHistoryPage || isKaSkoolPage || isKaSkoolProfilePage || isCoursesPage || isNextdoorPage || isFluxKmailPage || isTerraPage || isRufzeitKCallPage) {
+  if (isHomePage || isLobbyPage || isEarthPage || isCountryDetailPage || isKonektPage || isArea51Page || isTheRealmPage || isTruthLandingPage || isUNIPage || isShiLLzPage || isOliviaAppsPage || isB44PromptsPage || isWindowPage || isImageHistoryPage || isKaSkoolPage || isKaSkoolProfilePage || isCoursesPage || isNextdoorPage || isFluxKmailPage || isTerraPage || isRufzeitKCallPage || isDAGVisualizerPage) {
     return (
       <React.Suspense fallback={<div className="min-h-screen bg-black" />}>
         <VideoPlayerProvider>
