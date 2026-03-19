@@ -279,6 +279,7 @@ export default function DAGCanvas3D({ blocks, isMobile }) {
       if (d.age > d.maxAge) {
         s.scene.remove(mesh);
         if (d.trail) s.scene.remove(d.trail);
+        if (d.aura) s.scene.remove(d.aura);
         return false;
       }
 
