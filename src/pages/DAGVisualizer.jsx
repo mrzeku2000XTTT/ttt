@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import DAGCanvas from "@/components/dag/DAGCanvas";
+import DAGCanvas3D from "@/components/dag/DAGCanvas3D";
 import DAGStatsBar from "@/components/dag/DAGStatsBar";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Pause, Play, RefreshCw } from "lucide-react";
+import { ArrowLeft, Pause, Play, RefreshCw, Box, Layers } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
 const KASPA_API = "https://api.kaspa.org";
