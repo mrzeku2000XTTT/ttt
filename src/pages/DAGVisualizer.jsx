@@ -199,7 +199,7 @@ export default function DAGVisualizerPage() {
     };
   }, [fetchBlocks, fetchStats, isMobile]);
 
-  const combinedStats = { ...stats, tps };
+  const combinedStats = { ...stats, tps: tps ?? stats.tps };
 
   return (
     <div className="fixed inset-0 bg-black flex flex-col" style={{ fontFamily: "monospace" }}>
