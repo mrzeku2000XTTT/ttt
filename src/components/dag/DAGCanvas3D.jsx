@@ -12,8 +12,8 @@ export default function DAGCanvas3D({ blocks, isMobile }) {
     wormholeRings: [],
     satellites: [],
     newBlocks: [],
+    seenIds: new Set(),
     time: 0,
-    mouse: { x: 0, y: 0 },
     drag: { active: false, lastX: 0, lastY: 0 },
     rotX: 0.3,
     rotY: 0,
@@ -23,7 +23,13 @@ export default function DAGCanvas3D({ blocks, isMobile }) {
 
   useEffect(() => {
     if (!blocks?.length) return;
-    stateRef.current.newBlocks.push(...blocks);
+    const s = stateRef.current;
+    blocks.forEach((block) => {
+      const id = block.blockHash || block.header?.hashMerkleRoot;
+      if (id && s.seenIds.has(id)) return;
+      if (id) s.seenIds.add(id);
+      s.newBlocks.push(block);
+    });
   }, [blocks]);
 
   const init = useCallback(() => {
