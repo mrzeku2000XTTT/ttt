@@ -6,8 +6,6 @@ import { ArrowLeft, Pause, Play, RefreshCw } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
 const KASPA_API = "https://api.kaspa.org";
-const POLL_INTERVAL_MS = 1500; // 1.5s desktop
-const MOBILE_POLL_MS = 3000;
 
 const isMobileDevice = () =>
   /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
@@ -20,166 +18,221 @@ export default function DAGVisualizerPage() {
   const [isLive, setIsLive] = useState(false);
   const [paused, setPaused] = useState(false);
   const [isMobile] = useState(isMobileDevice);
+  const [seenHashes] = useState(() => new Set());
   const [blockCount, setBlockCount] = useState(0);
+  const [tps, setTps] = useState(null);
 
-  const lastBlueScoreRef = useRef(null);
-  const pollRef = useRef(null);
-  const tpsHistoryRef = useRef([]);
+  const lastFetchTimeRef = useRef(null);
+  const lastBlockCountRef = useRef(0);
+  const tipHashRef = useRef(null);
+
+  // Step 1: fetch DAG info to get live tip hashes + stats
+  const fetchDAGInfo = useCallback(async () => {
+    const res = await fetch(`${KASPA_API}/info/blockdag`);
+    const data = await res.json();
+    return data;
+  }, []);
+
+  // Step 2: given a tipHash, get a list of recent blockHashes
+  const fetchBlockHashes = useCallback(async (tipHash, limit = 20) => {
+    const res = await fetch(
+      `${KASPA_API}/blocks?lowHash=${tipHash}&includeTransactions=false&limit=${limit}`
+    );
+    const data = await res.json();
+    return data.blockHashes || [];
+  }, []);
+
+  // Step 3: fetch individual block header (lightweight, no transactions)
+  const fetchBlockHeader = useCallback(async (hash) => {
+    const res = await fetch(`${KASPA_API}/blocks/${hash}`);
+    const data = await res.json();
+    return data;
+  }, []);
 
   const fetchStats = useCallback(async () => {
     try {
-      const [dagRes, hashrateRes, priceRes] = await Promise.all([
+      const [dagData, hashrateRes, priceRes] = await Promise.all([
         fetch(`${KASPA_API}/info/blockdag`).then((r) => r.json()),
         fetch(`${KASPA_API}/info/hashrate`).then((r) => r.json()),
         fetch(`${KASPA_API}/info/price`).then((r) => r.json()),
       ]);
 
-      setStats((prev) => ({
-        ...prev,
-        blockCount: dagRes.blockCount,
-        blueScore: dagRes.virtualDaaScore,
-        networkTps: dagRes.networkTPS ? Math.round(dagRes.networkTPS) : prev.networkTps,
+      setStats({
+        blockCount: parseInt(dagData.blockCount),
+        blueScore: parseInt(dagData.virtualDaaScore),
         hashrate: hashrateRes.hashrate,
         price: priceRes.price,
-        mempoolSize: dagRes.mempoolSize,
-      }));
+        tipCount: dagData.tipHashes?.length || 0,
+      });
     } catch (err) {
-      console.error("Stats fetch error:", err);
+      console.error("Stats error:", err);
     }
   }, []);
 
   const fetchBlocks = useCallback(async () => {
     if (paused) return;
+
     try {
-      const limit = isMobile ? 5 : 20;
-      const res = await fetch(`${KASPA_API}/blocks?lowHash=&includeTransactions=false&limit=${limit}`);
-      const data = await res.json();
+      // Get current DAG tips
+      const dagData = await fetchDAGInfo();
+      const tipHashes = dagData.tipHashes || dagData.virtualParentHashes || [];
+      if (!tipHashes.length) return;
 
-      if (!data || !Array.isArray(data.blocks)) return;
+      // Use the first tip as our lowHash anchor
+      const anchorHash = tipHashes[0];
+      tipHashRef.current = anchorHash;
 
-      const newBlocks = data.blocks;
+      // Get recent block hashes (fewer on mobile)
+      const limit = isMobile ? 15 : 40;
+      const hashes = await fetchBlockHashes(anchorHash, limit);
 
-      // TPS estimation from block timestamps
-      if (newBlocks.length >= 2) {
-        const now = Date.now();
-        tpsHistoryRef.current.push({ time: now, count: newBlocks.length });
-        // Keep last 10 samples
-        if (tpsHistoryRef.current.length > 10) tpsHistoryRef.current.shift();
-
-        if (tpsHistoryRef.current.length >= 2) {
-          const oldest = tpsHistoryRef.current[0];
-          const newest = tpsHistoryRef.current[tpsHistoryRef.current.length - 1];
-          const elapsed = (newest.time - oldest.time) / 1000;
-          const totalTx = tpsHistoryRef.current.reduce((a, b) => a + b.count, 0);
-          const tps = elapsed > 0 ? Math.round(totalTx / elapsed) : 0;
-          setStats((prev) => ({ ...prev, tps }));
-        }
+      // Only fetch blocks we haven't seen yet
+      const newHashes = hashes.filter((h) => !seenHashes.has(h));
+      if (!newHashes.length) {
+        setIsLive(true);
+        return;
       }
 
-      setBlocks(newBlocks);
-      setBlockCount((c) => c + newBlocks.length);
-      setIsLive(true);
+      // Fetch up to N individual block headers (API rate limiting friendly)
+      const toFetch = newHashes.slice(0, isMobile ? 5 : 12);
+      const blockResults = await Promise.allSettled(
+        toFetch.map((h) => fetchBlockHeader(h))
+      );
+
+      const fetchedBlocks = blockResults
+        .filter((r) => r.status === "fulfilled" && r.value?.header)
+        .map((r) => r.value);
+
+      // Mark all as seen
+      hashes.forEach((h) => seenHashes.add(h));
+      // Keep set size bounded
+      if (seenHashes.size > 2000) {
+        const arr = Array.from(seenHashes);
+        arr.slice(0, 500).forEach((h) => seenHashes.delete(h));
+      }
+
+      // TPS calculation
+      const now = Date.now();
+      if (lastFetchTimeRef.current && fetchedBlocks.length > 0) {
+        const elapsed = (now - lastFetchTimeRef.current) / 1000;
+        const rawTps = fetchedBlocks.length / elapsed;
+        setTps((prev) => {
+          if (prev === null) return Math.round(rawTps);
+          return Math.round(prev * 0.7 + rawTps * 0.3); // smoothed
+        });
+      }
+      lastFetchTimeRef.current = now;
+      lastBlockCountRef.current += fetchedBlocks.length;
+      setBlockCount(lastBlockCountRef.current);
+
+      if (fetchedBlocks.length > 0) {
+        setBlocks(fetchedBlocks);
+        setIsLive(true);
+      }
     } catch (err) {
       console.error("Block fetch error:", err);
       setIsLive(false);
     }
-  }, [paused, isMobile]);
+  }, [paused, isMobile, fetchDAGInfo, fetchBlockHashes, fetchBlockHeader, seenHashes]);
 
   useEffect(() => {
     fetchStats();
     fetchBlocks();
 
-    const interval = isMobile ? MOBILE_POLL_MS : POLL_INTERVAL_MS;
-    const blockPoll = setInterval(fetchBlocks, interval);
-    const statsPoll = setInterval(fetchStats, 5000);
-
-    pollRef.current = { blockPoll, statsPoll };
+    const POLL = isMobile ? 3000 : 1800;
+    const blockInterval = setInterval(fetchBlocks, POLL);
+    const statsInterval = setInterval(fetchStats, 6000);
 
     return () => {
-      clearInterval(blockPoll);
-      clearInterval(statsPoll);
+      clearInterval(blockInterval);
+      clearInterval(statsInterval);
     };
   }, [fetchBlocks, fetchStats, isMobile]);
+
+  const combinedStats = { ...stats, tps };
 
   return (
     <div className="fixed inset-0 bg-black flex flex-col" style={{ fontFamily: "monospace" }}>
       {/* Top nav */}
-      <div className="flex items-center justify-between px-4 py-2 bg-black border-b border-teal-500/20 flex-shrink-0">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between px-3 py-2 bg-black border-b border-teal-500/20 flex-shrink-0">
+        <div className="flex items-center gap-2">
           <Link to={createPageUrl("AppStore")} className="text-white/40 hover:text-white transition-colors">
             <ArrowLeft className="w-4 h-4" />
           </Link>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 border border-teal-500/50 rounded flex items-center justify-center">
-              <span className="text-teal-400 text-xs">⬡</span>
-            </div>
-            <span className="text-teal-400 font-bold text-sm tracking-widest uppercase">DAG Visualizer</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-teal-400 text-base">⬡</span>
+            <span className="text-teal-400 font-bold text-sm tracking-widest">DAG VISUALIZER</span>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => setPaused((p) => !p)}
-            className="flex items-center gap-1.5 px-3 py-1 bg-white/5 border border-white/10 rounded text-white/60 hover:text-white text-xs transition-colors"
+            className="flex items-center gap-1 px-2 py-1 bg-white/5 border border-white/10 rounded text-white/60 hover:text-white text-xs transition-colors"
           >
             {paused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
-            {paused ? "Resume" : "Pause"}
+            <span className="hidden sm:inline">{paused ? "Resume" : "Pause"}</span>
           </button>
           <button
             onClick={() => { fetchBlocks(); fetchStats(); }}
-            className="flex items-center gap-1.5 px-3 py-1 bg-white/5 border border-white/10 rounded text-white/60 hover:text-white text-xs transition-colors"
+            className="p-1.5 bg-white/5 border border-white/10 rounded text-white/60 hover:text-white transition-colors"
           >
             <RefreshCw className="w-3 h-3" />
           </button>
-          <div className="hidden sm:flex items-center gap-2 text-white/30 text-xs">
-            <span className="text-white/20">BLOCKS SEEN:</span>
+          <div className="hidden sm:flex items-center gap-1 text-xs">
+            <span className="text-white/20">SEEN:</span>
             <span className="text-teal-400 font-bold">{blockCount.toLocaleString()}</span>
           </div>
         </div>
       </div>
 
       {/* Stats bar */}
-      <DAGStatsBar stats={stats} isLive={isLive} />
+      <DAGStatsBar stats={combinedStats} isLive={isLive} />
 
-      {/* Canvas area */}
+      {/* Canvas */}
       <div className="flex-1 relative overflow-hidden">
         <DAGCanvas blocks={blocks} isMobile={isMobile} />
 
-        {/* Legend */}
-        <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur border border-white/10 rounded-lg p-3 text-xs font-mono space-y-1.5">
-          <div className="text-white/40 text-[10px] mb-2 uppercase tracking-widest">Legend</div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-teal-400 shadow-[0_0_6px_#00d4aa]" />
-            <span className="text-teal-400">Chain Block</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-sky-500" />
-            <span className="text-white/60">Normal Block</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-slate-700" />
-            <span className="text-white/30">Orphan Block</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-px bg-teal-500/40" />
-            <span className="text-white/40">Parent Link</span>
-          </div>
+        {/* Legend - hidden on small mobile */}
+        <div className="absolute bottom-4 left-3 bg-black/70 backdrop-blur border border-white/10 rounded-lg p-2.5 text-xs font-mono space-y-1.5 hidden sm:block">
+          <div className="text-white/30 text-[9px] mb-1.5 uppercase tracking-widest">Legend</div>
+          <LegendItem color="bg-teal-400" glow label="Chain Block" />
+          <LegendItem color="bg-sky-500" label="Block" />
+          <LegendItem isLine label="Parent Link" />
         </div>
 
-        {/* Paused overlay */}
         {paused && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="text-teal-400 font-mono text-2xl font-bold tracking-widest animate-pulse">
-              ⏸ PAUSED
+          <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="text-teal-400 font-mono text-xl font-bold tracking-widest animate-pulse">⏸ PAUSED</div>
+          </div>
+        )}
+
+        {!isLive && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-teal-400 font-mono text-sm animate-pulse mb-2">Connecting to Kaspa network...</div>
+              <div className="text-white/20 font-mono text-xs">api.kaspa.org</div>
             </div>
           </div>
         )}
 
-        {/* Kaspa attribution */}
-        <div className="absolute bottom-4 right-4 text-white/20 text-[10px] font-mono">
+        <div className="absolute bottom-3 right-3 text-white/15 text-[9px] font-mono">
           DATA: api.kaspa.org
         </div>
       </div>
+    </div>
+  );
+}
+
+function LegendItem({ color, glow, label, isLine }) {
+  return (
+    <div className="flex items-center gap-2">
+      {isLine ? (
+        <div className="w-5 h-px bg-teal-500/40" />
+      ) : (
+        <div className={`w-2.5 h-2.5 rounded-full ${color} ${glow ? "shadow-[0_0_5px_#00d4aa]" : ""}`} />
+      )}
+      <span className={isLine ? "text-white/30" : glow ? "text-teal-400" : "text-white/50"}>{label}</span>
     </div>
   );
 }
