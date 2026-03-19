@@ -176,6 +176,17 @@ export default function DAGVisualizerPage() {
             <span className="hidden sm:inline">{paused ? "Resume" : "Pause"}</span>
           </button>
           <button
+            onClick={() => setIs3D((v) => !v)}
+            className={`flex items-center gap-1 px-2 py-1 border rounded text-xs font-bold transition-colors ${
+              is3D
+                ? "bg-teal-500/20 border-teal-500/60 text-teal-300"
+                : "bg-white/5 border-white/10 text-white/60 hover:text-white"
+            }`}
+          >
+            {is3D ? <Layers className="w-3 h-3" /> : <Box className="w-3 h-3" />}
+            {is3D ? "2D" : "3D"}
+          </button>
+          <button
             onClick={() => { fetchBlocks(); fetchStats(); }}
             className="p-1.5 bg-white/5 border border-white/10 rounded text-white/60 hover:text-white transition-colors"
           >
