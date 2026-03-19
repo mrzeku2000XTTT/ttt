@@ -204,7 +204,10 @@ export default function DAGVisualizerPage() {
 
       {/* Canvas */}
       <div className="flex-1 relative overflow-hidden">
-        <DAGCanvas blocks={blocks} isMobile={isMobile} />
+        {is3D
+          ? <DAGCanvas3D blocks={blocks} isMobile={isMobile} />
+          : <DAGCanvas blocks={blocks} isMobile={isMobile} />
+        }
 
         {/* Legend - hidden on small mobile */}
         <div className="absolute bottom-4 left-3 bg-black/70 backdrop-blur border border-white/10 rounded-lg p-2.5 text-xs font-mono space-y-1.5 hidden sm:block">
