@@ -321,6 +321,7 @@ export default function DAGCanvas3D({ blocks, isMobile }) {
       toRemove.forEach((m) => {
         s.scene.remove(m);
         if (m.userData.trail) s.scene.remove(m.userData.trail);
+        if (m.userData.aura) s.scene.remove(m.userData.aura);
       });
     }
 
