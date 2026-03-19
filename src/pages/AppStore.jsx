@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Search, TrendingUp, Crown, Star, Link2, Plus, Edit2, Shield } from "lucide-react";
+import { Search, TrendingUp, Crown, Star, Link2, Plus, Edit2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -95,11 +95,10 @@ export default function AppStorePage() {
     { name: "KivR", icon: "Link2", path: "KivR", category: "Finance", defaultIcon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a3f7bbc81_IMG_1275.jpg", objectFit: "cover" },
     { name: "SilverScript", icon: "Link2", path: "SilverScript", category: "Dev Tools", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e8d0baae0_IMG_0166.png" },
     { name: "Hwork", icon: "Link2", path: "Hwork", category: "Education", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/98c209fd7_IMG_0173.jpeg" },
-    { name: "Admin", icon: "Shield", path: "AdminHub", category: "Admin", isBlack: true, adminOnly: true },
     ];
 
   const getIconComponent = (iconName) => {
-    const icons = { Link2, Shield };
+    const icons = { Link2 };
     return icons[iconName] || Link2;
   };
 
@@ -116,9 +115,6 @@ export default function AppStorePage() {
         return false;
       }
       if (app.name === "Arh'tuun" && !isAdmin) {
-        return false;
-      }
-      if (app.adminOnly && !isAdmin) {
         return false;
       }
       return true;
@@ -186,7 +182,7 @@ export default function AppStorePage() {
                   whileTap={{ scale: 0.95 }}
                   className="flex flex-col items-center gap-2"
                 >
-                  <div className={`relative w-16 h-16 ${app.isBlack ? 'bg-black border-white/30' : 'bg-white/5 border-white/10'} backdrop-blur-xl border ${app.circular ? 'rounded-full' : 'rounded-xl'} flex items-center justify-center group-hover:bg-white/10 transition-all`}>
+                  <div className={`relative w-16 h-16 bg-white/5 backdrop-blur-xl border border-white/10 ${app.circular ? 'rounded-full' : 'rounded-xl'} flex items-center justify-center group-hover:bg-white/10 transition-all`}>
                     {app.premium && (
                       <Crown className="absolute -top-1 -right-1 w-3 h-3 text-yellow-400" />
                     )}
