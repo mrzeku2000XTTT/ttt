@@ -286,9 +286,14 @@ export default function DAGCanvas3D({ blocks, isMobile }) {
       mesh.position.y += d.vy * dt;
       mesh.position.z += d.vz * dt;
 
+      // Move aura with block
+      if (d.aura) d.aura.position.copy(mesh.position);
+
       // Fade out near end of life
       const lifeRatio = d.age / d.maxAge;
-      mesh.material.opacity = lifeRatio > 0.7 ? 1 - (lifeRatio - 0.7) / 0.3 : 1;
+      const opacity = lifeRatio > 0.7 ? 1 - (lifeRatio - 0.7) / 0.3 : 1;
+      mesh.material.opacity = opacity;
+      if (d.aura) d.aura.material.opacity = opacity * 0.15;
 
       // Update trail
       if (d.trail) {
