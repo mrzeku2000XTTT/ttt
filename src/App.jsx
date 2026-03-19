@@ -63,6 +63,7 @@ const AuthenticatedApp = () => {
         />
       ))}
       <Route path="/Hwork" element={<HworkPage />} />
+      <Route path="/AdminHub" element={<LayoutWrapper currentPageName="AdminHub"><AdminHubPage /></LayoutWrapper>} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
