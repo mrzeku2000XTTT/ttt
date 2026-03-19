@@ -10,6 +10,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import HworkPage from './pages/Hwork';
+import DAGVisualizerPage from './pages/DAGVisualizer';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -62,6 +63,7 @@ const AuthenticatedApp = () => {
         />
       ))}
       <Route path="/Hwork" element={<HworkPage />} />
+      <Route path="/DAGVisualizer" element={<DAGVisualizerPage />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
