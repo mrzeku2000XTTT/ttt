@@ -41,11 +41,12 @@ function StatItem({ icon, label, value, color }) {
 
 // PH/s style like kaspa.stream
 function formatHashrate(h) {
-  if (h >= 1e18) return (h / 1e18).toFixed(1) + " EH/s";
-  if (h >= 1e15) return (h / 1e15).toFixed(1) + " PH/s";
-  if (h >= 1e12) return (h / 1e12).toFixed(1) + " TH/s";
-  if (h >= 1e9)  return (h / 1e9).toFixed(1) + " GH/s";
-  return h + " H/s";
+  if (h >= 1e18) return (h / 1e18).toFixed(2) + " EH/s";
+  if (h >= 1e15) return (h / 1e15).toFixed(2) + " PH/s";
+  if (h >= 1e12) return (h / 1e12).toFixed(2) + " TH/s";
+  if (h >= 1e9)  return (h / 1e9).toFixed(2) + " GH/s";
+  if (h >= 1e6)  return (h / 1e6).toFixed(2) + " MH/s";
+  return (h / 1e3).toFixed(2) + " KH/s";
 }
 
 // e.g. 27.29B
