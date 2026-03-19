@@ -11,8 +11,8 @@ export default function DAGStatsBar({ stats, isLive }) {
 
       <div className="w-px h-4 bg-white/10 flex-shrink-0" />
 
-      <StatItem icon={<Zap className="w-3 h-3" />} label="TPS" value={stats.tps ?? "—"} color="teal" />
-      <StatItem icon={<Activity className="w-3 h-3" />} label="NET TPS" value={stats.networkTps ?? "—"} color="teal" />
+      <StatItem icon={<Zap className="w-3 h-3" />} label="BPS" value={stats.networkTps != null ? `${stats.networkTps}` : "—"} color="teal" />
+      <StatItem icon={<Activity className="w-3 h-3" />} label="OBS TPS" value={stats.tps ?? "—"} color="teal" />
       <StatItem icon={<Layers className="w-3 h-3" />} label="BLOCKS" value={stats.blockCount ? formatBig(stats.blockCount) : "—"} color="white" />
       <StatItem icon={<Cpu className="w-3 h-3" />} label="HASHRATE" value={stats.hashrate ? formatHashrate(stats.hashrate) : "—"} color="purple" />
       <StatItem icon={<DollarSign className="w-3 h-3" />} label="KAS" value={stats.price ? `$${stats.price.toFixed(4)}` : "—"} color="green" />
