@@ -167,45 +167,58 @@ export default function DAGCanvas3D({ blocks, isMobile }) {
     const s = stateRef.current;
     if (!s.scene) return;
 
-    const hash = block.blockHash || block.header?.hashMerkleRoot || Math.random().toString(36).slice(2);
-    if (s.nodes.find((n) => n.userData.id === hash)) return;
-
     const isChain = block.verboseData?.isChainBlock;
-    const r = isChain ? 0.28 : 0.18;
-    const geo = new THREE.SphereGeometry(r, isMobile ? 8 : 16, isMobile ? 8 : 16);
+    const txCount = block.verboseData?.transactionCount || 1;
+
+    // Size based on tx count: bigger blocks = more transactions
+    const r = isChain
+      ? Math.min(0.55, 0.3 + txCount * 0.02)
+      : Math.min(0.4, 0.2 + txCount * 0.015);
+
+    const geo = new THREE.SphereGeometry(r, isMobile ? 10 : 18, isMobile ? 10 : 18);
     const mat = new THREE.MeshBasicMaterial({
-      color: isChain ? 0x00ffbe : 0x0099ff,
+      color: isChain ? 0x00ffbe : 0x3399ff,
       transparent: true,
       opacity: 1,
     });
     const mesh = new THREE.Mesh(geo, mat);
 
-    // Spawn at tunnel center, random direction outward
+    // Glow aura around each real block
+    const aurGeo = new THREE.SphereGeometry(r * 2.2, 8, 8);
+    const aurMat = new THREE.MeshBasicMaterial({
+      color: isChain ? 0x00ffbe : 0x3399ff,
+      transparent: true,
+      opacity: 0.15,
+    });
+    const aura = new THREE.Mesh(aurGeo, aurMat);
+    s.scene.add(aura);
+
+    // Spawn at center (portal), burst outward
     const theta = Math.random() * Math.PI * 2;
     const phi = Math.acos(2 * Math.random() - 1);
-    mesh.userData = {
-      id: hash,
-      vx: Math.sin(phi) * Math.cos(theta) * (2.5 + Math.random() * 2),
-      vy: Math.sin(phi) * Math.sin(theta) * (1.5 + Math.random() * 1.5),
-      vz: Math.cos(phi) * (2 + Math.random() * 2),
-      age: 0,
-      maxAge: 4 + Math.random() * 3,
-      isChain,
-    };
+    const speed = 3.5 + Math.random() * 3;
     mesh.position.set(0, 0, 0);
+    aura.position.set(0, 0, 0);
 
-    // Trail trail as line
+    mesh.userData = {
+      vx: Math.sin(phi) * Math.cos(theta) * speed,
+      vy: Math.sin(phi) * Math.sin(theta) * speed * 0.7,
+      vz: Math.cos(phi) * speed * 0.8,
+      age: 0,
+      maxAge: 5 + Math.random() * 4,
+      isChain,
+      aura,
+    };
+
+    // Trail line
     const trailGeo = new THREE.BufferGeometry();
-    const trailPositions = new Float32Array(20 * 3);
-    trailGeo.setAttribute("position", new THREE.BufferAttribute(trailPositions, 3));
+    trailGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(30 * 3), 3));
     trailGeo.setDrawRange(0, 0);
-    const trailMat = new THREE.LineBasicMaterial({
-      color: isChain ? 0x00ffbe : 0x0099ff,
-      transparent: true,
-      opacity: 0.4,
-    });
-    const trail = new THREE.Line(trailGeo, trailMat);
-    trail.userData = { positions: [], maxLen: 20 };
+    const trail = new THREE.Line(
+      trailGeo,
+      new THREE.LineBasicMaterial({ color: isChain ? 0x00ffbe : 0x3399ff, transparent: true, opacity: 0.5 })
+    );
+    trail.userData = { positions: [], maxLen: 30 };
     s.scene.add(trail);
     mesh.userData.trail = trail;
 
