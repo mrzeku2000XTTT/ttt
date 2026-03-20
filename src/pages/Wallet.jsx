@@ -677,6 +677,12 @@ export default function WalletPage() {
                     >
                       <RefreshCw className={`w-4 h-4 ${isFetchingBalance ? 'animate-spin' : ''}`} />
                     </button>
+                    <button
+                      onClick={() => setShowBalance(s => !s)}
+                      className="text-gray-400 hover:text-white transition-colors"
+                    >
+                      {showBalance ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
                     {mnemonic && (
                       <button
                         onClick={() => setShowMnemonic(s => !s)}
@@ -686,12 +692,6 @@ export default function WalletPage() {
                         <Shield className="w-5 h-5" />
                       </button>
                     )}
-                    <button
-                      onClick={() => setShowBalance(s => !s)}
-                      className="text-gray-400 hover:text-white transition-colors"
-                    >
-                      {showBalance ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
                   </div>
                 </div>
 
