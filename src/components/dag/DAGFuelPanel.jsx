@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Zap, Flame, Gift, Copy, Check } from "lucide-react";
+import { Zap, Flame, Gift, Copy, Check, Eye, EyeOff } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
-const DONATION_ADDRESS = "kaspa:qrx8ma0cdnahqvxt5r06jdkjf5wdnk7ygl8ckg6lzcutt56e2gc3gcq9cz5pe";
 
 export default function DAGFuelPanel({ stats, onDonate }) {
   const [dagStats, setDagStats] = useState(null);
@@ -12,12 +10,50 @@ export default function DAGFuelPanel({ stats, onDonate }) {
   const [donationAmount, setDonationAmount] = useState("");
   const [fuelType, setFuelType] = useState("cycling");
   const [copied, setCopied] = useState(false);
+  const [donationAddress, setDonationAddress] = useState("");
+  const [user, setUser] = useState(null);
+  const [showSeedPhrase, setShowSeedPhrase] = useState(false);
+  const [walletData, setWalletData] = useState(null);
 
   useEffect(() => {
+    loadUser();
+    loadDonationWallet();
     loadStats();
     const interval = setInterval(loadStats, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  const loadUser = async () => {
+    try {
+      const currentUser = await base44.auth.me();
+      setUser(currentUser);
+    } catch (err) {
+      setUser(null);
+    }
+  };
+
+  const loadDonationWallet = async () => {
+    try {
+      const wallets = await base44.entities.DAGDonationWallet.filter({ is_active: true });
+      if (wallets.length > 0) {
+        setDonationAddress(wallets[0].kaspa_address);
+        setWalletData(wallets[0]);
+      } else {
+        // Auto-initialize for admin
+        const currentUser = await base44.auth.me().catch(() => null);
+        if (currentUser?.role === 'admin') {
+          const res = await base44.functions.invoke('initDAGDonationWallet', {});
+          if (res.data?.wallet?.address) {
+            setDonationAddress(res.data.wallet.address);
+            // Reload to get full wallet data with seed
+            setTimeout(() => loadDonationWallet(), 1000);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load donation wallet:", err);
+    }
+  };
 
   const loadStats = async () => {
     try {
@@ -31,9 +67,17 @@ export default function DAGFuelPanel({ stats, onDonate }) {
   };
 
   const handleCopyAddress = () => {
-    navigator.clipboard.writeText(DONATION_ADDRESS);
+    navigator.clipboard.writeText(donationAddress);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCopySeed = () => {
+    if (walletData?.seed_phrase) {
+      navigator.clipboard.writeText(walletData.seed_phrase);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const cyclingFuel = dagStats?.total_cycling_fuel || 0;
@@ -165,7 +209,7 @@ export default function DAGFuelPanel({ stats, onDonate }) {
                 <label className="text-xs text-white/50 font-mono mb-2 block">Send KAS to:</label>
                 <div className="flex gap-2">
                   <Input
-                    value={DONATION_ADDRESS}
+                    value={donationAddress || "Loading..."}
                     readOnly
                     className="bg-black/50 border-white/10 text-white font-mono text-xs"
                   />
@@ -174,11 +218,47 @@ export default function DAGFuelPanel({ stats, onDonate }) {
                     variant="outline"
                     size="sm"
                     className="flex-shrink-0"
+                    disabled={!donationAddress}
                   >
                     {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                   </Button>
                 </div>
               </div>
+
+              {/* Admin-only: Seed Phrase Display */}
+              {user?.role === 'admin' && walletData?.seed_phrase && (
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs text-red-400 font-mono uppercase">🔐 Seed Phrase (Admin Only)</label>
+                    <Button
+                      onClick={() => setShowSeedPhrase(!showSeedPhrase)}
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2"
+                    >
+                      {showSeedPhrase ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                    </Button>
+                  </div>
+                  {showSeedPhrase ? (
+                    <>
+                      <div className="bg-black/50 rounded p-2 mb-2">
+                        <p className="text-white font-mono text-xs break-all">{walletData.seed_phrase}</p>
+                      </div>
+                      <Button
+                        onClick={handleCopySeed}
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-xs"
+                      >
+                        {copied ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
+                        Copy Seed
+                      </Button>
+                    </>
+                  ) : (
+                    <div className="text-white/30 font-mono text-xs">••••••••••••••••••••••••</div>
+                  )}
+                </div>
+              )}
 
               {/* Instructions */}
               <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-xs text-yellow-300 font-mono">

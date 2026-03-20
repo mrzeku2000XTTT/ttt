@@ -1,11 +1,17 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
 
-const DONATION_ADDRESS = "kaspa:qrx8ma0cdnahqvxt5r06jdkjf5wdnk7ygl8ckg6lzcutt56e2gc3gcq9cz5pe";
 const KASPA_API = "https://api.kaspa.org";
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+
+    // Get active donation wallet address
+    const wallets = await base44.asServiceRole.entities.DAGDonationWallet.filter({ is_active: true });
+    if (wallets.length === 0) {
+      return Response.json({ message: "No active donation wallet", newDonations: 0 });
+    }
+    const DONATION_ADDRESS = wallets[0].kaspa_address;
 
     // Fetch recent transactions to donation address
     const txRes = await fetch(`${KASPA_API}/addresses/${DONATION_ADDRESS}/transactions?limit=50`);
