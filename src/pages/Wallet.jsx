@@ -683,15 +683,19 @@ export default function WalletPage() {
                     >
                       {showBalance ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
-                    {mnemonic && (
-                      <button
-                        onClick={() => setShowMnemonic(s => !s)}
-                        className="text-gray-400 hover:text-white transition-colors"
-                        title="View seed phrase"
-                      >
-                        <Shield className="w-5 h-5" />
-                      </button>
-                    )}
+                    <button
+                      onClick={() => {
+                        const seedSection = document.getElementById('seed-phrase-section');
+                        if (seedSection) {
+                          seedSection.scrollIntoView({ behavior: 'smooth' });
+                          if (mnemonic) setShowMnemonic(true);
+                        }
+                      }}
+                      className="text-gray-400 hover:text-white transition-colors"
+                      title="View seed phrase"
+                    >
+                      <Shield className="w-5 h-5" />
+                    </button>
                   </div>
                 </div>
 
@@ -777,46 +781,61 @@ export default function WalletPage() {
             )}
 
             {/* Seed Phrase */}
-            {mnemonic && (
-              <Card className="bg-zinc-950 border-zinc-800">
-                <CardHeader className="border-b border-zinc-800">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-white font-bold">Seed Phrase</h3>
-                    <div className="flex gap-2">
-                      {showMnemonic && (
-                        <Button onClick={copyPhrase} size="sm" variant="ghost">
-                          {copiedPhrase ? <CheckCircle2 className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+            <div id="seed-phrase-section">
+              {mnemonic ? (
+                <Card className="bg-zinc-950 border-zinc-800">
+                  <CardHeader className="border-b border-zinc-800">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-white font-bold">Seed Phrase</h3>
+                      <div className="flex gap-2">
+                        {showMnemonic && (
+                          <Button onClick={copyPhrase} size="sm" variant="ghost">
+                            {copiedPhrase ? <CheckCircle2 className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                          </Button>
+                        )}
+                        <Button onClick={() => setShowMnemonic(s => !s)} size="sm" variant="ghost">
+                          {showMnemonic ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </Button>
-                      )}
-                      <Button onClick={() => setShowMnemonic(s => !s)} size="sm" variant="ghost">
-                        {showMnemonic ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </Button>
+                      </div>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-6">
-                  {showMnemonic ? (
-                    <>
-                      <div className="grid grid-cols-3 gap-2 mb-4">
-                        {mnemonic.split(' ').filter(w => w).map((word, i) => (
-                          <div key={i} className="bg-black border border-zinc-800 rounded px-2 py-1 text-white text-sm font-mono">
-                            {i + 1}. {word}
-                          </div>
-                        ))}
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    {showMnemonic ? (
+                      <>
+                        <div className="grid grid-cols-3 gap-2 mb-4">
+                          {mnemonic.split(' ').filter(w => w).map((word, i) => (
+                            <div key={i} className="bg-black border border-zinc-800 rounded px-2 py-1 text-white text-sm font-mono">
+                              {i + 1}. {word}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                          <p className="text-xs text-red-300">⚠️ Save securely. Never share.</p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-8">
+                        <EyeOff className="w-12 h-12 text-gray-700 mx-auto mb-2" />
+                        <p className="text-gray-600">Tap eye to reveal</p>
                       </div>
-                      <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-                        <p className="text-xs text-red-300">⚠️ Save securely. Never share.</p>
-                      </div>
-                    </>
-                  ) : (
+                    )}
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="bg-zinc-950 border-zinc-800">
+                  <CardHeader className="border-b border-zinc-800">
+                    <h3 className="text-white font-bold">Seed Phrase</h3>
+                  </CardHeader>
+                  <CardContent className="p-6">
                     <div className="text-center py-8">
-                      <EyeOff className="w-12 h-12 text-gray-700 mx-auto mb-2" />
-                      <p className="text-gray-600">Tap eye to reveal</p>
+                      <Shield className="w-12 h-12 text-gray-700 mx-auto mb-2" />
+                      <p className="text-gray-500 text-sm mb-3">Seed phrase not stored in this session</p>
+                      <p className="text-gray-600 text-xs">Re-import your wallet to view your seed phrase</p>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </div>
         )}
       </div>
