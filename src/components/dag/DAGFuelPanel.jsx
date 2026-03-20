@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-const DONATION_ADDRESS = "kaspa:qr5w9dtp6ru08cwheusawez5kv0f9dmfaz8fwfqejvnx9jk4p74fc2g5wfzdm";
+const DONATION_ADDRESS = "kaspa:qrx8ma0cdnahqvxt5r06jdkjf5wdnk7ygl8ckg6lzcutt56e2gc3gcq9cz5pe";
 
 export default function DAGFuelPanel({ stats, onDonate }) {
   const [dagStats, setDagStats] = useState(null);

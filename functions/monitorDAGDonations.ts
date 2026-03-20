@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
 
-const DONATION_ADDRESS = "kaspa:qr5w9dtp6ru08cwheusawez5kv0f9dmfaz8fwfqejvnx9jk4p74fc2g5wfzdm";
+const DONATION_ADDRESS = "kaspa:qrx8ma0cdnahqvxt5r06jdkjf5wdnk7ygl8ckg6lzcutt56e2gc3gcq9cz5pe";
 const KASPA_API = "https://api.kaspa.org";
 
 Deno.serve(async (req) => {
