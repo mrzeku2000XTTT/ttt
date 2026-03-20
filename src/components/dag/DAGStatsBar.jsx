@@ -39,14 +39,13 @@ function StatItem({ icon, label, value, color }) {
   );
 }
 
-// PH/s style like kaspa.stream
+// PH/s style - API returns TH/s values, so thresholds are adjusted
 function formatHashrate(h) {
-  if (h >= 1e18) return (h / 1e18).toFixed(2) + " EH/s";
-  if (h >= 1e15) return (h / 1e15).toFixed(2) + " PH/s";
-  if (h >= 1e12) return (h / 1e12).toFixed(2) + " TH/s";
-  if (h >= 1e9)  return (h / 1e9).toFixed(2) + " GH/s";
-  if (h >= 1e6)  return (h / 1e6).toFixed(2) + " MH/s";
-  return (h / 1e3).toFixed(2) + " KH/s";
+  if (h >= 1e6) return (h / 1e6).toFixed(2) + " EH/s";
+  if (h >= 1e3) return (h / 1e3).toFixed(2) + " PH/s";
+  if (h >= 1) return h.toFixed(2) + " TH/s";
+  if (h >= 1e-3) return (h * 1e3).toFixed(2) + " GH/s";
+  return (h * 1e6).toFixed(2) + " MH/s";
 }
 
 // e.g. 27.29B
