@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import DAGCanvas from "@/components/dag/DAGCanvas";
 import DAGCanvas3D from "@/components/dag/DAGCanvas3D";
 import DAGStatsBar from "@/components/dag/DAGStatsBar";
+import DAGFuelPanel from "@/components/dag/DAGFuelPanel";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Pause, Play, RefreshCw, Box, Layers } from "lucide-react";
 import { createPageUrl } from "@/utils";
@@ -259,6 +260,11 @@ export default function DAGVisualizerPage() {
 
       {/* Stats bar */}
       <DAGStatsBar stats={combinedStats} isLive={isLive} />
+
+      {/* Fuel Panel */}
+      <div className="px-3 py-2 bg-black/60 border-b border-white/10">
+        <DAGFuelPanel stats={combinedStats} />
+      </div>
 
       {/* Canvas */}
       <div className="flex-1 relative overflow-hidden">
