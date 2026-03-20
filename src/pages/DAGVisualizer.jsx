@@ -40,6 +40,8 @@ export default function DAGVisualizerPage() {
   const lastFetchTimeRef = useRef(null);
   const lastBlockCountRef = useRef(0);
   const tipHashRef = useRef(null);
+  const lastDaaScoreRef = useRef(null);
+  const lastDaaTimeRef = useRef(null);
 
   useEffect(() => {
     checkAuth();
@@ -49,43 +51,12 @@ export default function DAGVisualizerPage() {
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
-      if (currentUser?.role !== 'admin') {
-        setLoading(false);
-        return;
-      }
       setLoading(false);
     } catch (err) {
       setUser(null);
       setLoading(false);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center">
-        <div className="text-teal-400 font-mono text-sm animate-pulse">Loading...</div>
-      </div>
-    );
-  }
-
-  if (!user || user.role !== 'admin') {
-    return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center">
-        <div className="text-center max-w-md px-4">
-          <Lock className="w-16 h-16 text-red-400 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-white mb-2">Admin Access Required</h1>
-          <p className="text-white/60 mb-6">This page is restricted to administrators only.</p>
-          <Link
-            to={createPageUrl("AppStore")}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-teal-500 hover:bg-teal-600 text-black font-bold rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to App Store
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   // Step 1: fetch DAG info to get live tip hashes + stats
   const fetchDAGInfo = useCallback(async () => {
@@ -109,9 +80,6 @@ export default function DAGVisualizerPage() {
     const data = await res.json();
     return data;
   }, []);
-
-  const lastDaaScoreRef = useRef(null);
-  const lastDaaTimeRef = useRef(null);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -251,6 +219,33 @@ export default function DAGVisualizerPage() {
   }, [fetchBlocks, fetchStats, isMobile]);
 
   const combinedStats = { ...stats, tps: tps ?? stats.tps };
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <div className="text-teal-400 font-mono text-sm animate-pulse">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user || user.role !== 'admin') {
+    return (
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <div className="text-center max-w-md px-4">
+          <Lock className="w-16 h-16 text-red-400 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-white mb-2">Admin Access Required</h1>
+          <p className="text-white/60 mb-6">This page is restricted to administrators only.</p>
+          <Link
+            to={createPageUrl("AppStore")}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-teal-500 hover:bg-teal-600 text-black font-bold rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to App Store
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black flex flex-col" style={{ fontFamily: "monospace" }}>
