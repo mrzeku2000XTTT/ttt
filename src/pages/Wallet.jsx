@@ -830,7 +830,21 @@ export default function WalletPage() {
                     <div className="text-center py-8">
                       <Shield className="w-12 h-12 text-gray-700 mx-auto mb-2" />
                       <p className="text-gray-500 text-sm mb-3">Seed phrase not stored in this session</p>
-                      <p className="text-gray-600 text-xs">Re-import your wallet to view your seed phrase</p>
+                      <p className="text-gray-600 text-xs mb-4">Re-import your wallet to view your seed phrase</p>
+                      <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mt-4 text-left">
+                        <p className="text-yellow-400 text-xs font-semibold mb-2">⚠️ Can you still send funds?</p>
+                        <p className="text-gray-400 text-xs leading-relaxed">
+                          {localStorage.getItem('ttt_wallet_pk') 
+                            ? "✅ Yes - Private key cached. You can send transactions." 
+                            : "❌ No - You need your seed phrase to send funds. Without it, funds cannot be recovered."}
+                        </p>
+                        {!localStorage.getItem('ttt_wallet_pk') && (
+                          <div className="mt-3 pt-3 border-t border-yellow-500/20">
+                            <p className="text-red-400 text-xs font-semibold mb-1">🚨 CRITICAL</p>
+                            <p className="text-gray-400 text-xs">Without the seed phrase, these funds are permanently inaccessible. Always backup your seed phrase when creating a wallet.</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
