@@ -4,8 +4,9 @@ import DAGCanvas3D from "@/components/dag/DAGCanvas3D";
 import DAGStatsBar from "@/components/dag/DAGStatsBar";
 import DAGFuelPanel from "@/components/dag/DAGFuelPanel";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Pause, Play, RefreshCw, Box, Layers } from "lucide-react";
+import { ArrowLeft, Pause, Play, RefreshCw, Box, Layers, Lock } from "lucide-react";
 import { createPageUrl } from "@/utils";
+import { base44 } from "@/api/base44Client";
 
 const KASPA_API = "https://api.kaspa.org";
 
@@ -33,10 +34,58 @@ export default function DAGVisualizerPage() {
   const [blockCount, setBlockCount] = useState(0);
   const [tps, setTps] = useState(null);
   const [is3D, setIs3D] = useState(false);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const lastFetchTimeRef = useRef(null);
   const lastBlockCountRef = useRef(0);
   const tipHashRef = useRef(null);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    try {
+      const currentUser = await base44.auth.me();
+      setUser(currentUser);
+      if (currentUser?.role !== 'admin') {
+        setLoading(false);
+        return;
+      }
+      setLoading(false);
+    } catch (err) {
+      setUser(null);
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <div className="text-teal-400 font-mono text-sm animate-pulse">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user || user.role !== 'admin') {
+    return (
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <div className="text-center max-w-md px-4">
+          <Lock className="w-16 h-16 text-red-400 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-white mb-2">Admin Access Required</h1>
+          <p className="text-white/60 mb-6">This page is restricted to administrators only.</p>
+          <Link
+            to={createPageUrl("AppStore")}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-teal-500 hover:bg-teal-600 text-black font-bold rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to App Store
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   // Step 1: fetch DAG info to get live tip hashes + stats
   const fetchDAGInfo = useCallback(async () => {
