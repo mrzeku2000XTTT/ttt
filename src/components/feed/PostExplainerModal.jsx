@@ -87,6 +87,7 @@ Analyze the images in detail and provide TWO informative sentences explaining wh
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: prompt,
         add_context_from_internet: true,
+        model: 'gemini_3_flash',
         response_json_schema: null,
         ...(mediaUrls.length > 0 && { file_urls: mediaUrls })
       });
@@ -94,7 +95,8 @@ Analyze the images in detail and provide TWO informative sentences explaining wh
       setExplanation(response || "Unable to generate explanation.");
     } catch (err) {
       console.error("Failed to explain post:", err);
-      setExplanation("Failed to analyze this post. Please try again.");
+      console.error("Error details:", err.message, err.response?.data);
+      setExplanation(`Failed to analyze this post. ${err.message || 'Please try again.'}`);
     } finally {
       setIsLoading(false);
     }
