@@ -64,7 +64,7 @@ export default function LearnMorePage() {
               TTTz.xyz
             </h1>
             <p className="text-xl md:text-2xl text-white/70 font-light tracking-wide">
-              Trust Task Transact Zero entropy knowledge unified
+              Tap to Tip Zero entropy knowledge unified
             </p>
           </motion.div>
 
