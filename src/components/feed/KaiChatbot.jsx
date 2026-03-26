@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Loader2, Sparkles, Minus } from "lucide-react";
+import { X, Send, Loader2, Sparkles, Minus, ExternalLink } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function KaiChatbot() {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [isEnabled, setIsEnabled] = useState(() => {
     const saved = localStorage.getItem('kai_enabled');
@@ -38,12 +41,34 @@ export default function KaiChatbot() {
     }
   }, [isOpen]);
 
+  const IMAGE_KEYWORDS = [
+    'draw', 'sketch', 'paint', 'create image', 'generate image', 'make image',
+    'make a picture', 'create a picture', 'design', 'illustrate', 'artwork',
+    'let\'s draw', 'lets draw', 'can you draw', 'draw me', 'draw a', 'draw an',
+    'show me', 'visualize', 'picture of', 'image of', 'art of', 'xunhua'
+  ];
+
+  const isImageRequest = (msg) => {
+    const lower = msg.toLowerCase();
+    return IMAGE_KEYWORDS.some(kw => lower.includes(kw));
+  };
+
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
     const userMsg = input.trim();
     setInput("");
     setMessages(prev => [...prev, { role: "user", content: userMsg }]);
     setIsLoading(true);
+
+    // Detect image/drawing intent
+    if (isImageRequest(userMsg)) {
+      setMessages(prev => [...prev, { role: "action", content: "Opening Xunhua App 🎨" }]);
+      await new Promise(r => setTimeout(r, 1200));
+      setIsLoading(false);
+      setIsOpen(false);
+      navigate(createPageUrl('Xunhua'));
+      return;
+    }
 
     try {
       const context = messages.slice(-6).map(m => `${m.role === 'user' ? 'User' : 'Kai'}: ${m.content}`).join('\n');
@@ -155,21 +180,37 @@ Respond as Kai:`,
             <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-hide">
               {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div
-                    className="max-w-[80%] text-sm leading-relaxed px-3 py-2 rounded-2xl"
-                    style={msg.role === 'user' ? {
-                      background: 'rgba(255,255,255,0.15)',
-                      color: 'rgba(255,255,255,0.95)',
-                      borderBottomRightRadius: '6px',
-                    } : {
-                      background: 'rgba(255,255,255,0.07)',
-                      color: 'rgba(255,255,255,0.85)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      borderBottomLeftRadius: '6px',
-                    }}
-                  >
-                    {msg.content}
-                  </div>
+                  {msg.role === 'action' ? (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="flex items-center gap-2 px-3 py-2 rounded-2xl text-sm font-medium"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(6,182,212,0.2), rgba(168,85,247,0.2))',
+                        border: '1px solid rgba(6,182,212,0.35)',
+                        color: 'rgba(6,182,212,0.95)',
+                      }}
+                    >
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      {msg.content}
+                    </motion.div>
+                  ) : (
+                    <div
+                      className="max-w-[80%] text-sm leading-relaxed px-3 py-2 rounded-2xl"
+                      style={msg.role === 'user' ? {
+                        background: 'rgba(255,255,255,0.15)',
+                        color: 'rgba(255,255,255,0.95)',
+                        borderBottomRightRadius: '6px',
+                      } : {
+                        background: 'rgba(255,255,255,0.07)',
+                        color: 'rgba(255,255,255,0.85)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderBottomLeftRadius: '6px',
+                      }}
+                    >
+                      {msg.content}
+                    </div>
+                  )}
                 </div>
               ))}
               {isLoading && (
