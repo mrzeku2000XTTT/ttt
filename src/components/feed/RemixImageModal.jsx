@@ -212,76 +212,29 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
         console.log(`🎨 Generation attempt ${attempts}/${maxAttempts}`);
 
         if (uploadedImage) {
-          // Check if user wants a style transformation (anime, pixel art, etc.)
-          const lowerPrompt = remixPrompt.toLowerCase();
-          isStyleTransformation = lowerPrompt.includes('anime') || lowerPrompt.includes('cartoon') || 
-                                        lowerPrompt.includes('pixel') || lowerPrompt.includes('3d') || 
-                                        lowerPrompt.includes('version') || lowerPrompt.includes('style') ||
-                                        lowerPrompt.includes('painting') || lowerPrompt.includes('sketch') ||
-                                        lowerPrompt.includes('ghibli') || lowerPrompt.includes('cyberpunk') ||
-                                        lowerPrompt.includes('manga') || lowerPrompt.includes('comic');
-        
-        if (isStyleTransformation) {
-          // Style transformation mode with enhanced keywords
-          const styleMap = {
-            'anime': 'Japanese anime art style with large expressive eyes, clean cell-shaded coloring, smooth vibrant colors, and anime facial proportions',
-            'ghibli': 'Studio Ghibli animation style with soft watercolor textures, gentle lighting, whimsical atmosphere, and characteristic hand-drawn charm',
-            'pixel': 'retro pixel art style with 16-bit or 32-bit game graphics, limited color palette, and blocky pixelated aesthetic',
-            'manga': 'black and white manga illustration with dynamic ink linework, dramatic screentone shading, and expressive Japanese comic style',
-            'comic': 'American comic book art with bold ink outlines, vibrant flat colors, halftone shading, and superhero comic aesthetic',
-            'cyberpunk': 'dark cyberpunk anime with neon accets, futuristic tech elements, noir atmosphere, and edgy sci-fi style',
-            'pixar': '3D Pixar animation style with smooth 3D rendering, exaggerated friendly features, warm lighting, and cinematic quality',
-            'painting': 'classical oil painting with visible brush strokes, rich layered colors, soft lighting, and fine art portrait aesthetic',
-            'cartoon': 'Western cartoon style with simplified bold features, thick outlines, bright saturated colors, and playful design',
-            'sketch': 'pencil sketch drawing with soft graphite shading, detailed linework, and traditional hand-drawn aesthetic',
-            'watercolor': 'watercolor painting with soft color bleeds, transparent layers, organic textures, and artistic brush marks'
-          };
+          // Always treat as reference image edit/transform
+          isStyleTransformation = true; // always use reference image mode
 
-          let styleDescription = '';
-          for (const [keyword, description] of Object.entries(styleMap)) {
-            if (lowerPrompt.includes(keyword)) {
-              styleDescription = description;
-              break;
-            }
-          }
+          // Build a clear, direct prompt that keeps user intent front and center
+          const constraints = [];
+          if (faceLocked) constraints.push("preserve the person's face and identity exactly");
+          if (!clothingEditable) constraints.push("keep clothing unchanged");
+          if (!postureEditable) constraints.push("keep the pose unchanged");
+          const constraintText = constraints.length > 0 ? ` Important: ${constraints.join(", ")}.` : "";
 
-          if (styleDescription) {
-            detailedPrompt = `Transform the subject in the reference image into ${styleDescription}. CRITICAL PRESERVATION: Maintain the core identity, structure, composition, and key elements from the reference. If it's a person, preserve their face and features. If it's a UI/logo/object, preserve its shape and design elements. ONLY change the visual art style and rendering technique. CAMERA ANGLE & SPATIAL UNDERSTANDING: Respect the perspective, angle, and 3D orientation of the subject. If merging features from multiple references, place them correctly in 3D space. LOCALIZED EDITING & TYPOGRAPHY: When user specifies editing a specific area (logo, text, background), focus ONLY on that part. Understand special characters - backwards K means horizontally mirrored K (К), reversed letters should be properly rendered. For UI/interface images, preserve the layout and structure while applying style changes. Professional high-quality result.`;
-          } else {
-            detailedPrompt = `Transform the subject into ${remixPrompt}. CRITICAL PRESERVATION: Maintain the core structure, composition, and identity of the subject from the reference. Whether it's a person, UI design, logo, or object - preserve the essential elements while applying changes. SPATIAL UNDERSTANDING: Respect the perspective, camera angle, and 3D orientation. When merging features from references, place them correctly in 3D space matching the subject's orientation. LOCALIZED EDITING & TYPOGRAPHY: When user specifies editing a specific area (logo, text, background), focus changes ONLY on that part. Understand special characters - backwards K means horizontally mirrored K (К), reversed letters should be properly rendered as requested. High quality professional result.`;
-          }
+          detailedPrompt = `Using the provided reference image as the base, apply this transformation: ${remixPrompt}.${constraintText} Keep the subject, composition, and overall structure of the reference image intact — only apply the requested changes. High quality result.`;
 
-          // Add start/end image guidance
           if (startImage && endImage) {
-            detailedPrompt += ` Use the start image as the initial visual state and the end image as the target final state. Create a transformation that progresses from start to end while maintaining identity.`;
+            detailedPrompt += ` Progress visually from the start image state toward the end image state.`;
           } else if (startImage) {
-            detailedPrompt += ` Use the start image as the base visual state to begin the transformation.`;
+            detailedPrompt += ` Use the start image as the initial state for transformation.`;
           } else if (endImage) {
-            detailedPrompt += ` Use the end image as the target visual state for the transformation.`;
+            detailedPrompt += ` Use the end image as the target final state.`;
           }
         } else {
-          // Standard remix mode - edit specific elements
-          const basePrompt = `Transform the reference image: ${remixPrompt}.`;
-          
-          // Build constraint instructions based on toggles (only for people-focused edits)
-          const constraints = [];
-          if (faceLocked) {
-            constraints.push("If the image contains people, preserve their faces, facial features, and identity");
-          }
-          if (!clothingEditable) {
-            constraints.push("If the image contains people, keep their clothing/outfit unchanged");
-          }
-          if (!postureEditable) {
-            constraints.push("If the image contains people, maintain their pose/posture");
-          }
-          
-          const constraintText = constraints.length > 0 ? constraints.join(". ") + "." : "";
-          detailedPrompt = `${basePrompt} ${constraintText} SPATIAL UNDERSTANDING: Respect perspective, camera angles, and 3D orientation (front-facing, 3/4 view, profile, etc.). When merging features from references, place them correctly in 3D space matching the subject's perspective. For faces, eyes should sit in eye sockets; for UI elements, maintain proper alignment and depth. LOCALIZED EDITING & TYPOGRAPHY: When user specifies a specific area (logo, text, coin, background, UI element), focus changes ONLY on that part. Backwards K means horizontally mirrored K (К). For UI/interface images, respect the layout structure. Preserve non-specified elements. High quality, professional, detailed result.`;
+          // Generate brand new image
+          detailedPrompt = `${remixPrompt}. High quality, professional, detailed digital art. No UI elements or interface controls in the image.`;
         }
-      } else {
-        // Generate brand new image
-        detailedPrompt = `Create an image: ${remixPrompt}. LOCALIZED EDITING: When user specifies changing a particular area, region, or element (e.g., "change the logo", "edit the text", "modify the background"), focus changes ONLY on that specified part while preserving everything else. Understand text and typography instructions including special characters like backwards/reversed letters (e.g., backwards K should be К or mirrored K). Ensure there are no UI elements, buttons, or interface controls in the final image. High quality, professional, detailed digital art.`;
-      }
 
       console.log('🎨 Generating image with prompt:', detailedPrompt);
 
