@@ -38,6 +38,8 @@ export default function ImageHistoryPage() {
   const [showFeatures, setShowFeatures] = useState(false);
   const [selectedProjects, setSelectedProjects] = useState([]);
   const [aspectRatio, setAspectRatio] = useState(() => localStorage.getItem('rmx_aspect_ratio') || '4:3');
+  const shouldStopRef = React.useRef(false);
+  const isPausedRef = React.useRef(false);
 
   useEffect(() => {
     loadHistory();
@@ -259,7 +261,9 @@ export default function ImageHistoryPage() {
   const handleStartGeneration = () => {
     setIsGenerating(true);
     setShouldStop(false);
+    shouldStopRef.current = false;
     setIsPaused(false);
+    isPausedRef.current = false;
     
     // Save generation state to localStorage
     localStorage.setItem('rmx_active_generation', JSON.stringify({
@@ -280,10 +284,12 @@ export default function ImageHistoryPage() {
 
   const handlePause = () => {
     setIsPaused(true);
+    isPausedRef.current = true;
   };
 
   const handleResume = () => {
     setIsPaused(false);
+    isPausedRef.current = false;
   };
 
   const generateImages = async (startFrom = 0) => {
@@ -334,16 +340,16 @@ export default function ImageHistoryPage() {
       // Run two RMX ULTRA agents in parallel
       const agent1 = async () => {
         for (let i = startFrom < 5 ? startFrom : 0; i < 5; i++) {
-          if (shouldStop) break;
-          while (isPaused && !shouldStop) {
+          if (shouldStopRef.current) break;
+          while (isPausedRef.current && !shouldStopRef.current) {
             await new Promise(resolve => setTimeout(resolve, 500));
           }
-          if (shouldStop) break;
+          if (shouldStopRef.current) break;
 
           let retries = 3;
           let success = false;
 
-          while (retries > 0 && !success && !shouldStop) {
+          while (retries > 0 && !success && !shouldStopRef.current) {
             try {
               console.log(`Agent 1: Generating tile ${i + 1}/10 (attempt ${4 - retries}/3)...`);
               
@@ -447,16 +453,16 @@ export default function ImageHistoryPage() {
 
       const agent2 = async () => {
         for (let i = (startFrom >= 5 ? startFrom : 5); i < 10; i++) {
-          if (shouldStop) break;
-          while (isPaused && !shouldStop) {
+          if (shouldStopRef.current) break;
+          while (isPausedRef.current && !shouldStopRef.current) {
             await new Promise(resolve => setTimeout(resolve, 500));
           }
-          if (shouldStop) break;
+          if (shouldStopRef.current) break;
 
           let retries = 3;
           let success = false;
 
-          while (retries > 0 && !success && !shouldStop) {
+          while (retries > 0 && !success && !shouldStopRef.current) {
             try {
               console.log(`Agent 2: Generating tile ${i + 1}/10 (attempt ${4 - retries}/3)...`);
               
@@ -585,8 +591,10 @@ export default function ImageHistoryPage() {
 
   const handleStop = () => {
     setShouldStop(true);
+    shouldStopRef.current = true;
     setIsGenerating(false);
     setIsPaused(false);
+    isPausedRef.current = false;
     localStorage.removeItem('rmx_active_generation');
   };
 
@@ -1270,81 +1278,69 @@ export default function ImageHistoryPage() {
                 {/* SUBJECT Section */}
                 <div className="space-y-2">
                   <div className="text-white text-[10px] font-bold tracking-wider">SUBJECT</div>
-                  <label className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden cursor-pointer hover:border-zinc-600 transition-colors block aspect-square">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleSubjectUpload}
-                      className="hidden"
-                      disabled={uploadingSubject}
-                    />
-                    {subjectImage ? (
-                      <img src={subjectImage} alt="Subject" className="w-full h-full object-cover" />
-                    ) : uploadingSubject ? (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Loader2 className="w-6 h-6 text-zinc-600 animate-spin" />
-                      </div>
-                    ) : (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <Upload className="w-4 h-4 text-zinc-700" />
-                        <span className="text-zinc-700 text-[8px] mt-1">Character</span>
-                      </div>
-                    )}
+                  <div className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden hover:border-zinc-600 transition-colors block aspect-square">
+                    <label className="absolute inset-0 cursor-pointer">
+                      <input type="file" accept="image/*" onChange={handleSubjectUpload} className="hidden" disabled={uploadingSubject} />
+                      {subjectImage ? (
+                        <img src={subjectImage} alt="Subject" className="w-full h-full object-cover" />
+                      ) : uploadingSubject ? (
+                        <div className="absolute inset-0 flex items-center justify-center"><Loader2 className="w-5 h-5 text-zinc-600 animate-spin" /></div>
+                      ) : (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center"><Upload className="w-4 h-4 text-zinc-700" /><span className="text-zinc-700 text-[8px] mt-1">Character</span></div>
+                      )}
                     </label>
-                    </div>
+                    {subjectImage && (
+                      <button onClick={() => setSubjectImage(null)} className="absolute top-1 right-1 w-5 h-5 bg-black/80 hover:bg-red-500 rounded-full flex items-center justify-center transition-colors z-10">
+                        <X className="w-3 h-3 text-white" />
+                      </button>
+                    )}
+                  </div>
+                </div>
 
-                    {/* STYLE Section */}
-                    <div className="space-y-2">
-                    <div className="text-white text-[10px] font-bold tracking-wider">STYLE</div>
-                    <label className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden cursor-pointer hover:border-zinc-600 transition-colors block aspect-square">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleStyleUpload}
-                      className="hidden"
-                      disabled={uploadingStyle}
-                    />
-                    {styleImage ? (
-                      <img src={styleImage} alt="Style" className="w-full h-full object-cover" />
-                    ) : uploadingStyle ? (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Loader2 className="w-6 h-6 text-zinc-600 animate-spin" />
-                      </div>
-                    ) : (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <Upload className="w-4 h-4 text-zinc-700" />
-                        <span className="text-zinc-700 text-[8px] mt-1">Style</span>
-                      </div>
-                    )}
+                {/* STYLE Section */}
+                <div className="space-y-2">
+                  <div className="text-white text-[10px] font-bold tracking-wider">STYLE</div>
+                  <div className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden hover:border-zinc-600 transition-colors block aspect-square">
+                    <label className="absolute inset-0 cursor-pointer">
+                      <input type="file" accept="image/*" onChange={handleStyleUpload} className="hidden" disabled={uploadingStyle} />
+                      {styleImage ? (
+                        <img src={styleImage} alt="Style" className="w-full h-full object-cover" />
+                      ) : uploadingStyle ? (
+                        <div className="absolute inset-0 flex items-center justify-center"><Loader2 className="w-5 h-5 text-zinc-600 animate-spin" /></div>
+                      ) : (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center"><Upload className="w-4 h-4 text-zinc-700" /><span className="text-zinc-700 text-[8px] mt-1">Style</span></div>
+                      )}
                     </label>
-                    </div>
+                    {styleImage && (
+                      <button onClick={() => setStyleImage(null)} className="absolute top-1 right-1 w-5 h-5 bg-black/80 hover:bg-red-500 rounded-full flex items-center justify-center transition-colors z-10">
+                        <X className="w-3 h-3 text-white" />
+                      </button>
+                    )}
+                  </div>
+                </div>
 
-                    {/* SCENE Section */}
-                    <div className="space-y-2">
-                    <div className="text-white text-[10px] font-bold tracking-wider">SCENE</div>
-                    <label className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden cursor-pointer hover:border-zinc-600 transition-colors block aspect-square">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleSceneUpload}
-                      className="hidden"
-                      disabled={uploadingScene}
-                    />
-                    {sceneImage ? (
-                      <img src={sceneImage} alt="Scene" className="w-full h-full object-cover" />
-                    ) : uploadingScene ? (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Loader2 className="w-6 h-6 text-zinc-600 animate-spin" />
-                      </div>
-                    ) : (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <Upload className="w-4 h-4 text-zinc-700" />
-                        <span className="text-zinc-700 text-[8px] mt-1">Scene</span>
-                      </div>
-                    )}
+                {/* SCENE Section */}
+                <div className="space-y-2">
+                  <div className="text-white text-[10px] font-bold tracking-wider">SCENE</div>
+                  <div className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden hover:border-zinc-600 transition-colors block aspect-square">
+                    <label className="absolute inset-0 cursor-pointer">
+                      <input type="file" accept="image/*" onChange={handleSceneUpload} className="hidden" disabled={uploadingScene} />
+                      {sceneImage ? (
+                        <img src={sceneImage} alt="Scene" className="w-full h-full object-cover" />
+                      ) : uploadingScene ? (
+                        <div className="absolute inset-0 flex items-center justify-center"><Loader2 className="w-5 h-5 text-zinc-600 animate-spin" /></div>
+                      ) : (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center"><Upload className="w-4 h-4 text-zinc-700" /><span className="text-zinc-700 text-[8px] mt-1">Scene</span></div>
+                      )}
                     </label>
-                    </div>
-                    </div>
+                    {sceneImage && (
+                      <button onClick={() => setSceneImage(null)} className="absolute top-1 right-1 w-5 h-5 bg-black/80 hover:bg-red-500 rounded-full flex items-center justify-center transition-colors z-10">
+                        <X className="w-3 h-3 text-white" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                </div>
                     </div>
                     )}
 
