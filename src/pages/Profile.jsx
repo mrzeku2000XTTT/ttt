@@ -1169,7 +1169,7 @@ Return ONLY the post text, no quotes or extra formatting.`,
                         </div>
                         <div>
                           <div className="text-white font-semibold text-sm">Kai Assistant</div>
-                          <div className="text-white/40 text-xs">Floating AI chatbot on Feed</div>
+                          <div className="text-white/40 text-xs">Persistent AI tab on the side</div>
                         </div>
                       </div>
                       <button

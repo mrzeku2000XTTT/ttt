@@ -8,6 +8,7 @@ import { createPageUrl } from "@/utils";
 export default function KaiChatbot() {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
   const [isEnabled, setIsEnabled] = useState(() => {
     const saved = localStorage.getItem('kai_enabled');
     return saved === null ? true : saved === 'true';
@@ -94,32 +95,32 @@ Respond as Kai:`,
 
   return (
     <>
-      {/* Floating Button */}
+      {/* Persistent Kai Tab - always visible when not open */}
       <AnimatePresence>
         {!isOpen && (
           <motion.button
-            initial={{ opacity: 0, scale: 0, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0, y: 20 }}
-            whileHover={{ scale: 1.08 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setIsOpen(true)}
-            className="fixed z-[70] flex items-center justify-center shadow-2xl"
+            initial={{ opacity: 0, x: 60 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 60 }}
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
+            onClick={() => { setIsOpen(true); setIsMinimized(false); }}
+            className="fixed z-[70] flex items-center gap-2 px-3 py-2 shadow-2xl"
             style={{
               bottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))',
-              right: '1rem',
-              width: '52px',
-              height: '52px',
-              borderRadius: '50%',
-              background: 'rgba(255,255,255,0.08)',
+              right: '0',
+              borderRadius: '12px 0 0 12px',
+              background: 'rgba(12,12,18,0.85)',
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255,255,255,0.18)',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.15)',
+              borderRight: 'none',
+              boxShadow: '-4px 4px 24px rgba(0,0,0,0.5)',
             }}
             title="Chat with Kai"
           >
-            <span className="text-xl">✦</span>
+            <span className="text-base">✦</span>
+            <span className="text-white/80 text-xs font-semibold tracking-wide">Kai</span>
           </motion.button>
         )}
       </AnimatePresence>
