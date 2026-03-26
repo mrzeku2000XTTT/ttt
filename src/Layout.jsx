@@ -12,6 +12,7 @@ const SearchBar = React.lazy(() => import("@/components/SearchBar").catch(() => 
 const MiniPlayer = React.lazy(() => import("@/components/MiniPlayer").catch(() => ({ default: () => null })));
 const VideoPlayerProvider = React.lazy(() => import("@/components/VideoPlayerContext").then(m => ({ default: m.VideoPlayerProvider })).catch(() => ({ default: ({ children }) => <>{children}</> })));
 
+import KaiChatbot from "@/components/feed/KaiChatbot";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -902,6 +903,7 @@ export default function Layout({ children, currentPageName }) {
         </div>
         </div>
       </div>
+      {currentPageName === 'Feed' && <KaiChatbot />}
       <React.Suspense fallback={null}>
         <MiniPlayer currentPage={currentPageName} />
       </React.Suspense>

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { User as UserIcon, Stamp, Shield, Camera, Loader2, Save, X, CheckCircle2, AlertCircle, Calendar, ExternalLink, Copy, Wallet, RefreshCw, Crown, Sparkles, Briefcase, Share2 } from "lucide-react";
+import { User as UserIcon, Stamp, Shield, Camera, Loader2, Save, X, CheckCircle2, AlertCircle, Calendar, ExternalLink, Copy, Wallet, RefreshCw, Crown, Sparkles, Briefcase, Share2, Bot } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DAGKnightBadge from "@/components/profile/DAGKnightBadge";
 import JobSelector from "@/components/profile/JobSelector";
@@ -37,6 +37,16 @@ export default function ProfilePage() {
   const [stampsView, setStampsView] = useState('news');
   const [stampedPosts, setStampedPosts] = useState([]);
   const [selectedStampPost, setSelectedStampPost] = useState(null);
+  const [kaiEnabled, setKaiEnabled] = useState(() => {
+    const saved = localStorage.getItem('kai_enabled');
+    return saved === null ? true : saved === 'true';
+  });
+
+  const toggleKai = (val) => {
+    setKaiEnabled(val);
+    localStorage.setItem('kai_enabled', String(val));
+    window.dispatchEvent(new Event('kai_toggle'));
+  };
 
   useEffect(() => {
     loadData();
@@ -1149,6 +1159,25 @@ Return ONLY the post text, no quotes or extra formatting.`,
                           </div>
                         </div>
                       )}
+                    </div>
+
+                    {/* Kai Toggle */}
+                    <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.1)' }}>
+                          <span className="text-base">✦</span>
+                        </div>
+                        <div>
+                          <div className="text-white font-semibold text-sm">Kai Assistant</div>
+                          <div className="text-white/40 text-xs">Floating AI chatbot on Feed</div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => toggleKai(!kaiEnabled)}
+                        className={`relative w-12 h-6 rounded-full transition-all duration-300 ${kaiEnabled ? 'bg-cyan-500' : 'bg-white/20'}`}
+                      >
+                        <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-300 ${kaiEnabled ? 'left-6' : 'left-0.5'}`} />
+                      </button>
                     </div>
 
                     {isEditing && (
