@@ -305,9 +305,14 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
     setShowPaymentModal(true);
   };
 
+  // Determine which wallet address is available
+  const availableWalletAddress = kaswareWallet.connected ? kaswareWallet.address : user?.created_wallet_address;
+
   const handleSelfPayment = async () => {
     if (!kaswareWallet.connected) {
-      toast.error('Please connect Kasware wallet');
+      // TTT wallet users must use ZK flow
+      setShowPaymentModal(false);
+      setShowZkVerification(true);
       return;
     }
 
@@ -754,9 +759,11 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
 
               <div className="space-y-4">
                 <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-                  <div className="text-xs text-white/60 mb-1">Your Wallet</div>
+                  <div className="text-xs text-white/60 mb-1">
+                    {kaswareWallet.connected ? 'Kasware Wallet' : 'TTT Wallet'}
+                  </div>
                   <div className="text-white font-mono text-sm break-all">
-                    {kaswareWallet.address}
+                    {availableWalletAddress || 'No wallet connected'}
                   </div>
                 </div>
 
@@ -772,7 +779,7 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
 
                 <Button
                   onClick={handleSelfPayment}
-                  disabled={publishingMessageId === messageToPublish.id}
+                  disabled={publishingMessageId === messageToPublish.id || !availableWalletAddress}
                   className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 h-12 text-black font-bold"
                 >
                   {publishingMessageId === messageToPublish.id ? (
@@ -783,7 +790,7 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
                   ) : (
                     <>
                       <Lock className="w-5 h-5 mr-2" />
-                      Pay 1 KAS & Publish
+                      {kaswareWallet.connected ? 'Pay 1 KAS & Publish' : 'Pay via ZK (TTT Wallet)'}
                     </>
                   )}
                 </Button>
