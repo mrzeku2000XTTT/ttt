@@ -109,15 +109,19 @@ Respond as Kai:`,
             style={{
               bottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))',
               right: '1rem',
-              width: '32px',
-              height: '32px',
+              width: '30px',
+              height: '30px',
               borderRadius: '50%',
-              background: 'transparent',
-              border: '1px solid rgba(255,255,255,0.2)',
+              background: 'rgba(0,0,0,0)',
+              backgroundColor: 'transparent',
+              border: '1px solid rgba(255,255,255,0.25)',
+              boxShadow: 'none',
+              padding: 0,
+              outline: 'none',
             }}
             title="Chat with Kai"
           >
-            <span className="text-sm text-white/70">✦</span>
+            <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.65)', lineHeight: 1 }}>✦</span>
           </motion.button>
         )}
       </AnimatePresence>
