@@ -202,18 +202,19 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
 
     let attempts = 0;
     const maxAttempts = 3;
+    let detailedPrompt = "";
+    let imageUrls = [];
+    let isStyleTransformation = false;
 
     while (attempts < maxAttempts) {
       try {
         attempts++;
         console.log(`🎨 Generation attempt ${attempts}/${maxAttempts}`);
 
-        let detailedPrompt = "";
-
         if (uploadedImage) {
           // Check if user wants a style transformation (anime, pixel art, etc.)
           const lowerPrompt = remixPrompt.toLowerCase();
-          const isStyleTransformation = lowerPrompt.includes('anime') || lowerPrompt.includes('cartoon') || 
+          isStyleTransformation = lowerPrompt.includes('anime') || lowerPrompt.includes('cartoon') || 
                                         lowerPrompt.includes('pixel') || lowerPrompt.includes('3d') || 
                                         lowerPrompt.includes('version') || lowerPrompt.includes('style') ||
                                         lowerPrompt.includes('painting') || lowerPrompt.includes('sketch') ||
@@ -285,7 +286,7 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
       console.log('🎨 Generating image with prompt:', detailedPrompt);
 
       // Collect all image references
-      const imageUrls = [];
+      imageUrls = [];
       if (uploadedImage) imageUrls.push(uploadedImage);
       if (startImage) imageUrls.push(startImage);
       if (endImage) imageUrls.push(endImage);
@@ -586,13 +587,13 @@ Keep the user's core intent but make it technically precise and comprehensive. R
                         setCropImageUrl(uploadedImage);
                         setShowCropModal(true);
                       }}
-                      className="absolute top-2 left-2 w-8 h-8 bg-cyan-500/80 hover:bg-cyan-500 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-2 left-2 w-8 h-8 bg-cyan-500/80 hover:bg-cyan-500 rounded-lg flex items-center justify-center transition-opacity"
                     >
                       <Edit2 className="w-4 h-4 text-white" />
                     </button>
                     <button
                       onClick={() => setUploadedImage(null)}
-                      className="absolute top-2 right-2 w-8 h-8 bg-red-500/80 hover:bg-red-500 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-2 right-2 w-8 h-8 bg-red-500/80 hover:bg-red-500 rounded-lg flex items-center justify-center transition-opacity"
                     >
                       <X className="w-4 h-4 text-white" />
                     </button>
