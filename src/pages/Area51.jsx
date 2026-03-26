@@ -23,6 +23,7 @@ export default function Area51Page() {
   const [messageToPublish, setMessageToPublish] = useState(null);
   const [publishingMessageId, setPublishingMessageId] = useState(null);
   const [kaswareWallet, setKaswareWallet] = useState({ connected: false, address: null });
+  const [tttWalletAddress, setTttWalletAddress] = useState(null);
   const [showZkVerification, setShowZkVerification] = useState(false);
   const [zkAmount, setZkAmount] = useState('1');
   const [zkTimestamp, setZkTimestamp] = useState(null);
@@ -104,6 +105,10 @@ export default function Area51Page() {
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
+      // Store wallet address separately so it's always accessible
+      if (currentUser?.created_wallet_address) {
+        setTttWalletAddress(currentUser.created_wallet_address);
+      }
     } catch (error) {
       console.log("Guest user");
     }
@@ -353,7 +358,7 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
   };
 
   const handleZkVerification = async () => {
-    const verifyAddress = selectedZkWallet === 'ttt' ? user?.created_wallet_address : kaswareWallet.address;
+    const verifyAddress = selectedZkWallet === 'ttt' ? tttWalletAddress : kaswareWallet.address;
     
     if (!verifyAddress || verifyAddress === 'undefined') {
       if (selectedZkWallet === 'ttt') {
@@ -870,7 +875,7 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
                         <div className="text-left">
                           <p className="text-xs font-semibold mb-1">TTT Wallet</p>
                           <p className="text-[10px] font-mono opacity-70">
-                            {user?.created_wallet_address?.substring(0, 10)}...
+                            {tttWalletAddress ? `${tttWalletAddress.substring(0, 10)}...` : 'Not connected'}
                           </p>
                         </div>
                       </Button>
@@ -888,7 +893,7 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
                     </div>
                   </div>
 
-                  {selectedZkWallet === 'ttt' && !user?.created_wallet_address ? (
+                  {selectedZkWallet === 'ttt' && !tttWalletAddress ? (
                     <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
                       <p className="text-red-400 text-xs font-semibold">⚠️ No TTT wallet found</p>
                       <p className="text-white/50 text-xs mt-1">Please connect a wallet in your Profile first, or switch to Kasware L1.</p>
@@ -904,13 +909,13 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-white text-sm font-mono break-all">
                         {selectedZkWallet === 'ttt' 
-                          ? `${user.created_wallet_address.substring(0, 12)}...${user.created_wallet_address.slice(-8)}`
+                          ? `${tttWalletAddress.substring(0, 12)}...${tttWalletAddress.slice(-8)}`
                           : `${kaswareWallet.address.substring(0, 12)}...${kaswareWallet.address.slice(-8)}`
                         }
                       </p>
                       <Button
                         onClick={() => {
-                          const address = selectedZkWallet === 'ttt' ? user?.created_wallet_address : kaswareWallet.address;
+                          const address = selectedZkWallet === 'ttt' ? tttWalletAddress : kaswareWallet.address;
                           navigator.clipboard.writeText(address || '');
                           toast.success('✓ Address copied');
                         }}
@@ -951,7 +956,7 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
 
                   <Button
                     onClick={handleZkVerification}
-                    disabled={!zkAmount || parseFloat(zkAmount) <= 0 || !(selectedZkWallet === 'ttt' ? user?.created_wallet_address : kaswareWallet.address)}
+                    disabled={!zkAmount || parseFloat(zkAmount) <= 0 || !(selectedZkWallet === 'ttt' ? tttWalletAddress : kaswareWallet.address)}
                     className="w-full bg-cyan-500 hover:bg-cyan-600 text-white h-12 font-semibold disabled:opacity-50"
                   >
                     Start Verification
@@ -980,11 +985,11 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
                   <p className="text-white/40 text-xs mb-1">Send to this address:</p>
                   <div className="flex items-center gap-2">
                     <p className="text-white text-xs font-mono break-all flex-1">
-                      {selectedZkWallet === 'ttt' ? user?.created_wallet_address : kaswareWallet.address}
+                       {selectedZkWallet === 'ttt' ? tttWalletAddress : kaswareWallet.address}
                     </p>
                     <Button
                       onClick={() => {
-                        const address = selectedZkWallet === 'ttt' ? user?.created_wallet_address : kaswareWallet.address;
+                        const address = selectedZkWallet === 'ttt' ? tttWalletAddress : kaswareWallet.address;
                         navigator.clipboard.writeText(address || '');
                         toast.success('Address copied!');
                       }}
