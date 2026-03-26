@@ -355,8 +355,12 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
   const handleZkVerification = async () => {
     const verifyAddress = selectedZkWallet === 'ttt' ? user?.created_wallet_address : kaswareWallet.address;
     
-    if (!verifyAddress) {
-      toast.error(selectedZkWallet === 'ttt' ? 'Please login first' : 'Please connect Kasware');
+    if (!verifyAddress || verifyAddress === 'undefined') {
+      if (selectedZkWallet === 'ttt') {
+        toast.error('No TTT wallet address found. Please connect a wallet in your Profile first.');
+      } else {
+        toast.error('Please connect Kasware wallet.');
+      }
       return;
     }
 
@@ -884,13 +888,24 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
                     </div>
                   </div>
 
+                  {selectedZkWallet === 'ttt' && !user?.created_wallet_address ? (
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                      <p className="text-red-400 text-xs font-semibold">⚠️ No TTT wallet found</p>
+                      <p className="text-white/50 text-xs mt-1">Please connect a wallet in your Profile first, or switch to Kasware L1.</p>
+                    </div>
+                  ) : selectedZkWallet === 'kasware' && !kaswareWallet.address ? (
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                      <p className="text-red-400 text-xs font-semibold">⚠️ Kasware not connected</p>
+                      <p className="text-white/50 text-xs mt-1">Please connect Kasware wallet or switch to TTT Wallet.</p>
+                    </div>
+                  ) : (
                   <div className="bg-white/5 rounded-lg p-3 border border-white/10">
                     <p className="text-white/40 text-xs mb-1">Selected Address</p>
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-white text-sm font-mono break-all">
                         {selectedZkWallet === 'ttt' 
-                          ? `${user?.created_wallet_address?.substring(0, 12)}...${user?.created_wallet_address?.slice(-8)}`
-                          : `${kaswareWallet.address?.substring(0, 12)}...${kaswareWallet.address?.slice(-8)}`
+                          ? `${user.created_wallet_address.substring(0, 12)}...${user.created_wallet_address.slice(-8)}`
+                          : `${kaswareWallet.address.substring(0, 12)}...${kaswareWallet.address.slice(-8)}`
                         }
                       </p>
                       <Button
@@ -906,6 +921,7 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
                       </Button>
                     </div>
                   </div>
+                  )}
 
                   <div>
                     <label className="text-white/60 text-sm mb-2 block">
@@ -935,7 +951,7 @@ Topics can include: aliens, government secrets, shadow organizations, hidden tec
 
                   <Button
                     onClick={handleZkVerification}
-                    disabled={!zkAmount || parseFloat(zkAmount) <= 0}
+                    disabled={!zkAmount || parseFloat(zkAmount) <= 0 || !(selectedZkWallet === 'ttt' ? user?.created_wallet_address : kaswareWallet.address)}
                     className="w-full bg-cyan-500 hover:bg-cyan-600 text-white h-12 font-semibold disabled:opacity-50"
                   >
                     Start Verification
