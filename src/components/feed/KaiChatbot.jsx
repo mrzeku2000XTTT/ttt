@@ -105,22 +105,19 @@ Respond as Kai:`,
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
             onClick={() => { setIsOpen(true); setIsMinimized(false); }}
-            className="fixed z-[70] flex items-center gap-2 px-3 py-2 shadow-2xl"
+            className="fixed z-[70] flex items-center justify-center"
             style={{
               bottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))',
-              right: '0',
-              borderRadius: '12px 0 0 12px',
-              background: 'rgba(12,12,18,0.85)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255,255,255,0.15)',
-              borderRight: 'none',
-              boxShadow: '-4px 4px 24px rgba(0,0,0,0.5)',
+              right: '1rem',
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              background: 'transparent',
+              border: '1px solid rgba(255,255,255,0.2)',
             }}
             title="Chat with Kai"
           >
-            <span className="text-base">✦</span>
-            <span className="text-white/80 text-xs font-semibold tracking-wide">Kai</span>
+            <span className="text-sm text-white/70">✦</span>
           </motion.button>
         )}
       </AnimatePresence>
