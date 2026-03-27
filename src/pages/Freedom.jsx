@@ -151,6 +151,21 @@ function MeshCanvas({ depthMap }) {
       }
     }
 
+    const frontVertexCount = positions.length / 3;
+
+    // Back face (flat at z = -0.01)
+    for (let yi = 0; yi <= segH; yi++) {
+      for (let xi = 0; xi <= segW; xi++) {
+        const u = xi / segW;
+        const v = yi / segH;
+        const x = (u - 0.5) * scaleX;
+        const y = -(v - 0.5) * scaleY;
+        positions.push(x, y, -0.01);
+        uvs.push(u, 1 - v);
+        normals.push(0, 0, -1);
+      }
+    }
+
     // Helper: sample mask at grid coordinates
     const getMaskXY = (xi, yi) => {
       const sx = Math.round((Math.min(Math.max(xi,0),segW) / segW) * (width - 1));
@@ -169,8 +184,14 @@ function MeshCanvas({ depthMap }) {
         const b = a + 1;
         const c = a + (segW + 1);
         const d = c + 1;
+        // Front
         indices.push(a, c, b, b, c, d);
-        indices.push(a, b, c, b, d, c);
+        // Back
+        const ba = a + frontVertexCount;
+        const bb = ba + 1;
+        const bc = ba + (segW + 1);
+        const bd = bc + 1;
+        indices.push(ba, bb, bc, bb, bd, bc);
       }
     }
 
