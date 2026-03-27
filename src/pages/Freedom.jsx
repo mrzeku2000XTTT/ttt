@@ -118,7 +118,7 @@ function MeshCanvas({ depthMap }) {
     const segH = Math.min(height - 1, 255);
     const scaleX = aspect >= 1 ? 2 : 2 * aspect;
     const scaleY = aspect >= 1 ? 2 / aspect : 2;
-    const MAX_Z = 0.55;
+    const MAX_Z = 0.18;
 
     const geo = new THREE.BufferGeometry();
     const positions = [];
@@ -158,7 +158,7 @@ function MeshCanvas({ depthMap }) {
       }
     }
 
-    // Back face (flat at z = -0.05)
+    // Back face (flat at z = 0)
     const backOffset = positions.length / 3;
     for (let yi = 0; yi <= segH; yi++) {
       for (let xi = 0; xi <= segW; xi++) {
@@ -166,7 +166,7 @@ function MeshCanvas({ depthMap }) {
         const v = yi / segH;
         const x = (u - 0.5) * scaleX;
         const y = -(v - 0.5) * scaleY;
-        positions.push(x, y, -0.05);
+        positions.push(x, y, 0);
         uvs.push(u, 1 - v);
         normals.push(0, 0, -1);
       }
@@ -177,8 +177,28 @@ function MeshCanvas({ depthMap }) {
         const b = a + 1;
         const c = a + (segW + 1);
         const d = c + 1;
-        indices.push(a, b, c, b, d, c); // reversed winding
+        indices.push(a, b, c, b, d, c);
       }
+    }
+
+    // Side walls — stitch silhouette edge front to back
+    // Walk the border of the mask and connect front/back vertices
+    const frontVerts = (yi, xi) => yi * (segW + 1) + xi;
+    const backVerts = (yi, xi) => backOffset + yi * (segW + 1) + xi;
+    const addWall = (yi0, xi0, yi1, xi1) => {
+      const f0 = frontVerts(yi0, xi0), f1 = frontVerts(yi1, xi1);
+      const b0 = backVerts(yi0, xi0),  b1 = backVerts(yi1, xi1);
+      indices.push(f0, b0, f1, f1, b0, b1);
+    };
+    // Top and bottom edges
+    for (let xi = 0; xi < segW; xi++) {
+      addWall(0, xi, 0, xi + 1);
+      addWall(segH, xi + 1, segH, xi);
+    }
+    // Left and right edges
+    for (let yi = 0; yi < segH; yi++) {
+      addWall(yi + 1, 0, yi, 0);
+      addWall(yi, segW, yi + 1, segW);
     }
 
     geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
