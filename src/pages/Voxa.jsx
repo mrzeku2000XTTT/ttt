@@ -124,19 +124,22 @@ export default function VoxaPage() {
   const [sourceLang, setSourceLang] = useState("en");
   const [targetLang, setTargetLang] = useState("es");
   const [loading, setLoading] = useState(false);
+  const [romanization, setRomanization] = useState("");
   const [speakingSource, setSpeakingSource] = useState(false);
   const [speakingTarget, setSpeakingTarget] = useState(false);
   const debounceRef = useRef(null);
 
   const translate = async (text, from, to) => {
-    if (!text.trim()) { setTranslatedText(""); return; }
+    if (!text.trim()) { setTranslatedText(""); setRomanization(""); return; }
     setLoading(true);
     try {
-      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${from}&tl=${to}&dt=t&q=${encodeURIComponent(text)}`;
+      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${from}&tl=${to}&dt=t&dt=rm&q=${encodeURIComponent(text)}`;
       const res = await fetch(url);
       const data = await res.json();
       const result = data[0]?.map(item => item[0]).join("") || "";
+      const roman = data[0]?.map(item => item[3]).filter(Boolean).join("") || "";
       setTranslatedText(result);
+      setRomanization(roman);
     } catch (err) {
       toast.error("Translation failed. Please try again.");
     } finally {
@@ -285,9 +288,16 @@ export default function VoxaPage() {
                 <span className="text-white/40 text-sm">Translating...</span>
               </div>
             ) : (
-              <p className="text-white text-lg leading-relaxed min-h-[120px] whitespace-pre-wrap" style={{ fontFamily: MULTILANG_FONT }}>
-                {translatedText || <span className="text-white/20">Translation will appear here...</span>}
-              </p>
+              <div className="min-h-[120px]">
+                <p className="text-white text-lg leading-relaxed whitespace-pre-wrap" style={{ fontFamily: MULTILANG_FONT }}>
+                  {translatedText || <span className="text-white/20">Translation will appear here...</span>}
+                </p>
+                {romanization && translatedText && (
+                  <p className="text-white/50 text-sm mt-2 italic" style={{ fontFamily: "system-ui, sans-serif" }}>
+                    {romanization}
+                  </p>
+                )}
+              </div>
             )}
           </div>
         </motion.div>
