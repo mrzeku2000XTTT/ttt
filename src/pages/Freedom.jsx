@@ -105,8 +105,7 @@ function MeshCanvas({ depthMap }) {
 
     const { depth, mask, data, width, height, aspect } = depthMap;
 
-    // Build extruded solid mesh — front surface only + flat back + side walls
-    const THICKNESS = 0.08; // extrusion depth for solid volume
+    // Build displaced mesh geometry
     const segW = Math.min(width - 1, 255);
     const segH = Math.min(height - 1, 255);
     const scaleX = aspect >= 1 ? 2 : 2 * aspect;
@@ -132,7 +131,7 @@ function MeshCanvas({ depthMap }) {
       return mask[sy * width + sx] ? 1 : 0;
     };
 
-    // Front face vertices (top surface with depth displacement)
+    // Front face vertices
     for (let yi = 0; yi <= segH; yi++) {
       for (let xi = 0; xi <= segW; xi++) {
         const u = xi / segW;
@@ -142,13 +141,14 @@ function MeshCanvas({ depthMap }) {
         const z = getDepth(xi, yi);
         positions.push(x, y, z);
         uvs.push(u, 1 - v);
-        normals.push(0, 0, 1);
+        normals.push(0, 0, 1); // will compute later
       }
     }
 
-    // Front face triangles
+    // Front face triangles — only where mask is foreground
     for (let yi = 0; yi < segH; yi++) {
       for (let xi = 0; xi < segW; xi++) {
+        // Skip quad if all 4 corners are background
         const m00 = getMaskXY(xi, yi), m10 = getMaskXY(xi+1, yi);
         const m01 = getMaskXY(xi, yi+1), m11 = getMaskXY(xi+1, yi+1);
         if (!m00 && !m10 && !m01 && !m11) continue;
@@ -160,7 +160,7 @@ function MeshCanvas({ depthMap }) {
       }
     }
 
-    // Back face vertices (flat surface at z = -THICKNESS)
+    // Back face (depth-displaced concave mirror of front, gives real volume)
     const backOffset = positions.length / 3;
     for (let yi = 0; yi <= segH; yi++) {
       for (let xi = 0; xi <= segW; xi++) {
@@ -168,14 +168,12 @@ function MeshCanvas({ depthMap }) {
         const v = yi / segH;
         const x = (u - 0.5) * scaleX;
         const y = -(v - 0.5) * scaleY;
-        const z = -THICKNESS; // flat back
+        const z = -getDepth(xi, yi) * 0.15; // thinner back wall
         positions.push(x, y, z);
         uvs.push(u, 1 - v);
         normals.push(0, 0, -1);
       }
     }
-
-    // Back face triangles (reversed winding)
     for (let yi = 0; yi < segH; yi++) {
       for (let xi = 0; xi < segW; xi++) {
         const m00 = getMaskXY(xi, yi), m10 = getMaskXY(xi+1, yi);
