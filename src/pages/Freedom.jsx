@@ -288,7 +288,8 @@ function MeshCanvas({ depthMap, controls }) {
     geo.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
     geo.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
     geo.setIndex(indices);
-    geo.computeVertexNormals(); // real smooth normals
+    geo.computeVertexNormals();
+    geo.computeTangents();
 
     // Texture from image data
     const texCanvas = document.createElement("canvas");
@@ -312,8 +313,10 @@ function MeshCanvas({ depthMap, controls }) {
       alphaTest: 0.1,
       roughness: controls.roughness,
       metalness: controls.metalness,
-      envMapIntensity: 0.6,
+      envMapIntensity: 0.8,
       flatShading: false,
+      wireframe: false,
+      smoothShading: true,
     });
     materialRef.current = mat;
 
@@ -359,15 +362,12 @@ function MeshCanvas({ depthMap, controls }) {
 
     const updateMaterial = () => {
       if (materialRef.current) {
-        materialRef.current.roughness = controls.roughness;
-        materialRef.current.metalness = controls.metalness;
+        materialRef.current.roughness = Math.max(0, Math.min(1, controls.roughness));
+        materialRef.current.metalness = Math.max(0, Math.min(1, controls.metalness));
         materialRef.current.needsUpdate = true;
-        if (materialRef.current.map) {
-          materialRef.current.map.colorSpace = THREE.SRGBColorSpace;
-        }
       }
       if (lightRef.current) {
-        lightRef.current.intensity = controls.lightIntensity;
+        lightRef.current.intensity = Math.max(0.1, controls.lightIntensity);
       }
     };
 
