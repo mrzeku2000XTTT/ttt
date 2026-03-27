@@ -206,7 +206,7 @@ Be creative — map organic subjects to geometric forms.`,
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-6">
       {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -226,7 +226,8 @@ Be creative — map organic subjects to geometric forms.`,
         style={{
           background: "linear-gradient(160deg, #0a0a14 0%, #080810 100%)",
           border: "1px solid rgba(255,255,255,0.08)",
-          maxHeight: "92vh",
+          height: "92dvh",
+          maxHeight: "92dvh",
         }}
         onDrop={onDrop}
         onDragOver={e => e.preventDefault()}
