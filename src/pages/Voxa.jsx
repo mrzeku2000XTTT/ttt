@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 
-const MULTILANG_FONT = "'Noto Sans', 'Noto Sans Arabic', 'Noto Sans Devanagari', 'Noto Sans SC', 'Noto Sans JP', 'Noto Sans KR', 'Noto Sans Thai', 'Noto Sans Hebrew', 'Noto Sans Bengali', system-ui, sans-serif";
 import { ArrowLeftRight, Volume2, Copy, X, ChevronDown, Search, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+
+const MULTILANG_FONT = "'Noto Sans', 'Noto Sans Arabic', 'Noto Sans Devanagari', 'Noto Sans SC', 'Noto Sans JP', 'Noto Sans KR', 'Noto Sans Thai', 'Noto Sans Hebrew', 'Noto Sans Bengali', system-ui, sans-serif";
 
 const LANGUAGES = [
   { code: "af", name: "Afrikaans" }, { code: "sq", name: "Albanian" }, { code: "am", name: "Amharic" },
