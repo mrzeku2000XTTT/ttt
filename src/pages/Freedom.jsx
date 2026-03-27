@@ -110,6 +110,10 @@ function MeshCanvas({ depthMap }) {
     const rim = new THREE.DirectionalLight(0xffffff, 0.3);
     rim.position.set(0, 0, -3);
     scene.add(rim);
+    // Rear point light gives the concave back face warm edge definition
+    const backLight = new THREE.PointLight(0x664422, 1.8, 8);
+    backLight.position.set(0, 0, -2.5);
+    scene.add(backLight);
 
     const { depth, mask, data, width, height, aspect } = depthMap;
 
@@ -169,7 +173,7 @@ function MeshCanvas({ depthMap }) {
       }
     }
 
-    // Back face (flat at z = 0)
+    // Back face (depth-displaced concave mirror of front, gives real volume)
     const backOffset = positions.length / 3;
     for (let yi = 0; yi <= segH; yi++) {
       for (let xi = 0; xi <= segW; xi++) {
@@ -177,7 +181,8 @@ function MeshCanvas({ depthMap }) {
         const v = yi / segH;
         const x = (u - 0.5) * scaleX;
         const y = -(v - 0.5) * scaleY;
-        positions.push(x, y, 0);
+        const z = -getDepth(xi, yi) * 0.55; // concave mirror of front
+        positions.push(x, y, z);
         uvs.push(u, 1 - v);
         normals.push(0, 0, -1);
       }
