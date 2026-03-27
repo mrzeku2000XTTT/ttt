@@ -234,7 +234,7 @@ function MeshCanvas({ depthMap, controls }) {
         const v = yi / segH;
         const x = (u - 0.5) * scaleX;
         const y = -(v - 0.5) * scaleY;
-        const z = -getDepth(xi, yi) * 0.15; // thinner back wall
+        const z = -getDepth(xi, yi) * 0.35; // proper thickness depth
         positions.push(x, y, z);
         uvs.push(u, 1 - v);
         normals.push(0, 0, -1);
