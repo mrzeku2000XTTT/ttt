@@ -4,9 +4,9 @@ import { motion } from "framer-motion";
 import { X, Upload, Loader2, Image as ImageIcon, RotateCcw, Sparkles } from "lucide-react";
 import * as THREE from "three";
 
-// ── Canvas-based depth estimation — subject pops OUT regardless of color ──────
+// ── Smart depth: alpha-channel first, then edge+contrast fallback ────────────
 async function runDepthEstimation(imageElement, onProgress) {
-  onProgress("Analysing image depth...");
+  onProgress("Analysing image...");
   const w = imageElement.naturalWidth || imageElement.width;
   const h = imageElement.naturalHeight || imageElement.height;
 
@@ -17,33 +17,43 @@ async function runDepthEstimation(imageElement, onProgress) {
   ctx.drawImage(imageElement, 0, 0);
   const { data } = ctx.getImageData(0, 0, w, h);
 
-  onProgress("Computing depth map...");
+  onProgress("Building depth map...");
 
-  // Sample corners to estimate background color
-  const cornerLums = [];
-  const samplePoints = [
-    [0,0],[1,0],[2,0],[w-1,0],[w-2,0],
-    [0,1],[0,h-1],[w-1,h-1],[w-2,h-2],[1,h-1]
-  ];
-  for (const [x, y] of samplePoints) {
-    const i = (y * w + x) * 4;
-    cornerLums.push(0.299*(data[i]/255) + 0.587*(data[i+1]/255) + 0.114*(data[i+2]/255));
-  }
-  const bgLum = cornerLums.reduce((a,b)=>a+b,0) / cornerLums.length;
-
-  // Build "distance from background" map — subject always pops out
-  const depth = new Float32Array(w * h);
-  for (let i = 0; i < w * h; i++) {
-    const lum = 0.299*(data[i*4]/255) + 0.587*(data[i*4+1]/255) + 0.114*(data[i*4+2]/255);
-    const alpha = data[i*4+3] !== undefined ? data[i*4+3]/255 : 1;
-    // Distance from background luminance = subject depth
-    depth[i] = Math.abs(lum - bgLum) * alpha;
+  // Check if image has meaningful alpha (PNG with transparent bg)
+  let hasAlpha = false;
+  for (let i = 3; i < data.length; i += 4) {
+    if (data[i] < 200) { hasAlpha = true; break; }
   }
 
-  // Multi-pass blur for smooth depth field
-  const blurred = boxBlur(boxBlur(depth, w, h, 8), w, h, 6);
+  const raw = new Float32Array(w * h);
 
-  // Normalize to 0-1
+  if (hasAlpha) {
+    // Alpha-based: transparent = background (flat), opaque = foreground (pops out)
+    for (let i = 0; i < w * h; i++) {
+      raw[i] = data[i * 4 + 3] / 255;
+    }
+  } else {
+    // Fallback: sample corners for bg color, use color distance as depth
+    let bgR = 0, bgG = 0, bgB = 0, n = 0;
+    const corners = [[0,0],[w-1,0],[0,h-1],[w-1,h-1],[Math.floor(w/2),0],[0,Math.floor(h/2)]];
+    for (const [x, y] of corners) {
+      const i = (y * w + x) * 4;
+      bgR += data[i]; bgG += data[i+1]; bgB += data[i+2]; n++;
+    }
+    bgR /= n; bgG /= n; bgB /= n;
+
+    for (let i = 0; i < w * h; i++) {
+      const dr = data[i*4]   - bgR;
+      const dg = data[i*4+1] - bgG;
+      const db = data[i*4+2] - bgB;
+      raw[i] = Math.sqrt(dr*dr + dg*dg + db*db) / 441.67; // 441.67 = max dist
+    }
+  }
+
+  // Smooth with a light blur to avoid pixel jaggies on mesh
+  const blurred = boxBlur(raw, w, h, 6);
+
+  // Normalize
   let max = 0;
   for (let i = 0; i < blurred.length; i++) if (blurred[i] > max) max = blurred[i];
   if (max > 0) for (let i = 0; i < blurred.length; i++) blurred[i] /= max;
@@ -103,7 +113,7 @@ function DepthCanvas({ imageSrc, depthData }) {
     dir.position.set(2, 3, 4);
     scene.add(dir);
 
-    const segments = 128;
+    const segments = 160;
     const geo = new THREE.PlaneGeometry(3.2, 2.4, segments, segments);
     const pos = geo.attributes.position;
 
@@ -113,7 +123,8 @@ function DepthCanvas({ imageSrc, depthData }) {
         const idx = i * (segments + 1) + j;
         const px = Math.floor((j / segments) * (dw - 1));
         const py = Math.floor((i / segments) * (dh - 1));
-        pos.setZ(idx, (depthData.data[py * dw + px] || 0) * 0.7 - 0.1);
+        const d = depthData.data[py * dw + px] || 0;
+        pos.setZ(idx, d * 0.9); // subject pops OUT toward viewer
       }
     }
     geo.computeVertexNormals();
