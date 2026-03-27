@@ -147,12 +147,27 @@ function MeshCanvas({ depthMap, controls }) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setClearColor(0x000000, 1);
     renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
+    renderer.toneMappingExposure = 1.2;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
     el.appendChild(renderer.domElement);
 
-    // Lighting
-    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    // Lighting - enhanced setup
+    const ambLight = new THREE.AmbientLight(0x6688cc, 0.5);
+    scene.add(ambLight);
+    
     const sun = new THREE.DirectionalLight(0xffffff, controls.lightIntensity);
+    sun.position.set(3, 3, 2);
+    sun.castShadow = true;
+    sun.shadow.mapSize.width = 2048;
+    sun.shadow.mapSize.height = 2048;
+    scene.add(sun);
     lightRef.current = sun;
+
+    // Fill light from opposite side
+    const fillLight = new THREE.DirectionalLight(0x4488ff, 0.4);
+    fillLight.position.set(-2, 1, 3);
+    scene.add(fillLight);
 
     const { depth, mask, data, width, height, aspect } = depthMap;
 
@@ -297,6 +312,8 @@ function MeshCanvas({ depthMap, controls }) {
       alphaTest: 0.1,
       roughness: controls.roughness,
       metalness: controls.metalness,
+      envMapIntensity: 0.6,
+      flatShading: false,
     });
     materialRef.current = mat;
 
@@ -309,7 +326,14 @@ function MeshCanvas({ depthMap, controls }) {
     for (let i = 0; i < 40; i++) pts.push((Math.random()-.5)*6,(Math.random()-.5)*6,(Math.random()-.5)*3);
     const pGeo = new THREE.BufferGeometry();
     pGeo.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
-    scene.add(new THREE.Points(pGeo, new THREE.PointsMaterial({ color: 0x0066ff, size: 0.02, opacity: 0.3, transparent: true })));
+    const ptMat = new THREE.PointsMaterial({ 
+      color: 0x0099ff, 
+      size: 0.025, 
+      opacity: 0.4, 
+      transparent: true,
+      sizeAttenuation: true
+    });
+    scene.add(new THREE.Points(pGeo, ptMat));
 
     // Drag to orbit
     let isDragging = false, prevX = 0, prevY = 0;
