@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { X, Upload, Loader2, Image as ImageIcon, RotateCcw, Sparkles } from "lucide-react";
 import * as THREE from "three";
 
-// ── Canvas-based luminance depth estimation (no external deps, no CORS issues) ─
+// ── Canvas-based depth estimation — subject pops OUT regardless of color ──────
 async function runDepthEstimation(imageElement, onProgress) {
   onProgress("Analysing image depth...");
   const w = imageElement.naturalWidth || imageElement.width;
@@ -19,14 +19,34 @@ async function runDepthEstimation(imageElement, onProgress) {
 
   onProgress("Computing depth map...");
 
-  // Luminance map
-  const lum = new Float32Array(w * h);
+  // Sample corners to estimate background color
+  const cornerLums = [];
+  const samplePoints = [
+    [0,0],[1,0],[2,0],[w-1,0],[w-2,0],
+    [0,1],[0,h-1],[w-1,h-1],[w-2,h-2],[1,h-1]
+  ];
+  for (const [x, y] of samplePoints) {
+    const i = (y * w + x) * 4;
+    cornerLums.push(0.299*(data[i]/255) + 0.587*(data[i+1]/255) + 0.114*(data[i+2]/255));
+  }
+  const bgLum = cornerLums.reduce((a,b)=>a+b,0) / cornerLums.length;
+
+  // Build "distance from background" map — subject always pops out
+  const depth = new Float32Array(w * h);
   for (let i = 0; i < w * h; i++) {
-    lum[i] = 0.299 * (data[i*4]/255) + 0.587 * (data[i*4+1]/255) + 0.114 * (data[i*4+2]/255);
+    const lum = 0.299*(data[i*4]/255) + 0.587*(data[i*4+1]/255) + 0.114*(data[i*4+2]/255);
+    const alpha = data[i*4+3] !== undefined ? data[i*4+3]/255 : 1;
+    // Distance from background luminance = subject depth
+    depth[i] = Math.abs(lum - bgLum) * alpha;
   }
 
-  // Multi-pass blur for smooth depth
-  const blurred = boxBlur(boxBlur(lum, w, h, 12), w, h, 8);
+  // Multi-pass blur for smooth depth field
+  const blurred = boxBlur(boxBlur(depth, w, h, 8), w, h, 6);
+
+  // Normalize to 0-1
+  let max = 0;
+  for (let i = 0; i < blurred.length; i++) if (blurred[i] > max) max = blurred[i];
+  if (max > 0) for (let i = 0; i < blurred.length; i++) blurred[i] /= max;
 
   return { data: blurred, width: w, height: h, max: 1.0 };
 }
