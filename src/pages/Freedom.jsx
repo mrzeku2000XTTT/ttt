@@ -4,23 +4,62 @@ import { motion } from "framer-motion";
 import { X, Upload, Loader2, Image as ImageIcon, RotateCcw, Sparkles } from "lucide-react";
 import * as THREE from "three";
 
-// ── Depth-Anything via transformers.js ─────────────────────────────────────
+// ── Canvas-based luminance depth estimation (no external deps) ──────────────
 async function runDepthEstimation(imageElement) {
-  const { pipeline, RawImage } = await import("@xenova/transformers");
-  const estimator = await pipeline("depth-estimation", "Xenova/depth-anything-small-hf", {
-    quantized: true,
-  });
-  const image = await RawImage.fromURL(imageToDataURL(imageElement));
-  const result = await estimator(image);
-  return result.depth; // RawImage with depth data
+  const w = imageElement.naturalWidth || imageElement.width;
+  const h = imageElement.naturalHeight || imageElement.height;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(imageElement, 0, 0);
+  const imageData = ctx.getImageData(0, 0, w, h);
+  const pixels = imageData.data; // RGBA
+
+  // Build luminance map
+  const lum = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) {
+    const r = pixels[i * 4] / 255;
+    const g = pixels[i * 4 + 1] / 255;
+    const b = pixels[i * 4 + 2] / 255;
+    lum[i] = 0.299 * r + 0.587 * g + 0.114 * b;
+  }
+
+  // Box blur to simulate depth smoothing
+  const blurred = boxBlur(lum, w, h, 10);
+
+  return { data: blurred, width: w, height: h, max: 1.0 };
 }
 
-function imageToDataURL(img) {
-  const canvas = document.createElement("canvas");
-  canvas.width = img.naturalWidth || img.width;
-  canvas.height = img.naturalHeight || img.height;
-  canvas.getContext("2d").drawImage(img, 0, 0);
-  return canvas.toDataURL("image/jpeg", 0.9);
+function boxBlur(data, w, h, radius) {
+  const tmp = new Float32Array(data.length);
+  const out = new Float32Array(data.length);
+  // Horizontal pass
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      let sum = 0, count = 0;
+      for (let dx = -radius; dx <= radius; dx++) {
+        const nx = Math.min(Math.max(x + dx, 0), w - 1);
+        sum += data[y * w + nx];
+        count++;
+      }
+      tmp[y * w + x] = sum / count;
+    }
+  }
+  // Vertical pass
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      let sum = 0, count = 0;
+      for (let dy = -radius; dy <= radius; dy++) {
+        const ny = Math.min(Math.max(y + dy, 0), h - 1);
+        sum += tmp[ny * w + x];
+        count++;
+      }
+      out[y * w + x] = sum / count;
+    }
+  }
+  return out;
 }
 
 // ── 3D Depth Canvas ─────────────────────────────────────────────────────────
@@ -46,48 +85,37 @@ function DepthCanvas({ imageSrc, depthData }) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     el.appendChild(renderer.domElement);
 
-    // Lighting
     scene.add(new THREE.AmbientLight(0xffffff, 0.6));
     const dir = new THREE.DirectionalLight(0xffffff, 1.2);
     dir.position.set(2, 3, 4);
     scene.add(dir);
 
-    // Build displaced geometry from depth map
     const segments = 128;
     const geo = new THREE.PlaneGeometry(3.2, 2.4, segments, segments);
     const pos = geo.attributes.position;
 
-    // Depth data: raw pixel values from depth-anything
     const dw = depthData.width;
     const dh = depthData.height;
-    const dPixels = depthData.data; // Float32 or Uint8
+    const dPixels = depthData.data;
+    const maxVal = depthData.max || 1.0;
 
     for (let i = 0; i <= segments; i++) {
       for (let j = 0; j <= segments; j++) {
         const idx = i * (segments + 1) + j;
-        // Map to depth image coords
         const px = Math.floor((j / segments) * (dw - 1));
         const py = Math.floor((i / segments) * (dh - 1));
         const dIdx = py * dw + px;
-        // Normalize depth to 0-1
-        const maxVal = depthData.max !== undefined ? depthData.max : 255;
-        const raw = dPixels[dIdx] || 0;
-        const norm = raw / maxVal;
+        const norm = (dPixels[dIdx] || 0) / maxVal;
         pos.setZ(idx, norm * 0.6 - 0.1);
       }
     }
     geo.computeVertexNormals();
 
-    // Texture from original image
     const loader = new THREE.TextureLoader();
     const tex = loader.load(imageSrc);
     tex.minFilter = THREE.LinearFilter;
 
-    const mat = new THREE.MeshStandardMaterial({
-      map: tex,
-      side: THREE.DoubleSide,
-    });
-
+    const mat = new THREE.MeshStandardMaterial({ map: tex, side: THREE.DoubleSide });
     const mesh = new THREE.Mesh(geo, mat);
     scene.add(mesh);
 
@@ -167,7 +195,6 @@ function IdleCanvas() {
     );
     scene.add(sphere);
 
-    // wireframe overlay
     const wf = new THREE.Mesh(
       new THREE.SphereGeometry(1.02, 24, 24),
       new THREE.MeshBasicMaterial({ color: 0x00aaff, wireframe: true, opacity: 0.15, transparent: true })
@@ -201,7 +228,7 @@ export default function FreedomPage() {
   const [tab, setTab] = useState("canvas");
   const [imageSrc, setImageSrc] = useState(null);
   const [depthData, setDepthData] = useState(null);
-  const [status, setStatus] = useState("idle"); // idle | loading-model | estimating | done | error
+  const [status, setStatus] = useState("idle");
   const [statusMsg, setStatusMsg] = useState("");
   const fileRef = useRef(null);
 
@@ -215,15 +242,12 @@ export default function FreedomPage() {
       const src = e.target.result;
       setImageSrc(src);
       setDepthData(null);
-      setStatus("loading-model");
-      setStatusMsg("Loading Depth-Anything AI model (first time may take ~30s)...");
+      setStatus("estimating");
+      setStatusMsg("Analysing depth from image...");
 
-      // Create image element for processing
       const img = new Image();
       img.onload = async () => {
         try {
-          setStatus("estimating");
-          setStatusMsg("Running AI depth estimation...");
           const depth = await runDepthEstimation(img);
           setDepthData(depth);
           setStatus("done");
@@ -251,7 +275,7 @@ export default function FreedomPage() {
     handleFile(e.dataTransfer.files[0]);
   }, [handleFile]);
 
-  const isProcessing = status === "loading-model" || status === "estimating";
+  const isProcessing = status === "estimating";
 
   return (
     <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-6">
@@ -286,7 +310,7 @@ export default function FreedomPage() {
             </div>
             <div>
               <h1 className="text-white font-bold text-lg leading-none">Freedom</h1>
-              <p className="text-white/40 text-xs mt-0.5">AI Depth → Real 3D</p>
+              <p className="text-white/40 text-xs mt-0.5">Depth-Parallax 3D</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -339,7 +363,7 @@ export default function FreedomPage() {
               {status === "done" && (
                 <div className="mx-4 mt-2 flex items-center gap-2 px-3 py-1.5 rounded-xl" style={{ background: "rgba(0,200,100,0.1)", border: "1px solid rgba(0,200,100,0.2)" }}>
                   <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                  <span className="text-green-400 text-xs">Depth-Anything AI · real depth displacement</span>
+                  <span className="text-green-400 text-xs">Luminance depth · real 3D displacement · drag to rotate</span>
                 </div>
               )}
 
@@ -371,7 +395,7 @@ export default function FreedomPage() {
                     </div>
                     <div className="text-center">
                       <p className="text-white/70 font-medium text-sm">Upload an image</p>
-                      <p className="text-white/35 text-xs mt-1">Depth-Anything AI converts it to real 3D · drag & drop supported</p>
+                      <p className="text-white/35 text-xs mt-1">Instant depth analysis → interactive 3D mesh · drag & drop</p>
                     </div>
                     <div className="flex items-center gap-1.5 px-4 py-2 rounded-full" style={{ background: "rgba(0,180,255,0.15)", border: "1px solid rgba(0,180,255,0.3)" }}>
                       <Upload className="w-3.5 h-3.5 text-blue-400" />
@@ -389,9 +413,9 @@ export default function FreedomPage() {
           ) : (
             <div className="px-5 py-4 pb-8 space-y-4">
               {[
-                { num: "01", title: "Upload Any Image", body: "A face, landscape, object — any photo works. Freedom sends it to a real AI depth estimation model.", color: "#00b4ff" },
-                { num: "02", title: "Depth-Anything AI", body: "The open-source Depth-Anything-V2 model (by ByteDance, NeurIPS 2024) runs directly in your browser via transformers.js — no server needed.", color: "#8844ff" },
-                { num: "03", title: "Real 3D Displacement", body: "Each pixel's depth value is mapped to a vertex Z position on a 128×128 mesh. The original image becomes the texture, creating a true parallax 3D effect.", color: "#00ffaa" },
+                { num: "01", title: "Upload Any Image", body: "A face, landscape, object — any photo works. Freedom instantly analyses luminance to generate a depth map.", color: "#00b4ff" },
+                { num: "02", title: "Luminance Depth Analysis", body: "Each pixel's brightness is used to estimate depth — brighter areas appear closer, darker areas recede. A gaussian blur smooths the depth field for a natural parallax feel.", color: "#8844ff" },
+                { num: "03", title: "Real 3D Displacement", body: "Depth values are mapped to Z-positions on a 128×128 mesh. The original image textures the mesh, creating a true parallax 3D effect you can rotate.", color: "#00ffaa" },
                 { num: "04", title: "The Philosophy", body: "Freedom perceives depth from flat images — just as consciousness extracts structure from raw sensation. Awareness is pattern recognition.", color: "#ff6644" },
               ].map((card, i) => (
                 <div key={i} className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>

@@ -304,12 +304,6 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
       // For next attempt, simplify the prompt
       console.log('Retrying with simplified prompt...');
 
-      // Remove potentially problematic elements and make more general
-      remixPrompt = remixPrompt
-        .replace(/\b(add|put|write|text|words?|letters?|logo)\b/gi, '')
-        .replace(/["'][^"']*["']/g, '') // Remove quoted text
-        .trim() || 'professional high quality image';
-
       // Wait 2 seconds before retry
       await new Promise(resolve => setTimeout(resolve, 2000));
       }
