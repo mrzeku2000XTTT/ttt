@@ -52,7 +52,7 @@ export default function TapToTipPage() {
       const updated = await base44.auth.me();
       setCurrentUser(updated);
       setShowEditProfile(false);
-      loadUsers();
+      loadUsers(updated);
     } catch (err) {
       console.error('Failed to save profile:', err);
     } finally {
@@ -143,7 +143,8 @@ export default function TapToTipPage() {
     }
   };
 
-  const loadUsers = async () => {
+  const loadUsers = async (freshUser = null) => {
+    const activeUser = freshUser || currentUser;
     try {
       setLoading(true);
       
@@ -241,19 +242,19 @@ export default function TapToTipPage() {
       }
       
       // Always inject current user if they have a wallet and aren't already in the list
-      if (currentUser?.created_wallet_address) {
-        const alreadyIn = allUsers.some(u => u.email === currentUser.email);
-        if (!alreadyIn) {
-          allUsers.unshift({
-            id: currentUser.id || 'current_user',
-            username: currentUser.username || currentUser.full_name || currentUser.email?.split('@')[0],
-            email: currentUser.email,
-            created_wallet_address: currentUser.created_wallet_address,
-            agent_zk_id: null,
-            role: currentUser.role || 'user',
-            created_date: currentUser.created_date
-          });
-        }
+      if (activeUser?.created_wallet_address) {
+        // Remove any stale version of the current user first
+        const idx = allUsers.findIndex(u => u.email === activeUser.email);
+        if (idx !== -1) allUsers.splice(idx, 1);
+        allUsers.unshift({
+          id: activeUser.id || 'current_user',
+          username: activeUser.username || activeUser.full_name || activeUser.email?.split('@')[0],
+          email: activeUser.email,
+          created_wallet_address: activeUser.created_wallet_address,
+          agent_zk_id: null,
+          role: activeUser.role || 'user',
+          created_date: activeUser.created_date
+        });
       }
 
       const usersWithWallets = allUsers.filter(u => {
@@ -318,8 +319,8 @@ export default function TapToTipPage() {
       // Sort users: Current user FIRST, then destroyer, then TTT, then priority users, then by badges
       const sortedUsers = usersWithWallets.sort((a, b) => {
         // Current user always first
-        const aIsCurrentUser = currentUser && a.email === currentUser.email;
-        const bIsCurrentUser = currentUser && b.email === currentUser.email;
+        const aIsCurrentUser = activeUser && a.email === activeUser.email;
+        const bIsCurrentUser = activeUser && b.email === activeUser.email;
         
         if (aIsCurrentUser && !bIsCurrentUser) return -1;
         if (!aIsCurrentUser && bIsCurrentUser) return 1;
@@ -673,7 +674,7 @@ export default function TapToTipPage() {
             {filteredUsers.map((user, i) => {
               const address = user.created_wallet_address || user.agent_zk_id;
               const isCopied = copiedAddress === address;
-              const isCurrentUser = currentUser && user.email === currentUser.email;
+              const isCurrentUser = currentUser && user.email === currentUser.email; // uses live state for UI badge
               const hasActiveWallet = !!user.created_wallet_address;
               
               return (
