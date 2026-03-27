@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { base44 } from "@/api/base44Client";
 import { X, Upload, Loader2, Image as ImageIcon, RotateCcw, Sparkles } from "lucide-react";
 import MeshControls from "@/components/3d/MeshControls";
 import * as THREE from "three";
@@ -461,6 +462,8 @@ function IdleCanvas() {
 export default function FreedomPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState("canvas");
+  const [isAdmin, setIsAdmin] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [imageSrc, setImageSrc] = useState(null);
   const [depthMap, setDepthMap] = useState(null);
   const [status, setStatus] = useState("idle");
@@ -475,6 +478,26 @@ export default function FreedomPage() {
   const fileRef = useRef(null);
 
   const close = () => navigate(-1);
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      try {
+        const user = await base44.auth.me();
+        if (!user || user.role !== 'admin') {
+          setIsAdmin(false);
+          navigate(-1);
+          return;
+        }
+        setIsAdmin(true);
+      } catch {
+        setIsAdmin(false);
+        navigate(-1);
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkAdmin();
+  }, [navigate]);
 
   const handleFile = useCallback(async (file) => {
     if (!file || !file.type.startsWith("image/")) return;
@@ -503,6 +526,9 @@ export default function FreedomPage() {
     };
     reader.readAsDataURL(file);
   }, []);
+
+  if (loading) return <div className="fixed inset-0 z-[200] flex items-center justify-center"><div className="w-8 h-8 border-4 border-white/20 border-t-white rounded-full animate-spin" /></div>;
+  if (!isAdmin) return null;
 
   const reset = () => { setImageSrc(null); setDepthMap(null); setStatus("idle"); setStatusMsg(""); };
   const onDrop = useCallback((e) => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); }, [handleFile]);
