@@ -153,7 +153,7 @@ function MeshCanvas({ depthMap, controls }) {
     el.appendChild(renderer.domElement);
 
     // Lighting - enhanced setup
-    const ambLight = new THREE.AmbientLight(0x6688cc, 0.5);
+    const ambLight = new THREE.AmbientLight(0x6688cc, 1.2);
     scene.add(ambLight);
     
     const sun = new THREE.DirectionalLight(0xffffff, controls.lightIntensity);
@@ -361,6 +361,7 @@ function MeshCanvas({ depthMap, controls }) {
       if (materialRef.current) {
         materialRef.current.roughness = controls.roughness;
         materialRef.current.metalness = controls.metalness;
+        materialRef.current.needsUpdate = true;
         if (materialRef.current.map) {
           materialRef.current.map.colorSpace = THREE.SRGBColorSpace;
         }
@@ -370,16 +371,11 @@ function MeshCanvas({ depthMap, controls }) {
       }
     };
 
-    let lastUpdate = 0;
     let frame;
     let t = 0;
     const originalAnimate = () => {
       frame = requestAnimationFrame(() => {
-        const now = Date.now();
-        if (now - lastUpdate > 16) {
-          updateMaterial();
-          lastUpdate = now;
-        }
+        updateMaterial();
         
         t += 0.008;
         if (autoRotate) {
