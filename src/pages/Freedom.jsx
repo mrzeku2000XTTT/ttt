@@ -181,24 +181,44 @@ function MeshCanvas({ depthMap }) {
       }
     }
 
-    // Side walls — stitch silhouette edge front to back
-    // Walk the border of the mask and connect front/back vertices
-    const frontVerts = (yi, xi) => yi * (segW + 1) + xi;
-    const backVerts = (yi, xi) => backOffset + yi * (segW + 1) + xi;
-    const addWall = (yi0, xi0, yi1, xi1) => {
-      const f0 = frontVerts(yi0, xi0), f1 = frontVerts(yi1, xi1);
-      const b0 = backVerts(yi0, xi0),  b1 = backVerts(yi1, xi1);
-      indices.push(f0, b0, f1, f1, b0, b1);
+    // Side walls — only along actual silhouette edges (mask boundary)
+    const getMask = (xi, yi) => {
+      const sx = Math.round((xi / segW) * (width - 1));
+      const sy = Math.round((yi / segH) * (height - 1));
+      return mask[sy * width + sx] ? 1 : 0;
     };
-    // Top and bottom edges
-    for (let xi = 0; xi < segW; xi++) {
-      addWall(0, xi, 0, xi + 1);
-      addWall(segH, xi + 1, segH, xi);
-    }
-    // Left and right edges
+    const frontV = (yi, xi) => yi * (segW + 1) + xi;
+    const backV  = (yi, xi) => backOffset + yi * (segW + 1) + xi;
+
     for (let yi = 0; yi < segH; yi++) {
-      addWall(yi + 1, 0, yi, 0);
-      addWall(yi, segW, yi + 1, segW);
+      for (let xi = 0; xi < segW; xi++) {
+        const here = getMask(xi, yi);
+        if (!here) continue;
+        // Check right neighbor — if outside, add vertical wall on right edge
+        if (!getMask(xi + 1, yi)) {
+          const f0 = frontV(yi, xi+1), f1 = frontV(yi+1, xi+1);
+          const b0 = backV(yi, xi+1),  b1 = backV(yi+1, xi+1);
+          indices.push(f0, f1, b0, f1, b1, b0);
+        }
+        // Check left neighbor
+        if (!getMask(xi - 1, yi)) {
+          const f0 = frontV(yi, xi), f1 = frontV(yi+1, xi);
+          const b0 = backV(yi, xi),  b1 = backV(yi+1, xi);
+          indices.push(f0, b0, f1, f1, b0, b1);
+        }
+        // Check bottom neighbor
+        if (!getMask(xi, yi + 1)) {
+          const f0 = frontV(yi+1, xi), f1 = frontV(yi+1, xi+1);
+          const b0 = backV(yi+1, xi),  b1 = backV(yi+1, xi+1);
+          indices.push(f0, f1, b0, f1, b1, b0);
+        }
+        // Check top neighbor
+        if (!getMask(xi, yi - 1)) {
+          const f0 = frontV(yi, xi), f1 = frontV(yi, xi+1);
+          const b0 = backV(yi, xi),  b1 = backV(yi, xi+1);
+          indices.push(f0, b0, f1, f1, b0, b1);
+        }
+      }
     }
 
     geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
