@@ -7,7 +7,7 @@ import * as THREE from "three";
 // ── Build depth map from image ───────────────────────────────────────────────
 async function buildDepthMap(imageElement, onProgress) {
   onProgress("Reading pixels...");
-  const MAX = 300; // cap resolution for performance
+  const MAX = 256;
   const aspect = imageElement.naturalWidth / imageElement.naturalHeight;
   const cw = Math.min(imageElement.naturalWidth, MAX);
   const ch = Math.round(cw / aspect);
@@ -18,71 +18,49 @@ async function buildDepthMap(imageElement, onProgress) {
   ctx.drawImage(imageElement, 0, 0, cw, ch);
   const { data } = ctx.getImageData(0, 0, cw, ch);
 
-  onProgress("Computing depth...");
+  onProgress("Building depth map...");
 
-  // Check for alpha channel
+  // Build silhouette mask from alpha
   let hasAlpha = false;
   for (let i = 3; i < data.length; i += 4) {
     if (data[i] < 200) { hasAlpha = true; break; }
   }
 
-  const depth = new Float32Array(cw * ch);
-
+  const mask = new Uint8Array(cw * ch);
   if (hasAlpha) {
-    for (let i = 0; i < cw * ch; i++) depth[i] = data[i * 4 + 3] / 255;
+    for (let i = 0; i < cw * ch; i++) mask[i] = data[i * 4 + 3] > 100 ? 1 : 0;
   } else {
-    // Sample corners for background color
+    // background detect
     let bgR = 0, bgG = 0, bgB = 0, n = 0;
-    const corners = [[0,0],[cw-1,0],[0,ch-1],[cw-1,ch-1],[Math.floor(cw/2),0],[0,Math.floor(ch/2)]];
+    const corners = [[0,0],[cw-1,0],[0,ch-1],[cw-1,ch-1]];
     for (const [x, y] of corners) {
       const i = (y * cw + x) * 4;
       bgR += data[i]; bgG += data[i+1]; bgB += data[i+2]; n++;
     }
     bgR /= n; bgG /= n; bgB /= n;
     for (let i = 0; i < cw * ch; i++) {
-      const dr = data[i*4] - bgR, dg = data[i*4+1] - bgG, db = data[i*4+2] - bgB;
-      depth[i] = Math.sqrt(dr*dr + dg*dg + db*db) / 441.67;
+      const dr = data[i*4]-bgR, dg = data[i*4+1]-bgG, db = data[i*4+2]-bgB;
+      mask[i] = Math.sqrt(dr*dr+dg*dg+db*db) > 40 ? 1 : 0;
     }
   }
 
-  // Smooth depth
-  // For images with alpha: use distance-from-silhouette-edge transform
-  // This makes center pixels bulge forward, edges recede = rounded 3D body
-  if (hasAlpha) {
-    // Build binary mask of opaque pixels
-    const mask = new Uint8Array(cw * ch);
-    for (let i = 0; i < cw * ch; i++) mask[i] = depth[i] > 0.5 ? 1 : 0;
+  // Distance-from-edge transform via iterative erosion
+  let distMap = new Float32Array(cw * ch);
+  for (let i = 0; i < cw * ch; i++) distMap[i] = mask[i];
 
-    // Approximate distance transform: blur the mask multiple times
-    // Each pass spreads the "distance from edge" information inward
-    let distMap = new Float32Array(cw * ch);
-    for (let i = 0; i < cw * ch; i++) distMap[i] = mask[i];
-
-    // Multiple blur passes simulate distance transform
-    for (let pass = 0; pass < 12; pass++) {
-      distMap = boxBlur(distMap, cw, ch, 3);
-      // Re-clamp to mask boundary — only keep values inside the silhouette
-      for (let i = 0; i < cw * ch; i++) if (!mask[i]) distMap[i] = 0;
-    }
-
-    // Normalize
-    let max = 0;
-    for (let i = 0; i < distMap.length; i++) if (distMap[i] > max) max = distMap[i];
-    if (max > 0) for (let i = 0; i < distMap.length; i++) distMap[i] /= max;
-
-    // Apply sqrt to make the rounding more spherical
-    for (let i = 0; i < distMap.length; i++) distMap[i] = Math.sqrt(distMap[i]);
-
-    return { depth: distMap, data, width: cw, height: ch };
+  for (let pass = 0; pass < 16; pass++) {
+    distMap = boxBlur(distMap, cw, ch, 2);
+    for (let i = 0; i < cw * ch; i++) if (!mask[i]) distMap[i] = 0;
   }
 
-  // For non-alpha images: use existing color-distance approach
-  const blurred = boxBlur(depth, cw, ch, 4);
-  let max = 0;
-  for (let i = 0; i < blurred.length; i++) if (blurred[i] > max) max = blurred[i];
-  if (max > 0) for (let i = 0; i < blurred.length; i++) blurred[i] /= max;
+  let maxD = 0;
+  for (let i = 0; i < distMap.length; i++) if (distMap[i] > maxD) maxD = distMap[i];
+  if (maxD > 0) for (let i = 0; i < distMap.length; i++) {
+    distMap[i] /= maxD;
+    distMap[i] = Math.pow(distMap[i], 0.6); // gamma: rounder bulge
+  }
 
-  return { depth: blurred, data, width: cw, height: ch };
+  return { depth: distMap, mask, data, width: cw, height: ch, aspect };
 }
 
 function boxBlur(src, w, h, r) {
@@ -100,8 +78,8 @@ function boxBlur(src, w, h, r) {
   return out;
 }
 
-// ── 3D Point Cloud Canvas ────────────────────────────────────────────────────
-function PointCloudCanvas({ depthMap }) {
+// ── 3D Mesh Canvas ────────────────────────────────────────────────────────────
+function MeshCanvas({ depthMap }) {
   const mountRef = useRef(null);
 
   useEffect(() => {
@@ -112,134 +90,181 @@ function PointCloudCanvas({ depthMap }) {
     const W = el.clientWidth, H = el.clientHeight;
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, W / H, 0.01, 100);
-    camera.position.set(0, 0, 2.8);
+    camera.position.set(0, 0, 3.0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(W, H);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setClearColor(0x000000, 0);
+    renderer.shadowMap.enabled = true;
     el.appendChild(renderer.domElement);
 
-    // Build point cloud geometry
-    const { depth, data, width, height } = depthMap;
-    const step = 1; // every pixel for full density
-    const positions = [];
-    const colors = [];
+    // Lighting
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+    sun.position.set(2, 3, 4);
+    scene.add(sun);
+    const fill = new THREE.DirectionalLight(0x8888ff, 0.4);
+    fill.position.set(-2, -1, 2);
+    scene.add(fill);
+    const rim = new THREE.DirectionalLight(0xffffff, 0.3);
+    rim.position.set(0, 0, -3);
+    scene.add(rim);
 
-    // Fit the cloud into a 2x2 world-unit box preserving aspect ratio
-    const aspect = width / height;
-    // scale so the larger dimension spans 2 units
+    const { depth, mask, data, width, height, aspect } = depthMap;
+
+    // Build displaced mesh geometry
+    const segW = Math.min(width - 1, 255);
+    const segH = Math.min(height - 1, 255);
     const scaleX = aspect >= 1 ? 2 : 2 * aspect;
     const scaleY = aspect >= 1 ? 2 / aspect : 2;
+    const MAX_Z = 0.55;
 
-    const MAX_DEPTH = 0.5; // total depth of the 3D body
-    const Z_SLICES = 8;    // how many layers to fill per pixel column
+    const geo = new THREE.BufferGeometry();
+    const positions = [];
+    const normals = [];
+    const uvs = [];
+    const indices = [];
 
-    for (let y = 0; y < height; y += step) {
-      for (let x = 0; x < width; x += step) {
-        const i = y * width + x;
-        const alpha = data[i * 4 + 3] !== undefined ? data[i * 4 + 3] / 255 : 1;
-        if (alpha < 0.15) continue;
+    const getDepth = (xi, yi) => {
+      const sx = Math.round((xi / segW) * (width - 1));
+      const sy = Math.round((yi / segH) * (height - 1));
+      const idx = sy * width + sx;
+      return mask[idx] ? depth[idx] * MAX_Z : 0;
+    };
 
-        const d = depth[i];
-        const px = ((x / width) - 0.5) * scaleX;
-        const py = -((y / height) - 0.5) * scaleY;
-        const frontZ = d * MAX_DEPTH;
-
-        const r = data[i*4]/255, g = data[i*4+1]/255, b = data[i*4+2]/255;
-
-        // Fill the full column from back (z=0) to front (z=frontZ)
-        for (let s = 0; s <= Z_SLICES; s++) {
-          const pz = (s / Z_SLICES) * frontZ;
-          // Darken interior slices slightly for shading depth cue
-          const shade = 0.4 + 0.6 * (s / Z_SLICES);
-          positions.push(px, py, pz);
-          colors.push(r * shade, g * shade, b * shade);
-        }
+    // Front face vertices
+    for (let yi = 0; yi <= segH; yi++) {
+      for (let xi = 0; xi <= segW; xi++) {
+        const u = xi / segW;
+        const v = yi / segH;
+        const x = (u - 0.5) * scaleX;
+        const y = -(v - 0.5) * scaleY;
+        const z = getDepth(xi, yi);
+        positions.push(x, y, z);
+        uvs.push(u, 1 - v);
+        normals.push(0, 0, 1); // will compute later
       }
     }
 
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-    geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+    // Front face triangles
+    for (let yi = 0; yi < segH; yi++) {
+      for (let xi = 0; xi < segW; xi++) {
+        const a = yi * (segW + 1) + xi;
+        const b = a + 1;
+        const c = a + (segW + 1);
+        const d = c + 1;
+        indices.push(a, c, b, b, c, d);
+      }
+    }
 
-    const mat = new THREE.PointsMaterial({
-      size: 0.008,
-      vertexColors: true,
-      sizeAttenuation: true,
+    // Back face (flat at z = -0.05)
+    const backOffset = positions.length / 3;
+    for (let yi = 0; yi <= segH; yi++) {
+      for (let xi = 0; xi <= segW; xi++) {
+        const u = xi / segW;
+        const v = yi / segH;
+        const x = (u - 0.5) * scaleX;
+        const y = -(v - 0.5) * scaleY;
+        positions.push(x, y, -0.05);
+        uvs.push(u, 1 - v);
+        normals.push(0, 0, -1);
+      }
+    }
+    for (let yi = 0; yi < segH; yi++) {
+      for (let xi = 0; xi < segW; xi++) {
+        const a = backOffset + yi * (segW + 1) + xi;
+        const b = a + 1;
+        const c = a + (segW + 1);
+        const d = c + 1;
+        indices.push(a, b, c, b, d, c); // reversed winding
+      }
+    }
+
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geo.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
+    geo.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+    geo.setIndex(indices);
+    geo.computeVertexNormals(); // real smooth normals
+
+    // Texture from image data
+    const texCanvas = document.createElement("canvas");
+    texCanvas.width = width; texCanvas.height = height;
+    const tc = texCanvas.getContext("2d");
+    const imgData = tc.createImageData(width, height);
+    imgData.data.set(data);
+    // Fill transparent pixels with nearest edge color for cleaner silhouette
+    for (let i = 0; i < width * height; i++) {
+      if (!mask[i]) {
+        imgData.data[i * 4 + 3] = 0;
+      }
+    }
+    tc.putImageData(imgData, 0, 0);
+    const texture = new THREE.CanvasTexture(texCanvas);
+    texture.needsUpdate = true;
+
+    const mat = new THREE.MeshStandardMaterial({
+      map: texture,
+      side: THREE.DoubleSide,
+      alphaTest: 0.1,
+      roughness: 0.7,
+      metalness: 0.05,
     });
 
-    const cloud = new THREE.Points(geo, mat);
-    scene.add(cloud);
+    const mesh = new THREE.Mesh(geo, mat);
+    scene.add(mesh);
 
-    // Subtle ambient particles
+    // Ambient particles
     const pts = [];
-    for (let i = 0; i < 60; i++) pts.push((Math.random()-.5)*5,(Math.random()-.5)*5,(Math.random()-.5)*2);
+    for (let i = 0; i < 40; i++) pts.push((Math.random()-.5)*6,(Math.random()-.5)*6,(Math.random()-.5)*3);
     const pGeo = new THREE.BufferGeometry();
     pGeo.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
-    scene.add(new THREE.Points(pGeo, new THREE.PointsMaterial({ color: 0x0066ff, size: 0.025, opacity: 0.4, transparent: true })));
+    scene.add(new THREE.Points(pGeo, new THREE.PointsMaterial({ color: 0x0066ff, size: 0.02, opacity: 0.3, transparent: true })));
 
-    // Drag-to-orbit state
-    let isDragging = false;
-    let prevX = 0, prevY = 0;
-    let rotX = 0, rotY = 0;
-    let velX = 0, velY = 0;
+    // Drag to orbit
+    let isDragging = false, prevX = 0, prevY = 0;
+    let rotX = 0, rotY = 0, velX = 0, velY = 0;
     let autoRotate = true;
 
-    const onMouseDown = (e) => { isDragging = true; autoRotate = false; prevX = e.clientX; prevY = e.clientY; };
-    const onMouseMove = (e) => {
+    const onDown = (x, y) => { isDragging = true; autoRotate = false; prevX = x; prevY = y; };
+    const onMove = (x, y) => {
       if (!isDragging) return;
-      velY += (e.clientX - prevX) * 0.005;
-      velX += (e.clientY - prevY) * 0.005;
-      prevX = e.clientX; prevY = e.clientY;
+      velY += (x - prevX) * 0.005; velX += (y - prevY) * 0.005;
+      prevX = x; prevY = y;
     };
-    const onMouseUp = () => { isDragging = false; };
+    const onUp = () => { isDragging = false; };
 
-    const onTouchStart = (e) => { isDragging = true; autoRotate = false; prevX = e.touches[0].clientX; prevY = e.touches[0].clientY; };
-    const onTouchMove = (e) => {
-      if (!isDragging) return;
-      velY += (e.touches[0].clientX - prevX) * 0.007;
-      velX += (e.touches[0].clientY - prevY) * 0.007;
-      prevX = e.touches[0].clientX; prevY = e.touches[0].clientY;
-    };
-    const onTouchEnd = () => { isDragging = false; };
-
-    el.addEventListener("mousedown", onMouseDown);
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-    el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchmove", onTouchMove, { passive: true });
-    el.addEventListener("touchend", onTouchEnd);
+    el.addEventListener("mousedown", e => onDown(e.clientX, e.clientY));
+    window.addEventListener("mousemove", e => onMove(e.clientX, e.clientY));
+    window.addEventListener("mouseup", onUp);
+    el.addEventListener("touchstart", e => onDown(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+    el.addEventListener("touchmove", e => onMove(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+    el.addEventListener("touchend", onUp);
 
     let t = 0, frame;
     const animate = () => {
       frame = requestAnimationFrame(animate);
       t += 0.008;
-
       if (autoRotate) {
-        cloud.rotation.y += 0.004;
-        cloud.rotation.x = Math.sin(t * 0.3) * 0.15;
+        mesh.rotation.y += 0.004;
+        mesh.rotation.x = Math.sin(t * 0.3) * 0.1;
       } else {
         rotY += velY; rotX += velX;
         velY *= 0.88; velX *= 0.88;
-        cloud.rotation.y = rotY;
-        cloud.rotation.x = Math.max(-1.2, Math.min(1.2, rotX));
+        mesh.rotation.y = rotY;
+        mesh.rotation.x = Math.max(-1.2, Math.min(1.2, rotX));
       }
-
       renderer.render(scene, camera);
     };
     animate();
 
     return () => {
       cancelAnimationFrame(frame);
-      el.removeEventListener("mousedown", onMouseDown);
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-      el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchmove", onTouchMove);
-      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("mousedown", e => onDown(e.clientX, e.clientY));
+      window.removeEventListener("mousemove", e => onMove(e.clientX, e.clientY));
+      window.removeEventListener("mouseup", onUp);
       if (el.contains(renderer.domElement)) el.removeChild(renderer.domElement);
-      renderer.dispose(); geo.dispose(); mat.dispose();
+      renderer.dispose(); geo.dispose(); mat.dispose(); texture.dispose();
     };
   }, [depthMap]);
 
@@ -402,7 +427,7 @@ export default function FreedomPage() {
                     <button onClick={reset} className="text-white/40 text-xs underline mt-1">Try again</button>
                   </div>
                 ) : depthMap ? (
-                  <PointCloudCanvas depthMap={depthMap} />
+                  <MeshCanvas depthMap={depthMap} />
                 ) : (
                   <IdleCanvas />
                 )}
@@ -411,7 +436,7 @@ export default function FreedomPage() {
               {status === "done" && (
                 <div className="mx-4 mt-2 flex items-center gap-2 px-3 py-1.5 rounded-xl" style={{ background: "rgba(0,200,100,0.1)", border: "1px solid rgba(0,200,100,0.2)" }}>
                   <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                  <span className="text-green-400 text-xs">3D point cloud · drag to orbit · pinch to zoom</span>
+                  <span className="text-green-400 text-xs">3D mesh · drag to orbit · real geometry</span>
                 </div>
               )}
 
@@ -449,7 +474,7 @@ export default function FreedomPage() {
 
                 <p className="text-center text-white/20 text-xs mt-3 flex items-center justify-center gap-1">
                   <Sparkles className="w-3 h-3" />
-                  Drag to orbit · auto-rotates to show depth
+                  Real 3D mesh · drag to orbit · depth-displaced geometry
                 </p>
               </div>
             </div>
