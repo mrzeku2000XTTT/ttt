@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { X, Upload, Loader2, Image as ImageIcon, RotateCcw, Sparkles } from "lucide-react";
 import * as THREE from "three";
 
-// ── Smart depth: alpha-channel first, then edge+contrast fallback ────────────
+// ── Depth estimation: alpha-first, then bg-color-distance fallback ──────────
 async function runDepthEstimation(imageElement, onProgress) {
   onProgress("Analysing image...");
   const w = imageElement.naturalWidth || imageElement.width;
@@ -19,7 +19,7 @@ async function runDepthEstimation(imageElement, onProgress) {
 
   onProgress("Building depth map...");
 
-  // Check if image has meaningful alpha (PNG with transparent bg)
+  // Check for meaningful alpha (transparent PNG)
   let hasAlpha = false;
   for (let i = 3; i < data.length; i += 4) {
     if (data[i] < 200) { hasAlpha = true; break; }
@@ -28,12 +28,12 @@ async function runDepthEstimation(imageElement, onProgress) {
   const raw = new Float32Array(w * h);
 
   if (hasAlpha) {
-    // Alpha-based: transparent = background (flat), opaque = foreground (pops out)
+    // Alpha = depth: transparent bg stays flat, opaque subject pops out
     for (let i = 0; i < w * h; i++) {
       raw[i] = data[i * 4 + 3] / 255;
     }
   } else {
-    // Fallback: sample corners for bg color, use color distance as depth
+    // Sample corners for background color, use color distance as depth
     let bgR = 0, bgG = 0, bgB = 0, n = 0;
     const corners = [[0,0],[w-1,0],[0,h-1],[w-1,h-1],[Math.floor(w/2),0],[0,Math.floor(h/2)]];
     for (const [x, y] of corners) {
@@ -41,24 +41,20 @@ async function runDepthEstimation(imageElement, onProgress) {
       bgR += data[i]; bgG += data[i+1]; bgB += data[i+2]; n++;
     }
     bgR /= n; bgG /= n; bgB /= n;
-
     for (let i = 0; i < w * h; i++) {
       const dr = data[i*4]   - bgR;
       const dg = data[i*4+1] - bgG;
       const db = data[i*4+2] - bgB;
-      raw[i] = Math.sqrt(dr*dr + dg*dg + db*db) / 441.67; // 441.67 = max dist
+      raw[i] = Math.sqrt(dr*dr + dg*dg + db*db) / 441.67;
     }
   }
 
-  // Smooth with a light blur to avoid pixel jaggies on mesh
   const blurred = boxBlur(raw, w, h, 6);
-
-  // Normalize
   let max = 0;
   for (let i = 0; i < blurred.length; i++) if (blurred[i] > max) max = blurred[i];
   if (max > 0) for (let i = 0; i < blurred.length; i++) blurred[i] /= max;
 
-  return { data: blurred, width: w, height: h, max: 1.0 };
+  return { data: blurred, width: w, height: h };
 }
 
 function boxBlur(data, w, h, radius) {
@@ -97,26 +93,31 @@ function DepthCanvas({ imageSrc, depthData }) {
     if (!el) return;
 
     const w = el.clientWidth, h = el.clientHeight;
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x050510);
 
+    // Scene
+    const scene = new THREE.Scene();
+
+    // Camera
     const camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 100);
     camera.position.set(0, 0, 3.5);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    // Renderer — transparent background so no black rectangle
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(w, h);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0x000000, 0);
     el.appendChild(renderer.domElement);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-    const dir = new THREE.DirectionalLight(0xffffff, 1.2);
+    // Lights
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    const dir = new THREE.DirectionalLight(0xffffff, 1.4);
     dir.position.set(2, 3, 4);
     scene.add(dir);
 
+    // Displaced mesh
     const segments = 160;
     const geo = new THREE.PlaneGeometry(3.2, 2.4, segments, segments);
     const pos = geo.attributes.position;
-
     const dw = depthData.width, dh = depthData.height;
     for (let i = 0; i <= segments; i++) {
       for (let j = 0; j <= segments; j++) {
@@ -124,14 +125,19 @@ function DepthCanvas({ imageSrc, depthData }) {
         const px = Math.floor((j / segments) * (dw - 1));
         const py = Math.floor((i / segments) * (dh - 1));
         const d = depthData.data[py * dw + px] || 0;
-        pos.setZ(idx, d * 0.9); // subject pops OUT toward viewer
+        pos.setZ(idx, d * 0.9);
       }
     }
     geo.computeVertexNormals();
 
     const tex = new THREE.TextureLoader().load(imageSrc);
     tex.minFilter = THREE.LinearFilter;
-    const mat = new THREE.MeshStandardMaterial({ map: tex, side: THREE.DoubleSide });
+    const mat = new THREE.MeshStandardMaterial({
+      map: tex,
+      side: THREE.DoubleSide,
+      transparent: true,
+      alphaTest: 0.05,
+    });
     const mesh = new THREE.Mesh(geo, mat);
     scene.add(mesh);
 
@@ -323,7 +329,7 @@ export default function FreedomPage() {
           {tab === "canvas" ? (
             <div className="flex flex-col h-full">
               <div className="relative mx-4 mt-3 rounded-2xl overflow-hidden flex-shrink-0"
-                style={{ height: 260, border: "1px solid rgba(255,255,255,0.06)" }}>
+                style={{ height: 260, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(5,5,20,0.8)" }}>
                 {isProcessing ? (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/90">
                     <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
@@ -344,7 +350,7 @@ export default function FreedomPage() {
               {status === "done" && (
                 <div className="mx-4 mt-2 flex items-center gap-2 px-3 py-1.5 rounded-xl" style={{ background: "rgba(0,200,100,0.1)", border: "1px solid rgba(0,200,100,0.2)" }}>
                   <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                  <span className="text-green-400 text-xs">Luminance depth map · real 3D displacement · drag to rotate</span>
+                  <span className="text-green-400 text-xs">Alpha depth map · real 3D displacement · drag to rotate</span>
                 </div>
               )}
 
@@ -371,7 +377,7 @@ export default function FreedomPage() {
                     </div>
                     <div className="text-center">
                       <p className="text-white/70 font-medium text-sm">Upload an image</p>
-                      <p className="text-white/35 text-xs mt-1">Instant depth analysis → interactive 3D mesh · drag & drop</p>
+                      <p className="text-white/35 text-xs mt-1">PNG with transparency works best · drag & drop</p>
                     </div>
                     <div className="flex items-center gap-1.5 px-4 py-2 rounded-full" style={{ background: "rgba(0,180,255,0.15)", border: "1px solid rgba(0,180,255,0.3)" }}>
                       <Upload className="w-3.5 h-3.5 text-blue-400" />
@@ -389,10 +395,10 @@ export default function FreedomPage() {
           ) : (
             <div className="px-5 py-4 pb-8 space-y-4">
               {[
-                { num: "01", title: "Upload Any Image", body: "A face, landscape, object — any photo works. Freedom instantly analyses luminance to generate a depth map.", color: "#00b4ff" },
-                { num: "02", title: "Luminance Depth Analysis", body: "Each pixel's brightness is used to estimate depth — brighter areas appear closer, darker areas recede. Multi-pass blur smooths the depth field for a natural parallax feel.", color: "#8844ff" },
-                { num: "03", title: "Real 3D Displacement", body: "Depth values are mapped to Z-positions on a 128×128 mesh. The original image textures the mesh, creating a true parallax 3D effect you can rotate.", color: "#00ffaa" },
-                { num: "04", title: "The Philosophy", body: "Freedom perceives depth from flat images — just as consciousness extracts structure from raw sensation. Awareness is pattern recognition.", color: "#ff6644" },
+                { num: "01", title: "Upload Any Image", body: "PNG with transparency works best — the subject pops out cleanly. JPEGs use background color detection as fallback.", color: "#00b4ff" },
+                { num: "02", title: "Alpha Depth Analysis", body: "Transparent pixels = flat background. Opaque pixels = foreground that extrudes toward the viewer. Multi-pass blur smooths jagged edges.", color: "#8844ff" },
+                { num: "03", title: "Real 3D Displacement", body: "Depth values displace a 160×160 mesh. The original image textures it, creating a true parallax 3D you can rotate.", color: "#00ffaa" },
+                { num: "04", title: "The Philosophy", body: "Freedom perceives depth from flat images — just as consciousness extracts structure from raw sensation.", color: "#ff6644" },
               ].map((card, i) => (
                 <div key={i} className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
                   <div className="flex gap-3">
