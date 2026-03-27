@@ -101,20 +101,30 @@ function PointCloudCanvas({ depthMap }) {
     const scaleX = aspect >= 1 ? 2 : 2 * aspect;
     const scaleY = aspect >= 1 ? 2 / aspect : 2;
 
+    const MAX_DEPTH = 0.5; // total depth of the 3D body
+    const Z_SLICES = 8;    // how many layers to fill per pixel column
+
     for (let y = 0; y < height; y += step) {
       for (let x = 0; x < width; x += step) {
         const i = y * width + x;
         const alpha = data[i * 4 + 3] !== undefined ? data[i * 4 + 3] / 255 : 1;
-        if (alpha < 0.1) continue; // skip fully transparent pixels
+        if (alpha < 0.15) continue;
 
         const d = depth[i];
-        // Map pixel coords to -1..1 space, depth to Z
         const px = ((x / width) - 0.5) * scaleX;
         const py = -((y / height) - 0.5) * scaleY;
-        const pz = d * 0.4; // subtle depth — shows 3D without exploding
+        const frontZ = d * MAX_DEPTH;
 
-        positions.push(px, py, pz);
-        colors.push(data[i*4]/255, data[i*4+1]/255, data[i*4+2]/255);
+        const r = data[i*4]/255, g = data[i*4+1]/255, b = data[i*4+2]/255;
+
+        // Fill the full column from back (z=0) to front (z=frontZ)
+        for (let s = 0; s <= Z_SLICES; s++) {
+          const pz = (s / Z_SLICES) * frontZ;
+          // Darken interior slices slightly for shading depth cue
+          const shade = 0.4 + 0.6 * (s / Z_SLICES);
+          positions.push(px, py, pz);
+          colors.push(r * shade, g * shade, b * shade);
+        }
       }
     }
 
