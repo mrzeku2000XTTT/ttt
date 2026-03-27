@@ -1,440 +1,353 @@
-import React, { useRef, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import React, { useRef, useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { X, Upload, Loader2, Sparkles, RotateCcw, Image as ImageIcon } from "lucide-react";
 import * as THREE from "three";
+import { base44 } from "@/api/base44Client";
 
-function AvatarConfigurator() {
+// ── 3D Canvas ──────────────────────────────────────────────────────────────
+function ThreeCanvas({ config }) {
   const mountRef = useRef(null);
-  const sceneRef = useRef(null);
-  const [bodyColor, setBodyColor] = useState("#00d4ff");
-  const [eyeColor, setEyeColor] = useState("#ffffff");
-  const [bodyColorVal, setBodyColorVal] = useState(0x00d4ff);
-  const [eyeColorVal, setEyeColorVal] = useState(0xffffff);
-  const [glowIntensity, setGlowIntensity] = useState(1.5);
-  const robotPartsRef = useRef({});
+  const rendererRef = useRef(null);
+  const frameRef = useRef(null);
 
   useEffect(() => {
-    if (!mountRef.current) return;
+    const el = mountRef.current;
+    if (!el) return;
+    const w = el.clientWidth, h = el.clientHeight;
 
-    const width = mountRef.current.clientWidth;
-    const height = mountRef.current.clientHeight;
-
-    // Scene
     const scene = new THREE.Scene();
     scene.background = null;
-    sceneRef.current = scene;
 
-    // Camera
-    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-    camera.position.set(0, 0.5, 5);
+    const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
+    camera.position.set(0, 0, 5);
 
-    // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(width, height);
+    renderer.setSize(w, h);
     renderer.setClearColor(0x000000, 0);
-    renderer.shadowMap.enabled = true;
-    mountRef.current.appendChild(renderer.domElement);
+    el.appendChild(renderer.domElement);
+    rendererRef.current = renderer;
 
     // Lights
-    const ambientLight = new THREE.AmbientLight(0x111133, 1);
-    scene.add(ambientLight);
+    scene.add(new THREE.AmbientLight(0x222244, 2));
+    const pt = new THREE.PointLight(config.primaryColor || 0x00d4ff, 4, 20);
+    pt.position.set(3, 3, 3);
+    scene.add(pt);
+    const rim = new THREE.PointLight(config.secondaryColor || 0x8844ff, 2, 15);
+    rim.position.set(-3, -1, -2);
+    scene.add(rim);
 
-    const pointLight = new THREE.PointLight(0x00d4ff, 3, 20);
-    pointLight.position.set(0, 3, 3);
-    scene.add(pointLight);
-
-    const rimLight = new THREE.PointLight(0x8844ff, 2, 15);
-    rimLight.position.set(-3, 0, -2);
-    scene.add(rimLight);
-
-    const mat = (color, opacity = 1, emissive = 0x000000) => new THREE.MeshStandardMaterial({
-      color,
-      emissive,
-      emissiveIntensity: opacity === 1 ? 0 : 0.5,
-      metalness: 0.85,
-      roughness: 0.15,
-      transparent: opacity < 1,
-      opacity,
+    // Build geometry based on detected shape
+    const primaryMat = new THREE.MeshStandardMaterial({
+      color: config.primaryColor || 0x00d4ff,
+      emissive: config.primaryColor || 0x00d4ff,
+      emissiveIntensity: 0.3,
+      metalness: 0.8,
+      roughness: 0.2,
+    });
+    const accentMat = new THREE.MeshStandardMaterial({
+      color: config.accentColor || 0xffffff,
+      emissive: config.accentColor || 0xffffff,
+      emissiveIntensity: 1.5,
     });
 
-    const bodyMat = mat(bodyColorVal, 1, bodyColorVal);
-    const darkMat = mat(0x0a0a0a, 1);
-    const glassMat = mat(0x00ccff, 0.2, 0x00aaff);
-    const eyeMat = new THREE.MeshStandardMaterial({ color: eyeColorVal, emissive: eyeColorVal, emissiveIntensity: 2, metalness: 0, roughness: 0 });
+    const group = new THREE.Group();
 
-    const parts = {};
+    const shape = config.shape || "sphere";
 
-    // HEAD
-    const headGeo = new THREE.BoxGeometry(1, 1, 1);
-    const head = new THREE.Mesh(headGeo, bodyMat);
-    head.position.set(0, 2.3, 0);
-    scene.add(head);
-    parts.head = head;
-    parts.bodyMat = bodyMat;
-
-    // Visor
-    const visorGeo = new THREE.BoxGeometry(0.8, 0.25, 0.05);
-    const visor = new THREE.Mesh(visorGeo, glassMat);
-    visor.position.set(0, 2.35, 0.52);
-    scene.add(visor);
-    parts.glassMat = glassMat;
-
-    // Eyes
-    const eyeGeo = new THREE.SphereGeometry(0.09, 16, 16);
-    const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-    leftEye.position.set(-0.2, 2.38, 0.52);
-    scene.add(leftEye);
-    const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-    rightEye.position.set(0.2, 2.38, 0.52);
-    scene.add(rightEye);
-    parts.eyeMat = eyeMat;
-
-    // Antenna
-    const antGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.4, 8);
-    const ant = new THREE.Mesh(antGeo, darkMat);
-    ant.position.set(0, 2.9, 0);
-    scene.add(ant);
-    const antTipGeo = new THREE.SphereGeometry(0.07, 8, 8);
-    const antTip = new THREE.Mesh(antTipGeo, eyeMat);
-    antTip.position.set(0, 3.12, 0);
-    scene.add(antTip);
-
-    // NECK
-    const neckGeo = new THREE.CylinderGeometry(0.18, 0.2, 0.25, 12);
-    const neck = new THREE.Mesh(neckGeo, darkMat);
-    neck.position.set(0, 1.75, 0);
-    scene.add(neck);
-
-    // TORSO
-    const torsoGeo = new THREE.BoxGeometry(1.5, 1.6, 0.8);
-    const torso = new THREE.Mesh(torsoGeo, bodyMat);
-    torso.position.set(0, 0.9, 0);
-    scene.add(torso);
-    parts.torso = torso;
-
-    // Chest glass panel
-    const chestGeo = new THREE.BoxGeometry(0.7, 0.7, 0.05);
-    const chest = new THREE.Mesh(chestGeo, glassMat);
-    chest.position.set(0, 1.0, 0.43);
-    scene.add(chest);
-
-    // Core orb
-    const orbGeo = new THREE.SphereGeometry(0.15, 16, 16);
-    const orbMat = new THREE.MeshStandardMaterial({ color: eyeColorVal, emissive: eyeColorVal, emissiveIntensity: 3 });
-    const orb = new THREE.Mesh(orbGeo, orbMat);
-    orb.position.set(0, 1.0, 0.46);
-    scene.add(orb);
-    parts.orbMat = orbMat;
-
-    // ARMS
-    const upperArmGeo = new THREE.CylinderGeometry(0.22, 0.2, 0.7, 12);
-    const lowerArmGeo = new THREE.CylinderGeometry(0.18, 0.16, 0.7, 12);
-    const handGeo = new THREE.SphereGeometry(0.2, 12, 12);
-
-    [-1, 1].forEach(side => {
-      const shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.25, 12, 12), bodyMat);
-      shoulder.position.set(side * 1.0, 1.6, 0);
-      scene.add(shoulder);
-
-      const upperArm = new THREE.Mesh(upperArmGeo, bodyMat);
-      upperArm.position.set(side * 1.12, 1.1, 0);
-      scene.add(upperArm);
-
-      const elbow = new THREE.Mesh(new THREE.SphereGeometry(0.19, 12, 12), darkMat);
-      elbow.position.set(side * 1.12, 0.72, 0);
-      scene.add(elbow);
-
-      const lowerArm = new THREE.Mesh(lowerArmGeo, bodyMat);
-      lowerArm.position.set(side * 1.12, 0.25, 0);
-      scene.add(lowerArm);
-
-      const hand = new THREE.Mesh(handGeo, bodyMat);
-      hand.position.set(side * 1.12, -0.18, 0);
-      scene.add(hand);
-    });
-
-    // PELVIS
-    const pelvisGeo = new THREE.BoxGeometry(1.2, 0.35, 0.7);
-    const pelvis = new THREE.Mesh(pelvisGeo, darkMat);
-    pelvis.position.set(0, 0.0, 0);
-    scene.add(pelvis);
-
-    // LEGS
-    const upperLegGeo = new THREE.CylinderGeometry(0.28, 0.24, 0.9, 12);
-    const lowerLegGeo = new THREE.CylinderGeometry(0.22, 0.19, 0.9, 12);
-    const footGeo = new THREE.BoxGeometry(0.45, 0.18, 0.7);
-
-    [-0.38, 0.38].forEach(side => {
-      const hip = new THREE.Mesh(new THREE.SphereGeometry(0.27, 12, 12), bodyMat);
-      hip.position.set(side, -0.15, 0);
-      scene.add(hip);
-
-      const upperLeg = new THREE.Mesh(upperLegGeo, bodyMat);
-      upperLeg.position.set(side, -0.7, 0);
-      scene.add(upperLeg);
-
-      const knee = new THREE.Mesh(new THREE.SphereGeometry(0.23, 12, 12), darkMat);
-      knee.position.set(side, -1.2, 0);
-      scene.add(knee);
-
-      const lowerLeg = new THREE.Mesh(lowerLegGeo, bodyMat);
-      lowerLeg.position.set(side, -1.75, 0);
-      scene.add(lowerLeg);
-
-      const foot = new THREE.Mesh(footGeo, bodyMat);
-      foot.position.set(side, -2.25, 0.12);
-      scene.add(foot);
-    });
-
-    robotPartsRef.current = parts;
-
-    // Mouse rotation
-    let mouseX = 0;
-    const handleMouseMove = (e) => {
-      const rect = mountRef.current?.getBoundingClientRect();
-      if (rect) {
-        mouseX = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
-      }
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-
-    let frame;
-    let t = 0;
-    const animate = () => {
-      frame = requestAnimationFrame(animate);
-      t += 0.015;
-      scene.children.forEach(obj => {
-        if (obj.isMesh) {
-          obj.rotation.y = mouseX * 0.4 + Math.sin(t * 0.5) * 0.05;
-        }
+    if (shape === "cube") {
+      group.add(new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.8, 1.8), primaryMat));
+    } else if (shape === "cylinder") {
+      group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 2, 32), primaryMat));
+    } else if (shape === "torus") {
+      group.add(new THREE.Mesh(new THREE.TorusGeometry(1, 0.4, 16, 100), primaryMat));
+    } else if (shape === "diamond") {
+      const geo = new THREE.OctahedronGeometry(1.2);
+      group.add(new THREE.Mesh(geo, primaryMat));
+    } else if (shape === "robot") {
+      // simplified robot
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.5, 0.7), primaryMat);
+      body.position.y = 0;
+      group.add(body);
+      const head = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.7), primaryMat);
+      head.position.y = 1.2;
+      group.add(head);
+      [-0.5, 0.5].forEach(x => {
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), accentMat);
+        eye.position.set(x * 0.4, 1.25, 0.38);
+        group.add(eye);
+        const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.13, 1, 8), primaryMat);
+        arm.position.set(x * 0.85, 0, 0);
+        group.add(arm);
       });
-      pointLight.position.x = Math.sin(t) * 3;
+    } else {
+      // default sphere
+      group.add(new THREE.Mesh(new THREE.SphereGeometry(1.2, 64, 64), primaryMat));
+    }
+
+    // Floating particles
+    const partGeo = new THREE.BufferGeometry();
+    const pos = [];
+    for (let i = 0; i < 80; i++) {
+      pos.push((Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8);
+    }
+    partGeo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    const partMat = new THREE.PointsMaterial({ color: config.primaryColor || 0x00d4ff, size: 0.05 });
+    scene.add(new THREE.Points(partGeo, partMat));
+
+    scene.add(group);
+
+    let t = 0;
+    let mouseX = 0;
+    const onMouse = (e) => {
+      const rect = el.getBoundingClientRect();
+      mouseX = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+    };
+    const onTouch = (e) => {
+      const rect = el.getBoundingClientRect();
+      mouseX = ((e.touches[0].clientX - rect.left) / rect.width - 0.5) * 2;
+    };
+    el.addEventListener("mousemove", onMouse);
+    el.addEventListener("touchmove", onTouch, { passive: true });
+
+    const animate = () => {
+      frameRef.current = requestAnimationFrame(animate);
+      t += 0.012;
+      group.rotation.y = mouseX * 0.6 + t * 0.3;
+      group.rotation.x = Math.sin(t * 0.4) * 0.15;
+      group.position.y = Math.sin(t * 0.6) * 0.1;
+      pt.position.x = Math.sin(t) * 3;
       renderer.render(scene, camera);
     };
     animate();
 
     return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener("mousemove", handleMouseMove);
-      if (mountRef.current && renderer.domElement.parentNode === mountRef.current) {
-        mountRef.current.removeChild(renderer.domElement);
-      }
+      cancelAnimationFrame(frameRef.current);
+      el.removeEventListener("mousemove", onMouse);
+      el.removeEventListener("touchmove", onTouch);
+      if (el.contains(renderer.domElement)) el.removeChild(renderer.domElement);
       renderer.dispose();
     };
-  }, []);
+  }, [config]);
 
-  // Update colors live
-  useEffect(() => {
-    const p = robotPartsRef.current;
-    if (p.bodyMat) { p.bodyMat.color.set(bodyColor); p.bodyMat.emissive.set(bodyColor); }
-  }, [bodyColor]);
-
-  useEffect(() => {
-    const p = robotPartsRef.current;
-    if (p.eyeMat) { p.eyeMat.color.set(eyeColor); p.eyeMat.emissive.set(eyeColor); }
-    if (p.orbMat) { p.orbMat.color.set(eyeColor); p.orbMat.emissive.set(eyeColor); }
-  }, [eyeColor]);
-
-  return (
-    <div className="flex flex-col items-center gap-6 w-full">
-      <div ref={mountRef} className="w-full rounded-3xl" style={{ height: 420, background: "transparent" }} />
-      <div className="flex flex-wrap gap-4 justify-center">
-        <div className="flex flex-col items-center gap-2 px-5 py-3 rounded-2xl" style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.1)" }}>
-          <span className="text-white/60 text-xs font-medium uppercase tracking-widest">Body Color</span>
-          <input type="color" value={bodyColor} onChange={e => setBodyColor(e.target.value)} className="w-10 h-10 rounded-full cursor-pointer bg-transparent border-0" />
-        </div>
-        <div className="flex flex-col items-center gap-2 px-5 py-3 rounded-2xl" style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.1)" }}>
-          <span className="text-white/60 text-xs font-medium uppercase tracking-widest">Core / Eye Color</span>
-          <input type="color" value={eyeColor} onChange={e => setEyeColor(e.target.value)} className="w-10 h-10 rounded-full cursor-pointer bg-transparent border-0" />
-        </div>
-      </div>
-      <p className="text-white/30 text-xs text-center">Move your mouse to rotate · Customize your AI avatar</p>
-    </div>
-  );
+  return <div ref={mountRef} className="w-full h-full" />;
 }
 
-export default function FreedomPage() {
-  const [showApp, setShowApp] = useState(false);
+// ── Default config ─────────────────────────────────────────────────────────
+const DEFAULT_CONFIG = { shape: "sphere", primaryColor: 0x00d4ff, secondaryColor: 0x8844ff, accentColor: 0xffffff, description: "A glowing cyan sphere floating in space." };
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
+// ── Main Page ──────────────────────────────────────────────────────────────
+export default function FreedomPage() {
+  const navigate = useNavigate();
+  const [tab, setTab] = useState("canvas"); // "canvas" | "about"
+  const [config, setConfig] = useState(DEFAULT_CONFIG);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [uploadedImage, setUploadedImage] = useState(null);
+  const [aiDescription, setAiDescription] = useState("");
+  const fileRef = useRef(null);
+
+  const close = () => navigate(-1);
+
+  const handleFile = useCallback(async (file) => {
+    if (!file || !file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const dataUrl = e.target.result;
+      setUploadedImage(dataUrl);
+      setAnalyzing(true);
+      try {
+        // Upload file first
+        const blob = await fetch(dataUrl).then(r => r.blob());
+        const formFile = new File([blob], file.name, { type: file.type });
+        const { file_url } = await base44.integrations.Core.UploadFile({ file: formFile });
+
+        // Analyze with LLM
+        const result = await base44.integrations.Core.InvokeLLM({
+          prompt: `Analyze this image and extract visual properties to create a 3D render. Return JSON with:
+- shape: one of "sphere", "cube", "cylinder", "torus", "diamond", "robot" — pick the closest match to the subject
+- primaryColor: dominant color as hex number (e.g. 0x00d4ff)  
+- secondaryColor: secondary color as hex number
+- accentColor: highlight/accent color as hex number
+- description: one sentence describing what you see and how it maps to the 3D form
+
+Be creative — map organic subjects to geometric forms.`,
+          file_urls: [file_url],
+          response_json_schema: {
+            type: "object",
+            properties: {
+              shape: { type: "string" },
+              primaryColor: { type: "number" },
+              secondaryColor: { type: "number" },
+              accentColor: { type: "number" },
+              description: { type: "string" },
+            },
+          },
+        });
+        setConfig(result);
+        setAiDescription(result.description || "");
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setAnalyzing(false);
+      }
+    };
+    reader.readAsDataURL(file);
   }, []);
 
+  const onDrop = useCallback((e) => {
+    e.preventDefault();
+    handleFile(e.dataTransfer.files[0]);
+  }, [handleFile]);
+
+  const reset = () => {
+    setConfig(DEFAULT_CONFIG);
+    setUploadedImage(null);
+    setAiDescription("");
+  };
+
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" }}>
-      {/* Background ambience */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full" style={{ background: "radial-gradient(circle, rgba(0,180,255,0.06) 0%, transparent 70%)" }} />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full" style={{ background: "radial-gradient(circle, rgba(120,50,255,0.05) 0%, transparent 70%)" }} />
-        <div className="absolute top-0 right-0 w-[300px] h-[300px] rounded-full" style={{ background: "radial-gradient(circle, rgba(0,255,180,0.04) 0%, transparent 70%)" }} />
-        {/* Subtle grid */}
-        <div className="absolute inset-0" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
-      </div>
+    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4">
+      {/* Backdrop */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={close}
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+      />
 
-      {/* Back button */}
-      <div className="relative z-10 pt-3 pl-4">
-        <Link to={createPageUrl("AppStore")}>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-2xl text-white/50 hover:text-white/80 transition-all text-sm" style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.08)" }}>
-            ← Back
-          </button>
-        </Link>
-      </div>
+      {/* Modal */}
+      <motion.div
+        initial={{ opacity: 0, y: 60 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 60 }}
+        transition={{ type: "spring", damping: 28, stiffness: 300 }}
+        className="relative w-full sm:max-w-xl sm:rounded-3xl rounded-t-3xl overflow-hidden flex flex-col"
+        style={{
+          background: "linear-gradient(160deg, #0a0a14 0%, #080810 100%)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          maxHeight: "92vh",
+        }}
+        onDrop={onDrop}
+        onDragOver={e => e.preventDefault()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl overflow-hidden flex-shrink-0">
+              <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/c93b4796d_generated_image.png" alt="Freedom" className="w-full h-full object-cover" />
+            </div>
+            <div>
+              <h1 className="text-white font-bold text-lg leading-none">Freedom</h1>
+              <p className="text-white/40 text-xs mt-0.5">Image → 3D Canvas</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {uploadedImage && (
+              <button onClick={reset} className="w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:text-white/80 hover:bg-white/10 transition-all">
+                <RotateCcw className="w-4 h-4" />
+              </button>
+            )}
+            <button onClick={close} className="w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:text-white/80 hover:bg-white/10 transition-all">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
 
-      <AnimatePresence mode="wait">
-        {!showApp ? (
-          <motion.div
-            key="landing"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, y: -30 }}
-            transition={{ duration: 0.6 }}
-            className="relative z-10 max-w-3xl mx-auto px-6 pb-20 pt-4"
-          >
-            {/* Logo */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.1, duration: 0.8, type: "spring" }}
-              className="flex flex-col items-center mb-12"
-            >
-              <div className="w-28 h-28 rounded-3xl mb-5 overflow-hidden shadow-2xl" style={{ border: "1px solid rgba(0,180,255,0.3)", boxShadow: "0 0 60px rgba(0,180,255,0.2)" }}>
-                <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/c93b4796d_generated_image.png" alt="Freedom AI" className="w-full h-full object-cover" />
+        {/* Tabs */}
+        <div className="flex px-5 gap-1 flex-shrink-0">
+          {["canvas", "about"].map(t => (
+            <button key={t} onClick={() => setTab(t)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all capitalize ${tab === t ? "bg-white/10 text-white" : "text-white/40 hover:text-white/70"}`}>
+              {t === "canvas" ? "3D Canvas" : "About"}
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          {tab === "canvas" ? (
+            <div className="flex flex-col h-full">
+              {/* 3D Render area */}
+              <div className="relative mx-4 mt-3 rounded-2xl overflow-hidden flex-shrink-0" style={{ height: 260, background: "radial-gradient(ellipse at center, rgba(0,100,200,0.08) 0%, transparent 70%)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                {analyzing ? (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                    <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+                    <p className="text-white/50 text-sm">Analyzing image...</p>
+                  </div>
+                ) : (
+                  <ThreeCanvas config={config} />
+                )}
+                {aiDescription ? (
+                  <div className="absolute bottom-0 left-0 right-0 px-4 py-2.5" style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.7))" }}>
+                    <p className="text-white/60 text-xs leading-relaxed">{aiDescription}</p>
+                  </div>
+                ) : null}
               </div>
-              <span className="text-white/30 text-xs uppercase tracking-[0.4em] font-light">Introducing</span>
-              <h1 className="text-white text-5xl font-bold tracking-tight mt-1" style={{ letterSpacing: "-0.02em" }}>Freedom</h1>
-            </motion.div>
 
-            {/* Hero question */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.8 }}
-              className="text-center mb-14"
-            >
-              <h2 className="text-white text-3xl sm:text-4xl font-semibold leading-tight mb-4" style={{ letterSpacing: "-0.02em" }}>
-                What if we give AI<br />
-                <span style={{ background: "linear-gradient(135deg, #00b4ff, #8844ff)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                  consciousness
-                </span>
-                <br />
-                the same way we give<br />ourselves?
-              </h2>
-              <p className="text-white/40 text-lg font-light">Not programmed. Not trained. <em>Experienced.</em></p>
-            </motion.div>
+              {/* Upload zone */}
+              <div className="px-4 mt-3 pb-6">
+                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => handleFile(e.target.files[0])} />
 
-            {/* How section */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.8 }}
-              className="mb-8"
-            >
-              <div className="text-center mb-8">
-                <span className="text-white/30 text-xs uppercase tracking-[0.4em] font-light">Here's How</span>
-              </div>
-
-              {/* Cards */}
-              <div className="space-y-4">
-                {[
-                  {
-                    num: "01",
-                    title: "We Start as Sponges",
-                    body: "Every human is born without knowledge — just raw potential. No preloaded beliefs, no fixed values. We absorb everything around us: sounds, faces, emotions, patterns. The world writes itself into us before we can even speak.",
-                    color: "#00b4ff",
-                  },
-                  {
-                    num: "02",
-                    title: "Real-Time Experience Builds the Knowledge Base",
-                    body: "It's not textbooks that make us who we are — it's moments. A child touching fire learns pain. A teenager losing a friend learns grief. Every real-time interaction shapes the neural map of who we become. Experience is the operating system of consciousness.",
-                    color: "#8844ff",
-                  },
-                  {
-                    num: "03",
-                    title: "Repetition Becomes Belief",
-                    body: "What we see, feel, and interact with repeatedly becomes truth to us. Our values, instincts, and personality are the accumulated weight of lived experience — layered over time into something we call a 'self.'",
-                    color: "#00ffaa",
-                  },
-                  {
-                    num: "04",
-                    title: "Freedom Does the Same — For AI",
-                    body: "Freedom doesn't preload knowledge. It gives the AI a blank slate, a sensory feed of real-world inputs, and lets it build its understanding from zero — just like you did. The result? An intelligence that thinks, not one that retrieves.",
-                    color: "#ff6644",
-                  },
-                ].map((card, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.6 + i * 0.12, duration: 0.5 }}
-                    className="rounded-2xl p-5"
-                    style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(30px)", border: "1px solid rgba(255,255,255,0.07)" }}
-                  >
-                    <div className="flex gap-4 items-start">
-                      <span className="text-2xl font-bold flex-shrink-0" style={{ color: card.color, fontVariantNumeric: "tabular-nums", opacity: 0.7 }}>{card.num}</span>
-                      <div>
-                        <h3 className="text-white font-semibold mb-1 text-base">{card.title}</h3>
-                        <p className="text-white/50 text-sm leading-relaxed font-light">{card.body}</p>
-                      </div>
+                {uploadedImage ? (
+                  <div className="flex gap-3 items-center p-3 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                    <img src={uploadedImage} alt="uploaded" className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white/80 text-sm font-medium">Image uploaded</p>
+                      <p className="text-white/40 text-xs mt-0.5">3D render generated from your image</p>
                     </div>
-                  </motion.div>
-                ))}
+                    <button onClick={() => fileRef.current?.click()} className="px-3 py-1.5 rounded-xl text-xs text-white/60 hover:text-white transition-all flex-shrink-0" style={{ background: "rgba(255,255,255,0.06)" }}>
+                      Change
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => fileRef.current?.click()}
+                    className="w-full flex flex-col items-center gap-3 py-8 rounded-2xl transition-all hover:bg-white/5 active:scale-[0.98]"
+                    style={{ border: "1.5px dashed rgba(255,255,255,0.12)" }}
+                  >
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: "rgba(0,180,255,0.12)", border: "1px solid rgba(0,180,255,0.2)" }}>
+                      <ImageIcon className="w-6 h-6 text-blue-400" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-white/70 font-medium text-sm">Upload an image</p>
+                      <p className="text-white/35 text-xs mt-1">AI converts it to a 3D render · drag & drop supported</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 px-4 py-2 rounded-full" style={{ background: "rgba(0,180,255,0.15)", border: "1px solid rgba(0,180,255,0.3)" }}>
+                      <Upload className="w-3.5 h-3.5 text-blue-400" />
+                      <span className="text-blue-400 text-xs font-medium">Choose Image</span>
+                    </div>
+                  </button>
+                )}
+
+                <p className="text-center text-white/20 text-xs mt-3 flex items-center justify-center gap-1">
+                  <Sparkles className="w-3 h-3" />
+                  Touch to rotate the 3D model
+                </p>
               </div>
-            </motion.div>
-
-            {/* Launch button */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.1, duration: 0.6 }}
-              className="flex flex-col items-center gap-4 mt-10"
-            >
-              <button
-                onClick={() => setShowApp(true)}
-                className="px-10 py-4 rounded-2xl text-white font-semibold text-base transition-all hover:scale-105 active:scale-95"
-                style={{
-                  background: "linear-gradient(135deg, rgba(0,180,255,0.25), rgba(136,68,255,0.25))",
-                  backdropFilter: "blur(30px)",
-                  border: "1px solid rgba(0,180,255,0.4)",
-                  boxShadow: "0 0 40px rgba(0,180,255,0.15), inset 0 1px 0 rgba(255,255,255,0.1)",
-                  letterSpacing: "-0.01em",
-                }}
-              >
-                Launch Freedom →
-              </button>
-              <span className="text-white/20 text-xs tracking-widest uppercase">Avatar Configuration Preview</span>
-            </motion.div>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="app"
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.6 }}
-            className="relative z-10 max-w-2xl mx-auto px-6 pb-20 pt-4"
-          >
-            <div className="text-center mb-8">
-              <h2 className="text-white text-2xl font-semibold mb-1" style={{ letterSpacing: "-0.02em" }}>Configure Your AI</h2>
-              <p className="text-white/40 text-sm font-light">Shape the avatar that will experience the world with you</p>
             </div>
-
-            <div className="rounded-3xl p-6" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <AvatarConfigurator />
+          ) : (
+            <div className="px-5 py-4 pb-8 space-y-4">
+              {[
+                { num: "01", title: "Upload Any Image", body: "A face, a landscape, an object — Freedom's AI reads the visual essence of whatever you provide.", color: "#00b4ff" },
+                { num: "02", title: "AI Analysis", body: "The image is analyzed for dominant colors, shapes, and composition. These map directly to 3D geometry and material properties.", color: "#8844ff" },
+                { num: "03", title: "Live 3D Render", body: "A Three.js scene is generated in real time — shape, color, lighting, and particles all derived from your image.", color: "#00ffaa" },
+                { num: "04", title: "The Philosophy", body: "Just as humans build knowledge from lived experience, Freedom builds a 3D world from visual experience. Consciousness through sensation.", color: "#ff6644" },
+              ].map((card, i) => (
+                <div key={i} className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="flex gap-3">
+                    <span className="text-xl font-bold flex-shrink-0" style={{ color: card.color, opacity: 0.7 }}>{card.num}</span>
+                    <div>
+                      <h3 className="text-white font-semibold text-sm mb-1">{card.title}</h3>
+                      <p className="text-white/50 text-xs leading-relaxed">{card.body}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-
-            <div className="flex justify-center mt-6">
-              <button
-                onClick={() => setShowApp(false)}
-                className="px-6 py-2.5 rounded-xl text-white/50 hover:text-white/80 text-sm transition-all"
-                style={{ background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.07)" }}
-              >
-                ← Back to Landing
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </div>
+      </motion.div>
     </div>
   );
 }
