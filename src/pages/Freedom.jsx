@@ -147,9 +147,13 @@ function MeshCanvas({ depthMap }) {
       }
     }
 
-    // Front face triangles
+    // Front face triangles — only where mask is foreground
     for (let yi = 0; yi < segH; yi++) {
       for (let xi = 0; xi < segW; xi++) {
+        // Skip quad if all 4 corners are background
+        const m00 = getMaskXY(xi, yi), m10 = getMaskXY(xi+1, yi);
+        const m01 = getMaskXY(xi, yi+1), m11 = getMaskXY(xi+1, yi+1);
+        if (!m00 && !m10 && !m01 && !m11) continue;
         const a = yi * (segW + 1) + xi;
         const b = a + 1;
         const c = a + (segW + 1);
@@ -157,6 +161,13 @@ function MeshCanvas({ depthMap }) {
         indices.push(a, c, b, b, c, d);
       }
     }
+
+    // Helper defined here so back face + walls can use it too
+    const getMaskXY = (xi, yi) => {
+      const sx = Math.round((Math.min(Math.max(xi,0),segW) / segW) * (width - 1));
+      const sy = Math.round((Math.min(Math.max(yi,0),segH) / segH) * (height - 1));
+      return mask[sy * width + sx] ? 1 : 0;
+    };
 
     // Back face (flat at z = 0)
     const backOffset = positions.length / 3;
@@ -173,6 +184,9 @@ function MeshCanvas({ depthMap }) {
     }
     for (let yi = 0; yi < segH; yi++) {
       for (let xi = 0; xi < segW; xi++) {
+        const m00 = getMaskXY(xi, yi), m10 = getMaskXY(xi+1, yi);
+        const m01 = getMaskXY(xi, yi+1), m11 = getMaskXY(xi+1, yi+1);
+        if (!m00 && !m10 && !m01 && !m11) continue;
         const a = backOffset + yi * (segW + 1) + xi;
         const b = a + 1;
         const c = a + (segW + 1);
@@ -182,38 +196,33 @@ function MeshCanvas({ depthMap }) {
     }
 
     // Side walls — only along actual silhouette edges (mask boundary)
-    const getMask = (xi, yi) => {
-      const sx = Math.round((xi / segW) * (width - 1));
-      const sy = Math.round((yi / segH) * (height - 1));
-      return mask[sy * width + sx] ? 1 : 0;
-    };
     const frontV = (yi, xi) => yi * (segW + 1) + xi;
     const backV  = (yi, xi) => backOffset + yi * (segW + 1) + xi;
 
     for (let yi = 0; yi < segH; yi++) {
       for (let xi = 0; xi < segW; xi++) {
-        const here = getMask(xi, yi);
+        const here = getMaskXY(xi, yi);
         if (!here) continue;
         // Check right neighbor — if outside, add vertical wall on right edge
-        if (!getMask(xi + 1, yi)) {
+        if (!getMaskXY(xi + 1, yi)) {
           const f0 = frontV(yi, xi+1), f1 = frontV(yi+1, xi+1);
           const b0 = backV(yi, xi+1),  b1 = backV(yi+1, xi+1);
           indices.push(f0, f1, b0, f1, b1, b0);
         }
         // Check left neighbor
-        if (!getMask(xi - 1, yi)) {
+        if (!getMaskXY(xi - 1, yi)) {
           const f0 = frontV(yi, xi), f1 = frontV(yi+1, xi);
           const b0 = backV(yi, xi),  b1 = backV(yi+1, xi);
           indices.push(f0, b0, f1, f1, b0, b1);
         }
         // Check bottom neighbor
-        if (!getMask(xi, yi + 1)) {
+        if (!getMaskXY(xi, yi + 1)) {
           const f0 = frontV(yi+1, xi), f1 = frontV(yi+1, xi+1);
           const b0 = backV(yi+1, xi),  b1 = backV(yi+1, xi+1);
           indices.push(f0, f1, b0, f1, b1, b0);
         }
         // Check top neighbor
-        if (!getMask(xi, yi - 1)) {
+        if (!getMaskXY(xi, yi - 1)) {
           const f0 = frontV(yi, xi), f1 = frontV(yi, xi+1);
           const b0 = backV(yi, xi),  b1 = backV(yi, xi+1);
           indices.push(f0, b0, f1, f1, b0, b1);
