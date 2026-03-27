@@ -184,14 +184,7 @@ function MeshCanvas({ depthMap }) {
         const b = a + 1;
         const c = a + (segW + 1);
         const d = c + 1;
-        // Front
         indices.push(a, c, b, b, c, d);
-        // Back
-        const ba = a + frontVertexCount;
-        const bb = ba + 1;
-        const bc = ba + (segW + 1);
-        const bd = bc + 1;
-        indices.push(ba, bb, bc, bb, bd, bc);
       }
     }
 
