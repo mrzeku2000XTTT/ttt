@@ -10,6 +10,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import HworkPage from './pages/Hwork';
+import VoxaPage from './pages/Voxa';
 import DAGVisualizerPage from './pages/DAGVisualizer';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -63,6 +64,7 @@ const AuthenticatedApp = () => {
         />
       ))}
       <Route path="/Hwork" element={<HworkPage />} />
+      <Route path="/Voxa" element={<VoxaPage />} />
       <Route path="/DAGVisualizer" element={<DAGVisualizerPage />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
