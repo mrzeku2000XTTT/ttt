@@ -170,6 +170,7 @@ function MeshCanvas({ depthMap }) {
         const c = a + (segW + 1);
         const d = c + 1;
         indices.push(a, c, b, b, c, d);
+        indices.push(a, b, c, b, d, c);
       }
     }
 
