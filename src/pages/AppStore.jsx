@@ -97,6 +97,7 @@ export default function AppStorePage() {
     { name: "Hwork", icon: "Link2", path: "Hwork", category: "Education", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/98c209fd7_IMG_0173.jpeg" },
     { name: "DAG", icon: "Link2", path: "DAGVisualizer", category: "Tools", defaultIcon: "https://api.iconify.design/mdi/cube-outline.svg?color=%2300d4aa&width=128&height=128", isEmoji: false },
     { name: "Voxa", icon: "Link2", path: "Voxa", category: "Tools", defaultIcon: "https://ui-avatars.com/api/?name=Vx&size=128&background=000000&color=ffffff&bold=true" },
+    { name: "Freedom", icon: "Link2", path: "Freedom", category: "AI", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/c93b4796d_generated_image.png", circular: false },
      ];
 
   const getIconComponent = (iconName) => {
