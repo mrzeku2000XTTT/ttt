@@ -4,184 +4,201 @@ import { motion } from "framer-motion";
 import { X, Upload, Loader2, Image as ImageIcon, RotateCcw, Sparkles } from "lucide-react";
 import * as THREE from "three";
 
-// ── Depth estimation: alpha-first, then bg-color-distance fallback ──────────
-async function runDepthEstimation(imageElement, onProgress) {
-  onProgress("Analysing image...");
-  const w = imageElement.naturalWidth || imageElement.width;
-  const h = imageElement.naturalHeight || imageElement.height;
+// ── Build depth map from image ───────────────────────────────────────────────
+async function buildDepthMap(imageElement, onProgress) {
+  onProgress("Reading pixels...");
+  const MAX = 300; // cap resolution for performance
+  const aspect = imageElement.naturalWidth / imageElement.naturalHeight;
+  const cw = Math.min(imageElement.naturalWidth, MAX);
+  const ch = Math.round(cw / aspect);
 
   const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
+  canvas.width = cw; canvas.height = ch;
   const ctx = canvas.getContext("2d");
-  ctx.drawImage(imageElement, 0, 0);
-  const { data } = ctx.getImageData(0, 0, w, h);
+  ctx.drawImage(imageElement, 0, 0, cw, ch);
+  const { data } = ctx.getImageData(0, 0, cw, ch);
 
-  onProgress("Building depth map...");
+  onProgress("Computing depth...");
 
-  // Check for meaningful alpha (transparent PNG)
+  // Check for alpha channel
   let hasAlpha = false;
   for (let i = 3; i < data.length; i += 4) {
     if (data[i] < 200) { hasAlpha = true; break; }
   }
 
-  const raw = new Float32Array(w * h);
+  const depth = new Float32Array(cw * ch);
 
   if (hasAlpha) {
-    // Alpha = depth: transparent bg stays flat, opaque subject pops out
-    for (let i = 0; i < w * h; i++) {
-      raw[i] = data[i * 4 + 3] / 255;
-    }
+    for (let i = 0; i < cw * ch; i++) depth[i] = data[i * 4 + 3] / 255;
   } else {
-    // Sample corners for background color, use color distance as depth
+    // Sample corners for background color
     let bgR = 0, bgG = 0, bgB = 0, n = 0;
-    const corners = [[0,0],[w-1,0],[0,h-1],[w-1,h-1],[Math.floor(w/2),0],[0,Math.floor(h/2)]];
+    const corners = [[0,0],[cw-1,0],[0,ch-1],[cw-1,ch-1],[Math.floor(cw/2),0],[0,Math.floor(ch/2)]];
     for (const [x, y] of corners) {
-      const i = (y * w + x) * 4;
+      const i = (y * cw + x) * 4;
       bgR += data[i]; bgG += data[i+1]; bgB += data[i+2]; n++;
     }
     bgR /= n; bgG /= n; bgB /= n;
-    for (let i = 0; i < w * h; i++) {
-      const dr = data[i*4]   - bgR;
-      const dg = data[i*4+1] - bgG;
-      const db = data[i*4+2] - bgB;
-      raw[i] = Math.sqrt(dr*dr + dg*dg + db*db) / 441.67;
+    for (let i = 0; i < cw * ch; i++) {
+      const dr = data[i*4] - bgR, dg = data[i*4+1] - bgG, db = data[i*4+2] - bgB;
+      depth[i] = Math.sqrt(dr*dr + dg*dg + db*db) / 441.67;
     }
   }
 
-  const blurred = boxBlur(raw, w, h, 6);
+  // Smooth depth
+  const blurred = boxBlur(depth, cw, ch, 4);
   let max = 0;
   for (let i = 0; i < blurred.length; i++) if (blurred[i] > max) max = blurred[i];
   if (max > 0) for (let i = 0; i < blurred.length; i++) blurred[i] /= max;
 
-  return { data: blurred, width: w, height: h };
+  return { depth: blurred, data, width: cw, height: ch };
 }
 
-function boxBlur(data, w, h, radius) {
-  const tmp = new Float32Array(data.length);
-  const out = new Float32Array(data.length);
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      let sum = 0, count = 0;
-      for (let dx = -radius; dx <= radius; dx++) {
-        const nx = Math.min(Math.max(x + dx, 0), w - 1);
-        sum += data[y * w + nx]; count++;
-      }
-      tmp[y * w + x] = sum / count;
-    }
+function boxBlur(src, w, h, r) {
+  const tmp = new Float32Array(src.length), out = new Float32Array(src.length);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let s = 0, c = 0;
+    for (let dx = -r; dx <= r; dx++) { const nx = Math.min(Math.max(x+dx,0),w-1); s += src[y*w+nx]; c++; }
+    tmp[y*w+x] = s/c;
   }
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      let sum = 0, count = 0;
-      for (let dy = -radius; dy <= radius; dy++) {
-        const ny = Math.min(Math.max(y + dy, 0), h - 1);
-        sum += tmp[ny * w + x]; count++;
-      }
-      out[y * w + x] = sum / count;
-    }
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let s = 0, c = 0;
+    for (let dy = -r; dy <= r; dy++) { const ny = Math.min(Math.max(y+dy,0),h-1); s += tmp[ny*w+x]; c++; }
+    out[y*w+x] = s/c;
   }
   return out;
 }
 
-// ── 3D Depth Canvas ──────────────────────────────────────────────────────────
-function DepthCanvas({ imageSrc, depthData }) {
+// ── 3D Point Cloud Canvas ────────────────────────────────────────────────────
+function PointCloudCanvas({ depthMap }) {
   const mountRef = useRef(null);
 
   useEffect(() => {
-    if (!imageSrc || !depthData) return;
+    if (!depthMap) return;
     const el = mountRef.current;
     if (!el) return;
 
-    const w = el.clientWidth, h = el.clientHeight;
-
-    // Scene
+    const W = el.clientWidth, H = el.clientHeight;
     const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, W / H, 0.01, 100);
+    camera.position.set(0, 0, 3);
 
-    // Camera
-    const camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 100);
-    camera.position.set(0, 0, 3.5);
-
-    // Renderer — transparent background so no black rectangle
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(w, h);
+    renderer.setSize(W, H);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setClearColor(0x000000, 0);
     el.appendChild(renderer.domElement);
 
-    // Lights
-    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-    const dir = new THREE.DirectionalLight(0xffffff, 1.4);
-    dir.position.set(2, 3, 4);
-    scene.add(dir);
+    // Build point cloud geometry
+    const { depth, data, width, height } = depthMap;
+    const step = 2; // sample every 2px for performance vs density balance
+    const positions = [];
+    const colors = [];
 
-    // Displaced mesh
-    const segments = 160;
-    const geo = new THREE.PlaneGeometry(3.2, 2.4, segments, segments);
-    const pos = geo.attributes.position;
-    const dw = depthData.width, dh = depthData.height;
-    for (let i = 0; i <= segments; i++) {
-      for (let j = 0; j <= segments; j++) {
-        const idx = i * (segments + 1) + j;
-        const px = Math.floor((j / segments) * (dw - 1));
-        const py = Math.floor((i / segments) * (dh - 1));
-        const d = depthData.data[py * dw + px] || 0;
-        pos.setZ(idx, d * 0.9);
+    const aspect = width / height;
+
+    for (let y = 0; y < height; y += step) {
+      for (let x = 0; x < width; x += step) {
+        const i = y * width + x;
+        const alpha = data[i * 4 + 3] !== undefined ? data[i * 4 + 3] / 255 : 1;
+        if (alpha < 0.1) continue; // skip fully transparent pixels
+
+        const d = depth[i];
+        // Map pixel coords to -1..1 space, depth to Z
+        const px = ((x / width) - 0.5) * 2 * aspect;
+        const py = -((y / height) - 0.5) * 2;
+        const pz = d * 1.2; // depth extrusion amount
+
+        positions.push(px, py, pz);
+        colors.push(data[i*4]/255, data[i*4+1]/255, data[i*4+2]/255);
       }
     }
-    geo.computeVertexNormals();
 
-    const tex = new THREE.TextureLoader().load(imageSrc);
-    tex.minFilter = THREE.LinearFilter;
-    const mat = new THREE.MeshStandardMaterial({
-      map: tex,
-      side: THREE.DoubleSide,
-      transparent: true,
-      alphaTest: 0.05,
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+
+    const mat = new THREE.PointsMaterial({
+      size: 0.015,
+      vertexColors: true,
+      sizeAttenuation: true,
     });
-    const mesh = new THREE.Mesh(geo, mat);
-    scene.add(mesh);
 
-    // Particles
+    const cloud = new THREE.Points(geo, mat);
+    scene.add(cloud);
+
+    // Subtle ambient particles
     const pts = [];
-    for (let i = 0; i < 80; i++) pts.push((Math.random()-.5)*6,(Math.random()-.5)*6,(Math.random()-.5)*3);
-    const partGeo = new THREE.BufferGeometry();
-    partGeo.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
-    scene.add(new THREE.Points(partGeo, new THREE.PointsMaterial({ color: 0x00aaff, size: 0.04 })));
+    for (let i = 0; i < 60; i++) pts.push((Math.random()-.5)*5,(Math.random()-.5)*5,(Math.random()-.5)*2);
+    const pGeo = new THREE.BufferGeometry();
+    pGeo.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+    scene.add(new THREE.Points(pGeo, new THREE.PointsMaterial({ color: 0x0066ff, size: 0.025, opacity: 0.4, transparent: true })));
 
-    let t = 0, mx = 0, my = 0;
-    const onMove = (e) => {
-      const r = el.getBoundingClientRect();
-      mx = ((e.clientX - r.left) / r.width - 0.5) * 2;
-      my = -((e.clientY - r.top) / r.height - 0.5) * 2;
-    };
-    const onTouch = (e) => {
-      const r = el.getBoundingClientRect();
-      mx = ((e.touches[0].clientX - r.left) / r.width - 0.5) * 2;
-      my = -((e.touches[0].clientY - r.top) / r.height - 0.5) * 2;
-    };
-    el.addEventListener("mousemove", onMove);
-    el.addEventListener("touchmove", onTouch, { passive: true });
+    // Drag-to-orbit state
+    let isDragging = false;
+    let prevX = 0, prevY = 0;
+    let rotX = 0, rotY = 0;
+    let velX = 0, velY = 0;
+    let autoRotate = true;
 
-    let frame;
+    const onMouseDown = (e) => { isDragging = true; autoRotate = false; prevX = e.clientX; prevY = e.clientY; };
+    const onMouseMove = (e) => {
+      if (!isDragging) return;
+      velY += (e.clientX - prevX) * 0.005;
+      velX += (e.clientY - prevY) * 0.005;
+      prevX = e.clientX; prevY = e.clientY;
+    };
+    const onMouseUp = () => { isDragging = false; };
+
+    const onTouchStart = (e) => { isDragging = true; autoRotate = false; prevX = e.touches[0].clientX; prevY = e.touches[0].clientY; };
+    const onTouchMove = (e) => {
+      if (!isDragging) return;
+      velY += (e.touches[0].clientX - prevX) * 0.007;
+      velX += (e.touches[0].clientY - prevY) * 0.007;
+      prevX = e.touches[0].clientX; prevY = e.touches[0].clientY;
+    };
+    const onTouchEnd = () => { isDragging = false; };
+
+    el.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: true });
+    el.addEventListener("touchend", onTouchEnd);
+
+    let t = 0, frame;
     const animate = () => {
       frame = requestAnimationFrame(animate);
       t += 0.008;
-      mesh.rotation.y = mx * 0.35 + Math.sin(t * 0.3) * 0.05;
-      mesh.rotation.x = my * 0.2 + Math.sin(t * 0.4) * 0.03;
+
+      if (autoRotate) {
+        cloud.rotation.y += 0.004;
+        cloud.rotation.x = Math.sin(t * 0.3) * 0.15;
+      } else {
+        rotY += velY; rotX += velX;
+        velY *= 0.88; velX *= 0.88;
+        cloud.rotation.y = rotY;
+        cloud.rotation.x = Math.max(-1.2, Math.min(1.2, rotX));
+      }
+
       renderer.render(scene, camera);
     };
     animate();
 
     return () => {
       cancelAnimationFrame(frame);
-      el.removeEventListener("mousemove", onMove);
-      el.removeEventListener("touchmove", onTouch);
+      el.removeEventListener("mousedown", onMouseDown);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
       if (el.contains(renderer.domElement)) el.removeChild(renderer.domElement);
-      renderer.dispose(); geo.dispose(); mat.dispose(); tex.dispose();
+      renderer.dispose(); geo.dispose(); mat.dispose();
     };
-  }, [imageSrc, depthData]);
+  }, [depthMap]);
 
-  return <div ref={mountRef} className="w-full h-full" />;
+  return <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />;
 }
 
 // ── Idle canvas ──────────────────────────────────────────────────────────────
@@ -210,11 +227,10 @@ function IdleCanvas() {
       new THREE.MeshStandardMaterial({ color: 0x0088cc, emissive: 0x003355, metalness: 0.9, roughness: 0.1 })
     );
     scene.add(sphere);
-    const wf = new THREE.Mesh(
+    scene.add(new THREE.Mesh(
       new THREE.SphereGeometry(1.02, 24, 24),
       new THREE.MeshBasicMaterial({ color: 0x00aaff, wireframe: true, opacity: 0.15, transparent: true })
-    );
-    scene.add(wf);
+    ));
 
     let t = 0, frame;
     const animate = () => {
@@ -241,7 +257,7 @@ export default function FreedomPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState("canvas");
   const [imageSrc, setImageSrc] = useState(null);
-  const [depthData, setDepthData] = useState(null);
+  const [depthMap, setDepthMap] = useState(null);
   const [status, setStatus] = useState("idle");
   const [statusMsg, setStatusMsg] = useState("");
   const fileRef = useRef(null);
@@ -254,21 +270,21 @@ export default function FreedomPage() {
     reader.onload = async (e) => {
       const src = e.target.result;
       setImageSrc(src);
-      setDepthData(null);
+      setDepthMap(null);
       setStatus("loading");
       setStatusMsg("Preparing...");
 
       const img = new Image();
       img.onload = async () => {
         try {
-          const depth = await runDepthEstimation(img, setStatusMsg);
-          setDepthData(depth);
+          const result = await buildDepthMap(img, setStatusMsg);
+          setDepthMap(result);
           setStatus("done");
           setStatusMsg("");
         } catch (err) {
           console.error(err);
           setStatus("error");
-          setStatusMsg("Depth estimation failed. Try a different image.");
+          setStatusMsg("Processing failed. Try a different image.");
         }
       };
       img.src = src;
@@ -276,7 +292,7 @@ export default function FreedomPage() {
     reader.readAsDataURL(file);
   }, []);
 
-  const reset = () => { setImageSrc(null); setDepthData(null); setStatus("idle"); setStatusMsg(""); };
+  const reset = () => { setImageSrc(null); setDepthMap(null); setStatus("idle"); setStatusMsg(""); };
   const onDrop = useCallback((e) => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); }, [handleFile]);
   const isProcessing = status === "loading";
 
@@ -299,7 +315,7 @@ export default function FreedomPage() {
             </div>
             <div>
               <h1 className="text-white font-bold text-lg leading-none">Freedom</h1>
-              <p className="text-white/40 text-xs mt-0.5">Depth-Parallax 3D</p>
+              <p className="text-white/40 text-xs mt-0.5">3D Point Cloud</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -329,19 +345,19 @@ export default function FreedomPage() {
           {tab === "canvas" ? (
             <div className="flex flex-col h-full">
               <div className="relative mx-4 mt-3 rounded-2xl overflow-hidden flex-shrink-0"
-                style={{ height: 260, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(5,5,20,0.8)" }}>
+                style={{ height: 280, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(3,3,12,0.9)" }}>
                 {isProcessing ? (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/90">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
                     <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
                     <p className="text-white/60 text-xs text-center px-6">{statusMsg}</p>
                   </div>
                 ) : status === "error" ? (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/90">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
                     <p className="text-red-400 text-sm text-center px-4">{statusMsg}</p>
                     <button onClick={reset} className="text-white/40 text-xs underline mt-1">Try again</button>
                   </div>
-                ) : depthData && imageSrc ? (
-                  <DepthCanvas imageSrc={imageSrc} depthData={depthData} />
+                ) : depthMap ? (
+                  <PointCloudCanvas depthMap={depthMap} />
                 ) : (
                   <IdleCanvas />
                 )}
@@ -349,8 +365,8 @@ export default function FreedomPage() {
 
               {status === "done" && (
                 <div className="mx-4 mt-2 flex items-center gap-2 px-3 py-1.5 rounded-xl" style={{ background: "rgba(0,200,100,0.1)", border: "1px solid rgba(0,200,100,0.2)" }}>
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                  <span className="text-green-400 text-xs">Alpha depth map · real 3D displacement · drag to rotate</span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                  <span className="text-green-400 text-xs">3D point cloud · drag to orbit · pinch to zoom</span>
                 </div>
               )}
 
@@ -361,8 +377,8 @@ export default function FreedomPage() {
                   <div className="flex gap-3 items-center p-3 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
                     <img src={imageSrc} alt="uploaded" className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-white/80 text-sm font-medium">{isProcessing ? statusMsg : "3D depth render ready"}</p>
-                      <p className="text-white/40 text-xs mt-0.5">Drag to rotate · touch to interact</p>
+                      <p className="text-white/80 text-sm font-medium">{isProcessing ? statusMsg : "3D point cloud ready"}</p>
+                      <p className="text-white/40 text-xs mt-0.5">Drag to orbit · rotate to see depth</p>
                     </div>
                     <button onClick={() => fileRef.current?.click()} className="px-3 py-1.5 rounded-xl text-xs text-white/60 hover:text-white transition-all flex-shrink-0" style={{ background: "rgba(255,255,255,0.06)" }}>
                       Change
@@ -377,7 +393,7 @@ export default function FreedomPage() {
                     </div>
                     <div className="text-center">
                       <p className="text-white/70 font-medium text-sm">Upload an image</p>
-                      <p className="text-white/35 text-xs mt-1">PNG with transparency works best · drag & drop</p>
+                      <p className="text-white/35 text-xs mt-1">Converted to a real 3D point cloud you can orbit · PNG works best</p>
                     </div>
                     <div className="flex items-center gap-1.5 px-4 py-2 rounded-full" style={{ background: "rgba(0,180,255,0.15)", border: "1px solid rgba(0,180,255,0.3)" }}>
                       <Upload className="w-3.5 h-3.5 text-blue-400" />
@@ -388,17 +404,17 @@ export default function FreedomPage() {
 
                 <p className="text-center text-white/20 text-xs mt-3 flex items-center justify-center gap-1">
                   <Sparkles className="w-3 h-3" />
-                  Move mouse / touch to rotate 3D model
+                  Drag to orbit · auto-rotates to show depth
                 </p>
               </div>
             </div>
           ) : (
             <div className="px-5 py-4 pb-8 space-y-4">
               {[
-                { num: "01", title: "Upload Any Image", body: "PNG with transparency works best — the subject pops out cleanly. JPEGs use background color detection as fallback.", color: "#00b4ff" },
-                { num: "02", title: "Alpha Depth Analysis", body: "Transparent pixels = flat background. Opaque pixels = foreground that extrudes toward the viewer. Multi-pass blur smooths jagged edges.", color: "#8844ff" },
-                { num: "03", title: "Real 3D Displacement", body: "Depth values displace a 160×160 mesh. The original image textures it, creating a true parallax 3D you can rotate.", color: "#00ffaa" },
-                { num: "04", title: "The Philosophy", body: "Freedom perceives depth from flat images — just as consciousness extracts structure from raw sensation.", color: "#ff6644" },
+                { num: "01", title: "Upload Any Image", body: "PNG with transparency works best. Each visible pixel becomes a 3D point in space.", color: "#00b4ff" },
+                { num: "02", title: "Depth Detection", body: "Alpha channel (for PNGs) or background color distance determines how far each pixel sits in Z-space.", color: "#8844ff" },
+                { num: "03", title: "True 3D Point Cloud", body: "Every pixel is placed as a colored 3D point at its computed depth — forming a real volumetric structure you can orbit from any angle.", color: "#00ffaa" },
+                { num: "04", title: "The Philosophy", body: "Freedom reconstructs depth from flatness — seeing the hidden dimension inside every image.", color: "#ff6644" },
               ].map((card, i) => (
                 <div key={i} className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
                   <div className="flex gap-3">
