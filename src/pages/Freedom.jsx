@@ -20,17 +20,28 @@ async function buildDepthMap(imageElement, onProgress) {
 
   onProgress("Building depth map...");
 
-  // Build silhouette mask from alpha
+  // Build silhouette mask with strict filtering
   let hasAlpha = false;
   for (let i = 3; i < data.length; i += 4) {
     if (data[i] < 200) { hasAlpha = true; break; }
   }
 
   const mask = new Uint8Array(cw * ch);
+  const ALPHA_THRESHOLD = 230; // 90% opacity
+  const WHITE_THRESHOLD = 240; // exclude near-white pixels
+  
   if (hasAlpha) {
-    for (let i = 0; i < cw * ch; i++) mask[i] = data[i * 4 + 3] > 100 ? 1 : 0;
+    // Alpha-based masking: only pixels with opacity >= 90%
+    for (let i = 0; i < cw * ch; i++) {
+      const alpha = data[i * 4 + 3];
+      const r = data[i * 4];
+      const g = data[i * 4 + 1];
+      const b = data[i * 4 + 2];
+      // Exclude: low alpha OR very white pixels
+      mask[i] = (alpha >= ALPHA_THRESHOLD && !(r > WHITE_THRESHOLD && g > WHITE_THRESHOLD && b > WHITE_THRESHOLD)) ? 1 : 0;
+    }
   } else {
-    // background detect
+    // Background color detection + white threshold
     let bgR = 0, bgG = 0, bgB = 0, n = 0;
     const corners = [[0,0],[cw-1,0],[0,ch-1],[cw-1,ch-1]];
     for (const [x, y] of corners) {
@@ -39,10 +50,38 @@ async function buildDepthMap(imageElement, onProgress) {
     }
     bgR /= n; bgG /= n; bgB /= n;
     for (let i = 0; i < cw * ch; i++) {
-      const dr = data[i*4]-bgR, dg = data[i*4+1]-bgG, db = data[i*4+2]-bgB;
-      mask[i] = Math.sqrt(dr*dr+dg*dg+db*db) > 40 ? 1 : 0;
+      const r = data[i*4], g = data[i*4+1], b = data[i*4+2];
+      const dr = r-bgR, dg = g-bgG, db = b-bgB;
+      const dist = Math.sqrt(dr*dr+dg*dg+db*db);
+      // Exclude: too close to background color OR very white
+      mask[i] = (dist > 40 && !(r > WHITE_THRESHOLD && g > WHITE_THRESHOLD && b > WHITE_THRESHOLD)) ? 1 : 0;
     }
   }
+
+  // Apply 3px edge erosion to remove silhouette bleed
+  const erosionRadius = 3;
+  const erodedMask = new Uint8Array(cw * ch);
+  for (let i = 0; i < cw * ch; i++) erodedMask[i] = mask[i];
+  
+  for (let y = 0; y < ch; y++) {
+    for (let x = 0; x < cw; x++) {
+      if (!mask[y * cw + x]) continue; // skip if already background
+      let isBoundary = false;
+      for (let dy = -erosionRadius; dy <= erosionRadius; dy++) {
+        for (let dx = -erosionRadius; dx <= erosionRadius; dx++) {
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || nx >= cw || ny < 0 || ny >= ch || !mask[ny * cw + nx]) {
+            isBoundary = true;
+            break;
+          }
+        }
+        if (isBoundary) break;
+      }
+      if (isBoundary) erodedMask[y * cw + x] = 0; // erode boundary pixels
+    }
+  }
+  
+  for (let i = 0; i < cw * ch; i++) mask[i] = erodedMask[i];
 
   // Distance-from-edge transform via iterative erosion
   let distMap = new Float32Array(cw * ch);
@@ -53,11 +92,18 @@ async function buildDepthMap(imageElement, onProgress) {
     for (let i = 0; i < cw * ch; i++) if (!mask[i]) distMap[i] = 0;
   }
 
+  // Normalize and apply gamma only within foreground region
   let maxD = 0;
-  for (let i = 0; i < distMap.length; i++) if (distMap[i] > maxD) maxD = distMap[i];
-  if (maxD > 0) for (let i = 0; i < distMap.length; i++) {
-    distMap[i] /= maxD;
-    distMap[i] = Math.pow(distMap[i], 0.6); // gamma: rounder bulge
+  for (let i = 0; i < distMap.length; i++) if (mask[i] && distMap[i] > maxD) maxD = distMap[i];
+  if (maxD > 0) {
+    for (let i = 0; i < distMap.length; i++) {
+      if (mask[i]) {
+        distMap[i] /= maxD;
+        distMap[i] = Math.pow(distMap[i], 0.6); // gamma: rounder bulge
+      } else {
+        distMap[i] = 0; // force background to zero depth
+      }
+    }
   }
 
   return { depth: distMap, mask, data, width: cw, height: ch, aspect };
