@@ -240,6 +240,22 @@ export default function TapToTipPage() {
         });
       }
       
+      // Always inject current user if they have a wallet and aren't already in the list
+      if (currentUser?.created_wallet_address) {
+        const alreadyIn = allUsers.some(u => u.email === currentUser.email);
+        if (!alreadyIn) {
+          allUsers.unshift({
+            id: currentUser.id || 'current_user',
+            username: currentUser.username || currentUser.full_name || currentUser.email?.split('@')[0],
+            email: currentUser.email,
+            created_wallet_address: currentUser.created_wallet_address,
+            agent_zk_id: null,
+            role: currentUser.role || 'user',
+            created_date: currentUser.created_date
+          });
+        }
+      }
+
       const usersWithWallets = allUsers.filter(u => {
         // Must have a wallet
         if (!u.created_wallet_address && !u.agent_zk_id) return false;
