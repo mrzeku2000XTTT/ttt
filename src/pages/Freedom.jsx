@@ -153,7 +153,7 @@ function MeshCanvas({ depthMap, controls }) {
     el.appendChild(renderer.domElement);
 
     // Lighting - enhanced setup
-    const ambLight = new THREE.AmbientLight(0x6688cc, 1.2);
+    const ambLight = new THREE.AmbientLight(0x6688cc, 2.0);
     scene.add(ambLight);
     
     const sun = new THREE.DirectionalLight(0xffffff, controls.lightIntensity);
@@ -165,7 +165,7 @@ function MeshCanvas({ depthMap, controls }) {
     lightRef.current = sun;
 
     // Fill light from opposite side
-    const fillLight = new THREE.DirectionalLight(0x4488ff, 0.4);
+    const fillLight = new THREE.DirectionalLight(0x4488ff, 1.2);
     fillLight.position.set(-2, 1, 3);
     scene.add(fillLight);
 
@@ -467,9 +467,9 @@ export default function FreedomPage() {
   const [statusMsg, setStatusMsg] = useState("");
   const [controls, setControls] = useState({
     depthMultiplier: 0.18,
-    roughness: 0.7,
-    metalness: 0.05,
-    lightIntensity: 1.2,
+    roughness: 0.3,
+    metalness: 0.1,
+    lightIntensity: 4.0,
     saturation: 1,
   });
   const fileRef = useRef(null);
