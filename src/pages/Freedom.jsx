@@ -235,33 +235,7 @@ function MeshCanvas({ depthMap }) {
       }
       }
 
-      // Stitch perimeter edges: connect front/back boundary vertices with quads
-      // Top edge (yi=0)
-      for (let xi = 0; xi < segW; xi++) {
-      const f0 = frontV(0, xi), f1 = frontV(0, xi+1);
-      const b0 = backV(0, xi),  b1 = backV(0, xi+1);
-      indices.push(f0, f1, b0, f1, b1, b0);
-      }
-      // Bottom edge (yi=segH)
-      for (let xi = 0; xi < segW; xi++) {
-      const f0 = frontV(segH, xi), f1 = frontV(segH, xi+1);
-      const b0 = backV(segH, xi),  b1 = backV(segH, xi+1);
-      indices.push(f0, b0, f1, f1, b0, b1);
-      }
-      // Left edge (xi=0)
-      for (let yi = 0; yi < segH; yi++) {
-      const f0 = frontV(yi, 0), f1 = frontV(yi+1, 0);
-      const b0 = backV(yi, 0),  b1 = backV(yi+1, 0);
-      indices.push(f0, b0, f1, f1, b0, b1);
-      }
-      // Right edge (xi=segW)
-      for (let yi = 0; yi < segH; yi++) {
-      const f0 = frontV(yi, segW), f1 = frontV(yi+1, segW);
-      const b0 = backV(yi, segW),  b1 = backV(yi+1, segW);
-      indices.push(f0, f1, b0, f1, b1, b0);
-      }
-
-      geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
     geo.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
     geo.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
     geo.setIndex(indices);
@@ -543,11 +517,7 @@ export default function FreedomPage() {
                     </div>
                     <div className="text-center">
                       <p className="text-white/70 font-medium text-sm">Upload an image</p>
-                      <p className="text-white/35 text-xs mt-1">Converted to a real 3D point cloud you can orbit · PNG works best</p>
-                    </div>
-                    <div className="flex items-center gap-1.5 px-4 py-2 rounded-full" style={{ background: "rgba(0,180,255,0.15)", border: "1px solid rgba(0,180,255,0.3)" }}>
-                      <Upload className="w-3.5 h-3.5 text-blue-400" />
-                      <span className="text-blue-400 text-xs font-medium">Choose Image</span>
+                      <p className="text-white/35 text-xs mt-1">Works best with black background · PNG with transparency</p>
                     </div>
                   </button>
                 )}
