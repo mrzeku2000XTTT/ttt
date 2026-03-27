@@ -81,7 +81,7 @@ function PointCloudCanvas({ depthMap }) {
     const W = el.clientWidth, H = el.clientHeight;
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, W / H, 0.01, 100);
-    camera.position.set(0, 0, 3);
+    camera.position.set(0, 0, 2.8);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(W, H);
@@ -91,11 +91,15 @@ function PointCloudCanvas({ depthMap }) {
 
     // Build point cloud geometry
     const { depth, data, width, height } = depthMap;
-    const step = 2; // sample every 2px for performance vs density balance
+    const step = 1; // every pixel for full density
     const positions = [];
     const colors = [];
 
+    // Fit the cloud into a 2x2 world-unit box preserving aspect ratio
     const aspect = width / height;
+    // scale so the larger dimension spans 2 units
+    const scaleX = aspect >= 1 ? 2 : 2 * aspect;
+    const scaleY = aspect >= 1 ? 2 / aspect : 2;
 
     for (let y = 0; y < height; y += step) {
       for (let x = 0; x < width; x += step) {
@@ -105,9 +109,9 @@ function PointCloudCanvas({ depthMap }) {
 
         const d = depth[i];
         // Map pixel coords to -1..1 space, depth to Z
-        const px = ((x / width) - 0.5) * 2 * aspect;
-        const py = -((y / height) - 0.5) * 2;
-        const pz = d * 1.2; // depth extrusion amount
+        const px = ((x / width) - 0.5) * scaleX;
+        const py = -((y / height) - 0.5) * scaleY;
+        const pz = d * 0.4; // subtle depth — shows 3D without exploding
 
         positions.push(px, py, pz);
         colors.push(data[i*4]/255, data[i*4+1]/255, data[i*4+2]/255);
@@ -119,7 +123,7 @@ function PointCloudCanvas({ depthMap }) {
     geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
 
     const mat = new THREE.PointsMaterial({
-      size: 0.015,
+      size: 0.008,
       vertexColors: true,
       sizeAttenuation: true,
     });
