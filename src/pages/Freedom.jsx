@@ -110,6 +110,7 @@ function MeshCanvas({ depthMap }) {
     const rim = new THREE.DirectionalLight(0xffffff, 0.3);
     rim.position.set(0, 0, -3);
     scene.add(rim);
+    // Rear point light gives the concave back face warm edge definition
     const backLight = new THREE.PointLight(0x664422, 1.8, 8);
     backLight.position.set(0, 0, -2.5);
     scene.add(backLight);
@@ -122,7 +123,6 @@ function MeshCanvas({ depthMap }) {
     const scaleX = aspect >= 1 ? 2 : 2 * aspect;
     const scaleY = aspect >= 1 ? 2 / aspect : 2;
     const MAX_Z = 0.18;
-    const depthScale = MAX_Z;
 
     const geo = new THREE.BufferGeometry();
     const positions = [];
@@ -147,22 +147,7 @@ function MeshCanvas({ depthMap }) {
         const z = getDepth(xi, yi);
         positions.push(x, y, z);
         uvs.push(u, 1 - v);
-        normals.push(0, 0, 1);
-      }
-    }
-
-    const frontVertexCount = positions.length / 3;
-
-    // Back face (flat at z = -0.01)
-    for (let yi = 0; yi <= segH; yi++) {
-      for (let xi = 0; xi <= segW; xi++) {
-        const u = xi / segW;
-        const v = yi / segH;
-        const x = (u - 0.5) * scaleX;
-        const y = -(v - 0.5) * scaleY;
-        positions.push(x, y, -0.01);
-        uvs.push(u, 1 - v);
-        normals.push(0, 0, -1);
+        normals.push(0, 0, 1); // will compute later
       }
     }
 
@@ -188,11 +173,73 @@ function MeshCanvas({ depthMap }) {
       }
     }
 
+    // Back face (depth-displaced concave mirror of front, gives real volume)
+    const backOffset = positions.length / 3;
+    for (let yi = 0; yi <= segH; yi++) {
+      for (let xi = 0; xi <= segW; xi++) {
+        const u = xi / segW;
+        const v = yi / segH;
+        const x = (u - 0.5) * scaleX;
+        const y = -(v - 0.5) * scaleY;
+        const z = -getDepth(xi, yi) * 0.55; // concave mirror of front
+        positions.push(x, y, z);
+        uvs.push(u, 1 - v);
+        normals.push(0, 0, -1);
+      }
+    }
+    for (let yi = 0; yi < segH; yi++) {
+      for (let xi = 0; xi < segW; xi++) {
+        const m00 = getMaskXY(xi, yi), m10 = getMaskXY(xi+1, yi);
+        const m01 = getMaskXY(xi, yi+1), m11 = getMaskXY(xi+1, yi+1);
+        if (!m00 && !m10 && !m01 && !m11) continue;
+        const a = backOffset + yi * (segW + 1) + xi;
+        const b = a + 1;
+        const c = a + (segW + 1);
+        const d = c + 1;
+        indices.push(a, b, c, b, d, c);
+      }
+    }
+
+    // Side walls — only along actual silhouette edges (mask boundary)
+    const frontV = (yi, xi) => yi * (segW + 1) + xi;
+    const backV  = (yi, xi) => backOffset + yi * (segW + 1) + xi;
+
+    for (let yi = 0; yi < segH; yi++) {
+      for (let xi = 0; xi < segW; xi++) {
+        const here = getMaskXY(xi, yi);
+        if (!here) continue;
+        // Check right neighbor — if outside, add vertical wall on right edge
+        if (!getMaskXY(xi + 1, yi)) {
+          const f0 = frontV(yi, xi+1), f1 = frontV(yi+1, xi+1);
+          const b0 = backV(yi, xi+1),  b1 = backV(yi+1, xi+1);
+          indices.push(f0, f1, b0, f1, b1, b0);
+        }
+        // Check left neighbor
+        if (!getMaskXY(xi - 1, yi)) {
+          const f0 = frontV(yi, xi), f1 = frontV(yi+1, xi);
+          const b0 = backV(yi, xi),  b1 = backV(yi+1, xi);
+          indices.push(f0, b0, f1, f1, b0, b1);
+        }
+        // Check bottom neighbor
+        if (!getMaskXY(xi, yi + 1)) {
+          const f0 = frontV(yi+1, xi), f1 = frontV(yi+1, xi+1);
+          const b0 = backV(yi+1, xi),  b1 = backV(yi+1, xi+1);
+          indices.push(f0, f1, b0, f1, b1, b0);
+        }
+        // Check top neighbor
+        if (!getMaskXY(xi, yi - 1)) {
+          const f0 = frontV(yi, xi), f1 = frontV(yi, xi+1);
+          const b0 = backV(yi, xi),  b1 = backV(yi, xi+1);
+          indices.push(f0, b0, f1, f1, b0, b1);
+        }
+      }
+      }
+
     geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
     geo.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
     geo.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
     geo.setIndex(indices);
-    geo.computeVertexNormals();
+    geo.computeVertexNormals(); // real smooth normals
 
     // Texture from image data
     const texCanvas = document.createElement("canvas");
@@ -200,6 +247,7 @@ function MeshCanvas({ depthMap }) {
     const tc = texCanvas.getContext("2d");
     const imgData = tc.createImageData(width, height);
     imgData.data.set(data);
+    // Fill transparent pixels with nearest edge color for cleaner silhouette
     for (let i = 0; i < width * height; i++) {
       if (!mask[i]) {
         imgData.data[i * 4 + 3] = 0;
