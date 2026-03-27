@@ -46,6 +46,37 @@ async function buildDepthMap(imageElement, onProgress) {
   }
 
   // Smooth depth
+  // For images with alpha: use distance-from-silhouette-edge transform
+  // This makes center pixels bulge forward, edges recede = rounded 3D body
+  if (hasAlpha) {
+    // Build binary mask of opaque pixels
+    const mask = new Uint8Array(cw * ch);
+    for (let i = 0; i < cw * ch; i++) mask[i] = depth[i] > 0.5 ? 1 : 0;
+
+    // Approximate distance transform: blur the mask multiple times
+    // Each pass spreads the "distance from edge" information inward
+    let distMap = new Float32Array(cw * ch);
+    for (let i = 0; i < cw * ch; i++) distMap[i] = mask[i];
+
+    // Multiple blur passes simulate distance transform
+    for (let pass = 0; pass < 12; pass++) {
+      distMap = boxBlur(distMap, cw, ch, 3);
+      // Re-clamp to mask boundary — only keep values inside the silhouette
+      for (let i = 0; i < cw * ch; i++) if (!mask[i]) distMap[i] = 0;
+    }
+
+    // Normalize
+    let max = 0;
+    for (let i = 0; i < distMap.length; i++) if (distMap[i] > max) max = distMap[i];
+    if (max > 0) for (let i = 0; i < distMap.length; i++) distMap[i] /= max;
+
+    // Apply sqrt to make the rounding more spherical
+    for (let i = 0; i < distMap.length; i++) distMap[i] = Math.sqrt(distMap[i]);
+
+    return { depth: distMap, data, width: cw, height: ch };
+  }
+
+  // For non-alpha images: use existing color-distance approach
   const blurred = boxBlur(depth, cw, ch, 4);
   let max = 0;
   for (let i = 0; i < blurred.length; i++) if (blurred[i] > max) max = blurred[i];
