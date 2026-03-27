@@ -1,222 +1,267 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, Upload, Loader2, Sparkles, RotateCcw, Image as ImageIcon } from "lucide-react";
+import { motion } from "framer-motion";
+import { X, Upload, Loader2, Image as ImageIcon, RotateCcw, Sparkles } from "lucide-react";
 import * as THREE from "three";
-import { base44 } from "@/api/base44Client";
 
-// ── 3D Canvas ──────────────────────────────────────────────────────────────
-function ThreeCanvas({ config }) {
+// ── Depth-Anything via transformers.js ─────────────────────────────────────
+async function runDepthEstimation(imageElement) {
+  const { pipeline, RawImage } = await import("@xenova/transformers");
+  const estimator = await pipeline("depth-estimation", "Xenova/depth-anything-small-hf", {
+    quantized: true,
+  });
+  const image = await RawImage.fromURL(imageToDataURL(imageElement));
+  const result = await estimator(image);
+  return result.depth; // RawImage with depth data
+}
+
+function imageToDataURL(img) {
+  const canvas = document.createElement("canvas");
+  canvas.width = img.naturalWidth || img.width;
+  canvas.height = img.naturalHeight || img.height;
+  canvas.getContext("2d").drawImage(img, 0, 0);
+  return canvas.toDataURL("image/jpeg", 0.9);
+}
+
+// ── 3D Depth Canvas ─────────────────────────────────────────────────────────
+function DepthCanvas({ imageSrc, depthData }) {
   const mountRef = useRef(null);
-  const rendererRef = useRef(null);
-  const frameRef = useRef(null);
+
+  useEffect(() => {
+    if (!imageSrc || !depthData) return;
+    const el = mountRef.current;
+    if (!el) return;
+
+    const w = el.clientWidth;
+    const h = el.clientHeight;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x050510);
+
+    const camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 100);
+    camera.position.set(0, 0, 3.5);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(w, h);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    el.appendChild(renderer.domElement);
+
+    // Lighting
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const dir = new THREE.DirectionalLight(0xffffff, 1.2);
+    dir.position.set(2, 3, 4);
+    scene.add(dir);
+
+    // Build displaced geometry from depth map
+    const segments = 128;
+    const geo = new THREE.PlaneGeometry(3.2, 2.4, segments, segments);
+    const pos = geo.attributes.position;
+
+    // Depth data: raw pixel values from depth-anything
+    const dw = depthData.width;
+    const dh = depthData.height;
+    const dPixels = depthData.data; // Float32 or Uint8
+
+    for (let i = 0; i <= segments; i++) {
+      for (let j = 0; j <= segments; j++) {
+        const idx = i * (segments + 1) + j;
+        // Map to depth image coords
+        const px = Math.floor((j / segments) * (dw - 1));
+        const py = Math.floor((i / segments) * (dh - 1));
+        const dIdx = py * dw + px;
+        // Normalize depth to 0-1
+        const maxVal = depthData.max !== undefined ? depthData.max : 255;
+        const raw = dPixels[dIdx] || 0;
+        const norm = raw / maxVal;
+        pos.setZ(idx, norm * 0.6 - 0.1);
+      }
+    }
+    geo.computeVertexNormals();
+
+    // Texture from original image
+    const loader = new THREE.TextureLoader();
+    const tex = loader.load(imageSrc);
+    tex.minFilter = THREE.LinearFilter;
+
+    const mat = new THREE.MeshStandardMaterial({
+      map: tex,
+      side: THREE.DoubleSide,
+    });
+
+    const mesh = new THREE.Mesh(geo, mat);
+    scene.add(mesh);
+
+    // Particles
+    const partGeo = new THREE.BufferGeometry();
+    const pts = [];
+    for (let i = 0; i < 60; i++) {
+      pts.push((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 3);
+    }
+    partGeo.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+    scene.add(new THREE.Points(partGeo, new THREE.PointsMaterial({ color: 0x00aaff, size: 0.04 })));
+
+    let t = 0;
+    let mx = 0, my = 0;
+    const onMove = (e) => {
+      const rect = el.getBoundingClientRect();
+      mx = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+      my = -((e.clientY - rect.top) / rect.height - 0.5) * 2;
+    };
+    const onTouch = (e) => {
+      const rect = el.getBoundingClientRect();
+      mx = ((e.touches[0].clientX - rect.left) / rect.width - 0.5) * 2;
+      my = -((e.touches[0].clientY - rect.top) / rect.height - 0.5) * 2;
+    };
+    el.addEventListener("mousemove", onMove);
+    el.addEventListener("touchmove", onTouch, { passive: true });
+
+    let frame;
+    const animate = () => {
+      frame = requestAnimationFrame(animate);
+      t += 0.008;
+      mesh.rotation.y = mx * 0.35 + Math.sin(t * 0.3) * 0.05;
+      mesh.rotation.x = my * 0.2 + Math.sin(t * 0.4) * 0.03;
+      renderer.render(scene, camera);
+    };
+    animate();
+
+    return () => {
+      cancelAnimationFrame(frame);
+      el.removeEventListener("mousemove", onMove);
+      el.removeEventListener("touchmove", onTouch);
+      if (el.contains(renderer.domElement)) el.removeChild(renderer.domElement);
+      renderer.dispose();
+      geo.dispose();
+      mat.dispose();
+      tex.dispose();
+    };
+  }, [imageSrc, depthData]);
+
+  return <div ref={mountRef} className="w-full h-full" />;
+}
+
+// ── Default idle canvas ──────────────────────────────────────────────────────
+function IdleCanvas() {
+  const mountRef = useRef(null);
 
   useEffect(() => {
     const el = mountRef.current;
     if (!el) return;
     const w = el.clientWidth, h = el.clientHeight;
-
     const scene = new THREE.Scene();
-    scene.background = null;
-
-    const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
-    camera.position.set(0, 0, 5);
-
+    const camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 100);
+    camera.position.set(0, 0, 4);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(w, h);
     renderer.setClearColor(0x000000, 0);
     el.appendChild(renderer.domElement);
-    rendererRef.current = renderer;
 
-    // Lights
-    scene.add(new THREE.AmbientLight(0x222244, 2));
-    const pt = new THREE.PointLight(config.primaryColor || 0x00d4ff, 4, 20);
-    pt.position.set(3, 3, 3);
+    scene.add(new THREE.AmbientLight(0x223366, 2));
+    const pt = new THREE.PointLight(0x00d4ff, 4, 20);
+    pt.position.set(2, 2, 3);
     scene.add(pt);
-    const rim = new THREE.PointLight(config.secondaryColor || 0x8844ff, 2, 15);
-    rim.position.set(-3, -1, -2);
-    scene.add(rim);
 
-    // Build geometry based on detected shape
-    const primaryMat = new THREE.MeshStandardMaterial({
-      color: config.primaryColor || 0x00d4ff,
-      emissive: config.primaryColor || 0x00d4ff,
-      emissiveIntensity: 0.3,
-      metalness: 0.8,
-      roughness: 0.2,
-    });
-    const accentMat = new THREE.MeshStandardMaterial({
-      color: config.accentColor || 0xffffff,
-      emissive: config.accentColor || 0xffffff,
-      emissiveIntensity: 1.5,
-    });
+    const sphere = new THREE.Mesh(
+      new THREE.SphereGeometry(1, 64, 64),
+      new THREE.MeshStandardMaterial({ color: 0x0088cc, emissive: 0x003355, metalness: 0.9, roughness: 0.1 })
+    );
+    scene.add(sphere);
 
-    const group = new THREE.Group();
-
-    const shape = config.shape || "sphere";
-
-    if (shape === "cube") {
-      group.add(new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.8, 1.8), primaryMat));
-    } else if (shape === "cylinder") {
-      group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 2, 32), primaryMat));
-    } else if (shape === "torus") {
-      group.add(new THREE.Mesh(new THREE.TorusGeometry(1, 0.4, 16, 100), primaryMat));
-    } else if (shape === "diamond") {
-      const geo = new THREE.OctahedronGeometry(1.2);
-      group.add(new THREE.Mesh(geo, primaryMat));
-    } else if (shape === "robot") {
-      // simplified robot
-      const body = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.5, 0.7), primaryMat);
-      body.position.y = 0;
-      group.add(body);
-      const head = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.7), primaryMat);
-      head.position.y = 1.2;
-      group.add(head);
-      [-0.5, 0.5].forEach(x => {
-        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), accentMat);
-        eye.position.set(x * 0.4, 1.25, 0.38);
-        group.add(eye);
-        const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.13, 1, 8), primaryMat);
-        arm.position.set(x * 0.85, 0, 0);
-        group.add(arm);
-      });
-    } else {
-      // default sphere
-      group.add(new THREE.Mesh(new THREE.SphereGeometry(1.2, 64, 64), primaryMat));
-    }
-
-    // Floating particles
-    const partGeo = new THREE.BufferGeometry();
-    const pos = [];
-    for (let i = 0; i < 80; i++) {
-      pos.push((Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8);
-    }
-    partGeo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
-    const partMat = new THREE.PointsMaterial({ color: config.primaryColor || 0x00d4ff, size: 0.05 });
-    scene.add(new THREE.Points(partGeo, partMat));
-
-    scene.add(group);
+    // wireframe overlay
+    const wf = new THREE.Mesh(
+      new THREE.SphereGeometry(1.02, 24, 24),
+      new THREE.MeshBasicMaterial({ color: 0x00aaff, wireframe: true, opacity: 0.15, transparent: true })
+    );
+    scene.add(wf);
 
     let t = 0;
-    let mouseX = 0;
-    const onMouse = (e) => {
-      const rect = el.getBoundingClientRect();
-      mouseX = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
-    };
-    const onTouch = (e) => {
-      const rect = el.getBoundingClientRect();
-      mouseX = ((e.touches[0].clientX - rect.left) / rect.width - 0.5) * 2;
-    };
-    el.addEventListener("mousemove", onMouse);
-    el.addEventListener("touchmove", onTouch, { passive: true });
-
+    let frame;
     const animate = () => {
-      frameRef.current = requestAnimationFrame(animate);
-      t += 0.012;
-      group.rotation.y = mouseX * 0.6 + t * 0.3;
-      group.rotation.x = Math.sin(t * 0.4) * 0.15;
-      group.position.y = Math.sin(t * 0.6) * 0.1;
+      frame = requestAnimationFrame(animate);
+      t += 0.01;
+      sphere.rotation.y = t * 0.4;
       pt.position.x = Math.sin(t) * 3;
       renderer.render(scene, camera);
     };
     animate();
 
     return () => {
-      cancelAnimationFrame(frameRef.current);
-      el.removeEventListener("mousemove", onMouse);
-      el.removeEventListener("touchmove", onTouch);
+      cancelAnimationFrame(frame);
       if (el.contains(renderer.domElement)) el.removeChild(renderer.domElement);
       renderer.dispose();
     };
-  }, [config]);
+  }, []);
 
   return <div ref={mountRef} className="w-full h-full" />;
 }
 
-// ── Default config ─────────────────────────────────────────────────────────
-const DEFAULT_CONFIG = { shape: "sphere", primaryColor: 0x00d4ff, secondaryColor: 0x8844ff, accentColor: 0xffffff, description: "A glowing cyan sphere floating in space." };
-
-// ── Main Page ──────────────────────────────────────────────────────────────
+// ── Main Page ────────────────────────────────────────────────────────────────
 export default function FreedomPage() {
   const navigate = useNavigate();
-  const [tab, setTab] = useState("canvas"); // "canvas" | "about"
-  const [config, setConfig] = useState(DEFAULT_CONFIG);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [uploadedImage, setUploadedImage] = useState(null);
-  const [aiDescription, setAiDescription] = useState("");
+  const [tab, setTab] = useState("canvas");
+  const [imageSrc, setImageSrc] = useState(null);
+  const [depthData, setDepthData] = useState(null);
+  const [status, setStatus] = useState("idle"); // idle | loading-model | estimating | done | error
+  const [statusMsg, setStatusMsg] = useState("");
   const fileRef = useRef(null);
 
   const close = () => navigate(-1);
 
   const handleFile = useCallback(async (file) => {
     if (!file || !file.type.startsWith("image/")) return;
+
     const reader = new FileReader();
     reader.onload = async (e) => {
-      const dataUrl = e.target.result;
-      setUploadedImage(dataUrl);
-      setAnalyzing(true);
-      try {
-        // Upload file first
-        const blob = await fetch(dataUrl).then(r => r.blob());
-        const formFile = new File([blob], file.name, { type: file.type });
-        const { file_url } = await base44.integrations.Core.UploadFile({ file: formFile });
+      const src = e.target.result;
+      setImageSrc(src);
+      setDepthData(null);
+      setStatus("loading-model");
+      setStatusMsg("Loading Depth-Anything AI model (first time may take ~30s)...");
 
-        // Analyze with LLM
-        const result = await base44.integrations.Core.InvokeLLM({
-          prompt: `Analyze this image and extract visual properties to create a 3D render. Return JSON with:
-- shape: one of "sphere", "cube", "cylinder", "torus", "diamond", "robot" — pick the closest match to the subject
-- primaryColor: dominant color as hex number (e.g. 0x00d4ff)  
-- secondaryColor: secondary color as hex number
-- accentColor: highlight/accent color as hex number
-- description: one sentence describing what you see and how it maps to the 3D form
-
-Be creative — map organic subjects to geometric forms.`,
-          file_urls: [file_url],
-          response_json_schema: {
-            type: "object",
-            properties: {
-              shape: { type: "string" },
-              primaryColor: { type: "number" },
-              secondaryColor: { type: "number" },
-              accentColor: { type: "number" },
-              description: { type: "string" },
-            },
-          },
-        });
-        setConfig(result);
-        setAiDescription(result.description || "");
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setAnalyzing(false);
-      }
+      // Create image element for processing
+      const img = new Image();
+      img.onload = async () => {
+        try {
+          setStatus("estimating");
+          setStatusMsg("Running AI depth estimation...");
+          const depth = await runDepthEstimation(img);
+          setDepthData(depth);
+          setStatus("done");
+          setStatusMsg("");
+        } catch (err) {
+          console.error(err);
+          setStatus("error");
+          setStatusMsg("Depth estimation failed. Try a different image.");
+        }
+      };
+      img.src = src;
     };
     reader.readAsDataURL(file);
   }, []);
+
+  const reset = () => {
+    setImageSrc(null);
+    setDepthData(null);
+    setStatus("idle");
+    setStatusMsg("");
+  };
 
   const onDrop = useCallback((e) => {
     e.preventDefault();
     handleFile(e.dataTransfer.files[0]);
   }, [handleFile]);
 
-  const reset = () => {
-    setConfig(DEFAULT_CONFIG);
-    setUploadedImage(null);
-    setAiDescription("");
-  };
+  const isProcessing = status === "loading-model" || status === "estimating";
 
   return (
     <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-6">
-      {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
         onClick={close}
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
       />
 
-      {/* Modal */}
       <motion.div
         initial={{ opacity: 0, y: 60 }}
         animate={{ opacity: 1, y: 0 }}
@@ -231,6 +276,7 @@ Be creative — map organic subjects to geometric forms.`,
         }}
         onDrop={onDrop}
         onDragOver={e => e.preventDefault()}
+        onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3 flex-shrink-0">
@@ -240,11 +286,11 @@ Be creative — map organic subjects to geometric forms.`,
             </div>
             <div>
               <h1 className="text-white font-bold text-lg leading-none">Freedom</h1>
-              <p className="text-white/40 text-xs mt-0.5">Image → 3D Canvas</p>
+              <p className="text-white/40 text-xs mt-0.5">AI Depth → Real 3D</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {uploadedImage && (
+            {imageSrc && (
               <button onClick={reset} className="w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:text-white/80 hover:bg-white/10 transition-all">
                 <RotateCcw className="w-4 h-4" />
               </button>
@@ -269,33 +315,46 @@ Be creative — map organic subjects to geometric forms.`,
         <div className="flex-1 overflow-y-auto min-h-0">
           {tab === "canvas" ? (
             <div className="flex flex-col h-full">
-              {/* 3D Render area */}
-              <div className="relative mx-4 mt-3 rounded-2xl overflow-hidden flex-shrink-0" style={{ height: 260, background: "radial-gradient(ellipse at center, rgba(0,100,200,0.08) 0%, transparent 70%)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                {analyzing ? (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+              {/* 3D area */}
+              <div className="relative mx-4 mt-3 rounded-2xl overflow-hidden flex-shrink-0"
+                style={{ height: 260, border: "1px solid rgba(255,255,255,0.06)" }}>
+                {isProcessing ? (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/90">
                     <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
-                    <p className="text-white/50 text-sm">Analyzing image...</p>
+                    <p className="text-white/60 text-xs text-center px-6">{statusMsg}</p>
                   </div>
+                ) : status === "error" ? (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/90">
+                    <p className="text-red-400 text-sm">{statusMsg}</p>
+                    <button onClick={reset} className="text-white/40 text-xs underline">Try again</button>
+                  </div>
+                ) : depthData && imageSrc ? (
+                  <DepthCanvas imageSrc={imageSrc} depthData={depthData} />
                 ) : (
-                  <ThreeCanvas config={config} />
+                  <IdleCanvas />
                 )}
-                {aiDescription ? (
-                  <div className="absolute bottom-0 left-0 right-0 px-4 py-2.5" style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.7))" }}>
-                    <p className="text-white/60 text-xs leading-relaxed">{aiDescription}</p>
-                  </div>
-                ) : null}
               </div>
+
+              {/* Status badge */}
+              {status === "done" && (
+                <div className="mx-4 mt-2 flex items-center gap-2 px-3 py-1.5 rounded-xl" style={{ background: "rgba(0,200,100,0.1)", border: "1px solid rgba(0,200,100,0.2)" }}>
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                  <span className="text-green-400 text-xs">Depth-Anything AI · real depth displacement</span>
+                </div>
+              )}
 
               {/* Upload zone */}
               <div className="px-4 mt-3 pb-6">
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => handleFile(e.target.files[0])} />
 
-                {uploadedImage ? (
+                {imageSrc ? (
                   <div className="flex gap-3 items-center p-3 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                    <img src={uploadedImage} alt="uploaded" className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
+                    <img src={imageSrc} alt="uploaded" className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-white/80 text-sm font-medium">Image uploaded</p>
-                      <p className="text-white/40 text-xs mt-0.5">3D render generated from your image</p>
+                      <p className="text-white/80 text-sm font-medium">
+                        {isProcessing ? "Processing..." : "3D depth render ready"}
+                      </p>
+                      <p className="text-white/40 text-xs mt-0.5">Drag to rotate · touch to interact</p>
                     </div>
                     <button onClick={() => fileRef.current?.click()} className="px-3 py-1.5 rounded-xl text-xs text-white/60 hover:text-white transition-all flex-shrink-0" style={{ background: "rgba(255,255,255,0.06)" }}>
                       Change
@@ -312,7 +371,7 @@ Be creative — map organic subjects to geometric forms.`,
                     </div>
                     <div className="text-center">
                       <p className="text-white/70 font-medium text-sm">Upload an image</p>
-                      <p className="text-white/35 text-xs mt-1">AI converts it to a 3D render · drag & drop supported</p>
+                      <p className="text-white/35 text-xs mt-1">Depth-Anything AI converts it to real 3D · drag & drop supported</p>
                     </div>
                     <div className="flex items-center gap-1.5 px-4 py-2 rounded-full" style={{ background: "rgba(0,180,255,0.15)", border: "1px solid rgba(0,180,255,0.3)" }}>
                       <Upload className="w-3.5 h-3.5 text-blue-400" />
@@ -323,17 +382,17 @@ Be creative — map organic subjects to geometric forms.`,
 
                 <p className="text-center text-white/20 text-xs mt-3 flex items-center justify-center gap-1">
                   <Sparkles className="w-3 h-3" />
-                  Touch to rotate the 3D model
+                  Move mouse / touch to rotate 3D model
                 </p>
               </div>
             </div>
           ) : (
             <div className="px-5 py-4 pb-8 space-y-4">
               {[
-                { num: "01", title: "Upload Any Image", body: "A face, a landscape, an object — Freedom's AI reads the visual essence of whatever you provide.", color: "#00b4ff" },
-                { num: "02", title: "AI Analysis", body: "The image is analyzed for dominant colors, shapes, and composition. These map directly to 3D geometry and material properties.", color: "#8844ff" },
-                { num: "03", title: "Live 3D Render", body: "A Three.js scene is generated in real time — shape, color, lighting, and particles all derived from your image.", color: "#00ffaa" },
-                { num: "04", title: "The Philosophy", body: "Just as humans build knowledge from lived experience, Freedom builds a 3D world from visual experience. Consciousness through sensation.", color: "#ff6644" },
+                { num: "01", title: "Upload Any Image", body: "A face, landscape, object — any photo works. Freedom sends it to a real AI depth estimation model.", color: "#00b4ff" },
+                { num: "02", title: "Depth-Anything AI", body: "The open-source Depth-Anything-V2 model (by ByteDance, NeurIPS 2024) runs directly in your browser via transformers.js — no server needed.", color: "#8844ff" },
+                { num: "03", title: "Real 3D Displacement", body: "Each pixel's depth value is mapped to a vertex Z position on a 128×128 mesh. The original image becomes the texture, creating a true parallax 3D effect.", color: "#00ffaa" },
+                { num: "04", title: "The Philosophy", body: "Freedom perceives depth from flat images — just as consciousness extracts structure from raw sensation. Awareness is pattern recognition.", color: "#ff6644" },
               ].map((card, i) => (
                 <div key={i} className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
                   <div className="flex gap-3">
