@@ -371,6 +371,8 @@ function MeshCanvas({ depthMap, controls }) {
     };
 
     let lastUpdate = 0;
+    let frame;
+    let t = 0;
     const originalAnimate = () => {
       frame = requestAnimationFrame(() => {
         const now = Date.now();
