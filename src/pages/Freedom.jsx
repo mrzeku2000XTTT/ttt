@@ -102,22 +102,11 @@ function MeshCanvas({ depthMap }) {
     // Lighting
     scene.add(new THREE.AmbientLight(0xffffff, 0.6));
     const sun = new THREE.DirectionalLight(0xffffff, 1.2);
-    sun.position.set(2, 3, 4);
-    scene.add(sun);
-    const fill = new THREE.DirectionalLight(0x8888ff, 0.4);
-    fill.position.set(-2, -1, 2);
-    scene.add(fill);
-    const rim = new THREE.DirectionalLight(0xffffff, 0.3);
-    rim.position.set(0, 0, -3);
-    scene.add(rim);
-    // Rear point light gives the concave back face warm edge definition
-    const backLight = new THREE.PointLight(0x664422, 1.8, 8);
-    backLight.position.set(0, 0, -2.5);
-    scene.add(backLight);
 
     const { depth, mask, data, width, height, aspect } = depthMap;
 
-    // Build displaced mesh geometry
+    // Build extruded solid mesh — front surface only + flat back + side walls
+    const THICKNESS = 0.08; // extrusion depth for solid volume
     const segW = Math.min(width - 1, 255);
     const segH = Math.min(height - 1, 255);
     const scaleX = aspect >= 1 ? 2 : 2 * aspect;
@@ -137,7 +126,13 @@ function MeshCanvas({ depthMap }) {
       return mask[idx] ? depth[idx] * MAX_Z : 0;
     };
 
-    // Front face vertices
+    const getMaskXY = (xi, yi) => {
+      const sx = Math.round((Math.min(Math.max(xi,0),segW) / segW) * (width - 1));
+      const sy = Math.round((Math.min(Math.max(yi,0),segH) / segH) * (height - 1));
+      return mask[sy * width + sx] ? 1 : 0;
+    };
+
+    // Front face vertices (top surface with depth displacement)
     for (let yi = 0; yi <= segH; yi++) {
       for (let xi = 0; xi <= segW; xi++) {
         const u = xi / segW;
@@ -147,21 +142,13 @@ function MeshCanvas({ depthMap }) {
         const z = getDepth(xi, yi);
         positions.push(x, y, z);
         uvs.push(u, 1 - v);
-        normals.push(0, 0, 1); // will compute later
+        normals.push(0, 0, 1);
       }
     }
 
-    // Helper: sample mask at grid coordinates
-    const getMaskXY = (xi, yi) => {
-      const sx = Math.round((Math.min(Math.max(xi,0),segW) / segW) * (width - 1));
-      const sy = Math.round((Math.min(Math.max(yi,0),segH) / segH) * (height - 1));
-      return mask[sy * width + sx] ? 1 : 0;
-    };
-
-    // Front face triangles — only where mask is foreground
+    // Front face triangles
     for (let yi = 0; yi < segH; yi++) {
       for (let xi = 0; xi < segW; xi++) {
-        // Skip quad if all 4 corners are background
         const m00 = getMaskXY(xi, yi), m10 = getMaskXY(xi+1, yi);
         const m01 = getMaskXY(xi, yi+1), m11 = getMaskXY(xi+1, yi+1);
         if (!m00 && !m10 && !m01 && !m11) continue;
@@ -173,7 +160,7 @@ function MeshCanvas({ depthMap }) {
       }
     }
 
-    // Back face (depth-displaced concave mirror of front, gives real volume)
+    // Back face vertices (flat surface at z = -THICKNESS)
     const backOffset = positions.length / 3;
     for (let yi = 0; yi <= segH; yi++) {
       for (let xi = 0; xi <= segW; xi++) {
@@ -181,12 +168,14 @@ function MeshCanvas({ depthMap }) {
         const v = yi / segH;
         const x = (u - 0.5) * scaleX;
         const y = -(v - 0.5) * scaleY;
-        const z = -getDepth(xi, yi) * 0.55; // concave mirror of front
+        const z = -THICKNESS; // flat back
         positions.push(x, y, z);
         uvs.push(u, 1 - v);
         normals.push(0, 0, -1);
       }
     }
+
+    // Back face triangles (reversed winding)
     for (let yi = 0; yi < segH; yi++) {
       for (let xi = 0; xi < segW; xi++) {
         const m00 = getMaskXY(xi, yi), m10 = getMaskXY(xi+1, yi);
@@ -200,7 +189,7 @@ function MeshCanvas({ depthMap }) {
       }
     }
 
-    // Side walls — only along actual silhouette edges (mask boundary)
+    // Side walls along silhouette edges
     const frontV = (yi, xi) => yi * (segW + 1) + xi;
     const backV  = (yi, xi) => backOffset + yi * (segW + 1) + xi;
 
@@ -208,32 +197,28 @@ function MeshCanvas({ depthMap }) {
       for (let xi = 0; xi < segW; xi++) {
         const here = getMaskXY(xi, yi);
         if (!here) continue;
-        // Check right neighbor — if outside, add vertical wall on right edge
         if (!getMaskXY(xi + 1, yi)) {
           const f0 = frontV(yi, xi+1), f1 = frontV(yi+1, xi+1);
           const b0 = backV(yi, xi+1),  b1 = backV(yi+1, xi+1);
           indices.push(f0, f1, b0, f1, b1, b0);
         }
-        // Check left neighbor
         if (!getMaskXY(xi - 1, yi)) {
           const f0 = frontV(yi, xi), f1 = frontV(yi+1, xi);
           const b0 = backV(yi, xi),  b1 = backV(yi+1, xi);
           indices.push(f0, b0, f1, f1, b0, b1);
         }
-        // Check bottom neighbor
         if (!getMaskXY(xi, yi + 1)) {
           const f0 = frontV(yi+1, xi), f1 = frontV(yi+1, xi+1);
           const b0 = backV(yi+1, xi),  b1 = backV(yi+1, xi+1);
           indices.push(f0, f1, b0, f1, b1, b0);
         }
-        // Check top neighbor
         if (!getMaskXY(xi, yi - 1)) {
           const f0 = frontV(yi, xi), f1 = frontV(yi, xi+1);
           const b0 = backV(yi, xi),  b1 = backV(yi, xi+1);
           indices.push(f0, b0, f1, f1, b0, b1);
         }
       }
-      }
+    }
 
     geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
     geo.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
