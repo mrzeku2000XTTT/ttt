@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Zap, Search, Wallet, User as UserIcon, Copy, Check, Send, CheckCircle2, Upload } from "lucide-react";
+import { Zap, Search, Wallet, User as UserIcon, Copy, Check, Send, CheckCircle2, Upload, ArrowRight, Star } from "lucide-react";
 
 export default function TapToTipPage() {
   const defaultBackground = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/165624785_image.png';
@@ -538,6 +540,77 @@ export default function TapToTipPage() {
             />
           </div>
         </div>
+
+        {/* Wallet Status Banner */}
+        {currentUser && (
+          <div className="max-w-2xl mx-auto mb-8">
+            {currentUser.created_wallet_address ? (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/30 backdrop-blur-sm"
+              >
+                <div className="w-9 h-9 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Star className="w-5 h-5 text-green-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-green-400 font-semibold text-sm">Your Kaspa address is live on TapToTip</p>
+                  <p className="text-white/50 text-xs truncate font-mono mt-0.5">{currentUser.created_wallet_address.slice(0, 20)}...{currentUser.created_wallet_address.slice(-8)}</p>
+                </div>
+                <Link to={createPageUrl("Profile")}>
+                  <button className="text-green-400 hover:text-green-300 text-xs border border-green-500/30 px-3 py-1.5 rounded-lg hover:bg-green-500/10 transition-all whitespace-nowrap">
+                    Edit Profile
+                  </button>
+                </Link>
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-3 p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/30 backdrop-blur-sm"
+              >
+                <div className="w-9 h-9 bg-cyan-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Wallet className="w-5 h-5 text-cyan-400" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-white font-semibold text-sm">Ready to receive KAS tips?</p>
+                  <p className="text-white/50 text-xs mt-0.5">Add your Kaspa wallet address to appear on TapToTip and let the community support you.</p>
+                </div>
+                <Link to={createPageUrl("Wallet")}>
+                  <button className="flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 text-xs border border-cyan-500/30 px-3 py-1.5 rounded-lg hover:bg-cyan-500/10 transition-all whitespace-nowrap">
+                    Add Wallet
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
+                </Link>
+              </motion.div>
+            )}
+          </div>
+        )}
+
+        {!currentUser && (
+          <div className="max-w-2xl mx-auto mb-8">
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm"
+            >
+              <div className="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0">
+                <Wallet className="w-5 h-5 text-white/60" />
+              </div>
+              <div className="flex-1">
+                <p className="text-white font-semibold text-sm">Want to receive KAS tips?</p>
+                <p className="text-white/50 text-xs mt-0.5">Sign in and add your Kaspa address to appear on TapToTip.</p>
+              </div>
+              <button
+                onClick={() => base44.auth.redirectToLogin()}
+                className="flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 text-xs border border-cyan-500/30 px-3 py-1.5 rounded-lg hover:bg-cyan-500/10 transition-all whitespace-nowrap"
+              >
+                Sign In
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            </motion.div>
+          </div>
+        )}
 
         {/* Users Grid */}
         {loading ? (
