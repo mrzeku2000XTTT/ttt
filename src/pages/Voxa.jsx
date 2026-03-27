@@ -1,10 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 
-// Load Noto Sans for broad Unicode/script support
-const fontLink = document.createElement('link');
-fontLink.rel = 'stylesheet';
-fontLink.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&family=Noto+Sans+Arabic&family=Noto+Sans+Devanagari&family=Noto+Sans+SC&family=Noto+Sans+JP&family=Noto+Sans+KR&family=Noto+Sans+Thai&family=Noto+Sans+Hebrew&family=Noto+Sans+Bengali&display=swap';
-if (!document.head.querySelector('[href*="Noto+Sans"]')) document.head.appendChild(fontLink);
+const MULTILANG_FONT = "'Noto Sans', 'Noto Sans Arabic', 'Noto Sans Devanagari', 'Noto Sans SC', 'Noto Sans JP', 'Noto Sans KR', 'Noto Sans Thai', 'Noto Sans Hebrew', 'Noto Sans Bengali', system-ui, sans-serif";
 import { ArrowLeftRight, Volume2, Copy, X, ChevronDown, Search, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -114,6 +110,15 @@ function LanguagePicker({ value, onChange, exclude }) {
 }
 
 export default function VoxaPage() {
+  useEffect(() => {
+    if (!document.head.querySelector('[data-voxa-fonts]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.setAttribute('data-voxa-fonts', '1');
+      link.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&family=Noto+Sans+Arabic&family=Noto+Sans+Devanagari&family=Noto+Sans+SC&family=Noto+Sans+JP&family=Noto+Sans+KR&family=Noto+Sans+Thai&family=Noto+Sans+Hebrew&family=Noto+Sans+Bengali&display=swap';
+      document.head.appendChild(link);
+    }
+  }, []);
   const [sourceText, setSourceText] = useState("");
   const [translatedText, setTranslatedText] = useState("");
   const [sourceLang, setSourceLang] = useState("en");
@@ -243,6 +248,7 @@ export default function VoxaPage() {
             placeholder="Enter text to translate..."
             rows={5}
             className="w-full bg-transparent text-white text-lg placeholder:text-white/25 outline-none resize-none leading-relaxed"
+            style={{ fontFamily: MULTILANG_FONT }}
           />
         </motion.div>
 
@@ -279,7 +285,7 @@ export default function VoxaPage() {
                 <span className="text-white/40 text-sm">Translating...</span>
               </div>
             ) : (
-              <p className="text-white text-lg leading-relaxed min-h-[120px] whitespace-pre-wrap" style={{fontFamily: "'Noto Sans', 'Noto Sans Arabic', 'Noto Sans Devanagari', 'Noto Sans SC', 'Noto Sans JP', 'Noto Sans KR', 'Noto Sans Thai', 'Noto Sans Hebrew', 'Noto Sans Bengali', system-ui, sans-serif"}}>
+              <p className="text-white text-lg leading-relaxed min-h-[120px] whitespace-pre-wrap" style={{ fontFamily: MULTILANG_FONT }}>
                 {translatedText || <span className="text-white/20">Translation will appear here...</span>}
               </p>
             )}
