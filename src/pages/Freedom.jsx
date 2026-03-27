@@ -147,6 +147,13 @@ function MeshCanvas({ depthMap }) {
       }
     }
 
+    // Helper: sample mask at grid coordinates
+    const getMaskXY = (xi, yi) => {
+      const sx = Math.round((Math.min(Math.max(xi,0),segW) / segW) * (width - 1));
+      const sy = Math.round((Math.min(Math.max(yi,0),segH) / segH) * (height - 1));
+      return mask[sy * width + sx] ? 1 : 0;
+    };
+
     // Front face triangles — only where mask is foreground
     for (let yi = 0; yi < segH; yi++) {
       for (let xi = 0; xi < segW; xi++) {
@@ -161,13 +168,6 @@ function MeshCanvas({ depthMap }) {
         indices.push(a, c, b, b, c, d);
       }
     }
-
-    // Helper defined here so back face + walls can use it too
-    const getMaskXY = (xi, yi) => {
-      const sx = Math.round((Math.min(Math.max(xi,0),segW) / segW) * (width - 1));
-      const sy = Math.round((Math.min(Math.max(yi,0),segH) / segH) * (height - 1));
-      return mask[sy * width + sx] ? 1 : 0;
-    };
 
     // Back face (flat at z = 0)
     const backOffset = positions.length / 3;
