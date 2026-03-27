@@ -257,6 +257,10 @@ function AvatarConfigurator() {
 export default function FreedomPage() {
   const [showApp, setShowApp] = useState(false);
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <div className="min-h-screen bg-black relative overflow-hidden" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" }}>
       {/* Background ambience */}
@@ -269,7 +273,7 @@ export default function FreedomPage() {
       </div>
 
       {/* Back button */}
-      <div className="relative z-10 pt-6 pl-6">
+      <div className="relative z-10 pt-3 pl-4">
         <Link to={createPageUrl("AppStore")}>
           <button className="flex items-center gap-2 px-4 py-2 rounded-2xl text-white/50 hover:text-white/80 transition-all text-sm" style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.08)" }}>
             ← Back
