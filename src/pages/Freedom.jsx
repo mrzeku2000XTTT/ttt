@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { X, Upload, Loader2, Image as ImageIcon, RotateCcw, Sparkles } from "lucide-react";
+import MeshControls from "@/components/3d/MeshControls";
 import * as THREE from "three";
 
 // ── Build depth map from image ───────────────────────────────────────────────
@@ -125,8 +126,11 @@ function boxBlur(src, w, h, r) {
 }
 
 // ── 3D Mesh Canvas ────────────────────────────────────────────────────────────
-function MeshCanvas({ depthMap }) {
+function MeshCanvas({ depthMap, controls }) {
   const mountRef = useRef(null);
+  const meshRef = useRef(null);
+  const materialRef = useRef(null);
+  const lightRef = useRef(null);
 
   useEffect(() => {
     if (!depthMap) return;
@@ -147,7 +151,8 @@ function MeshCanvas({ depthMap }) {
 
     // Lighting
     scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-    const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+    const sun = new THREE.DirectionalLight(0xffffff, controls.lightIntensity);
+    lightRef.current = sun;
 
     const { depth, mask, data, width, height, aspect } = depthMap;
 
@@ -290,11 +295,13 @@ function MeshCanvas({ depthMap }) {
       map: texture,
       side: THREE.DoubleSide,
       alphaTest: 0.1,
-      roughness: 0.7,
-      metalness: 0.05,
+      roughness: controls.roughness,
+      metalness: controls.metalness,
     });
+    materialRef.current = mat;
 
     const mesh = new THREE.Mesh(geo, mat);
+    meshRef.current = mesh;
     scene.add(mesh);
 
     // Ambient particles
@@ -324,22 +331,45 @@ function MeshCanvas({ depthMap }) {
     el.addEventListener("touchmove", e => onMove(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
     el.addEventListener("touchend", onUp);
 
-    let t = 0, frame;
-    const animate = () => {
-      frame = requestAnimationFrame(animate);
-      t += 0.008;
-      if (autoRotate) {
-        mesh.rotation.y += 0.004;
-        mesh.rotation.x = Math.sin(t * 0.3) * 0.1;
-      } else {
-        rotY += velY; rotX += velX;
-        velY *= 0.88; velX *= 0.88;
-        mesh.rotation.y = rotY;
-        mesh.rotation.x = Math.max(-1.2, Math.min(1.2, rotX));
+
+
+    const updateMaterial = () => {
+      if (materialRef.current) {
+        materialRef.current.roughness = controls.roughness;
+        materialRef.current.metalness = controls.metalness;
+        if (materialRef.current.map) {
+          materialRef.current.map.colorSpace = THREE.SRGBColorSpace;
+        }
       }
-      renderer.render(scene, camera);
+      if (lightRef.current) {
+        lightRef.current.intensity = controls.lightIntensity;
+      }
     };
-    animate();
+
+    let lastUpdate = 0;
+    const originalAnimate = () => {
+      frame = requestAnimationFrame(() => {
+        const now = Date.now();
+        if (now - lastUpdate > 16) {
+          updateMaterial();
+          lastUpdate = now;
+        }
+        
+        t += 0.008;
+        if (autoRotate) {
+          mesh.rotation.y += 0.004;
+          mesh.rotation.x = Math.sin(t * 0.3) * 0.1;
+        } else {
+          rotY += velY; rotX += velX;
+          velY *= 0.88; velX *= 0.88;
+          mesh.rotation.y = rotY;
+          mesh.rotation.x = Math.max(-1.2, Math.min(1.2, rotX));
+        }
+        renderer.render(scene, camera);
+        originalAnimate();
+      });
+    };
+    originalAnimate();
 
     return () => {
       cancelAnimationFrame(frame);
@@ -349,7 +379,7 @@ function MeshCanvas({ depthMap }) {
       if (el.contains(renderer.domElement)) el.removeChild(renderer.domElement);
       renderer.dispose(); geo.dispose(); mat.dispose(); texture.dispose();
     };
-  }, [depthMap]);
+  }, [depthMap, controls]);
 
   return <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />;
 }
@@ -413,6 +443,13 @@ export default function FreedomPage() {
   const [depthMap, setDepthMap] = useState(null);
   const [status, setStatus] = useState("idle");
   const [statusMsg, setStatusMsg] = useState("");
+  const [controls, setControls] = useState({
+    depthMultiplier: 0.18,
+    roughness: 0.7,
+    metalness: 0.05,
+    lightIntensity: 1.2,
+    saturation: 1,
+  });
   const fileRef = useRef(null);
 
   const close = () => navigate(-1);
@@ -510,17 +547,33 @@ export default function FreedomPage() {
                     <button onClick={reset} className="text-white/40 text-xs underline mt-1">Try again</button>
                   </div>
                 ) : depthMap ? (
-                  <MeshCanvas depthMap={depthMap} />
+                  <MeshCanvas depthMap={depthMap} controls={controls} />
                 ) : (
                   <IdleCanvas />
                 )}
               </div>
 
               {status === "done" && (
-                <div className="mx-4 mt-2 flex items-center gap-2 px-3 py-1.5 rounded-xl" style={{ background: "rgba(0,200,100,0.1)", border: "1px solid rgba(0,200,100,0.2)" }}>
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                  <span className="text-green-400 text-xs">3D mesh · drag to orbit · real geometry</span>
-                </div>
+                <>
+                  <div className="mx-4 mt-2 flex items-center gap-2 px-3 py-1.5 rounded-xl" style={{ background: "rgba(0,200,100,0.1)", border: "1px solid rgba(0,200,100,0.2)" }}>
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                    <span className="text-green-400 text-xs">3D mesh · drag to orbit · real geometry</span>
+                  </div>
+                  <div className="mx-4 mt-3">
+                    <MeshControls
+                      depthMultiplier={controls.depthMultiplier}
+                      onDepthChange={(val) => setControls({ ...controls, depthMultiplier: val })}
+                      roughness={controls.roughness}
+                      onRoughnessChange={(val) => setControls({ ...controls, roughness: val })}
+                      metalness={controls.metalness}
+                      onMetalnessChange={(val) => setControls({ ...controls, metalness: val })}
+                      lightIntensity={controls.lightIntensity}
+                      onLightIntensityChange={(val) => setControls({ ...controls, lightIntensity: val })}
+                      saturation={controls.saturation}
+                      onSaturationChange={(val) => setControls({ ...controls, saturation: val })}
+                    />
+                  </div>
+                </>
               )}
 
               <div className="px-4 mt-3 pb-6">
