@@ -1,4 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
+
+// Load Noto Sans for broad Unicode/script support
+const fontLink = document.createElement('link');
+fontLink.rel = 'stylesheet';
+fontLink.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&family=Noto+Sans+Arabic&family=Noto+Sans+Devanagari&family=Noto+Sans+SC&family=Noto+Sans+JP&family=Noto+Sans+KR&family=Noto+Sans+Thai&family=Noto+Sans+Hebrew&family=Noto+Sans+Bengali&display=swap';
+if (!document.head.querySelector('[href*="Noto+Sans"]')) document.head.appendChild(fontLink);
 import { ArrowLeftRight, Volume2, Copy, X, ChevronDown, Search, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -273,7 +279,7 @@ export default function VoxaPage() {
                 <span className="text-white/40 text-sm">Translating...</span>
               </div>
             ) : (
-              <p className="text-white text-lg leading-relaxed min-h-[120px] whitespace-pre-wrap">
+              <p className="text-white text-lg leading-relaxed min-h-[120px] whitespace-pre-wrap" style={{fontFamily: "'Noto Sans', 'Noto Sans Arabic', 'Noto Sans Devanagari', 'Noto Sans SC', 'Noto Sans JP', 'Noto Sans KR', 'Noto Sans Thai', 'Noto Sans Hebrew', 'Noto Sans Bengali', system-ui, sans-serif"}}>
                 {translatedText || <span className="text-white/20">Translation will appear here...</span>}
               </p>
             )}
