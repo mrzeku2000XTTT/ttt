@@ -95,7 +95,7 @@ function MeshCanvas({ depthMap }) {
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(W, H);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setClearColor(0x000000, 0);
+    renderer.setClearColor(0x000000, 1);
     renderer.shadowMap.enabled = true;
     el.appendChild(renderer.domElement);
 
@@ -233,9 +233,35 @@ function MeshCanvas({ depthMap }) {
           indices.push(f0, b0, f1, f1, b0, b1);
         }
       }
-    }
+      }
 
-    geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+      // Stitch perimeter edges: connect front/back boundary vertices with quads
+      // Top edge (yi=0)
+      for (let xi = 0; xi < segW; xi++) {
+      const f0 = frontV(0, xi), f1 = frontV(0, xi+1);
+      const b0 = backV(0, xi),  b1 = backV(0, xi+1);
+      indices.push(f0, f1, b0, f1, b1, b0);
+      }
+      // Bottom edge (yi=segH)
+      for (let xi = 0; xi < segW; xi++) {
+      const f0 = frontV(segH, xi), f1 = frontV(segH, xi+1);
+      const b0 = backV(segH, xi),  b1 = backV(segH, xi+1);
+      indices.push(f0, b0, f1, f1, b0, b1);
+      }
+      // Left edge (xi=0)
+      for (let yi = 0; yi < segH; yi++) {
+      const f0 = frontV(yi, 0), f1 = frontV(yi+1, 0);
+      const b0 = backV(yi, 0),  b1 = backV(yi+1, 0);
+      indices.push(f0, b0, f1, f1, b0, b1);
+      }
+      // Right edge (xi=segW)
+      for (let yi = 0; yi < segH; yi++) {
+      const f0 = frontV(yi, segW), f1 = frontV(yi+1, segW);
+      const b0 = backV(yi, segW),  b1 = backV(yi+1, segW);
+      indices.push(f0, f1, b0, f1, b1, b0);
+      }
+
+      geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
     geo.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
     geo.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
     geo.setIndex(indices);
@@ -338,7 +364,7 @@ function IdleCanvas() {
     camera.position.set(0, 0, 4);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(w, h);
-    renderer.setClearColor(0x000000, 0);
+    renderer.setClearColor(0x000000, 1);
     el.appendChild(renderer.domElement);
 
     scene.add(new THREE.AmbientLight(0x223366, 2));
