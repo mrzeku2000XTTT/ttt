@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Search, TrendingUp, Crown, Star, Link2, Plus, Edit2 } from "lucide-react";
+import { Search, TrendingUp, Crown, Star, Link2, Plus, Edit2, Eye } from "lucide-react";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -99,10 +99,11 @@ export default function AppStorePage() {
     { name: "Voxa", icon: "Link2", path: "Voxa", category: "Tools", defaultIcon: "https://ui-avatars.com/api/?name=Vx&size=128&background=000000&color=ffffff&bold=true" },
     { name: "Freedom", icon: "Link2", path: "Freedom", category: "AI", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/c93b4796d_generated_image.png", circular: false },
     { name: "Prompto", icon: "Link2", path: "Prompto", category: "AI", defaultIcon: "https://ui-avatars.com/api/?name=Pr&size=128&background=a855f7&color=ffffff&bold=true" },
-     ];
+    { name: "Cinemata", icon: "Eye", path: "Cinemata", category: "Media", defaultIcon: "👁️", isEmoji: true },
+      ];
 
   const getIconComponent = (iconName) => {
-    const icons = { Link2 };
+    const icons = { Link2, Eye };
     return icons[iconName] || Link2;
   };
 
