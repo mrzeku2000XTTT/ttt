@@ -13,6 +13,7 @@ import HworkPage from './pages/Hwork';
 import FreedomPage from './pages/Freedom';
 import VoxaPage from './pages/Voxa';
 import DAGVisualizerPage from './pages/DAGVisualizer';
+import PromptPage from './pages/Prompto';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -68,6 +69,7 @@ const AuthenticatedApp = () => {
       <Route path="/Voxa" element={<VoxaPage />} />
       <Route path="/Freedom" element={<FreedomPage />} />
       <Route path="/DAGVisualizer" element={<DAGVisualizerPage />} />
+      <Route path="/Prompto" element={<PromptPage />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
