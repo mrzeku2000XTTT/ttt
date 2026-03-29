@@ -14,7 +14,7 @@ import FreedomPage from './pages/Freedom';
 import VoxaPage from './pages/Voxa';
 import DAGVisualizerPage from './pages/DAGVisualizer';
 import PromptPage from './pages/Prompto';
-import CinematPage from './pages/Cinemata';
+import CinekasPage from './pages/Cinemata';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -71,7 +71,7 @@ const AuthenticatedApp = () => {
       <Route path="/Freedom" element={<FreedomPage />} />
       <Route path="/DAGVisualizer" element={<DAGVisualizerPage />} />
       <Route path="/Prompto" element={<PromptPage />} />
-      <Route path="/Cinemata" element={<CinematPage />} />
+      <Route path="/Cinekas" element={<CinekasPage />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

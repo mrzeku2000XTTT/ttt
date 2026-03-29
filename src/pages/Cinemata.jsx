@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
-export default function CinematPage() {
+export default function CinekasPage() {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(null);
 
@@ -36,7 +36,7 @@ export default function CinematPage() {
     <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black">
       <div className="w-full h-full flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-white/10 bg-black/80 backdrop-blur-xl">
-          <h3 className="text-white font-bold text-lg">Cinemata</h3>
+          <h3 className="text-white font-bold text-lg">Cinekas</h3>
           <button
             onClick={() => navigate(-1)}
             className="text-white/60 hover:text-white transition-colors"
@@ -46,9 +46,9 @@ export default function CinematPage() {
         </div>
         <div className="flex-1 w-full">
           <iframe
-            src="https://cinematakas.base44.app"
+            src="https://cinekas.xyz"
             className="w-full h-full border-0"
-            title="Cinemata"
+            title="Cinekas"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           />
         </div>
