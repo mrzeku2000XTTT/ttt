@@ -29,10 +29,10 @@ export default function SpeedImageGen() {
     
     setGenerating(true);
     try {
-      const result = await base44.integrations.Core.GenerateImage({
+      const result = await base44.functions.invoke('fluxImageGen', {
         prompt: prompt,
       });
-      setImageUrl(result.url);
+      setImageUrl(result.data.url);
     } catch (err) {
       console.error("Generation failed:", err);
     } finally {
@@ -46,7 +46,7 @@ export default function SpeedImageGen() {
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Describe the image you want to generate... ultra-fast AI generation"
+          placeholder="Describe the image you want to generate... ultra-fast flux generation"
           className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-white/30 resize-none"
           rows="3"
         />
