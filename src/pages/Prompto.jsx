@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import ReactMarkdown from "react-markdown";
 import { Send, Sparkles, Lightbulb, Wand2, ArrowLeft, ImagePlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
@@ -105,10 +106,12 @@ export default function PromptPage() {
     try {
       const invokeParams = currentImage
         ? {
-            prompt: `The user uploaded an image. Based on the image and this input: "${currentPrompt || 'no text provided'}", understand their intent and generate a helpful, detailed response. If they want a script, write a full script. If they want marketing copy, write that. Adapt to their intent.`,
+            prompt: `You are a visionary Hollywood movie director and creative storyteller. The user uploaded an image. Based on the image and this input: "${currentPrompt || 'no text provided'}", respond in a natural, conversational tone as a seasoned director would — passionate, vivid, cinematic. Do NOT use markdown headers (no #, ##, ###, ####). Do NOT use ** for bold. Write in clean, flowing prose with natural paragraphs. Use line breaks between sections. If writing a script outline, format it like a real director's treatment — not a bulleted list.`,
             file_urls: [currentImage.url],
           }
-        : { prompt: currentPrompt };
+        : {
+            prompt: `You are a visionary Hollywood movie director and creative storyteller. Respond to this in a natural, conversational tone as a seasoned director would — passionate, vivid, cinematic. Do NOT use markdown headers (no #, ##, ###, ####). Do NOT use ** for bold. Write in clean, flowing prose with natural paragraphs. Here is the user's request: "${currentPrompt}"`,
+          };
       const aiResponse = await base44.integrations.Core.InvokeLLM(invokeParams);
       setMessages(prev => [...prev, { role: "assistant", content: aiResponse }]);
     } catch (err) {
@@ -172,7 +175,11 @@ export default function PromptPage() {
                   {msg.imagePreview && (
                     <img src={msg.imagePreview} alt="uploaded" className="h-32 rounded-xl object-cover mb-2 border border-white/10" />
                   )}
-                  {msg.content}
+                  {msg.role === "assistant" ? (
+                    <div className="prose prose-sm prose-invert max-w-none [&>p]:my-2 [&>p]:leading-relaxed">
+                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    </div>
+                  ) : msg.content}
                 </div>
               </div>
             </motion.div>
