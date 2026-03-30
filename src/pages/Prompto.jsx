@@ -106,10 +106,9 @@ export default function PromptPage() {
       const invokeParams = currentImage
         ? {
             prompt: `The user uploaded an image. Based on the image and this input: "${currentPrompt || 'no text provided'}", understand their intent and generate a helpful, detailed response. If they want a script, write a full script. If they want marketing copy, write that. Adapt to their intent.`,
-            model: "gpt_5",
             file_urls: [currentImage.url],
           }
-        : { prompt: currentPrompt, model: "gpt_5_mini" };
+        : { prompt: currentPrompt };
       const aiResponse = await base44.integrations.Core.InvokeLLM(invokeParams);
       setMessages(prev => [...prev, { role: "assistant", content: aiResponse }]);
     } catch (err) {
