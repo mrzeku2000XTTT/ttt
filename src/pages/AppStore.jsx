@@ -140,6 +140,7 @@ export default function AppStorePage() {
     { name: "Freedom", icon: "Link2", path: "Freedom", category: "AI", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/c93b4796d_generated_image.png", circular: false },
     { name: "Prompto", icon: "Link2", path: "Prompto", category: "AI", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/073d22c9d_generated_image.png" },
     { name: "CineKas", icon: "Eye", path: "Cinekas", category: "Media", isCinekas: true, adminOnly: true },
+    { name: "Speed", icon: "Link2", path: "Speed", category: "Tools", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/078ebbdaf_generated_image.png" },
       ];
 
   const getIconComponent = (iconName) => {
