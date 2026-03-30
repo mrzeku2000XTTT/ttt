@@ -171,6 +171,8 @@ export default function ChannelPage() {
                             {mediaType === 'video' ? (
                               <video
                                 src={mediaUrl}
+                                preload="none"
+                                playsInline
                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                               />
                             ) : (
