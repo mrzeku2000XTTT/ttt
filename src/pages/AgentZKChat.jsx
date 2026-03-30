@@ -351,7 +351,6 @@ Be thorough and provide actionable insights.`,
 
       const updatedMessages = [...newMessages, aiMessage];
       setMessages(updatedMessages);
-      saveChatHistory(updatedMessages);
       
       setDeepSearchFile(null);
       setShowDeepSearch(false);
@@ -364,7 +363,6 @@ Be thorough and provide actionable insights.`,
       };
       const updatedMessages = [...newMessages, errorMessage];
       setMessages(updatedMessages);
-      saveChatHistory(updatedMessages);
     } finally {
       setIsDeepSearching(false);
     }

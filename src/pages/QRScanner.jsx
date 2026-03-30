@@ -147,8 +147,8 @@ export default function QRScannerPage() {
     // Use jsQR library for cross-platform QR code detection
     try {
       // jsQR is loaded via CDN in index.html
-      if (typeof jsQR !== 'undefined') {
-        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+      if (typeof window.jsQR !== 'undefined') {
+        const code = window.jsQR(imageData.data, imageData.width, imageData.height, {
           inversionAttempts: "dontInvert",
         });
         

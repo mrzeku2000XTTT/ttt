@@ -49,6 +49,17 @@ export default function KaiChatbot() {
     'show me', 'visualize', 'picture of', 'image of', 'art of', 'xunhua'
   ];
 
+  const FEED_KEYWORDS = [
+    'feed', 'ttt feed', 'latest posts', 'recent posts', 'whats on the feed',
+    "what's on the feed", 'check feed', 'examine feed', 'what are people saying',
+    'what\'s new', 'whats new', 'latest updates', 'community posts', 'ttt posts'
+  ];
+
+  const isFeedRequest = (msg) => {
+    const lower = msg.toLowerCase();
+    return FEED_KEYWORDS.some(kw => lower.includes(kw));
+  };
+
   const isImageRequest = (msg) => {
     const lower = msg.toLowerCase();
     return IMAGE_KEYWORDS.some(kw => lower.includes(kw));
@@ -71,17 +82,33 @@ export default function KaiChatbot() {
       return;
     }
 
+    // Detect feed request
+    if (isFeedRequest(userMsg)) {
+      setMessages(prev => [...prev, { role: "action", content: "Checking TTT Feed... 📡" }]);
+      try {
+        const posts = await base44.entities.Post.list('-created_date', 20);
+        const feedSummary = posts.map(p => `- ${p.author_name}: ${p.content?.slice(0, 120)}`).join('\n');
+        const summary = await base44.integrations.Core.InvokeLLM({
+          prompt: `You are Kai, an AI assistant for the TTT community. Here are the 20 most recent posts from the TTT feed:\n\n${feedSummary}\n\nProvide a friendly, concise summary of what the community is talking about. Highlight key themes, hot topics, and any interesting discussions. Keep it under 200 words. Use emojis.`,
+        });
+        setMessages(prev => [
+          ...prev.filter(m => m.role !== 'action'),
+          { role: "assistant", content: summary }
+        ]);
+      } catch (err) {
+        setMessages(prev => [
+          ...prev.filter(m => m.role !== 'action'),
+          { role: "assistant", content: "Couldn't load the feed right now. Try again! 🙏" }
+        ]);
+      }
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const context = messages.slice(-6).map(m => `${m.role === 'user' ? 'User' : 'Kai'}: ${m.content}`).join('\n');
       const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are Kai, a helpful AI assistant embedded in TTT (a Kaspa blockchain community app). You're knowledgeable about Kaspa, crypto, the TTT platform features (Feed, AgentZK, DAGKnight, Bridge, etc.), and general topics. Keep responses concise, friendly, and helpful. Use emojis occasionally.
-
-Conversation so far:
-${context}
-
-User: ${userMsg}
-
-Respond as Kai:`,
+        prompt: `You are Kai, a helpful AI assistant embedded in TTT (a Kaspa blockchain community app). You're knowledgeable about Kaspa, crypto, the TTT platform features (Feed, AgentZK, DAGKnight, Bridge, etc.), and general topics. Keep responses concise, friendly, and helpful. Use emojis occasionally.\n\nConversation so far:\n${context}\n\nUser: ${userMsg}\n\nRespond as Kai:`,
       });
       setMessages(prev => [...prev, { role: "assistant", content: response }]);
     } catch (err) {

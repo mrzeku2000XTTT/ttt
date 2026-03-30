@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Loader2, Wand2, Shield, LogIn, ArrowRight, Zap, LogOut, Link as LinkIcon, Hand, ChevronRight, X, TrendingUp, Link2, ArrowUpDown, Wallet, Key, CheckCircle2, Menu } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -26,6 +26,7 @@ export default function HomePage() {
   const [walletAddress, setWalletAddress] = useState("");
   const [isConnectingWallet, setIsConnectingWallet] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
   const messagesEndRef = React.useRef(null);
 

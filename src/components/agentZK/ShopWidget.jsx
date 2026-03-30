@@ -342,7 +342,7 @@ export default function ShopWidget({ shopItems, totalItems, userBalance }) {
                       <div className="pt-1.5 border-t border-purple-500/30 flex justify-between">
                         <span className="text-white font-bold">Total</span>
                         <span className="text-purple-400 font-bold">
-                          {totalCost} KAS
+                          {selectedItem.price_kas + (selectedItem.shipping_cost_kas || 0)} KAS
                         </span>
                       </div>
                     </div>

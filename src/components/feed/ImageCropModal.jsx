@@ -332,7 +332,7 @@ export default function ImageCropModal({ imageUrl, onClose, onSave }) {
     setCropHistory(cropHistory.filter(c => c.id !== id));
   };
 
-  const useCropFromHistory = async (crop) => {
+  const applyCropFromHistory = async (crop) => {
     const response = await fetch(crop.dataUrl);
     const blob = await response.blob();
     onSave(blob);
@@ -491,7 +491,7 @@ export default function ImageCropModal({ imageUrl, onClose, onSave }) {
                     <img
                       src={crop.dataUrl}
                       alt="Crop"
-                      onClick={() => useCropFromHistory(crop)}
+                      onClick={() => applyCropFromHistory(crop)}
                       className="w-full h-24 object-cover"
                     />
                     <button

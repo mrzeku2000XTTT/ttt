@@ -527,11 +527,12 @@ export default function FreedomPage() {
     reader.readAsDataURL(file);
   }, []);
 
+  const onDrop = useCallback((e) => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); }, [handleFile]);
+
   if (loading) return <div className="fixed inset-0 z-[200] flex items-center justify-center"><div className="w-8 h-8 border-4 border-white/20 border-t-white rounded-full animate-spin" /></div>;
   if (!isAdmin) return null;
 
   const reset = () => { setImageSrc(null); setDepthMap(null); setStatus("idle"); setStatusMsg(""); };
-  const onDrop = useCallback((e) => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); }, [handleFile]);
   const isProcessing = status === "loading";
 
   return (

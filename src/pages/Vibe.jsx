@@ -203,8 +203,8 @@ export default function VibePage() {
             handleScannedQR(barcodes[0].rawValue);
           }
         }).catch(() => {});
-      } else if (typeof jsQR !== 'undefined') {
-        const code = jsQR(imageData.data, imageData.width, imageData.height);
+      } else if (typeof window.jsQR !== 'undefined') {
+        const code = window.jsQR(imageData.data, imageData.width, imageData.height);
         if (code && scanning) {
           handleScannedQR(code.data);
         }

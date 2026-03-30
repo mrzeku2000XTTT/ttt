@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Sparkles, Loader2, RefreshCw, Terminal, Database, Activity, Users, Brain, Eye, Wallet, TrendingUp, Globe, Zap, Shield, MessageSquare, Download, Save, Copy, Trash2, X as XIcon, Maximize2 } from "lucide-react";
+import { ArrowLeft, Sparkles, Loader2, RefreshCw, Terminal, Database, Activity, Users, Brain, Eye, Wallet, TrendingUp, Globe, Zap, Shield, MessageSquare, Download, Save, Copy, Trash2, X as XIcon, Maximize2, Send } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
