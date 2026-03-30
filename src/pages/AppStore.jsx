@@ -1,4 +1,44 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+
+function CinekasLogoCanvas() {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const cv = canvasRef.current;
+    if (!cv) return;
+    const ctx = cv.getContext('2d');
+    const G = '#00f5a0', B = '#00b4ff', W = 'rgba(255,255,255,0.9)';
+    let animId;
+    function draw(t) {
+      ctx.clearRect(0, 0, 120, 120);
+      const cx = 60, cy = 60, R = 22;
+      for (let i = 0; i < 3; i++) {
+        const phase = (t * 0.8 + i / 3) * Math.PI * 2;
+        const ox = Math.cos(phase) * 9, oy = Math.sin(phase) * 9;
+        const a0 = i * Math.PI * 2 / 3 + t * 0.4;
+        ctx.beginPath();
+        for (let k = 0; k < 3; k++) {
+          const a = a0 + k * Math.PI * 2 / 3;
+          const px = cx + ox + Math.cos(a) * R, py = cy + oy + Math.sin(a) * R;
+          k === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        const alpha = 0.6 + 0.25 * Math.sin(t * 1.5 + i);
+        ctx.strokeStyle = i === 0 ? G : i === 1 ? B : W;
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = alpha;
+        ctx.stroke();
+        ctx.globalAlpha = alpha * 0.13;
+        ctx.fillStyle = i === 0 ? G : i === 1 ? B : W;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+    function loop(ts) { draw((ts || 0) / 1000); animId = requestAnimationFrame(loop); }
+    animId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(animId);
+  }, []);
+  return <canvas ref={canvasRef} width={120} height={120} style={{ width: 64, height: 64 }} />;
+}
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Search, TrendingUp, Crown, Star, Link2, Plus, Edit2, Eye } from "lucide-react";
@@ -99,7 +139,7 @@ export default function AppStorePage() {
     { name: "Voxa", icon: "Link2", path: "Voxa", category: "Tools", defaultIcon: "https://ui-avatars.com/api/?name=Vx&size=128&background=000000&color=ffffff&bold=true" },
     { name: "Freedom", icon: "Link2", path: "Freedom", category: "AI", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/c93b4796d_generated_image.png", circular: false },
     { name: "Prompto", icon: "Link2", path: "Prompto", category: "AI", defaultIcon: "https://ui-avatars.com/api/?name=Pr&size=128&background=a855f7&color=ffffff&bold=true" },
-    { name: "Cinemata", icon: "Eye", path: "Cinemata", category: "Media", defaultIcon: "👁️", isEmoji: true },
+    { name: "CineKas", icon: "Eye", path: "Cinekas", category: "Media", isCinekas: true, adminOnly: true },
       ];
 
   const getIconComponent = (iconName) => {
@@ -115,13 +155,9 @@ export default function AppStorePage() {
         app.category.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : apps).filter(app => {
-      // Hide admin-only apps for non-admin users
-      if (app.name === "KaSkool" && !isAdmin) {
-        return false;
-      }
-      if (app.name === "Arh'tuun" && !isAdmin) {
-        return false;
-      }
+      if (app.adminOnly && !isAdmin) return false;
+      if (app.name === "KaSkool" && !isAdmin) return false;
+      if (app.name === "Arh'tuun" && !isAdmin) return false;
       return true;
     });
 
@@ -191,7 +227,9 @@ export default function AppStorePage() {
                     {app.premium && (
                       <Crown className="absolute -top-1 -right-1 w-3 h-3 text-yellow-400" />
                     )}
-                    {appImages[app.path] ? (
+                    {app.isCinekas ? (
+                      <CinekasLogoCanvas />
+                    ) : appImages[app.path] ? (
                       <img src={appImages[app.path]} alt={app.name} className={`w-full h-full ${app.objectFit || 'object-cover'} ${app.circular ? 'rounded-full' : 'rounded-xl'}`} />
                     ) : app.isEmoji ? (
                       <span className="text-3xl">{app.defaultIcon}</span>
