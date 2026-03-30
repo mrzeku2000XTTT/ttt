@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
-import { Send, Sparkles, Lightbulb, Wand2, ArrowLeft, ImagePlus, X, Copy, Check } from "lucide-react";
+import { Send, Sparkles, Lightbulb, Wand2, ArrowLeft, ImagePlus, X, Copy, Check, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -15,6 +15,8 @@ export default function PromptPage() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [uploadedImage, setUploadedImage] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [analyzeMode, setAnalyzeMode] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const debounceTimerRef = useRef(null);
@@ -85,12 +87,53 @@ export default function PromptPage() {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       setUploadedImage({ url: file_url, preview });
       toast.success("Image attached!");
+      setAnalyzeMode(true);
     } catch (err) {
       URL.revokeObjectURL(preview);
       toast.error("Image upload failed. Please try again.");
       console.error(err);
     }
     setUploading(false);
+  };
+
+  const analyzeImage = async () => {
+    if (!uploadedImage) return;
+    setAnalyzing(true);
+    try {
+      const analysis = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are an expert in visual design, animation, and digital art. Analyze this image in EXTREME detail and provide:
+
+1. **Image Type**: Is it a cartoon, anime, 3D render, photograph, digital art, illustration, vector art, etc.?
+2. **Animation Style** (if applicable): What animation style is it? (e.g., 2D cel animation, 3D CGI, stop-motion, motion capture)
+3. **Color Palette**: Describe the dominant colors, color scheme (warm/cool/saturated/muted), lighting
+4. **Composition**: Subject matter, framing, perspective, focal points
+5. **Art Style Details**: Texture, brushstrokes (if visible), shading technique, level of realism
+6. **Technical Details**: Resolution quality, depth of field, motion blur (if any), special effects
+7. **Mood & Atmosphere**: The overall feeling and atmosphere
+
+Then provide a DETAILED, COMPREHENSIVE prompt that someone could use to generate the same style of image. The prompt should be:
+- Specific about the animation/art style
+- Rich in descriptive details about colors, composition, and mood
+- Include technical terms and specifications
+- Between 150-300 words
+- Written in a way that's copy-paste ready for AI image generators
+
+Format your response as:
+[Analysis]
+[Your detailed analysis above]
+
+[Replication Prompt]
+[The detailed prompt here - make it very specific and copy-ready]`,
+        file_urls: [uploadedImage.url],
+        model: "gpt_5"
+      });
+      setMessages([{ role: "assistant", content: analysis }]);
+    } catch (err) {
+      toast.error("Analysis failed. Please try again.");
+      console.error(err);
+    } finally {
+      setAnalyzing(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -138,13 +181,41 @@ export default function PromptPage() {
         />
         <div>
           <h1 className="text-white font-bold text-lg leading-none">Prompto</h1>
-          <p className="text-white/40 text-xs mt-0.5">AI Prompt Builder &amp; Enhancer</p>
+          <p className="text-white/40 text-xs mt-0.5">{analyzeMode ? "Image Analyzer" : "AI Prompt Builder & Enhancer"}</p>
         </div>
       </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-6 max-w-3xl w-full mx-auto space-y-4">
-        {messages.length === 0 ? (
+        {analyzeMode && uploadedImage && messages.length === 0 ? (
+          <div className="h-full flex flex-col items-center justify-center gap-4 text-center min-h-[400px]">
+            <img src={uploadedImage.preview} alt="uploaded" className="w-32 h-32 rounded-2xl object-cover border border-white/20" />
+            <div>
+              <p className="text-white font-semibold text-lg">Analyze this image</p>
+              <p className="text-white/40 text-sm mt-1">Get a detailed breakdown and a copy-ready prompt to replicate it</p>
+            </div>
+            <motion.button
+              onClick={analyzeImage}
+              disabled={analyzing}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 disabled:opacity-50 text-white rounded-xl font-semibold flex items-center gap-2"
+            >
+              <Eye className="w-4 h-4" />
+              {analyzing ? "Analyzing..." : "Analyze Image"}
+            </motion.button>
+            <button
+              onClick={() => {
+                setAnalyzeMode(false);
+                setUploadedImage(null);
+                setMessages([]);
+              }}
+              className="text-white/40 hover:text-white text-sm"
+            >
+              Or go back to prompt builder
+            </button>
+          </div>
+        ) : messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center gap-4 text-center min-h-[400px]">
             <img
               src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/073d22c9d_generated_image.png"
@@ -232,7 +303,7 @@ export default function PromptPage() {
 
       {/* Input */}
       <div className="border-t border-white/10 px-4 py-4 max-w-3xl w-full mx-auto">
-        {uploadedImage && (
+        {uploadedImage && !analyzeMode && (
           <div className="mb-3 flex items-center gap-2">
             <div className="relative inline-block">
               <img src={uploadedImage.preview} alt="upload" className="h-16 w-16 object-cover rounded-xl border border-white/20" />
@@ -244,6 +315,8 @@ export default function PromptPage() {
             <span className="text-white/40 text-xs">Image attached — AI will analyze it with your prompt</span>
           </div>
         )}
+        {!analyzeMode && (
+        <>
         <form onSubmit={handleSubmit} className="flex gap-2">
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
             onChange={(e) => handleImageUpload(e.target.files[0])} />
@@ -272,7 +345,9 @@ export default function PromptPage() {
             <Send className="w-4 h-4 text-white" />
           </button>
         </form>
-        <p className="text-white/20 text-xs mt-2 text-center">Press Enter or click Send · Upload an image for visual AI analysis</p>
+        <p className="text-white/20 text-xs mt-2 text-center">Press Enter or click Send · Upload an image to analyze and replicate</p>
+        </>
+        )}
       </div>
     </div>
   );
