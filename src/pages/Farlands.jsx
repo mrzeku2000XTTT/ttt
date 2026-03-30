@@ -1,11 +1,19 @@
-import { ExternalLink, Gamepad2, Star, Users, Zap } from "lucide-react";
+import { ExternalLink, Gamepad2, Star, Users, Zap, ArrowLeft } from "lucide-react";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function Farlands() {
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden">
-      {/* Background glow */}
-      <div className="absolute inset-0 bg-gradient-radial from-yellow-500/10 via-black to-black" />
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-yellow-500/5 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden">
+      {/* Background image */}
+      <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/d74e02774_generated_image.png')" }} />
+      <div className="absolute inset-0 bg-black/60" />
+
+      {/* Back button */}
+      <Link to={createPageUrl("AppStore")} className="absolute top-4 left-4 z-20 flex items-center gap-2 px-3 py-2 bg-black/50 hover:bg-black/70 border border-white/20 rounded-xl text-white/70 hover:text-white text-sm transition-all backdrop-blur-sm">
+        <ArrowLeft className="w-4 h-4" />
+        <span>Back</span>
+      </Link>
 
       <div className="relative z-10 flex flex-col items-center text-center max-w-md w-full">
         {/* Icon */}
