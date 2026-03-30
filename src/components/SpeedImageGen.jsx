@@ -1,18 +1,59 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Wand2, Copy, Check } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
+function AnimatedLoadingLogo() {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const cv = canvasRef.current;
+    if (!cv) return;
+    const ctx = cv.getContext('2d');
+    const G = '#00f5a0', B = '#00b4ff', W = 'rgba(255,255,255,0.9)';
+    let animId;
+
+    function draw(t) {
+      ctx.clearRect(0, 0, 200, 200);
+      const cx = 100, cy = 100, R = 38;
+      for (let i = 0; i < 3; i++) {
+        const phase = (t * 0.8 + i / 3) * Math.PI * 2;
+        const ox = Math.cos(phase) * 15, oy = Math.sin(phase) * 15;
+        const a0 = i * Math.PI * 2 / 3 + t * 0.4;
+        ctx.beginPath();
+        for (let k = 0; k < 3; k++) {
+          const a = a0 + k * Math.PI * 2 / 3;
+          const px = cx + ox + Math.cos(a) * R, py = cy + oy + Math.sin(a) * R;
+          k === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        const alpha = 0.6 + 0.25 * Math.sin(t * 1.5 + i);
+        ctx.strokeStyle = i === 0 ? G : i === 1 ? B : W;
+        ctx.lineWidth = 2.5;
+        ctx.globalAlpha = alpha;
+        ctx.stroke();
+        ctx.globalAlpha = alpha * 0.13;
+        ctx.fillStyle = i === 0 ? G : i === 1 ? B : W;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    function loop(ts) {
+      draw((ts || 0) / 1000);
+      animId = requestAnimationFrame(loop);
+    }
+    animId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(animId);
+  }, []);
+
+  return <canvas ref={canvasRef} width={200} height={200} style={{ width: 160, height: 160 }} />;
+}
+
 function ShimmerPlaceholder() {
   return (
-    <div className="w-full aspect-square rounded-3xl overflow-hidden relative" style={{ background: "rgba(255,255,255,0.02)" }}>
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-pulse" style={{ animation: "shimmer 2s infinite" }} />
-      <style>{`
-        @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
-      `}</style>
+    <div className="w-full aspect-square rounded-3xl overflow-hidden relative flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(0,45,100,0.2), rgba(100,0,150,0.1))" }}>
+      <AnimatedLoadingLogo />
     </div>
   );
 }
@@ -30,7 +71,7 @@ export default function SpeedImageGen() {
     setGenerating(true);
     try {
       const result = await base44.integrations.Core.GenerateImage({
-        prompt: prompt,
+        prompt,
       });
       setImageUrl(result.url);
     } catch (err) {
@@ -38,7 +79,7 @@ export default function SpeedImageGen() {
     } finally {
       setGenerating(false);
     }
-  };
+  }
 
   return (
     <div className="space-y-4">
