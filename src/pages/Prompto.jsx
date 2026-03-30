@@ -112,7 +112,7 @@ export default function PromptPage() {
         />
         <div>
           <h1 className="text-white font-bold text-lg leading-none">Prompto</h1>
-          <p className="text-white/40 text-xs mt-0.5">AI Prompt Builder & Enhancer</p>
+          <p className="text-white/40 text-xs mt-0.5">AI Prompt Builder &amp; Enhancer</p>
         </div>
       </div>
 
