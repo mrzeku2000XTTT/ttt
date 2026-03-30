@@ -62,32 +62,44 @@ export default function SpeedImageGen() {
   const [prompt, setPrompt] = useState("");
   const [generating, setGenerating] = useState(false);
   const [imageUrl, setImageUrl] = useState(null);
-  const [copiedIdx, setCopiedIdx] = useState(null);
+  const [error, setError] = useState(null);
+  const [copied, setCopied] = useState(false);
 
-  const handleGenerate = async (e) => {
-    e.preventDefault();
-    if (!prompt.trim()) return;
-    
+  const handleGenerate = async () => {
+    if (!prompt.trim() || generating) return;
     setGenerating(true);
+    setError(null);
+    setImageUrl(null);
     try {
-      const result = await base44.integrations.Core.GenerateImage({
-        prompt,
-      });
-      setImageUrl(result.url);
+      const result = await base44.integrations.Core.GenerateImage({ prompt });
+      if (result?.url) {
+        setImageUrl(result.url);
+      } else {
+        setError("No image returned. Please try again.");
+      }
     } catch (err) {
       console.error("Generation failed:", err);
+      setError("Generation failed. Please try again.");
     } finally {
       setGenerating(false);
     }
-  }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleGenerate();
+    }
+  };
 
   return (
     <div className="space-y-4">
-      <form onSubmit={handleGenerate} className="space-y-3">
+      <div className="space-y-3">
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Describe the image you want to generate... ultra-fast AI generation"
+          onKeyDown={handleKeyDown}
+          placeholder="Describe the image you want to generate..."
           className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-white/30 resize-none"
           rows="3"
         />
@@ -108,7 +120,13 @@ export default function SpeedImageGen() {
             {generating ? "Generating..." : "Generate Image"}
           </span>
         </motion.button>
-      </form>
+      </div>
+
+      {error && (
+        <div className="px-4 py-3 rounded-2xl text-red-400 text-sm" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)" }}>
+          {error}
+        </div>
+      )}
 
       <AnimatePresence mode="wait">
         {generating ? (
@@ -121,12 +139,12 @@ export default function SpeedImageGen() {
             <button
               onClick={() => {
                 navigator.clipboard.writeText(imageUrl);
-                setCopiedIdx(0);
-                setTimeout(() => setCopiedIdx(null), 2000);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
               }}
               className="w-full py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 hover:text-white text-sm transition-colors flex items-center justify-center gap-2"
             >
-              {copiedIdx === 0 ? (
+              {copied ? (
                 <><Check className="w-4 h-4" /> Copied</>
               ) : (
                 <><Copy className="w-4 h-4" /> Copy URL</>
