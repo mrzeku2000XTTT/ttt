@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Send, Sparkles, Lightbulb, Wand2, ArrowLeft, ImagePlus, X } from "lucide-react";
+import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -15,6 +16,7 @@ export default function PromptPage() {
   const [uploading, setUploading] = useState(false);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const debounceTimerRef = useRef(null);
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -23,13 +25,21 @@ export default function PromptPage() {
   }, [messages]);
 
   useEffect(() => {
+    clearTimeout(debounceTimerRef.current);
     if (prompt.trim().length > 3) {
-      generateSuggestions(prompt);
+      debounceTimerRef.current = setTimeout(() => generateSuggestions(prompt), 300);
     } else {
       setSuggestions([]);
       setShowSuggestions(false);
     }
+    return () => clearTimeout(debounceTimerRef.current);
   }, [prompt]);
+
+  useEffect(() => {
+    return () => {
+      if (uploadedImage?.preview) URL.revokeObjectURL(uploadedImage.preview);
+    };
+  }, []);
 
   const generateSuggestions = async (text) => {
     try {
@@ -41,8 +51,11 @@ export default function PromptPage() {
         const s = JSON.parse(result);
         setSuggestions(s);
         setShowSuggestions(true);
-      } catch { setSuggestions([]); }
-    } catch {}
+      } catch { setSuggestions([]);
+      }
+    } catch (err) {
+      console.error("Suggestions failed:", err);
+    }
   };
 
   const enhancePrompt = async () => {
@@ -54,7 +67,10 @@ export default function PromptPage() {
         model: "gemini_3_pro"
       });
       setPrompt(enhanced);
-    } catch {}
+    } catch (err) {
+      toast.error("Enhancement failed. Please try again.");
+      console.error(err);
+    }
     setLoading(false);
   };
 
@@ -65,8 +81,11 @@ export default function PromptPage() {
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       setUploadedImage({ url: file_url, preview });
-    } catch {
-      alert("Image upload failed. Please try again.");
+      toast.success("Image attached!");
+    } catch (err) {
+      URL.revokeObjectURL(preview);
+      toast.error("Image upload failed. Please try again.");
+      console.error(err);
     }
     setUploading(false);
   };
@@ -92,7 +111,9 @@ export default function PromptPage() {
         : { prompt: currentPrompt, model: "gpt_5_mini" };
       const aiResponse = await base44.integrations.Core.InvokeLLM(invokeParams);
       setMessages(prev => [...prev, { role: "assistant", content: aiResponse }]);
-    } catch {
+    } catch (err) {
+      toast.error("Failed to generate response. Please try again.");
+      console.error(err);
       setMessages(prev => [...prev, { role: "assistant", content: "Error generating response. Please try again." }]);
     }
     setLoading(false);
