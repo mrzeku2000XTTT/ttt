@@ -50,6 +50,7 @@ import ProposeAppModal from "@/components/appstore/ProposeAppModal";
 
 export default function AppStorePage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState("All");
   const [user, setUser] = useState(null);
   const [appImages, setAppImages] = useState({});
   const [showProposeModal, setShowProposeModal] = useState(false);
@@ -150,6 +151,8 @@ export default function AppStorePage() {
   };
 
   const isAdmin = user && user.role === 'admin';
+
+  const categories = ["All", "AI", "Tools", "Finance", "Games", "Social", "Community", "Education", "Media", "Creative", "Communication", "Dev Tools", "Shop"];
   
   const filteredApps = (searchQuery
     ? apps.filter(app =>
@@ -160,6 +163,7 @@ export default function AppStorePage() {
       if (app.adminOnly && !isAdmin) return false;
       if (app.name === "KaSkool" && !isAdmin) return false;
       if (app.name === "Arh'tuun" && !isAdmin) return false;
+      if (activeCategory !== "All" && app.category !== activeCategory) return false;
       return true;
     });
 
@@ -197,7 +201,7 @@ export default function AppStorePage() {
           )}
         </motion.div>
 
-        <div className="mb-8 relative">
+        <div className="mb-4 relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
           <Input
             value={searchQuery}
@@ -205,6 +209,22 @@ export default function AppStorePage() {
             placeholder="Search apps..."
             className="pl-12 h-14 bg-white/5 border-white/10 text-white placeholder:text-white/40"
           />
+        </div>
+
+        <div className="mb-6 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          {categories.map(cat => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                activeCategory === cat
+                  ? 'bg-cyan-500 text-black'
+                  : 'bg-white/10 text-white/70 hover:bg-white/20'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
         </div>
 
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
