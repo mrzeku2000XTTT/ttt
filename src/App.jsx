@@ -16,6 +16,7 @@ import DAGVisualizerPage from './pages/DAGVisualizer';
 import PromptPage from './pages/Prompto';
 import CinekasPage from './pages/Cinemata';
 import SpeedPage from './pages/Speed';
+import FarlandsPage from './pages/Farlands';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -74,6 +75,7 @@ const AuthenticatedApp = () => {
       <Route path="/Prompto" element={<PromptPage />} />
       <Route path="/Cinekas" element={<CinekasPage />} />
       <Route path="/Speed" element={<SpeedPage />} />
+      <Route path="/Farlands" element={<FarlandsPage />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
