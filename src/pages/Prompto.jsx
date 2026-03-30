@@ -64,7 +64,7 @@ export default function PromptPage() {
     try {
       const enhanced = await base44.integrations.Core.InvokeLLM({
         prompt: `You are a prompt engineering expert. Enhance and improve this user prompt to be more specific, detailed, and effective for AI tasks: "${prompt}". Provide the enhanced prompt only, no explanation.`,
-        model: "gemini_3_pro"
+        model: "gpt_5"
       });
       setPrompt(enhanced);
     } catch (err) {
@@ -105,7 +105,7 @@ export default function PromptPage() {
       const invokeParams = currentImage
         ? {
             prompt: `The user uploaded an image. Based on the image and this input: "${currentPrompt || 'no text provided'}", understand their intent and generate a helpful, detailed response. If they want a script, write a full script. If they want marketing copy, write that. Adapt to their intent.`,
-            model: "gemini_3_pro",
+            model: "gpt_5",
             file_urls: [currentImage.url],
           }
         : { prompt: currentPrompt, model: "gpt_5_mini" };
