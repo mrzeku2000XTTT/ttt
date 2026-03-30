@@ -89,7 +89,7 @@ export default function CinekasPage() {
         </div>
         <div className="flex-1 w-full">
           <iframe
-            src="https://cinekas.xyz"
+            src="https://cinekasxyz.base44.app"
             className="w-full h-full border-0"
             title="Cinekas"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
