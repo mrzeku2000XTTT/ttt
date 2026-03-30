@@ -94,7 +94,7 @@ export default function PromptPage() {
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
         className="relative w-full sm:max-w-2xl sm:rounded-3xl rounded-t-3xl overflow-hidden flex flex-col"
         style={{
-          background: "rgba(15, 15, 20, 0.7)",
+          background: "rgba(0, 0, 0, 0.98)",
           backdropFilter: "blur(20px) saturate(180%)",
           WebkitBackdropFilter: "blur(20px) saturate(180%)",
           border: "1px solid rgba(255, 255, 255, 0.15)",
