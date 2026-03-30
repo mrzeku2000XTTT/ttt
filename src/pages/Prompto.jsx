@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Send, Sparkles, Lightbulb, Wand2, ArrowLeft } from "lucide-react";
+import { Send, Sparkles, Lightbulb, Wand2, ArrowLeft, ImagePlus, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -11,7 +11,10 @@ export default function PromptPage() {
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [uploadedImage, setUploadedImage] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -55,19 +58,39 @@ export default function PromptPage() {
     setLoading(false);
   };
 
+  const handleImageUpload = async (file) => {
+    if (!file || !file.type.startsWith("image/")) return;
+    setUploading(true);
+    const preview = URL.createObjectURL(file);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setUploadedImage({ url: file_url, preview });
+    } catch {
+      alert("Image upload failed. Please try again.");
+    }
+    setUploading(false);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!prompt.trim()) return;
-    const userMessage = { role: "user", content: prompt };
+    if (!prompt.trim() && !uploadedImage) return;
+    const userMessage = { role: "user", content: prompt, imagePreview: uploadedImage?.preview };
     setMessages(prev => [...prev, userMessage]);
+    const currentPrompt = prompt;
+    const currentImage = uploadedImage;
     setPrompt("");
+    setUploadedImage(null);
     setShowSuggestions(false);
     setLoading(true);
     try {
-      const aiResponse = await base44.integrations.Core.InvokeLLM({
-        prompt: userMessage.content,
-        model: "gpt_5_mini"
-      });
+      const invokeParams = currentImage
+        ? {
+            prompt: `The user uploaded an image. Based on the image and this input: "${currentPrompt || 'no text provided'}", understand their intent and generate a helpful, detailed response. If they want a script, write a full script. If they want marketing copy, write that. Adapt to their intent.`,
+            model: "gemini_3_pro",
+            file_urls: [currentImage.url],
+          }
+        : { prompt: currentPrompt, model: "gpt_5_mini" };
+      const aiResponse = await base44.integrations.Core.InvokeLLM(invokeParams);
       setMessages(prev => [...prev, { role: "assistant", content: aiResponse }]);
     } catch {
       setMessages(prev => [...prev, { role: "assistant", content: "Error generating response. Please try again." }]);
@@ -102,7 +125,7 @@ export default function PromptPage() {
             </div>
             <div>
               <p className="text-white font-semibold text-xl">Start creating prompts</p>
-              <p className="text-white/40 text-sm mt-2">Write anything below to get AI-powered responses</p>
+              <p className="text-white/40 text-sm mt-2">Write anything below or upload an image for AI-powered responses</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 w-full max-w-xl">
               {["Write a movie script outline", "Explain quantum computing simply", "Create a marketing campaign"].map((ex, i) => (
@@ -122,6 +145,9 @@ export default function PromptPage() {
                     ? "bg-purple-600/30 border border-purple-500/30 text-white"
                     : "bg-white/5 border border-white/10 text-white/90"
                 }`}>
+                  {msg.imagePreview && (
+                    <img src={msg.imagePreview} alt="uploaded" className="h-32 rounded-xl object-cover mb-2 border border-white/10" />
+                  )}
                   {msg.content}
                 </div>
               </div>
@@ -162,25 +188,47 @@ export default function PromptPage() {
 
       {/* Input */}
       <div className="border-t border-white/10 px-4 py-4 max-w-3xl w-full mx-auto">
+        {uploadedImage && (
+          <div className="mb-3 flex items-center gap-2">
+            <div className="relative inline-block">
+              <img src={uploadedImage.preview} alt="upload" className="h-16 w-16 object-cover rounded-xl border border-white/20" />
+              <button onClick={() => setUploadedImage(null)}
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-black border border-white/20 rounded-full flex items-center justify-center text-white/70 hover:text-white">
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+            <span className="text-white/40 text-xs">Image attached — AI will analyze it with your prompt</span>
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="flex gap-2">
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+            onChange={(e) => handleImageUpload(e.target.files[0])} />
+          <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
+            className="w-11 h-11 bg-white/5 hover:bg-white/10 disabled:opacity-40 border border-white/10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
+            title="Upload image">
+            {uploading
+              ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              : <ImagePlus className="w-4 h-4 text-white/70" />
+            }
+          </button>
           <input
             type="text"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Type a prompt..."
+            placeholder={uploadedImage ? "Describe what you want from this image..." : "Type a prompt..."}
             className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-purple-500/50 transition-all"
           />
           <button type="button" onClick={enhancePrompt} disabled={loading || !prompt.trim()}
-            className="w-11 h-11 bg-white/5 hover:bg-white/10 disabled:opacity-40 border border-white/10 rounded-full flex items-center justify-center transition-all"
+            className="w-11 h-11 bg-white/5 hover:bg-white/10 disabled:opacity-40 border border-white/10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
             title="Enhance with AI">
             <Wand2 className="w-4 h-4 text-white" />
           </button>
-          <button type="submit" disabled={loading || !prompt.trim()}
-            className="w-11 h-11 bg-purple-600/40 hover:bg-purple-600/60 disabled:opacity-40 border border-purple-500/30 rounded-full flex items-center justify-center transition-all">
+          <button type="submit" disabled={loading || (!prompt.trim() && !uploadedImage)}
+            className="w-11 h-11 bg-purple-600/40 hover:bg-purple-600/60 disabled:opacity-40 border border-purple-500/30 rounded-full flex items-center justify-center transition-all flex-shrink-0">
             <Send className="w-4 h-4 text-white" />
           </button>
         </form>
-        <p className="text-white/20 text-xs mt-2 text-center">Press Enter or click Send to get AI response</p>
+        <p className="text-white/20 text-xs mt-2 text-center">Press Enter or click Send · Upload an image for visual AI analysis</p>
       </div>
     </div>
   );
