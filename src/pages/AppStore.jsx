@@ -216,14 +216,15 @@ export default function AppStorePage() {
             const LinkComponent = app.isExternal ? 'a' : Link;
             
             return (
-              <LinkComponent key={i} {...linkProps}>
+              <LinkComponent key={i} {...linkProps} style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}>
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.05 }}
+                  transition={{ delay: Math.min(i * 0.03, 0.5) }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="flex flex-col items-center gap-2"
+                  style={{ touchAction: 'manipulation' }}
                 >
                   <div className={`relative w-16 h-16 bg-white/5 backdrop-blur-xl border border-white/10 ${app.circular ? 'rounded-full' : 'rounded-xl'} flex items-center justify-center group-hover:bg-white/10 transition-all`}>
                     {app.premium && (
