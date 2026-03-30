@@ -16,19 +16,21 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'API not configured' }, { status: 500 });
     }
 
-    const response = await fetch(`${apiUrl}/v1/images/generations`, {
+    const requestBody = {
+      prompt: prompt,
+      model: 'flux-pro',
+      width: 1024,
+      height: 1024,
+      num_inference_steps: 20,
+    };
+
+    const response = await fetch(`${apiUrl}/api/v1/images/generations`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        prompt: prompt,
-        model: 'flux-pro',
-        width: 1024,
-        height: 1024,
-        num_inference_steps: 20,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
