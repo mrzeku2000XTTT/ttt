@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Zap, Gauge, Activity, TrendingUp, Clock, Wifi, Cpu, MemoryStick, RefreshCw, ChevronRight } from "lucide-react";
+import { ArrowLeft, Zap, ArrowDownToLine, ArrowUpFromLine, Radio, Waves, SignalLow, Timer, BrainCircuit, Lightbulb } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -277,17 +277,17 @@ export default function SpeedPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <MetricPill icon={Activity} label="Ping" value={results.ping} unit="ms" color="#00b4ff" />
-                <MetricPill icon={TrendingUp} label="Jitter" value={results.jitter} unit="ms" color="#f5c400" />
-                <MetricPill icon={Wifi} label="Packet Loss" value={results.packetLoss} unit="%" color="#f54b00" />
-                <MetricPill icon={Clock} label="Load Time" value={results.loadTime} unit="s" color="#00f5a0" />
+                <MetricPill icon={Radio} label="Ping" value={results.ping} unit="ms" color="#00b4ff" />
+                <MetricPill icon={Waves} label="Jitter" value={results.jitter} unit="ms" color="#f5c400" />
+                <MetricPill icon={SignalLow} label="Packet Loss" value={results.packetLoss} unit="%" color="#f54b00" />
+                <MetricPill icon={Timer} label="Load Time" value={results.loadTime} unit="s" color="#00f5a0" />
               </div>
 
               {/* AI Insight */}
               <GlassCard className="p-5">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-7 h-7 rounded-xl flex items-center justify-center" style={{ background: "rgba(124,58,237,0.3)", border: "1px solid rgba(124,58,237,0.5)" }}>
-                    <Cpu className="w-3.5 h-3.5 text-purple-300" />
+                    <BrainCircuit className="w-3.5 h-3.5 text-purple-300" />
                   </div>
                   <span className="text-white/70 text-xs font-semibold uppercase tracking-widest">AI Analysis</span>
                 </div>
@@ -307,8 +307,8 @@ export default function SpeedPage() {
         <GlassCard className="p-4">
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-2xl flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: "rgba(0,245,160,0.15)", border: "1px solid rgba(0,245,160,0.3)" }}>
-              <Zap className="w-3.5 h-3.5 text-emerald-400" />
-            </div>
+                <Lightbulb className="w-3.5 h-3.5 text-emerald-400" />
+              </div>
             <div>
               <div className="text-white/30 text-[10px] uppercase tracking-widest mb-1">Pro Tip</div>
               <AnimatePresence mode="wait">
