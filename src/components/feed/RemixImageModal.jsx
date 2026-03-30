@@ -269,10 +269,8 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
           console.log('Failed to save learning data:', err);
         }
 
-        // Convert URL to blob for saving
-        const imageResponse = await fetch(response.url);
-        const blob = await imageResponse.blob();
-        onSave(blob);
+        // Pass URL directly (avoids CORS issues on mobile with blob fetch)
+        onSave(response.url);
         onClose();
         return; // Success - exit the retry loop
       } else {

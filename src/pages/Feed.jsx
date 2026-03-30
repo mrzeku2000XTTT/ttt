@@ -319,32 +319,16 @@ export default function FeedPage() {
     }
   };
 
-  const handleSaveEditedImage = async (blob) => {
+  const handleSaveEditedImage = async (blobOrUrl) => {
     try {
-      const file = new File([blob], 'edited-image.png', { type: 'image/png' });
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-
-      // Replace the original image with the edited one, or add new image
-      const imageIndex = uploadedFiles.findIndex(f => f.type === 'image');
-      if (imageIndex !== -1) {
-        const newFiles = [...uploadedFiles];
-        newFiles[imageIndex] = {
-          url: file_url,
-          type: 'image',
-          name: 'edited-image.png',
-          size: blob.size
-        };
-        setUploadedFiles(newFiles);
-      } else {
-        // No existing image - add new one
-        setUploadedFiles([...uploadedFiles, {
-          url: file_url,
-          type: 'image',
-          name: 'edited-image.png',
-          size: blob.size
-        }]);
+      let file_url = typeof blobOrUrl === 'string' ? blobOrUrl : null;
+      if (!file_url) {
+        const res = await base44.integrations.Core.UploadFile({ file: new File([blobOrUrl], 'edited-image.png', { type: 'image/png' }) });
+        file_url = res.file_url;
       }
-
+      const entry = { url: file_url, type: 'image', name: 'edited-image.png', size: 0 };
+      const idx = uploadedFiles.findIndex(f => f.type === 'image');
+      setUploadedFiles(idx !== -1 ? uploadedFiles.map((f, i) => i === idx ? entry : f) : [...uploadedFiles, entry]);
       setShowImageEditor(false);
       setShowRemixModal(false);
       setError(null);
