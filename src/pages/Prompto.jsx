@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
-import { Send, Sparkles, Lightbulb, Wand2, ArrowLeft, ImagePlus, X } from "lucide-react";
+import { Send, Sparkles, Lightbulb, Wand2, ArrowLeft, ImagePlus, X, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -18,6 +18,7 @@ export default function PromptPage() {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const debounceTimerRef = useRef(null);
+  const [copiedIdx, setCopiedIdx] = useState(null);
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -176,9 +177,21 @@ export default function PromptPage() {
                     <img src={msg.imagePreview} alt="uploaded" className="h-32 rounded-xl object-cover mb-2 border border-white/10" />
                   )}
                   {msg.role === "assistant" ? (
-                    <div className="prose prose-sm prose-invert max-w-none [&>p]:my-2 [&>p]:leading-relaxed">
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
-                    </div>
+                    <>
+                      <div className="prose prose-sm prose-invert max-w-none [&>p]:my-2 [&>p]:leading-relaxed">
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      </div>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(msg.content);
+                          setCopiedIdx(i);
+                          setTimeout(() => setCopiedIdx(null), 2000);
+                        }}
+                        className="mt-2 flex items-center gap-1.5 text-[11px] text-white/30 hover:text-white/60 transition-colors self-end"
+                      >
+                        {copiedIdx === i ? <><Check className="w-3 h-3" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
+                      </button>
+                    </>
                   ) : msg.content}
                 </div>
               </div>
