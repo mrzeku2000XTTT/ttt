@@ -45,7 +45,7 @@ export default function PromptPage() {
     try {
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `Generate 3 short, actionable prompt enhancement suggestions (2-5 words each) to improve this user prompt: "${text}". Return as JSON array: ["suggestion1", "suggestion2", "suggestion3"]`,
-        model: "gemini_3_flash"
+        model: "gpt_5_mini"
       });
       try {
         const s = JSON.parse(result);
@@ -70,8 +70,9 @@ export default function PromptPage() {
     } catch (err) {
       toast.error("Enhancement failed. Please try again.");
       console.error(err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleImageUpload = async (file) => {
@@ -115,8 +116,9 @@ export default function PromptPage() {
       toast.error("Failed to generate response. Please try again.");
       console.error(err);
       setMessages(prev => [...prev, { role: "assistant", content: "Error generating response. Please try again." }]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
