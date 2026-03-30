@@ -120,9 +120,11 @@ export default function PromptPage() {
       <div className="flex-1 overflow-y-auto px-4 py-6 max-w-3xl w-full mx-auto space-y-4">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center gap-4 text-center min-h-[400px]">
-            <div className="w-16 h-16 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
-              <Sparkles className="w-8 h-8 text-purple-400" />
-            </div>
+            <img
+              src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/073d22c9d_generated_image.png"
+              alt="Prompto"
+              className="w-24 h-24 rounded-3xl object-cover shadow-2xl shadow-purple-500/30"
+            />
             <div>
               <p className="text-white font-semibold text-xl">Start creating prompts</p>
               <p className="text-white/40 text-sm mt-2">Write anything below or upload an image for AI-powered responses</p>
