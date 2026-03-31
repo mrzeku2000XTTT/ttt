@@ -144,7 +144,9 @@ export default function ValorantArena() {
     dir.position.set(4, 10, 5);
     dir.castShadow = true;
     scene.add(dir);
-    scene.add(Object.assign(new THREE.PointLight(0x4488ff, 1, 35), { position: new THREE.Vector3(0, 8, -12) }));
+    const ptLight = new THREE.PointLight(0x4488ff, 1, 35);
+    ptLight.position.set(0, 8, -12);
+    scene.add(ptLight);
 
     // Floor
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(50, 50),
