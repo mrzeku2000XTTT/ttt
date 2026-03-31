@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
-import { Send, Lightbulb, Wand2, ArrowLeft, ImagePlus, X, Copy, Check, Eye, Wallet, Bot, Trash2, Lock, Unlock } from "lucide-react";
+import { Send, Lightbulb, Wand2, ArrowLeft, ImagePlus, X, Copy, Check, Eye, Wallet, Bot, Trash2, Lock, Unlock, Sliders, Shuffle, Zap, TrendingUp, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -39,7 +39,67 @@ export default function PromptPage() {
   const fileInputRef = useRef(null);
   const debounceTimerRef = useRef(null);
   const [copiedIdx, setCopiedIdx] = useState(null);
+  const [showToolkit, setShowToolkit] = useState(false);
+  const [activeStyle, setActiveStyle] = useState(null);
+  const [activeShot, setActiveShot] = useState(null);
+  const [activeMood, setActiveMood] = useState(null);
   const [walletAddress, setWalletAddress] = useState(null);
+
+  const STYLES = ["Photorealistic", "Anime", "Cyberpunk", "Studio Ghibli", "Oil Painting", "Pixel Art", "Dark Fantasy", "3D Render"];
+  const SHOTS = ["Close-up", "Wide Shot", "Bird's Eye", "Low Angle", "Dutch Angle", "POV", "Medium Shot"];
+  const MOODS = ["🌅 Golden Hour", "🌙 Night", "⚡ Neon", "🌫 Foggy", "🔥 Dramatic", "🌊 Ethereal", "🎬 Cinematic"];
+
+  const appendToPrompt = (tag) => {
+    setPrompt(prev => prev ? `${prev}, ${tag}` : tag);
+  };
+
+  const handleStyleChip = (style) => {
+    if (activeStyle) setPrompt(prev => prev.replace(`, ${activeStyle}`, '').replace(activeStyle, '').trim());
+    if (activeStyle === style) { setActiveStyle(null); return; }
+    setActiveStyle(style);
+    appendToPrompt(style);
+  };
+
+  const handleShotChip = (shot) => {
+    if (activeShot) setPrompt(prev => prev.replace(`, ${activeShot}`, '').replace(activeShot, '').trim());
+    if (activeShot === shot) { setActiveShot(null); return; }
+    setActiveShot(shot);
+    appendToPrompt(shot);
+  };
+
+  const handleMoodChip = (mood) => {
+    if (activeMood) setPrompt(prev => prev.replace(`, ${activeMood}`, '').replace(activeMood, '').trim());
+    if (activeMood === mood) { setActiveMood(null); return; }
+    setActiveMood(mood);
+    appendToPrompt(mood);
+  };
+
+  const handleSmartAction = async (action) => {
+    if (!isAuthorized) { toast.error('Connect wallet first'); return; }
+    if (action === 'random') {
+      setLoading(true);
+      try {
+        const r = await base44.integrations.Core.InvokeLLM({ prompt: 'Give me ONE short creative AI image prompt idea (10-15 words max). Return only the prompt, nothing else.', model: 'gpt_5_mini' });
+        setPrompt(r.trim());
+      } catch {} finally { setLoading(false); }
+    } else if (action === 'fix') {
+      if (!prompt.trim()) { toast.error('Describe what went wrong first'); return; }
+      setLoading(true);
+      try {
+        const r = await base44.integrations.Core.InvokeLLM({ prompt: `The user tried this image prompt: "${prompt}" but the shot didn't work. Rewrite it with specific fixes for pose, angle, and subject focus. Return only the improved prompt.`, model: 'gpt_5_mini' });
+        setPrompt(r.trim());
+        toast.success('Prompt fixed!');
+      } catch {} finally { setLoading(false); }
+    } else if (action === 'viral') {
+      if (!prompt.trim()) { toast.error('Enter a prompt first'); return; }
+      setLoading(true);
+      try {
+        const r = await base44.integrations.Core.InvokeLLM({ prompt: `Make this image prompt go viral on social media by adding trending aesthetic tags, popular styles, and high-engagement visual hooks: "${prompt}". Return only the enhanced prompt.`, model: 'gpt_5_mini' });
+        setPrompt(r.trim());
+        toast.success('Made viral-ready!');
+      } catch {} finally { setLoading(false); }
+    }
+  };
   const [agentCreated, setAgentCreated] = useState(false);
   const [creatingAgent, setCreatingAgent] = useState(false);
   const [showAgentModal, setShowAgentModal] = useState(false);
@@ -496,6 +556,63 @@ An image has been attached — factor it into your prompts.`, file_urls: [curren
         </div>
       )}
 
+      {/* Toolkit Panel */}
+      {showToolkit && isAuthorized && (
+        <div className="border-t border-white/10 px-4 py-3 max-w-3xl w-full mx-auto space-y-3">
+          {/* Smart Actions */}
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={() => handleSmartAction('random')} disabled={loading}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 rounded-full text-xs text-purple-300 transition-all disabled:opacity-40">
+              <Shuffle className="w-3 h-3" /> Random
+            </button>
+            <button onClick={() => handleSmartAction('fix')} disabled={loading}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 hover:bg-orange-500/25 border border-orange-500/30 rounded-full text-xs text-orange-300 transition-all disabled:opacity-40">
+              <Zap className="w-3 h-3" /> Fix My Shot
+            </button>
+            <button onClick={() => handleSmartAction('viral')} disabled={loading}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-pink-500/15 hover:bg-pink-500/25 border border-pink-500/30 rounded-full text-xs text-pink-300 transition-all disabled:opacity-40">
+              <TrendingUp className="w-3 h-3" /> Make it Viral
+            </button>
+          </div>
+          {/* Style */}
+          <div>
+            <p className="text-white/30 text-[10px] uppercase tracking-widest mb-1.5">Style</p>
+            <div className="flex flex-wrap gap-1.5">
+              {STYLES.map(s => (
+                <button key={s} onClick={() => handleStyleChip(s)}
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all border ${
+                    activeStyle === s ? 'bg-cyan-500/25 border-cyan-500/60 text-cyan-300' : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80'
+                  }`}>{s}</button>
+              ))}
+            </div>
+          </div>
+          {/* Shot */}
+          <div>
+            <p className="text-white/30 text-[10px] uppercase tracking-widest mb-1.5">Shot Type</p>
+            <div className="flex flex-wrap gap-1.5">
+              {SHOTS.map(s => (
+                <button key={s} onClick={() => handleShotChip(s)}
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all border ${
+                    activeShot === s ? 'bg-yellow-500/25 border-yellow-500/60 text-yellow-300' : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80'
+                  }`}>{s}</button>
+              ))}
+            </div>
+          </div>
+          {/* Mood */}
+          <div>
+            <p className="text-white/30 text-[10px] uppercase tracking-widest mb-1.5">Mood & Lighting</p>
+            <div className="flex flex-wrap gap-1.5">
+              {MOODS.map(s => (
+                <button key={s} onClick={() => handleMoodChip(s)}
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all border ${
+                    activeMood === s ? 'bg-pink-500/25 border-pink-500/60 text-pink-300' : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80'
+                  }`}>{s}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Input */}
       <div className="border-t border-white/10 px-4 py-4 max-w-3xl w-full mx-auto">
         {/* Image preview */}
@@ -565,6 +682,14 @@ An image has been attached — factor it into your prompts.`, file_urls: [curren
             disabled={!isAuthorized}
             className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-purple-500/50 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           />
+
+          {/* Toolkit toggle */}
+          <button type="button" onClick={() => setShowToolkit(v => !v)} disabled={!isAuthorized}
+            className={`w-11 h-11 disabled:opacity-40 border rounded-full flex items-center justify-center transition-all flex-shrink-0 ${
+              showToolkit ? 'bg-purple-500/20 border-purple-500/40 text-purple-400' : 'bg-white/5 hover:bg-white/10 border-white/10 text-white/60'
+            }`} title="Prompt Toolkit">
+            <Sliders className="w-4 h-4" />
+          </button>
 
           {/* Enhance button */}
           <button type="button" onClick={enhancePrompt} disabled={loading || !prompt.trim() || !isAuthorized}
