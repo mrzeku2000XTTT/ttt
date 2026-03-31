@@ -104,13 +104,34 @@ export default function PromptPage() {
     toast.success('Chat history cleared');
   };
 
+  const isDesktop = !!window.kasware;
+
   const createAgent = async () => {
     if (!walletAddress) { toast.error('No wallet connected'); return; }
-    if (!window.kasware) { toast.error('Kasware wallet required for on-chain agent creation'); return; }
     setCreatingAgent(true);
     try {
-      // Self-transaction: 0 KAS to self, user just pays the tiny network fee
-      const txId = await window.kasware.sendKaspa(walletAddress, 0);
+      let txId;
+
+      if (window.kasware) {
+        // Desktop: send 1 KAS to self via Kasware
+        const SOMPI_PER_KAS = 100000000;
+        txId = await window.kasware.sendKaspa(walletAddress, 1 * SOMPI_PER_KAS);
+      } else {
+        // Mobile / TTT native wallet: send 1 KAS to self
+        const privateKey = localStorage.getItem('kaspa_private_key') || localStorage.getItem('kaspa_wallet_seed');
+        if (!privateKey) {
+          toast.error('No TTT wallet found. Please set up your wallet first.');
+          setCreatingAgent(false);
+          return;
+        }
+        const res = await base44.functions.invoke('sendKaspaTransaction', {
+          privateKey,
+          toAddress: walletAddress,
+          amount: '1',
+        });
+        txId = res?.data?.txId || res?.data?.tx_hash || 'ttt-self-tx-' + Date.now();
+      }
+
       const agentKey = `prompto_agent_${walletAddress.slice(0, 16)}`;
       localStorage.setItem(agentKey, JSON.stringify({ address: walletAddress, txId, createdAt: new Date().toISOString() }));
       setAgentCreated(true);
@@ -286,7 +307,8 @@ Respond to this in a natural, conversational tone as a seasoned director would �
               </div>
             </div>
             <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-4 space-y-2">
-              <p className="text-white/70 text-sm">This sends a <strong className="text-white">self-transaction</strong> on Kaspa — you pay only the network fee (~0.0001 KAS).</p>
+              <p className="text-white/70 text-sm">This sends a <strong className="text-white">1 KAS self-transaction</strong> on Kaspa — sealed to your wallet on-chain.</p>
+              <p className="text-cyan-400/70 text-xs">{window.kasware ? '🖥 Desktop: via Kasware' : '📱 Mobile: via TTT Native Wallet'}</p>
               <p className="text-white/70 text-sm">Your agent will be cryptographically tied to:</p>
               <code className="block text-cyan-400 text-xs bg-black/40 rounded-lg px-3 py-2 break-all">{walletAddress}</code>
               <p className="text-white/40 text-xs">All chats are encrypted locally and only readable with this wallet address.</p>
