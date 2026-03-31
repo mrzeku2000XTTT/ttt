@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
-import { Send, Lightbulb, Wand2, ArrowLeft, ImagePlus, X, Copy, Check, Eye, Wallet, Bot, Trash2, Lock, Unlock, Sliders, Shuffle, Zap, TrendingUp, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Send, Lightbulb, Wand2, ArrowLeft, ImagePlus, X, Copy, Check,
+  Eye, Wallet, Bot, Trash2, Lock, Unlock, Sliders, Shuffle, Zap,
+  TrendingUp, Plus, Brain, ChevronDown, MessageSquare, BookOpen
+} from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 
-// Safe base64 encode/decode for unicode
 const toB64 = (str) => btoa(unescape(encodeURIComponent(str)));
 const fromB64 = (str) => decodeURIComponent(escape(atob(str)));
-
 const encryptData = (data, key) => {
   try {
     const str = JSON.stringify(data);
@@ -18,234 +20,278 @@ const encryptData = (data, key) => {
     return toB64(xored);
   } catch { return ''; }
 };
-
 const decryptData = (enc, key) => {
   try {
     const str = fromB64(enc).split('').map((c, i) => String.fromCharCode(c.charCodeAt(0) ^ key.charCodeAt(i % key.length))).join('');
     return JSON.parse(str);
-  } catch { return []; }
+  } catch { return null; }
 };
+
+const STYLES = ["Photorealistic", "Anime", "Cyberpunk", "Studio Ghibli", "Oil Painting", "Pixel Art", "Dark Fantasy", "3D Render"];
+const SHOTS = ["Close-up", "Wide Shot", "Bird's Eye", "Low Angle", "Dutch Angle", "POV", "Medium Shot"];
+const MOODS = ["🌅 Golden Hour", "🌙 Night", "⚡ Neon", "🌫 Foggy", "🔥 Dramatic", "🌊 Ethereal", "🎬 Cinematic"];
 
 export default function PromptPage() {
   const [prompt, setPrompt] = useState("");
-  const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [uploadedImage, setUploadedImage] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [autoAnalyze, setAutoAnalyze] = useState(false); // toggle: analyze image to generate prompt
-  const messagesEndRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const debounceTimerRef = useRef(null);
+  const [autoAnalyze, setAutoAnalyze] = useState(false);
   const [copiedIdx, setCopiedIdx] = useState(null);
   const [showToolkit, setShowToolkit] = useState(false);
   const [activeStyle, setActiveStyle] = useState(null);
   const [activeShot, setActiveShot] = useState(null);
   const [activeMood, setActiveMood] = useState(null);
+  const [showSessions, setShowSessions] = useState(false);
+
+  // Wallet / agent
   const [walletAddress, setWalletAddress] = useState(null);
-
-  const STYLES = ["Photorealistic", "Anime", "Cyberpunk", "Studio Ghibli", "Oil Painting", "Pixel Art", "Dark Fantasy", "3D Render"];
-  const SHOTS = ["Close-up", "Wide Shot", "Bird's Eye", "Low Angle", "Dutch Angle", "POV", "Medium Shot"];
-  const MOODS = ["🌅 Golden Hour", "🌙 Night", "⚡ Neon", "🌫 Foggy", "🔥 Dramatic", "🌊 Ethereal", "🎬 Cinematic"];
-
-  const appendToPrompt = (tag) => {
-    setPrompt(prev => prev ? `${prev}, ${tag}` : tag);
-  };
-
-  const handleStyleChip = (style) => {
-    if (activeStyle) setPrompt(prev => prev.replace(`, ${activeStyle}`, '').replace(activeStyle, '').trim());
-    if (activeStyle === style) { setActiveStyle(null); return; }
-    setActiveStyle(style);
-    appendToPrompt(style);
-  };
-
-  const handleShotChip = (shot) => {
-    if (activeShot) setPrompt(prev => prev.replace(`, ${activeShot}`, '').replace(activeShot, '').trim());
-    if (activeShot === shot) { setActiveShot(null); return; }
-    setActiveShot(shot);
-    appendToPrompt(shot);
-  };
-
-  const handleMoodChip = (mood) => {
-    if (activeMood) setPrompt(prev => prev.replace(`, ${activeMood}`, '').replace(activeMood, '').trim());
-    if (activeMood === mood) { setActiveMood(null); return; }
-    setActiveMood(mood);
-    appendToPrompt(mood);
-  };
-
-  const handleSmartAction = async (action) => {
-    if (!isAuthorized) { toast.error('Connect wallet first'); return; }
-    if (action === 'random') {
-      setLoading(true);
-      try {
-        const r = await base44.integrations.Core.InvokeLLM({ prompt: 'Give me ONE short creative AI image prompt idea (10-15 words max). Return only the prompt, nothing else.', model: 'gpt_5_mini' });
-        setPrompt(r.trim());
-      } catch {} finally { setLoading(false); }
-    } else if (action === 'fix') {
-      if (!prompt.trim()) { toast.error('Describe what went wrong first'); return; }
-      setLoading(true);
-      try {
-        const r = await base44.integrations.Core.InvokeLLM({ prompt: `The user tried this image prompt: "${prompt}" but the shot didn't work. Rewrite it with specific fixes for pose, angle, and subject focus. Return only the improved prompt.`, model: 'gpt_5_mini' });
-        setPrompt(r.trim());
-        toast.success('Prompt fixed!');
-      } catch {} finally { setLoading(false); }
-    } else if (action === 'viral') {
-      if (!prompt.trim()) { toast.error('Enter a prompt first'); return; }
-      setLoading(true);
-      try {
-        const r = await base44.integrations.Core.InvokeLLM({ prompt: `Make this image prompt go viral on social media by adding trending aesthetic tags, popular styles, and high-engagement visual hooks: "${prompt}". Return only the enhanced prompt.`, model: 'gpt_5_mini' });
-        setPrompt(r.trim());
-        toast.success('Made viral-ready!');
-      } catch {} finally { setLoading(false); }
-    }
-  };
   const [agentCreated, setAgentCreated] = useState(false);
   const [creatingAgent, setCreatingAgent] = useState(false);
   const [showAgentModal, setShowAgentModal] = useState(false);
 
+  // Multi-session
+  const [sessions, setSessions] = useState([]); // [{id, title, messages}]
+  const [activeSessionId, setActiveSessionId] = useState(null);
+
+  // Agent knowledge base
+  const [knowledgeBase, setKnowledgeBase] = useState([]); // [{text, addedAt}]
+  const [showKnowledge, setShowKnowledge] = useState(false);
+
+  const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const debounceTimerRef = useRef(null);
+
+  const isAuthorized = !!(walletAddress && agentCreated);
+  const activeSession = sessions.find(s => s.id === activeSessionId);
+  const messages = activeSession?.messages || [];
+
+  // ── Init ──────────────────────────────────────────────────────
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+    const detect = async () => {
+      let addr = null;
+      try { if (window.kasware) { const a = await window.kasware.getAccounts(); if (a?.length) addr = a[0]; } } catch {}
+      if (!addr) addr = localStorage.getItem('ttt_wallet_address');
+      if (addr) {
+        setWalletAddress(addr);
+        setAgentCreated(!!localStorage.getItem(`prompto_agent_${addr.slice(0,16)}`));
+        loadSessions(addr);
+        loadKnowledge(addr);
+      }
+    };
+    detect();
+  }, []);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   useEffect(() => {
     clearTimeout(debounceTimerRef.current);
-    if (prompt.trim().length > 3) {
-      debounceTimerRef.current = setTimeout(() => generateSuggestions(prompt), 400);
-    } else {
-      setSuggestions([]);
-      setShowSuggestions(false);
-    }
+    if (prompt.trim().length > 3 && isAuthorized) {
+      debounceTimerRef.current = setTimeout(() => generateSuggestions(prompt), 500);
+    } else { setSuggestions([]); setShowSuggestions(false); }
     return () => clearTimeout(debounceTimerRef.current);
   }, [prompt]);
 
-  // Detect connected wallet
+  // Persist sessions on change
   useEffect(() => {
-    const detectWallet = async () => {
-      let addr = null;
-      try {
-        if (window.kasware) {
-          const accounts = await window.kasware.getAccounts();
-          if (accounts?.length > 0) addr = accounts[0];
-        }
-      } catch {}
-      if (!addr) addr = localStorage.getItem('ttt_wallet_address');
-      if (addr) {
-        setWalletAddress(addr);
-        loadEncryptedMessages(addr);
-        const agentKey = `prompto_agent_${addr.slice(0, 16)}`;
-        setAgentCreated(!!localStorage.getItem(agentKey));
-      }
-    };
-    detectWallet();
-  }, []);
-
-  // Persist messages
-  useEffect(() => {
-    if (walletAddress && messages.length > 0) {
-      try {
-        const key = `prompto_chat_${walletAddress.slice(0, 16)}`;
-        const safe = messages.map(m => ({ role: m.role, content: m.content }));
-        localStorage.setItem(key, encryptData(safe, walletAddress));
-      } catch {}
-    }
-  }, [messages, walletAddress]);
-
-  const loadEncryptedMessages = (addr) => {
+    if (!walletAddress || sessions.length === 0) return;
     try {
-      const key = `prompto_chat_${addr.slice(0, 16)}`;
+      const key = `prompto_sessions_${walletAddress.slice(0,16)}`;
+      localStorage.setItem(key, encryptData(sessions, walletAddress));
+    } catch {}
+  }, [sessions, walletAddress]);
+
+  // ── Storage ────────────────────────────────────────────────────
+  const loadSessions = (addr) => {
+    try {
+      const key = `prompto_sessions_${addr.slice(0,16)}`;
       const stored = localStorage.getItem(key);
-      if (stored) setMessages(decryptData(stored, addr));
+      const data = stored ? decryptData(stored, addr) : null;
+      if (data?.length) {
+        setSessions(data);
+        setActiveSessionId(data[data.length - 1].id);
+      } else {
+        createNewSession(addr, true);
+      }
+    } catch { createNewSession(addr, true); }
+  };
+
+  const loadKnowledge = (addr) => {
+    try {
+      const key = `prompto_kb_${addr.slice(0,16)}`;
+      const stored = localStorage.getItem(key);
+      const data = stored ? JSON.parse(stored) : [];
+      setKnowledgeBase(data);
     } catch {}
   };
 
-  const clearHistory = () => {
-    if (!walletAddress) return;
-    const key = `prompto_chat_${walletAddress.slice(0, 16)}`;
-    localStorage.removeItem(key);
-    setMessages([]);
-    toast.success('Chat history cleared');
+  const saveKnowledge = (kb, addr) => {
+    try {
+      localStorage.setItem(`prompto_kb_${addr.slice(0,16)}`, JSON.stringify(kb));
+    } catch {}
   };
 
-  const isAuthorized = !!(walletAddress && agentCreated);
+  // ── Sessions ───────────────────────────────────────────────────
+  const createNewSession = (addr, init = false) => {
+    const id = Date.now().toString();
+    const session = { id, title: `Chat ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`, messages: [], createdAt: new Date().toISOString() };
+    if (init) {
+      setSessions([session]);
+    } else {
+      setSessions(prev => [...prev, session]);
+    }
+    setActiveSessionId(id);
+    setShowSessions(false);
+  };
 
+  const deleteSession = (id) => {
+    setSessions(prev => {
+      const updated = prev.filter(s => s.id !== id);
+      if (id === activeSessionId) {
+        setActiveSessionId(updated.length ? updated[updated.length - 1].id : null);
+        if (!updated.length && walletAddress) setTimeout(() => createNewSession(walletAddress), 0);
+      }
+      return updated;
+    });
+    toast.success('Chat deleted');
+  };
+
+  const updateSessionMessages = (sessionId, updater) => {
+    setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, messages: typeof updater === 'function' ? updater(s.messages) : updater } : s));
+  };
+
+  const updateSessionTitle = (sessionId, title) => {
+    setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, title } : s));
+  };
+
+  // ── Knowledge Base ─────────────────────────────────────────────
+  const addToKnowledge = async (content) => {
+    if (!walletAddress) return;
+    setLoading(true);
+    try {
+      const summary = await base44.integrations.Core.InvokeLLM({
+        prompt: `Extract the key prompt engineering insight or technique from this content in 1-2 sentences max. Be specific and actionable:\n\n${content}`,
+        model: "gpt_5_mini"
+      });
+      const entry = { id: Date.now(), text: summary.trim(), addedAt: new Date().toISOString() };
+      const updated = [...knowledgeBase, entry];
+      setKnowledgeBase(updated);
+      saveKnowledge(updated, walletAddress);
+      toast.success('✅ Added to Agent Knowledge!');
+    } catch { toast.error('Failed to add to knowledge'); }
+    finally { setLoading(false); }
+  };
+
+  const deleteKnowledge = (id) => {
+    const updated = knowledgeBase.filter(k => k.id !== id);
+    setKnowledgeBase(updated);
+    if (walletAddress) saveKnowledge(updated, walletAddress);
+  };
+
+  // Build knowledge context string for injection
+  const getKnowledgeContext = () => {
+    if (!knowledgeBase.length) return '';
+    return `\n\n**Agent Trained Knowledge (apply these learnings):**\n${knowledgeBase.map((k, i) => `${i+1}. ${k.text}`).join('\n')}`;
+  };
+
+  // ── Wallet / Agent ─────────────────────────────────────────────
   const createAgent = async () => {
     if (!walletAddress) { toast.error('No wallet connected'); return; }
     setCreatingAgent(true);
     try {
       let txId;
       if (window.kasware) {
-        const SOMPI_PER_KAS = 100000000;
-        txId = await window.kasware.sendKaspa(walletAddress, 1 * SOMPI_PER_KAS);
+        txId = await window.kasware.sendKaspa(walletAddress, 100000000);
       } else {
         const privateKey = localStorage.getItem('kaspa_private_key') || localStorage.getItem('kaspa_wallet_seed');
-        if (!privateKey) {
-          toast.error('No TTT wallet found. Please set up your wallet first.');
-          setCreatingAgent(false);
-          return;
-        }
-        const res = await base44.functions.invoke('sendKaspaTransaction', {
-          privateKey,
-          toAddress: walletAddress,
-          amount: '1',
-        });
-        txId = res?.data?.txId || res?.data?.tx_hash || 'ttt-self-tx-' + Date.now();
+        if (!privateKey) { toast.error('No TTT wallet found.'); setCreatingAgent(false); return; }
+        const res = await base44.functions.invoke('sendKaspaTransaction', { privateKey, toAddress: walletAddress, amount: '1' });
+        txId = res?.data?.txId || 'ttt-self-tx-' + Date.now();
       }
-      const agentKey = `prompto_agent_${walletAddress.slice(0, 16)}`;
-      localStorage.setItem(agentKey, JSON.stringify({ address: walletAddress, txId, createdAt: new Date().toISOString() }));
+      localStorage.setItem(`prompto_agent_${walletAddress.slice(0,16)}`, JSON.stringify({ address: walletAddress, txId, createdAt: new Date().toISOString() }));
       setAgentCreated(true);
       setShowAgentModal(false);
       toast.success('Agent created and sealed on-chain!');
-      setMessages(prev => [{
-        role: 'assistant',
-        content: `✅ **Prompto Agent activated!**\n\nYour personal AI agent is now sealed to wallet \`${walletAddress.slice(0,8)}...${walletAddress.slice(-6)}\`\n\nAll your conversations are encrypted and stored locally. Let's build something great.`
-      }, ...prev]);
-    } catch (err) {
-      if (err?.message?.includes('rejected') || err?.message?.includes('User reject')) {
-        toast.error('Transaction cancelled');
-      } else {
-        toast.error('Failed: ' + (err?.message || 'Unknown error'));
+      if (activeSessionId) {
+        updateSessionMessages(activeSessionId, prev => [{
+          role: 'assistant', id: Date.now(),
+          content: `✅ **Prompto Agent activated!**\n\nSealed to \`${walletAddress.slice(0,8)}...${walletAddress.slice(-6)}\`\n\nAll chats encrypted locally. Each new chat trains from your shared knowledge base. Let's build.`
+        }, ...prev]);
       }
-    } finally {
-      setCreatingAgent(false);
-    }
+    } catch (err) {
+      if (err?.message?.includes('rejected') || err?.message?.includes('User reject')) toast.error('Cancelled');
+      else toast.error('Failed: ' + (err?.message || 'Unknown'));
+    } finally { setCreatingAgent(false); }
   };
 
+  // ── Suggestions ────────────────────────────────────────────────
   const generateSuggestions = async (text) => {
-    if (!isAuthorized) return;
     try {
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `Generate 3 short prompt enhancement suggestions (2-5 words each) for: "${text}". Return ONLY a JSON array like: ["suggestion1","suggestion2","suggestion3"]`,
         model: "gpt_5_mini"
       });
       const match = result.match(/\[.*\]/s);
-      if (match) {
-        const s = JSON.parse(match[0]);
-        setSuggestions(s);
-        setShowSuggestions(true);
-      }
+      if (match) { setSuggestions(JSON.parse(match[0])); setShowSuggestions(true); }
     } catch {}
   };
 
   const enhancePrompt = async () => {
-    if (!isAuthorized) { toast.error('Connect wallet and create your agent first.'); return; }
-    if (!prompt.trim()) return;
+    if (!isAuthorized || !prompt.trim()) return;
     setLoading(true);
     try {
       const enhanced = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a prompt engineering expert. Enhance this prompt to be more specific and effective for AI tasks: "${prompt}". Return only the enhanced prompt, no explanation.`,
-        model: "gpt_5"
+        prompt: `You are a prompt engineering expert. Enhance this image prompt to be more specific and detailed: "${prompt}". Return only the enhanced prompt.`,
+        model: "gpt_5_mini"
       });
-      setPrompt(enhanced);
-    } catch (err) {
-      toast.error("Enhancement failed. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+      setPrompt(enhanced.trim());
+    } catch { toast.error("Enhancement failed."); }
+    finally { setLoading(false); }
   };
 
+  // ── Toolkit chips ──────────────────────────────────────────────
+  const appendToPrompt = (tag) => setPrompt(prev => prev ? `${prev}, ${tag}` : tag);
+
+  const handleStyleChip = (style) => {
+    if (activeStyle) setPrompt(prev => prev.replace(`, ${activeStyle}`, '').replace(activeStyle, '').trim());
+    if (activeStyle === style) { setActiveStyle(null); return; }
+    setActiveStyle(style); appendToPrompt(style);
+  };
+  const handleShotChip = (shot) => {
+    if (activeShot) setPrompt(prev => prev.replace(`, ${activeShot}`, '').replace(activeShot, '').trim());
+    if (activeShot === shot) { setActiveShot(null); return; }
+    setActiveShot(shot); appendToPrompt(shot);
+  };
+  const handleMoodChip = (mood) => {
+    if (activeMood) setPrompt(prev => prev.replace(`, ${activeMood}`, '').replace(activeMood, '').trim());
+    if (activeMood === mood) { setActiveMood(null); return; }
+    setActiveMood(mood); appendToPrompt(mood);
+  };
+
+  const handleSmartAction = async (action) => {
+    if (!isAuthorized) { toast.error('Connect wallet first'); return; }
+    setLoading(true);
+    try {
+      if (action === 'random') {
+        const r = await base44.integrations.Core.InvokeLLM({ prompt: 'Give me ONE short creative AI image prompt idea (10-15 words max). Return only the prompt.', model: 'gpt_5_mini' });
+        setPrompt(r.trim());
+      } else if (action === 'fix') {
+        if (!prompt.trim()) { toast.error('Describe what went wrong first'); return; }
+        const r = await base44.integrations.Core.InvokeLLM({ prompt: `This image prompt didn't work: "${prompt}". Rewrite it with specific fixes for pose, angle, and subject focus. Return only the improved prompt.`, model: 'gpt_5_mini' });
+        setPrompt(r.trim()); toast.success('Prompt fixed!');
+      } else if (action === 'viral') {
+        if (!prompt.trim()) { toast.error('Enter a prompt first'); return; }
+        const r = await base44.integrations.Core.InvokeLLM({ prompt: `Make this image prompt viral-ready with trending aesthetic tags: "${prompt}". Return only the enhanced prompt.`, model: 'gpt_5_mini' });
+        setPrompt(r.trim()); toast.success('Made viral-ready!');
+      }
+    } catch {} finally { setLoading(false); }
+  };
+
+  // ── Image upload ───────────────────────────────────────────────
   const handleImageUpload = async (file) => {
     if (!file || !file.type.startsWith("image/")) return;
     setUploading(true);
@@ -254,218 +300,233 @@ export default function PromptPage() {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       setUploadedImage({ url: file_url, preview });
       toast.success("Image attached!");
-    } catch (err) {
-      URL.revokeObjectURL(preview);
-      toast.error("Image upload failed. Please try again.");
-    } finally {
-      setUploading(false);
-    }
+    } catch { URL.revokeObjectURL(preview); toast.error("Upload failed."); }
+    finally { setUploading(false); }
   };
 
+  // ── Submit ─────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isAuthorized) { toast.error('Connect wallet and create your agent first.'); return; }
     if (!prompt.trim() && !uploadedImage) return;
+    if (!activeSessionId) return;
 
     const currentPrompt = prompt;
     const currentImage = uploadedImage;
     const isAnalyzeRun = autoAnalyze && !!currentImage;
+    const sessionId = activeSessionId;
 
-    const userMessage = {
-      role: "user",
-      content: isAnalyzeRun
-        ? `[Image Analysis] ${currentPrompt || 'Analyze this image and generate a replication prompt'}`
-        : currentPrompt,
+    const userMsg = {
+      id: Date.now(), role: "user",
+      content: isAnalyzeRun ? `[Image Analysis] ${currentPrompt || 'Analyze and generate replication prompt'}` : currentPrompt,
       imagePreview: currentImage?.preview
     };
-    setMessages(prev => [...prev, userMessage]);
-    setPrompt("");
-    setUploadedImage(null);
-    setShowSuggestions(false);
-    setLoading(true);
 
-    // Add placeholder streaming message
-    const streamId = Date.now();
-    setMessages(prev => [...prev, { role: "assistant", content: "", streaming: true, id: streamId }]);
+    updateSessionMessages(sessionId, prev => [...prev, userMsg]);
+
+    // Auto-title from first message
+    if (!messages.length) {
+      updateSessionTitle(sessionId, currentPrompt.slice(0, 32) || 'Image Analysis');
+    }
+
+    setPrompt(""); setUploadedImage(null); setShowSuggestions(false); setLoading(true);
+    const streamId = Date.now() + 1;
+    updateSessionMessages(sessionId, prev => [...prev, { id: streamId, role: "assistant", content: "", streaming: true }]);
 
     try {
-      let aiResponse;
+      const kb = getKnowledgeContext();
 
+      let aiResponse;
       if (isAnalyzeRun) {
         aiResponse = await base44.integrations.Core.InvokeLLM({
-          prompt: `You are an elite AI image prompt engineer. Analyze this image deeply and output:
-
-**📸 Visual Analysis**
-- Image type, art style, technique
-- Color palette, lighting, mood
-- Composition, camera angle, depth of field
-
-**✨ Replication Prompts — 3 Variations**
-
-**Prompt A — Exact Match:**
-[150-word prompt to recreate this exactly]
-
-**Prompt B — Enhanced Version:**
-[150-word prompt with cinematic upgrades]
-
-**Prompt C — Alternative Angle:**
-[150-word prompt with a creative twist]
-
-**🎯 Key Tips to nail this shot:**
-[2-3 specific tips]
-${currentPrompt ? `\nUser's goal: ${currentPrompt}` : ''}`,
+          prompt: `You are an elite AI image prompt engineer.${kb}\n\nAnalyze this image and output:\n\n**📸 Visual Analysis**\n- Image type, art style, technique\n- Color palette, lighting, mood\n- Composition, camera angle, depth of field\n\n**✨ Replication Prompts — 3 Variations**\n\n**Prompt A — Exact Match:**\n\`\`\`\n[150-word prompt to recreate exactly]\n\`\`\`\n\n**Prompt B — Enhanced:**\n\`\`\`\n[cinematic upgrade]\n\`\`\`\n\n**Prompt C — Alternative:**\n\`\`\`\n[creative twist]\n\`\`\`\n\n**🎯 Key Tips:**\n[2-3 specific tips]${currentPrompt ? `\n\nUser's goal: ${currentPrompt}` : ''}`,
           file_urls: [currentImage.url],
           model: "gpt_5"
         });
       } else {
-        const agentContext = walletAddress
-          ? `You are a personal AI prompt engineering agent sealed to wallet ${walletAddress.slice(0,8)}...${walletAddress.slice(-6)}. `
-          : '';
+        const agentCtx = `You are PROMPTO — an elite AI image prompt engineer sealed to wallet ${walletAddress?.slice(0,8)}...${walletAddress?.slice(-6)}.${kb}`;
+        const system = `${agentCtx}\n\nFor EVERY request output 3 prompt variations:\n\n**🎯 Prompto reads your vision:** [1 line]\n\n**Prompt A — Direct Shot:**\n\`\`\`\n[100-150 words: subject, pose, environment, lighting, camera, style, color, mood, quality tags]\n\`\`\`\n\n**Prompt B — Cinematic Cut:**\n\`\`\`\n[dramatic version]\n\`\`\`\n\n**Prompt C — Stylized:**\n\`\`\`\n[unique art style variation]\n\`\`\`\n\n**⚡ Quantum Refine — try adding:**\n[3 quick suggestions]`;
 
-        const PROMPT_ENGINEER_SYSTEM = `${agentContext}You are PROMPTO — an elite AI image prompt engineer and creative director. Your job is to take ANY basic idea and transform it into multiple detailed, production-ready AI image generation prompts.
+        const params = currentImage
+          ? { prompt: `${system}\n\nUser request: "${currentPrompt || 'describe and prompt this image'}"\n\nImage attached — factor it in.`, file_urls: [currentImage.url] }
+          : { prompt: `${system}\n\nUser request: "${currentPrompt}"` };
 
-For EVERY request:
-1. Understand the user's core vision (even if vague)
-2. Output 3 variations of detailed prompts (Exact / Cinematic / Stylized)
-3. Each prompt must include: subject, pose/action, environment, lighting, camera angle, art style, color palette, mood, technical quality tags
-4. Give real-time iterative suggestions to refine further
-5. Be fluid, fast, and quantum — like a creative AI that thinks in images
-
-Format every response like this:
-**🎯 Prompto reads your vision:** [1 line interpretation]
-
-**Prompt A — Direct Shot:**
-\`\`\`
-[detailed prompt, 100-150 words]
-\`\`\`
-
-**Prompt B — Cinematic Cut:**
-\`\`\`
-[dramatic cinematic version, 100-150 words]
-\`\`\`
-
-**Prompt C — Stylized:**
-\`\`\`
-[unique art style variation, 100-150 words]
-\`\`\`
-
-**⚡ Quantum Refine — try adding:**
-[3 quick suggestions to evolve the prompt further]`;
-
-        const invokeParams = currentImage
-          ? { prompt: `${PROMPT_ENGINEER_SYSTEM}\n\nUser request: "${currentPrompt || 'describe and prompt this image'}"
-
-An image has been attached — factor it into your prompts.`, file_urls: [currentImage.url] }
-          : { prompt: `${PROMPT_ENGINEER_SYSTEM}\n\nUser request: "${currentPrompt}"` };
-
-        aiResponse = await base44.integrations.Core.InvokeLLM({ ...invokeParams, model: "gpt_5" });
+        aiResponse = await base44.integrations.Core.InvokeLLM({ ...params, model: "gpt_5" });
       }
 
-      // Replace streaming placeholder with real content
-      setMessages(prev => prev.map(m => m.id === streamId ? { role: "assistant", content: aiResponse } : m));
+      updateSessionMessages(sessionId, prev => prev.map(m => m.id === streamId ? { ...m, content: aiResponse, streaming: false } : m));
     } catch (err) {
-      console.error("Prompto error:", err);
-      toast.error("Failed to generate response. Please try again.");
-      setMessages(prev => prev.filter(m => m.id !== streamId));
-      setMessages(prev => [...prev, { role: "assistant", content: "Something went wrong. Please try again." }]);
-    } finally {
-      setLoading(false);
-    }
+      console.error(err);
+      toast.error("Failed to generate. Try again.");
+      updateSessionMessages(sessionId, prev => prev.filter(m => m.id !== streamId));
+    } finally { setLoading(false); }
   };
 
   return (
-    <div className="min-h-screen bg-black flex flex-col">
-      {/* Agent Create Modal */}
-      {showAgentModal && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4" onClick={() => setShowAgentModal(false)}>
-          <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} onClick={e => e.stopPropagation()}
-            className="bg-zinc-950 border border-white/20 rounded-2xl p-6 max-w-sm w-full">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                <Bot className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-white font-bold">Create Personal Agent</h3>
-                <p className="text-white/40 text-xs">Seal your agent to your wallet</p>
-              </div>
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-4 space-y-2">
-              <p className="text-white/70 text-sm">This sends a <strong className="text-white">1 KAS self-transaction</strong> on Kaspa — sealed to your wallet on-chain.</p>
-              <p className="text-cyan-400/70 text-xs">{window.kasware ? '🖥 Desktop: via Kasware' : '📱 Mobile: via TTT Native Wallet'}</p>
-              <code className="block text-cyan-400 text-xs bg-black/40 rounded-lg px-3 py-2 break-all">{walletAddress}</code>
-              <p className="text-white/40 text-xs">All chats are encrypted locally and only readable with this wallet.</p>
-            </div>
-            <div className="flex gap-3">
-              <button onClick={() => setShowAgentModal(false)}
-                className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white/60 text-sm">
-                Cancel
-              </button>
-              <button onClick={createAgent} disabled={creatingAgent}
-                className="flex-1 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 disabled:opacity-50 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2">
-                {creatingAgent
-                  ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Signing...</>
-                  : <><Wallet className="w-4 h-4" /> Approve & Create</>
-                }
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+    <div className="fixed inset-0 bg-black flex flex-col overflow-hidden">
 
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-4 border-b border-white/10">
+      {/* Agent Create Modal */}
+      <AnimatePresence>
+        {showAgentModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
+            onClick={() => setShowAgentModal(false)}>
+            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-zinc-950 border border-white/20 rounded-2xl p-6 max-w-sm w-full">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                  <Bot className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-white font-bold">Create Personal Agent</h3>
+                  <p className="text-white/40 text-xs">Seal your agent to your wallet</p>
+                </div>
+              </div>
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-4 space-y-2">
+                <p className="text-white/70 text-sm">Sends a <strong className="text-white">1 KAS self-transaction</strong> — sealed on-chain.</p>
+                <code className="block text-cyan-400 text-xs bg-black/40 rounded-lg px-3 py-2 break-all">{walletAddress}</code>
+                <p className="text-white/40 text-xs">Chats are encrypted locally. Knowledge base trains all sessions simultaneously.</p>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => setShowAgentModal(false)} className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white/60 text-sm">Cancel</button>
+                <button onClick={createAgent} disabled={creatingAgent}
+                  className="flex-1 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 disabled:opacity-50 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2">
+                  {creatingAgent ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Signing...</> : <><Wallet className="w-4 h-4" /> Approve & Create</>}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Knowledge Base Modal */}
+      <AnimatePresence>
+        {showKnowledge && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[998] flex items-end sm:items-center justify-center p-4"
+            onClick={() => setShowKnowledge(false)}>
+            <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-zinc-950 border border-white/20 rounded-2xl p-5 w-full max-w-lg max-h-[70vh] flex flex-col">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Brain className="w-5 h-5 text-purple-400" />
+                  <h3 className="text-white font-bold">Agent Knowledge Base</h3>
+                  <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded-full">{knowledgeBase.length} entries</span>
+                </div>
+                <button onClick={() => setShowKnowledge(false)} className="text-white/40 hover:text-white"><X className="w-5 h-5" /></button>
+              </div>
+              <p className="text-white/40 text-xs mb-3">These learnings are injected into every chat session — your agent trains simultaneously across all chats.</p>
+              <div className="flex-1 overflow-y-auto space-y-2">
+                {knowledgeBase.length === 0 ? (
+                  <p className="text-white/30 text-sm text-center py-8">No knowledge yet. Click "Add to Agent" on any response.</p>
+                ) : knowledgeBase.map(k => (
+                  <div key={k.id} className="flex items-start gap-2 p-3 bg-white/5 border border-white/10 rounded-xl">
+                    <p className="text-white/70 text-xs flex-1 leading-relaxed">{k.text}</p>
+                    <button onClick={() => deleteKnowledge(k.id)} className="text-white/20 hover:text-red-400 flex-shrink-0 mt-0.5"><X className="w-3.5 h-3.5" /></button>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── FIXED HEADER ── */}
+      <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3 border-b border-white/10 bg-black z-10">
         <Link to={createPageUrl("AppStore")} className="text-white/40 hover:text-white transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/073d22c9d_generated_image.png"
           alt="Prompto" className="w-8 h-8 rounded-xl object-cover" />
-        <div className="flex-1">
-          <h1 className="text-white font-bold text-lg leading-none">Prompto</h1>
-          <p className="text-white/40 text-xs mt-0.5">AI Prompt Builder & Enhancer</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {walletAddress ? (
-            <>
-              {agentCreated ? (
-                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-purple-500/10 border border-purple-500/30 rounded-full">
-                  <Lock className="w-3 h-3 text-purple-400" />
-                  <span className="text-purple-400 text-[10px] font-semibold">{walletAddress.slice(0,6)}...{walletAddress.slice(-4)}</span>
+
+        {/* Session selector */}
+        <div className="flex-1 relative">
+          <button onClick={() => isAuthorized && setShowSessions(v => !v)}
+            className="flex items-center gap-1.5 text-white font-bold text-sm hover:text-purple-300 transition-colors">
+            <span className="truncate max-w-[140px]">{activeSession?.title || 'Prompto'}</span>
+            {isAuthorized && <ChevronDown className="w-3.5 h-3.5 text-white/40 flex-shrink-0" />}
+          </button>
+
+          <AnimatePresence>
+            {showSessions && (
+              <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                className="absolute top-full left-0 mt-2 w-64 bg-zinc-950 border border-white/20 rounded-2xl shadow-2xl z-50 overflow-hidden">
+                <div className="p-2 border-b border-white/10">
+                  <button onClick={() => createNewSession(walletAddress)}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 text-sm font-semibold transition-all">
+                    <Plus className="w-4 h-4" /> New Chat
+                  </button>
                 </div>
-              ) : (
-                <button onClick={() => setShowAgentModal(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/40 hover:border-purple-400/60 rounded-full transition-all">
-                  <Bot className="w-3 h-3 text-purple-400" />
-                  <span className="text-purple-400 text-xs font-semibold">Create Agent</span>
-                </button>
-              )}
-              {messages.length > 0 && (
-                <button onClick={clearHistory}
-                  className="w-8 h-8 bg-white/5 hover:bg-red-500/10 border border-white/10 hover:border-red-500/30 rounded-full flex items-center justify-center transition-all">
-                  <Trash2 className="w-3.5 h-3.5 text-white/40" />
-                </button>
-              )}
+                <div className="max-h-48 overflow-y-auto p-2 space-y-1">
+                  {[...sessions].reverse().map(s => (
+                    <div key={s.id} className={`flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer transition-all group ${s.id === activeSessionId ? 'bg-white/10' : 'hover:bg-white/5'}`}
+                      onClick={() => { setActiveSessionId(s.id); setShowSessions(false); }}>
+                      <MessageSquare className="w-3.5 h-3.5 text-white/40 flex-shrink-0" />
+                      <span className="text-white/70 text-xs flex-1 truncate">{s.title}</span>
+                      <button onClick={e => { e.stopPropagation(); deleteSession(s.id); }}
+                        className="opacity-0 group-hover:opacity-100 text-white/30 hover:text-red-400 transition-all">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Right header actions */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {isAuthorized && (
+            <>
+              <button onClick={() => setShowKnowledge(true)}
+                className="relative flex items-center gap-1 px-2.5 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 rounded-full transition-all"
+                title="Agent Knowledge">
+                <Brain className="w-3.5 h-3.5 text-purple-400" />
+                {knowledgeBase.length > 0 && <span className="text-purple-400 text-[10px] font-bold">{knowledgeBase.length}</span>}
+              </button>
+              <button onClick={() => createNewSession(walletAddress)}
+                className="w-8 h-8 bg-white/5 hover:bg-purple-500/20 border border-white/10 hover:border-purple-500/30 rounded-full flex items-center justify-center transition-all"
+                title="New chat">
+                <Plus className="w-3.5 h-3.5 text-white/60" />
+              </button>
             </>
+          )}
+          {walletAddress ? (
+            agentCreated ? (
+              <div className="flex items-center gap-1 px-2 py-1 bg-purple-500/10 border border-purple-500/30 rounded-full">
+                <Lock className="w-3 h-3 text-purple-400" />
+                <span className="text-purple-400 text-[10px] font-semibold hidden sm:block">{walletAddress.slice(0,6)}...{walletAddress.slice(-4)}</span>
+              </div>
+            ) : (
+              <button onClick={() => setShowAgentModal(true)}
+                className="flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/40 rounded-full">
+                <Bot className="w-3 h-3 text-purple-400" />
+                <span className="text-purple-400 text-xs font-semibold">Create Agent</span>
+              </button>
+            )
           ) : (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white/5 border border-white/10 rounded-full">
+            <div className="flex items-center gap-1 px-2 py-1 bg-white/5 border border-white/10 rounded-full">
               <Unlock className="w-3 h-3 text-white/30" />
-              <span className="text-white/30 text-[10px]">No wallet</span>
+              <span className="text-white/30 text-[10px] hidden sm:block">No wallet</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 max-w-3xl w-full mx-auto space-y-4">
+      {/* ── SCROLLABLE MESSAGES ── */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 max-w-3xl w-full mx-auto space-y-4"
+        onClick={() => { setShowSessions(false); }}>
         {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center gap-4 text-center min-h-[400px]">
+          <div className="h-full flex flex-col items-center justify-center gap-4 text-center min-h-[300px]">
             <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/073d22c9d_generated_image.png"
-              alt="Prompto" className="w-24 h-24 rounded-3xl object-cover shadow-2xl shadow-purple-500/30" />
+              alt="Prompto" className="w-20 h-20 rounded-3xl object-cover shadow-2xl shadow-purple-500/30" />
             <div>
-              <p className="text-white font-semibold text-xl">Start creating prompts</p>
-              <p className="text-white/40 text-sm mt-2">
-                {walletAddress && !agentCreated
-                  ? 'Wallet detected — create your agent to enable persistent memory'
-                  : 'Write anything below · Upload an image and toggle 👁 to auto-analyze it'}
+              <p className="text-white font-semibold text-lg">Start creating prompts</p>
+              <p className="text-white/40 text-sm mt-1">
+                {walletAddress && !agentCreated ? 'Create your agent to unlock' : 'Type any idea — Prompto gives you 3 ready-to-use variations'}
               </p>
             </div>
             {walletAddress && !agentCreated && (
@@ -474,10 +535,10 @@ An image has been attached — factor it into your prompts.`, file_urls: [curren
                 <Bot className="w-4 h-4" /> Create My Agent
               </button>
             )}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2 w-full max-w-xl">
-              {["dog looking at a PC screen, wearing glasses, cyberpunk style", "golden retriever in a suit trading crypto, cinematic lighting", "cat as a NASA scientist, realistic photo"].map((ex, i) => (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2 w-full max-w-xl">
+              {["dog looking at a PC screen, wearing glasses, cyberpunk", "golden retriever in a suit trading crypto, cinematic lighting", "cat as a NASA scientist, realistic photo"].map((ex, i) => (
                 <button key={i} onClick={() => setPrompt(ex)}
-                  className="px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm text-white/70 text-left transition-all">
+                  className="px-3 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs text-white/60 text-left transition-all">
                   {ex}
                 </button>
               ))}
@@ -485,7 +546,7 @@ An image has been attached — factor it into your prompts.`, file_urls: [curren
           </div>
         ) : (
           messages.map((msg, i) => (
-            <motion.div key={msg.id || i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            <motion.div key={msg.id || i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
               <div className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-2xl px-4 py-3 rounded-2xl text-sm leading-relaxed ${
                   msg.role === "user"
@@ -498,25 +559,25 @@ An image has been attached — factor it into your prompts.`, file_urls: [curren
                   {msg.streaming ? (
                     <div className="flex items-center gap-2">
                       <div className="flex gap-1">
-                        {[0,1,2].map(j => <div key={j} className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce" style={{animationDelay: `${j*0.15}s`}} />)}
+                        {[0,1,2].map(j => <div key={j} className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce" style={{animationDelay:`${j*0.15}s`}} />)}
                       </div>
-                      <span className="text-purple-300/60 text-xs animate-pulse">⚡ Prompto is quantum-generating your prompts...</span>
+                      <span className="text-purple-300/60 text-xs animate-pulse">⚡ Quantum-generating prompts...</span>
                     </div>
                   ) : msg.role === "assistant" ? (
                     <>
-                      <div className="prose prose-sm prose-invert max-w-none [&>p]:my-2 [&>p]:leading-relaxed [&_code]:bg-white/10 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-black/40 [&_pre]:p-3 [&_pre]:rounded-xl [&_pre]:border [&_pre]:border-white/10 [&_pre]:text-xs [&_pre]:overflow-x-auto">
+                      <div className="prose prose-sm prose-invert max-w-none [&>p]:my-2 [&_code]:bg-white/10 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-black/40 [&_pre]:p-3 [&_pre]:rounded-xl [&_pre]:border [&_pre]:border-white/10 [&_pre]:text-xs [&_pre]:overflow-x-auto">
                         <ReactMarkdown>{msg.content}</ReactMarkdown>
                       </div>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(msg.content);
-                          setCopiedIdx(i);
-                          setTimeout(() => setCopiedIdx(null), 2000);
-                        }}
-                        className="mt-2 flex items-center gap-1.5 text-[11px] text-white/30 hover:text-white/60 transition-colors"
-                      >
-                        {copiedIdx === i ? <><Check className="w-3 h-3" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
-                      </button>
+                      <div className="mt-2 flex items-center gap-3">
+                        <button onClick={() => { navigator.clipboard.writeText(msg.content); setCopiedIdx(i); setTimeout(() => setCopiedIdx(null), 2000); }}
+                          className="flex items-center gap-1 text-[11px] text-white/30 hover:text-white/60 transition-colors">
+                          {copiedIdx === i ? <><Check className="w-3 h-3" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
+                        </button>
+                        <button onClick={() => addToKnowledge(msg.content)} disabled={loading}
+                          className="flex items-center gap-1 text-[11px] text-purple-400/50 hover:text-purple-300 transition-colors disabled:opacity-40">
+                          <Brain className="w-3 h-3" /> Add to Agent
+                        </button>
+                      </div>
                     </>
                   ) : msg.content}
                 </div>
@@ -524,186 +585,144 @@ An image has been attached — factor it into your prompts.`, file_urls: [curren
             </motion.div>
           ))
         )}
-        {loading && (
-          <div className="flex justify-start">
-            <div className="bg-white/5 border border-white/10 px-4 py-3 rounded-2xl">
-              <div className="flex gap-2">
-                <div className="w-2 h-2 bg-white/40 rounded-full animate-bounce" />
-                <div className="w-2 h-2 bg-white/40 rounded-full animate-bounce [animation-delay:0.2s]" />
-                <div className="w-2 h-2 bg-white/40 rounded-full animate-bounce [animation-delay:0.4s]" />
-              </div>
-            </div>
-          </div>
-        )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Suggestions */}
-      {showSuggestions && suggestions.length > 0 && (
-        <div className="px-4 py-3 border-t border-white/10 max-w-3xl w-full mx-auto">
-          <div className="flex items-center gap-2 mb-2">
-            <Lightbulb className="w-4 h-4 text-yellow-400/60" />
-            <p className="text-white/40 text-xs font-medium">Suggestions</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {suggestions.map((s, i) => (
-              <button key={i} onClick={() => setPrompt(s)}
-                className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-xs text-white/70 transition-all">
-                {s}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* ── FIXED BOTTOM PANEL ── */}
+      <div className="flex-shrink-0 border-t border-white/10 bg-black">
+        {/* Suggestions */}
+        <AnimatePresence>
+          {showSuggestions && suggestions.length > 0 && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+              className="px-4 pt-2 max-w-3xl w-full mx-auto">
+              <div className="flex items-center gap-2 mb-1.5">
+                <Lightbulb className="w-3.5 h-3.5 text-yellow-400/60" />
+                <p className="text-white/30 text-[10px] uppercase tracking-widest">Suggestions</p>
+              </div>
+              <div className="flex flex-wrap gap-1.5 pb-2">
+                {suggestions.map((s, i) => (
+                  <button key={i} onClick={() => setPrompt(s)}
+                    className="px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-xs text-white/60 transition-all">
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* Toolkit Panel */}
-      {showToolkit && isAuthorized && (
-        <div className="border-t border-white/10 px-4 py-3 max-w-3xl w-full mx-auto space-y-3">
-          {/* Smart Actions */}
-          <div className="flex gap-2 flex-wrap">
-            <button onClick={() => handleSmartAction('random')} disabled={loading}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 rounded-full text-xs text-purple-300 transition-all disabled:opacity-40">
-              <Shuffle className="w-3 h-3" /> Random
-            </button>
-            <button onClick={() => handleSmartAction('fix')} disabled={loading}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 hover:bg-orange-500/25 border border-orange-500/30 rounded-full text-xs text-orange-300 transition-all disabled:opacity-40">
-              <Zap className="w-3 h-3" /> Fix My Shot
-            </button>
-            <button onClick={() => handleSmartAction('viral')} disabled={loading}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-pink-500/15 hover:bg-pink-500/25 border border-pink-500/30 rounded-full text-xs text-pink-300 transition-all disabled:opacity-40">
-              <TrendingUp className="w-3 h-3" /> Make it Viral
-            </button>
-          </div>
-          {/* Style */}
-          <div>
-            <p className="text-white/30 text-[10px] uppercase tracking-widest mb-1.5">Style</p>
-            <div className="flex flex-wrap gap-1.5">
-              {STYLES.map(s => (
-                <button key={s} onClick={() => handleStyleChip(s)}
-                  className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all border ${
-                    activeStyle === s ? 'bg-cyan-500/25 border-cyan-500/60 text-cyan-300' : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80'
-                  }`}>{s}</button>
-              ))}
-            </div>
-          </div>
-          {/* Shot */}
-          <div>
-            <p className="text-white/30 text-[10px] uppercase tracking-widest mb-1.5">Shot Type</p>
-            <div className="flex flex-wrap gap-1.5">
-              {SHOTS.map(s => (
-                <button key={s} onClick={() => handleShotChip(s)}
-                  className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all border ${
-                    activeShot === s ? 'bg-yellow-500/25 border-yellow-500/60 text-yellow-300' : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80'
-                  }`}>{s}</button>
-              ))}
-            </div>
-          </div>
-          {/* Mood */}
-          <div>
-            <p className="text-white/30 text-[10px] uppercase tracking-widest mb-1.5">Mood & Lighting</p>
-            <div className="flex flex-wrap gap-1.5">
-              {MOODS.map(s => (
-                <button key={s} onClick={() => handleMoodChip(s)}
-                  className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all border ${
-                    activeMood === s ? 'bg-pink-500/25 border-pink-500/60 text-pink-300' : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80'
-                  }`}>{s}</button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+        {/* Toolkit Panel */}
+        <AnimatePresence>
+          {showToolkit && isAuthorized && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+              className="px-4 py-3 max-w-3xl w-full mx-auto space-y-2.5 border-b border-white/10">
+              <div className="flex gap-2 flex-wrap">
+                {[
+                  { action: 'random', icon: Shuffle, label: 'Random', color: 'purple' },
+                  { action: 'fix', icon: Zap, label: 'Fix Shot', color: 'orange' },
+                  { action: 'viral', icon: TrendingUp, label: 'Make Viral', color: 'pink' },
+                ].map(({ action, icon: Icon, label, color }) => (
+                  <button key={action} onClick={() => handleSmartAction(action)} disabled={loading}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all disabled:opacity-40 bg-${color}-500/15 hover:bg-${color}-500/25 border border-${color}-500/30 text-${color}-300`}>
+                    <Icon className="w-3 h-3" /> {label}
+                  </button>
+                ))}
+              </div>
+              <div>
+                <p className="text-white/25 text-[9px] uppercase tracking-widest mb-1">Style</p>
+                <div className="flex flex-wrap gap-1">
+                  {STYLES.map(s => (
+                    <button key={s} onClick={() => handleStyleChip(s)}
+                      className={`px-2 py-0.5 rounded-full text-[11px] border transition-all ${activeStyle === s ? 'bg-cyan-500/25 border-cyan-500/50 text-cyan-300' : 'bg-white/5 border-white/10 text-white/40 hover:text-white/70'}`}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-white/25 text-[9px] uppercase tracking-widest mb-1">Shot</p>
+                <div className="flex flex-wrap gap-1">
+                  {SHOTS.map(s => (
+                    <button key={s} onClick={() => handleShotChip(s)}
+                      className={`px-2 py-0.5 rounded-full text-[11px] border transition-all ${activeShot === s ? 'bg-yellow-500/25 border-yellow-500/50 text-yellow-300' : 'bg-white/5 border-white/10 text-white/40 hover:text-white/70'}`}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-white/25 text-[9px] uppercase tracking-widest mb-1">Mood</p>
+                <div className="flex flex-wrap gap-1">
+                  {MOODS.map(s => (
+                    <button key={s} onClick={() => handleMoodChip(s)}
+                      className={`px-2 py-0.5 rounded-full text-[11px] border transition-all ${activeMood === s ? 'bg-pink-500/25 border-pink-500/50 text-pink-300' : 'bg-white/5 border-white/10 text-white/40 hover:text-white/70'}`}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* Input */}
-      <div className="border-t border-white/10 px-4 py-4 max-w-3xl w-full mx-auto">
-        {/* Image preview */}
-        {uploadedImage && (
-          <div className="mb-3 flex items-center gap-3">
-            <div className="relative inline-block">
-              <img src={uploadedImage.preview} alt="upload" className="h-14 w-14 object-cover rounded-xl border border-white/20" />
-              <button onClick={() => setUploadedImage(null)}
-                className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-black border border-white/20 rounded-full flex items-center justify-center text-white/70 hover:text-white">
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-white/50 text-xs">Image attached</span>
-              {/* Auto-analyze toggle */}
-              <button
-                onClick={() => setAutoAnalyze(v => !v)}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all border ${
-                  autoAnalyze
-                    ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400'
-                    : 'bg-white/5 border-white/10 text-white/40 hover:text-white/70'
-                }`}
-              >
+        {/* Image preview + auth warning */}
+        <div className="px-4 max-w-3xl w-full mx-auto">
+          {uploadedImage && (
+            <div className="mt-2 flex items-center gap-3">
+              <div className="relative inline-block">
+                <img src={uploadedImage.preview} alt="upload" className="h-12 w-12 object-cover rounded-xl border border-white/20" />
+                <button onClick={() => setUploadedImage(null)} className="absolute -top-1 -right-1 w-4 h-4 bg-black border border-white/20 rounded-full flex items-center justify-center text-white/70">
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              </div>
+              <button onClick={() => setAutoAnalyze(v => !v)}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all ${autoAnalyze ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' : 'bg-white/5 border-white/10 text-white/40'}`}>
                 <Eye className="w-3 h-3" />
-                {autoAnalyze ? 'Auto-Analyze ON — will output replication prompt' : 'Auto-Analyze OFF — tap to enable'}
+                {autoAnalyze ? 'Auto-Analyze ON' : 'Auto-Analyze OFF'}
               </button>
             </div>
-          </div>
-        )}
+          )}
+          {!isAuthorized && (
+            <div className="flex items-center gap-2 px-3 py-2 my-2 bg-purple-500/10 border border-purple-500/30 rounded-xl">
+              <Lock className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
+              <p className="text-purple-300/80 text-xs">{!walletAddress ? 'Connect your Kaspa wallet.' : 'Create your agent to unlock.'}</p>
+            </div>
+          )}
+        </div>
 
-        {!isAuthorized && (
-          <div className="flex items-center gap-3 px-4 py-3 mb-3 bg-purple-500/10 border border-purple-500/30 rounded-2xl">
-            <Lock className="w-4 h-4 text-purple-400 flex-shrink-0" />
-            <p className="text-purple-300/80 text-xs">
-              {!walletAddress ? 'Connect your Kaspa wallet to use Prompto.' : 'Create your agent to unlock the chat.'}
-            </p>
-          </div>
-        )}
+        {/* Input bar */}
+        <div className="px-4 pb-4 pt-2 max-w-3xl w-full mx-auto">
+          <form onSubmit={handleSubmit} className="flex gap-2 items-center">
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+              onChange={e => { if (e.target.files[0]) handleImageUpload(e.target.files[0]); e.target.value = ''; }} />
 
-        <form onSubmit={handleSubmit} className="flex gap-2 items-center">
-          <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
-            onChange={(e) => { if (e.target.files[0]) handleImageUpload(e.target.files[0]); e.target.value = ''; }} />
+            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || !isAuthorized}
+              className={`w-10 h-10 disabled:opacity-40 border rounded-full flex items-center justify-center flex-shrink-0 transition-all ${uploadedImage ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400' : 'bg-white/5 hover:bg-white/10 border-white/10 text-white/60'}`}>
+              {uploading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <ImagePlus className="w-4 h-4" />}
+            </button>
 
-          {/* Upload button */}
-          <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || !isAuthorized}
-            className={`w-11 h-11 disabled:opacity-40 border rounded-full flex items-center justify-center transition-all flex-shrink-0 ${
-              uploadedImage ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400' : 'bg-white/5 hover:bg-white/10 border-white/10 text-white/60'
-            }`}
-            title="Attach image">
-            {uploading
-              ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              : <ImagePlus className="w-4 h-4" />
-            }
-          </button>
+            <button type="button" onClick={() => setShowToolkit(v => !v)} disabled={!isAuthorized}
+              className={`w-10 h-10 disabled:opacity-40 border rounded-full flex items-center justify-center flex-shrink-0 transition-all ${showToolkit ? 'bg-purple-500/20 border-purple-500/40 text-purple-400' : 'bg-white/5 hover:bg-white/10 border-white/10 text-white/60'}`}>
+              <Sliders className="w-4 h-4" />
+            </button>
 
-          <input
-            type="text"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e); } }}
-            placeholder={
-              !isAuthorized ? 'Wallet + agent required...'
-              : uploadedImage && autoAnalyze ? 'Optional note about the image...'
-              : uploadedImage ? 'Describe what you want with this image...'
-              : 'e.g. "dog looking at the PC, cyberpunk..." — Prompto gives you 3 variations'
-            }
-            disabled={!isAuthorized}
-            className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-purple-500/50 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-          />
+            <input type="text" value={prompt} onChange={e => setPrompt(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e); } }}
+              placeholder={!isAuthorized ? 'Wallet + agent required...' : uploadedImage && autoAnalyze ? 'Optional note...' : 'Any idea → 3 prompt variations'}
+              disabled={!isAuthorized}
+              className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-purple-500/50 transition-all disabled:opacity-40 text-sm" />
 
-          {/* Toolkit toggle */}
-          <button type="button" onClick={() => setShowToolkit(v => !v)} disabled={!isAuthorized}
-            className={`w-11 h-11 disabled:opacity-40 border rounded-full flex items-center justify-center transition-all flex-shrink-0 ${
-              showToolkit ? 'bg-purple-500/20 border-purple-500/40 text-purple-400' : 'bg-white/5 hover:bg-white/10 border-white/10 text-white/60'
-            }`} title="Prompt Toolkit">
-            <Sliders className="w-4 h-4" />
-          </button>
+            <button type="button" onClick={enhancePrompt} disabled={loading || !prompt.trim() || !isAuthorized}
+              className="w-10 h-10 bg-white/5 hover:bg-white/10 disabled:opacity-40 border border-white/10 rounded-full flex items-center justify-center flex-shrink-0 transition-all">
+              <Wand2 className="w-4 h-4 text-white" />
+            </button>
 
-          {/* Enhance button */}
-          <button type="button" onClick={enhancePrompt} disabled={loading || !prompt.trim() || !isAuthorized}
-            className="w-11 h-11 bg-white/5 hover:bg-white/10 disabled:opacity-40 border border-white/10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
-            title="Enhance prompt with AI">
-            <Wand2 className="w-4 h-4 text-white" />
-          </button>
-
-          {/* Send */}
-          <button type="submit" disabled={loading || (!prompt.trim() && !uploadedImage) || !isAuthorized}
-            className="w-11 h-11 bg-purple-600/40 hover:bg-purple-600/60 disabled:opacity-40 border border-purple-500/30 rounded-full flex items-center justify-center transition-all flex-shrink-0">
-            <Send className="w-4 h-4 text-white" />
-          </button>
-        </form>
+            <button type="submit" disabled={loading || (!prompt.trim() && !uploadedImage) || !isAuthorized}
+              className="w-10 h-10 bg-purple-600/40 hover:bg-purple-600/60 disabled:opacity-40 border border-purple-500/30 rounded-full flex items-center justify-center flex-shrink-0 transition-all">
+              <Send className="w-4 h-4 text-white" />
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
