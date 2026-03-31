@@ -152,7 +152,11 @@ export default function PromptPage() {
     }
   };
 
+  // Security gate: LLM calls are only allowed for wallet-authenticated agent owners
+  const isAuthorized = !!(walletAddress && agentCreated);
+
   const generateSuggestions = async (text) => {
+    if (!isAuthorized) return;
     try {
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `Generate 3 short, actionable prompt enhancement suggestions (2-5 words each) to improve this user prompt: "${text}". Return as JSON array: ["suggestion1", "suggestion2", "suggestion3"]`,
@@ -169,6 +173,7 @@ export default function PromptPage() {
   };
 
   const enhancePrompt = async () => {
+    if (!isAuthorized) { toast.error('Connect wallet and create your agent first.'); return; }
     if (!prompt.trim()) return;
     setLoading(true);
     try {
@@ -203,6 +208,7 @@ export default function PromptPage() {
   };
 
   const analyzeImage = async () => {
+    if (!isAuthorized) { toast.error('Connect wallet and create your agent first.'); return; }
     if (!uploadedImage) return;
     setAnalyzing(true);
     try {
@@ -244,6 +250,7 @@ Format your response as:
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isAuthorized) { toast.error('Connect wallet and create your agent first.'); return; }
     if (!prompt.trim() && !uploadedImage) return;
     const userMessage = { role: "user", content: prompt, imagePreview: uploadedImage?.preview };
     setMessages(prev => [...prev, userMessage]);
@@ -515,10 +522,18 @@ Respond to this in a natural, conversational tone as a seasoned director would â
         )}
         {!analyzeMode && (
           <>
+            {!isAuthorized && (
+              <div className="flex items-center gap-3 px-4 py-3 mb-3 bg-purple-500/10 border border-purple-500/30 rounded-2xl">
+                <Lock className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                <p className="text-purple-300/80 text-xs">
+                  {!walletAddress ? 'Connect your Kaspa wallet to use Prompto.' : 'Create your agent to unlock the chat â€” your session will be sealed to your wallet.'}
+                </p>
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="flex gap-2">
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
                 onChange={(e) => handleImageUpload(e.target.files[0])} />
-              <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
+              <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || !isAuthorized}
                 className="w-11 h-11 bg-white/5 hover:bg-white/10 disabled:opacity-40 border border-white/10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
                 title="Upload image">
                 {uploading
@@ -530,15 +545,16 @@ Respond to this in a natural, conversational tone as a seasoned director would â
                 type="text"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder={uploadedImage ? "Describe what you want from this image..." : "Type a prompt..."}
-                className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-purple-500/50 transition-all"
+                placeholder={!isAuthorized ? 'Wallet + agent required...' : uploadedImage ? 'Describe what you want from this image...' : 'Type a prompt...'}
+                disabled={!isAuthorized}
+                className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-purple-500/50 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               />
-              <button type="button" onClick={enhancePrompt} disabled={loading || !prompt.trim()}
+              <button type="button" onClick={enhancePrompt} disabled={loading || !prompt.trim() || !isAuthorized}
                 className="w-11 h-11 bg-white/5 hover:bg-white/10 disabled:opacity-40 border border-white/10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
                 title="Enhance with AI">
                 <Wand2 className="w-4 h-4 text-white" />
               </button>
-              <button type="submit" disabled={loading || (!prompt.trim() && !uploadedImage)}
+              <button type="submit" disabled={loading || (!prompt.trim() && !uploadedImage) || !isAuthorized}
                 className="w-11 h-11 bg-purple-600/40 hover:bg-purple-600/60 disabled:opacity-40 border border-purple-500/30 rounded-full flex items-center justify-center transition-all flex-shrink-0">
                 <Send className="w-4 h-4 text-white" />
               </button>
