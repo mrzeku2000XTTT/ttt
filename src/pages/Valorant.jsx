@@ -4,8 +4,10 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { ArrowLeft, Crosshair, Target, Trophy, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 export default function ValorantPage() {
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
       {/* Background Image */}
@@ -97,6 +99,7 @@ export default function ValorantPage() {
               VALORANT integration coming soon to TTT
             </p>
             <Button
+              onClick={() => navigate(createPageUrl('ValorantArena'))}
               className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-8 py-6 text-lg font-bold"
             >
               <Target className="w-5 h-5 mr-2" />

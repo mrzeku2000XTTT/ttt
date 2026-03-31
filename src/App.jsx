@@ -11,6 +11,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import HworkPage from './pages/Hwork';
 import XunhuaPage from './pages/Xunhua';
+import ValorantArenaPage from './pages/ValorantArena';
 import FreedomPage from './pages/Freedom';
 import VoxaPage from './pages/Voxa';
 import DAGVisualizerPage from './pages/DAGVisualizer';
@@ -78,6 +79,7 @@ const AuthenticatedApp = () => {
       <Route path="/Cinekas" element={<CinekasPage />} />
       <Route path="/Speed" element={<SpeedPage />} />
       <Route path="/Farlands" element={<FarlandsPage />} />
+      <Route path="/ValorantArena" element={<ValorantArenaPage />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
