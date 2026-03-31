@@ -709,10 +709,10 @@ export default function XunhuaPage() {
   };
 
   return (
-    <div className="bg-black flex flex-col touch-none" style={{ height: '100dvh', minHeight: '100vh', overflow: 'hidden' }}>
-      <div className="flex-1 flex flex-col p-3" style={{ overflow: 'hidden', touchAction: 'none' }}>
+    <div className="bg-black flex flex-col touch-none" style={{ position: 'fixed', inset: 0, overflow: 'hidden' }}>
+      <div className="flex flex-col p-2" style={{ height: '100%', overflow: 'hidden', touchAction: 'none' }}>
         {/* Top Controls */}
-        <div className="flex items-center justify-between mb-3 gap-2">
+        <div className="flex items-center justify-between mb-2 gap-2" style={{ flexShrink: 0 }}>
           <div className="flex items-center gap-2">
             <h1 className="text-white font-bold text-lg">Xùnhuà</h1>
             <p className="text-white/40 text-xs hidden sm:block">AI Sketch Studio</p>
@@ -777,7 +777,7 @@ export default function XunhuaPage() {
         </div>
 
         {/* Drawing Tools */}
-        <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <div className="flex items-center gap-1.5 mb-2 overflow-x-auto scrollbar-hide" style={{ flexShrink: 0, flexWrap: 'nowrap' }}>
           <Button onClick={undo} disabled={historyStep <= 0} size="sm" className="h-8 px-2 bg-white/5 text-white disabled:opacity-30">
             <Undo className="w-4 h-4" />
           </Button>
@@ -1220,7 +1220,7 @@ export default function XunhuaPage() {
         </div>
 
         {/* Bottom Input */}
-        <div className="flex gap-2 mt-3 flex-shrink-0">
+        <div className="flex gap-2 mt-2" style={{ flexShrink: 0 }}>
           <Input
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
