@@ -709,12 +709,7 @@ export default function XunhuaPage() {
   };
 
   return (
-    <div className="fixed inset-0 bg-black flex flex-col touch-none overscroll-none" style={{
-      top: 'calc(var(--sat, 0px) + 7.5rem)',
-      bottom: 'calc(env(safe-area-inset-bottom, 0px) + 4rem)',
-      overflow: 'hidden',
-      position: 'fixed'
-    }}>
+    <div className="min-h-screen bg-black flex flex-col touch-none overscroll-none" style={{ overflow: 'hidden' }}>
       <div className="flex-1 flex flex-col p-3" style={{ overflow: 'hidden', touchAction: 'none' }}>
         {/* Top Controls */}
         <div className="flex items-center justify-between mb-3 gap-2">
