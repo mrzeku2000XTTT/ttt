@@ -1220,20 +1220,20 @@ export default function XunhuaPage() {
         </div>
 
         {/* Bottom Input */}
-        <div className="flex gap-2 mt-3">
+        <div className="flex gap-2 mt-3 flex-shrink-0">
           <Input
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && !autoRender && handleGenerate()}
             placeholder="Describe your drawing..."
-            className="flex-1 bg-black border-white/20 text-white h-11"
+            className="flex-1 bg-black border-white/20 text-white h-14"
             disabled={isGenerating}
           />
           {!autoRender && (
             <Button
               onClick={handleGenerate}
               disabled={isGenerating || !prompt.trim()}
-              className="h-11 px-6 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white"
+              className="h-14 px-6 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white"
             >
               {isGenerating ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
