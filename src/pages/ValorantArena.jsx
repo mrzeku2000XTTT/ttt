@@ -259,7 +259,7 @@ export default function ValorantArena() {
 
     // Controls
     const onMouseDown = (e) => {
-      if (!lockedRef.current) { canvas.requestPointerLock(); return; }
+      if (!lockedRef.current) { try { canvas.requestPointerLock(); } catch(e) {} return; }
       const cfg = SCENARIOS[currentScenarioRef.current];
       if (!cfg || cfg.shootMode === "hold") return;
       statsRef.current.shots++;
