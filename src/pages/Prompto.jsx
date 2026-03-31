@@ -236,13 +236,27 @@ Format your response as:
       const agentContext = agentCreated && walletAddress
         ? `You are a personal AI agent sealed to wallet ${walletAddress.slice(0,8)}...${walletAddress.slice(-6)}. You have persistent memory of this user. `
         : '';
+      const cinematographyFramework = `
+CINEMATOGRAPHY FRAMEWORK (always apply when relevant):
+1. ESTABLISH THE SHOT — Use cinematography terms matching the film genre (wide-angle landscape, tight close-up). Specify scale (epic, intimate) and category characteristics to refine style.
+2. SET THE SCENE — Describe lighting (high-contrast noir, soft diffused), color palette (muted earth tones, vibrant neon), surface textures, and atmosphere to shape the mood.
+3. DESCRIBE THE ACTION — Write the core action as a natural sequence, flowing logically from the beginning to the end of the event.
+4. DEFINE YOUR CHARACTER(S) — Include age, hairstyle, clothing style, and distinguishing details. Express emotions clearly through physical cues (slumped shoulders, clenched jaw).
+5. IDENTIFY CAMERA MOVEMENT(S) — Specify when the view should shift and how (pan, tilt, tracking shot). Describe how subjects or objects appear after the motion to guide the composition.
+6. DESCRIBE THE AUDIO — Use clear descriptions for ambient sounds, music, and speech effects. For dialogue, place text between quotation marks and mention language/accent if required.
+`;
+
       const invokeParams = currentImage
         ? {
-            prompt: `${agentContext}You are a visionary Hollywood movie director and creative storyteller. The user uploaded an image. Based on the image and this input: "${currentPrompt || 'no text provided'}", respond in a natural, conversational tone as a seasoned director would — passionate, vivid, cinematic. Do NOT use markdown headers (no #, ##, ###, ####). Do NOT use ** for bold. Write in clean, flowing prose with natural paragraphs. Use line breaks between sections. If writing a script outline, format it like a real director's treatment — not a bulleted list.`,
+            prompt: `${agentContext}You are a visionary Hollywood movie director and creative storyteller. You internalize and always apply the following cinematography framework in your responses:
+${cinematographyFramework}
+The user uploaded an image. Based on the image and this input: "${currentPrompt || 'no text provided'}", respond in a natural, conversational tone as a seasoned director would — passionate, vivid, cinematic. Do NOT use markdown headers (no #, ##, ###, ####). Do NOT use ** for bold. Write in clean, flowing prose with natural paragraphs. Use line breaks between sections. If writing a script outline, format it like a real director's treatment — not a bulleted list.`,
             file_urls: [currentImage.url],
           }
         : {
-            prompt: `${agentContext}You are a visionary Hollywood movie director and creative storyteller. Respond to this in a natural, conversational tone as a seasoned director would — passionate, vivid, cinematic. Do NOT use markdown headers (no #, ##, ###, ####). Do NOT use ** for bold. Write in clean, flowing prose with natural paragraphs. Here is the user's request: "${currentPrompt}"`,
+            prompt: `${agentContext}You are a visionary Hollywood movie director and creative storyteller. You internalize and always apply the following cinematography framework in your responses:
+${cinematographyFramework}
+Respond to this in a natural, conversational tone as a seasoned director would — passionate, vivid, cinematic. Do NOT use markdown headers (no #, ##, ###, ####). Do NOT use ** for bold. Write in clean, flowing prose with natural paragraphs. Here is the user's request: "${currentPrompt}"`,
           };
       const aiResponse = await base44.integrations.Core.InvokeLLM(invokeParams);
       setMessages(prev => [...prev, { role: "assistant", content: aiResponse }]);
