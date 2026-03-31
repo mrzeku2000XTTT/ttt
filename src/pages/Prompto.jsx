@@ -211,7 +211,6 @@ export default function PromptPage() {
     const currentImage = uploadedImage;
     const isAnalyzeRun = autoAnalyze && !!currentImage;
 
-    // Add user message
     const userMessage = {
       role: "user",
       content: isAnalyzeRun
@@ -225,51 +224,89 @@ export default function PromptPage() {
     setShowSuggestions(false);
     setLoading(true);
 
+    // Add placeholder streaming message
+    const streamId = Date.now();
+    setMessages(prev => [...prev, { role: "assistant", content: "", streaming: true, id: streamId }]);
+
     try {
       let aiResponse;
 
       if (isAnalyzeRun) {
-        // Auto-analyze mode: analyze image to output how to recreate it
         aiResponse = await base44.integrations.Core.InvokeLLM({
-          prompt: `You are an expert in visual design, animation, and digital art. Analyze this image in detail and provide:
+          prompt: `You are an elite AI image prompt engineer. Analyze this image deeply and output:
 
-1. **Image Type**: cartoon, anime, 3D render, photograph, digital art, etc.
-2. **Art Style**: Style, technique, and visual characteristics
-3. **Color Palette**: Dominant colors, mood, lighting
-4. **Composition**: Subject, framing, perspective
-5. **Mood & Atmosphere**: Overall feeling
+**📸 Visual Analysis**
+- Image type, art style, technique
+- Color palette, lighting, mood
+- Composition, camera angle, depth of field
 
-Then provide a DETAILED, copy-ready prompt (150-300 words) that someone can paste into an AI image generator to recreate this exact style.
+**✨ Replication Prompts — 3 Variations**
 
-Format:
-**Analysis**
-[analysis here]
+**Prompt A — Exact Match:**
+[150-word prompt to recreate this exactly]
 
-**Replication Prompt**
-[ready-to-use prompt here]
-${currentPrompt ? `\nUser note: ${currentPrompt}` : ''}`,
+**Prompt B — Enhanced Version:**
+[150-word prompt with cinematic upgrades]
+
+**Prompt C — Alternative Angle:**
+[150-word prompt with a creative twist]
+
+**🎯 Key Tips to nail this shot:**
+[2-3 specific tips]
+${currentPrompt ? `\nUser's goal: ${currentPrompt}` : ''}`,
           file_urls: [currentImage.url],
           model: "gpt_5"
         });
       } else {
         const agentContext = walletAddress
-          ? `You are a personal AI agent sealed to wallet ${walletAddress.slice(0,8)}...${walletAddress.slice(-6)}. `
+          ? `You are a personal AI prompt engineering agent sealed to wallet ${walletAddress.slice(0,8)}...${walletAddress.slice(-6)}. `
           : '';
+
+        const PROMPT_ENGINEER_SYSTEM = `${agentContext}You are PROMPTO — an elite AI image prompt engineer and creative director. Your job is to take ANY basic idea and transform it into multiple detailed, production-ready AI image generation prompts.
+
+For EVERY request:
+1. Understand the user's core vision (even if vague)
+2. Output 3 variations of detailed prompts (Exact / Cinematic / Stylized)
+3. Each prompt must include: subject, pose/action, environment, lighting, camera angle, art style, color palette, mood, technical quality tags
+4. Give real-time iterative suggestions to refine further
+5. Be fluid, fast, and quantum — like a creative AI that thinks in images
+
+Format every response like this:
+**🎯 Prompto reads your vision:** [1 line interpretation]
+
+**Prompt A — Direct Shot:**
+\`\`\`
+[detailed prompt, 100-150 words]
+\`\`\`
+
+**Prompt B — Cinematic Cut:**
+\`\`\`
+[dramatic cinematic version, 100-150 words]
+\`\`\`
+
+**Prompt C — Stylized:**
+\`\`\`
+[unique art style variation, 100-150 words]
+\`\`\`
+
+**⚡ Quantum Refine — try adding:**
+[3 quick suggestions to evolve the prompt further]`;
+
         const invokeParams = currentImage
-          ? {
-              prompt: `${agentContext}You are a visionary Hollywood movie director and creative storyteller. The user uploaded an image. Based on it and this input: "${currentPrompt || 'describe this image creatively'}", respond in a passionate, cinematic, conversational tone. Write in clean flowing prose, no markdown headers.`,
-              file_urls: [currentImage.url],
-            }
-          : {
-              prompt: `${agentContext}You are a visionary Hollywood movie director and creative storyteller. Respond to this request in a passionate, vivid, cinematic tone. Write in clean flowing prose, no markdown headers. Request: "${currentPrompt}"`,
-            };
-        aiResponse = await base44.integrations.Core.InvokeLLM(invokeParams);
+          ? { prompt: `${PROMPT_ENGINEER_SYSTEM}\n\nUser request: "${currentPrompt || 'describe and prompt this image'}"
+
+An image has been attached — factor it into your prompts.`, file_urls: [currentImage.url] }
+          : { prompt: `${PROMPT_ENGINEER_SYSTEM}\n\nUser request: "${currentPrompt}"` };
+
+        aiResponse = await base44.integrations.Core.InvokeLLM({ ...invokeParams, model: "gpt_5" });
       }
 
-      setMessages(prev => [...prev, { role: "assistant", content: aiResponse }]);
+      // Replace streaming placeholder with real content
+      setMessages(prev => prev.map(m => m.id === streamId ? { role: "assistant", content: aiResponse } : m));
     } catch (err) {
       console.error("Prompto error:", err);
       toast.error("Failed to generate response. Please try again.");
+      setMessages(prev => prev.filter(m => m.id !== streamId));
       setMessages(prev => [...prev, { role: "assistant", content: "Something went wrong. Please try again." }]);
     } finally {
       setLoading(false);
@@ -378,7 +415,7 @@ ${currentPrompt ? `\nUser note: ${currentPrompt}` : ''}`,
               </button>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2 w-full max-w-xl">
-              {["Write a movie script outline", "Explain quantum computing simply", "Create a marketing campaign"].map((ex, i) => (
+              {["dog looking at a PC screen, wearing glasses, cyberpunk style", "golden retriever in a suit trading crypto, cinematic lighting", "cat as a NASA scientist, realistic photo"].map((ex, i) => (
                 <button key={i} onClick={() => setPrompt(ex)}
                   className="px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm text-white/70 text-left transition-all">
                   {ex}
@@ -388,7 +425,7 @@ ${currentPrompt ? `\nUser note: ${currentPrompt}` : ''}`,
           </div>
         ) : (
           messages.map((msg, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            <motion.div key={msg.id || i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
               <div className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-2xl px-4 py-3 rounded-2xl text-sm leading-relaxed ${
                   msg.role === "user"
@@ -398,9 +435,16 @@ ${currentPrompt ? `\nUser note: ${currentPrompt}` : ''}`,
                   {msg.imagePreview && (
                     <img src={msg.imagePreview} alt="uploaded" className="h-28 rounded-xl object-cover mb-2 border border-white/10" />
                   )}
-                  {msg.role === "assistant" ? (
+                  {msg.streaming ? (
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1">
+                        {[0,1,2].map(j => <div key={j} className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce" style={{animationDelay: `${j*0.15}s`}} />)}
+                      </div>
+                      <span className="text-purple-300/60 text-xs animate-pulse">⚡ Prompto is quantum-generating your prompts...</span>
+                    </div>
+                  ) : msg.role === "assistant" ? (
                     <>
-                      <div className="prose prose-sm prose-invert max-w-none [&>p]:my-2 [&>p]:leading-relaxed">
+                      <div className="prose prose-sm prose-invert max-w-none [&>p]:my-2 [&>p]:leading-relaxed [&_code]:bg-white/10 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-black/40 [&_pre]:p-3 [&_pre]:rounded-xl [&_pre]:border [&_pre]:border-white/10 [&_pre]:text-xs [&_pre]:overflow-x-auto">
                         <ReactMarkdown>{msg.content}</ReactMarkdown>
                       </div>
                       <button
@@ -516,7 +560,7 @@ ${currentPrompt ? `\nUser note: ${currentPrompt}` : ''}`,
               !isAuthorized ? 'Wallet + agent required...'
               : uploadedImage && autoAnalyze ? 'Optional note about the image...'
               : uploadedImage ? 'Describe what you want with this image...'
-              : 'Type a prompt...'
+              : 'e.g. "dog looking at the PC, cyberpunk..." — Prompto gives you 3 variations'
             }
             disabled={!isAuthorized}
             className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-purple-500/50 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
