@@ -3,9 +3,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Trash2, Wand2, Download, Palette, Eraser, Paintbrush, FlipHorizontal, ToggleLeft, ToggleRight, Undo, Redo, Circle, Square, Droplet, Sparkles, Pencil, Highlighter, Brush, Pipette, Stamp, Upload, Move, Maximize2, Layers, Eye, EyeOff, Trash, Type } from "lucide-react";
+import { Loader2, Trash2, Wand2, Download, Palette, Eraser, Paintbrush, FlipHorizontal, ToggleLeft, ToggleRight, Undo, Redo, Circle, Square, Droplet, Sparkles, Pencil, Highlighter, Brush, Pipette, Stamp, Upload, Move, Maximize2, Layers, Eye, EyeOff, Trash, Type, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function XunhuaPage() {
+  const navigate = useNavigate();
   const canvasRef = useRef(null);
   const resultCanvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -714,6 +716,9 @@ export default function XunhuaPage() {
         {/* Top Controls */}
         <div className="flex items-center justify-between mb-2 gap-2" style={{ flexShrink: 0 }}>
           <div className="flex items-center gap-2">
+            <button onClick={() => navigate(-1)} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+            </button>
             <h1 className="text-white font-bold text-lg">Xùnhuà</h1>
             <p className="text-white/40 text-xs hidden sm:block">AI Sketch Studio</p>
           </div>
