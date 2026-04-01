@@ -51,6 +51,16 @@ export default function CinekasPage() {
     checkAdmin();
   }, []);
 
+  useEffect(() => {
+    const handleMessage = (e) => {
+      if (e.data === 'close_app' || e.data?.type === 'close_app') {
+        navigate('/AppStore');
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [navigate]);
+
   const checkAdmin = async () => {
     try {
       const user = await base44.auth.me();
@@ -81,7 +91,7 @@ export default function CinekasPage() {
             <h3 className="text-white font-bold text-lg">CineKas</h3>
           </div>
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/AppStore')}
             className="text-white/60 hover:text-white transition-colors"
           >
             <X className="w-5 h-5" />
