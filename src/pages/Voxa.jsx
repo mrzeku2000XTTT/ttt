@@ -153,13 +153,14 @@ export default function VoxaPage() {
         const fromName = LANGUAGES.find(l => l.code === from)?.name || from;
         const toName = LANGUAGES.find(l => l.code === to)?.name || to;
         base44.integrations.Core.InvokeLLM({
-          prompt: `Break down this ${toName} text word by word. For each word provide original characters (chars), romanized pronunciation (roman), and English meaning (english).\n\nOriginal ${fromName}: "${text}"\n${toName} translation: "${result}"\n\nReturn JSON with "words" array of {chars, roman, english}. Be accurate.`,
+          prompt: `Word-by-word breakdown of ${toName}: "${result}"\nSource(${fromName}): "${text}"\nFor each word: chars, roman, english.`,
           response_json_schema: {
             type: "object",
             properties: {
               words: { type: "array", items: { type: "object", properties: { chars: { type: "string" }, roman: { type: "string" }, english: { type: "string" } } } }
             }
-          }
+          },
+          model: "gemini_3_flash"
         }).then(r => {
           if (callId === pronAbortRef.current) {
             setPronunciation(Array.isArray(r?.words) ? r.words : []);
