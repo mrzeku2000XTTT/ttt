@@ -1137,8 +1137,8 @@ export default function ImageHistoryPage() {
               {isGenerating && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-cyan-400">Tiles complete: {completedImages}/10</span>
-                    <span className="text-zinc-500">{Math.round((completedImages / 10) * 100)}%</span>
+                    <span className="text-cyan-400">Tiles complete: {Math.min(completedImages, 10)}/10</span>
+                    <span className="text-zinc-500">{Math.round((Math.min(completedImages, 10) / 10) * 100)}%</span>
                   </div>
                   <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
                     <div
