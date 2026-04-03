@@ -154,7 +154,7 @@ export default function VoxaPage() {
       const langName = LANGUAGES.find(l => l.code === langCode)?.name || langCode;
       const label = getPronunciationLabel(langCode);
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Break down this ${langName} translation word by word. For each word or short phrase, provide the characters, the ${label} romanization, and the English meaning.\n\nOriginal English: "${sourceText}"\n${langName} translation: "${text}"\n\nReturn a JSON array of objects with keys: "chars", "roman", "english".\nExample: [{"chars":"你好","roman":"nǐ hǎo","english":"hello"}]\n\nBe accurate with tones and natural pronunciation. Return ONLY the JSON array, no other text.`,
+        prompt: `Break down this ${langName} translation word by word. For each word or short phrase, provide the characters, the ${label} romanization, and the English meaning.\n\nOriginal English: "${sourceText}"\n${langName} translation: "${text}"\n\nReturn a JSON object with a "words" array. Each item has keys: "chars", "roman", "english".\nExample: {"words":[{"chars":"你好","roman":"nǐ hǎo","english":"hello"}]}\n\nBe accurate with tones and natural pronunciation.`,
         response_json_schema: {
           type: "object",
           properties: {
@@ -173,8 +173,10 @@ export default function VoxaPage() {
         },
         model: "gpt_5_mini"
       });
-      setPronunciation(result?.words || []);
-    } catch {
+      const words = Array.isArray(result?.words) ? result.words : [];
+      setPronunciation(words);
+    } catch (err) {
+      console.log("Pronunciation fetch failed:", err);
       setPronunciation([]);
     } finally {
       setLoadingPronunciation(false);
