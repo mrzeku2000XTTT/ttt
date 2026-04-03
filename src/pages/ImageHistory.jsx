@@ -364,9 +364,9 @@ export default function ImageHistoryPage() {
               
               const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\n🎬 CRITICAL CAMERA INSTRUCTION - SHOT ${i + 1}/10:\n${cameraAngles[i]}\n\nIMPORTANT: This shot MUST be visually DIFFERENT from other shots. Apply the exact camera angle described above. Keep subject consistent but CHANGE the camera position, framing, and perspective dramatically.\n\nImage dimensions: ${dimensions} (aspect ratio ${aspectRatio})\nProfessional cinematography, high quality output`;
               
-              // Add timeout to prevent infinite hanging
+              // Shorter timeout to prevent hanging (30s)
               const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Generation timeout after 60s')), 60000)
+                setTimeout(() => reject(new Error('Generation timeout')), 30000)
               );
               
               const generatePromise = base44.integrations.Core.GenerateImage({
@@ -434,10 +434,15 @@ export default function ImageHistoryPage() {
               }
             } catch (err) {
               console.error(`❌ Agent 1: Tile ${i + 1} error:`, err);
-              retries--;
-              if (retries > 0) {
-                console.log(`⚠️ Agent 1: Retrying tile ${i + 1}...`);
-                await new Promise(resolve => setTimeout(resolve, 500));
+              if (err.message?.includes('timeout')) {
+                console.log(`⏱️ Agent 1: Tile ${i + 1} timed out, skipping`);
+                retries = 0;
+              } else {
+                retries--;
+                if (retries > 0) {
+                  console.log(`⚠️ Agent 1: Retrying tile ${i + 1}...`);
+                  await new Promise(resolve => setTimeout(resolve, 500));
+                }
               }
             }
           }
@@ -474,9 +479,9 @@ export default function ImageHistoryPage() {
               
               const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\n🎬 CRITICAL CAMERA INSTRUCTION - SHOT ${i + 1}/10:\n${cameraAngles[i]}\n\nIMPORTANT: This shot MUST be visually DIFFERENT from other shots. Apply the exact camera angle described above. Keep subject consistent but CHANGE the camera position, framing, and perspective dramatically.\n\nImage dimensions: ${dimensions} (aspect ratio ${aspectRatio})\nProfessional cinematography, high quality output`;
               
-              // Add timeout to prevent infinite hanging
+              // Shorter timeout to prevent hanging (30s)
               const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Generation timeout after 60s')), 60000)
+                setTimeout(() => reject(new Error('Generation timeout')), 30000)
               );
               
               const generatePromise = base44.integrations.Core.GenerateImage({
@@ -544,10 +549,15 @@ export default function ImageHistoryPage() {
               }
             } catch (err) {
               console.error(`❌ Agent 2: Tile ${i + 1} error:`, err);
-              retries--;
-              if (retries > 0) {
-                console.log(`⚠️ Agent 2: Retrying tile ${i + 1}...`);
-                await new Promise(resolve => setTimeout(resolve, 500));
+              if (err.message?.includes('timeout')) {
+                console.log(`⏱️ Agent 2: Tile ${i + 1} timed out, skipping`);
+                retries = 0;
+              } else {
+                retries--;
+                if (retries > 0) {
+                  console.log(`⚠️ Agent 2: Retrying tile ${i + 1}...`);
+                  await new Promise(resolve => setTimeout(resolve, 500));
+                }
               }
             }
           }
