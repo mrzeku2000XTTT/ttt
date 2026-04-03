@@ -125,93 +125,36 @@ export default function VoxaPage() {
   const [sourceLang, setSourceLang] = useState("en");
   const [targetLang, setTargetLang] = useState("es");
   const [loading, setLoading] = useState(false);
-  const [romanization, setRomanization] = useState("");
   const [speakingSource, setSpeakingSource] = useState(false);
   const [speakingTarget, setSpeakingTarget] = useState(false);
   const [pronunciation, setPronunciation] = useState([]);
-  const [loadingPronunciation, setLoadingPronunciation] = useState(false);
-  const [showWordBreakdown, setShowWordBreakdown] = useState(false);
   const debounceRef = useRef(null);
-  const lastTranslationRef = useRef({ text: "", lang: "", source: "" });
 
   const PRONUNCIATION_LANGS = ["zh-cn", "zh-tw", "ja", "ko", "ar", "hi", "th", "ka", "he", "bn", "my", "km", "lo", "am", "ru", "uk", "el", "fa", "ur", "ta", "te", "kn", "ml", "gu", "pa", "si", "ne", "or"];
-
   const needsPronunciation = (langCode) => PRONUNCIATION_LANGS.includes(langCode);
 
-  const getPronunciationLabel = (langCode) => {
-    if (langCode === "zh-cn" || langCode === "zh-tw") return "Pinyin";
-    if (langCode === "ja") return "Romaji";
-    if (langCode === "ko") return "Romanized";
-    if (langCode === "ar") return "Transliteration";
-    if (langCode === "hi" || langCode === "bn" || langCode === "gu" || langCode === "pa" || langCode === "ta" || langCode === "te" || langCode === "kn" || langCode === "ml" || langCode === "or" || langCode === "ne" || langCode === "si") return "Romanized";
-    if (langCode === "th") return "Thai Romanization";
-    if (langCode === "ru" || langCode === "uk") return "Transliteration";
-    return "Pronunciation";
-  };
-
-  const fetchPronunciation = async (text, langCode, sourceText) => {
-    if (!text.trim() || !needsPronunciation(langCode)) { setPronunciation([]); return; }
-    setLoadingPronunciation(true);
+  const translate = async (text, from, to) => {
+    if (!text.trim()) { setTranslatedText(""); setPronunciation([]); return; }
+    setLoading(true);
     try {
-      const langName = LANGUAGES.find(l => l.code === langCode)?.name || langCode;
-      const label = getPronunciationLabel(langCode);
+      const fromName = LANGUAGES.find(l => l.code === from)?.name || from;
+      const toName = LANGUAGES.find(l => l.code === to)?.name || to;
+      const wantPron = needsPronunciation(to);
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Break down this ${langName} translation word by word. For each word or short phrase, provide the characters, the ${label} romanization, and the English meaning.\n\nOriginal English: "${sourceText}"\n${langName} translation: "${text}"\n\nReturn a JSON object with a "words" array. Each item has keys: "chars", "roman", "english".\nExample: {"words":[{"chars":"你好","roman":"nǐ hǎo","english":"hello"}]}\n\nBe accurate with tones and natural pronunciation.`,
+        prompt: `Translate from ${fromName} to ${toName}.${wantPron ? " Also provide word-by-word pronunciation: for each word give original characters (chars), romanized pronunciation (roman), and English meaning (english)." : ""}\n\nText: "${text}"\n\nReturn JSON with \"translation\" (the translated string)${wantPron ? ' and \"words\" array of {chars, roman, english}' : ''}.`,
         response_json_schema: {
           type: "object",
           properties: {
-            words: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  chars: { type: "string" },
-                  roman: { type: "string" },
-                  english: { type: "string" }
-                }
-              }
-            }
+            translation: { type: "string" },
+            ...(wantPron ? { words: { type: "array", items: { type: "object", properties: { chars: { type: "string" }, roman: { type: "string" }, english: { type: "string" } } } } } : {})
           }
         },
         model: "gpt_5_mini"
       });
-      const words = Array.isArray(result?.words) ? result.words : [];
-      setPronunciation(words);
+      setTranslatedText(result?.translation || "");
+      setPronunciation(Array.isArray(result?.words) ? result.words : []);
     } catch (err) {
-      console.log("Pronunciation fetch failed:", err);
-      setPronunciation([]);
-    } finally {
-      setLoadingPronunciation(false);
-    }
-  };
-
-  const handleExpandBreakdown = () => {
-    if (pronunciation.length > 0) {
-      setShowWordBreakdown(true);
-      return;
-    }
-    const { text, lang, source } = lastTranslationRef.current;
-    if (text && lang) {
-      setShowWordBreakdown(true);
-      fetchPronunciation(text, lang, source);
-    }
-  };
-
-  const translate = async (text, from, to) => {
-    if (!text.trim()) { setTranslatedText(""); setRomanization(""); return; }
-    setLoading(true);
-    try {
-      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${from}&tl=${to}&dt=t&dt=rm&q=${encodeURIComponent(text)}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      const result = data[0]?.map(item => item[0]).join("") || "";
-      const roman = data[0]?.map(item => item[3]).filter(Boolean).join("") || "";
-      setTranslatedText(result);
-      setRomanization(roman);
-      lastTranslationRef.current = { text: result, lang: to, source: text };
-      setPronunciation([]);
-      setShowWordBreakdown(false);
-    } catch (err) {
+      console.log("Translation failed:", err);
       toast.error("Translation failed. Please try again.");
     } finally {
       setLoading(false);
@@ -363,63 +306,21 @@ export default function VoxaPage() {
                 <p className="text-white text-lg leading-relaxed whitespace-pre-wrap" style={{ fontFamily: MULTILANG_FONT }}>
                   {translatedText || <span className="text-white/20">Translation will appear here...</span>}
                 </p>
-                {translatedText && (romanization || needsPronunciation(targetLang)) && !showWordBreakdown && (
+                {translatedText && pronunciation.length > 0 && (
                   <div className="mt-3 pt-3 border-t border-white/10">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <BookOpen className="w-3 h-3 text-cyan-400/70" />
-                        <span className="text-cyan-400/70 text-[10px] uppercase tracking-widest font-semibold">
-                          {needsPronunciation(targetLang) ? getPronunciationLabel(targetLang) : "Romanization"}
-                        </span>
-                      </div>
-                      {needsPronunciation(targetLang) && (
-                        <button onClick={handleExpandBreakdown} className="text-cyan-400/60 text-[10px] uppercase tracking-wider hover:text-cyan-300 transition-colors">
-                          Word breakdown →
-                        </button>
-                      )}
+                    <div className="flex items-center gap-1.5 mb-2.5">
+                      <BookOpen className="w-3 h-3 text-cyan-400/70" />
+                      <span className="text-cyan-400/70 text-[10px] uppercase tracking-widest font-semibold">Pronunciation</span>
                     </div>
-                    {romanization && (
-                      <p className="text-cyan-200/70 text-sm leading-relaxed whitespace-pre-wrap" style={{ fontFamily: "system-ui, sans-serif" }}>
-                        {romanization}
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {showWordBreakdown && translatedText && (
-                  <div className="mt-3 pt-3 border-t border-white/10">
-                    <div className="flex items-center justify-between mb-2.5">
-                      <div className="flex items-center gap-1.5">
-                        <BookOpen className="w-3 h-3 text-cyan-400/70" />
-                        <span className="text-cyan-400/70 text-[10px] uppercase tracking-widest font-semibold">
-                          {getPronunciationLabel(targetLang)} · Word Breakdown
-                        </span>
-                        {loadingPronunciation && <Loader2 className="w-3 h-3 text-cyan-400/50 animate-spin" />}
-                      </div>
-                      {romanization && (
-                        <button onClick={() => setShowWordBreakdown(false)} className="text-white/30 text-[10px] uppercase tracking-wider hover:text-white/60 transition-colors">
-                          Simple ←
-                        </button>
-                      )}
+                    <div className="flex flex-wrap gap-4">
+                      {pronunciation.map((w, i) => (
+                        <div key={i} className="flex flex-col items-center text-center min-w-[40px]">
+                          <span className="text-white text-lg font-medium" style={{ fontFamily: MULTILANG_FONT }}>{w.chars}</span>
+                          <span className="text-cyan-300/80 text-xs mt-0.5" style={{ fontFamily: "system-ui, sans-serif" }}>{w.roman}</span>
+                          <span className="text-white/40 text-[10px] mt-0.5">{w.english}</span>
+                        </div>
+                      ))}
                     </div>
-                    {pronunciation.length > 0 ? (
-                      <div className="flex flex-wrap gap-4">
-                        {pronunciation.map((w, i) => (
-                          <div key={i} className="flex flex-col items-center text-center min-w-[40px]">
-                            <span className="text-white text-lg font-medium" style={{ fontFamily: MULTILANG_FONT }}>{w.chars}</span>
-                            <span className="text-cyan-300/80 text-xs mt-0.5" style={{ fontFamily: "system-ui, sans-serif" }}>{w.roman}</span>
-                            <span className="text-white/40 text-[10px] mt-0.5">{w.english}</span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : loadingPronunciation ? (
-                      <div className="flex items-center gap-2 py-4 justify-center">
-                        <Loader2 className="w-4 h-4 text-cyan-400/50 animate-spin" />
-                        <span className="text-cyan-400/50 text-xs">Generating word breakdown...</span>
-                      </div>
-                    ) : (
-                      <p className="text-white/30 text-xs text-center py-2">Could not generate breakdown</p>
-                    )}
                   </div>
                 )}
               </div>
