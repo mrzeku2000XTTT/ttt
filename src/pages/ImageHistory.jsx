@@ -438,6 +438,7 @@ export default function ImageHistoryPage() {
               if (retries > 0) {
                 console.log(`⚠️ Agent 1: Retrying tile ${i + 1}...`);
                 await new Promise(resolve => setTimeout(resolve, 500));
+              }
             }
           }
 
