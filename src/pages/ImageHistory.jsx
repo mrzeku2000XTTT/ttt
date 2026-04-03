@@ -422,26 +422,22 @@ export default function ImageHistoryPage() {
                   created_date: new Date().toISOString()
                 };
 
-                try {
-                  await base44.entities.RemixAILearning.create(entryData);
-                } catch (err) {
-                  console.log('Not logged in, saving to localStorage');
+                // Fire-and-forget DB save — don't block next image
+                base44.entities.RemixAILearning.create(entryData).catch(() => {
                   const localHistory = JSON.parse(localStorage.getItem('rmx_local_history') || '[]');
                   localHistory.unshift({ ...entryData, id: Date.now() + i });
                   localStorage.setItem('rmx_local_history', JSON.stringify(localHistory.slice(0, 100)));
-                }
+                });
               } else {
                 retries--;
                 if (retries > 0) console.log(`⚠️ Agent 1: Tile ${i + 1} failed, retrying...`);
               }
             } catch (err) {
               console.error(`❌ Agent 1: Tile ${i + 1} error:`, err);
-              console.error(`❌ Full error details:`, err.message, err.stack);
               retries--;
               if (retries > 0) {
                 console.log(`⚠️ Agent 1: Retrying tile ${i + 1}...`);
-                await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s before retry
-              }
+                await new Promise(resolve => setTimeout(resolve, 500));
             }
           }
 
@@ -535,25 +531,22 @@ export default function ImageHistoryPage() {
                   created_date: new Date().toISOString()
                 };
 
-                try {
-                  await base44.entities.RemixAILearning.create(entryData);
-                } catch (err) {
-                  console.log('Not logged in, saving to localStorage');
+                // Fire-and-forget DB save — don't block next image
+                base44.entities.RemixAILearning.create(entryData).catch(() => {
                   const localHistory = JSON.parse(localStorage.getItem('rmx_local_history') || '[]');
                   localHistory.unshift({ ...entryData, id: Date.now() + i });
                   localStorage.setItem('rmx_local_history', JSON.stringify(localHistory.slice(0, 100)));
-                }
+                });
               } else {
                 retries--;
                 if (retries > 0) console.log(`⚠️ Agent 2: Tile ${i + 1} failed, retrying...`);
               }
             } catch (err) {
               console.error(`❌ Agent 2: Tile ${i + 1} error:`, err);
-              console.error(`❌ Full error details:`, err.message, err.stack);
               retries--;
               if (retries > 0) {
                 console.log(`⚠️ Agent 2: Retrying tile ${i + 1}...`);
-                await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s before retry
+                await new Promise(resolve => setTimeout(resolve, 500));
               }
             }
           }
