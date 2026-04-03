@@ -210,12 +210,7 @@ export default function VoxaPage() {
       setRomanization(roman);
       lastTranslationRef.current = { text: result, lang: to, source: text };
       setPronunciation([]);
-      if (needsPronunciation(to) && result.trim()) {
-        setShowWordBreakdown(true);
-        fetchPronunciation(result, to, text);
-      } else {
-        setShowWordBreakdown(false);
-      }
+      setShowWordBreakdown(false);
     } catch (err) {
       toast.error("Translation failed. Please try again.");
     } finally {
@@ -368,7 +363,7 @@ export default function VoxaPage() {
                 <p className="text-white text-lg leading-relaxed whitespace-pre-wrap" style={{ fontFamily: MULTILANG_FONT }}>
                   {translatedText || <span className="text-white/20">Translation will appear here...</span>}
                 </p>
-                {translatedText && romanization && !showWordBreakdown && (
+                {translatedText && (romanization || needsPronunciation(targetLang)) && !showWordBreakdown && (
                   <div className="mt-3 pt-3 border-t border-white/10">
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-1.5">
@@ -383,9 +378,11 @@ export default function VoxaPage() {
                         </button>
                       )}
                     </div>
-                    <p className="text-cyan-200/70 text-sm leading-relaxed whitespace-pre-wrap" style={{ fontFamily: "system-ui, sans-serif" }}>
-                      {romanization}
-                    </p>
+                    {romanization && (
+                      <p className="text-cyan-200/70 text-sm leading-relaxed whitespace-pre-wrap" style={{ fontFamily: "system-ui, sans-serif" }}>
+                        {romanization}
+                      </p>
+                    )}
                   </div>
                 )}
 
