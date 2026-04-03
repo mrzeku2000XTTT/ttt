@@ -258,7 +258,7 @@ export default function ImageHistoryPage() {
     setShowProjectOptions(false);
   };
 
-  const handleStartGeneration = () => {
+  const handleStartGeneration = async () => {
     setIsGenerating(true);
     setShouldStop(false);
     shouldStopRef.current = false;
@@ -279,7 +279,7 @@ export default function ImageHistoryPage() {
       generatedImages: Array(10).fill(null)
     }));
     
-    generateImages(0);
+    await generateImages(0);
   };
 
   const handlePause = () => {
