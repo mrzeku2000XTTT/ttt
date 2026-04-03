@@ -133,30 +133,44 @@ export default function VoxaPage() {
   const PRONUNCIATION_LANGS = ["zh-cn", "zh-tw", "ja", "ko", "ar", "hi", "th", "ka", "he", "bn", "my", "km", "lo", "am", "ru", "uk", "el", "fa", "ur", "ta", "te", "kn", "ml", "gu", "pa", "si", "ne", "or"];
   const needsPronunciation = (langCode) => PRONUNCIATION_LANGS.includes(langCode);
 
+  const pronAbortRef = useRef(0);
+
   const translate = async (text, from, to) => {
     if (!text.trim()) { setTranslatedText(""); setPronunciation([]); return; }
     setLoading(true);
+    const callId = ++pronAbortRef.current;
     try {
-      const fromName = LANGUAGES.find(l => l.code === from)?.name || from;
-      const toName = LANGUAGES.find(l => l.code === to)?.name || to;
-      const wantPron = needsPronunciation(to);
-      const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Translate from ${fromName} to ${toName}.${wantPron ? " Also provide word-by-word pronunciation: for each word give original characters (chars), romanized pronunciation (roman), and English meaning (english)." : ""}\n\nText: "${text}"\n\nReturn JSON with \"translation\" (the translated string)${wantPron ? ' and \"words\" array of {chars, roman, english}' : ''}.`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            translation: { type: "string" },
-            ...(wantPron ? { words: { type: "array", items: { type: "object", properties: { chars: { type: "string" }, roman: { type: "string" }, english: { type: "string" } } } } } : {})
+      // Fast Google Translate
+      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${from}&tl=${to}&dt=t&dt=rm&q=${encodeURIComponent(text)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const result = data[0]?.map(item => item[0]).join("") || "";
+      setTranslatedText(result);
+      setLoading(false);
+
+      // Fire LLM pronunciation in background for non-Latin scripts
+      if (needsPronunciation(to) && result.trim()) {
+        const fromName = LANGUAGES.find(l => l.code === from)?.name || from;
+        const toName = LANGUAGES.find(l => l.code === to)?.name || to;
+        base44.integrations.Core.InvokeLLM({
+          prompt: `Break down this ${toName} text word by word. For each word provide original characters (chars), romanized pronunciation (roman), and English meaning (english).\n\nOriginal ${fromName}: "${text}"\n${toName} translation: "${result}"\n\nReturn JSON with "words" array of {chars, roman, english}. Be accurate.`,
+          response_json_schema: {
+            type: "object",
+            properties: {
+              words: { type: "array", items: { type: "object", properties: { chars: { type: "string" }, roman: { type: "string" }, english: { type: "string" } } } }
+            }
           }
-        },
-        model: "gpt_5_mini"
-      });
-      setTranslatedText(result?.translation || "");
-      setPronunciation(Array.isArray(result?.words) ? result.words : []);
+        }).then(r => {
+          if (callId === pronAbortRef.current) {
+            setPronunciation(Array.isArray(r?.words) ? r.words : []);
+          }
+        }).catch(() => {});
+      } else {
+        setPronunciation([]);
+      }
     } catch (err) {
       console.log("Translation failed:", err);
-      toast.error("Translation failed. Please try again.");
-    } finally {
+      toast.error("Translation failed.");
       setLoading(false);
     }
   };
