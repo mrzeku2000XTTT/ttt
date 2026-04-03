@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 
-import { ArrowLeftRight, Volume2, Copy, X, ChevronDown, Search, Loader2 } from "lucide-react";
+import { ArrowLeftRight, Volume2, Copy, X, ChevronDown, Search, Loader2, BookOpen } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
@@ -127,7 +128,42 @@ export default function VoxaPage() {
   const [romanization, setRomanization] = useState("");
   const [speakingSource, setSpeakingSource] = useState(false);
   const [speakingTarget, setSpeakingTarget] = useState(false);
+  const [pronunciation, setPronunciation] = useState("");
+  const [loadingPronunciation, setLoadingPronunciation] = useState(false);
   const debounceRef = useRef(null);
+
+  const PRONUNCIATION_LANGS = ["zh-cn", "zh-tw", "ja", "ko", "ar", "hi", "th", "ka", "he", "bn", "my", "km", "lo", "am", "ru", "uk", "el", "fa", "ur", "ta", "te", "kn", "ml", "gu", "pa", "si", "ne", "or"];
+
+  const needsPronunciation = (langCode) => PRONUNCIATION_LANGS.includes(langCode);
+
+  const getPronunciationLabel = (langCode) => {
+    if (langCode === "zh-cn" || langCode === "zh-tw") return "Pinyin";
+    if (langCode === "ja") return "Romaji";
+    if (langCode === "ko") return "Romanized";
+    if (langCode === "ar") return "Transliteration";
+    if (langCode === "hi" || langCode === "bn" || langCode === "gu" || langCode === "pa" || langCode === "ta" || langCode === "te" || langCode === "kn" || langCode === "ml" || langCode === "or" || langCode === "ne" || langCode === "si") return "Romanized";
+    if (langCode === "th") return "Thai Romanization";
+    if (langCode === "ru" || langCode === "uk") return "Transliteration";
+    return "Pronunciation";
+  };
+
+  const fetchPronunciation = async (text, langCode) => {
+    if (!text.trim() || !needsPronunciation(langCode)) { setPronunciation(""); return; }
+    setLoadingPronunciation(true);
+    try {
+      const langName = LANGUAGES.find(l => l.code === langCode)?.name || langCode;
+      const label = getPronunciationLabel(langCode);
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `Give me the ${label} pronunciation guide for this ${langName} text. For each line, show the original word/phrase followed by its romanized pronunciation in parentheses. Keep it simple and accurate. Only output the pronunciation, nothing else. No explanations.\n\nText:\n${text}`,
+        model: "gpt_5_mini"
+      });
+      setPronunciation(result.trim());
+    } catch {
+      setPronunciation("");
+    } finally {
+      setLoadingPronunciation(false);
+    }
+  };
 
   const translate = async (text, from, to) => {
     if (!text.trim()) { setTranslatedText(""); setRomanization(""); return; }
@@ -140,6 +176,11 @@ export default function VoxaPage() {
       const roman = data[0]?.map(item => item[3]).filter(Boolean).join("") || "";
       setTranslatedText(result);
       setRomanization(roman);
+      if (result && needsPronunciation(to)) {
+        fetchPronunciation(result, to);
+      } else {
+        setPronunciation("");
+      }
     } catch (err) {
       toast.error("Translation failed. Please try again.");
     } finally {
@@ -292,10 +333,19 @@ export default function VoxaPage() {
                 <p className="text-white text-lg leading-relaxed whitespace-pre-wrap" style={{ fontFamily: MULTILANG_FONT }}>
                   {translatedText || <span className="text-white/20">Translation will appear here...</span>}
                 </p>
-                {romanization && translatedText && (
-                  <p className="text-white/50 text-sm mt-2 italic" style={{ fontFamily: "system-ui, sans-serif" }}>
-                    {romanization}
-                  </p>
+                {translatedText && (pronunciation || romanization) && (
+                  <div className="mt-3 pt-3 border-t border-white/10">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <BookOpen className="w-3 h-3 text-cyan-400/70" />
+                      <span className="text-cyan-400/70 text-[10px] uppercase tracking-widest font-semibold">
+                        {needsPronunciation(targetLang) ? getPronunciationLabel(targetLang) : "Romanization"}
+                      </span>
+                      {loadingPronunciation && <Loader2 className="w-3 h-3 text-cyan-400/50 animate-spin" />}
+                    </div>
+                    <p className="text-cyan-200/70 text-sm leading-relaxed whitespace-pre-wrap" style={{ fontFamily: "system-ui, sans-serif" }}>
+                      {pronunciation || romanization}
+                    </p>
+                  </div>
                 )}
               </div>
             )}
