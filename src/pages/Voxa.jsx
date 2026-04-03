@@ -209,11 +209,11 @@ export default function VoxaPage() {
       setTranslatedText(result);
       setRomanization(roman);
       lastTranslationRef.current = { text: result, lang: to, source: text };
-      if (needsPronunciation(to)) {
-        setPronunciation([]);
-        setShowWordBreakdown(false);
+      setPronunciation([]);
+      if (needsPronunciation(to) && result.trim()) {
+        setShowWordBreakdown(true);
+        fetchPronunciation(result, to, text);
       } else {
-        setPronunciation([]);
         setShowWordBreakdown(false);
       }
     } catch (err) {
@@ -388,14 +388,7 @@ export default function VoxaPage() {
                     </p>
                   </div>
                 )}
-                {translatedText && needsPronunciation(targetLang) && !romanization && !showWordBreakdown && (
-                  <div className="mt-3 pt-3 border-t border-white/10">
-                    <button onClick={handleExpandBreakdown} className="flex items-center gap-1.5 text-cyan-400/60 hover:text-cyan-300 transition-colors">
-                      <BookOpen className="w-3 h-3" />
-                      <span className="text-xs">Show pronunciation guide</span>
-                    </button>
-                  </div>
-                )}
+
                 {showWordBreakdown && translatedText && (
                   <div className="mt-3 pt-3 border-t border-white/10">
                     <div className="flex items-center justify-between mb-2.5">
