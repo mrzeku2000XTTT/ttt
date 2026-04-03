@@ -255,21 +255,16 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
       console.log('✅ Generated image:', response);
 
       if (response?.url) {
-        // Save learning data for AI improvement
-        try {
-          await base44.entities.RemixAILearning.create({
-            user_prompt: remixPrompt,
-            detailed_prompt: detailedPrompt,
-            reference_images: imageUrls,
-            result_image: response.url,
-            was_successful: true,
-            style_type: isStyleTransformation ? 'style_transformation' : (uploadedImage ? 'localized_edit' : 'new_generation')
-          });
-        } catch (err) {
-          console.log('Failed to save learning data:', err);
-        }
+        // Save learning data fire-and-forget (don't block the user)
+        base44.entities.RemixAILearning.create({
+          user_prompt: remixPrompt,
+          detailed_prompt: detailedPrompt,
+          reference_images: imageUrls,
+          result_image: response.url,
+          was_successful: true,
+          style_type: isStyleTransformation ? 'style_transformation' : (uploadedImage ? 'localized_edit' : 'new_generation')
+        }).catch(() => {});
 
-        // Pass URL directly (avoids CORS issues on mobile with blob fetch)
         onSave(response.url);
         onClose();
         return; // Success - exit the retry loop
@@ -279,18 +274,14 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
       } catch (err) {
       console.error(`❌ Remix generation error (attempt ${attempts}/${maxAttempts}):`, err);
 
-      // Save failure data for learning
-      try {
-        await base44.entities.RemixAILearning.create({
-          user_prompt: remixPrompt,
-          detailed_prompt: detailedPrompt,
-          reference_images: imageUrls,
-          was_successful: false,
-          error_message: err.message || 'Unknown error'
-        });
-      } catch (saveErr) {
-        console.log('Failed to save error data:', saveErr);
-      }
+      // Save failure data fire-and-forget
+      base44.entities.RemixAILearning.create({
+        user_prompt: remixPrompt,
+        detailed_prompt: detailedPrompt,
+        reference_images: imageUrls,
+        was_successful: false,
+        error_message: err.message || 'Unknown error'
+      }).catch(() => {});
 
       // If this was the last attempt, show error
       if (attempts >= maxAttempts) {
@@ -302,8 +293,8 @@ export default function RemixImageModal({ imageUrl, onClose, onSave }) {
       // For next attempt, simplify the prompt
       console.log('Retrying with simplified prompt...');
 
-      // Wait 2 seconds before retry
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Short delay before retry
+      await new Promise(resolve => setTimeout(resolve, 500));
       }
       }
 
