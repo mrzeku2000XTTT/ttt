@@ -258,7 +258,7 @@ export default function ImageHistoryPage() {
     setShowProjectOptions(false);
   };
 
-  const handleStartGeneration = async () => {
+  const handleStartGeneration = () => {
     setIsGenerating(true);
     setShouldStop(false);
     shouldStopRef.current = false;
@@ -279,7 +279,7 @@ export default function ImageHistoryPage() {
       generatedImages: Array(10).fill(null)
     }));
     
-    await generateImages(0);
+    generateImages(0);
   };
 
   const handlePause = () => {
@@ -364,9 +364,9 @@ export default function ImageHistoryPage() {
               
               const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\n🎬 CRITICAL CAMERA INSTRUCTION - SHOT ${i + 1}/10:\n${cameraAngles[i]}\n\nIMPORTANT: This shot MUST be visually DIFFERENT from other shots. Apply the exact camera angle described above. Keep subject consistent but CHANGE the camera position, framing, and perspective dramatically.\n\nImage dimensions: ${dimensions} (aspect ratio ${aspectRatio})\nProfessional cinematography, high quality output`;
               
-              // Shorter timeout to prevent hanging (30s)
+              // Add timeout to prevent infinite hanging
               const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Generation timeout')), 30000)
+                setTimeout(() => reject(new Error('Generation timeout after 60s')), 60000)
               );
               
               const generatePromise = base44.integrations.Core.GenerateImage({
@@ -422,27 +422,25 @@ export default function ImageHistoryPage() {
                   created_date: new Date().toISOString()
                 };
 
-                // Fire-and-forget DB save — don't block next image
-                base44.entities.RemixAILearning.create(entryData).catch(() => {
+                try {
+                  await base44.entities.RemixAILearning.create(entryData);
+                } catch (err) {
+                  console.log('Not logged in, saving to localStorage');
                   const localHistory = JSON.parse(localStorage.getItem('rmx_local_history') || '[]');
                   localHistory.unshift({ ...entryData, id: Date.now() + i });
                   localStorage.setItem('rmx_local_history', JSON.stringify(localHistory.slice(0, 100)));
-                });
+                }
               } else {
                 retries--;
                 if (retries > 0) console.log(`⚠️ Agent 1: Tile ${i + 1} failed, retrying...`);
               }
             } catch (err) {
               console.error(`❌ Agent 1: Tile ${i + 1} error:`, err);
-              if (err.message?.includes('timeout')) {
-                console.log(`⏱️ Agent 1: Tile ${i + 1} timed out, skipping`);
-                retries = 0;
-              } else {
-                retries--;
-                if (retries > 0) {
-                  console.log(`⚠️ Agent 1: Retrying tile ${i + 1}...`);
-                  await new Promise(resolve => setTimeout(resolve, 500));
-                }
+              console.error(`❌ Full error details:`, err.message, err.stack);
+              retries--;
+              if (retries > 0) {
+                console.log(`⚠️ Agent 1: Retrying tile ${i + 1}...`);
+                await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s before retry
               }
             }
           }
@@ -479,9 +477,9 @@ export default function ImageHistoryPage() {
               
               const enhancedPrompt = `[Project ID: ${projectId}]\n\n${basePrompt}\n\n🎬 CRITICAL CAMERA INSTRUCTION - SHOT ${i + 1}/10:\n${cameraAngles[i]}\n\nIMPORTANT: This shot MUST be visually DIFFERENT from other shots. Apply the exact camera angle described above. Keep subject consistent but CHANGE the camera position, framing, and perspective dramatically.\n\nImage dimensions: ${dimensions} (aspect ratio ${aspectRatio})\nProfessional cinematography, high quality output`;
               
-              // Shorter timeout to prevent hanging (30s)
+              // Add timeout to prevent infinite hanging
               const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Generation timeout')), 30000)
+                setTimeout(() => reject(new Error('Generation timeout after 60s')), 60000)
               );
               
               const generatePromise = base44.integrations.Core.GenerateImage({
@@ -537,27 +535,25 @@ export default function ImageHistoryPage() {
                   created_date: new Date().toISOString()
                 };
 
-                // Fire-and-forget DB save — don't block next image
-                base44.entities.RemixAILearning.create(entryData).catch(() => {
+                try {
+                  await base44.entities.RemixAILearning.create(entryData);
+                } catch (err) {
+                  console.log('Not logged in, saving to localStorage');
                   const localHistory = JSON.parse(localStorage.getItem('rmx_local_history') || '[]');
                   localHistory.unshift({ ...entryData, id: Date.now() + i });
                   localStorage.setItem('rmx_local_history', JSON.stringify(localHistory.slice(0, 100)));
-                });
+                }
               } else {
                 retries--;
                 if (retries > 0) console.log(`⚠️ Agent 2: Tile ${i + 1} failed, retrying...`);
               }
             } catch (err) {
               console.error(`❌ Agent 2: Tile ${i + 1} error:`, err);
-              if (err.message?.includes('timeout')) {
-                console.log(`⏱️ Agent 2: Tile ${i + 1} timed out, skipping`);
-                retries = 0;
-              } else {
-                retries--;
-                if (retries > 0) {
-                  console.log(`⚠️ Agent 2: Retrying tile ${i + 1}...`);
-                  await new Promise(resolve => setTimeout(resolve, 500));
-                }
+              console.error(`❌ Full error details:`, err.message, err.stack);
+              retries--;
+              if (retries > 0) {
+                console.log(`⚠️ Agent 2: Retrying tile ${i + 1}...`);
+                await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s before retry
               }
             }
           }
@@ -1147,8 +1143,8 @@ export default function ImageHistoryPage() {
               {isGenerating && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-cyan-400">Tiles complete: {Math.min(completedImages, 10)}/10</span>
-                    <span className="text-zinc-500">{Math.round((Math.min(completedImages, 10) / 10) * 100)}%</span>
+                    <span className="text-cyan-400">Tiles complete: {completedImages}/10</span>
+                    <span className="text-zinc-500">{Math.round((completedImages / 10) * 100)}%</span>
                   </div>
                   <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
                     <div
