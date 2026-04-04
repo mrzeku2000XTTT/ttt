@@ -77,9 +77,9 @@ export default function LearnMorePage() {
               className="bg-white/5 border border-white/20 rounded-xl p-4"
             >
               <Shield className="w-10 h-10 text-cyan-400 mb-3" />
-              <h3 className="text-xl font-bold text-white mb-2">Trust</h3>
+              <h3 className="text-xl font-bold text-white mb-2">Trustless</h3>
               <p className="text-sm text-gray-300 leading-relaxed">
-                Built on cryptographic verification and blockchain immutability. Every interaction is trustworthy, transparent, and verifiable through zero-knowledge proofs.
+                No trust needed — everything is open-sourced and secured by Kaspa's BlockDAG protocol. Authentication and transactions are censorship-resistant, cryptographically verified, and fully transparent.
               </p>
             </motion.div>
 
