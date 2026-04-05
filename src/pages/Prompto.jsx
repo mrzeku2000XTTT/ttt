@@ -52,6 +52,9 @@ export default function PromptPage() {
   const [agentCreated, setAgentCreated] = useState(false);
   const [creatingAgent, setCreatingAgent] = useState(false);
   const [showAgentModal, setShowAgentModal] = useState(false);
+  const [showConnectModal, setShowConnectModal] = useState(false);
+  const [manualAddr, setManualAddr] = useState("");
+  const [b44User, setB44User] = useState(null);
 
   // Multi-session
   const [sessions, setSessions] = useState([]); // [{id, title, messages}]
@@ -81,19 +84,29 @@ export default function PromptPage() {
   useEffect(() => {
     const detect = async () => {
       let addr = null;
+      // Try kasware first
       try { if (window.kasware) { const a = await window.kasware.getAccounts(); if (a?.length) addr = a[0]; } } catch {}
+      // Fallback to localStorage
       if (!addr) addr = localStorage.getItem('ttt_wallet_address');
+      // Fallback to base44 user wallet
+      if (!addr) {
+        try {
+          const u = await base44.auth.me();
+          setB44User(u);
+          if (u?.created_wallet_address) addr = u.created_wallet_address;
+        } catch {}
+      } else {
+        try { const u = await base44.auth.me(); setB44User(u); } catch {}
+      }
       if (addr) {
         setWalletAddress(addr);
         setAgentCreated(!!localStorage.getItem(`prompto_agent_${addr.slice(0,16)}`));
         loadSessions(addr);
         loadKnowledge(addr);
-        // Load wallet permission
         try {
           const perm = localStorage.getItem(`prompto_wallet_perm_${addr.slice(0,16)}`);
           if (perm) setWalletPermission(JSON.parse(perm));
         } catch {}
-        // Load training log
         try {
           const log = localStorage.getItem(`prompto_training_${addr.slice(0,16)}`);
           if (log) setTrainingLog(JSON.parse(log));
@@ -482,6 +495,104 @@ export default function PromptPage() {
         )}
       </AnimatePresence>
 
+      {/* Connect Wallet Modal */}
+      <AnimatePresence>
+        {showConnectModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[1000] flex items-end sm:items-center justify-center p-4"
+            onClick={() => setShowConnectModal(false)}>
+            <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-zinc-950 border border-purple-500/30 rounded-2xl p-6 w-full max-w-sm space-y-3">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-white font-bold">Connect Wallet</h3>
+                <button onClick={() => setShowConnectModal(false)} className="text-white/40 hover:text-white"><X className="w-5 h-5" /></button>
+              </div>
+
+              {/* ZK / Base44 wallet */}
+              {b44User?.created_wallet_address && (
+                <button onClick={() => {
+                  const addr = b44User.created_wallet_address;
+                  setWalletAddress(addr);
+                  localStorage.setItem('ttt_wallet_address', addr);
+                  setAgentCreated(!!localStorage.getItem(`prompto_agent_${addr.slice(0,16)}`));
+                  loadSessions(addr); loadKnowledge(addr);
+                  setShowConnectModal(false);
+                  toast.success('ZK wallet connected!');
+                }}
+                  className="w-full p-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/40 rounded-xl hover:from-purple-500/30 hover:to-pink-500/30 transition-all text-left">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center">
+                      <Lock className="w-5 h-5 text-purple-400" />
+                    </div>
+                    <div>
+                      <p className="text-white font-semibold text-sm">Agent ZK Wallet</p>
+                      <p className="text-xs text-gray-400 truncate max-w-[200px]">{b44User.created_wallet_address}</p>
+                    </div>
+                  </div>
+                </button>
+              )}
+
+              {/* Kasware (if available) */}
+              {typeof window !== 'undefined' && window.kasware && (
+                <button onClick={async () => {
+                  try {
+                    const accounts = await window.kasware.requestAccounts();
+                    if (accounts?.[0]) {
+                      const addr = accounts[0];
+                      setWalletAddress(addr);
+                      setAgentCreated(!!localStorage.getItem(`prompto_agent_${addr.slice(0,16)}`));
+                      loadSessions(addr); loadKnowledge(addr);
+                      setShowConnectModal(false);
+                      toast.success('Kasware connected!');
+                    }
+                  } catch { toast.error('Kasware connection failed'); }
+                }}
+                  className="w-full p-4 bg-gradient-to-r from-cyan-500/20 to-emerald-500/20 border border-cyan-500/40 rounded-xl hover:from-cyan-500/30 hover:to-emerald-500/30 transition-all text-left">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-cyan-500/20 rounded-full flex items-center justify-center">
+                      <Wallet className="w-5 h-5 text-cyan-400" />
+                    </div>
+                    <div>
+                      <p className="text-white font-semibold text-sm">Kasware</p>
+                      <p className="text-xs text-gray-400">Browser extension</p>
+                    </div>
+                  </div>
+                </button>
+              )}
+
+              {/* Manual entry */}
+              <div className="p-4 bg-white/5 border border-white/10 rounded-xl space-y-3">
+                <div className="flex items-center gap-2">
+                  <Wallet className="w-4 h-4 text-white/40" />
+                  <span className="text-white/70 text-sm font-medium">Enter Kaspa Address</span>
+                </div>
+                <input
+                  value={manualAddr}
+                  onChange={e => setManualAddr(e.target.value)}
+                  placeholder="kaspa:..."
+                  className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-purple-500/50"
+                />
+                <button onClick={() => {
+                  if (!manualAddr.trim()) return;
+                  const addr = manualAddr.trim();
+                  setWalletAddress(addr);
+                  localStorage.setItem('ttt_wallet_address', addr);
+                  setAgentCreated(!!localStorage.getItem(`prompto_agent_${addr.slice(0,16)}`));
+                  loadSessions(addr); loadKnowledge(addr);
+                  setShowConnectModal(false);
+                  setManualAddr('');
+                  toast.success('Wallet connected!');
+                }} disabled={!manualAddr.trim()}
+                  className="w-full py-2 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 rounded-lg text-purple-300 text-sm font-semibold disabled:opacity-40 transition-all">
+                  Connect
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* UTXO Wallet Permission Modal */}
       <AnimatePresence>
         {showWalletModal && (
@@ -652,10 +763,11 @@ export default function PromptPage() {
               </button>
             )
           ) : (
-            <div className="flex items-center gap-1 px-2 py-1 bg-white/5 border border-white/10 rounded-full">
-              <Unlock className="w-3 h-3 text-white/30" />
-              <span className="text-white/30 text-[10px] hidden sm:block">No wallet</span>
-            </div>
+            <button onClick={() => setShowConnectModal(true)}
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 rounded-full transition-all">
+              <Wallet className="w-3 h-3 text-purple-400" />
+              <span className="text-purple-300 text-[10px] font-semibold">Connect</span>
+            </button>
           )}
         </div>
       </div>
@@ -829,7 +941,12 @@ export default function PromptPage() {
           {!isAuthorized && (
             <div className="flex items-center gap-2 px-3 py-2 my-2 bg-purple-500/10 border border-purple-500/30 rounded-xl">
               <Lock className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
-              <p className="text-purple-300/80 text-xs">{!walletAddress ? 'Connect your Kaspa wallet.' : 'Create your agent to unlock.'}</p>
+              <p className="text-purple-300/80 text-xs">
+                {!walletAddress
+                  ? <button onClick={() => setShowConnectModal(true)} className="underline hover:text-purple-200">Connect your wallet to start</button>
+                  : 'Create your agent to unlock.'
+                }
+              </p>
             </div>
           )}
         </div>
