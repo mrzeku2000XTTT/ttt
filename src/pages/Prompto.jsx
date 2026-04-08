@@ -399,19 +399,17 @@ export default function PromptPage() {
       let aiResponse;
       if (isAnalyzeRun) {
         aiResponse = await base44.integrations.Core.InvokeLLM({
-          prompt: `You are an elite AI image prompt engineer.${kb}\n\nAnalyze this image and output:\n\n**📸 Visual Analysis**\n- Image type, art style, technique\n- Color palette, lighting, mood\n- Composition, camera angle, depth of field\n\n**✨ Replication Prompts — 3 Variations**\n\n**Prompt A — Exact Match:**\n\`\`\`\n[150-word prompt to recreate exactly]\n\`\`\`\n\n**Prompt B — Enhanced:**\n\`\`\`\n[cinematic upgrade]\n\`\`\`\n\n**Prompt C — Alternative:**\n\`\`\`\n[creative twist]\n\`\`\`\n\n**🎯 Key Tips:**\n[2-3 specific tips]${currentPrompt ? `\n\nUser's goal: ${currentPrompt}` : ''}`,
-          file_urls: [currentImage.url],
-          model: "gpt_5_mini"
+          prompt: `Analyze this image. Output: visual analysis (style, colors, lighting, composition), then 3 replication prompts (Exact Match, Enhanced, Alternative) each in code blocks. Add 2-3 tips.${currentPrompt ? ` User goal: ${currentPrompt}` : ''}${kb}`,
+          file_urls: [currentImage.url]
         });
       } else {
-        const agentCtx = `You are PROMPTO — an elite AI image prompt engineer sealed to wallet ${walletAddress?.slice(0,8)}...${walletAddress?.slice(-6)}.${kb}`;
-        const system = `${agentCtx}\n\nFor EVERY request output 3 prompt variations:\n\n**🎯 Prompto reads your vision:** [1 line]\n\n**Prompt A — Direct Shot:**\n\`\`\`\n[100-150 words: subject, pose, environment, lighting, camera, style, color, mood, quality tags]\n\`\`\`\n\n**Prompt B — Cinematic Cut:**\n\`\`\`\n[dramatic version]\n\`\`\`\n\n**Prompt C — Stylized:**\n\`\`\`\n[unique art style variation]\n\`\`\`\n\n**⚡ Quantum Refine — try adding:**\n[3 quick suggestions]`;
+        const system = `You are PROMPTO, an AI image prompt engineer. For every request output 3 prompt variations (Direct, Cinematic, Stylized) each in code blocks with detailed descriptions. Add 3 refinement suggestions at the end.${kb}`;
 
         const params = currentImage
-          ? { prompt: `${system}\n\nUser request: "${currentPrompt || 'describe and prompt this image'}"\n\nImage attached — factor it in.`, file_urls: [currentImage.url] }
-          : { prompt: `${system}\n\nUser request: "${currentPrompt}"` };
+          ? { prompt: `${system}\n\nUser: "${currentPrompt || 'describe and prompt this image'}"`, file_urls: [currentImage.url] }
+          : { prompt: `${system}\n\nUser: "${currentPrompt}"` };
 
-        aiResponse = await base44.integrations.Core.InvokeLLM({ ...params, model: "gpt_5_mini" });
+        aiResponse = await base44.integrations.Core.InvokeLLM(params);
       }
 
       updateSessionMessages(sessionId, prev => prev.map(m => m.id === streamId ? { ...m, content: aiResponse, streaming: false } : m));
