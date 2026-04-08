@@ -184,49 +184,23 @@ export default function PromptPage() {
   };
 
   const trainAgent = async () => {
-    if (!walletAccessActive) { setShowWalletModal(true); return; }
     if (!walletAddress) return;
     setTraining(true);
-    const SOMPI = 100000000;
     try {
-      let txId;
-      if (window.kasware) {
-        txId = await window.kasware.sendKaspa(walletAddress, Math.round(0.1 * SOMPI));
-      } else {
-        const privateKey = localStorage.getItem('kaspa_private_key') || localStorage.getItem('kaspa_wallet_seed');
-        if (!privateKey) { toast.error('No wallet key found'); setTraining(false); return; }
-        const res = await base44.functions.invoke('sendKaspaTransaction', { privateKey, toAddress: walletAddress, amount: '0.1' });
-        txId = res?.data?.txId || res?.data?.tx_hash || 'train-' + Date.now();
-      }
-      let txContext = `Training TX: ${(txId||'').slice(0,16)} | 0.1 KAS self-fed | wallet: ${walletAddress.slice(0,12)}... | ${new Date().toISOString()}`;
-      try {
-        const res = await base44.functions.invoke('getKaspaTransactionHistory', { address: walletAddress, limit: 5 });
-        const txs = res?.data?.transactions || res?.data || [];
-        if (txs?.length) {
-          txContext = `Live UTXO data from ${walletAddress.slice(0,8)}...:\n` +
-            txs.slice(0,5).map((t, i) => `TX${i+1}: ${(t.transaction_id||txId||'').slice(0,14)}... | ${t.outputs?.[0]?.amount ? (t.outputs[0].amount/SOMPI).toFixed(4) : '0.1'} KAS`).join('\n');
-        }
-      } catch {}
-      const entry = { id: Date.now(), text: `[LIVE TRAINING] ${txContext}`, addedAt: new Date().toISOString(), isTraining: true, txId };
+      const txContext = `Training session | wallet: ${walletAddress.slice(0,12)}... | ${new Date().toISOString()}`;
+      const entry = { id: Date.now(), text: `[LOCAL TRAINING] ${txContext}`, addedAt: new Date().toISOString(), isTraining: true };
       const updatedKb = [...knowledgeBase, entry];
       setKnowledgeBase(updatedKb);
       saveKnowledge(updatedKb, walletAddress);
-      const updatedPerm = { ...walletPermission, txCount: (walletPermission.txCount||0)+1, totalKasFed: +((walletPermission.totalKasFed||0)+0.1).toFixed(2) };
-      setWalletPermission(updatedPerm);
-      try { localStorage.setItem(`prompto_wallet_perm_${walletAddress.slice(0,16)}`, JSON.stringify(updatedPerm)); } catch {}
-      const updatedLog = [...trainingLog, { txId, amount: 0.1, at: new Date().toISOString() }];
-      setTrainingLog(updatedLog);
-      try { localStorage.setItem(`prompto_training_${walletAddress.slice(0,16)}`, JSON.stringify(updatedLog)); } catch {}
-      toast.success(`Agent trained! TX: ${(txId||'').slice(0,10)}...`);
+      toast.success('Agent trained!');
       if (activeSessionId) {
         updateSessionMessages(activeSessionId, prev => [...prev, {
           id: Date.now(), role: 'assistant',
-          content: `**Live UTXO Training Complete**\n\nAbsorbed real transaction data from your wallet.\n\n\`\`\`\n${txContext}\n\`\`\`\n\nEmbedded in knowledge base — active across all sessions simultaneously.`
+          content: `**Training Complete**\n\nKnowledge base updated locally.\n\n\`\`\`\n${txContext}\n\`\`\`\n\nEmbedded in knowledge base — active across all sessions.`
         }]);
       }
     } catch (err) {
-      if (err?.message?.includes('reject') || err?.message?.includes('cancel')) toast.error('Cancelled');
-      else toast.error('Training failed: ' + (err?.message || 'Unknown'));
+      toast.error('Training failed: ' + (err?.message || 'Unknown'));
     } finally { setTraining(false); }
   };
 
@@ -298,19 +272,11 @@ export default function PromptPage() {
     if (!walletAddress) { toast.error('No wallet connected'); return; }
     setCreatingAgent(true);
     try {
-      let txId;
-      if (window.kasware) {
-        txId = await window.kasware.sendKaspa(walletAddress, 100000000);
-      } else {
-        const privateKey = localStorage.getItem('kaspa_private_key') || localStorage.getItem('kaspa_wallet_seed');
-        if (!privateKey) { toast.error('No TTT wallet found.'); setCreatingAgent(false); return; }
-        const res = await base44.functions.invoke('sendKaspaTransaction', { privateKey, toAddress: walletAddress, amount: '1' });
-        txId = res?.data?.txId || 'ttt-self-tx-' + Date.now();
-      }
-      localStorage.setItem(`prompto_agent_${walletAddress.slice(0,16)}`, JSON.stringify({ address: walletAddress, txId, createdAt: new Date().toISOString() }));
+      const sessionId = 'session-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+      localStorage.setItem(`prompto_agent_${walletAddress.slice(0,16)}`, JSON.stringify({ address: walletAddress, sessionId, createdAt: new Date().toISOString() }));
       setAgentCreated(true);
       setShowAgentModal(false);
-      toast.success('Agent created and sealed on-chain!');
+      toast.success('Agent created! Encrypted session started.');
       if (activeSessionId) {
         updateSessionMessages(activeSessionId, prev => [{
           role: 'assistant', id: Date.now(),
@@ -318,8 +284,7 @@ export default function PromptPage() {
         }, ...prev]);
       }
     } catch (err) {
-      if (err?.message?.includes('rejected') || err?.message?.includes('User reject')) toast.error('Cancelled');
-      else toast.error('Failed: ' + (err?.message || 'Unknown'));
+      toast.error('Failed: ' + (err?.message || 'Unknown'));
     } finally { setCreatingAgent(false); }
   };
 
@@ -479,15 +444,15 @@ export default function PromptPage() {
                 </div>
               </div>
               <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-4 space-y-2">
-                <p className="text-white/70 text-sm">Sends a <strong className="text-white">1 KAS self-transaction</strong> — sealed on-chain.</p>
+                <p className="text-white/70 text-sm">Creates an <strong className="text-white">encrypted local session</strong> sealed to your address.</p>
                 <code className="block text-cyan-400 text-xs bg-black/40 rounded-lg px-3 py-2 break-all">{walletAddress}</code>
-                <p className="text-white/40 text-xs">Chats are encrypted locally. Knowledge base trains all sessions simultaneously.</p>
+                <p className="text-white/40 text-xs">No payment required. Chats are encrypted locally.</p>
               </div>
               <div className="flex gap-3">
                 <button onClick={() => setShowAgentModal(false)} className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white/60 text-sm">Cancel</button>
                 <button onClick={createAgent} disabled={creatingAgent}
                   className="flex-1 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 disabled:opacity-50 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2">
-                  {creatingAgent ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Signing...</> : <><Wallet className="w-4 h-4" /> Approve & Create</>}
+                  {creatingAgent ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Creating...</> : <><Bot className="w-4 h-4" /> Create Agent</>}
                 </button>
               </div>
             </motion.div>
