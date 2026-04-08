@@ -768,7 +768,7 @@ export default function PromptPage() {
       </div>
 
       {/* ── SCROLLABLE MESSAGES ── */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 max-w-3xl w-full mx-auto space-y-4"
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 sm:px-4 py-4 max-w-3xl w-full mx-auto space-y-4"
         onClick={() => { setShowSessions(false); }}>
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center gap-4 text-center min-h-[300px]">
@@ -799,7 +799,7 @@ export default function PromptPage() {
           messages.map((msg, i) => (
             <motion.div key={msg.id || i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
               <div className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[85vw] sm:max-w-2xl px-4 py-3 rounded-2xl text-sm leading-relaxed break-words overflow-hidden ${
+                <div style={{maxWidth: 'calc(100vw - 2rem)'}} className={`sm:max-w-2xl px-3 sm:px-4 py-3 rounded-2xl text-sm leading-relaxed break-words overflow-x-auto ${
                   msg.role === "user"
                     ? "bg-purple-600/30 border border-purple-500/30 text-white"
                     : "bg-white/5 border border-white/10 text-white/90"
@@ -816,7 +816,7 @@ export default function PromptPage() {
                     </div>
                   ) : msg.role === "assistant" ? (
                     <>
-                      <div className="prose prose-sm prose-invert max-w-none break-words [&>p]:my-2 [&_code]:bg-white/10 [&_code]:px-1 [&_code]:rounded [&_code]:break-all [&_pre]:bg-black/40 [&_pre]:p-3 [&_pre]:rounded-xl [&_pre]:border [&_pre]:border-white/10 [&_pre]:text-xs [&_pre]:overflow-x-auto [&_pre]:max-w-full">
+                      <div className="prose prose-sm prose-invert max-w-none break-words overflow-hidden [&>p]:my-2 [&_code]:bg-white/10 [&_code]:px-1 [&_code]:rounded [&_code]:break-all [&_code]:whitespace-pre-wrap [&_pre]:bg-black/40 [&_pre]:p-2 [&_pre]:rounded-xl [&_pre]:border [&_pre]:border-white/10 [&_pre]:text-xs [&_pre]:overflow-x-auto [&_pre]:max-w-full [&_pre_code]:whitespace-pre-wrap [&_pre_code]:break-words">
                         <ReactMarkdown>{msg.content}</ReactMarkdown>
                       </div>
                       <div className="mt-2 flex items-center gap-3">
