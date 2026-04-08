@@ -401,7 +401,7 @@ export default function PromptPage() {
         aiResponse = await base44.integrations.Core.InvokeLLM({
           prompt: `You are an elite AI image prompt engineer.${kb}\n\nAnalyze this image and output:\n\n**📸 Visual Analysis**\n- Image type, art style, technique\n- Color palette, lighting, mood\n- Composition, camera angle, depth of field\n\n**✨ Replication Prompts — 3 Variations**\n\n**Prompt A — Exact Match:**\n\`\`\`\n[150-word prompt to recreate exactly]\n\`\`\`\n\n**Prompt B — Enhanced:**\n\`\`\`\n[cinematic upgrade]\n\`\`\`\n\n**Prompt C — Alternative:**\n\`\`\`\n[creative twist]\n\`\`\`\n\n**🎯 Key Tips:**\n[2-3 specific tips]${currentPrompt ? `\n\nUser's goal: ${currentPrompt}` : ''}`,
           file_urls: [currentImage.url],
-          model: "gpt_5"
+          model: "gpt_5_mini"
         });
       } else {
         const agentCtx = `You are PROMPTO — an elite AI image prompt engineer sealed to wallet ${walletAddress?.slice(0,8)}...${walletAddress?.slice(-6)}.${kb}`;
@@ -411,7 +411,7 @@ export default function PromptPage() {
           ? { prompt: `${system}\n\nUser request: "${currentPrompt || 'describe and prompt this image'}"\n\nImage attached — factor it in.`, file_urls: [currentImage.url] }
           : { prompt: `${system}\n\nUser request: "${currentPrompt}"` };
 
-        aiResponse = await base44.integrations.Core.InvokeLLM({ ...params, model: "gpt_5" });
+        aiResponse = await base44.integrations.Core.InvokeLLM({ ...params, model: "gpt_5_mini" });
       }
 
       updateSessionMessages(sessionId, prev => prev.map(m => m.id === streamId ? { ...m, content: aiResponse, streaming: false } : m));
