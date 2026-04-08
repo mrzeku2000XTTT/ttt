@@ -19,6 +19,7 @@ import PromptPage from './pages/Prompto';
 import CinekasPage from './pages/Cinemata';
 import SpeedPage from './pages/Speed';
 import FarlandsPage from './pages/Farlands';
+import V1Page from './pages/V1';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -79,6 +80,7 @@ const AuthenticatedApp = () => {
       <Route path="/Cinekas" element={<CinekasPage />} />
       <Route path="/Speed" element={<SpeedPage />} />
       <Route path="/Farlands" element={<FarlandsPage />} />
+      <Route path="/V1" element={<V1Page />} />
       <Route path="/ValorantArena" element={<ValorantArenaPage />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
