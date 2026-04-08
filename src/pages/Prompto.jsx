@@ -277,12 +277,23 @@ export default function PromptPage() {
       setAgentCreated(true);
       setShowAgentModal(false);
       toast.success('Agent created! Encrypted session started.');
-      if (activeSessionId) {
-        updateSessionMessages(activeSessionId, prev => [{
-          role: 'assistant', id: Date.now(),
-          content: `✅ **Prompto Agent activated!**\n\nSealed to \`${walletAddress.slice(0,8)}...${walletAddress.slice(-6)}\`\n\nAll chats encrypted locally. Each new chat trains from your shared knowledge base. Let's build.`
-        }, ...prev]);
+
+      // Ensure a session exists
+      let currentSessionId = activeSessionId;
+      if (!currentSessionId || !sessions.find(s => s.id === currentSessionId)) {
+        const newId = Date.now().toString();
+        const newSession = { id: newId, title: 'New Chat', messages: [], createdAt: new Date().toISOString() };
+        setSessions(prev => prev.length === 0 ? [newSession] : [...prev, newSession]);
+        setActiveSessionId(newId);
+        currentSessionId = newId;
       }
+
+      // Add welcome message
+      const welcomeMsg = {
+        role: 'assistant', id: Date.now(),
+        content: `✅ **Prompto Agent activated!**\n\nSealed to \`${walletAddress.slice(0,8)}...${walletAddress.slice(-6)}\`\n\nAll chats encrypted locally. Each new chat trains from your shared knowledge base. Let's build.`
+      };
+      setSessions(prev => prev.map(s => s.id === currentSessionId ? { ...s, messages: [welcomeMsg, ...s.messages] } : s));
     } catch (err) {
       toast.error('Failed: ' + (err?.message || 'Unknown'));
     } finally { setCreatingAgent(false); }
@@ -369,12 +380,20 @@ export default function PromptPage() {
     e.preventDefault();
     if (!isAuthorized) { toast.error('Connect wallet and create your agent first.'); return; }
     if (!prompt.trim() && !uploadedImage) return;
-    if (!activeSessionId) return;
+
+    // Auto-create session if missing
+    let sessionId = activeSessionId;
+    if (!sessionId || !sessions.find(s => s.id === sessionId)) {
+      const newId = Date.now().toString();
+      const newSession = { id: newId, title: 'New Chat', messages: [], createdAt: new Date().toISOString() };
+      setSessions(prev => [...prev, newSession]);
+      setActiveSessionId(newId);
+      sessionId = newId;
+    }
 
     const currentPrompt = prompt;
     const currentImage = uploadedImage;
     const isAnalyzeRun = autoAnalyze && !!currentImage;
-    const sessionId = activeSessionId;
 
     const userMsg = {
       id: Date.now(), role: "user",
