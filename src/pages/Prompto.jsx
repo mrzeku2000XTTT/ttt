@@ -316,15 +316,17 @@ export default function PromptPage() {
   };
 
   const enhancePrompt = async () => {
-    if (!isAuthorized || !prompt.trim()) return;
+    if (!isAuthorized || !prompt.trim() || loading) return;
     setLoading(true);
     try {
-      const enhanced = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a prompt engineering expert. Enhance this image prompt to be more specific and detailed: "${prompt}". Return only the enhanced prompt.`,
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `Enhance this image prompt to be more specific and detailed. Return ONLY the enhanced prompt, nothing else: "${prompt}"`,
         model: "gpt_5_mini"
       });
-      setPrompt(enhanced.trim());
-    } catch { toast.error("Enhancement failed."); }
+      const enhanced = typeof result === 'string' ? result.trim() : (result?.text || result?.content || JSON.stringify(result));
+      if (enhanced) setPrompt(enhanced);
+      else toast.error('Empty response');
+    } catch (err) { console.error('Enhance error:', err); toast.error("Enhancement failed."); }
     finally { setLoading(false); }
   };
 
