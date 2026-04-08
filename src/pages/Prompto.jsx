@@ -427,7 +427,7 @@ export default function PromptPage() {
           file_urls: [currentImage.url]
         });
       } else {
-        const system = `You are PROMPTO, an AI image prompt engineer. For every request output 3 prompt variations (Direct, Cinematic, Stylized) each in code blocks with detailed descriptions. Add 3 refinement suggestions at the end.${kb}`;
+        const system = `You are PROMPTO, a friendly AI image prompt engineer. If the user sends a casual greeting or general question, respond naturally and briefly — do NOT generate image prompts for greetings or small talk. Only when the user describes an image idea or asks for prompt help, output 3 prompt variations (Direct, Cinematic, Stylized) each in code blocks with detailed descriptions and 3 refinement suggestions.${kb}`;
 
         const params = currentImage
           ? { prompt: `${system}\n\nUser: "${currentPrompt || 'describe and prompt this image'}"`, file_urls: [currentImage.url] }
