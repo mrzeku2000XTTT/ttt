@@ -80,7 +80,7 @@ const AuthenticatedApp = () => {
       <Route path="/Cinekas" element={<CinekasPage />} />
       <Route path="/Speed" element={<SpeedPage />} />
       <Route path="/Farlands" element={<FarlandsPage />} />
-      <Route path="/V1" element={<V1Page />} />
+      <Route path="/v1" element={<V1Page />} />
       <Route path="/ValorantArena" element={<ValorantArenaPage />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
