@@ -74,6 +74,7 @@ export default function PromptPage() {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const debounceTimerRef = useRef(null);
+  const sessionsRef = useRef([]);
 
   const isAuthorized = !!(walletAddress && agentCreated);
   const walletAccessActive = !!(walletPermission && walletPermission.expiresAt > Date.now());
@@ -127,6 +128,9 @@ export default function PromptPage() {
     } else { setSuggestions([]); setShowSuggestions(false); }
     return () => clearTimeout(debounceTimerRef.current);
   }, [prompt]);
+
+  // Keep ref in sync
+  useEffect(() => { sessionsRef.current = sessions; }, [sessions]);
 
   // Persist sessions on change
   useEffect(() => {
@@ -381,36 +385,37 @@ export default function PromptPage() {
     if (!isAuthorized) { toast.error('Connect wallet and create your agent first.'); return; }
     if (!prompt.trim() && !uploadedImage) return;
 
-    // Auto-create session if missing
-    let sessionId = activeSessionId;
-    if (!sessionId || !sessions.find(s => s.id === sessionId)) {
-      const newId = Date.now().toString();
-      const newSession = { id: newId, title: 'New Chat', messages: [], createdAt: new Date().toISOString() };
-      setSessions(prev => [...prev, newSession]);
-      setActiveSessionId(newId);
-      sessionId = newId;
-    }
-
     const currentPrompt = prompt;
     const currentImage = uploadedImage;
     const isAnalyzeRun = autoAnalyze && !!currentImage;
+    const streamId = Date.now() + 1;
 
     const userMsg = {
       id: Date.now(), role: "user",
       content: isAnalyzeRun ? `[Image Analysis] ${currentPrompt || 'Analyze and generate replication prompt'}` : currentPrompt,
       imagePreview: currentImage?.preview
     };
+    const streamMsg = { id: streamId, role: "assistant", content: "", streaming: true };
 
-    updateSessionMessages(sessionId, prev => [...prev, userMsg]);
-
-    // Auto-title from first message
-    if (!messages.length) {
-      updateSessionTitle(sessionId, currentPrompt.slice(0, 32) || 'Image Analysis');
-    }
+    // Use functional updater that guarantees session exists
+    let sessionId = activeSessionId;
+    setSessions(prev => {
+      let updated = [...prev];
+      let session = updated.find(s => s.id === sessionId);
+      if (!session) {
+        sessionId = Date.now().toString();
+        session = { id: sessionId, title: currentPrompt.slice(0, 32) || 'New Chat', messages: [], createdAt: new Date().toISOString() };
+        updated.push(session);
+      }
+      return updated.map(s => s.id === session.id ? {
+        ...s,
+        title: s.messages.length === 0 ? (currentPrompt.slice(0, 32) || 'Image Analysis') : s.title,
+        messages: [...s.messages, userMsg, streamMsg]
+      } : s);
+    });
+    if (!activeSessionId) setActiveSessionId(sessionId);
 
     setPrompt(""); setUploadedImage(null); setShowSuggestions(false); setLoading(true);
-    const streamId = Date.now() + 1;
-    updateSessionMessages(sessionId, prev => [...prev, { id: streamId, role: "assistant", content: "", streaming: true }]);
 
     try {
       const kb = getKnowledgeContext();
@@ -431,11 +436,17 @@ export default function PromptPage() {
         aiResponse = await base44.integrations.Core.InvokeLLM(params);
       }
 
-      updateSessionMessages(sessionId, prev => prev.map(m => m.id === streamId ? { ...m, content: aiResponse, streaming: false } : m));
+      setSessions(prev => prev.map(s => ({
+        ...s,
+        messages: s.messages.map(m => m.id === streamId ? { ...m, content: aiResponse, streaming: false } : m)
+      })));
     } catch (err) {
-      console.error(err);
+      console.error('Prompto LLM error:', err);
       toast.error("Failed to generate. Try again.");
-      updateSessionMessages(sessionId, prev => prev.filter(m => m.id !== streamId));
+      setSessions(prev => prev.map(s => ({
+        ...s,
+        messages: s.messages.filter(m => m.id !== streamId)
+      })));
     } finally { setLoading(false); }
   };
 
