@@ -27,42 +27,26 @@ export default function KlockPage() {
 
   const fetchTodayGames = async () => {
     setLoadingGames(true);
+    setTodayGames(null);
     try {
-      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 15000));
-      const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000));
+      const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
       const fetchPromise = base44.integrations.Core.InvokeLLM({
-        prompt: `Today is ${today}. List the NBA games scheduled for today (or the most recent/upcoming games if none today). Return ONLY a JSON object:\n{"games": [{"teamA": "Team Name", "teamB": "Team Name", "time": "7:00 PM ET", "status": "scheduled" or "live" or "final", "score": "" or "105-98", "headline": "short 5-word max note"}], "date": "today's date"}\nMax 6 games. If games are live, include score. If no games today, show next day's games.`,
+        prompt: `NBA games for ${today}. Return JSON: {"games":[{"teamA":"Name","teamB":"Name","time":"7PM ET","status":"scheduled","headline":"brief"}],"date":"${today}"}. Max 6. If none today, next day.`,
         add_context_from_internet: true,
         model: "gemini_3_flash",
         response_json_schema: {
           type: "object",
           properties: {
-            games: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  teamA: { type: "string" },
-                  teamB: { type: "string" },
-                  time: { type: "string" },
-                  status: { type: "string" },
-                  score: { type: "string" },
-                  headline: { type: "string" }
-                }
-              }
-            },
+            games: { type: "array", items: { type: "object", properties: { teamA: { type: "string" }, teamB: { type: "string" }, time: { type: "string" }, status: { type: "string" }, headline: { type: "string" } } } },
             date: { type: "string" }
           }
         }
       });
       const result = await Promise.race([fetchPromise, timeout]);
-      if (result?.games?.length) {
-        setTodayGames(result);
-      } else {
-        setTodayGames(null);
-      }
+      setTodayGames(result?.games?.length ? result : null);
     } catch (err) {
-      console.error("Failed to fetch today's games:", err);
+      console.error("Failed to fetch games:", err);
       setTodayGames(null);
     } finally {
       setLoadingGames(false);
@@ -218,7 +202,13 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
                 <Loader2 className="w-4 h-4 text-orange-400 animate-spin" />
                 <span className="text-white/40 text-xs">Loading today's games...</span>
               </div>
-            ) : todayGames?.games?.length > 0 ? (
+            ) : !todayGames?.games?.length ? (
+              <button onClick={fetchTodayGames}
+                className="flex items-center gap-2 mt-2 px-4 py-2 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 rounded-xl transition-all">
+                <Zap className="w-3.5 h-3.5 text-orange-400" />
+                <span className="text-orange-300 text-xs font-medium">Tap to load today's games</span>
+              </button>
+            ) : (
               <div className="w-full max-w-md mt-2">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
@@ -226,20 +216,17 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {todayGames.games.slice(0, 6).map((g, i) => (
-                    <button key={i} onClick={() => submitQuery(`Analyze ${g.teamA} vs ${g.teamB} — focus ONLY on this specific game. ${g.score ? `Last reported score: ${g.score}.` : `Scheduled: ${g.time}.`} Provide pace metrics, projected total, injury report, and strategic context for this matchup.`)}
+                    <button key={i} onClick={() => submitQuery(`Analyze ${g.teamA} vs ${g.teamB} \u2014 focus ONLY on this specific game. Scheduled: ${g.time}. Provide pace metrics, projected total, injury report, and strategic context for this matchup.`)}
                       className="flex items-center gap-3 px-3 py-2.5 bg-white/5 hover:bg-orange-500/10 border border-white/10 hover:border-orange-500/30 rounded-xl text-left transition-all group">
                       <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
                         g.status === "live" ? "bg-red-500 animate-pulse" :
                         g.status === "final" ? "bg-white/30" : "bg-orange-500"
                       }`} />
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <span className="text-white text-xs font-semibold truncate">{g.teamA} vs {g.teamB}</span>
-                        </div>
+                        <span className="text-white text-xs font-semibold truncate block">{g.teamA} vs {g.teamB}</span>
                         <div className="flex items-center gap-2 mt-0.5">
-                          {g.score && <span className="text-orange-400 text-[11px] font-bold">{g.score}</span>}
                           <span className="text-white/30 text-[10px]">
-                            {g.status === "live" ? "🔴 LIVE" : g.status === "final" ? "FINAL" : g.time}
+                            {g.status === "live" ? "\ud83d\udd34 LIVE" : g.status === "final" ? "FINAL" : g.time}
                           </span>
                         </div>
                         {g.headline && <p className="text-white/25 text-[10px] mt-0.5 truncate">{g.headline}</p>}
@@ -248,7 +235,7 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
                   ))}
                 </div>
               </div>
-            ) : null}
+            )}
 
             <div className="grid grid-cols-1 gap-2 w-full max-w-md mt-4">
               {quickPrompts.map((p, i) => (
