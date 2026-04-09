@@ -21,6 +21,7 @@ import SpeedPage from './pages/Speed';
 import FarlandsPage from './pages/Farlands';
 import V1Page from './pages/V1';
 import KlockPage from './pages/Klock';
+import StakeDAGPage from './pages/StakeDAG';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -83,6 +84,7 @@ const AuthenticatedApp = () => {
       <Route path="/Farlands" element={<FarlandsPage />} />
       <Route path="/v1" element={<V1Page />} />
       <Route path="/Klock" element={<KlockPage />} />
+      <Route path="/StakeDAG" element={<StakeDAGPage />} />
       <Route path="/ValorantArena" element={<ValorantArenaPage />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>

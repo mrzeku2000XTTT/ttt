@@ -1,0 +1,147 @@
+{
+  "name": "SportsBet",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "User who placed the bet"
+    },
+    "user_wallet_address": {
+      "type": "string",
+      "description": "User wallet address for payouts"
+    },
+    "game_id": {
+      "type": "string",
+      "description": "ESPN game ID"
+    },
+    "team_a": {
+      "type": "string",
+      "description": "Away team name"
+    },
+    "team_b": {
+      "type": "string",
+      "description": "Home team name"
+    },
+    "team_a_short": {
+      "type": "string"
+    },
+    "team_b_short": {
+      "type": "string"
+    },
+    "team_a_logo": {
+      "type": "string"
+    },
+    "team_b_logo": {
+      "type": "string"
+    },
+    "game_start_time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the game starts"
+    },
+    "bet_type": {
+      "type": "string",
+      "enum": [
+        "moneyline",
+        "spread",
+        "over_under",
+        "player_prop"
+      ],
+      "description": "Type of bet"
+    },
+    "pick": {
+      "type": "string",
+      "description": "User's pick (team name, over/under, etc.)"
+    },
+    "pick_detail": {
+      "type": "string",
+      "description": "Extra detail like spread value or total line"
+    },
+    "odds": {
+      "type": "number",
+      "description": "Decimal odds"
+    },
+    "odds_display": {
+      "type": "string",
+      "description": "American odds display e.g. -110, +150"
+    },
+    "wager_kas": {
+      "type": "number",
+      "description": "Amount wagered in KAS"
+    },
+    "potential_payout_kas": {
+      "type": "number",
+      "description": "Potential payout in KAS"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "active",
+        "won",
+        "lost",
+        "push",
+        "cancelled",
+        "paid_out"
+      ],
+      "default": "pending",
+      "description": "Bet status"
+    },
+    "final_score_a": {
+      "type": "number",
+      "description": "Final score team A"
+    },
+    "final_score_b": {
+      "type": "number",
+      "description": "Final score team B"
+    },
+    "tx_hash_wager": {
+      "type": "string",
+      "description": "Transaction hash of the wager deposit"
+    },
+    "tx_hash_payout": {
+      "type": "string",
+      "description": "Transaction hash of the payout"
+    },
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the bet was resolved"
+    },
+    "escrow_address": {
+      "type": "string",
+      "description": "Escrow wallet address holding funds"
+    }
+  },
+  "required": [
+    "user_email",
+    "user_wallet_address",
+    "game_id",
+    "team_a",
+    "team_b",
+    "bet_type",
+    "pick",
+    "odds",
+    "wager_kas",
+    "potential_payout_kas"
+  ],
+  "rls": {
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "read": true,
+    "update": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user.role": "admin"
+        }
+      ]
+    },
+    "delete": {
+      "user.role": "admin"
+    }
+  }
+}
