@@ -13,11 +13,55 @@ export default function KlockPage() {
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState([]);
   const [simData, setSimData] = useState(null);
+  const [todayGames, setTodayGames] = useState(null);
+  const [loadingGames, setLoadingGames] = useState(true);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
+
+  useEffect(() => {
+    fetchTodayGames();
+  }, []);
+
+  const fetchTodayGames = async () => {
+    setLoadingGames(true);
+    try {
+      const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `Today is ${today}. List the NBA games scheduled for today (or the most recent/upcoming games if none today). Return ONLY a JSON object, nothing else:\n{"games": [{"teamA": "Team Name", "teamB": "Team Name", "time": "7:00 PM ET", "status": "scheduled" or "live" or "final", "score": "" or "105-98", "headline": "short 5-word max note like key matchup or injury"}], "date": "today's date"}\nMax 6 games. If games are live, include score. If no games today, show next day's games.`,
+        add_context_from_internet: true,
+        model: "gemini_3_flash",
+        response_json_schema: {
+          type: "object",
+          properties: {
+            games: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  teamA: { type: "string" },
+                  teamB: { type: "string" },
+                  time: { type: "string" },
+                  status: { type: "string" },
+                  score: { type: "string" },
+                  headline: { type: "string" }
+                }
+              }
+            },
+            date: { type: "string" }
+          }
+        }
+      });
+      setTodayGames(result);
+    } catch (err) {
+      console.error("Failed to fetch today's games:", err);
+      setTodayGames(null);
+    } finally {
+      setLoadingGames(false);
+    }
+  };
 
   const SYSTEM_PROMPT = `You are KLOCK, a Real-Time Sports Data Analyst AI specializing in NBA games. Your goal is to provide live game updates and predictive scoring simulations.
 
@@ -111,12 +155,14 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
     }
   };
 
-  const quickPrompts = [
-    "Who's playing in the NBA tonight?",
-    "Blazers vs Spurs over/under 236.5",
-    "Lakers game pace analysis",
-    "Top NBA games to watch today"
-  ];
+  const quickPrompts = todayGames?.games?.length
+    ? todayGames.games.slice(0, 4).map(g => `${g.teamA} vs ${g.teamB} pace analysis`)
+    : [
+        "Who's playing in the NBA tonight?",
+        "Top NBA games to watch today",
+        "Lakers game pace analysis",
+        "Best over/under bets today"
+      ];
 
   return (
     <div className="fixed inset-0 bg-black flex flex-col overflow-hidden">
@@ -145,6 +191,44 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
               <p className="text-white font-semibold text-lg">Klock — NBA Analyst</p>
               <p className="text-white/40 text-sm mt-1">Ask about any NBA game for live pace analysis, scoring predictions, and over/under simulations.</p>
             </div>
+
+            {/* Today's Games Ticker */}
+            {loadingGames ? (
+              <div className="flex items-center gap-2 mt-2">
+                <Loader2 className="w-4 h-4 text-orange-400 animate-spin" />
+                <span className="text-white/40 text-xs">Loading today's games...</span>
+              </div>
+            ) : todayGames?.games?.length > 0 ? (
+              <div className="w-full max-w-md mt-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+                  <span className="text-white/50 text-[10px] uppercase tracking-widest font-semibold">{todayGames.date || "Today's Games"}</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {todayGames.games.slice(0, 6).map((g, i) => (
+                    <button key={i} onClick={() => setQuery(`${g.teamA} vs ${g.teamB} pace analysis${g.score ? `, current score ${g.score}` : ""}`)}
+                      className="flex items-center gap-3 px-3 py-2.5 bg-white/5 hover:bg-orange-500/10 border border-white/10 hover:border-orange-500/30 rounded-xl text-left transition-all group">
+                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                        g.status === "live" ? "bg-red-500 animate-pulse" :
+                        g.status === "final" ? "bg-white/30" : "bg-orange-500"
+                      }`} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <span className="text-white text-xs font-semibold truncate">{g.teamA} vs {g.teamB}</span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {g.score && <span className="text-orange-400 text-[11px] font-bold">{g.score}</span>}
+                          <span className="text-white/30 text-[10px]">
+                            {g.status === "live" ? "🔴 LIVE" : g.status === "final" ? "FINAL" : g.time}
+                          </span>
+                        </div>
+                        {g.headline && <p className="text-white/25 text-[10px] mt-0.5 truncate">{g.headline}</p>}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             <div className="grid grid-cols-1 gap-2 w-full max-w-md mt-4">
               {quickPrompts.map((p, i) => (
