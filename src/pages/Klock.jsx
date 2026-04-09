@@ -28,9 +28,10 @@ export default function KlockPage() {
   const fetchTodayGames = async () => {
     setLoadingGames(true);
     try {
+      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 15000));
       const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
-      const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Today is ${today}. List the NBA games scheduled for today (or the most recent/upcoming games if none today). Return ONLY a JSON object, nothing else:\n{"games": [{"teamA": "Team Name", "teamB": "Team Name", "time": "7:00 PM ET", "status": "scheduled" or "live" or "final", "score": "" or "105-98", "headline": "short 5-word max note like key matchup or injury"}], "date": "today's date"}\nMax 6 games. If games are live, include score. If no games today, show next day's games.`,
+      const fetchPromise = base44.integrations.Core.InvokeLLM({
+        prompt: `Today is ${today}. List the NBA games scheduled for today (or the most recent/upcoming games if none today). Return ONLY a JSON object:\n{"games": [{"teamA": "Team Name", "teamB": "Team Name", "time": "7:00 PM ET", "status": "scheduled" or "live" or "final", "score": "" or "105-98", "headline": "short 5-word max note"}], "date": "today's date"}\nMax 6 games. If games are live, include score. If no games today, show next day's games.`,
         add_context_from_internet: true,
         model: "gemini_3_flash",
         response_json_schema: {
@@ -54,7 +55,12 @@ export default function KlockPage() {
           }
         }
       });
-      setTodayGames(result);
+      const result = await Promise.race([fetchPromise, timeout]);
+      if (result?.games?.length) {
+        setTodayGames(result);
+      } else {
+        setTodayGames(null);
+      }
     } catch (err) {
       console.error("Failed to fetch today's games:", err);
       setTodayGames(null);
