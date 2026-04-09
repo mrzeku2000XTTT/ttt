@@ -12,6 +12,8 @@ import WalletPanel from "@/components/stakedag/WalletPanel";
 
 const LOGO_URL = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2c211776c_generated_image.png";
 
+const ADMIN_GATE = true;
+
 export default function StakeDAGPage() {
   const [tab, setTab] = useState("games");
   const [games, setGames] = useState([]);
@@ -24,6 +26,7 @@ export default function StakeDAGPage() {
   const [loadingBets, setLoadingBets] = useState(false);
   const [placing, setPlacing] = useState(false);
   const [user, setUser] = useState(null);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   useEffect(() => { init(); }, []);
 
@@ -31,11 +34,12 @@ export default function StakeDAGPage() {
     try {
       const u = await base44.auth.me();
       setUser(u);
+      if (ADMIN_GATE && u?.role !== 'admin') { setAccessDenied(true); return; }
       const saved = localStorage.getItem('stakedag_wallet');
       if (saved) { setWalletAddress(saved); fetchBalance(saved); }
       else if (u?.created_wallet_address) { setWalletAddress(u.created_wallet_address); fetchBalance(u.created_wallet_address); }
       loadBets(u.email);
-    } catch { console.log('Not logged in'); }
+    } catch { console.log('Not logged in'); setAccessDenied(true); }
     fetchGames();
     const interval = setInterval(() => fetchGames(true), 30000);
     return () => clearInterval(interval);
@@ -115,12 +119,22 @@ export default function StakeDAGPage() {
 
   return (
     <div className="fixed inset-0 bg-black flex flex-col overflow-hidden">
+      {/* Admin gate */}
+      {accessDenied && (
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8 relative z-10">
+          <img src={LOGO_URL} alt="Kaching" className="w-16 h-16 rounded-2xl opacity-30" />
+          <p className="text-white/40 text-sm font-medium">Admin access required</p>
+          <Link to={createPageUrl("AppStore")} className="text-emerald-400/60 text-xs hover:text-emerald-400 transition-colors">← Back to App Store</Link>
+        </div>
+      )}
+
       {/* Background gradient */}
-      <div className="absolute inset-0 pointer-events-none">
+      {!accessDenied && <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-emerald-500/[0.04] rounded-full blur-[120px]" />
         <div className="absolute bottom-0 right-0 w-[400px] h-[300px] bg-emerald-600/[0.03] rounded-full blur-[100px]" />
-      </div>
+      </div>}
 
+      {!accessDenied && <>
       {/* Header */}
       <div className="flex-shrink-0 relative z-10 px-4 py-4 border-b border-white/[0.06] bg-black/60 backdrop-blur-2xl">
         <div className="flex items-center gap-3 max-w-3xl mx-auto">
@@ -129,7 +143,7 @@ export default function StakeDAGPage() {
           </Link>
           <img src={LOGO_URL} alt="StakeDAG" className="w-10 h-10 rounded-2xl object-cover shadow-xl shadow-emerald-500/20 border border-emerald-500/20" />
           <div className="flex-1">
-            <h1 className="text-white font-black text-lg tracking-tight">StakeDAG</h1>
+            <h1 className="text-white font-black text-lg tracking-tight">Kaching</h1>
             <p className="text-white/25 text-[10px] font-medium">NBA Predictions · Kaspa Native</p>
           </div>
           <button
@@ -275,6 +289,7 @@ export default function StakeDAGPage() {
         show={showWallet}
         onClose={() => setShowWallet(false)}
       />
+      </>}
     </div>
   );
 }
