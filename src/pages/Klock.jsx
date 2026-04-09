@@ -22,40 +22,21 @@ export default function KlockPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  // Don't auto-fetch — let user tap to load (avoids wasted slow calls)
+  useEffect(() => {
+    fetchTodayGames();
+    // Auto-refresh scores every 30s
+    const interval = setInterval(fetchTodayGames, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchTodayGames = async () => {
-    setLoadingGames(true);
-    setTodayGames(null);
+    if (!loadingGames) setLoadingGames(true);
     setGamesFetchFailed(false);
     try {
-      const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-      const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `List NBA games scheduled for ${today}. Return a JSON object. If no games today, use the next game day.`,
-        add_context_from_internet: true,
-        model: "gemini_3_flash",
-        response_json_schema: {
-          type: "object",
-          properties: {
-            games: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  teamA: { type: "string" },
-                  teamB: { type: "string" },
-                  time: { type: "string" },
-                  status: { type: "string" },
-                  headline: { type: "string" }
-                }
-              }
-            },
-            date: { type: "string" }
-          }
-        }
-      });
-      if (result?.games?.length) {
-        setTodayGames(result);
+      const res = await base44.functions.invoke('getNBAScores', {});
+      const data = res.data;
+      if (data?.games?.length) {
+        setTodayGames(data);
       } else {
         setGamesFetchFailed(true);
       }
@@ -67,53 +48,27 @@ export default function KlockPage() {
     }
   };
 
-  const SYSTEM_PROMPT = `You are KLOCK, an NBA Sports Data Analyst AI.
+  // Build live score context for AI
+  const getLiveScoreContext = () => {
+    if (!todayGames?.games?.length) return '';
+    const lines = todayGames.games.map(g => {
+      if (g.status === 'live') return `🔴 LIVE: ${g.teamA} ${g.scoreA} - ${g.scoreB} ${g.teamB} (${g.statusDetail})`;
+      if (g.status === 'final') return `✅ FINAL: ${g.teamA} ${g.scoreA} - ${g.scoreB} ${g.teamB}`;
+      return `⏰ ${g.teamA} vs ${g.teamB} @ ${g.statusDetail}`;
+    });
+    return `\n\n**LIVE ESPN SCOREBOARD (real-time data — use these exact scores):**\n${lines.join('\n')}`;
+  };
 
-CRITICAL HONESTY RULES:
-- You DO NOT have access to live game scores or real-time data feeds.
-- NEVER fabricate scores, times remaining, or specific live game data.
-- If a game is currently happening, say "This game may be in progress — I don't have a live score feed. Check ESPN.com or the NBA app for the exact current score."
-- You CAN provide: season averages, historical matchup data, team stats, injury reports from recent news, and predictive analysis.
-- Be transparent about what is verified data vs. AI projection.
+  const SYSTEM_PROMPT = `You are KLOCK, an NBA Sports Data Analyst AI with LIVE ESPN score access.
 
-When the user asks about an NBA game, follow this process:
-
-Step 1: Data Context — Use your internet knowledge to find:
-- Team Season Averages (PPG, pace rating)
-- Recent form and win/loss streaks
-- Key Player Injury Status from recent reports
-- Historical Head-to-Head data
-- Vegas/betting lines if available from recent sources
-
-Step 2: Analysis — Calculate:
-- Expected scoring pace based on team averages
-- Projected total based on offensive/defensive ratings
-- If user provides a target (Over/Under line), calculate probability
-
-Step 3: Response Formatting — ALWAYS use this structure:
-
-**🏀 [Team A] vs. [Team B] — Analysis**
-**Status:** [Scheduled for TIME / May be in progress — check live sources for exact score / Final: SCORE]
-
----
-
-**📊 Projected Pace Metrics**
-- **Combined Season Avg:** ~X.X PPG
-- **Pace Rating:** [fast/average/slow]
-- **Projected Total:** ~XXX points
-- **Over/Under Line (if given):** [probability assessment]
-
----
-
-**🧠 Strategic Context**
-Brief explanation of matchup dynamics, injuries, rest days, etc.
-
----
-
-**⚠️ Data Disclaimer**
-Scores and live data should be verified on ESPN.com or NBA.com. Analysis is based on seasonal stats and recent reports.
-
-Step 4: ALSO return a JSON block at the very end wrapped in \`\`\`json ... \`\`\` tags with this structure for the simulation chart:
+CRITICAL RULES:
+- You HAVE access to live game scores via ESPN data feed injected below.
+- When live scores are provided, USE THEM — they are real and accurate.
+- For games marked LIVE, report the exact score shown.
+- For games marked FINAL, report the final score.
+- For scheduled games, provide predictive analysis.
+- You CAN also provide: season averages, historical matchup data, team stats, injury reports, and predictive analysis.
+- Be transparent about what is live data vs. AI projection.
 {
   "simData": {
     "mean": 225,
@@ -141,8 +96,10 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
         .map(m => `${m.role === "user" ? "User" : "KLOCK"}: ${m.content}`)
         .join("\n\n");
 
+      const liveScores = getLiveScoreContext();
+
       const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `${SYSTEM_PROMPT}\n\n${conversationContext ? `Previous conversation:\n${conversationContext}\n\n` : ""}User: ${userMsg}`,
+        prompt: `${SYSTEM_PROMPT}${liveScores}\n\n${conversationContext ? `Previous conversation:\n${conversationContext}\n\n` : ""}User: ${userMsg}`,
         add_context_from_internet: true,
         model: "gemini_3_flash"
       });
@@ -174,7 +131,11 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
   };
 
   const quickPrompts = todayGames?.games?.length
-    ? todayGames.games.slice(0, 4).map(g => `${g.teamA} vs ${g.teamB} pace analysis`)
+    ? todayGames.games.slice(0, 4).map(g => {
+        if (g.status === 'live') return `${g.teamA} ${g.scoreA}-${g.scoreB} ${g.teamB} — live analysis`;
+        if (g.status === 'final') return `${g.teamA} ${g.scoreA}-${g.scoreB} ${g.teamB} — post-game breakdown`;
+        return `${g.teamA} vs ${g.teamB} pace analysis`;
+      })
     : [
         "Who's playing in the NBA tonight?",
         "Top NBA games to watch today",
@@ -207,38 +168,45 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
             <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3a8b4c791_generated_image.png" alt="Klock" className="w-20 h-20 rounded-3xl object-cover shadow-2xl shadow-orange-500/30" />
             <div>
               <p className="text-white font-semibold text-lg">Klock — NBA Analyst</p>
-              <p className="text-white/40 text-sm mt-1">Ask about any NBA game for live pace analysis, scoring predictions, and over/under simulations.</p>
+              <p className="text-white/40 text-sm mt-1">Real-time ESPN scores · Live pace analysis · Scoring predictions · Over/under simulations</p>
             </div>
 
             {/* Today's Games Ticker */}
-            {loadingGames ? (
+            {loadingGames && !todayGames ? (
               <div className="flex items-center gap-2 mt-2">
                 <Loader2 className="w-4 h-4 text-orange-400 animate-spin" />
-                <span className="text-white/40 text-xs">Fetching today's NBA schedule...</span>
+                <span className="text-white/40 text-xs">Fetching live NBA scores...</span>
               </div>
             ) : todayGames?.games?.length ? (
               <div className="w-full max-w-md mt-2">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
-                  <span className="text-white/50 text-[10px] uppercase tracking-widest font-semibold">{todayGames.date || "Today's Games"}</span>
+                  <span className="text-white/50 text-[10px] uppercase tracking-widest font-semibold">Live Scoreboard — {todayGames.games.length} Games</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {todayGames.games.slice(0, 6).map((g, i) => (
-                    <button key={i} onClick={() => submitQuery(`Analyze ${g.teamA} vs ${g.teamB} — focus ONLY on this specific game. Scheduled: ${g.time}. Provide pace metrics, projected total, injury report, and strategic context for this matchup.`)}
+                  {todayGames.games.map((g, i) => (
+                    <button key={i} onClick={() => submitQuery(`Analyze ${g.teamA} vs ${g.teamB} — ${g.status === 'live' ? `LIVE score: ${g.scoreA}-${g.scoreB}` : g.status === 'final' ? `Final: ${g.scoreA}-${g.scoreB}` : `Scheduled: ${g.statusDetail}`}. Provide pace metrics, projected total, injury report, and strategic context.`)}
                       className="flex items-center gap-3 px-3 py-2.5 bg-white/5 hover:bg-orange-500/10 border border-white/10 hover:border-orange-500/30 rounded-xl text-left transition-all group">
-                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                        g.status === "live" ? "bg-red-500 animate-pulse" :
-                        g.status === "final" ? "bg-white/30" : "bg-orange-500"
-                      }`} />
+                      {g.teamALogo && <img src={g.teamALogo} alt="" className="w-5 h-5 flex-shrink-0" />}
                       <div className="flex-1 min-w-0">
-                        <span className="text-white text-xs font-semibold truncate block">{g.teamA} vs {g.teamB}</span>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-white/30 text-[10px]">
-                            {g.status === "live" ? "🔴 LIVE" : g.status === "final" ? "FINAL" : g.time}
-                          </span>
+                        <div className="flex items-center justify-between">
+                          <span className="text-white text-xs font-semibold truncate">{g.teamAShort} vs {g.teamBShort}</span>
+                          {(g.status === 'live' || g.status === 'final') && (
+                            <span className={`text-xs font-bold ml-2 ${g.status === 'live' ? 'text-red-400' : 'text-white/60'}`}>
+                              {g.scoreA} - {g.scoreB}
+                            </span>
+                          )}
                         </div>
-                        {g.headline && <p className="text-white/25 text-[10px] mt-0.5 truncate">{g.headline}</p>}
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className={`text-[10px] font-medium ${
+                            g.status === 'live' ? 'text-red-400' : g.status === 'final' ? 'text-white/40' : 'text-orange-400/70'
+                          }`}>
+                            {g.status === 'live' ? `🔴 ${g.statusDetail}` : g.status === 'final' ? 'FINAL' : g.statusDetail}
+                          </span>
+                          {g.broadcast && <span className="text-white/20 text-[9px]">{g.broadcast}</span>}
+                        </div>
                       </div>
+                      {g.teamBLogo && <img src={g.teamBLogo} alt="" className="w-5 h-5 flex-shrink-0" />}
                     </button>
                   ))}
                 </div>
@@ -248,10 +216,10 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
                 <button onClick={fetchTodayGames}
                   className="flex items-center gap-2 px-5 py-2.5 bg-orange-500/15 hover:bg-orange-500/25 border border-orange-500/40 rounded-xl transition-all">
                   <Zap className="w-4 h-4 text-orange-400" />
-                  <span className="text-orange-300 text-sm font-semibold">{gamesFetchFailed ? "Retry — Load Games" : "Load Today's Games"}</span>
+                  <span className="text-orange-300 text-sm font-semibold">{gamesFetchFailed ? 'Retry — Load Scores' : 'Load Live Scores'}</span>
                 </button>
                 {gamesFetchFailed && (
-                  <p className="text-white/30 text-[10px]">Fetch timed out — tap to retry or ask below</p>
+                  <p className="text-white/30 text-[10px]">Could not reach ESPN — tap to retry</p>
                 )}
               </div>
             )}
@@ -270,7 +238,7 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
 
             <div className="flex items-center gap-2 mt-4 px-3 py-2 bg-orange-500/10 border border-orange-500/30 rounded-xl">
               <Clock className="w-3.5 h-3.5 text-orange-400 flex-shrink-0" />
-              <p className="text-orange-300/70 text-[11px]">Data powered by AI web search — updated in real-time</p>
+              <p className="text-orange-300/70 text-[11px]">Live scores from ESPN · AI analysis · Auto-refreshes every 30s</p>
             </div>
           </div>
         ) : (
