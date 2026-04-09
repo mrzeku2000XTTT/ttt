@@ -129,13 +129,12 @@ Step 4: ALSO return a JSON block at the very end wrapped in \`\`\`json ... \`\`\
 
 If the user asks a non-NBA question, respond helpfully but remind them you specialize in NBA analysis. Be concise, data-driven, and confident.`;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!query.trim() || loading) return;
+  const submitQuery = async (text) => {
+    const userMsg = (text || "").trim();
+    if (!userMsg || loading) return;
 
-    const userMsg = query.trim();
-    setMessages(prev => [...prev, { role: "user", content: userMsg }]);
     setQuery("");
+    setMessages(prev => [...prev, { role: "user", content: userMsg }]);
     setLoading(true);
     setSimData(null);
 
@@ -165,10 +164,15 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
     } catch (err) {
       console.error("Klock error:", err);
       toast.error("Failed to analyze. Try again.");
-      setMessages(prev => [...prev, { role: "assistant", content: "⚠️ Analysis failed. Please try again." }]);
+      setMessages(prev => [...prev, { role: "assistant", content: "\u26a0\ufe0f Analysis failed. Please try again." }]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await submitQuery(query);
   };
 
   const quickPrompts = todayGames?.games?.length
@@ -222,7 +226,7 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {todayGames.games.slice(0, 6).map((g, i) => (
-                    <button key={i} onClick={() => setQuery(`${g.teamA} vs ${g.teamB} pace analysis${g.score ? `, current score ${g.score}` : ""}`)}
+                    <button key={i} onClick={() => submitQuery(`Analyze ${g.teamA} vs ${g.teamB} — focus ONLY on this specific game. ${g.score ? `Last reported score: ${g.score}.` : `Scheduled: ${g.time}.`} Provide pace metrics, projected total, injury report, and strategic context for this matchup.`)}
                       className="flex items-center gap-3 px-3 py-2.5 bg-white/5 hover:bg-orange-500/10 border border-white/10 hover:border-orange-500/30 rounded-xl text-left transition-all group">
                       <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
                         g.status === "live" ? "bg-red-500 animate-pulse" :
@@ -248,7 +252,7 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
 
             <div className="grid grid-cols-1 gap-2 w-full max-w-md mt-4">
               {quickPrompts.map((p, i) => (
-                <button key={i} onClick={() => setQuery(p)}
+                <button key={i} onClick={() => submitQuery(p)}
                   className="px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs text-white/60 text-left transition-all flex items-center gap-3">
                   <div className="w-7 h-7 rounded-lg bg-orange-500/20 flex items-center justify-center flex-shrink-0">
                     {[Target, TrendingUp, BarChart3, Zap][i] && React.createElement([Target, TrendingUp, BarChart3, Zap][i], { className: "w-3.5 h-3.5 text-orange-400" })}
@@ -288,8 +292,7 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
                   <KlockSimChart data={simData} />
                   <button
                     onClick={() => {
-                      const predQuery = `Give me a deep future prediction for ${simData.teamA} vs ${simData.teamB}. Analyze from 1000+ data points including: season-long trends, player efficiency ratings, home/away splits, back-to-back fatigue, referee tendencies, pace-of-play matchups, 3-point shooting variance, free throw rates, turnover margins, clutch performance stats, quarter-by-quarter scoring patterns, and historical playoff implications. Provide a comprehensive breakdown with confidence percentages.`;
-                      setQuery(predQuery);
+                      submitQuery(`Give me a deep future prediction for ${simData.teamA} vs ${simData.teamB}. Analyze from 1000+ data points including: season-long trends, player efficiency ratings, home/away splits, back-to-back fatigue, referee tendencies, pace-of-play matchups, 3-point shooting variance, free throw rates, turnover margins, clutch performance stats, quarter-by-quarter scoring patterns, and historical playoff implications. Provide a comprehensive breakdown with confidence percentages.`);
                     }}
                     className="w-full py-3 bg-gradient-to-r from-orange-600/30 to-red-600/30 hover:from-orange-600/40 hover:to-red-600/40 border border-orange-500/40 hover:border-orange-500/60 rounded-xl text-orange-300 text-sm font-bold transition-all flex items-center justify-center gap-2"
                   >
