@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import KlockSimChart from "@/components/klock/KlockSimChart";
+import LiveScoreTicker from "@/components/klock/LiveScoreTicker";
 
 export default function KlockPage() {
   const [query, setQuery] = useState("");
@@ -16,6 +17,7 @@ export default function KlockPage() {
   const [todayGames, setTodayGames] = useState(null);
   const [loadingGames, setLoadingGames] = useState(false);
   const [gamesFetchFailed, setGamesFetchFailed] = useState(false);
+  const [showScoreboard, setShowScoreboard] = useState(true);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -155,14 +157,49 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
           <h1 className="text-white font-bold text-sm">Klock</h1>
           <p className="text-white/40 text-[10px]">NBA Real-Time Analyst</p>
         </div>
-        <div className="flex items-center gap-1 px-2 py-1 bg-green-500/20 border border-green-500/40 rounded-full">
+        <button
+          onClick={() => setShowScoreboard(v => !v)}
+          className={`flex items-center gap-1 px-2 py-1 rounded-full transition-all ${
+            showScoreboard ? 'bg-green-500/20 border border-green-500/40' : 'bg-white/5 border border-white/10'
+          }`}
+        >
           <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
           <span className="text-green-400 text-[10px] font-semibold">LIVE</span>
-        </div>
+        </button>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 max-w-3xl w-full mx-auto space-y-4">
+      {/* Main content area */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Live Scoreboard Panel */}
+        <AnimatePresence>
+          {showScoreboard && (
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 'auto', opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="hidden md:flex flex-shrink-0 w-64 border-r border-white/10 bg-black/50 flex-col overflow-hidden"
+            >
+              <div className="px-3 py-3 border-b border-white/10">
+                <h3 className="text-white text-xs font-bold uppercase tracking-widest">Scoreboard</h3>
+              </div>
+              <div className="flex-1 overflow-y-auto px-2 py-2 scrollbar-hide">
+                <LiveScoreTicker onGameClick={(prompt) => submitQuery(prompt)} />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 max-w-3xl w-full mx-auto space-y-4">
+
+        {/* Mobile scoreboard (inline, collapsible) */}
+        {showScoreboard && (
+          <div className="md:hidden mb-3">
+            <LiveScoreTicker onGameClick={(prompt) => submitQuery(prompt)} />
+          </div>
+        )}
+
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center gap-4 text-center min-h-[300px]">
             <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3a8b4c791_generated_image.png" alt="Klock" className="w-20 h-20 rounded-3xl object-cover shadow-2xl shadow-orange-500/30" />
@@ -287,6 +324,7 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
           </motion.div>
         )}
         <div ref={messagesEndRef} />
+      </div>
       </div>
 
       {/* Input */}
