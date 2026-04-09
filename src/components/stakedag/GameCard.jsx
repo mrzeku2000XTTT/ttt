@@ -1,13 +1,10 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Clock, TrendingUp, ArrowRight } from "lucide-react";
 
 export default function GameCard({ game, onSelectBet, isLive }) {
-  const statusColor = game.status === 'live' ? 'text-red-400' : game.status === 'final' ? 'text-white/40' : 'text-emerald-400';
-  const statusBg = game.status === 'live' ? 'bg-red-500/10 border-red-500/30' : game.status === 'final' ? 'bg-white/5 border-white/10' : 'bg-emerald-500/10 border-emerald-500/30';
   const isBettable = game.status === 'scheduled';
 
-  // Generate fake but realistic odds based on game id hash
+  // Generate deterministic odds from game id
   const hash = (game.id || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
   const homeSpread = ((hash % 13) - 6.5).toFixed(1);
   const awaySpread = (parseFloat(homeSpread) * -1).toFixed(1);
@@ -31,80 +28,122 @@ export default function GameCard({ game, onSelectBet, isLive }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`rounded-2xl border p-4 ${statusBg} transition-all`}
+      className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900/80 to-zinc-950/80 border border-white/[0.06] backdrop-blur-sm hover:border-emerald-500/20 transition-all duration-300"
     >
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          {game.status === 'live' && <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />}
-          <span className={`text-[10px] font-bold uppercase tracking-widest ${statusColor}`}>
-            {game.status === 'live' ? `LIVE · ${game.statusDetail}` : game.status === 'final' ? 'FINAL' : game.statusDetail}
-          </span>
-        </div>
-        {game.broadcast && <span className="text-white/20 text-[9px]">{game.broadcast}</span>}
-      </div>
+      {/* Glow accent */}
+      {game.status === 'live' && (
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-red-500 to-transparent" />
+      )}
+      {isBettable && (
+        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      )}
 
-      {/* Teams + Score */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3 flex-1">
-          {game.teamALogo && <img src={game.teamALogo} alt="" className="w-8 h-8" />}
-          <div>
-            <p className="text-white font-bold text-sm">{game.teamA}</p>
-            <p className="text-white/30 text-[10px]">Away</p>
+      <div className="p-4">
+        {/* Status bar */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            {game.status === 'live' ? (
+              <div className="flex items-center gap-1.5 px-2 py-0.5 bg-red-500/15 border border-red-500/25 rounded-full">
+                <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+                <span className="text-red-400 text-[10px] font-bold tracking-wide">{game.statusDetail}</span>
+              </div>
+            ) : game.status === 'final' ? (
+              <span className="text-white/30 text-[10px] font-semibold tracking-wider uppercase">Final</span>
+            ) : (
+              <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
+                <span className="text-emerald-400/80 text-[10px] font-medium">{game.statusDetail}</span>
+              </div>
+            )}
           </div>
-        </div>
-        <div className="flex flex-col items-center px-4">
-          {(game.status === 'live' || game.status === 'final') ? (
-            <div className="flex items-center gap-3">
-              <span className="text-white text-xl font-black tabular-nums">{game.scoreA}</span>
-              <span className="text-white/30 text-sm">-</span>
-              <span className="text-white text-xl font-black tabular-nums">{game.scoreB}</span>
-            </div>
-          ) : (
-            <span className="text-white/30 text-xs">VS</span>
+          {game.broadcast && (
+            <span className="text-white/15 text-[9px] font-medium bg-white/[0.03] px-2 py-0.5 rounded-full">{game.broadcast}</span>
           )}
         </div>
-        <div className="flex items-center gap-3 flex-1 justify-end">
-          <div className="text-right">
-            <p className="text-white font-bold text-sm">{game.teamB}</p>
-            <p className="text-white/30 text-[10px]">Home</p>
+
+        {/* Matchup */}
+        <div className="flex items-center gap-3 mb-4">
+          {/* Team A */}
+          <div className="flex-1 flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center flex-shrink-0 overflow-hidden">
+              {game.teamALogo ? (
+                <img src={game.teamALogo} alt="" className="w-8 h-8 object-contain" />
+              ) : (
+                <span className="text-white/30 text-xs font-bold">{game.teamAShort}</span>
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="text-white font-bold text-sm truncate">{game.teamAShort || game.teamA}</p>
+              <p className="text-white/25 text-[10px]">Away</p>
+            </div>
           </div>
-          {game.teamBLogo && <img src={game.teamBLogo} alt="" className="w-8 h-8" />}
+
+          {/* Score / VS */}
+          <div className="flex-shrink-0 px-3">
+            {(game.status === 'live' || game.status === 'final') ? (
+              <div className="flex items-center gap-2.5">
+                <span className="text-white text-2xl font-black tabular-nums tracking-tight">{game.scoreA}</span>
+                <div className="w-4 h-[1px] bg-white/10" />
+                <span className="text-white text-2xl font-black tabular-nums tracking-tight">{game.scoreB}</span>
+              </div>
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-white/[0.03] border border-white/[0.06] flex items-center justify-center">
+                <span className="text-white/20 text-[10px] font-bold tracking-widest">VS</span>
+              </div>
+            )}
+          </div>
+
+          {/* Team B */}
+          <div className="flex-1 flex items-center gap-3 justify-end">
+            <div className="text-right min-w-0">
+              <p className="text-white font-bold text-sm truncate">{game.teamBShort || game.teamB}</p>
+              <p className="text-white/25 text-[10px]">Home</p>
+            </div>
+            <div className="w-11 h-11 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center flex-shrink-0 overflow-hidden">
+              {game.teamBLogo ? (
+                <img src={game.teamBLogo} alt="" className="w-8 h-8 object-contain" />
+              ) : (
+                <span className="text-white/30 text-xs font-bold">{game.teamBShort}</span>
+              )}
+            </div>
+          </div>
         </div>
+
+        {/* Bet Options */}
+        {isBettable && (
+          <div className="pt-3 border-t border-white/[0.04]">
+            <div className="grid grid-cols-3 gap-1 mb-1.5">
+              <span className="text-center text-white/20 text-[8px] uppercase tracking-[0.15em] font-semibold">Moneyline</span>
+              <span className="text-center text-white/20 text-[8px] uppercase tracking-[0.15em] font-semibold">Spread</span>
+              <span className="text-center text-white/20 text-[8px] uppercase tracking-[0.15em] font-semibold">Total</span>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {[0, 2, 4].map(startIdx => (
+                <div key={startIdx} className="space-y-1.5">
+                  {[betOptions[startIdx], betOptions[startIdx + 1]].map((opt, j) => (
+                    <button
+                      key={j}
+                      onClick={() => onSelectBet({ ...opt, game })}
+                      className="w-full py-2.5 px-2 bg-white/[0.03] hover:bg-emerald-500/15 border border-white/[0.06] hover:border-emerald-500/30 rounded-xl transition-all duration-200 text-center group/btn"
+                    >
+                      <span className="text-white/70 text-[10px] font-semibold block group-hover/btn:text-emerald-300 transition-colors">{opt.label}</span>
+                      <span className="text-white/25 text-[9px] block mt-0.5">{opt.detail}</span>
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!isBettable && game.status !== 'final' && (
+          <div className="pt-3 border-t border-white/[0.04] text-center">
+            <span className="text-white/15 text-[10px]">Live betting coming soon</span>
+          </div>
+        )}
       </div>
-
-      {/* Bet Options Grid */}
-      {isBettable && (
-        <div>
-          <div className="grid grid-cols-6 gap-1 mb-1">
-            <span className="col-span-2 text-center text-white/30 text-[9px] uppercase tracking-widest">Moneyline</span>
-            <span className="col-span-2 text-center text-white/30 text-[9px] uppercase tracking-widest">Spread</span>
-            <span className="col-span-2 text-center text-white/30 text-[9px] uppercase tracking-widest">Total</span>
-          </div>
-          <div className="grid grid-cols-6 gap-1">
-            {betOptions.map((opt, i) => (
-              <button
-                key={i}
-                onClick={() => onSelectBet({ ...opt, game })}
-                className="py-2 px-1 bg-white/5 hover:bg-emerald-500/20 border border-white/10 hover:border-emerald-500/40 rounded-lg transition-all text-center group"
-              >
-                <span className="text-white/70 text-[10px] block group-hover:text-emerald-300">{opt.label}</span>
-                <span className="text-white/40 text-[9px] block">{opt.detail}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {!isBettable && (
-        <div className="text-center py-1">
-          <span className="text-white/20 text-[10px]">
-            {game.status === 'live' ? 'Live betting coming soon' : 'Game completed'}
-          </span>
-        </div>
-      )}
     </motion.div>
   );
 }

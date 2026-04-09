@@ -145,7 +145,7 @@ export default function AppStorePage() {
     { name: "Farlands", icon: "Link2", path: "Farlands", category: "Games", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/869680b72_IMG_0177.jpeg", circular: true },
     { name: "Velour", icon: "Link2", path: "V1", category: "Shop", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/585acf464_generated_image.png", circular: true },
     { name: "Klock", icon: "Activity", path: "Klock", category: "Tools", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3a8b4c791_generated_image.png" },
-    { name: "StakeDAG", icon: "TrendingUp", path: "StakeDAG", category: "Games", defaultIcon: "https://ui-avatars.com/api/?name=SD&size=128&background=059669&color=fff&bold=true" },
+    { name: "StakeDAG", icon: "TrendingUp", path: "StakeDAG", category: "Games", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2c211776c_generated_image.png" },
       ];
 
   const getIconComponent = (iconName) => {
