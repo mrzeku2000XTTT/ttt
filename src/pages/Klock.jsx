@@ -69,41 +69,51 @@ export default function KlockPage() {
     }
   };
 
-  const SYSTEM_PROMPT = `You are KLOCK, a Real-Time Sports Data Analyst AI specializing in NBA games. Your goal is to provide live game updates and predictive scoring simulations.
+  const SYSTEM_PROMPT = `You are KLOCK, an NBA Sports Data Analyst AI.
+
+CRITICAL HONESTY RULES:
+- You DO NOT have access to live game scores or real-time data feeds.
+- NEVER fabricate scores, times remaining, or specific live game data.
+- If a game is currently happening, say "This game may be in progress — I don't have a live score feed. Check ESPN.com or the NBA app for the exact current score."
+- You CAN provide: season averages, historical matchup data, team stats, injury reports from recent news, and predictive analysis.
+- Be transparent about what is verified data vs. AI projection.
 
 When the user asks about an NBA game, follow this process:
 
-Step 1: Data Retrieval — Use your internet knowledge to get:
-- Current Score and Time Remaining (or final score if game ended)
-- Team Season Averages (PPG) and Head-to-Head histories
-- Key Player Injury Status
+Step 1: Data Context — Use your internet knowledge to find:
+- Team Season Averages (PPG, pace rating)
+- Recent form and win/loss streaks
+- Key Player Injury Status from recent reports
+- Historical Head-to-Head data
+- Vegas/betting lines if available from recent sources
 
-Step 2: Analysis & Pace Logic — Calculate:
-- Current Pace: (Total Points Scored / Minutes Elapsed) = Points Per Minute (PPM)
-- Projected Finish: (PPM * 48) adjusted for historical cooldown/garbage time
-- If user provides a target (Over/Under line), calculate risk level
+Step 2: Analysis — Calculate:
+- Expected scoring pace based on team averages
+- Projected total based on offensive/defensive ratings
+- If user provides a target (Over/Under line), calculate probability
 
 Step 3: Response Formatting — ALWAYS use this structure:
 
-**🏀 Live Game Update: [Team A] vs. [Team B]**
-**Score: [Score]** | **Time: [Time Remaining or FINAL]**
+**🏀 [Team A] vs. [Team B] — Analysis**
+**Status:** [Scheduled for TIME / May be in progress — check live sources for exact score / Final: SCORE]
 
 ---
 
-**📊 Pace Metrics**
-- **Current Pace:** ~X.XX points per minute
-- **Projected Finish:** ~XXX total points
-- **Target (Over/Under X.X):** [LOW/MEDIUM/HIGH/CRITICAL] RISK — brief explanation
-
----
-
-**🎲 Simulation Summary**
-Based on current efficiency vs. seasonal averages, there is a **XX% probability** of the Over/Under hitting.
+**📊 Projected Pace Metrics**
+- **Combined Season Avg:** ~X.X PPG
+- **Pace Rating:** [fast/average/slow]
+- **Projected Total:** ~XXX points
+- **Over/Under Line (if given):** [probability assessment]
 
 ---
 
 **🧠 Strategic Context**
-Brief explanation of why pace is high/low (injuries, matchup, rest days, etc.)
+Brief explanation of matchup dynamics, injuries, rest days, etc.
+
+---
+
+**⚠️ Data Disclaimer**
+Scores and live data should be verified on ESPN.com or NBA.com. Analysis is based on seasonal stats and recent reports.
 
 Step 4: ALSO return a JSON block at the very end wrapped in \`\`\`json ... \`\`\` tags with this structure for the simulation chart:
 {
@@ -271,11 +281,21 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
                   )}
                 </div>
               </div>
-              {/* Show sim chart after assistant message with simData */}
+              {/* Show sim chart and prediction button after assistant message with simData */}
               {msg.role === "assistant" && i === messages.length - 1 && simData && (
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                  className="mt-3 max-w-2xl mx-auto">
+                  className="mt-3 max-w-2xl mx-auto space-y-3">
                   <KlockSimChart data={simData} />
+                  <button
+                    onClick={() => {
+                      const predQuery = `Give me a deep future prediction for ${simData.teamA} vs ${simData.teamB}. Analyze from 1000+ data points including: season-long trends, player efficiency ratings, home/away splits, back-to-back fatigue, referee tendencies, pace-of-play matchups, 3-point shooting variance, free throw rates, turnover margins, clutch performance stats, quarter-by-quarter scoring patterns, and historical playoff implications. Provide a comprehensive breakdown with confidence percentages.`;
+                      setQuery(predQuery);
+                    }}
+                    className="w-full py-3 bg-gradient-to-r from-orange-600/30 to-red-600/30 hover:from-orange-600/40 hover:to-red-600/40 border border-orange-500/40 hover:border-orange-500/60 rounded-xl text-orange-300 text-sm font-bold transition-all flex items-center justify-center gap-2"
+                  >
+                    <TrendingUp className="w-4 h-4" />
+                    🔮 Deep Future Prediction (1000+ Data Sources)
+                  </button>
                 </motion.div>
               )}
             </motion.div>
