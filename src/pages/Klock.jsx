@@ -125,9 +125,7 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
         <Link to={createPageUrl("AppStore")} className="text-white/40 hover:text-white transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center shadow-lg shadow-orange-500/30">
-          <Activity className="w-5 h-5 text-white" />
-        </div>
+        <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3a8b4c791_generated_image.png" alt="Klock" className="w-9 h-9 rounded-xl object-cover shadow-lg shadow-orange-500/30" />
         <div className="flex-1">
           <h1 className="text-white font-bold text-sm">Klock</h1>
           <p className="text-white/40 text-[10px]">NBA Real-Time Analyst</p>
@@ -142,9 +140,7 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
       <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 max-w-3xl w-full mx-auto space-y-4">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center gap-4 text-center min-h-[300px]">
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center shadow-2xl shadow-orange-500/30">
-              <Activity className="w-10 h-10 text-white" />
-            </div>
+            <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3a8b4c791_generated_image.png" alt="Klock" className="w-20 h-20 rounded-3xl object-cover shadow-2xl shadow-orange-500/30" />
             <div>
               <p className="text-white font-semibold text-lg">Klock — NBA Analyst</p>
               <p className="text-white/40 text-sm mt-1">Ask about any NBA game for live pace analysis, scoring predictions, and over/under simulations.</p>
