@@ -9,8 +9,11 @@ Deno.serve(async (req) => {
     }
 
     // ESPN scoreboard API — free, no key needed
-    const today = new Date();
-    const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
+    // Use date from request body if provided, otherwise use UTC
+    const body = await req.json().catch(() => ({}));
+    const dateStr = body.date
+      ? body.date.replace(/-/g, '')
+      : new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const url = `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${dateStr}`;
     
     const res = await fetch(url, {
