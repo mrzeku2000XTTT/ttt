@@ -14,40 +14,54 @@ export default function KlockPage() {
   const [messages, setMessages] = useState([]);
   const [simData, setSimData] = useState(null);
   const [todayGames, setTodayGames] = useState(null);
-  const [loadingGames, setLoadingGames] = useState(true);
+  const [loadingGames, setLoadingGames] = useState(false);
+  const [gamesFetchFailed, setGamesFetchFailed] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  useEffect(() => {
-    fetchTodayGames();
-  }, []);
+  // Don't auto-fetch — let user tap to load (avoids wasted slow calls)
 
   const fetchTodayGames = async () => {
     setLoadingGames(true);
     setTodayGames(null);
+    setGamesFetchFailed(false);
     try {
-      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000));
       const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-      const fetchPromise = base44.integrations.Core.InvokeLLM({
-        prompt: `NBA games for ${today}. Return JSON: {"games":[{"teamA":"Name","teamB":"Name","time":"7PM ET","status":"scheduled","headline":"brief"}],"date":"${today}"}. Max 6. If none today, next day.`,
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `List NBA games scheduled for ${today}. Return a JSON object. If no games today, use the next game day.`,
         add_context_from_internet: true,
         model: "gemini_3_flash",
         response_json_schema: {
           type: "object",
           properties: {
-            games: { type: "array", items: { type: "object", properties: { teamA: { type: "string" }, teamB: { type: "string" }, time: { type: "string" }, status: { type: "string" }, headline: { type: "string" } } } },
+            games: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  teamA: { type: "string" },
+                  teamB: { type: "string" },
+                  time: { type: "string" },
+                  status: { type: "string" },
+                  headline: { type: "string" }
+                }
+              }
+            },
             date: { type: "string" }
           }
         }
       });
-      const result = await Promise.race([fetchPromise, timeout]);
-      setTodayGames(result?.games?.length ? result : null);
+      if (result?.games?.length) {
+        setTodayGames(result);
+      } else {
+        setGamesFetchFailed(true);
+      }
     } catch (err) {
       console.error("Failed to fetch games:", err);
-      setTodayGames(null);
+      setGamesFetchFailed(true);
     } finally {
       setLoadingGames(false);
     }
@@ -200,15 +214,9 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
             {loadingGames ? (
               <div className="flex items-center gap-2 mt-2">
                 <Loader2 className="w-4 h-4 text-orange-400 animate-spin" />
-                <span className="text-white/40 text-xs">Loading today's games...</span>
+                <span className="text-white/40 text-xs">Fetching today's NBA schedule...</span>
               </div>
-            ) : !todayGames?.games?.length ? (
-              <button onClick={fetchTodayGames}
-                className="flex items-center gap-2 mt-2 px-4 py-2 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 rounded-xl transition-all">
-                <Zap className="w-3.5 h-3.5 text-orange-400" />
-                <span className="text-orange-300 text-xs font-medium">Tap to load today's games</span>
-              </button>
-            ) : (
+            ) : todayGames?.games?.length ? (
               <div className="w-full max-w-md mt-2">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
@@ -216,7 +224,7 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {todayGames.games.slice(0, 6).map((g, i) => (
-                    <button key={i} onClick={() => submitQuery(`Analyze ${g.teamA} vs ${g.teamB} \u2014 focus ONLY on this specific game. Scheduled: ${g.time}. Provide pace metrics, projected total, injury report, and strategic context for this matchup.`)}
+                    <button key={i} onClick={() => submitQuery(`Analyze ${g.teamA} vs ${g.teamB} — focus ONLY on this specific game. Scheduled: ${g.time}. Provide pace metrics, projected total, injury report, and strategic context for this matchup.`)}
                       className="flex items-center gap-3 px-3 py-2.5 bg-white/5 hover:bg-orange-500/10 border border-white/10 hover:border-orange-500/30 rounded-xl text-left transition-all group">
                       <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
                         g.status === "live" ? "bg-red-500 animate-pulse" :
@@ -226,7 +234,7 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
                         <span className="text-white text-xs font-semibold truncate block">{g.teamA} vs {g.teamB}</span>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="text-white/30 text-[10px]">
-                            {g.status === "live" ? "\ud83d\udd34 LIVE" : g.status === "final" ? "FINAL" : g.time}
+                            {g.status === "live" ? "🔴 LIVE" : g.status === "final" ? "FINAL" : g.time}
                           </span>
                         </div>
                         {g.headline && <p className="text-white/25 text-[10px] mt-0.5 truncate">{g.headline}</p>}
@@ -234,6 +242,17 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
                     </button>
                   ))}
                 </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2 mt-2">
+                <button onClick={fetchTodayGames}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-orange-500/15 hover:bg-orange-500/25 border border-orange-500/40 rounded-xl transition-all">
+                  <Zap className="w-4 h-4 text-orange-400" />
+                  <span className="text-orange-300 text-sm font-semibold">{gamesFetchFailed ? "Retry — Load Games" : "Load Today's Games"}</span>
+                </button>
+                {gamesFetchFailed && (
+                  <p className="text-white/30 text-[10px]">Fetch timed out — tap to retry or ask below</p>
+                )}
               </div>
             )}
 
