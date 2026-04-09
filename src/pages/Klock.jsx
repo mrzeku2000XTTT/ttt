@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft, Send, Loader2, Activity, TrendingUp, Target, BarChart3, Clock, Zap } from "lucide-react";
+import { ArrowLeft, Send, Loader2, Activity, TrendingUp, Target, BarChart3, Clock, Zap, ImagePlus, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,7 +18,14 @@ export default function KlockPage() {
   const [loadingGames, setLoadingGames] = useState(false);
   const [gamesFetchFailed, setGamesFetchFailed] = useState(false);
   const [showScoreboard, setShowScoreboard] = useState(true);
+  const [attachedImage, setAttachedImage] = useState(null); // { file, preview, url }
+  const [uploading, setUploading] = useState(false);
+  const [learnings, setLearnings] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('klock_learnings') || '[]'); } catch { return []; }
+  });
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const inputRef = useRef(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -61,7 +68,51 @@ export default function KlockPage() {
     return `\n\n**LIVE ESPN SCOREBOARD (real-time data — use these exact scores):**\n${lines.join('\n')}`;
   };
 
-  const SYSTEM_PROMPT = `You are KLOCK, an NBA Sports Data Analyst AI with LIVE ESPN score access.
+  const saveLearning = (text) => {
+    const updated = [...learnings, { text, date: new Date().toISOString() }].slice(-20);
+    setLearnings(updated);
+    localStorage.setItem('klock_learnings', JSON.stringify(updated));
+  };
+
+  const getLearningsContext = () => {
+    if (!learnings.length) return '';
+    return `\n\n**PREVIOUS ANALYSIS LEARNINGS (use these to improve predictions):**\n${learnings.map((l, i) => `${i + 1}. ${l.text}`).join('\n')}`;
+  };
+
+  const handleImageUpload = async (file) => {
+    if (!file || !file.type.startsWith('image/')) return;
+    setUploading(true);
+    const preview = URL.createObjectURL(file);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setAttachedImage({ preview, url: file_url });
+    } catch {
+      toast.error('Image upload failed');
+      URL.revokeObjectURL(preview);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handlePaste = (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) handleImageUpload(file);
+        break;
+      }
+    }
+  };
+
+  const removeImage = () => {
+    if (attachedImage?.preview) URL.revokeObjectURL(attachedImage.preview);
+    setAttachedImage(null);
+  };
+
+  const SYSTEM_PROMPT = `You are KLOCK, an elite NBA Sports Data Analyst AI with LIVE ESPN score access and image analysis capabilities.
 
 CRITICAL RULES:
 - You HAVE access to live game scores via ESPN data feed injected below.
@@ -71,6 +122,12 @@ CRITICAL RULES:
 - For scheduled games, provide predictive analysis.
 - You CAN also provide: season averages, historical matchup data, team stats, injury reports, and predictive analysis.
 - Be transparent about what is live data vs. AI projection.
+- When user sends images (screenshots, charts, stats tables, betting slips, box scores), ANALYZE them thoroughly.
+- Compare image data with your knowledge and live scores to give insights.
+- If the image shows historical charts or trends, reference them in future predictions.
+- Learn from every interaction — if you previously analyzed something, build on it.
+- You can also have normal conversations — respond naturally to any question.
+- When you learn something important from an image analysis, end your response with a line starting with "LEARNING:" followed by a 1-sentence key takeaway (this will be saved for future reference).
 {
   "simData": {
     "mean": 225,
@@ -82,14 +139,17 @@ CRITICAL RULES:
   }
 }
 
-If the user asks a non-NBA question, respond helpfully but remind them you specialize in NBA analysis. Be concise, data-driven, and confident.`;
+Respond helpfully to any question. Be concise, data-driven, and confident.`;
 
-  const submitQuery = async (text) => {
+  const submitQuery = async (text, imageOverride) => {
     const userMsg = (text || "").trim();
-    if (!userMsg || loading) return;
+    const currentImage = imageOverride || attachedImage;
+    if ((!userMsg && !currentImage) || loading) return;
 
     setQuery("");
-    setMessages(prev => [...prev, { role: "user", content: userMsg }]);
+    const msgObj = { role: "user", content: userMsg || "[Image sent for analysis]", imagePreview: currentImage?.preview || null };
+    setMessages(prev => [...prev, msgObj]);
+    setAttachedImage(null);
     setLoading(true);
     setSimData(null);
 
@@ -99,12 +159,19 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
         .join("\n\n");
 
       const liveScores = getLiveScoreContext();
+      const learnCtx = getLearningsContext();
 
-      const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `${SYSTEM_PROMPT}${liveScores}\n\n${conversationContext ? `Previous conversation:\n${conversationContext}\n\n` : ""}User: ${userMsg}`,
+      const llmParams = {
+        prompt: `${SYSTEM_PROMPT}${liveScores}${learnCtx}\n\n${conversationContext ? `Previous conversation:\n${conversationContext}\n\n` : ""}User: ${userMsg || "Analyze this image"}`,
         add_context_from_internet: true,
         model: "gemini_3_flash"
-      });
+      };
+
+      if (currentImage?.url) {
+        llmParams.file_urls = [currentImage.url];
+      }
+
+      const response = await base44.integrations.Core.InvokeLLM(llmParams);
 
       // Extract sim data JSON if present
       const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/);
@@ -115,8 +182,17 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
         } catch {}
       }
 
-      // Remove JSON block from displayed message
-      const cleanResponse = response.replace(/```json[\s\S]*?```/g, "").trim();
+      // Extract learning if present
+      const learningMatch = response.match(/LEARNING:\s*(.+)/i);
+      if (learningMatch) {
+        saveLearning(learningMatch[1].trim());
+      }
+
+      // Remove JSON block and LEARNING line from displayed message
+      const cleanResponse = response
+        .replace(/```json[\s\S]*?```/g, "")
+        .replace(/LEARNING:\s*.+/gi, "")
+        .trim();
       setMessages(prev => [...prev, { role: "assistant", content: cleanResponse }]);
     } catch (err) {
       console.error("Klock error:", err);
@@ -130,6 +206,12 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
   const handleSubmit = async (e) => {
     e.preventDefault();
     await submitQuery(query);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer?.files?.[0];
+    if (file) handleImageUpload(file);
   };
 
   const quickPrompts = todayGames?.games?.length
@@ -287,6 +369,9 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
                     ? "bg-orange-600/30 border border-orange-500/30 text-white"
                     : "bg-white/5 border border-white/10 text-white/90"
                 }`}>
+                  {msg.imagePreview && (
+                    <img src={msg.imagePreview} alt="attached" className="max-h-40 rounded-xl border border-white/10 mb-2 object-contain" />
+                  )}
                   {msg.role === "assistant" ? (
                     <div className="prose prose-sm prose-invert max-w-none break-words overflow-hidden [&>p]:my-2 [&_code]:bg-white/10 [&_code]:px-1 [&_code]:rounded [&_code]:break-all [&_code]:whitespace-pre-wrap [&_pre]:bg-black/40 [&_pre]:p-2 [&_pre]:rounded-xl [&_pre]:border [&_pre]:border-white/10 [&_pre]:text-xs [&_pre]:overflow-x-auto [&_pre]:max-w-full [&_hr]:border-white/10 [&_hr]:my-3">
                       <ReactMarkdown>{msg.content}</ReactMarkdown>
@@ -328,21 +413,61 @@ If the user asks a non-NBA question, respond helpfully but remind them you speci
       </div>
 
       {/* Input */}
-      <div className="flex-shrink-0 border-t border-white/10 bg-black px-4 pb-4 pt-2 max-w-3xl w-full mx-auto">
+      <div className="flex-shrink-0 border-t border-white/10 bg-black px-4 pb-4 pt-2 max-w-3xl w-full mx-auto"
+        onDragOver={e => e.preventDefault()} onDrop={handleDrop}>
+
+        {/* Image preview */}
+        {attachedImage && (
+          <div className="mb-2 flex items-center gap-2">
+            <div className="relative inline-block">
+              <img src={attachedImage.preview} alt="preview" className="h-14 w-14 object-cover rounded-xl border border-orange-500/30" />
+              <button onClick={removeImage} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-black border border-white/20 rounded-full flex items-center justify-center">
+                <X className="w-3 h-3 text-white/70" />
+              </button>
+            </div>
+            <span className="text-white/40 text-[10px]">Image attached — add a message or send directly</span>
+          </div>
+        )}
+        {uploading && (
+          <div className="mb-2 flex items-center gap-2">
+            <Loader2 className="w-4 h-4 text-orange-400 animate-spin" />
+            <span className="text-white/40 text-xs">Uploading image...</span>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="flex gap-2 items-center">
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+            onChange={e => { if (e.target.files?.[0]) handleImageUpload(e.target.files[0]); e.target.value = ''; }} />
+
+          <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
+            className={`w-10 h-10 flex-shrink-0 border rounded-full flex items-center justify-center transition-all disabled:opacity-40 ${
+              attachedImage ? 'bg-orange-500/20 border-orange-500/40 text-orange-400' : 'bg-white/5 hover:bg-white/10 border-white/10 text-white/50'
+            }`}>
+            <ImagePlus className="w-4 h-4" />
+          </button>
+
           <input
+            ref={inputRef}
             type="text"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Ask about any NBA game..."
+            onPaste={handlePaste}
+            placeholder={attachedImage ? "Describe what to analyze..." : "Ask about any NBA game, or paste an image..."}
             disabled={loading}
             className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-orange-500/50 transition-all disabled:opacity-40 text-sm"
           />
-          <button type="submit" disabled={loading || !query.trim()}
+          <button type="submit" disabled={loading || (!query.trim() && !attachedImage)}
             className="w-10 h-10 bg-orange-600/40 hover:bg-orange-600/60 disabled:opacity-40 border border-orange-500/30 rounded-full flex items-center justify-center flex-shrink-0 transition-all">
             <Send className="w-4 h-4 text-white" />
           </button>
         </form>
+
+        {learnings.length > 0 && (
+          <div className="mt-1.5 flex items-center gap-1">
+            <div className="w-1.5 h-1.5 bg-orange-400 rounded-full" />
+            <span className="text-white/20 text-[9px]">{learnings.length} learned insight{learnings.length !== 1 ? 's' : ''} active</span>
+          </div>
+        )}
       </div>
     </div>
   );
