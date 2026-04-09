@@ -122,7 +122,7 @@ export default function StakeDAGPage() {
       {/* Admin gate */}
       {accessDenied && (
         <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8 relative z-10">
-          <img src={LOGO_URL} alt="Kaching" className="w-16 h-16 rounded-2xl opacity-30" />
+          <img src={LOGO_URL} alt="KaChing" className="w-16 h-16 rounded-2xl opacity-30" />
           <p className="text-white/40 text-sm font-medium">Admin access required</p>
           <Link to={createPageUrl("AppStore")} className="text-emerald-400/60 text-xs hover:text-emerald-400 transition-colors">← Back to App Store</Link>
         </div>
@@ -143,7 +143,7 @@ export default function StakeDAGPage() {
           </Link>
           <img src={LOGO_URL} alt="StakeDAG" className="w-10 h-10 rounded-2xl object-cover shadow-xl shadow-emerald-500/20 border border-emerald-500/20" />
           <div className="flex-1">
-            <h1 className="text-white font-black text-lg tracking-tight">Kaching</h1>
+            <h1 className="text-white font-black text-lg tracking-tight">KaChing</h1>
             <p className="text-white/25 text-[10px] font-medium">NBA Predictions · Kaspa Native</p>
           </div>
           <button
