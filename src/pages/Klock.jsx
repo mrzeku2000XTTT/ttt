@@ -33,10 +33,7 @@ export default function KlockPage() {
     if (!loadingGames) setLoadingGames(true);
     setGamesFetchFailed(false);
     try {
-      // Send local date to avoid UTC timezone mismatch
-      const now = new Date();
-      const localDate = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-      const res = await base44.functions.invoke('getNBAScores', { date: localDate });
+      const res = await base44.functions.invoke('getNBAScores', {});
       const data = res.data;
       if (data?.games?.length) {
         setTodayGames(data);

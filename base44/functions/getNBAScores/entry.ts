@@ -9,14 +9,16 @@ Deno.serve(async (req) => {
     }
 
     // ESPN scoreboard API — free, no key needed
-    // Use date from request body if provided, otherwise use UTC
-    const body = await req.json().catch(() => ({}));
-    const dateStr = body.date
-      ? body.date.replace(/-/g, '')
-      : new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const url = `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${dateStr}`;
+    // Use America/Chicago timezone to get the correct local date
+    const now = new Date();
+    const chicagoTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+    const yr = chicagoTime.getFullYear();
+    const mo = String(chicagoTime.getMonth() + 1).padStart(2, '0');
+    const dy = String(chicagoTime.getDate()).padStart(2, '0');
+    const dateStr = `${yr}${mo}${dy}`;
+    const espnUrl = `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${dateStr}`;
     
-    const res = await fetch(url, {
+    const res = await fetch(espnUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0' }
     });
 
@@ -64,7 +66,7 @@ Deno.serve(async (req) => {
 
     return Response.json({ 
       games, 
-      date: data?.day?.date || today.toISOString().slice(0, 10),
+      date: data?.day?.date || `${yr}-${mo}-${dy}`,
       count: games.length 
     });
   } catch (error) {
