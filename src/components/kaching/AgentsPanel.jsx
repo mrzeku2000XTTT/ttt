@@ -136,13 +136,13 @@ function FundBotModal({ bot, onClose }) {
   return (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/95 backdrop-blur-lg z-[9999] flex items-center justify-center p-4"
       onClick={onClose}
     >
       <motion.div
         initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
         onClick={e => e.stopPropagation()}
-        className="bg-zinc-950/100 border border-emerald-500/20 rounded-2xl p-4 w-full max-w-xs space-y-3 shadow-2xl shadow-black/80"
+        className="bg-zinc-950 border border-emerald-500/20 rounded-2xl p-4 w-full max-w-xs space-y-3 shadow-2xl shadow-black"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -204,6 +204,11 @@ export default function AgentsPanel() {
       const res = await base44.functions.invoke('kachingBotManager', { action: 'list_bots' });
       if (res.data?.bots?.length > 0) {
         setBots(res.data.bots);
+        // Auto-refresh balances from chain on initial load
+        try {
+          const balRes = await base44.functions.invoke('kachingBotManager', { action: 'refresh_balances' });
+          if (balRes.data?.results) setBots(balRes.data.results);
+        } catch {}
       } else {
         // No bots yet — create them
         const createRes = await base44.functions.invoke('kachingBotManager', { action: 'create_bots' });
