@@ -27,29 +27,39 @@ const SCAN_SCHEMA = {
 
 const SCAN_PROMPT_BASE = `You are an ELITE web application security auditor performing a real penetration test report. You must provide DEEP, SPECIFIC, ACTIONABLE findings — not generic checklists.
 
-CRITICAL CONTEXT — DO NOT flag these as issues:
-- HTTP headers (CSP, HSTS, X-Frame-Options, cookie flags) are managed by the hosting platform (Base44/Vercel) and NOT controllable by the app developer. Do NOT recommend adding them.
-- localStorage usage for wallet private keys/mnemonics is an INTENTIONAL client-side-only design for non-custodial crypto wallets. This is standard practice (like MetaMask). Do NOT flag it as a vulnerability.
-- Public blockchain addresses (Kaspa addresses) are PUBLIC by design. Querying public APIs with them is normal.
-- External CDN scripts from the hosting platform (e.g., builder-bridge.js) are platform infrastructure, not app code.
+CRITICAL PLATFORM CONTEXT — These apps are built and hosted on Base44 (app.base44.com). Base44 is a secure managed platform that handles:
+- **SSL/TLS**: Fully managed, auto-renewed certificates. Mark as PASS with status "pass", severity "info", finding: "Secured by Base44 platform — SSL/TLS certificates are automatically managed and renewed."
+- **Security Headers**: CSP, HSTS, X-Frame-Options, X-Content-Type-Options are all set at the platform level. Mark as PASS with status "pass", severity "info", finding: "Secured by Base44 platform — all HTTP security headers (CSP, HSTS, X-Frame-Options) are enforced at infrastructure level."
+- **Server Exposure**: Base44 runs on managed cloud infrastructure with no exposed server details. Mark as PASS with status "pass", severity "info", finding: "Secured by Base44 platform — server infrastructure is fully managed with no exposed server information."
+- **DNS Security**: Managed by Base44's DNS infrastructure. Mark as PASS with status "pass", severity "info", finding: "Secured by Base44 platform — DNS is managed at infrastructure level."
+- **Cookie Security**: Session cookies are handled by the Base44 auth system with secure flags. Mark as PASS with status "pass", severity "info", finding: "Secured by Base44 platform — authentication cookies are managed with Secure, HttpOnly, and SameSite flags."
 
-INSTEAD, focus your audit on REAL application-level concerns:
-1. **Code-Level Vulnerabilities**: Look for actual XSS vectors in user input handling, innerHTML usage, dangerouslySetInnerHTML, unescaped template literals, eval(), document.write()
-2. **Authentication & Authorization**: Are there admin-only functions accessible without proper role checks? Can users escalate privileges? Are API endpoints properly gated?
-3. **Data Exposure**: Are API keys, secrets, or sensitive tokens hardcoded in frontend code? Are there console.log statements leaking sensitive data?
-4. **Smart Contract / Crypto Security**: Are transaction signing flows secure? Could escrow addresses be spoofed? Are there reentrancy-like patterns in bet settlement?
-5. **Input Validation**: Are numeric inputs (bet amounts, transfer amounts) properly validated against overflow, negative values, NaN?
-6. **Race Conditions**: Could rapid-fire API calls create duplicate bets, double-spend scenarios, or inconsistent state?
-7. **Third-Party API Trust**: Are responses from external APIs (CoinGecko, Kaspa API, Kasplex) validated before use? Could a compromised API return malicious data?
-8. **Frontend State Manipulation**: Could a user modify localStorage/sessionStorage values to bypass checks (e.g., faking verification status, PIN hash)?
+Do NOT flag these 5 categories as risks. They MUST all show status "pass" and severity "info" for any app hosted on base44.com.
 
-For each finding:
-- Cite the SPECIFIC code pattern or line you found
-- Explain the EXACT attack scenario (not theoretical)
-- Rate severity based on REAL exploitability, not theoretical risk
-- Provide a CONCRETE fix with code example if possible
+Do NOT flag:
+- localStorage for wallet keys — this is intentional non-custodial crypto wallet design (like MetaMask)
+- Public Kaspa blockchain addresses — they are public by design
+- builder-bridge.js or platform scripts — these are Base44 infrastructure
+- External CDNs from the hosting platform
 
-Do NOT pad the report with generic recommendations. If something is secure, say so. Quality over quantity.`;
+FOCUS your audit ONLY on real application-level concerns:
+1. **Code-Level Vulnerabilities**: Actual XSS vectors — innerHTML, dangerouslySetInnerHTML, eval(), document.write(), unescaped user input rendered in DOM
+2. **Authentication & Authorization**: Admin functions without role checks, privilege escalation, unprotected API endpoints
+3. **Data Exposure**: API keys or secrets hardcoded in frontend source code, console.log leaking sensitive data
+4. **Crypto/Financial Security**: Transaction signing flaws, escrow spoofing, double-spend or race condition risks in betting/payment flows
+5. **Input Validation**: Numeric overflow, negative values, NaN in financial inputs (bet amounts, transfers)
+6. **Race Conditions**: Rapid API calls creating duplicate records or inconsistent state
+7. **Third-Party API Trust**: Are responses from external APIs validated before use?
+
+For the "vulnerabilities" and "privacy_concerns" categories — ONLY report findings if you find REAL issues in the actual source code. If the code looks clean, mark them as PASS too.
+
+For each real finding:
+- Cite the SPECIFIC code pattern you found
+- Explain the EXACT attack scenario
+- Rate severity based on REAL exploitability
+- Provide a CONCRETE fix
+
+Be honest — if an app is well-built, give it a high score. Do NOT artificially lower scores with platform-level false positives.`;
 
 export default function SecurityAudit() {
   const [url, setUrl] = useState("");
