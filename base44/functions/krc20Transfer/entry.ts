@@ -252,7 +252,34 @@ async function buildAndSubmitRevealTx({
 }) {
   console.log('[reveal] Starting reveal TX construction...');
 
-  // 1. Wait for P2SH UTXO to appear
+  // 1. Wait for commit TX to be ACCEPTED (not just visible)
+  console.log(`[reveal] Waiting for commit TX ${commitTxId} to be accepted...`);
+  let commitAccepted = false;
+  for (let attempt = 0; attempt < 30; attempt++) {
+    await new Promise(r => setTimeout(r, 2000));
+    try {
+      // Check if the transaction exists and is accepted
+      const txRes = await fetch(`${KASPA_API}/transactions/${commitTxId}`);
+      if (txRes.ok) {
+        const txData = await txRes.json();
+        // If we can fetch the TX and it has a block, it's accepted
+        if (txData && (txData.block_id || txData.accepting_block_hash || txData.is_accepted !== false)) {
+          console.log(`[reveal] ✓ Commit TX accepted (attempt ${attempt + 1})`);
+          commitAccepted = true;
+          break;
+        }
+      }
+    } catch (e) {
+      // Transaction not yet indexed, keep waiting
+    }
+    console.log(`[reveal] Commit TX not yet accepted (attempt ${attempt + 1}/30)...`);
+  }
+
+  if (!commitAccepted) {
+    console.warn('[reveal] Commit TX acceptance not confirmed after 60s, proceeding with UTXO check...');
+  }
+
+  // 2. Wait for P2SH UTXO to appear
   let p2shUtxo = null;
   for (let attempt = 0; attempt < 20; attempt++) {
     await new Promise(r => setTimeout(r, 3000));
@@ -273,16 +300,21 @@ async function buildAndSubmitRevealTx({
     throw new Error('P2SH UTXO not found after 60s. Commit TX may not have confirmed.');
   }
 
-  // 2. Fetch sender UTXOs for gas
+  // 3. Extra safety wait — ensure UTXO is fully propagated across nodes
+  console.log('[reveal] Waiting 5s extra for full DAG propagation...');
+  await new Promise(r => setTimeout(r, 5000));
+
+  // 4. Fetch sender UTXOs for gas (exclude UTXOs from the commit TX to avoid orphan)
   const senderRes = await fetch(`${KASPA_API}/addresses/${senderAddress}/utxos`);
   if (!senderRes.ok) throw new Error('Failed to fetch sender UTXOs');
   const senderUtxos = await senderRes.json();
 
-  // Select sender UTXOs for gas
+  // Select sender UTXOs for gas — EXCLUDE any from the commit TX (change outputs are unconfirmed)
   let gasTotal = 0n;
   const gasUtxos = [];
-  senderUtxos.sort((a, b) => Number(b.utxoEntry.amount) - Number(a.utxoEntry.amount));
-  for (const u of senderUtxos) {
+  const confirmedSenderUtxos = senderUtxos.filter(u => u.outpoint.transactionId !== commitTxId);
+  confirmedSenderUtxos.sort((a, b) => Number(b.utxoEntry.amount) - Number(a.utxoEntry.amount));
+  for (const u of confirmedSenderUtxos) {
     if (gasTotal >= REVEAL_FEE_SOMPI) break;
     if (gasUtxos.length >= 10) break;
     gasUtxos.push(u);
@@ -313,7 +345,7 @@ async function buildAndSubmitRevealTx({
   inputs.push({
     prevTxId: p2shUtxo.outpoint.transactionId,
     prevIndex: p2shUtxo.outpoint.index,
-    utxoScriptVersion: 1,  // P2SH version
+    utxoScriptVersion: 0,  // Kaspa always uses version 0 for all script types
     utxoScriptPubKey: p2shScriptPubKey,
     utxoAmount: p2shAmount,
     sequence: 0n,
@@ -403,11 +435,29 @@ async function buildAndSubmitRevealTx({
   console.log('[reveal] Submitting reveal TX...');
   console.log(`[reveal] Inputs: ${rawTx.inputs.length}, Outputs: ${rawTx.outputs.length}`);
 
-  const submitRes = await fetch(`${KASPA_API}/transactions`, {
+  // Try with allowOrphan: false first, then retry with allowOrphan: true
+  let submitRes = await fetch(`${KASPA_API}/transactions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ transaction: rawTx, allowOrphan: false }),
   });
+
+  if (!submitRes.ok) {
+    const errText = await submitRes.text();
+    console.warn(`[reveal] First submit failed (${submitRes.status}): ${errText.slice(0, 200)}`);
+    
+    // If orphan error, wait longer and retry
+    if (errText.includes('orphan')) {
+      console.log('[reveal] Orphan error — waiting 10s for DAG propagation and retrying...');
+      await new Promise(r => setTimeout(r, 10000));
+      
+      submitRes = await fetch(`${KASPA_API}/transactions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transaction: rawTx, allowOrphan: false }),
+      });
+    }
+  }
 
   const submitText = await submitRes.text();
   console.log('[reveal] Submit status:', submitRes.status, submitText.slice(0, 500));
