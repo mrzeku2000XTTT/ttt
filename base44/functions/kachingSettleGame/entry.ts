@@ -270,15 +270,22 @@ async function sendPayout(base44, game, recipientAddress, amountKas) {
     return null;
   }
 
-  console.log(`Payout: sending ${actualSend} KAS (requested ${amountKas}, escrow balance ${escrowBalance}, fee reserve ${TX_FEE}) to ${toAddr.slice(0, 20)}...`);
+  // Determine if this is the only/last payout — if so, use sendAll to drain escrow cleanly
+  const useSendAll = (actualSend >= maxSendable - 0.001);
+  console.log(`Payout: sending ${useSendAll ? 'ALL' : actualSend + ' KAS'} (requested ${amountKas}, escrow balance ${escrowBalance}) to ${toAddr.slice(0, 20)}...`);
 
   try {
-    const res = await base44.asServiceRole.functions.invoke('sendKaspaTransaction', {
+    const txParams = {
       mnemonic: game.escrow_mnemonic,
       fromAddress: fromAddr,
       toAddress: toAddr,
-      amountKas: actualSend,
-    });
+    };
+    if (useSendAll) {
+      txParams.sendAll = true;
+    } else {
+      txParams.amountKas = actualSend;
+    }
+    const res = await base44.asServiceRole.functions.invoke('sendKaspaTransaction', txParams);
 
     if (res?.error) {
       console.error(`Payout failed to ${recipientAddress.slice(0, 12)}: ${res.error}`);

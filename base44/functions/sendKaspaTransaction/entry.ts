@@ -6,9 +6,9 @@ const FEE_SOMPI = 10000; // 0.0001 KAS minimum fee
 
 Deno.serve(async (req) => {
   try {
-    const { mnemonic, privateKey: inputPrivateKey, fromAddress, toAddress, amountKas } = await req.json();
+    const { mnemonic, privateKey: inputPrivateKey, fromAddress, toAddress, amountKas, sendAll } = await req.json();
 
-    if ((!mnemonic && !inputPrivateKey) || !fromAddress || !toAddress || !amountKas) {
+    if ((!mnemonic && !inputPrivateKey) || !fromAddress || !toAddress || (!amountKas && !sendAll)) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -16,8 +16,8 @@ Deno.serve(async (req) => {
     const normalizedFromAddress = fromAddress.startsWith('kaspa:') ? fromAddress : `kaspa:${fromAddress}`;
     const normalizedToAddress = toAddress.startsWith('kaspa:') ? toAddress : `kaspa:${toAddress}`;
 
-    const amountSompi = Math.round(parseFloat(amountKas) * 1e8);
-    if (amountSompi <= 0) return Response.json({ error: 'Invalid amount' }, { status: 400 });
+    let amountSompi = amountKas ? Math.round(parseFloat(amountKas) * 1e8) : 0;
+    if (!sendAll && amountSompi <= 0) return Response.json({ error: 'Invalid amount' }, { status: 400 });
 
     // 1. Get private key — either directly or derive from mnemonic
     let privateKey = inputPrivateKey;
@@ -41,21 +41,33 @@ Deno.serve(async (req) => {
     // 3. Greedy UTXO selection — prefer largest UTXOs first to minimize storage mass
     // Max ~80 UTXOs to stay well under the 100000 storage mass limit
     const MAX_UTXOS = 80;
-    const needed = amountSompi + FEE_SOMPI;
     let totalIn = 0;
     const selectedUtxos = [];
     utxos.sort((a, b) => Number(b.utxoEntry.amount) - Number(a.utxoEntry.amount));
-    for (const utxo of utxos) {
-      if (totalIn >= needed) break;
-      if (selectedUtxos.length >= MAX_UTXOS) break;
-      selectedUtxos.push(utxo);
-      totalIn += Number(utxo.utxoEntry.amount);
-    }
-    if (totalIn < needed) {
-      throw new Error(`Insufficient balance. Need ${(needed / 1e8).toFixed(4)} KAS (incl. fee), have ${(totalIn / 1e8).toFixed(4)} KAS`);
+
+    if (sendAll) {
+      // Send ALL: use all UTXOs (up to limit), send everything minus fee
+      for (const utxo of utxos) {
+        if (selectedUtxos.length >= MAX_UTXOS) break;
+        selectedUtxos.push(utxo);
+        totalIn += Number(utxo.utxoEntry.amount);
+      }
+      amountSompi = totalIn - FEE_SOMPI;
+      if (amountSompi <= 0) throw new Error('Balance too low to cover fee');
+    } else {
+      const needed = amountSompi + FEE_SOMPI;
+      for (const utxo of utxos) {
+        if (totalIn >= needed) break;
+        if (selectedUtxos.length >= MAX_UTXOS) break;
+        selectedUtxos.push(utxo);
+        totalIn += Number(utxo.utxoEntry.amount);
+      }
+      if (totalIn < needed) {
+        throw new Error(`Insufficient balance. Need ${(needed / 1e8).toFixed(4)} KAS (incl. fee), have ${(totalIn / 1e8).toFixed(4)} KAS`);
+      }
     }
 
-    const change = totalIn - amountSompi - FEE_SOMPI;
+    const change = sendAll ? 0 : (totalIn - amountSompi - FEE_SOMPI);
 
     // 4. Build inputs for OKX SDK
     const inputs = selectedUtxos.map(u => ({
