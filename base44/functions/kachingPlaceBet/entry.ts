@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { game_id, side, tx_hash_in, bot_email, bot_wallet } = await req.json();
+    const { game_id, side, tx_hash_in, bot_email, bot_wallet, pacman_amount, tx_hash_pacman_in } = await req.json();
 
     // Support bot bets with explicit email/wallet override
     const betEmail = bot_email || user.email || '';
@@ -118,35 +118,43 @@ Deno.serve(async (req) => {
       : senderWallet;
 
     // Create bet record with ON-CHAIN verified data
+    const pacAmt = parseFloat(pacman_amount) || 0;
     const betData = {
       game_id: game.id,
       game_number: game.game_number,
       user_wallet_address: finalWallet,
       side,
       amount_kas: verification.amount_kas,
+      amount_pacman: pacAmt,
       status: 'confirmed',
       verified: true,
       tx_hash_in: tx_hash_in,
     };
+    if (pacAmt > 0 && tx_hash_pacman_in) betData.tx_hash_pacman_in = tx_hash_pacman_in;
     // Include email if available (optional)
     if (betEmail) betData.user_email = betEmail;
     const bet = await base44.asServiceRole.entities.GameBet.create(betData);
 
-    // Update game pool counters
+    // Update game pool counters (KAS + PACMAN)
     const updateData = {
       total_pool_kas: (game.total_pool_kas || 0) + verification.amount_kas,
     };
+    if (pacAmt > 0) {
+      updateData.total_pool_pacman = (game.total_pool_pacman || 0) + pacAmt;
+    }
     if (side === 'yes') {
       updateData.yes_pool_kas = (game.yes_pool_kas || 0) + verification.amount_kas;
       updateData.yes_count = (game.yes_count || 0) + 1;
+      if (pacAmt > 0) updateData.yes_pool_pacman = (game.yes_pool_pacman || 0) + pacAmt;
     } else {
       updateData.no_pool_kas = (game.no_pool_kas || 0) + verification.amount_kas;
       updateData.no_count = (game.no_count || 0) + 1;
+      if (pacAmt > 0) updateData.no_pool_pacman = (game.no_pool_pacman || 0) + pacAmt;
     }
 
     await base44.asServiceRole.entities.PredictionGame.update(game.id, updateData);
 
-    console.log(`BET PLACED: ${senderWallet.slice(0, 12)}... bet ${verification.amount_kas} KAS on ${side.toUpperCase()} for game #${game.game_number}`);
+    console.log(`BET PLACED: ${senderWallet.slice(0, 12)}... bet ${verification.amount_kas} KAS + ${pacAmt} PACMAN on ${side.toUpperCase()} for game #${game.game_number}`);
 
     return Response.json({
       success: true,
@@ -154,6 +162,7 @@ Deno.serve(async (req) => {
       verified_on_chain: true,
       sender_address: `kaspa:${senderWallet}`,
       amount_kas: verification.amount_kas,
+      pacman_amount: pacAmt,
       side,
       game_number: game.game_number,
       escrow_address: `kaspa:${game.escrow_address}`,
@@ -162,6 +171,9 @@ Deno.serve(async (req) => {
         total: updateData.total_pool_kas,
         yes: updateData.yes_pool_kas || game.yes_pool_kas || 0,
         no: updateData.no_pool_kas || game.no_pool_kas || 0,
+        total_pacman: updateData.total_pool_pacman || game.total_pool_pacman || 0,
+        yes_pacman: updateData.yes_pool_pacman || game.yes_pool_pacman || 0,
+        no_pacman: updateData.no_pool_pacman || game.no_pool_pacman || 0,
       },
     });
   } catch (error) {

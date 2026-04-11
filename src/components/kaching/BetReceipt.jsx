@@ -86,6 +86,9 @@ export default function BetReceipt({ show, onClose, bet }) {
                 <span className={`text-xs font-black ${
                   r.your_side === 'yes' ? 'text-emerald-400' : 'text-rose-400'
                 }`}>{(r.your_side || '').toUpperCase()} · {r.your_bet_kas} KAS</span>
+                {(r.your_bet_pacman || 0) > 0 && (
+                  <span className="text-yellow-400 text-[10px] font-bold block mt-0.5">+ {r.your_bet_pacman} PACMAN</span>
+                )}
               </div>
             </div>
 
@@ -101,9 +104,15 @@ export default function BetReceipt({ show, onClose, bet }) {
                   {r.payout_kas > 0 ? `+${r.payout_kas}` : '0'} KAS
                 </span>
               </div>
+              {(r.payout_pacman || 0) > 0 && (
+                <div className="flex items-center justify-between mt-1 pt-1 border-t border-white/[0.04]">
+                  <span className="text-white/40 text-[10px]">PACMAN Payout</span>
+                  <span className="text-yellow-400 text-sm font-black">+{r.payout_pacman} PACMAN</span>
+                </div>
+              )}
               {r.kas_tx_hash && (
                 <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/[0.04]">
-                  <span className="text-white/20 text-[9px]">TX</span>
+                  <span className="text-white/20 text-[9px]">KAS TX</span>
                   <div className="flex items-center gap-1.5">
                     <CopyField value={r.kas_tx_hash} label="TX Hash" />
                     <a href={`https://explorer.kaspa.org/txs/${r.kas_tx_hash}`} target="_blank" rel="noopener noreferrer"
@@ -111,6 +120,12 @@ export default function BetReceipt({ show, onClose, bet }) {
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   </div>
+                </div>
+              )}
+              {r.pacman_tx_hash && (
+                <div className="flex items-center justify-between mt-1 pt-1 border-t border-white/[0.04]">
+                  <span className="text-white/20 text-[9px]">PACMAN TX</span>
+                  <CopyField value={r.pacman_tx_hash} label="PACMAN TX" />
                 </div>
               )}
             </div>
@@ -152,7 +167,7 @@ export default function BetReceipt({ show, onClose, bet }) {
 
             {/* Pool + Time */}
             <div className="flex items-center justify-between text-[9px] text-white/20 pt-2 border-t border-white/[0.04]">
-              <span>Pool: {r.total_pool_kas} KAS</span>
+              <span>Pool: {r.total_pool_kas} KAS{(r.total_pool_pacman || 0) > 0 ? ` + ${r.total_pool_pacman} PAC` : ''}</span>
               <span>{r.settled_at ? new Date(r.settled_at).toLocaleString() : ''}</span>
             </div>
           </div>

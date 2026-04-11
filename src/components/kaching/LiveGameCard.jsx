@@ -53,6 +53,10 @@ export default function LiveGameCard({ game, userBets, onBet }) {
   const total = yesTotal + noTotal;
   const yesPct = total > 0 ? Math.round((yesTotal / total) * 100) : 50;
 
+  const yesPacman = game.yes_pool_pacman || 0;
+  const noPacman = game.no_pool_pacman || 0;
+  const totalPacman = yesPacman + noPacman;
+
   // Extract price target from question
   const priceMatch = game.question?.match(/\$([0-9,.]+)/);
   const priceTarget = priceMatch ? priceMatch[1] : null;
@@ -88,6 +92,9 @@ export default function LiveGameCard({ game, userBets, onBet }) {
             {/* Pool info */}
             <div className="text-right">
               <div className="text-white/60 text-xs font-bold">{total.toFixed(2)} <span className="text-white/25">KAS</span></div>
+              {totalPacman > 0 && (
+                <div className="text-yellow-400/60 text-[10px] font-bold">{totalPacman.toLocaleString()} <span className="text-yellow-400/25">PACMAN</span></div>
+              )}
               <div className="text-white/20 text-[10px]">{totalBettors} bet{totalBettors !== 1 ? 's' : ''}</div>
             </div>
           </div>
@@ -113,8 +120,8 @@ export default function LiveGameCard({ game, userBets, onBet }) {
               <div className="h-full bg-gradient-to-r from-rose-400 to-rose-500 rounded-r-full transition-all duration-700" style={{ width: `${100 - yesPct}%` }} />
             </div>
             <div className="flex items-center justify-between mt-1.5">
-              <span className="text-emerald-400 text-[11px] font-bold">YES {yesPct}¢ <span className="text-white/15 font-normal">· {yesTotal.toFixed(1)} KAS</span></span>
-              <span className="text-rose-400 text-[11px] font-bold">NO {100 - yesPct}¢ <span className="text-white/15 font-normal">· {noTotal.toFixed(1)} KAS</span></span>
+              <span className="text-emerald-400 text-[11px] font-bold">YES {yesPct}¢ <span className="text-white/15 font-normal">· {yesTotal.toFixed(1)} KAS{yesPacman > 0 ? ` · ${yesPacman.toLocaleString()} PAC` : ''}</span></span>
+              <span className="text-rose-400 text-[11px] font-bold">NO {100 - yesPct}¢ <span className="text-white/15 font-normal">· {noTotal.toFixed(1)} KAS{noPacman > 0 ? ` · ${noPacman.toLocaleString()} PAC` : ''}</span></span>
             </div>
           </div>
 
@@ -130,7 +137,7 @@ export default function LiveGameCard({ game, userBets, onBet }) {
                   <span>
                     <span className="text-white/40">You: </span>
                     <span className={bet.side === 'yes' ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
-                      {bet.side.toUpperCase()} · {bet.amount_kas} KAS
+                      {bet.side.toUpperCase()} · {bet.amount_kas} KAS{(bet.amount_pacman || 0) > 0 ? ` + ${bet.amount_pacman} PAC` : ''}
                     </span>
                   </span>
                   <span className={

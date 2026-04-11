@@ -27,13 +27,26 @@
     "amount_kas": {
       "type": "number"
     },
+    "amount_pacman": {
+      "type": "number",
+      "default": 0,
+      "description": "PACMAN KRC-20 tokens bet"
+    },
     "tx_hash_in": {
       "type": "string",
-      "description": "Transaction hash of user's deposit to escrow"
+      "description": "Transaction hash of user's KAS deposit to escrow"
+    },
+    "tx_hash_pacman_in": {
+      "type": "string",
+      "description": "Transaction hash of user's PACMAN KRC-20 deposit to escrow"
     },
     "tx_hash_out": {
       "type": "string",
-      "description": "Transaction hash of payout (if won)"
+      "description": "Transaction hash of KAS payout (if won)"
+    },
+    "tx_hash_pacman_out": {
+      "type": "string",
+      "description": "Transaction hash of PACMAN KRC-20 payout (if won)"
     },
     "status": {
       "type": "string",
@@ -49,6 +62,11 @@
     "payout_kas": {
       "type": "number",
       "default": 0
+    },
+    "payout_pacman": {
+      "type": "number",
+      "default": 0,
+      "description": "PACMAN KRC-20 payout amount"
     },
     "verified": {
       "type": "boolean",
@@ -67,7 +85,13 @@
         "total_pool_kas": {
           "type": "number"
         },
+        "total_pool_pacman": {
+          "type": "number"
+        },
         "your_bet_kas": {
+          "type": "number"
+        },
+        "your_bet_pacman": {
           "type": "number"
         },
         "your_side": {
@@ -76,7 +100,13 @@
         "payout_kas": {
           "type": "number"
         },
+        "payout_pacman": {
+          "type": "number"
+        },
         "kas_tx_hash": {
+          "type": "string"
+        },
+        "pacman_tx_hash": {
           "type": "string"
         },
         "pacman_bonus": {

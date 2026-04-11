@@ -73,6 +73,21 @@
       "type": "number",
       "default": 0
     },
+    "total_pool_pacman": {
+      "type": "number",
+      "default": 0,
+      "description": "Total PACMAN KRC-20 tokens in pool"
+    },
+    "yes_pool_pacman": {
+      "type": "number",
+      "default": 0,
+      "description": "PACMAN tokens bet on YES"
+    },
+    "no_pool_pacman": {
+      "type": "number",
+      "default": 0,
+      "description": "PACMAN tokens bet on NO"
+    },
     "yes_count": {
       "type": "number",
       "default": 0
