@@ -1,0 +1,83 @@
+{
+  "name": "GameBet",
+  "type": "object",
+  "properties": {
+    "game_id": {
+      "type": "string",
+      "description": "Reference to PredictionGame"
+    },
+    "game_number": {
+      "type": "string"
+    },
+    "user_email": {
+      "type": "string"
+    },
+    "user_wallet_address": {
+      "type": "string",
+      "description": "User's Kaspa address for payouts"
+    },
+    "side": {
+      "type": "string",
+      "enum": [
+        "yes",
+        "no"
+      ]
+    },
+    "amount_kas": {
+      "type": "number"
+    },
+    "tx_hash_in": {
+      "type": "string",
+      "description": "Transaction hash of user's deposit to escrow"
+    },
+    "tx_hash_out": {
+      "type": "string",
+      "description": "Transaction hash of payout (if won)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending_deposit",
+        "confirmed",
+        "won",
+        "lost",
+        "refunded"
+      ],
+      "default": "pending_deposit"
+    },
+    "payout_kas": {
+      "type": "number",
+      "default": 0
+    },
+    "verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether user verified their PIN for this game session"
+    }
+  },
+  "required": [
+    "game_id",
+    "game_number",
+    "user_email",
+    "user_wallet_address",
+    "side",
+    "amount_kas"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": {
+      "$or": [
+        {
+          "user.role": "admin"
+        },
+        {
+          "created_by": "{{user.email}}"
+        }
+      ]
+    },
+    "delete": {
+      "user.role": "admin"
+    }
+  }
+}

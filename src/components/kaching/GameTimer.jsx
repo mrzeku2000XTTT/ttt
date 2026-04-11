@@ -1,0 +1,38 @@
+import React, { useState, useEffect } from "react";
+import { Clock } from "lucide-react";
+
+export default function GameTimer({ endTime }) {
+  const [remaining, setRemaining] = useState(getRemainingMs());
+
+  function getRemainingMs() {
+    return Math.max(0, new Date(endTime).getTime() - Date.now());
+  }
+
+  useEffect(() => {
+    const interval = setInterval(() => setRemaining(getRemainingMs()), 1000);
+    return () => clearInterval(interval);
+  }, [endTime]);
+
+  const totalSecs = Math.floor(remaining / 1000);
+  const mins = Math.floor(totalSecs / 60);
+  const secs = totalSecs % 60;
+  const pct = Math.max(0, Math.min(100, (remaining / (15 * 60 * 1000)) * 100));
+  const isUrgent = mins < 2;
+
+  return (
+    <div className="flex items-center gap-2">
+      <div className="relative w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-1000 ${isUrgent ? 'bg-red-500' : 'bg-emerald-500'}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <div className={`flex items-center gap-1 flex-shrink-0 ${isUrgent ? 'text-red-400' : 'text-emerald-400'}`}>
+        <Clock className="w-3 h-3" />
+        <span className="text-xs font-mono font-bold tabular-nums">
+          {remaining === 0 ? 'ENDED' : `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`}
+        </span>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,129 @@
+{
+  "name": "PredictionGame",
+  "type": "object",
+  "properties": {
+    "game_number": {
+      "type": "string",
+      "description": "Unique game # (truncated escrow address)"
+    },
+    "escrow_address": {
+      "type": "string",
+      "description": "Full Kaspa escrow wallet address"
+    },
+    "escrow_private_key": {
+      "type": "string",
+      "description": "Private key for escrow (NEVER exposed to frontend)"
+    },
+    "escrow_mnemonic": {
+      "type": "string",
+      "description": "Seed phrase for escrow (NEVER exposed to frontend)"
+    },
+    "market_id": {
+      "type": "string",
+      "description": "Reference to the prediction market"
+    },
+    "question": {
+      "type": "string",
+      "description": "The prediction question"
+    },
+    "yes_label": {
+      "type": "string"
+    },
+    "no_label": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string"
+    },
+    "subcategory": {
+      "type": "string"
+    },
+    "source_data": {
+      "type": "string",
+      "description": "Source of truth for judging (ESPN, CoinGecko, etc.)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "locked",
+        "judging",
+        "settled",
+        "cancelled"
+      ],
+      "default": "open"
+    },
+    "start_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "end_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "total_pool_kas": {
+      "type": "number",
+      "default": 0
+    },
+    "yes_pool_kas": {
+      "type": "number",
+      "default": 0
+    },
+    "no_pool_kas": {
+      "type": "number",
+      "default": 0
+    },
+    "yes_count": {
+      "type": "number",
+      "default": 0
+    },
+    "no_count": {
+      "type": "number",
+      "default": 0
+    },
+    "result": {
+      "type": "string",
+      "enum": [
+        "yes",
+        "no",
+        "push"
+      ],
+      "description": "Final result after judging"
+    },
+    "judge_reason": {
+      "type": "string",
+      "description": "Why the judge decided this result"
+    },
+    "settlement_tx_hashes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Transaction hashes of payouts"
+    },
+    "bot_status": {
+      "type": "string",
+      "enum": [
+        "ready",
+        "processing",
+        "error"
+      ],
+      "default": "ready"
+    }
+  },
+  "required": [
+    "game_number",
+    "escrow_address",
+    "question",
+    "start_time",
+    "end_time"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": {
+      "user.role": "admin"
+    }
+  }
+}
