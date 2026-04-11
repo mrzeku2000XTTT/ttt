@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
     // Validate format before calling API
     if (!/^kaspa:[a-z0-9]{61,63}$/.test(cleanAddress)) {
       console.error('[getKaspaBalance] Invalid address format:', cleanAddress.slice(0, 30), 'len=', cleanAddress.length);
-      return Response.json({ success: false, balanceKAS: 0, balanceSompi: 0, error: 'Invalid address format', address: cleanAddress });
+      return Response.json({ success: false, balanceKAS: null, balanceSompi: null, error: 'Invalid address format', address: cleanAddress });
     }
 
     console.log('[getKaspaBalance] address:', cleanAddress);
