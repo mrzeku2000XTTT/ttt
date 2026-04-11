@@ -8,10 +8,14 @@
 //   Step 4: Wait for P2SH UTXO confirmation
 //   Step 5: REVEAL TX — spend P2SH UTXO back to sender (inscription broadcast)
 //
-// KEY FIXES (v4):
+// KEY FIXES (v5):
 //   - Sighash always uses actual UTXO scriptPubKey (P2SH wrapper), NOT redeem script
 //   - Kaspa sighash differs from Bitcoin BIP-143: no script substitution for P2SH
+//   - Transaction version = 0 (Kaspa native TX version)
+//   - P2SH input sigOpCount = 0 (P2SH scriptPubKey has no OP_CHECKSIG)
 //   - Transaction IDs reversed to LE in sighash (Kaspa convention)
+//   - Sender UTXO retry for change output indexing delay
+//   - Bech32 checksum validation on toAddress
 //   - Minimum output enforced at 0.1 KAS per KASPACOM
 //   - Enhanced retry with exponential backoff
 
@@ -315,27 +319,34 @@ async function buildAndSubmitRevealTx({
   console.log('[reveal] Waiting 6s for full DAG propagation...');
   await new Promise(r => setTimeout(r, 6000));
 
-  // 4. Fetch sender UTXOs for gas
-  // IMPORTANT: We must NOT use the P2SH output from the commit TX (that's the inscription UTXO).
-  // But the CHANGE output from the commit TX that went back to our sender address IS safe to use as gas.
-  // So we only exclude UTXOs that are at the P2SH address, not all UTXOs from the commit TX.
-  const senderRes = await fetch(`${KASPA_API}/addresses/${senderAddress}/utxos`, {
-    signal: AbortSignal.timeout(10000)
-  });
-  if (!senderRes.ok) throw new Error('Failed to fetch sender UTXOs for gas');
-  const senderUtxos = await senderRes.json();
-
+  // 4. Fetch sender UTXOs for gas (with retry for change output indexing delay)
   let gasTotal = 0n;
-  const gasUtxos = [];
-  // All UTXOs at the sender address are safe — the P2SH UTXO is at the P2SH address, not here
-  const confirmedUtxos = senderUtxos
-    .sort((a, b) => Number(b.utxoEntry.amount) - Number(a.utxoEntry.amount));
-  
-  for (const u of confirmedUtxos) {
+  let gasUtxos = [];
+  for (let gasAttempt = 0; gasAttempt < 5; gasAttempt++) {
+    gasTotal = 0n;
+    gasUtxos = [];
+    const senderRes = await fetch(`${KASPA_API}/addresses/${senderAddress}/utxos`, {
+      signal: AbortSignal.timeout(10000)
+    });
+    if (!senderRes.ok) throw new Error('Failed to fetch sender UTXOs for gas');
+    const senderUtxos = await senderRes.json();
+
+    const confirmedUtxos = senderUtxos
+      .sort((a, b) => Number(b.utxoEntry.amount) - Number(a.utxoEntry.amount));
+    
+    for (const u of confirmedUtxos) {
+      if (gasTotal >= REVEAL_FEE_SOMPI) break;
+      if (gasUtxos.length >= 5) break;
+      gasUtxos.push(u);
+      gasTotal += BigInt(u.utxoEntry.amount);
+    }
     if (gasTotal >= REVEAL_FEE_SOMPI) break;
-    if (gasUtxos.length >= 5) break;
-    gasUtxos.push(u);
-    gasTotal += BigInt(u.utxoEntry.amount);
+
+    // Change output from commit TX may not be indexed yet — wait and retry
+    if (gasAttempt < 4) {
+      console.log(`[reveal] Sender UTXOs insufficient (${Number(gasTotal) / 1e8} KAS), waiting for change output indexing (attempt ${gasAttempt + 1}/5)...`);
+      await new Promise(r => setTimeout(r, 3000));
+    }
   }
   if (gasTotal < REVEAL_FEE_SOMPI) {
     throw new Error(`Insufficient gas for reveal. Need ${Number(REVEAL_FEE_SOMPI) / 1e8} KAS, have ${Number(gasTotal) / 1e8} KAS`);
@@ -359,7 +370,8 @@ async function buildAndSubmitRevealTx({
   const inputs = [];
 
   // P2SH input (index 0) — the inscription input
-  // sigOpCount = 1: the redeem script contains OP_CHECKSIG
+  // sigOpCount = 0: P2SH scriptPubKey (OP_BLAKE2B <hash> OP_EQUAL) has NO OP_CHECKSIG
+  // The OP_CHECKSIG is inside the redeem script, but sigOpCount counts the scriptPubKey only
   inputs.push({
     prevTxId: p2shUtxo.outpoint.transactionId,
     prevIndex: p2shUtxo.outpoint.index,
@@ -367,7 +379,7 @@ async function buildAndSubmitRevealTx({
     utxoScriptPubKey: p2shScriptPubKey,  // P2SH wrapper (OP_BLAKE2B <hash> OP_EQUAL) — used in sighash
     utxoAmount: p2shAmount,
     sequence: 0n,
-    sigOpCount: 1,
+    sigOpCount: 0,  // P2SH scriptPubKey has no OP_CHECKSIG
     isP2SH: true,
   });
 
@@ -535,6 +547,13 @@ Deno.serve(async (req) => {
 
       const normalizedFrom = fromAddress.startsWith('kaspa:') ? fromAddress : `kaspa:${fromAddress}`;
       const normalizedTo = toAddress.startsWith('kaspa:') ? toAddress : `kaspa:${toAddress}`;
+
+      // Validate toAddress bech32 checksum to prevent silent fund loss
+      try {
+        verifyKaspaBech32Checksum(normalizedTo);
+      } catch (addrErr) {
+        return Response.json({ success: false, error: `Invalid recipient address: ${addrErr.message}` }, { status: 400 });
+      }
 
       console.log(`[krc20] ${ticker} transfer: ${amount} from ${normalizedFrom} to ${normalizedTo}`);
 
@@ -861,6 +880,30 @@ function encodeKaspaBech32(hrp, payload) {
   let result = hrp + ':';
   for (const w of combined) result += BECH32_CHARSET[w];
   return result;
+}
+
+function verifyKaspaBech32Checksum(addr) {
+  const colonIdx = addr.indexOf(':');
+  if (colonIdx < 0) throw new Error('Invalid Kaspa address: no colon separator');
+  const hrp = addr.substring(0, colonIdx);
+  if (hrp !== 'kaspa' && hrp !== 'kaspatest') throw new Error(`Invalid address prefix: ${hrp}`);
+  const dataPart = addr.substring(colonIdx + 1);
+  if (dataPart.length < 10) throw new Error('Address too short');
+  const addressU5 = [];
+  for (const ch of dataPart) {
+    const code = ch.charCodeAt(0);
+    if (code >= BECH32_REV_CHARSET.length || BECH32_REV_CHARSET[code] === 100) {
+      throw new Error(`Invalid bech32 character: ${ch}`);
+    }
+    addressU5.push(BECH32_REV_CHARSET[code]);
+  }
+  const prefixBytes = new TextEncoder().encode(hrp);
+  const prefixU5 = Array.from(prefixBytes).map(b => b & 0x1f);
+  const values = [...prefixU5, 0, ...addressU5];
+  const remainder = polymod(values);
+  if (remainder !== 0n) {
+    throw new Error('Address checksum verification failed — possible typo');
+  }
 }
 
 function decodeKaspaBech32(addr) {
