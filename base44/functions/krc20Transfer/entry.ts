@@ -370,8 +370,7 @@ async function buildAndSubmitRevealTx({
   const inputs = [];
 
   // P2SH input (index 0) — the inscription input
-  // sigOpCount = 0: P2SH scriptPubKey (OP_BLAKE2B <hash> OP_EQUAL) has NO OP_CHECKSIG
-  // The OP_CHECKSIG is inside the redeem script, but sigOpCount counts the scriptPubKey only
+  // sigOpCount = 1: counts OP_CHECKSIG in the executed redeem script, not the P2SH wrapper
   inputs.push({
     prevTxId: p2shUtxo.outpoint.transactionId,
     prevIndex: p2shUtxo.outpoint.index,
@@ -379,7 +378,7 @@ async function buildAndSubmitRevealTx({
     utxoScriptPubKey: p2shScriptPubKey,  // P2SH wrapper (OP_BLAKE2B <hash> OP_EQUAL) — used in sighash
     utxoAmount: p2shAmount,
     sequence: 0n,
-    sigOpCount: 0,  // P2SH scriptPubKey has no OP_CHECKSIG
+    sigOpCount: 1,  // redeem script has OP_CHECKSIG
     isP2SH: true,
   });
 
@@ -811,7 +810,7 @@ Deno.serve(async (req) => {
           utxoScriptPubKey: p2shScriptPubKeyBytes,
           utxoAmount: BigInt(u.utxoEntry.amount),
           sequence: 0n,
-          sigOpCount: 0,
+          sigOpCount: 1,  // redeem script has OP_CHECKSIG
           isP2SH: true,
         });
       }
