@@ -81,12 +81,76 @@ export default function SecurityAudit() {
     startScan(`${SCAN_PROMPT_BASE}\n\nAnalyze this URL: ${target}`, target);
   };
 
-  const handleAppScan = (appName) => {
+  const handleAppScan = async (app) => {
+    const appName = app.name;
+    const appPath = app.path;
     setUrl(appName);
-    startScan(
-      `${SCAN_PROMPT_BASE}\n\nAnalyze the app/service called "${appName}" for security vulnerabilities. Search for it online and analyze its web presence, domain, and security posture.`,
-      appName
-    );
+    setScanTarget(appName);
+    setScanning(true);
+    setResults(null);
+    setError(null);
+    setScanProgress(0);
+
+    const interval = setInterval(() => {
+      setScanProgress(p => Math.min(p + Math.random() * 8, 40));
+    }, 500);
+    progressRef.current = interval;
+
+    // Build the internal app URL to fetch the actual page source
+    const appUrl = `${window.location.origin}/${appPath}`;
+    let pageSource = "";
+    try {
+      setScanProgress(10);
+      const resp = await fetch(appUrl);
+      const html = await resp.text();
+      // Extract meaningful content (first 8000 chars to stay within limits)
+      pageSource = html.slice(0, 8000);
+      setScanProgress(35);
+    } catch (fetchErr) {
+      pageSource = `Could not fetch page source for ${appPath}. URL attempted: ${appUrl}`;
+    }
+
+    clearInterval(interval);
+    const interval2 = setInterval(() => {
+      setScanProgress(p => Math.min(p + Math.random() * 12, 92));
+    }, 500);
+    progressRef.current = interval2;
+
+    const prompt = `${SCAN_PROMPT_BASE}
+
+You are auditing an INTERNAL web application page called "${appName}" hosted at: ${appUrl}
+
+This is a Single Page Application (React). Below is the actual HTML source of this app page. Analyze it for:
+- Inline scripts and their security implications
+- External resources loaded (CDNs, APIs, third-party scripts)
+- Data exposure risks (API keys, tokens, secrets in source)
+- DOM-based XSS vulnerabilities
+- Content Security Policy compliance
+- Authentication/authorization patterns visible in code
+- Sensitive data in local storage or cookies usage patterns
+- Third-party tracking or analytics scripts
+- Insecure resource loading (HTTP vs HTTPS)
+- Input handling and sanitization patterns
+
+ACTUAL PAGE SOURCE:
+\`\`\`html
+${pageSource}
+\`\`\`
+
+Base your findings ONLY on what you can see in the actual source code above. Do NOT guess or make up external URLs. Report real findings from the code.`;
+
+    base44.integrations.Core.InvokeLLM({
+      prompt,
+      response_json_schema: SCAN_SCHEMA
+    }).then(res => {
+      setScanProgress(100);
+      setTimeout(() => setResults(res), 400);
+    }).catch(err => {
+      setError(err.message || "Scan failed.");
+    }).finally(() => {
+      clearInterval(interval2);
+      setScanning(false);
+    });
   };
 
   const scoreColor = (s) => s >= 80 ? "text-emerald-400" : s >= 60 ? "text-yellow-400" : s >= 40 ? "text-orange-400" : "text-red-400";

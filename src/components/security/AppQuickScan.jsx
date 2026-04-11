@@ -101,7 +101,7 @@ export default function AppQuickScan({ onScanApp }) {
             transition={{ delay: Math.min(i * 0.02, 0.4) }}
             whileHover={{ scale: 1.08, y: -4 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onScanApp(app.name)}
+            onClick={() => onScanApp(app)}
             className="group flex flex-col items-center gap-2 p-3 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:border-cyan-500/30 hover:bg-cyan-500/[0.04] transition-all duration-300 relative overflow-hidden"
           >
             {/* Glow effect on hover */}
