@@ -207,8 +207,8 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
         setTipError('Transaction cancelled');
       } else if (errMsg.includes('storage mass')) {
         setTipError('⚠️ Storage mass error: Consolidate UTXOs in your wallet settings.');
-      } else if (errMsg.includes('false stack') || errMsg.includes('signature')) {
-        setTipError("It's been a while — just to make sure it's you, please reimport your wallet on the Wallet page by tapping Clear and re-entering your seed phrase.");
+      } else if (errMsg.includes('false stack') || errMsg.includes('signature') || errMsg.includes('script execution')) {
+        setTipError("⚠️ Wallet key mismatch — your stored private key doesn't match this address. Go to Terra → Settings → Clear & reimport your seed phrase to fix this.");
       } else {
         setTipError(errMsg);
       }
