@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Copy, Check, Users, Zap } from "lucide-react";
 import { toast } from "sonner";
 import GameTimer from "./GameTimer";
+import { getCurrentRoundEnd } from "./roundClock";
 
 export default function LiveGameCard({ game, userBets, onBet }) {
   const [copied, setCopied] = useState(false);
@@ -55,10 +56,10 @@ export default function LiveGameCard({ game, userBets, onBet }) {
         {/* Question */}
         <p className="text-white font-bold text-sm leading-snug mb-3">{game.question}</p>
 
-        {/* Timer */}
+        {/* Timer — all open games share the same UTC 15-min round clock */}
         {isOpen && (
           <div className="mb-3">
-            <GameTimer endTime={game.end_time} />
+            <GameTimer />
           </div>
         )}
 
