@@ -280,6 +280,32 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
             </div>
           )}
 
+          {/* Token Type: KAS or KRC-20 */}
+          <div className="flex gap-2">
+            <Button
+              onClick={() => { setTipTokenType('KAS'); setTipKrc20Ticker(''); }}
+              size="sm"
+              className={`flex-1 ${tipTokenType === 'KAS' ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white'}`}
+            >KAS</Button>
+            <Button
+              onClick={() => setTipTokenType('KRC20')}
+              size="sm"
+              className={`flex-1 ${tipTokenType === 'KRC20' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white'}`}
+            >KRC-20</Button>
+          </div>
+
+          {tipTokenType === 'KRC20' && (
+            <div>
+              <label className="text-sm text-white/60 mb-2 block">Token Ticker</label>
+              <Input
+                value={tipKrc20Ticker}
+                onChange={e => setTipKrc20Ticker(e.target.value.toUpperCase())}
+                placeholder="e.g., PACMAN, NACHO"
+                className="bg-white/5 border-white/10 text-white text-center h-10 font-semibold"
+              />
+            </div>
+          )}
+
           <div>
             <label className="text-sm text-white/60 mb-2 block">
               Amount ({tipTokenType === 'KRC20' ? tipKrc20Ticker || 'Tokens' : 'KAS'})
