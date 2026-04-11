@@ -3,22 +3,23 @@ import { motion } from "framer-motion";
 import { Copy, Check, Users, Zap, ExternalLink, Gavel, Send, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
+import BetLedgerModal from "@/components/kaching/BetLedgerModal";
 
 export default function LiveGameCard({ game, userBets, onBet }) {
   const [copied, setCopied] = useState(false);
   const [allBets, setAllBets] = useState([]);
-  const [showBets, setShowBets] = useState(false);
+  const [showLedgerModal, setShowLedgerModal] = useState(false);
   const isOpen = game.status === 'open' && new Date(game.end_time) > new Date();
   const isSettled = game.status === 'settled';
   const isJudging = game.status === 'judging' || game.status === 'locked';
   const myBets = userBets?.filter(b => b.game_id === game.id) || [];
 
   useEffect(() => {
-    if (showBets || isSettled) {
+    if (showLedgerModal || isSettled) {
       base44.entities.GameBet.filter({ game_id: game.id }, '-created_date', 50)
         .then(setAllBets).catch(() => {});
     }
-  }, [game.id, showBets, isSettled, game.total_pool_kas]);
+  }, [game.id, showLedgerModal, isSettled, game.total_pool_kas]);
 
   const copyEscrow = () => {
     navigator.clipboard.writeText(`kaspa:${game.escrow_address}`);
@@ -168,45 +169,21 @@ export default function LiveGameCard({ game, userBets, onBet }) {
           </div>
         )}
 
-        {/* Toggle bet ledger */}
-        {(total > 0 || allBets.length > 0) && (
-          <button
-            onClick={() => setShowBets(!showBets)}
-            className="flex items-center gap-1.5 text-white/20 hover:text-white/40 text-[9px] font-bold mb-2 transition-colors"
-          >
-            <Eye className="w-3 h-3" />
-            {showBets ? 'Hide' : 'Show'} Bet Ledger ({(game.yes_count || 0) + (game.no_count || 0)})
-          </button>
-        )}
+        {/* Bet Ledger Button */}
+        <button
+          onClick={() => setShowLedgerModal(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] text-white/30 hover:text-white/60 text-[10px] font-bold mb-2.5 transition-all w-full justify-center"
+        >
+          <Eye className="w-3 h-3" />
+          Show Bet Ledger ({(game.yes_count || 0) + (game.no_count || 0)})
+        </button>
 
-        {showBets && allBets.length > 0 && (
-          <div className="mb-2.5 max-h-40 overflow-y-auto space-y-1">
-            {allBets.map(bet => (
-              <div key={bet.id} className={`px-2 py-1.5 rounded-md border flex items-center gap-1.5 ${
-                bet.status === 'won' ? 'bg-emerald-500/8 border-emerald-500/15' :
-                bet.status === 'lost' ? 'bg-red-500/8 border-red-500/15' :
-                bet.side === 'yes' ? 'bg-emerald-500/[0.03] border-emerald-500/10' : 'bg-red-500/[0.03] border-red-500/10'
-              }`}>
-                <span className={`text-[8px] font-black w-5 ${bet.side === 'yes' ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {bet.side.toUpperCase()}
-                </span>
-                <span className="text-white/30 text-[8px] font-mono truncate flex-1">
-                  kaspa:{bet.user_wallet_address?.slice(0, 14)}...
-                </span>
-                <span className="text-white font-bold text-[9px]">{bet.amount_kas} KAS</span>
-                {bet.payout_kas > 0 && (
-                  <span className="text-emerald-400 text-[8px] font-bold">→ {bet.payout_kas.toFixed(2)}</span>
-                )}
-                {bet.tx_hash_in && (
-                  <a href={`https://explorer.kaspa.org/txs/${bet.tx_hash_in}`} target="_blank" rel="noopener noreferrer"
-                    className="text-blue-400/30 hover:text-blue-400" onClick={e => e.stopPropagation()}>
-                    <ExternalLink className="w-2.5 h-2.5" />
-                  </a>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+        <BetLedgerModal
+          show={showLedgerModal}
+          onClose={() => setShowLedgerModal(false)}
+          game={game}
+          bets={allBets}
+        />
 
         {/* My bets */}
         {myBets.length > 0 && (
