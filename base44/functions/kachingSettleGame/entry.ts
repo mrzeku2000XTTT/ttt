@@ -223,13 +223,21 @@ async function sendPayout(base44, game, recipientAddress, amountKas) {
   const toAddr = recipientAddress.startsWith('kaspa:') ? recipientAddress : `kaspa:${recipientAddress}`;
   const fromAddr = game.escrow_address.startsWith('kaspa:') ? game.escrow_address : `kaspa:${game.escrow_address}`;
 
+  // Deduct TX fee from payout so escrow can actually send
+  const TX_FEE = 0.0002; // 0.0002 KAS covers the Kaspa minimum fee
+  const actualSend = parseFloat((amountKas - TX_FEE).toFixed(4));
+  if (actualSend <= 0) {
+    console.log(`Payout amount ${amountKas} too small after fee deduction`);
+    return null;
+  }
+
   try {
     // Call sendKaspaTransaction directly via the SDK service role
     const res = await base44.asServiceRole.functions.invoke('sendKaspaTransaction', {
       mnemonic: game.escrow_mnemonic,
       fromAddress: fromAddr,
       toAddress: toAddr,
-      amountKas: amountKas,
+      amountKas: actualSend,
     });
 
     if (res?.error) {
@@ -238,12 +246,10 @@ async function sendPayout(base44, game, recipientAddress, amountKas) {
     }
 
     const txId = res?.txId || res?.data?.txId || '';
-    console.log(`Payout ${amountKas} KAS to ${recipientAddress.slice(0, 12)} | TX: ${txId}`);
+    console.log(`Payout ${actualSend} KAS (original ${amountKas}, fee ${TX_FEE}) to ${recipientAddress.slice(0, 12)} | TX: ${txId}`);
     return txId;
   } catch (err) {
     console.error(`Payout exception to ${recipientAddress.slice(0, 12)}:`, err.message);
-    // Non-blocking — settlement still succeeds even if payout transfer fails
-    // The payout amounts are recorded on the bet records for manual resolution
     return null;
   }
 }
