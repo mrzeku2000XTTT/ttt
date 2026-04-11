@@ -314,7 +314,10 @@ async function buildAndSubmitRevealTx({
   console.log('[reveal] Waiting 6s for full DAG propagation...');
   await new Promise(r => setTimeout(r, 6000));
 
-  // 4. Fetch sender UTXOs for gas — EXCLUDE any from commit TX
+  // 4. Fetch sender UTXOs for gas
+  // IMPORTANT: We must NOT use the P2SH output from the commit TX (that's the inscription UTXO).
+  // But the CHANGE output from the commit TX that went back to our sender address IS safe to use as gas.
+  // So we only exclude UTXOs that are at the P2SH address, not all UTXOs from the commit TX.
   const senderRes = await fetch(`${KASPA_API}/addresses/${senderAddress}/utxos`, {
     signal: AbortSignal.timeout(10000)
   });
@@ -323,8 +326,8 @@ async function buildAndSubmitRevealTx({
 
   let gasTotal = 0n;
   const gasUtxos = [];
+  // All UTXOs at the sender address are safe — the P2SH UTXO is at the P2SH address, not here
   const confirmedUtxos = senderUtxos
-    .filter(u => u.outpoint.transactionId !== commitTxId)
     .sort((a, b) => Number(b.utxoEntry.amount) - Number(a.utxoEntry.amount));
   
   for (const u of confirmedUtxos) {
