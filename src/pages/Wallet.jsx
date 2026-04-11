@@ -864,6 +864,7 @@ export default function WalletPage() {
         {/* KRC-20 Send Sheet */}
         <AnimatePresence>
           {krc20SendToken && (() => {
+            // Try terra_wallets first, then fall back to this page's mnemonic state
             const wallets = JSON.parse(localStorage.getItem('terra_wallets') || '[]');
             const terraW = wallets.find(w => {
               const wAddr = w.address?.replace('kaspa:', '');
@@ -872,7 +873,9 @@ export default function WalletPage() {
             });
             const activeWalletObj = terraW
               ? { address: terraW.address, mnemonic: terraW.mnemonic }
-              : null;
+              : mnemonic
+                ? { address, mnemonic }
+                : { address, mnemonic: null };
             return (
               <KRC20SendSheet
                 token={krc20SendToken}
