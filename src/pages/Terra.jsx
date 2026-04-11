@@ -271,28 +271,33 @@ export default function TerraPage() {
       const price = priceRes?.data?.price || priceRes?.data?.usd || null;
       setKasPrice(price);
 
-      // Fetch balances for all wallets
+      // Fetch balances for all wallets (sequential to avoid API rate limits)
       if (stored.length > 0) {
         const balMap = {};
-        await Promise.all(stored.map(async (w) => {
-          if (!w.address) return;
+        for (const w of stored) {
+          if (!w.address) continue;
           try {
-            // Validate address format before calling API
             const addr = w.address.startsWith('kaspa:') ? w.address : `kaspa:${w.address}`;
             if (!/^kaspa:[a-z0-9]{61,63}$/.test(addr)) {
               console.warn(`[Terra] Invalid address format: ${addr.slice(0, 20)}... (${addr.length} chars)`);
               balMap[w.address] = 0;
-              return;
+              continue;
             }
             const balRes = await base44.functions.invoke('getKaspaBalance', { address: addr });
-            const bal = balRes?.data?.balanceKAS ?? balRes?.data?.balance ?? balRes?.data?.kaspa ?? 0;
-            console.log(`[Terra] Balance for ${addr.slice(0, 16)}...: ${bal} KAS`);
-            balMap[w.address] = bal;
+            const bal = balRes?.data?.balanceKAS;
+            if (bal === null || bal === undefined) {
+              console.warn(`[Terra] Balance fetch error for ${addr.slice(0, 16)}...: ${balRes?.data?.error}`);
+              // Keep previous balance if we had one, otherwise mark as unknown
+              balMap[w.address] = balances[w.address] ?? '?';
+            } else {
+              console.log(`[Terra] Balance for ${addr.slice(0, 16)}...: ${bal} KAS`);
+              balMap[w.address] = bal;
+            }
           } catch (e) {
             console.error(`[Terra] Failed to fetch balance for ${w.address}:`, e);
-            balMap[w.address] = 0;
+            balMap[w.address] = balances[w.address] ?? '?';
           }
-        }));
+        }
         setBalances(balMap);
       }
     } catch (err) {
@@ -328,12 +333,14 @@ export default function TerraPage() {
     }
   };
 
-  const kasBalanceNum = parseFloat(balances[walletAddress]) || 0;
+  const rawBal = balances[walletAddress];
+  const balanceError = rawBal === '?';
+  const kasBalanceNum = balanceError ? 0 : (parseFloat(rawBal) || 0);
   const kasPriceNum = parseFloat(kasPrice) || 0;
   const usdValue = kasBalanceNum * kasPriceNum;
 
-  const displayKas = balanceHidden ? "•••••• KAS" : `${kasBalanceNum.toLocaleString("en-US", { maximumFractionDigits: 2 })} KAS`;
-  const displayUsd = balanceHidden ? "••••••" : `≈ $${usdValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`;
+  const displayKas = balanceHidden ? "•••••• KAS" : balanceError ? "⚠ Error loading" : `${kasBalanceNum.toLocaleString("en-US", { maximumFractionDigits: 2 })} KAS`;
+  const displayUsd = balanceHidden ? "••••••" : balanceError ? "Tap refresh" : `≈ $${usdValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`;
 
   const shortAddress = walletAddress ? `${walletAddress.slice(0, 8)}...${walletAddress.slice(-6)}` : "No wallet connected";
 
