@@ -67,15 +67,10 @@ export default function KaChingSettings({ show, onClose, walletAddress, onConnec
       toast.error('No Terra wallet with seed phrase found. Import one in Terra first.');
       return;
     }
-    if (!verified) {
-      toast.error('Verify your PIN first');
-      return;
-    }
     const newVal = !autoSign;
     setAutoSign(newVal);
     localStorage.setItem('kaching_autosign', newVal ? 'true' : 'false');
     if (newVal) {
-      // Connect the linked wallet address too
       if (linkedWallet.address && !walletAddress) {
         const clean = linkedWallet.address.startsWith('kaspa:') ? linkedWallet.address.slice(6) : linkedWallet.address;
         onConnectWallet(clean);
@@ -338,8 +333,10 @@ function RewardWalletSection({ linkedWallet }) {
       const user = await base44.auth.me();
       if (user?.role !== 'admin') { setLoading(false); return; }
       setIsAdmin(true);
-      const wallets = await base44.entities.PacmanRewardWallet.filter({ is_active: true });
-      if (wallets.length > 0) setExistingWallet(wallets[0]);
+      const res = await base44.functions.invoke('getPacmanRewardBalance', {});
+      if (res.data?.exists) {
+        setExistingWallet({ kaspa_address: res.data.address, wallet_name: 'PACMAN Reward Wallet' });
+      }
     } catch {}
     setLoading(false);
   };
@@ -351,19 +348,15 @@ function RewardWalletSection({ linkedWallet }) {
     }
     setSaving(true);
     try {
-      // Deactivate any existing reward wallet
-      if (existingWallet) {
-        await base44.entities.PacmanRewardWallet.update(existingWallet.id, { is_active: false });
-      }
       const addr = linkedWallet.address.startsWith('kaspa:') ? linkedWallet.address : `kaspa:${linkedWallet.address}`;
-      const created = await base44.entities.PacmanRewardWallet.create({
+      const res = await base44.functions.invoke('setPacmanRewardWallet', {
         wallet_name: linkedWallet.label || 'Terra Reward Wallet',
         kaspa_address: addr,
         encrypted_mnemonic: linkedWallet.mnemonic,
-        is_active: true,
       });
-      setExistingWallet(created);
-      toast.success('PACMAN reward wallet set! Settlement bot will use this for KRC-20 bonuses.');
+      if (res.data?.error) throw new Error(res.data.error);
+      setExistingWallet(res.data.wallet);
+      toast.success('PACMAN reward wallet set!');
     } catch (err) {
       toast.error('Failed to save: ' + (err.message || 'Unknown error'));
     }
