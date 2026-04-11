@@ -355,16 +355,17 @@ async function buildAndSubmitRevealTx({
   const inputs = [];
 
   // P2SH input (index 0) — the inscription input
-  // sigOpCount = 0 for P2SH: the OP_CHECKSIG is in the redeem script, not in the P2SH scriptPubKey
+  // sigOpCount MUST be 1: the redeem script contains OP_CHECKSIG, and the node
+  // enforces that actual sig ops don't exceed the declared count.
   inputs.push({
     prevTxId: p2shUtxo.outpoint.transactionId,
     prevIndex: p2shUtxo.outpoint.index,
     utxoScriptVersion: 0,
-    utxoScriptPubKey: p2shScriptPubKey, // OP_BLAKE2B <hash> OP_EQUAL (for serialization)
-    redeemScript: redeemScript,          // Used in sighash computation
+    utxoScriptPubKey: p2shScriptPubKey,
+    redeemScript: redeemScript,
     utxoAmount: p2shAmount,
     sequence: 0n,
-    sigOpCount: 0,  // P2SH: sig ops counted from redeem script at execution, scriptPubKey has 0
+    sigOpCount: 1,  // Redeem script has OP_CHECKSIG = 1 sig op
     isP2SH: true,
   });
 
