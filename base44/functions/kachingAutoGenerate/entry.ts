@@ -109,6 +109,7 @@ Deno.serve(async (req) => {
       else target = parseFloat(price.toFixed(6));
 
       const formattedPrice = target.toLocaleString('en-US', { maximumFractionDigits: 6 });
+      const question = `Will ${coin.symbol} be above $${formattedPrice} at round end?`;
 
       try {
         const escrow = await createEscrow();
