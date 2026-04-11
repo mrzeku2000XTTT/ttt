@@ -13,6 +13,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion, AnimatePresence } from "framer-motion";
 import QRScanner from "@/components/wallet/QRScanner";
+import KRC20Tokens from "@/components/terra/KRC20Tokens";
 
 // ── Toast ──────────────────────────────────────────────────────────────────────
 const Toast = ({ message, type, onClose }) => (
@@ -753,6 +754,9 @@ export default function WalletPage() {
                 )}
               </CardContent>
             </Card>
+
+            {/* KRC-20 Tokens */}
+            <KRC20Tokens walletAddress={address} />
 
             {/* PIN Setup */}
             {showPinSetup && !pinSet && (
