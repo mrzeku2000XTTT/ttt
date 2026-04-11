@@ -266,10 +266,14 @@ export default function TerraPage() {
       stored = stored.filter(w => w.address && isValidKaspaAddress(w.address));
       setWallets(stored);
 
-      // Fetch KAS price
-      const priceRes = await base44.functions.invoke('getKaspaPrice', {});
-      const price = priceRes?.data?.price || priceRes?.data?.usd || null;
-      setKasPrice(price);
+      // Fetch KAS price (don't let failure block balance fetch)
+      try {
+        const priceRes = await base44.functions.invoke('getKaspaPrice', {});
+        const price = priceRes?.data?.price || priceRes?.data?.usd || null;
+        setKasPrice(price);
+      } catch (priceErr) {
+        console.warn('Price fetch failed, continuing:', priceErr.message);
+      }
 
       // Fetch balances for all wallets (sequential to avoid API rate limits)
       if (stored.length > 0) {
