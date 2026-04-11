@@ -1,16 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Copy, Check, Users, Zap, TrendingUp } from "lucide-react";
+import { Copy, Check, Users, Zap, TrendingUp, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import { base44 } from "@/api/base44Client";
 import GameTimer from "./GameTimer";
 
 export default function LiveGameCard({ game, userBets, onBet }) {
   const [copied, setCopied] = useState(false);
+  const [allBets, setAllBets] = useState([]);
   const isOpen = game.status === 'open' && new Date(game.end_time) > new Date();
   const isSettled = game.status === 'settled';
   const myBets = userBets?.filter(b => b.game_id === game.id) || [];
   const myTotalKas = myBets.reduce((s, b) => s + b.amount_kas, 0);
   const myWinnings = myBets.reduce((s, b) => s + (b.payout_kas || 0), 0);
+
+  // Load all verified bets for this game
+  useEffect(() => {
+    base44.entities.GameBet.filter({ game_id: game.id, status: 'confirmed' }, '-created_date', 50)
+      .then(setAllBets)
+      .catch(() => {});
+  }, [game.id, game.total_pool_kas]);
 
   const copyGameId = () => {
     navigator.clipboard.writeText(`kaspa:${game.escrow_address}`);
@@ -96,7 +105,40 @@ export default function LiveGameCard({ game, userBets, onBet }) {
           </div>
         )}
 
-        {/* User's bet indicator */}
+        {/* On-chain verified bets */}
+        {allBets.length > 0 && (
+          <div className="mb-3">
+            <p className="text-white/20 text-[8px] font-bold uppercase tracking-wider mb-1.5">Verified Bets ({allBets.length})</p>
+            <div className="space-y-1 max-h-32 overflow-y-auto">
+              {allBets.map(bet => (
+                <div key={bet.id} className={`px-2.5 py-1.5 rounded-lg border flex items-center gap-2 ${
+                  bet.side === 'yes' ? 'bg-emerald-500/5 border-emerald-500/15' : 'bg-red-500/5 border-red-500/15'
+                }`}>
+                  <span className={`text-[9px] font-black w-6 ${
+                    bet.side === 'yes' ? 'text-emerald-400' : 'text-red-400'
+                  }`}>{bet.side.toUpperCase()}</span>
+                  <span className="text-white/40 text-[9px] font-mono truncate flex-1">
+                    kaspa:{bet.user_wallet_address?.slice(0, 12)}...
+                  </span>
+                  <span className="text-white font-bold text-[10px]">{bet.amount_kas} KAS</span>
+                  {bet.tx_hash_in && (
+                    <a
+                      href={`https://explorer.kaspa.org/txs/${bet.tx_hash_in}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400/40 hover:text-blue-400 transition-colors"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* User's own bet indicator */}
         {myBets.length > 0 && (
           <div className="mb-3 space-y-1">
             {myBets.map(bet => (
@@ -119,9 +161,6 @@ export default function LiveGameCard({ game, userBets, onBet }) {
                 </div>
               </div>
             ))}
-            {myBets.length > 1 && (
-              <div className="text-white/20 text-[9px] text-right">Total wagered: {myTotalKas.toFixed(2)} KAS</div>
-            )}
           </div>
         )}
 
