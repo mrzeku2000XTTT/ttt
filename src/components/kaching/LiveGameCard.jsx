@@ -14,7 +14,7 @@ const CRYPTO_ICONS = {
   BNB: "https://cryptologos.cc/logos/bnb-bnb-logo.png?v=040",
   DOGE: "https://cryptologos.cc/logos/dogecoin-doge-logo.png?v=040",
   XRP: "https://cryptologos.cc/logos/xrp-xrp-logo.png?v=040",
-  HYPE: "https://dd.dexscreener.com/ds-data/tokens/hyperliquid/0x0000000000000000000000000000000000000000.png",
+  HYPE: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/004c40311_image.png",
 };
 
 function CryptoIcon({ ticker, icon }) {
