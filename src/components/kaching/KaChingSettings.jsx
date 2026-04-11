@@ -354,10 +354,16 @@ function RewardWalletSection({ linkedWallet }) {
         kaspa_address: addr,
         encrypted_mnemonic: linkedWallet.mnemonic,
       });
-      if (res.data?.error) throw new Error(res.data.error);
-      setExistingWallet(res.data.wallet);
-      toast.success('PACMAN reward wallet set!');
+      const data = res?.data || res;
+      if (data?.error) throw new Error(data.error);
+      if (data?.success) {
+        setExistingWallet(data.wallet || { kaspa_address: addr, wallet_name: linkedWallet.label || 'Terra Reward Wallet' });
+        toast.success('PACMAN reward wallet set successfully!');
+      } else {
+        throw new Error('No success response from server');
+      }
     } catch (err) {
+      console.error('setPacmanRewardWallet error:', err);
       toast.error('Failed to save: ' + (err.message || 'Unknown error'));
     }
     setSaving(false);
@@ -372,10 +378,10 @@ function RewardWalletSection({ linkedWallet }) {
         <div className="p-3 bg-yellow-500/8 border border-yellow-500/20 rounded-xl space-y-1.5">
           <div className="flex items-center gap-2">
             <Coins className="w-4 h-4 text-yellow-400" />
-            <span className="text-yellow-400 text-xs font-bold">Active</span>
+            <span className="text-yellow-400 text-xs font-bold">Active ✓</span>
           </div>
           <p className="text-white/40 text-[9px] font-mono truncate">{existingWallet.kaspa_address}</p>
-          <p className="text-white/20 text-[9px]">Settlement bot sends PACMAN bonuses from this wallet</p>
+          <p className="text-emerald-400/60 text-[9px]">Settlement bot sends PACMAN bonuses from this wallet</p>
           {linkedWallet?.address && linkedWallet.address !== existingWallet.kaspa_address && linkedWallet.address !== existingWallet.kaspa_address?.replace('kaspa:', '') && (
             <button
               onClick={setAsRewardWallet}

@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft, Wallet, Trophy, Loader2, RefreshCw, Settings, Zap, Plus, TrendingUp, Bot } from "lucide-react";
+import { ArrowLeft, Wallet, Trophy, Loader2, RefreshCw, Settings, Zap, Plus, TrendingUp, Bot, Copy, Check, ExternalLink, Coins } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import LiveGameCard from "@/components/kaching/LiveGameCard.jsx";
 import BetReceipt from "@/components/kaching/BetReceipt";
+import BetRow from "@/components/kaching/BetRow";
 import SettlementAnimation from "@/components/kaching/SettlementAnimation";
 
 import BetModal from "@/components/kaching/BetModal";
@@ -444,44 +445,7 @@ export default function StakeDAGPage() {
               ) : (
                 userBets.map(bet => {
                   const game = games.find(g => g.id === bet.game_id);
-                  return (
-                    <motion.div
-                      key={bet.id}
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className={`p-4 rounded-xl border flex items-center gap-4 ${
-                        bet.status === 'won' ? 'bg-emerald-500/[0.06] border-emerald-500/15' :
-                        bet.status === 'lost' ? 'bg-red-500/[0.06] border-red-500/15' :
-                        'bg-white/[0.02] border-white/[0.06]'
-                      }`}
-                    >
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black flex-shrink-0 ${
-                        bet.side === 'yes' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-rose-500/15 text-rose-400'
-                      }`}>
-                        {bet.side.toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white/80 text-xs font-medium truncate">{game?.question || 'Game #' + bet.game_number}</p>
-                        <p className="text-white/25 text-[10px] mt-0.5">{bet.amount_kas} KAS · #{bet.game_number}</p>
-                      </div>
-                      <div className="text-right flex-shrink-0 flex items-center gap-2">
-                        <span className={`text-xs font-bold ${
-                          bet.status === 'won' ? 'text-emerald-400' : bet.status === 'lost' ? 'text-red-400' :
-                          bet.status === 'confirmed' ? 'text-blue-400' : 'text-amber-400'
-                        }`}>
-                          {bet.status === 'won' ? `+${bet.payout_kas?.toFixed(2)} KAS` : bet.status.toUpperCase()}
-                        </span>
-                        {bet.receipt && (
-                          <button
-                            onClick={() => setReceiptBet(bet)}
-                            className="text-[9px] text-cyan-400/60 hover:text-cyan-400 font-bold border border-cyan-500/20 px-1.5 py-0.5 rounded transition-colors"
-                          >
-                            Receipt
-                          </button>
-                        )}
-                      </div>
-                    </motion.div>
-                  );
+                  return <BetRow key={bet.id} bet={bet} game={game} onReceipt={() => setReceiptBet(bet)} />;
                 })
               )}
             </div>
