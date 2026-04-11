@@ -5,15 +5,15 @@ import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 import BetLedgerModal from "@/components/kaching/BetLedgerModal";
 
-// Crypto icons mapping
+// Crypto icons mapping — using CoinGecko CDN (no hotlink protection)
 const CRYPTO_ICONS = {
-  KAS: "https://cryptologos.cc/logos/kaspa-kas-logo.png?v=040",
-  BTC: "https://cryptologos.cc/logos/bitcoin-btc-logo.png?v=040",
-  ETH: "https://cryptologos.cc/logos/ethereum-eth-logo.png?v=040",
-  SOL: "https://cryptologos.cc/logos/solana-sol-logo.png?v=040",
-  BNB: "https://cryptologos.cc/logos/bnb-bnb-logo.png?v=040",
-  DOGE: "https://cryptologos.cc/logos/dogecoin-doge-logo.png?v=040",
-  XRP: "https://cryptologos.cc/logos/xrp-xrp-logo.png?v=040",
+  KAS: "https://assets.coingecko.com/coins/images/25751/small/kaspa-icon-exchanges.png",
+  BTC: "https://assets.coingecko.com/coins/images/1/small/bitcoin.png",
+  ETH: "https://assets.coingecko.com/coins/images/279/small/ethereum.png",
+  SOL: "https://assets.coingecko.com/coins/images/4128/small/solana.png",
+  BNB: "https://assets.coingecko.com/coins/images/825/small/bnb-icon2_2x.png",
+  DOGE: "https://assets.coingecko.com/coins/images/5/small/dogecoin.png",
+  XRP: "https://assets.coingecko.com/coins/images/44/small/xrp-symbol-white-128.png",
   HYPE: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/004c40311_image.png",
 };
 
