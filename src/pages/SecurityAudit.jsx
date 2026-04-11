@@ -1,11 +1,40 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, Search, AlertTriangle, CheckCircle, XCircle, ExternalLink, ArrowLeft, Loader2, Globe, Lock, Unlock, Server, Code, Eye } from "lucide-react";
+import { Shield, Search, AlertTriangle, CheckCircle, XCircle, ExternalLink, ArrowLeft, Loader2, Globe, Lock, Server, Code, Eye, Scan, Fingerprint, Activity } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
 import ScanResultCard from "@/components/security/ScanResultCard";
 import SeverityBadge from "@/components/security/SeverityBadge";
 import AppQuickScan from "@/components/security/AppQuickScan";
+
+const SCAN_SCHEMA = {
+  type: "object",
+  properties: {
+    url_analyzed: { type: "string" },
+    overall_score: { type: "number" },
+    overall_risk: { type: "string", enum: ["critical", "high", "medium", "low", "minimal"] },
+    summary: { type: "string" },
+    ssl_tls: { type: "object", properties: { status: { type: "string", enum: ["pass", "warn", "fail", "info"] }, severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] }, findings: { type: "array", items: { type: "string" } } } },
+    security_headers: { type: "object", properties: { status: { type: "string", enum: ["pass", "warn", "fail", "info"] }, severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] }, findings: { type: "array", items: { type: "string" } }, missing_headers: { type: "array", items: { type: "string" } } } },
+    vulnerabilities: { type: "object", properties: { status: { type: "string", enum: ["pass", "warn", "fail", "info"] }, severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] }, findings: { type: "array", items: { type: "string" } } } },
+    server_exposure: { type: "object", properties: { status: { type: "string", enum: ["pass", "warn", "fail", "info"] }, severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] }, findings: { type: "array", items: { type: "string" } } } },
+    dns_security: { type: "object", properties: { status: { type: "string", enum: ["pass", "warn", "fail", "info"] }, severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] }, findings: { type: "array", items: { type: "string" } } } },
+    cookie_security: { type: "object", properties: { status: { type: "string", enum: ["pass", "warn", "fail", "info"] }, severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] }, findings: { type: "array", items: { type: "string" } } } },
+    privacy_concerns: { type: "object", properties: { status: { type: "string", enum: ["pass", "warn", "fail", "info"] }, severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] }, findings: { type: "array", items: { type: "string" } } } },
+    recommendations: { type: "array", items: { type: "string" } }
+  }
+};
+
+const SCAN_PROMPT_BASE = `You are a web security auditor. Perform a comprehensive security assessment covering:
+1. SSL/TLS Configuration
+2. HTTP Security Headers - CSP, X-Frame-Options, HSTS, etc.
+3. Common Vulnerabilities - XSS, CSRF, SQL injection, clickjacking
+4. Server Information Exposure
+5. DNS & Domain Security
+6. Cookie Security
+7. Privacy Concerns
+8. Overall Risk Assessment
+Be thorough but realistic - only flag actual concerns.`;
 
 export default function SecurityAudit() {
   const [url, setUrl] = useState("");
@@ -13,133 +42,56 @@ export default function SecurityAudit() {
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
   const [scanProgress, setScanProgress] = useState(0);
+  const [scanTarget, setScanTarget] = useState("");
+  const progressRef = useRef(null);
 
-  const runScan = async () => {
-    if (!url.trim()) return;
-    let target = url.trim();
-    if (!target.startsWith("http://") && !target.startsWith("https://")) {
-      target = "https://" + target;
-    }
-
+  const startScan = (prompt, displayTarget) => {
+    setScanTarget(displayTarget);
     setScanning(true);
     setResults(null);
     setError(null);
     setScanProgress(0);
 
-    const progressInterval = setInterval(() => {
-      setScanProgress(p => Math.min(p + Math.random() * 15, 90));
-    }, 600);
+    const interval = setInterval(() => {
+      setScanProgress(p => Math.min(p + Math.random() * 12, 92));
+    }, 500);
+    progressRef.current = interval;
 
-    try {
-      const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a web security auditor. Analyze the following URL for potential security vulnerabilities and risks. URL: ${target}
-
-Perform a comprehensive security assessment covering:
-1. SSL/TLS Configuration - Check if HTTPS is enforced, certificate validity concerns
-2. HTTP Security Headers - Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Strict-Transport-Security, X-XSS-Protection, Referrer-Policy, Permissions-Policy
-3. Common Vulnerabilities - XSS potential, CSRF risks, SQL injection indicators, open redirects, clickjacking
-4. Server Information Exposure - Server header leaks, technology stack exposure, version disclosure
-5. DNS & Domain Security - DNSSEC, SPF, DMARC, domain reputation
-6. Cookie Security - Secure flag, HttpOnly, SameSite attributes
-7. Mixed Content - HTTP resources loaded on HTTPS pages
-8. API Security - Exposed endpoints, authentication concerns
-9. Privacy Concerns - Tracking scripts, data collection practices
-10. Overall Risk Assessment
-
-For each category, provide a severity rating and specific findings. Be thorough but realistic - only flag actual concerns, not hypothetical ones. Base your analysis on the URL structure, domain reputation, and common patterns.`,
-        add_context_from_internet: true,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            url_analyzed: { type: "string" },
-            overall_score: { type: "number", description: "Security score 0-100, higher is better" },
-            overall_risk: { type: "string", enum: ["critical", "high", "medium", "low", "minimal"] },
-            summary: { type: "string", description: "2-3 sentence overall assessment" },
-            ssl_tls: {
-              type: "object",
-              properties: {
-                status: { type: "string", enum: ["pass", "warn", "fail", "info"] },
-                severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] },
-                findings: { type: "array", items: { type: "string" } }
-              }
-            },
-            security_headers: {
-              type: "object",
-              properties: {
-                status: { type: "string", enum: ["pass", "warn", "fail", "info"] },
-                severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] },
-                findings: { type: "array", items: { type: "string" } },
-                missing_headers: { type: "array", items: { type: "string" } }
-              }
-            },
-            vulnerabilities: {
-              type: "object",
-              properties: {
-                status: { type: "string", enum: ["pass", "warn", "fail", "info"] },
-                severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] },
-                findings: { type: "array", items: { type: "string" } }
-              }
-            },
-            server_exposure: {
-              type: "object",
-              properties: {
-                status: { type: "string", enum: ["pass", "warn", "fail", "info"] },
-                severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] },
-                findings: { type: "array", items: { type: "string" } }
-              }
-            },
-            dns_security: {
-              type: "object",
-              properties: {
-                status: { type: "string", enum: ["pass", "warn", "fail", "info"] },
-                severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] },
-                findings: { type: "array", items: { type: "string" } }
-              }
-            },
-            cookie_security: {
-              type: "object",
-              properties: {
-                status: { type: "string", enum: ["pass", "warn", "fail", "info"] },
-                severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] },
-                findings: { type: "array", items: { type: "string" } }
-              }
-            },
-            privacy_concerns: {
-              type: "object",
-              properties: {
-                status: { type: "string", enum: ["pass", "warn", "fail", "info"] },
-                severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] },
-                findings: { type: "array", items: { type: "string" } }
-              }
-            },
-            recommendations: { type: "array", items: { type: "string" } }
-          }
-        }
-      });
-
+    base44.integrations.Core.InvokeLLM({
+      prompt,
+      add_context_from_internet: true,
+      response_json_schema: SCAN_SCHEMA
+    }).then(res => {
       setScanProgress(100);
-      setTimeout(() => setResults(res), 300);
-    } catch (err) {
-      setError(err.message || "Scan failed. Please try again.");
-    } finally {
-      clearInterval(progressInterval);
+      setTimeout(() => setResults(res), 400);
+    }).catch(err => {
+      setError(err.message || "Scan failed.");
+    }).finally(() => {
+      clearInterval(interval);
       setScanning(false);
+    });
+  };
+
+  const runScan = () => {
+    if (!url.trim()) return;
+    let target = url.trim();
+    if (!target.startsWith("http://") && !target.startsWith("https://")) {
+      target = "https://" + target;
     }
+    startScan(`${SCAN_PROMPT_BASE}\n\nAnalyze this URL: ${target}`, target);
   };
 
-  const scoreColor = (score) => {
-    if (score >= 80) return "text-emerald-400";
-    if (score >= 60) return "text-yellow-400";
-    if (score >= 40) return "text-orange-400";
-    return "text-red-400";
+  const handleAppScan = (appName) => {
+    setUrl(appName);
+    startScan(
+      `${SCAN_PROMPT_BASE}\n\nAnalyze the app/service called "${appName}" for security vulnerabilities. Search for it online and analyze its web presence, domain, and security posture.`,
+      appName
+    );
   };
 
-  const scoreRingColor = (score) => {
-    if (score >= 80) return "stroke-emerald-400";
-    if (score >= 60) return "stroke-yellow-400";
-    if (score >= 40) return "stroke-orange-400";
-    return "stroke-red-400";
-  };
+  const scoreColor = (s) => s >= 80 ? "text-emerald-400" : s >= 60 ? "text-yellow-400" : s >= 40 ? "text-orange-400" : "text-red-400";
+  const scoreGlow = (s) => s >= 80 ? "shadow-emerald-500/20" : s >= 60 ? "shadow-yellow-500/20" : s >= 40 ? "shadow-orange-500/20" : "shadow-red-500/20";
+  const scoreRing = (s) => s >= 80 ? "stroke-emerald-400" : s >= 60 ? "stroke-yellow-400" : s >= 40 ? "stroke-orange-400" : "stroke-red-400";
 
   const categories = results ? [
     { key: "ssl_tls", label: "SSL / TLS", icon: Lock, data: results.ssl_tls },
@@ -152,64 +104,133 @@ For each category, provide a severity rating and specific findings. Be thorough 
   ].filter(c => c.data) : [];
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black text-white relative overflow-hidden">
+      {/* Cinematic Background */}
+      <div className="fixed inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/30 via-black to-violet-950/20" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-cyan-500/[0.04] rounded-full blur-[120px]" />
+        <div className="absolute bottom-0 right-0 w-[600px] h-[300px] bg-violet-500/[0.03] rounded-full blur-[100px]" />
+        {/* Grid overlay */}
+        <div className="absolute inset-0 opacity-[0.02]" style={{
+          backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
+          backgroundSize: '60px 60px'
+        }} />
+      </div>
+
       {/* Header */}
-      <div className="border-b border-white/10 bg-black/80 backdrop-blur-xl sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
-          <Link to="/" className="text-white/40 hover:text-white transition-colors">
+      <div className="relative z-40 border-b border-white/[0.06] bg-black/60 backdrop-blur-2xl sticky top-0">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-4">
+          <Link to="/" className="text-white/30 hover:text-white transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <Shield className="w-5 h-5 text-cyan-400" />
-          <h1 className="text-lg font-bold">Security Audit</h1>
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <img
+                src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/81791a703_generated_image.png"
+                alt="Security Audit"
+                className="w-9 h-9 rounded-xl"
+              />
+              {scanning && (
+                <motion.div
+                  className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-cyan-400 rounded-full"
+                  animate={{ scale: [1, 1.3, 1], opacity: [1, 0.5, 1] }}
+                  transition={{ repeat: Infinity, duration: 1.5 }}
+                />
+              )}
+            </div>
+            <div>
+              <h1 className="text-white font-bold text-base tracking-tight">Security Audit</h1>
+              <p className="text-white/25 text-[10px] font-medium tracking-wider uppercase">AI-Powered Vulnerability Scanner</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-        {/* Search Bar */}
-        <div className="space-y-3">
-          <p className="text-white/50 text-sm">Enter any URL to scan for security vulnerabilities and misconfigurations.</p>
-          <div className="flex gap-2">
-            <div className="flex-1 relative">
-              <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-              <input
-                type="text"
-                value={url}
-                onChange={e => setUrl(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && !scanning && runScan()}
-                placeholder="example.com or https://example.com"
-                className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30 text-sm"
-              />
-            </div>
-            <button
-              onClick={runScan}
-              disabled={scanning || !url.trim()}
-              className="px-5 py-3 bg-cyan-500 hover:bg-cyan-400 disabled:bg-white/10 disabled:text-white/30 text-black font-bold rounded-xl transition-all flex items-center gap-2 text-sm"
-            >
-              {scanning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-              {scanning ? "Scanning..." : "Scan"}
-            </button>
-          </div>
-        </div>
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-8">
 
-        {/* Progress Bar */}
+        {/* Hero Search Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative"
+        >
+          <div className="bg-gradient-to-br from-white/[0.04] to-white/[0.01] border border-white/[0.08] rounded-3xl p-6 sm:p-8 backdrop-blur-xl overflow-hidden">
+            {/* Decorative elements */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/[0.06] rounded-full blur-[60px]" />
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-violet-500/[0.04] rounded-full blur-[40px]" />
+
+            <div className="relative z-10 space-y-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Scan className="w-4 h-4 text-cyan-400" />
+                <span className="text-white/40 text-xs font-medium uppercase tracking-widest">Scan Target</span>
+              </div>
+
+              <div className="flex gap-3">
+                <div className="flex-1 relative group">
+                  <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20 group-focus-within:text-cyan-400 transition-colors" />
+                  <input
+                    type="text"
+                    value={url}
+                    onChange={e => setUrl(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && !scanning && runScan()}
+                    placeholder="Enter any URL to scan..."
+                    className="w-full bg-black/40 border border-white/[0.08] rounded-2xl pl-12 pr-5 py-4 text-white placeholder-white/20 focus:outline-none focus:border-cyan-500/40 focus:ring-2 focus:ring-cyan-500/10 text-sm font-medium transition-all"
+                  />
+                </div>
+                <button
+                  onClick={runScan}
+                  disabled={scanning || !url.trim()}
+                  className="px-6 py-4 bg-gradient-to-r from-cyan-500 to-cyan-400 hover:from-cyan-400 hover:to-cyan-300 disabled:from-white/5 disabled:to-white/5 disabled:text-white/20 text-black font-bold rounded-2xl transition-all flex items-center gap-2 text-sm shadow-lg shadow-cyan-500/20 disabled:shadow-none"
+                >
+                  {scanning ? <Loader2 className="w-5 h-5 animate-spin" /> : <Shield className="w-5 h-5" />}
+                  <span className="hidden sm:inline">{scanning ? "Scanning..." : "Scan"}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Scanning Animation */}
         <AnimatePresence>
           {scanning && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="space-y-2"
+              className="bg-gradient-to-r from-cyan-500/[0.04] to-violet-500/[0.04] border border-cyan-500/[0.12] rounded-2xl p-5 space-y-4"
             >
-              <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+              <div className="flex items-center gap-3">
                 <motion.div
-                  className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full"
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                >
+                  <Fingerprint className="w-5 h-5 text-cyan-400" />
+                </motion.div>
+                <div className="flex-1">
+                  <p className="text-white/80 text-sm font-medium">Scanning {scanTarget}</p>
+                  <p className="text-white/30 text-[11px]">Analyzing security posture, headers, certificates, and vulnerabilities...</p>
+                </div>
+                <span className="text-cyan-400 font-mono text-sm font-bold">{Math.round(scanProgress)}%</span>
+              </div>
+              <div className="h-1 bg-white/[0.04] rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500"
                   animate={{ width: `${scanProgress}%` }}
                   transition={{ duration: 0.3 }}
                 />
               </div>
-              <div className="flex items-center justify-between text-[11px] text-white/30">
-                <span>Analyzing security posture...</span>
-                <span>{Math.round(scanProgress)}%</span>
+              {/* Animated scan lines */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {["SSL/TLS", "Headers", "DNS", "Cookies", "Privacy", "Vulnerabilities"].map((item, i) => (
+                  <motion.span
+                    key={item}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: scanProgress > (i + 1) * 14 ? 1 : 0.2 }}
+                    className="px-2 py-0.5 rounded-md bg-white/[0.03] border border-white/[0.06] text-[10px] text-white/40 font-mono"
+                  >
+                    {scanProgress > (i + 1) * 14 ? "✓" : "○"} {item}
+                  </motion.span>
+                ))}
               </div>
             </motion.div>
           )}
@@ -217,13 +238,17 @@ For each category, provide a severity rating and specific findings. Be thorough 
 
         {/* Error */}
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-start gap-3">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="bg-red-500/[0.06] border border-red-500/20 rounded-2xl p-5 flex items-start gap-3"
+          >
             <XCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-red-400 text-sm font-medium">Scan Failed</p>
-              <p className="text-white/50 text-xs mt-1">{error}</p>
+              <p className="text-red-400 text-sm font-bold">Scan Failed</p>
+              <p className="text-white/40 text-xs mt-1">{error}</p>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Results */}
@@ -232,51 +257,65 @@ For each category, provide a severity rating and specific findings. Be thorough 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="space-y-5"
+              className="space-y-6"
             >
-              {/* Score Overview */}
-              <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-5">
-                <div className="flex items-start gap-5">
-                  {/* Score Circle */}
-                  <div className="relative w-24 h-24 flex-shrink-0">
-                    <svg className="w-24 h-24 -rotate-90" viewBox="0 0 100 100">
-                      <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
-                      <circle
-                        cx="50" cy="50" r="42" fill="none"
-                        className={scoreRingColor(results.overall_score)}
-                        strokeWidth="8"
+              {/* Score Card */}
+              <div className={`bg-gradient-to-br from-white/[0.05] to-white/[0.01] border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl ${scoreGlow(results.overall_score)}`}>
+                <div className="flex flex-col sm:flex-row items-center gap-6">
+                  {/* Score Ring */}
+                  <div className="relative w-28 h-28 flex-shrink-0">
+                    <svg className="w-28 h-28 -rotate-90" viewBox="0 0 100 100">
+                      <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="6" />
+                      <motion.circle
+                        cx="50" cy="50" r="40" fill="none"
+                        className={scoreRing(results.overall_score)}
+                        strokeWidth="6"
                         strokeLinecap="round"
-                        strokeDasharray={`${(results.overall_score / 100) * 264} 264`}
+                        initial={{ strokeDasharray: "0 252" }}
+                        animate={{ strokeDasharray: `${(results.overall_score / 100) * 252} 252` }}
+                        transition={{ duration: 1.2, ease: "easeOut" }}
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className={`text-2xl font-black ${scoreColor(results.overall_score)}`}>{results.overall_score}</span>
-                      <span className="text-[9px] text-white/30 uppercase tracking-wider">Score</span>
+                      <motion.span
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.3 }}
+                        className={`text-3xl font-black ${scoreColor(results.overall_score)}`}
+                      >
+                        {results.overall_score}
+                      </motion.span>
+                      <span className="text-[9px] text-white/25 uppercase tracking-widest font-bold">Score</span>
                     </div>
                   </div>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-white font-bold text-sm truncate">{results.url_analyzed}</span>
-                      <a href={results.url_analyzed} target="_blank" rel="noopener noreferrer" className="text-white/20 hover:text-white/40">
-                        <ExternalLink className="w-3.5 h-3.5" />
+                  <div className="flex-1 min-w-0 text-center sm:text-left">
+                    <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
+                      <span className="text-white font-bold text-lg truncate">{results.url_analyzed}</span>
+                      <a href={results.url_analyzed} target="_blank" rel="noopener noreferrer" className="text-white/15 hover:text-white/40 transition-colors">
+                        <ExternalLink className="w-4 h-4" />
                       </a>
                     </div>
-                    <SeverityBadge severity={results.overall_risk} />
-                    <p className="text-white/50 text-xs mt-2 leading-relaxed">{results.summary}</p>
+                    <div className="mb-3">
+                      <SeverityBadge severity={results.overall_risk} />
+                    </div>
+                    <p className="text-white/45 text-sm leading-relaxed">{results.summary}</p>
                   </div>
                 </div>
               </div>
 
               {/* Category Results */}
               <div className="space-y-3">
-                <h2 className="text-white/60 text-xs font-bold uppercase tracking-widest">Detailed Findings</h2>
+                <div className="flex items-center gap-2 px-1">
+                  <Activity className="w-4 h-4 text-white/20" />
+                  <h2 className="text-white/50 text-xs font-bold uppercase tracking-widest">Detailed Findings</h2>
+                </div>
                 {categories.map((cat, i) => (
                   <motion.div
                     key={cat.key}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.06 }}
                   >
                     <ScanResultCard
                       label={cat.label}
@@ -292,84 +331,81 @@ For each category, provide a severity rating and specific findings. Be thorough 
 
               {/* Recommendations */}
               {results.recommendations?.length > 0 && (
-                <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-5 space-y-3">
+                <div className="bg-gradient-to-br from-cyan-500/[0.04] to-transparent border border-cyan-500/[0.1] rounded-2xl p-6 space-y-4">
                   <h2 className="text-white/60 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                    <CheckCircle className="w-3.5 h-3.5 text-cyan-400" />
+                    <CheckCircle className="w-4 h-4 text-cyan-400" />
                     Recommendations
                   </h2>
-                  <ul className="space-y-2">
+                  <div className="space-y-3">
                     {results.recommendations.map((rec, i) => (
-                      <li key={i} className="flex items-start gap-2 text-white/60 text-xs leading-relaxed">
-                        <span className="text-cyan-400/60 font-bold mt-px">{i + 1}.</span>
-                        <span>{rec}</span>
-                      </li>
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.5 + i * 0.05 }}
+                        className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04]"
+                      >
+                        <span className="w-5 h-5 rounded-full bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 text-[10px] font-bold flex-shrink-0 mt-0.5">{i + 1}</span>
+                        <span className="text-white/55 text-xs leading-relaxed">{rec}</span>
+                      </motion.div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               )}
 
-              {/* Disclaimer */}
-              <p className="text-white/15 text-[10px] text-center">
-                This scan provides an AI-powered assessment based on publicly available information. It does not perform active penetration testing. Results should be verified by a professional security auditor.
-              </p>
+              {/* Scan Again */}
+              <div className="text-center space-y-3 pt-2">
+                <button
+                  onClick={() => { setResults(null); setUrl(""); }}
+                  className="px-6 py-2.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] rounded-xl text-white/50 hover:text-white/80 text-xs font-medium transition-all"
+                >
+                  Scan Another Target
+                </button>
+                <p className="text-white/10 text-[10px]">
+                  AI-powered assessment based on public information. Does not perform active penetration testing.
+                </p>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Empty State + Quick Scan */}
+        {/* Empty State + App Grid */}
         {!results && !scanning && !error && (
-          <div className="space-y-8">
-            <div className="text-center py-10 space-y-3">
-              <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mx-auto">
-                <Shield className="w-8 h-8 text-cyan-400" />
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="space-y-10"
+          >
+            {/* Hero text */}
+            <div className="text-center space-y-4 py-6">
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 200 }}
+                className="w-20 h-20 rounded-3xl bg-gradient-to-br from-cyan-500/15 to-violet-500/10 border border-cyan-500/20 flex items-center justify-center mx-auto shadow-2xl shadow-cyan-500/10"
+              >
+                <Shield className="w-10 h-10 text-cyan-400" />
+              </motion.div>
+              <div>
+                <h2 className="text-white/90 font-bold text-xl mb-2">Scan Any Website</h2>
+                <p className="text-white/30 text-sm max-w-md mx-auto leading-relaxed">
+                  Enter a URL above to check for SSL issues, security headers, vulnerabilities, server exposure, DNS security, and more.
+                </p>
               </div>
-              <h2 className="text-white/60 font-bold text-sm">Scan Any Website</h2>
-              <p className="text-white/25 text-xs max-w-sm mx-auto">
-                Enter a URL above to check for SSL issues, missing security headers, vulnerabilities, server exposure, and more.
-              </p>
+
+              {/* Feature pills */}
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                {["SSL/TLS", "Headers", "XSS & CSRF", "DNS", "Cookies", "Privacy", "Server Exposure"].map(f => (
+                  <span key={f} className="px-3 py-1 rounded-full bg-white/[0.03] border border-white/[0.06] text-white/25 text-[10px] font-medium">
+                    {f}
+                  </span>
+                ))}
+              </div>
             </div>
-            <AppQuickScan onScanApp={(appName) => {
-              setUrl(appName + " website");
-              // Trigger scan with app name as context
-              const target = appName;
-              setScanning(true);
-              setResults(null);
-              setError(null);
-              setScanProgress(0);
-              const progressInterval = setInterval(() => {
-                setScanProgress(p => Math.min(p + Math.random() * 15, 90));
-              }, 600);
-              base44.integrations.Core.InvokeLLM({
-                prompt: `You are a web security auditor. Analyze the app/service called "${target}" for potential security vulnerabilities and risks. Search for the app online and analyze its web presence, domain, and any publicly available security information.\n\nPerform a comprehensive security assessment covering:\n1. SSL/TLS Configuration\n2. HTTP Security Headers\n3. Common Vulnerabilities\n4. Server Information Exposure\n5. DNS & Domain Security\n6. Cookie Security\n7. Mixed Content\n8. API Security\n9. Privacy Concerns\n10. Overall Risk Assessment`,
-                add_context_from_internet: true,
-                response_json_schema: {
-                  type: "object",
-                  properties: {
-                    url_analyzed: { type: "string" },
-                    overall_score: { type: "number" },
-                    overall_risk: { type: "string", enum: ["critical", "high", "medium", "low", "minimal"] },
-                    summary: { type: "string" },
-                    ssl_tls: { type: "object", properties: { status: { type: "string", enum: ["pass", "warn", "fail", "info"] }, severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] }, findings: { type: "array", items: { type: "string" } } } },
-                    security_headers: { type: "object", properties: { status: { type: "string", enum: ["pass", "warn", "fail", "info"] }, severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] }, findings: { type: "array", items: { type: "string" } }, missing_headers: { type: "array", items: { type: "string" } } } },
-                    vulnerabilities: { type: "object", properties: { status: { type: "string", enum: ["pass", "warn", "fail", "info"] }, severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] }, findings: { type: "array", items: { type: "string" } } } },
-                    server_exposure: { type: "object", properties: { status: { type: "string", enum: ["pass", "warn", "fail", "info"] }, severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] }, findings: { type: "array", items: { type: "string" } } } },
-                    dns_security: { type: "object", properties: { status: { type: "string", enum: ["pass", "warn", "fail", "info"] }, severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] }, findings: { type: "array", items: { type: "string" } } } },
-                    cookie_security: { type: "object", properties: { status: { type: "string", enum: ["pass", "warn", "fail", "info"] }, severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] }, findings: { type: "array", items: { type: "string" } } } },
-                    privacy_concerns: { type: "object", properties: { status: { type: "string", enum: ["pass", "warn", "fail", "info"] }, severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] }, findings: { type: "array", items: { type: "string" } } } },
-                    recommendations: { type: "array", items: { type: "string" } }
-                  }
-                }
-              }).then(res => {
-                setScanProgress(100);
-                setTimeout(() => setResults(res), 300);
-              }).catch(err => {
-                setError(err.message || "Scan failed.");
-              }).finally(() => {
-                clearInterval(progressInterval);
-                setScanning(false);
-              });
-            }} />
-          </div>
+
+            {/* App Quick Scan Grid */}
+            <AppQuickScan onScanApp={handleAppScan} />
+          </motion.div>
         )}
       </div>
     </div>
