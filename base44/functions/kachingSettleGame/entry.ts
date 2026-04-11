@@ -142,6 +142,23 @@ Deno.serve(async (req) => {
           judgeReason += ' (No winners — all refunded)';
         }
 
+        // Send KRC-20 PACMAN bonus to winners (non-blocking)
+        const krc20BonusTxs = [];
+        if (winners.length > 0) {
+          for (const winner of winners) {
+            try {
+              const bonusAmount = Math.max(1, Math.round(winner.amount_kas * 10)); // 10 PACMAN per KAS bet
+              const krc20Res = await sendKRC20Bonus(base44, winner.user_wallet_address, bonusAmount);
+              if (krc20Res) {
+                krc20BonusTxs.push({ address: winner.user_wallet_address.slice(0, 16), amount: bonusAmount, commitTx: krc20Res.commitTxId, revealTx: krc20Res.revealTxId });
+                console.log(`KRC20 Bonus: ${bonusAmount} PACMAN → ${winner.user_wallet_address.slice(0, 16)}...`);
+              }
+            } catch (krc20Err) {
+              console.warn(`KRC20 bonus failed for ${winner.user_wallet_address.slice(0, 12)}:`, krc20Err.message);
+            }
+          }
+        }
+
         await base44.asServiceRole.entities.PredictionGame.update(game.id, {
           status: 'settled',
           result,
@@ -176,6 +193,7 @@ Deno.serve(async (req) => {
           winners: winners.length,
           losers: losers.length,
           tx_hashes: txHashes,
+          krc20_bonuses: krc20BonusTxs,
           bet_ledger: betLedger,
         });
       } catch (gameError) {
@@ -251,6 +269,28 @@ async function judgeCryptoGame(game) {
     result: isAbove ? 'yes' : 'no',
     reason: `${coinId.toUpperCase()} at settlement: $${currentPrice.toLocaleString()} vs target $${targetPrice.toLocaleString()} → ${isAbove ? 'ABOVE' : 'AT OR BELOW'}`,
   };
+}
+
+// Send KRC-20 PACMAN bonus reward to a winner
+async function sendKRC20Bonus(base44, recipientAddress, amountPacman) {
+  try {
+    const toAddr = recipientAddress.startsWith('kaspa:') ? recipientAddress : `kaspa:${recipientAddress}`;
+    const res = await base44.asServiceRole.functions.invoke('sendPacmanKRC20Reward', {
+      recipient_address: toAddr,
+      amount_pacman: amountPacman,
+      ticker: 'PACMAN',
+      decimals: 8,
+    });
+    const data = res?.data || res;
+    if (data?.error) {
+      console.warn(`KRC20 bonus error: ${data.error}`);
+      return null;
+    }
+    return data;
+  } catch (err) {
+    console.warn(`KRC20 bonus exception: ${err.message}`);
+    return null;
+  }
 }
 
 // Fallback LLM judge
