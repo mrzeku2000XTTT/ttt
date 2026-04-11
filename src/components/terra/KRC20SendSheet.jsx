@@ -214,12 +214,18 @@ export default function KRC20SendSheet({ onClose, activeWallet, token, onBalance
           <motion.div key="done" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
             style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20, padding: "24px" }}>
             <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", damping: 12, stiffness: 200, delay: 0.1 }}
-              style={{ width: 80, height: 80, borderRadius: 40, background: "#1a4a1a", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Check size={36} color="#34c759" strokeWidth={3} />
+              style={{ width: 80, height: 80, borderRadius: 40, background: txResult?.phase === 'complete' ? '#1a4a1a' : '#3a3a1a', display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Check size={36} color={txResult?.phase === 'complete' ? '#34c759' : '#f59e0b'} strokeWidth={3} />
             </motion.div>
             <div style={{ textAlign: "center" }}>
-              <div style={{ color: "white", fontSize: 24, fontWeight: 700, marginBottom: 8 }}>Commit Sent!</div>
-              <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>{amount} {tick} — commit phase complete</div>
+              <div style={{ color: "white", fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
+                {txResult?.phase === 'complete' ? 'Transfer Complete!' : 'Commit Sent'}
+              </div>
+              <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>
+                {txResult?.phase === 'complete'
+                  ? `${amount} ${tick} sent successfully`
+                  : `${amount} ${tick} — commit sent, reveal pending`}
+              </div>
             </div>
             {txResult?.commitTxId && (
               <div style={{ background: "#1c1c1e", borderRadius: 12, padding: "12px 14px", width: "100%", border: "1px solid rgba(255,255,255,0.06)" }}>
@@ -227,9 +233,15 @@ export default function KRC20SendSheet({ onClose, activeWallet, token, onBalance
                 <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 11, fontFamily: "monospace", wordBreak: "break-all" }}>{txResult.commitTxId}</div>
               </div>
             )}
-            {txResult?.note && (
-              <div style={{ background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 12, padding: "10px 14px", width: "100%" }}>
-                <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 11, lineHeight: 1.5 }}>{txResult.note}</div>
+            {txResult?.revealTxId && (
+              <div style={{ background: "#1c1c1e", borderRadius: 12, padding: "12px 14px", width: "100%", border: "1px solid rgba(52,199,89,0.2)" }}>
+                <div style={{ color: "rgba(52,199,89,0.6)", fontSize: 10, marginBottom: 4 }}>Reveal TX ✓</div>
+                <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 11, fontFamily: "monospace", wordBreak: "break-all" }}>{txResult.revealTxId}</div>
+              </div>
+            )}
+            {txResult?.error && (
+              <div style={{ background: "rgba(255,149,0,0.08)", border: "1px solid rgba(255,149,0,0.2)", borderRadius: 12, padding: "10px 14px", width: "100%" }}>
+                <div style={{ color: "#ff9500", fontSize: 11, lineHeight: 1.5 }}>{txResult.error}</div>
               </div>
             )}
             <button onClick={onClose}
