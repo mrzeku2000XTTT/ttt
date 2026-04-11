@@ -10,6 +10,10 @@ const getTokenLogo = (tick) => {
   return `https://kasplex-indexer.s3.us-east-1.amazonaws.com/icon/${tick.toUpperCase()}`;
 };
 
+const KNOWN_LOGOS = {
+  PACMAN: 'https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8b3362e0b_image.png',
+};
+
 export default function KRC20Tokens({ walletAddress, onSendToken }) {
   const [tokens, setTokens] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -52,6 +56,12 @@ export default function KRC20Tokens({ walletAddress, onSendToken }) {
     setImgErrors(prev => ({ ...prev, [tick]: true }));
   };
 
+  const getEffectiveLogo = (tick) => {
+    if (imgErrors[tick] && KNOWN_LOGOS[tick?.toUpperCase()]) return KNOWN_LOGOS[tick.toUpperCase()];
+    if (imgErrors[tick]) return null;
+    return getTokenLogo(tick);
+  };
+
   return (
     <div style={{ margin: '0 16px 20px', fontFamily: SF }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
@@ -91,22 +101,27 @@ export default function KRC20Tokens({ walletAddress, onSendToken }) {
                 border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 12
               }}>
                 {/* Token logo */}
-                <div style={{
-                  width: 36, height: 36, borderRadius: 18, flexShrink: 0, overflow: 'hidden',
-                  background: hasImgError ? 'linear-gradient(135deg, rgba(168,85,247,0.3), rgba(59,130,246,0.3))' : '#1c1c1e',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  {!hasImgError && logoUrl ? (
-                    <img
-                      src={logoUrl}
-                      alt={tick}
-                      style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 18 }}
-                      onError={() => handleImgError(tick)}
-                    />
-                  ) : (
-                    <span style={{ color: 'white', fontSize: 11, fontWeight: 800 }}>{tick.slice(0, 4)}</span>
-                  )}
-                </div>
+                {(() => {
+                  const effectiveLogo = getEffectiveLogo(tick);
+                  return (
+                    <div style={{
+                      width: 36, height: 36, borderRadius: 18, flexShrink: 0, overflow: 'hidden',
+                      background: !effectiveLogo ? 'linear-gradient(135deg, rgba(168,85,247,0.3), rgba(59,130,246,0.3))' : '#1c1c1e',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {effectiveLogo ? (
+                        <img
+                          src={effectiveLogo}
+                          alt={tick}
+                          style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 18 }}
+                          onError={() => handleImgError(tick)}
+                        />
+                      ) : (
+                        <span style={{ color: 'white', fontSize: 11, fontWeight: 800 }}>{tick.slice(0, 4)}</span>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Token info */}
                 <div style={{ flex: 1, minWidth: 0 }}>

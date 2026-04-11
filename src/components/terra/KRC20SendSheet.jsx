@@ -9,6 +9,12 @@ const ACCENT = "#1a73e8";
 const getTokenLogo = (tick) =>
   `https://kasplex-indexer.s3.us-east-1.amazonaws.com/icon/${tick?.toUpperCase()}`;
 
+const KNOWN_LOGOS = {
+  PACMAN: 'https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8b3362e0b_image.png',
+};
+
+const getEffectiveLogo = (tick) => KNOWN_LOGOS[tick?.toUpperCase()] || getTokenLogo(tick);
+
 export default function KRC20SendSheet({ onClose, activeWallet, token, onBalanceUpdate }) {
   const [step, setStep] = useState("input"); // input | confirm | sending | done | error
   const [recipient, setRecipient] = useState("");
@@ -78,7 +84,7 @@ export default function KRC20SendSheet({ onClose, activeWallet, token, onBalance
         </button>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <img
-            src={getTokenLogo(tick)}
+            src={getEffectiveLogo(tick)}
             alt={tick}
             style={{ width: 22, height: 22, borderRadius: 11 }}
             onError={(e) => { e.target.style.display = "none"; }}
@@ -96,7 +102,7 @@ export default function KRC20SendSheet({ onClose, activeWallet, token, onBalance
 
             {/* Token info banner */}
             <div style={{ background: "#1c1c1e", borderRadius: 14, padding: "12px 14px", marginBottom: 16, display: "flex", alignItems: "center", gap: 10, border: "1px solid rgba(255,255,255,0.06)" }}>
-              <img src={getTokenLogo(tick)} alt={tick} style={{ width: 32, height: 32, borderRadius: 16 }} onError={(e) => { e.target.style.display = "none"; }} />
+              <img src={getEffectiveLogo(tick)} alt={tick} style={{ width: 32, height: 32, borderRadius: 16 }} onError={(e) => { e.target.style.display = "none"; }} />
               <div>
                 <div style={{ color: "white", fontSize: 14, fontWeight: 600 }}>{tick}</div>
                 <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>Balance: {humanBal.toLocaleString("en-US", { maximumFractionDigits: 4 })}</div>
@@ -162,7 +168,7 @@ export default function KRC20SendSheet({ onClose, activeWallet, token, onBalance
         {step === "confirm" && (
           <motion.div key="confirm" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
             style={{ flex: 1, display: "flex", flexDirection: "column", padding: "32px 24px", gap: 20, alignItems: "center" }}>
-            <img src={getTokenLogo(tick)} alt={tick} style={{ width: 56, height: 56, borderRadius: 28 }} onError={(e) => { e.target.style.display = "none"; }} />
+            <img src={getEffectiveLogo(tick)} alt={tick} style={{ width: 56, height: 56, borderRadius: 28 }} onError={(e) => { e.target.style.display = "none"; }} />
             <div style={{ textAlign: "center" }}>
               <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: 4 }}>You're sending</div>
               <div style={{ color: "white", fontSize: 36, fontWeight: 700 }}>{amount} {tick}</div>
