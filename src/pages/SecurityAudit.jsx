@@ -115,6 +115,35 @@ export default function SecurityAudit() {
     setTimeout(() => setCopiedIdx(null), 2000);
   };
 
+  const extractExternalResources = (html) => {
+    const iframes = [];
+    const scripts = [];
+    const links = [];
+    const images = [];
+    // Extract iframes
+    const iframeRe = /<iframe[^>]*src=["']([^"']+)["'][^>]*>/gi;
+    let m;
+    while ((m = iframeRe.exec(html)) !== null) iframes.push(m[1]);
+    // Extract scripts
+    const scriptRe = /<script[^>]*src=["']([^"']+)["'][^>]*>/gi;
+    while ((m = scriptRe.exec(html)) !== null) scripts.push(m[1]);
+    // Extract external links/stylesheets
+    const linkRe = /<link[^>]*href=["']([^"']+)["'][^>]*>/gi;
+    while ((m = linkRe.exec(html)) !== null) links.push(m[1]);
+    // Extract fetch/API calls
+    const fetchRe = /fetch\(["'`]([^"'`]+)["'`]/gi;
+    const apiCalls = [];
+    while ((m = fetchRe.exec(html)) !== null) apiCalls.push(m[1]);
+    // Inline scripts content
+    const inlineScriptRe = /<script(?![^>]*src)[^>]*>([\s\S]*?)<\/script>/gi;
+    const inlineScripts = [];
+    while ((m = inlineScriptRe.exec(html)) !== null) {
+      const content = m[1].trim();
+      if (content.length > 10) inlineScripts.push(content.slice(0, 500));
+    }
+    return { iframes, scripts, links, apiCalls, inlineScripts };
+  };
+
   const handleAppScan = async (app) => {
     const appName = app.name;
     const appPath = app.path;
@@ -127,56 +156,108 @@ export default function SecurityAudit() {
     setScanProgress(0);
 
     const interval = setInterval(() => {
-      setScanProgress(p => Math.min(p + Math.random() * 8, 40));
+      setScanProgress(p => Math.min(p + Math.random() * 5, 25));
     }, 500);
     progressRef.current = interval;
 
-    // Build the internal app URL to fetch the actual page source
+    // Phase 1: Fetch the actual page source
     const appUrl = `${window.location.origin}/${appPath}`;
     let pageSource = "";
+    let externalResources = { iframes: [], scripts: [], links: [], apiCalls: [], inlineScripts: [] };
     try {
-      setScanProgress(10);
+      setScanProgress(5);
       const resp = await fetch(appUrl);
       const html = await resp.text();
-      // Extract meaningful content (first 8000 chars to stay within limits)
-      pageSource = html.slice(0, 8000);
-      setScanProgress(35);
+      pageSource = html.slice(0, 15000);
+      externalResources = extractExternalResources(html);
+      setScanProgress(20);
     } catch (fetchErr) {
       pageSource = `Could not fetch page source for ${appPath}. URL attempted: ${appUrl}`;
     }
 
+    // Phase 2: If iframes found, fetch their content too
+    let iframeAnalysis = "";
+    if (externalResources.iframes.length > 0) {
+      setScanProgress(25);
+      const iframeResults = [];
+      for (const iframeSrc of externalResources.iframes.slice(0, 3)) {
+        try {
+          const iResp = await fetch(iframeSrc);
+          const iHtml = await iResp.text();
+          iframeResults.push({ url: iframeSrc, source: iHtml.slice(0, 4000) });
+        } catch {
+          iframeResults.push({ url: iframeSrc, source: "[COULD NOT FETCH — cross-origin blocked or unreachable]" });
+        }
+      }
+      setScanProgress(35);
+      iframeAnalysis = `\n\n=== EMBEDDED IFRAMES DETECTED (${externalResources.iframes.length}) ===\nThese are EXTERNAL applications embedded inside this app. Audit each one independently.\n` +
+        iframeResults.map((ir, i) => `\n--- iframe #${i+1}: ${ir.url} ---\n\`\`\`html\n${ir.source}\n\`\`\``).join('\n');
+    }
+
     clearInterval(interval);
     const interval2 = setInterval(() => {
-      setScanProgress(p => Math.min(p + Math.random() * 12, 92));
+      setScanProgress(p => Math.min(p + Math.random() * 8, 92));
     }, 500);
     progressRef.current = interval2;
 
+    // Build comprehensive resource inventory
+    const resourceInventory = `
+=== EXTERNAL RESOURCE INVENTORY ===
+
+IFRAMES (${externalResources.iframes.length}): ${externalResources.iframes.length > 0 ? '\n' + externalResources.iframes.map(u => `  ⚠️ ${u}`).join('\n') : 'None'}
+
+EXTERNAL SCRIPTS (${externalResources.scripts.length}): ${externalResources.scripts.length > 0 ? '\n' + externalResources.scripts.map(u => `  📦 ${u}`).join('\n') : 'None'}
+
+EXTERNAL STYLESHEETS/LINKS (${externalResources.links.length}): ${externalResources.links.length > 0 ? '\n' + externalResources.links.map(u => `  🔗 ${u}`).join('\n') : 'None'}
+
+API CALLS IN CODE (${externalResources.apiCalls.length}): ${externalResources.apiCalls.length > 0 ? '\n' + externalResources.apiCalls.map(u => `  🌐 ${u}`).join('\n') : 'None'}
+
+INLINE SCRIPTS (${externalResources.inlineScripts.length}): ${externalResources.inlineScripts.length > 0 ? '\n' + externalResources.inlineScripts.map((s, i) => `  📝 Script #${i+1}: ${s.slice(0, 200)}...`).join('\n') : 'None'}
+`;
+
     const prompt = `${SCAN_PROMPT_BASE}
 
-You are auditing an INTERNAL web application page called "${appName}" hosted at: ${appUrl}
+You are performing a FULL SECURITY AUDIT of "${appName}" — hosted on Base44 at: ${appUrl}
 
-This is a Single Page Application (React). Below is the actual HTML source of this app page. Analyze it for:
-- Inline scripts and their security implications
-- External resources loaded (CDNs, APIs, third-party scripts)
-- Data exposure risks (API keys, tokens, secrets in source)
-- DOM-based XSS vulnerabilities
-- Content Security Policy compliance
-- Authentication/authorization patterns visible in code
-- Sensitive data in local storage or cookies usage patterns
-- Third-party tracking or analytics scripts
-- Insecure resource loading (HTTP vs HTTPS)
-- Input handling and sanitization patterns
+This is a React Single Page Application. I have fetched the REAL page source and extracted all external resources.
 
-ACTUAL PAGE SOURCE:
+PROVIDE A THOROUGH, DETAILED REPORT. For each category, give MULTIPLE specific findings with evidence. Do NOT give one-liners — explain each finding in detail.
+
+${resourceInventory}
+
+=== FULL PAGE SOURCE CODE (${pageSource.length} chars) ===
 \`\`\`html
 ${pageSource}
 \`\`\`
+${iframeAnalysis}
 
-Base your findings ONLY on what you can see in the actual source code above. Do NOT guess or make up external URLs. Report real findings from the code.`;
+=== AUDIT INSTRUCTIONS ===
+
+1. **Vulnerabilities** — Analyze EVERY inline script, every external resource. For iframes: these are EXTERNAL apps embedded in the page — they represent a significant trust boundary. Report:
+   - What data could the iframe access?
+   - Is there postMessage communication? Is it validated?
+   - Could the iframe be hijacked or replaced?
+   - Are iframe sources using HTTPS?
+
+2. **Privacy** — Check for:
+   - Tracking pixels, analytics scripts, ad networks
+   - Data sent to third-party domains
+   - Fingerprinting techniques
+   - User data exposed in URLs or query params
+
+3. For EACH finding, provide:
+   - The exact code/URL that is the concern
+   - Risk level and attack scenario
+   - Specific remediation steps
+
+4. Give at least 3-5 actionable recommendations that are SPECIFIC to this app (not generic advice).
+
+5. Score honestly: an app with iframes to untrusted sources should score lower. An app with clean code and no external deps should score higher (85-95).`;
 
     base44.integrations.Core.InvokeLLM({
       prompt,
-      response_json_schema: SCAN_SCHEMA
+      response_json_schema: SCAN_SCHEMA,
+      model: 'gemini_3_flash'
     }).then(res => {
       setScanProgress(100);
       setTimeout(() => setResults(res), 400);
@@ -320,14 +401,14 @@ Base your findings ONLY on what you can see in the actual source code above. Do 
               </div>
               {/* Animated scan lines */}
               <div className="flex items-center gap-2 flex-wrap">
-                {["SSL/TLS", "Headers", "DNS", "Cookies", "Privacy", "Vulnerabilities"].map((item, i) => (
+                {["Source Code", "Iframes", "Scripts", "API Calls", "Privacy", "Vulnerabilities", "Auth"].map((item, i) => (
                   <motion.span
                     key={item}
                     initial={{ opacity: 0 }}
-                    animate={{ opacity: scanProgress > (i + 1) * 14 ? 1 : 0.2 }}
+                    animate={{ opacity: scanProgress > (i + 1) * 12 ? 1 : 0.2 }}
                     className="px-2 py-0.5 rounded-md bg-white/[0.03] border border-white/[0.06] text-[10px] text-white/40 font-mono"
                   >
-                    {scanProgress > (i + 1) * 14 ? "✓" : "○"} {item}
+                    {scanProgress > (i + 1) * 12 ? "✓" : "○"} {item}
                   </motion.span>
                 ))}
               </div>
