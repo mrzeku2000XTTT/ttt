@@ -28,8 +28,13 @@ export default function GameTimer({ endTime }) {
   const pct = Math.max(0, Math.min(100, (remaining / ROUND_MS) * 100));
   const isUrgent = mins < 2;
 
+  // Real Central Time clock
+  const now = new Date();
+  const ctStr = now.toLocaleTimeString('en-US', { timeZone: 'America/Chicago', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+
   return (
     <div className="flex items-center gap-2">
+      <span className="text-white/40 text-[10px] font-mono flex-shrink-0">{ctStr} CT</span>
       <div className="relative w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-all duration-1000 ${isUrgent ? 'bg-red-500' : 'bg-emerald-500'}`}
