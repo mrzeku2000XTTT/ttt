@@ -149,9 +149,7 @@ Deno.serve(async (req) => {
         return Response.json({ success: true, message: 'Bot already bet on this game', existing: true });
       }
 
-      const betAmount = bot.bet_amount_kas || 1;
-
-      // Check balance
+      // Check balance first
       const addr = bot.kaspa_address.startsWith('kaspa:') ? bot.kaspa_address : `kaspa:${bot.kaspa_address}`;
       let balance = 0;
       try {
@@ -159,8 +157,12 @@ Deno.serve(async (req) => {
         if (balRes.ok) { balance = ((await balRes.json()).balance || 0) / 1e8; }
       } catch {}
 
-      if (balance < betAmount + 0.001) {
-        return Response.json({ error: `Insufficient balance: ${balance.toFixed(4)} KAS (need ${betAmount + 0.001})` }, { status: 400 });
+      // Bet max balance minus fee reserve (no fixed amount)
+      const FEE_RESERVE = 0.002;
+      const betAmount = parseFloat((balance - FEE_RESERVE).toFixed(4));
+
+      if (betAmount < 0.1) {
+        return Response.json({ error: `Insufficient balance: ${balance.toFixed(4)} KAS (need at least 0.102)` }, { status: 400 });
       }
 
       // Determine side
