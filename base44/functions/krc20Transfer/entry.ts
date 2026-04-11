@@ -150,19 +150,16 @@ function hashBlake2b(data) {
   return blake2b(data, { dkLen: 32 });
 }
 
-// Reverse a hex txid for LE encoding in sighash
-function reverseTxId(txIdHex) {
-  const bytes = hexToBytes(txIdHex);
-  const reversed = new Uint8Array(bytes.length);
-  for (let i = 0; i < bytes.length; i++) reversed[i] = bytes[bytes.length - 1 - i];
-  return reversed;
+// Kaspa transaction IDs are 32-byte hashes used as-is (NO byte reversal unlike Bitcoin)
+function txIdToBytes(txIdHex) {
+  return hexToBytes(txIdHex);
 }
 
-// Hash of all outpoints (txId as LE bytes + index as u32 LE)
+// Hash of all outpoints (txId as raw bytes + index as u32 LE)
 function hashPrevOutputs(inputs) {
   const parts = [];
   for (const inp of inputs) {
-    parts.push(reverseTxId(inp.prevTxId));
+    parts.push(txIdToBytes(inp.prevTxId));
     parts.push(writeU32LE(inp.prevIndex));
   }
   return hashBlake2b(concatBytes(...parts));
@@ -219,7 +216,7 @@ function computeSigHash(tx, inputIndex) {
     prevOutputsHash,
     sequencesHash,
     sigOpCountsHash,
-    reverseTxId(inp.prevTxId),
+    txIdToBytes(inp.prevTxId),
     writeU32LE(inp.prevIndex),
     writeU16LE(inp.utxoScriptVersion ?? 0),
     writeU64LE(BigInt(scriptForSighash.length)),
