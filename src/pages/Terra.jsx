@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import ProfileTab from "@/components/terra/ProfileTab";
 import WalletManager, { WalletMenuSheet, BackupSeedSheet, ImportWalletSheet, DeleteConfirmSheet } from "@/components/terra/WalletManager";
 import KRC20Tokens from "@/components/terra/KRC20Tokens";
+import KRC20SendSheet from "@/components/terra/KRC20SendSheet";
 import ReceiveSheet from "@/components/terra/ReceiveSheet";
 import SendSheet from "@/components/terra/SendSheet";
 import { motion, AnimatePresence } from "framer-motion";
@@ -199,6 +200,7 @@ export default function TerraPage() {
   const [showBackup, setShowBackup] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [krc20SendToken, setKrc20SendToken] = useState(null);
 
   const activeWallet = wallets[activeWalletIdx] || null;
   const walletAddress = activeWallet?.address || null;
@@ -380,7 +382,7 @@ export default function TerraPage() {
             )}
 
             {/* KRC-20 Tokens */}
-            {walletAddress && <KRC20Tokens walletAddress={walletAddress} />}
+            {walletAddress && <KRC20Tokens walletAddress={walletAddress} onSendToken={(t) => setKrc20SendToken(t)} />}
 
             {/* KAS Price Info */}
             {kasPrice && (
@@ -651,6 +653,14 @@ export default function TerraPage() {
             wallet={activeWallet}
             onClose={() => setShowDelete(false)}
             onDeleted={deleteActiveWallet}
+          />
+        )}
+        {krc20SendToken && activeWallet && (
+          <KRC20SendSheet
+            token={krc20SendToken}
+            activeWallet={activeWallet}
+            onClose={() => setKrc20SendToken(null)}
+            onBalanceUpdate={loadData}
           />
         )}
       </AnimatePresence>
