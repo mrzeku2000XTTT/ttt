@@ -127,7 +127,7 @@ export default function PredictionSlip({ selections, onRemove, onClearAll, onPla
           <div className="flex items-center gap-2 mb-3">
             <Wallet className="w-3 h-3 text-emerald-400/50" />
             <span className="text-white/25 text-[10px] font-mono">{walletAddress.slice(0, 10)}...{walletAddress.slice(-6)}</span>
-            <span className="text-emerald-400/70 text-[10px] font-bold ml-auto">{walletBalance.toFixed(2)} KAS</span>
+            <span className="text-emerald-400/70 text-[10px] font-bold ml-auto">{walletBalance.toFixed(4)} KAS</span>
           </div>
         )}
         <div className="flex items-center justify-between mb-3">

@@ -185,7 +185,7 @@ export default function StakeDAGPage() {
           >
             <Wallet className="w-4 h-4" />
             <span className="text-xs font-bold">
-              {walletAddress ? `${walletBalance.toFixed(1)} KAS` : 'Connect'}
+              {walletAddress ? `${walletBalance.toFixed(4)} KAS` : 'Connect'}
             </span>
           </button>
         </div>

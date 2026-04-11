@@ -55,7 +55,7 @@ export default function WalletPanel({ walletAddress, walletBalance, onConnect, o
 
               <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
                 <p className="text-white/40 text-[10px] uppercase tracking-widest mb-1">Balance</p>
-                <p className="text-white text-2xl font-black">{walletBalance.toFixed(2)} <span className="text-sm text-white/40">KAS</span></p>
+                <p className="text-white text-2xl font-black">{walletBalance.toFixed(8)} <span className="text-sm text-white/40">KAS</span></p>
               </div>
 
               <button
