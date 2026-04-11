@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
 import ScanResultCard from "@/components/security/ScanResultCard";
 import SeverityBadge from "@/components/security/SeverityBadge";
+import AppQuickScan from "@/components/security/AppQuickScan";
 
 export default function SecurityAudit() {
   const [url, setUrl] = useState("");
@@ -315,16 +316,59 @@ For each category, provide a severity rating and specific findings. Be thorough 
           )}
         </AnimatePresence>
 
-        {/* Empty State */}
+        {/* Empty State + Quick Scan */}
         {!results && !scanning && !error && (
-          <div className="text-center py-16 space-y-3">
-            <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mx-auto">
-              <Shield className="w-8 h-8 text-cyan-400" />
+          <div className="space-y-8">
+            <div className="text-center py-10 space-y-3">
+              <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mx-auto">
+                <Shield className="w-8 h-8 text-cyan-400" />
+              </div>
+              <h2 className="text-white/60 font-bold text-sm">Scan Any Website</h2>
+              <p className="text-white/25 text-xs max-w-sm mx-auto">
+                Enter a URL above to check for SSL issues, missing security headers, vulnerabilities, server exposure, and more.
+              </p>
             </div>
-            <h2 className="text-white/60 font-bold text-sm">Scan Any Website</h2>
-            <p className="text-white/25 text-xs max-w-sm mx-auto">
-              Enter a URL above to check for SSL issues, missing security headers, vulnerabilities, server exposure, and more.
-            </p>
+            <AppQuickScan onScanApp={(appName) => {
+              setUrl(appName + " website");
+              // Trigger scan with app name as context
+              const target = appName;
+              setScanning(true);
+              setResults(null);
+              setError(null);
+              setScanProgress(0);
+              const progressInterval = setInterval(() => {
+                setScanProgress(p => Math.min(p + Math.random() * 15, 90));
+              }, 600);
+              base44.integrations.Core.InvokeLLM({
+                prompt: `You are a web security auditor. Analyze the app/service called "${target}" for potential security vulnerabilities and risks. Search for the app online and analyze its web presence, domain, and any publicly available security information.\n\nPerform a comprehensive security assessment covering:\n1. SSL/TLS Configuration\n2. HTTP Security Headers\n3. Common Vulnerabilities\n4. Server Information Exposure\n5. DNS & Domain Security\n6. Cookie Security\n7. Mixed Content\n8. API Security\n9. Privacy Concerns\n10. Overall Risk Assessment`,
+                add_context_from_internet: true,
+                response_json_schema: {
+                  type: "object",
+                  properties: {
+                    url_analyzed: { type: "string" },
+                    overall_score: { type: "number" },
+                    overall_risk: { type: "string", enum: ["critical", "high", "medium", "low", "minimal"] },
+                    summary: { type: "string" },
+                    ssl_tls: { type: "object", properties: { status: { type: "string", enum: ["pass", "warn", "fail", "info"] }, severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] }, findings: { type: "array", items: { type: "string" } } } },
+                    security_headers: { type: "object", properties: { status: { type: "string", enum: ["pass", "warn", "fail", "info"] }, severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] }, findings: { type: "array", items: { type: "string" } }, missing_headers: { type: "array", items: { type: "string" } } } },
+                    vulnerabilities: { type: "object", properties: { status: { type: "string", enum: ["pass", "warn", "fail", "info"] }, severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] }, findings: { type: "array", items: { type: "string" } } } },
+                    server_exposure: { type: "object", properties: { status: { type: "string", enum: ["pass", "warn", "fail", "info"] }, severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] }, findings: { type: "array", items: { type: "string" } } } },
+                    dns_security: { type: "object", properties: { status: { type: "string", enum: ["pass", "warn", "fail", "info"] }, severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] }, findings: { type: "array", items: { type: "string" } } } },
+                    cookie_security: { type: "object", properties: { status: { type: "string", enum: ["pass", "warn", "fail", "info"] }, severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] }, findings: { type: "array", items: { type: "string" } } } },
+                    privacy_concerns: { type: "object", properties: { status: { type: "string", enum: ["pass", "warn", "fail", "info"] }, severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] }, findings: { type: "array", items: { type: "string" } } } },
+                    recommendations: { type: "array", items: { type: "string" } }
+                  }
+                }
+              }).then(res => {
+                setScanProgress(100);
+                setTimeout(() => setResults(res), 300);
+              }).catch(err => {
+                setError(err.message || "Scan failed.");
+              }).finally(() => {
+                clearInterval(progressInterval);
+                setScanning(false);
+              });
+            }} />
           </div>
         )}
       </div>

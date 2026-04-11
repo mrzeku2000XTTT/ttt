@@ -146,6 +146,7 @@ export default function AppStorePage() {
     { name: "Velour", icon: "Link2", path: "V1", category: "Shop", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/585acf464_generated_image.png", circular: true },
     { name: "Klock", icon: "Activity", path: "Klock", category: "Tools", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3a8b4c791_generated_image.png" },
     { name: "KaChing", icon: "TrendingUp", path: "StakeDAG", category: "Games", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2c211776c_generated_image.png", adminOnly: true },
+    { name: "Security Audit", icon: "Link2", path: "SecurityAudit", category: "Security", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/81791a703_generated_image.png" },
       ];
 
   const getIconComponent = (iconName) => {
@@ -155,7 +156,7 @@ export default function AppStorePage() {
 
   const isAdmin = user && user.role === 'admin';
 
-  const categories = ["All", "AI", "Tools", "Finance", "Games", "Social", "Community", "Education", "Media", "Creative", "Communication", "Dev Tools", "Shop"];
+  const categories = ["All", "AI", "Tools", "Finance", "Games", "Social", "Community", "Education", "Media", "Creative", "Communication", "Dev Tools", "Shop", "Security"];
   
   const filteredApps = (searchQuery
     ? apps.filter(app =>
