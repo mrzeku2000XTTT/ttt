@@ -457,6 +457,14 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Normalize private key — OKX SDK may return "0x" prefixed or object
+    if (privateKey && typeof privateKey === 'object') {
+      privateKey = privateKey.toString();
+    }
+    if (typeof privateKey === 'string' && privateKey.startsWith('0x')) {
+      privateKey = privateKey.slice(2);
+    }
+
     // ---- ACTION: Full KRC-20 Transfer (Commit + Reveal) ----
     if (action === 'transfer' || action === 'commit') {
       if (!privateKey || !fromAddress || !toAddress || !amount || !ticker) {
