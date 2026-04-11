@@ -58,8 +58,12 @@ export default function StakeDAGPage() {
 
   const autoGenerate = async () => {
     try {
-      await base44.functions.invoke('kachingAutoGenerate', {});
-      loadGames();
+      const res = await base44.functions.invoke('kachingAutoGenerate', {});
+      const created = res?.data?.games_created || 0;
+      if (created > 0) {
+        console.log(`Auto-generated ${created} new games`);
+        await loadGames();
+      }
     } catch {}
   };
 
@@ -136,9 +140,15 @@ export default function StakeDAGPage() {
 
   const onSettlementAnimationComplete = async () => {
     setIsSettling(false);
+    // Immediately generate new games after settlement
     await autoGenerate();
     await loadGames();
     if (user?.email) loadUserBets(user.email);
+    // Double-check after a short delay in case CoinGecko was slow
+    setTimeout(async () => {
+      await autoGenerate();
+      await loadGames(true);
+    }, 5000);
   };
 
   const verifyDeposits = async () => {
@@ -167,23 +177,36 @@ export default function StakeDAGPage() {
         // We just crossed a boundary — settle and show animation
         settleGames(true);
       }
-      // Auto-generate new games 30s into new round
+      // Continuously ensure games exist — check every cycle
       const roundMs = 15 * 60 * 1000;
       const msSinceRound = Date.now() % roundMs;
-      if (msSinceRound > 3000 && msSinceRound < 8000 && !isSettling) {
-        autoGenerate();
+      // Generate at 3s, 15s, 30s, and 60s into each round for redundancy
+      if ((msSinceRound > 2000 && msSinceRound < 7000) ||
+          (msSinceRound > 14000 && msSinceRound < 19000) ||
+          (msSinceRound > 29000 && msSinceRound < 34000) ||
+          (msSinceRound > 59000 && msSinceRound < 64000)) {
+        if (!isSettling) autoGenerate();
       }
     }, 5000);
     return () => { clearInterval(refresh); clearInterval(roundCheck); };
   }, [accessDenied, user, isSettling]);
 
-  // Auto-settle expired games (check every 15s)
+  // Auto-settle expired games AND ensure new games exist (check every 10s)
   useEffect(() => {
     if (accessDenied) return;
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
       const expired = games.filter(g => g.status === 'open' && new Date(g.end_time) <= new Date());
-      if (expired.length > 0 && !isSettling) settleGames(true);
-    }, 15000);
+      if (expired.length > 0 && !isSettling) {
+        settleGames(true);
+      }
+      // If no open games at all, force auto-generate immediately
+      const openGames = games.filter(g => g.status === 'open' && new Date(g.end_time) > new Date());
+      if (openGames.length === 0 && !isSettling) {
+        console.log('No open games detected — forcing auto-generate');
+        await autoGenerate();
+        await loadGames(true);
+      }
+    }, 10000);
     return () => clearInterval(interval);
   }, [games, accessDenied, isSettling]);
 

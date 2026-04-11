@@ -15,6 +15,7 @@ function getCurrentRoundStart() {
 }
 
 const COINS = [
+  { id: 'kaspa', symbol: 'KAS', icon: '◆' },
   { id: 'bitcoin', symbol: 'BTC', icon: '₿' },
   { id: 'ethereum', symbol: 'ETH', icon: 'Ξ' },
   { id: 'solana', symbol: 'SOL', icon: '◎' },
@@ -22,7 +23,6 @@ const COINS = [
   { id: 'dogecoin', symbol: 'DOGE', icon: 'Ð' },
   { id: 'binancecoin', symbol: 'BNB', icon: '⬡' },
   { id: 'hyperliquid', symbol: 'HYPE', icon: '⚡' },
-  { id: 'kaspa', symbol: 'KAS', icon: '◆' },
 ];
 
 Deno.serve(async (req) => {
@@ -47,15 +47,20 @@ Deno.serve(async (req) => {
 
     console.log(`Round: ${roundStart.toISOString()} -> ${roundEndISO}`);
 
-    // Check if crypto games already exist for this exact round
+    // Check existing games for this round — only create coins that are missing
     const existing = await base44.asServiceRole.entities.PredictionGame.filter({
       end_time: roundEndISO,
       category: 'Crypto'
     });
-    console.log(`Existing crypto games for this round: ${existing.length}`);
-    if (existing.length > 0) {
-      return Response.json({ success: true, games_created: 0, games: [], round: { start: roundStart.toISOString(), end: roundEndISO }, message: `Already have ${existing.length} crypto games for this round` });
+    const existingSymbols = new Set(existing.map(g => g.subcategory));
+    console.log(`Existing crypto games for this round: ${existing.length} [${[...existingSymbols].join(',')}]`);
+
+    // Filter to only coins that don't have a game yet
+    const coinsToCreate = COINS.filter(c => !existingSymbols.has(c.symbol));
+    if (coinsToCreate.length === 0) {
+      return Response.json({ success: true, games_created: 0, games: [], round: { start: roundStart.toISOString(), end: roundEndISO }, message: `Already have all ${existing.length} crypto games for this round` });
     }
+    console.log(`Creating ${coinsToCreate.length} missing games: ${coinsToCreate.map(c => c.symbol).join(', ')}`);
 
     // Helper to create escrow wallet
     async function createEscrow() {
@@ -71,7 +76,7 @@ Deno.serve(async (req) => {
     }
 
     // Fetch all coin prices from CoinGecko in one call
-    const coinIds = COINS.map(c => c.id).join(',');
+    const coinIds = coinsToCreate.map(c => c.id).join(',');
     console.log(`Fetching prices for: ${coinIds}`);
     let priceData = {};
     try {
@@ -89,8 +94,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Failed to fetch prices: ' + e.message }, { status: 500 });
     }
 
-    // Create a prediction game for each coin
-    for (const coin of COINS) {
+    // Create a prediction game for each missing coin
+    for (const coin of coinsToCreate) {
       const data = priceData[coin.id];
       if (!data?.usd) {
         console.log(`No price data for ${coin.symbol}, skipping`);
