@@ -11,7 +11,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 import { KaspaWallet } from 'npm:@okxweb3/coin-kaspa@2.4.9';
 import { blake2b } from 'npm:@noble/hashes@1.4.0/blake2b';
-import * as secp from 'npm:@noble/secp256k1@2.1.0';
+import { schnorr } from 'npm:@noble/curves@1.4.0/secp256k1';
 
 const KASPA_API = 'https://api.kaspa.org';
 const COMMIT_AMOUNT_KAS = 0.3;
@@ -235,7 +235,7 @@ function computeSigHash(tx, inputIndex, sighashType = 0x01) {
  */
 function schnorrSign(messageHash, privateKeyHex) {
   const privKeyBytes = hexToBytes(privateKeyHex);
-  const sig = secp.schnorr.sign(messageHash, privKeyBytes);
+  const sig = schnorr.sign(messageHash, privKeyBytes);
   return new Uint8Array(sig);
 }
 
