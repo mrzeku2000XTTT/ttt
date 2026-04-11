@@ -6,6 +6,7 @@ import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import LiveGameCard from "@/components/kaching/LiveGameCard.jsx";
+import BetReceipt from "@/components/kaching/BetReceipt";
 import SettlementAnimation from "@/components/kaching/SettlementAnimation";
 
 import BetModal from "@/components/kaching/BetModal";
@@ -33,6 +34,7 @@ export default function StakeDAGPage() {
   const [showLogs, setShowLogs] = useState(false);
   const [isSettling, setIsSettling] = useState(false);
   const [showAgents, setShowAgents] = useState(false);
+  const [receiptBet, setReceiptBet] = useState(null);
 
   useEffect(() => { init(); }, []);
 
@@ -462,13 +464,21 @@ export default function StakeDAGPage() {
                         <p className="text-white/80 text-xs font-medium truncate">{game?.question || 'Game #' + bet.game_number}</p>
                         <p className="text-white/25 text-[10px] mt-0.5">{bet.amount_kas} KAS · #{bet.game_number}</p>
                       </div>
-                      <div className="text-right flex-shrink-0">
+                      <div className="text-right flex-shrink-0 flex items-center gap-2">
                         <span className={`text-xs font-bold ${
                           bet.status === 'won' ? 'text-emerald-400' : bet.status === 'lost' ? 'text-red-400' :
                           bet.status === 'confirmed' ? 'text-blue-400' : 'text-amber-400'
                         }`}>
                           {bet.status === 'won' ? `+${bet.payout_kas?.toFixed(2)} KAS` : bet.status.toUpperCase()}
                         </span>
+                        {bet.receipt && (
+                          <button
+                            onClick={() => setReceiptBet(bet)}
+                            className="text-[9px] text-cyan-400/60 hover:text-cyan-400 font-bold border border-cyan-500/20 px-1.5 py-0.5 rounded transition-colors"
+                          >
+                            Receipt
+                          </button>
+                        )}
                       </div>
                     </motion.div>
                   );
@@ -511,6 +521,12 @@ export default function StakeDAGPage() {
       </AnimatePresence>
 
       <GameLogs show={showLogs} onClose={() => setShowLogs(false)} />
+
+      <BetReceipt
+        show={!!receiptBet}
+        onClose={() => setReceiptBet(null)}
+        bet={receiptBet}
+      />
 
       <KaChingSettings
         show={showSettings}

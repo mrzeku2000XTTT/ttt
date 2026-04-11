@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
-// Judge + Settlement: determines winner, calculates payouts, sends KAS from escrow to winners
+// Judge + Settlement: determines winner, calculates payouts, sends KAS + PACMAN simultaneously
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -74,32 +74,47 @@ Deno.serve(async (req) => {
 
         const totalPool = allBets.reduce((s, b) => s + b.amount_kas, 0);
         const winnerPool = winners.reduce((s, b) => s + b.amount_kas, 0);
-        const loserPool = losers.reduce((s, b) => s + b.amount_kas, 0);
 
         console.log(`\n========== GAME #${game.game_number} BET LEDGER ==========`);
         console.log(`Question: ${game.question}`);
         console.log(`Result: ${result.toUpperCase()} | Reason: ${judgeReason}`);
         console.log(`Pool: total=${totalPool} KAS, YES=${game.yes_pool_kas}(${game.yes_count}), NO=${game.no_pool_kas}(${game.no_count})`);
-        console.log(`--- YES BETS (${allBets.filter(b=>b.side==='yes').length}) ---`);
-        allBets.filter(b => b.side === 'yes').forEach((b, i) => {
-          console.log(`  [YES #${i+1}] Address: kaspa:${b.user_wallet_address.replace('kaspa:','').slice(0,20)}... | Amount: ${b.amount_kas} KAS | TX_IN: ${b.tx_hash_in || 'none'} | User: ${b.user_email}`);
-        });
-        console.log(`--- NO BETS (${allBets.filter(b=>b.side==='no').length}) ---`);
-        allBets.filter(b => b.side === 'no').forEach((b, i) => {
-          console.log(`  [NO  #${i+1}] Address: kaspa:${b.user_wallet_address.replace('kaspa:','').slice(0,20)}... | Amount: ${b.amount_kas} KAS | TX_IN: ${b.tx_hash_in || 'none'} | User: ${b.user_email}`);
+        allBets.forEach((b, i) => {
+          console.log(`  [${b.side.toUpperCase()} #${i+1}] Address: kaspa:${b.user_wallet_address.replace('kaspa:','').slice(0,20)}... | Amount: ${b.amount_kas} KAS | TX_IN: ${b.tx_hash_in || 'none'} | User: ${b.user_email}`);
         });
         console.log(`--- WINNERS: ${winners.length} | LOSERS: ${losers.length} ---`);
 
         const txHashes = [];
+        const settledAt = new Date().toISOString();
 
         if (result === 'push' || allBets.length === 0) {
           // Refund everyone
           for (const bet of allBets) {
-            const txHash = await sendPayout(base44, game, bet.user_wallet_address, bet.amount_kas);
+            const toAddr = normalizeAddress(bet.user_wallet_address);
+            console.log(`REFUND → ${toAddr} | ${bet.amount_kas} KAS`);
+            const txHash = await sendPayout(base44, game, toAddr, bet.amount_kas);
+            
+            const receipt = {
+              result: 'push',
+              question: game.question,
+              total_pool_kas: totalPool,
+              your_bet_kas: bet.amount_kas,
+              your_side: bet.side,
+              payout_kas: bet.amount_kas,
+              kas_tx_hash: txHash || '',
+              pacman_bonus: 0,
+              pacman_tx_commit: '',
+              pacman_tx_reveal: '',
+              settled_at: settledAt,
+              judge_reason: judgeReason,
+              notes: `Game #${game.game_number} ended in a PUSH. Your ${bet.amount_kas} KAS bet was refunded in full.`
+            };
+
             await base44.asServiceRole.entities.GameBet.update(bet.id, {
               status: 'refunded',
               payout_kas: bet.amount_kas,
               tx_hash_out: txHash || '',
+              receipt,
             });
             if (txHash) txHashes.push(txHash);
           }
@@ -110,53 +125,99 @@ Deno.serve(async (req) => {
           for (const winner of winners) {
             const share = winnerPool > 0 ? (winner.amount_kas / winnerPool) * distributable : 0;
             const payout = parseFloat(share.toFixed(4));
+            const toAddr = normalizeAddress(winner.user_wallet_address);
+            const pacmanBonus = Math.max(1, Math.round(winner.amount_kas * 10)); // 10 PACMAN per KAS bet
 
-            const txHash = await sendPayout(base44, game, winner.user_wallet_address, payout);
+            console.log(`WINNER → ${toAddr} | KAS payout: ${payout} | PACMAN bonus: ${pacmanBonus}`);
+
+            // Send KAS payout + KRC-20 PACMAN bonus SIMULTANEOUSLY
+            const [txHash, krc20Result] = await Promise.all([
+              sendPayout(base44, game, toAddr, payout),
+              sendKRC20Bonus(base44, toAddr, pacmanBonus),
+            ]);
+
+            const receipt = {
+              result: result.toUpperCase(),
+              question: game.question,
+              total_pool_kas: totalPool,
+              your_bet_kas: winner.amount_kas,
+              your_side: winner.side,
+              payout_kas: payout,
+              kas_tx_hash: txHash || '',
+              pacman_bonus: pacmanBonus,
+              pacman_tx_commit: krc20Result?.commitTxId || '',
+              pacman_tx_reveal: krc20Result?.revealTxId || '',
+              settled_at: settledAt,
+              judge_reason: judgeReason,
+              notes: `🎉 You WON Game #${game.game_number}! You bet ${winner.amount_kas} KAS on ${winner.side.toUpperCase()} and won ${payout} KAS (${totalPool} KAS pool). Bonus: ${pacmanBonus} PACMAN tokens.`
+            };
 
             await base44.asServiceRole.entities.GameBet.update(winner.id, {
               status: 'won',
               payout_kas: payout,
               tx_hash_out: txHash || '',
+              receipt,
             });
             if (txHash) txHashes.push(txHash);
-            console.log(`Winner ${winner.user_wallet_address.slice(0, 8)}: bet=${winner.amount_kas}, payout=${payout}, tx=${txHash || 'none'}`);
+
+            console.log(`✅ Winner ${toAddr.slice(0, 20)}: bet=${winner.amount_kas}, payout=${payout}, kasTx=${txHash || 'none'}, pacman=${pacmanBonus}, krc20Tx=${krc20Result?.commitTxId || 'none'}`);
           }
 
           for (const loser of losers) {
+            const receipt = {
+              result: result.toUpperCase(),
+              question: game.question,
+              total_pool_kas: totalPool,
+              your_bet_kas: loser.amount_kas,
+              your_side: loser.side,
+              payout_kas: 0,
+              kas_tx_hash: '',
+              pacman_bonus: 0,
+              pacman_tx_commit: '',
+              pacman_tx_reveal: '',
+              settled_at: settledAt,
+              judge_reason: judgeReason,
+              notes: `Game #${game.game_number}: You bet ${loser.amount_kas} KAS on ${loser.side.toUpperCase()}. Result was ${result.toUpperCase()}. Better luck next time!`
+            };
+
             await base44.asServiceRole.entities.GameBet.update(loser.id, {
               status: 'lost',
               payout_kas: 0,
+              receipt,
             });
           }
         } else {
           // No winners — refund all
           for (const bet of allBets) {
-            const txHash = await sendPayout(base44, game, bet.user_wallet_address, bet.amount_kas);
+            const toAddr = normalizeAddress(bet.user_wallet_address);
+            console.log(`REFUND (no winners) → ${toAddr} | ${bet.amount_kas} KAS`);
+            const txHash = await sendPayout(base44, game, toAddr, bet.amount_kas);
+            
+            const receipt = {
+              result: 'NO WINNERS',
+              question: game.question,
+              total_pool_kas: totalPool,
+              your_bet_kas: bet.amount_kas,
+              your_side: bet.side,
+              payout_kas: bet.amount_kas,
+              kas_tx_hash: txHash || '',
+              pacman_bonus: 0,
+              pacman_tx_commit: '',
+              pacman_tx_reveal: '',
+              settled_at: settledAt,
+              judge_reason: judgeReason,
+              notes: `Game #${game.game_number} had no winners. Your ${bet.amount_kas} KAS bet was refunded.`
+            };
+
             await base44.asServiceRole.entities.GameBet.update(bet.id, {
               status: 'refunded',
               payout_kas: bet.amount_kas,
               tx_hash_out: txHash || '',
+              receipt,
             });
             if (txHash) txHashes.push(txHash);
           }
           judgeReason += ' (No winners — all refunded)';
-        }
-
-        // Send KRC-20 PACMAN bonus to winners (non-blocking)
-        const krc20BonusTxs = [];
-        if (winners.length > 0) {
-          for (const winner of winners) {
-            try {
-              const bonusAmount = Math.max(1, Math.round(winner.amount_kas * 10)); // 10 PACMAN per KAS bet
-              const krc20Res = await sendKRC20Bonus(base44, winner.user_wallet_address, bonusAmount);
-              if (krc20Res) {
-                krc20BonusTxs.push({ address: winner.user_wallet_address.slice(0, 16), amount: bonusAmount, commitTx: krc20Res.commitTxId, revealTx: krc20Res.revealTxId });
-                console.log(`KRC20 Bonus: ${bonusAmount} PACMAN → ${winner.user_wallet_address.slice(0, 16)}...`);
-              }
-            } catch (krc20Err) {
-              console.warn(`KRC20 bonus failed for ${winner.user_wallet_address.slice(0, 12)}:`, krc20Err.message);
-            }
-          }
         }
 
         await base44.asServiceRole.entities.PredictionGame.update(game.id, {
@@ -187,21 +248,6 @@ Deno.serve(async (req) => {
           console.warn('Bot stats update failed:', botErr.message);
         }
 
-        // Build detailed bet ledger for the response
-        const betLedger = allBets.map(b => ({
-          side: b.side,
-          address: `kaspa:${b.user_wallet_address.replace('kaspa:','')}`,
-          amount_kas: b.amount_kas,
-          tx_hash_in: b.tx_hash_in || null,
-          user_email: b.user_email,
-          status: b.status === 'confirmed' ? (b.side === result ? 'won' : (result === 'push' ? 'refunded' : 'lost')) : b.status,
-          payout_kas: b.payout_kas || 0,
-        }));
-
-        console.log(`--- PAYOUTS ---`);
-        betLedger.filter(b => b.payout_kas > 0).forEach(b => {
-          console.log(`  💰 ${b.address.slice(0,30)}... → ${b.payout_kas} KAS (${b.status})`);
-        });
         console.log(`========== END GAME #${game.game_number} ==========\n`);
 
         settlements.push({
@@ -213,8 +259,6 @@ Deno.serve(async (req) => {
           winners: winners.length,
           losers: losers.length,
           tx_hashes: txHashes,
-          krc20_bonuses: krc20BonusTxs,
-          bet_ledger: betLedger,
         });
       } catch (gameError) {
         console.error(`Settlement failed for game ${game.game_number}:`, gameError.message);
@@ -233,17 +277,30 @@ Deno.serve(async (req) => {
   }
 });
 
-// Send payout from game escrow to winner's wallet using direct HTTP call
+// Normalize address to always have kaspa: prefix
+function normalizeAddress(addr) {
+  if (!addr) return '';
+  return addr.startsWith('kaspa:') ? addr : `kaspa:${addr}`;
+}
+
+// Send payout from game escrow to winner's wallet
 async function sendPayout(base44, game, recipientAddress, amountKas) {
   if (!game.escrow_mnemonic || !amountKas || amountKas <= 0) {
     console.log(`Skipping payout: no mnemonic or amount=${amountKas}`);
     return null;
   }
 
-  const toAddr = recipientAddress.startsWith('kaspa:') ? recipientAddress : `kaspa:${recipientAddress}`;
-  const fromAddr = game.escrow_address.startsWith('kaspa:') ? game.escrow_address : `kaspa:${game.escrow_address}`;
+  const toAddr = normalizeAddress(recipientAddress);
+  const fromAddr = normalizeAddress(game.escrow_address);
 
-  // First check the actual escrow balance on-chain
+  // Validate recipient address looks real
+  const rawAddr = toAddr.replace('kaspa:', '');
+  if (rawAddr.length < 60) {
+    console.error(`INVALID recipient address (too short): ${toAddr}`);
+    return null;
+  }
+
+  // Check escrow balance on-chain
   let escrowBalance = 0;
   try {
     const balRes = await fetch(`https://api.kaspa.org/addresses/${fromAddr}/balance`, { signal: AbortSignal.timeout(10000) });
@@ -255,13 +312,11 @@ async function sendPayout(base44, game, recipientAddress, amountKas) {
   }
 
   if (escrowBalance <= 0.001) {
-    console.log(`Escrow ${fromAddr.slice(0, 20)} has insufficient balance: ${escrowBalance} KAS`);
+    console.log(`Escrow ${fromAddr.slice(0, 25)} has insufficient balance: ${escrowBalance} KAS`);
     return null;
   }
 
-  // Send the LESSER of requested payout or (escrow balance - fee reserve)
-  // This prevents "Insufficient balance" errors when escrow has exactly the bet amount
-  const TX_FEE = 0.001; // generous fee reserve
+  const TX_FEE = 0.001;
   const maxSendable = parseFloat((escrowBalance - TX_FEE).toFixed(4));
   const actualSend = parseFloat(Math.min(amountKas, maxSendable).toFixed(4));
 
@@ -270,9 +325,9 @@ async function sendPayout(base44, game, recipientAddress, amountKas) {
     return null;
   }
 
-  // Determine if this is the only/last payout — if so, use sendAll to drain escrow cleanly
+  // Use sendAll to drain escrow cleanly when close to full balance
   const useSendAll = (actualSend >= maxSendable - 0.001);
-  console.log(`Payout: sending ${useSendAll ? 'ALL' : actualSend + ' KAS'} (requested ${amountKas}, escrow balance ${escrowBalance}) to ${toAddr.slice(0, 20)}...`);
+  console.log(`PAYOUT: ${useSendAll ? 'ALL' : actualSend + ' KAS'} from escrow(${fromAddr.slice(0, 20)}) → ${toAddr.slice(0, 20)} (escrow bal: ${escrowBalance})`);
 
   try {
     const txParams = {
@@ -288,15 +343,15 @@ async function sendPayout(base44, game, recipientAddress, amountKas) {
     const res = await base44.asServiceRole.functions.invoke('sendKaspaTransaction', txParams);
 
     if (res?.error) {
-      console.error(`Payout failed to ${recipientAddress.slice(0, 12)}: ${res.error}`);
+      console.error(`Payout FAILED to ${toAddr.slice(0, 20)}: ${res.error}`);
       return null;
     }
 
     const txId = res?.txId || res?.data?.txId || '';
-    console.log(`Payout ${actualSend} KAS to ${recipientAddress.slice(0, 12)} | TX: ${txId}`);
+    console.log(`✅ Payout sent: ${actualSend} KAS → ${toAddr.slice(0, 20)} | TX: ${txId}`);
     return txId;
   } catch (err) {
-    console.error(`Payout exception to ${recipientAddress.slice(0, 12)}:`, err.message);
+    console.error(`Payout exception to ${toAddr.slice(0, 20)}:`, err.message);
     return null;
   }
 }
@@ -327,7 +382,7 @@ async function judgeCryptoGame(game) {
 // Send KRC-20 PACMAN bonus reward to a winner
 async function sendKRC20Bonus(base44, recipientAddress, amountPacman) {
   try {
-    const toAddr = recipientAddress.startsWith('kaspa:') ? recipientAddress : `kaspa:${recipientAddress}`;
+    const toAddr = normalizeAddress(recipientAddress);
     const res = await base44.asServiceRole.functions.invoke('sendPacmanKRC20Reward', {
       recipient_address: toAddr,
       amount_pacman: amountPacman,
