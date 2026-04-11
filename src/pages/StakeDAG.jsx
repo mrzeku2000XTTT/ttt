@@ -37,8 +37,15 @@ export default function StakeDAGPage() {
       setUser(u);
       if (ADMIN_GATE && u?.role !== 'admin') { setAccessDenied(true); return; }
       const saved = localStorage.getItem('stakedag_wallet');
-      if (saved) { setWalletAddress(saved); fetchBalance(saved); }
-      else if (u?.created_wallet_address) { setWalletAddress(u.created_wallet_address); fetchBalance(u.created_wallet_address); }
+      if (saved) {
+        const clean = saved.startsWith('kaspa:') ? saved.slice(6) : saved;
+        setWalletAddress(clean);
+        fetchBalance(clean);
+      } else if (u?.created_wallet_address) {
+        const clean = u.created_wallet_address.startsWith('kaspa:') ? u.created_wallet_address.slice(6) : u.created_wallet_address;
+        setWalletAddress(clean);
+        fetchBalance(clean);
+      }
       loadGames();
       loadUserBets(u.email);
     } catch { setAccessDenied(true); }
@@ -67,11 +74,27 @@ export default function StakeDAGPage() {
   };
 
   const fetchBalance = async (addr) => {
+    if (!addr) return;
     try {
-      const res = await fetch(`https://api.kaspa.org/addresses/kaspa:${addr}/balance`);
+      const cleanAddr = addr.startsWith('kaspa:') ? addr.replace('kaspa:', '') : addr;
+      const res = await fetch(`https://api.kaspa.org/addresses/kaspa:${cleanAddr}/balance`);
+      if (!res.ok) {
+        // Fallback: try UTXO aggregation
+        const utxoRes = await fetch(`https://api.kaspa.org/addresses/kaspa:${cleanAddr}/utxos`);
+        if (utxoRes.ok) {
+          const utxos = await utxoRes.json();
+          const totalSompi = (utxos || []).reduce((sum, u) => sum + (u?.utxoEntry?.amount || 0), 0);
+          setWalletBalance(totalSompi / 1e8);
+        }
+        return;
+      }
       const data = await res.json();
-      if (data?.balance != null) setWalletBalance(data.balance / 1e8);
-    } catch {}
+      if (data?.balance != null) {
+        setWalletBalance(data.balance / 1e8);
+      }
+    } catch (err) {
+      console.error('Balance fetch error:', err);
+    }
   };
 
   const connectWallet = (addr) => {
