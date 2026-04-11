@@ -59,11 +59,7 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
       return;
     }
 
-    // TTT wallet KRC20 not supported natively yet
-    if (sendMethod === 'ttt' && tipTokenType === 'KRC20') {
-      setTipError('KRC-20 tips require Kasware on mobile. Switch to KAS or use Kasware.');
-      return;
-    }
+    // KRC-20 via TTT wallet uses native krc20Transfer backend
 
     // TTT wallet: need either cached PK or mnemonic as fallback
     if (sendMethod === 'ttt' && !tttPrivateKey && !tipMnemonic.trim()) {
@@ -83,22 +79,44 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
       let txId;
 
       if (sendMethod === 'ttt') {
-        // Use Terra Protocol (TTT wallet backend)
-        const txPayload = {
-          fromAddress: tttWalletAddress,
-          toAddress: tippingPost.author_wallet_address,
-          amountKas: tipAmountValue,
-        };
-        if (tttPrivateKey) {
-          txPayload.privateKey = tttPrivateKey;
+        if (tipTokenType === 'KRC20') {
+          // Native KRC-20 transfer via krc20Transfer backend (commit-reveal)
+          const krc20Payload = {
+            action: 'transfer',
+            fromAddress: tttWalletAddress,
+            toAddress: tippingPost.author_wallet_address,
+            amount: String(tipAmountValue),
+            ticker: tipKrc20Ticker.toUpperCase(),
+            decimals: 8,
+          };
+          if (tttPrivateKey) {
+            krc20Payload.privateKey = tttPrivateKey;
+          } else {
+            krc20Payload.mnemonic = tipMnemonic.trim();
+          }
+          const krcRes = await base44.functions.invoke('krc20Transfer', krc20Payload);
+          if (!krcRes.data?.success || krcRes.data?.error) {
+            throw new Error(krcRes.data?.error || 'KRC-20 transfer failed');
+          }
+          txId = krcRes.data?.commitTxId || 'krc20-tx';
         } else {
-          txPayload.mnemonic = tipMnemonic.trim();
+          // Use Terra Protocol (TTT wallet backend) for KAS
+          const txPayload = {
+            fromAddress: tttWalletAddress,
+            toAddress: tippingPost.author_wallet_address,
+            amountKas: tipAmountValue,
+          };
+          if (tttPrivateKey) {
+            txPayload.privateKey = tttPrivateKey;
+          } else {
+            txPayload.mnemonic = tipMnemonic.trim();
+          }
+          const res = await base44.functions.invoke('sendKaspaTransaction', txPayload);
+          if (!res.data?.success || res.data?.error) {
+            throw new Error(res.data?.error || 'Transaction failed');
+          }
+          txId = res.data?.txId || 'ttt-tx';
         }
-        const res = await base44.functions.invoke('sendKaspaTransaction', txPayload);
-        if (!res.data?.success || res.data?.error) {
-          throw new Error(res.data?.error || 'Transaction failed');
-        }
-        txId = res.data?.txId || 'ttt-tx';
       } else {
         // Kasware
         if (tipTokenType === 'KRC20') {
@@ -264,13 +282,11 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
               size="sm"
               className={`flex-1 ${tipTokenType === 'KAS' ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white'}`}
             >KAS</Button>
-            {sendMethod === 'kasware' && (
               <Button
-                onClick={() => setTipTokenType('KRC20')}
-                size="sm"
-                className={`flex-1 ${tipTokenType === 'KRC20' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white'}`}
-              >KRC-20</Button>
-            )}
+              onClick={() => setTipTokenType('KRC20')}
+              size="sm"
+              className={`flex-1 ${tipTokenType === 'KRC20' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white'}`}
+            >KRC-20</Button>
           </div>
 
           {tipTokenType === 'KRC20' && (
