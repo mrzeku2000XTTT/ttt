@@ -720,6 +720,250 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ---- ACTION: Recover stuck P2SH UTXOs from failed reveals ----
+    if (action === 'recover') {
+      // Two modes:
+      //   Mode A: provide redeemScriptHex + commitTxId + p2shAddress directly
+      //   Mode B: provide original transfer params (ticker, amount, toAddress) to re-derive
+      if (!privateKey) {
+        return Response.json({ error: 'Missing mnemonic or privateKey' }, { status: 400 });
+      }
+
+      const normalizedFrom = fromAddress?.startsWith('kaspa:') ? fromAddress : `kaspa:${fromAddress}`;
+      const xOnlyPubKey = await getXOnlyPubKey(privateKey);
+
+      let redeemScriptBytes, p2shScriptPubKeyBytes, recoveryP2SHAddress;
+
+      if (body.redeemScriptHex) {
+        // Mode A: use provided redeem script
+        redeemScriptBytes = hexToBytes(body.redeemScriptHex);
+        const { scriptPubKey, scriptHash } = createP2SHScriptPublicKey(redeemScriptBytes);
+        p2shScriptPubKeyBytes = scriptPubKey;
+        recoveryP2SHAddress = body.p2shAddress || scriptHashToAddress(scriptHash, network);
+        console.log(`[recover] Mode A: redeemScript provided, P2SH: ${recoveryP2SHAddress}`);
+      } else if (ticker && amount && toAddress) {
+        // Mode B: re-derive from original params
+        const normalizedTo = toAddress.startsWith('kaspa:') ? toAddress : `kaspa:${toAddress}`;
+        const amtSompiStr = (BigInt(Math.round(parseFloat(amount) * Math.pow(10, decimals)))).toString();
+        const krc20Data = { p: 'krc-20', op: 'transfer', tick: ticker.toUpperCase(), amt: amtSompiStr, to: normalizedTo };
+        const krc20Json = JSON.stringify(krc20Data, null, 0);
+        redeemScriptBytes = buildInscriptionScript(xOnlyPubKey, krc20Json);
+        const { scriptPubKey, scriptHash } = createP2SHScriptPublicKey(redeemScriptBytes);
+        p2shScriptPubKeyBytes = scriptPubKey;
+        recoveryP2SHAddress = scriptHashToAddress(scriptHash, network);
+        console.log(`[recover] Mode B: re-derived P2SH: ${recoveryP2SHAddress}`);
+      } else {
+        return Response.json({ error: 'Provide either redeemScriptHex, or (ticker + amount + toAddress) to re-derive' }, { status: 400 });
+      }
+
+      // Fetch all UTXOs sitting at the P2SH address
+      const utxoRes = await fetch(`${KASPA_API}/addresses/${recoveryP2SHAddress}/utxos`, {
+        signal: AbortSignal.timeout(15000)
+      });
+      if (!utxoRes.ok) throw new Error(`Failed to fetch P2SH UTXOs: ${utxoRes.status}`);
+      const p2shUtxos = await utxoRes.json();
+
+      if (!p2shUtxos || p2shUtxos.length === 0) {
+        return Response.json({
+          success: true,
+          recovered: 0,
+          message: `No UTXOs found at P2SH address ${recoveryP2SHAddress}. Funds may have already been recovered or the address is wrong.`,
+          p2shAddress: recoveryP2SHAddress,
+        });
+      }
+
+      const totalStuck = p2shUtxos.reduce((s, u) => s + BigInt(u.utxoEntry.amount), 0n);
+      console.log(`[recover] Found ${p2shUtxos.length} stuck UTXOs totaling ${Number(totalStuck) / 1e8} KAS`);
+
+      // Build sender P2PK scriptPubKey
+      const senderPayload = decodeKaspaBech32(normalizedFrom);
+      const senderPubKeyHash = senderPayload.slice(1);
+      const senderScriptPubKey = new Uint8Array(34);
+      senderScriptPubKey[0] = OP_DATA_32;
+      senderScriptPubKey.set(senderPubKeyHash, 1);
+      senderScriptPubKey[33] = OP_CHECKSIG;
+
+      // Fetch gas UTXOs from sender
+      const senderRes = await fetch(`${KASPA_API}/addresses/${normalizedFrom}/utxos`, {
+        signal: AbortSignal.timeout(10000)
+      });
+      if (!senderRes.ok) throw new Error('Failed to fetch sender UTXOs for gas');
+      const senderUtxos = await senderRes.json();
+      let gasTotal = 0n;
+      const gasUtxos = [];
+      for (const u of senderUtxos.sort((a, b) => Number(b.utxoEntry.amount) - Number(a.utxoEntry.amount))) {
+        if (gasTotal >= REVEAL_FEE_SOMPI) break;
+        if (gasUtxos.length >= 3) break;
+        gasUtxos.push(u);
+        gasTotal += BigInt(u.utxoEntry.amount);
+      }
+      if (gasTotal < REVEAL_FEE_SOMPI) {
+        throw new Error(`Need gas for recovery TX. Have ${Number(gasTotal) / 1e8} KAS, need ${Number(REVEAL_FEE_SOMPI) / 1e8} KAS`);
+      }
+
+      // Build inputs: all P2SH UTXOs + gas UTXOs
+      const inputs = [];
+      for (const u of p2shUtxos) {
+        inputs.push({
+          prevTxId: u.outpoint.transactionId,
+          prevIndex: u.outpoint.index,
+          utxoScriptVersion: 0,
+          utxoScriptPubKey: p2shScriptPubKeyBytes,
+          utxoAmount: BigInt(u.utxoEntry.amount),
+          sequence: 0n,
+          sigOpCount: 0,
+          isP2SH: true,
+        });
+      }
+      for (const u of gasUtxos) {
+        inputs.push({
+          prevTxId: u.outpoint.transactionId,
+          prevIndex: u.outpoint.index,
+          utxoScriptVersion: 0,
+          utxoScriptPubKey: senderScriptPubKey,
+          utxoAmount: BigInt(u.utxoEntry.amount),
+          sequence: 0n,
+          sigOpCount: 1,
+          isP2SH: false,
+        });
+      }
+
+      const totalIn = totalStuck + gasTotal;
+      const changeAmount = totalIn - REVEAL_FEE_SOMPI;
+      const outputs = [];
+      if (changeAmount >= MIN_REVEAL_OUTPUT) {
+        outputs.push({
+          amount: changeAmount,
+          scriptVersion: 0,
+          scriptPubKey: senderScriptPubKey,
+        });
+      }
+
+      const tx = { version: 0, inputs, outputs, locktime: 0n, gas: 0n };
+
+      // Sign each input
+      const signatureScripts = [];
+      for (let i = 0; i < inputs.length; i++) {
+        const inp = inputs[i];
+        const sigHash = computeSigHash(tx, i);
+        const sig = schnorrSign(sigHash, privateKey);
+        const sigWithType = concatBytes(sig, new Uint8Array([0x01]));
+
+        if (inp.isP2SH) {
+          signatureScripts.push(bytesToHex(concatBytes(
+            canonicalDataPush(sigWithType),
+            canonicalDataPush(redeemScriptBytes)
+          )));
+        } else {
+          signatureScripts.push(bytesToHex(canonicalDataPush(sigWithType)));
+        }
+      }
+
+      // Build raw TX
+      const rawTx = {
+        version: 0,
+        inputs: inputs.map((inp, i) => ({
+          previousOutpoint: { transactionId: inp.prevTxId, index: inp.prevIndex },
+          signatureScript: signatureScripts[i],
+          sequence: "0",
+          sigOpCount: inp.sigOpCount,
+        })),
+        outputs: outputs.map(out => ({
+          amount: out.amount.toString(),
+          scriptPublicKey: { version: out.scriptVersion, scriptPublicKey: bytesToHex(out.scriptPubKey) },
+        })),
+        lockTime: "0",
+        subnetworkId: "0000000000000000000000000000000000000000",
+      };
+
+      // Submit
+      console.log(`[recover] Submitting recovery TX (${inputs.length} inputs, ${outputs.length} outputs)...`);
+      let lastErr = '';
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (attempt > 0) await new Promise(r => setTimeout(r, 3000));
+        const submitRes = await fetch(`${KASPA_API}/transactions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ transaction: rawTx, allowOrphan: false }),
+          signal: AbortSignal.timeout(15000),
+        });
+        if (submitRes.ok) {
+          const submitData = await submitRes.json().catch(() => ({}));
+          const recoveryTxId = submitData.transactionId || '';
+          console.log(`[recover] ✓ Recovery TX: ${recoveryTxId}`);
+          return Response.json({
+            success: true,
+            recovered: p2shUtxos.length,
+            recoveredKAS: Number(changeAmount) / 1e8,
+            recoveryTxId,
+            p2shAddress: recoveryP2SHAddress,
+            message: `Successfully recovered ${Number(changeAmount) / 1e8} KAS from ${p2shUtxos.length} stuck UTXO(s)`,
+          });
+        }
+        lastErr = (await submitRes.text()).slice(0, 300);
+        console.warn(`[recover] Attempt ${attempt + 1} failed: ${lastErr}`);
+        if (!lastErr.includes('orphan')) break;
+      }
+
+      return Response.json({
+        success: false,
+        error: `Recovery TX failed: ${lastErr}`,
+        p2shAddress: recoveryP2SHAddress,
+        stuckUTXOs: p2shUtxos.length,
+        stuckKAS: Number(totalStuck) / 1e8,
+      });
+    }
+
+    // ---- ACTION: Scan all stuck P2SH UTXOs from past failed transfers ----
+    if (action === 'scan') {
+      if (!privateKey) return Response.json({ error: 'Missing mnemonic or privateKey' }, { status: 400 });
+
+      // Re-derive P2SH addresses for known tickers/amounts if provided, or scan a list
+      const { transfers } = body; // [{ticker, amount, toAddress, decimals?}]
+      if (!transfers || !Array.isArray(transfers) || transfers.length === 0) {
+        return Response.json({ error: 'Provide transfers array: [{ticker, amount, toAddress, decimals?}]' }, { status: 400 });
+      }
+
+      const xOnlyPubKey = await getXOnlyPubKey(privateKey);
+      const results = [];
+
+      for (const t of transfers) {
+        const normalizedTo = (t.toAddress || '').startsWith('kaspa:') ? t.toAddress : `kaspa:${t.toAddress}`;
+        const dec = t.decimals || 8;
+        const amtSompiStr = (BigInt(Math.round(parseFloat(t.amount) * Math.pow(10, dec)))).toString();
+        const krc20Data = { p: 'krc-20', op: 'transfer', tick: (t.ticker || '').toUpperCase(), amt: amtSompiStr, to: normalizedTo };
+        const krc20Json = JSON.stringify(krc20Data, null, 0);
+        const redeemScript = buildInscriptionScript(xOnlyPubKey, krc20Json);
+        const { scriptHash } = createP2SHScriptPublicKey(redeemScript);
+        const p2shAddr = scriptHashToAddress(scriptHash, network);
+
+        try {
+          const res = await fetch(`${KASPA_API}/addresses/${p2shAddr}/utxos`, { signal: AbortSignal.timeout(10000) });
+          const utxos = res.ok ? await res.json() : [];
+          const stuck = utxos.reduce((s, u) => s + BigInt(u.utxoEntry.amount), 0n);
+          results.push({
+            ticker: (t.ticker || '').toUpperCase(),
+            amount: t.amount,
+            toAddress: normalizedTo,
+            p2shAddress: p2shAddr,
+            stuckUTXOs: utxos.length,
+            stuckKAS: Number(stuck) / 1e8,
+            redeemScriptHex: bytesToHex(redeemScript),
+          });
+        } catch (e) {
+          results.push({ ticker: (t.ticker || '').toUpperCase(), amount: t.amount, p2shAddress: p2shAddr, error: e.message });
+        }
+      }
+
+      const totalStuck = results.reduce((s, r) => s + (r.stuckKAS || 0), 0);
+      return Response.json({
+        success: true,
+        totalStuckKAS: totalStuck,
+        totalAddresses: results.filter(r => r.stuckUTXOs > 0).length,
+        results,
+      });
+    }
+
     // ---- ACTION: Build script (debug) ----
     if (action === 'buildScript') {
       if (!privateKey || !ticker || !amount || !toAddress) {
