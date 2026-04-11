@@ -13,13 +13,22 @@ Deno.serve(async (req) => {
       mnemonic: mnemonic.trim(),
       hdPath: `m/44'/111111'/0'/0/${idx}`,
     });
-    const { address } = await wallet.getNewAddress({ privateKey });
+    const result = await wallet.getNewAddress({ privateKey });
+    const rawAddress = result.address || result;
     
-    // Strip kaspa: prefix if present to ensure consistency
-    const cleanAddress = address.startsWith('kaspa:') ? address.slice(6) : address;
+    // Always return full kaspa: address
+    const address = rawAddress.startsWith('kaspa:') ? rawAddress : `kaspa:${rawAddress}`;
+    
+    // Validate address format
+    if (!/^kaspa:[a-z0-9]{61,63}$/.test(address)) {
+      console.error(`[deriveKaspaAddress] Invalid address generated: ${address} (len=${address.length})`);
+      return Response.json({ error: `Invalid address format: ${address.slice(0, 30)}...` }, { status: 500 });
+    }
 
-    return Response.json({ address: cleanAddress, addressIndex: idx });
+    console.log(`[deriveKaspaAddress] Index ${idx}: ${address}`);
+    return Response.json({ address, addressIndex: idx });
   } catch (error) {
+    console.error('[deriveKaspaAddress] Error:', error.message);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

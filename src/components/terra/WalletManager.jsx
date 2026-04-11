@@ -119,8 +119,10 @@ function ImportWalletSheet({ onClose, onImported }) {
         if (bal > 0) break; // found a funded address, stop scanning
       }
 
-      console.log(`[ImportWallet] Selected address: ${bestAddress.slice(0,10)}... at index ${bestIndex}`);
-      onImported({ address: bestAddress, mnemonic: mnemonic.trim(), label: label || `Wallet ${Date.now()}`, addressIndex: bestIndex });
+      // Ensure address always has kaspa: prefix
+      const finalAddress = bestAddress.startsWith('kaspa:') ? bestAddress : `kaspa:${bestAddress}`;
+      console.log(`[ImportWallet] Selected address: ${finalAddress.slice(0,16)}... at index ${bestIndex}`);
+      onImported({ address: finalAddress, mnemonic: mnemonic.trim(), label: label || `Wallet ${Date.now()}`, addressIndex: bestIndex });
       onClose();
     } catch (err) {
       setError(err.message || "Failed to import wallet.");

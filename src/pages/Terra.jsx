@@ -171,8 +171,23 @@ function CreateWalletModal({ onClose, onCreated }) {
 }
 
 // LocalStorage helpers for multi-wallet
+function normalizeAddress(addr) {
+  if (!addr) return addr;
+  return addr.startsWith('kaspa:') ? addr : `kaspa:${addr}`;
+}
+
+function isValidKaspaAddress(addr) {
+  if (!addr) return false;
+  const full = normalizeAddress(addr);
+  return /^kaspa:[a-z0-9]{61,63}$/.test(full);
+}
+
 function loadStoredWallets() {
-  try { return JSON.parse(localStorage.getItem('terra_wallets') || '[]'); } catch { return []; }
+  try {
+    const raw = JSON.parse(localStorage.getItem('terra_wallets') || '[]');
+    // Normalize all addresses to include kaspa: prefix
+    return raw.map(w => ({ ...w, address: w.address ? normalizeAddress(w.address) : w.address }));
+  } catch { return []; }
 }
 function saveStoredWallets(wallets) {
   localStorage.setItem('terra_wallets', JSON.stringify(wallets));
@@ -241,11 +256,14 @@ export default function TerraPage() {
 
       // Load wallets: start from localStorage, seed from user profile if authenticated
       let stored = loadStoredWallets();
-      const profileAddr = currentUser?.created_wallet_address || currentUser?.kaspa_address;
-      if (profileAddr && !stored.find(w => w.address === profileAddr)) {
+      const rawProfileAddr = currentUser?.created_wallet_address || currentUser?.kaspa_address;
+      const profileAddr = rawProfileAddr ? normalizeAddress(rawProfileAddr) : null;
+      if (profileAddr && isValidKaspaAddress(profileAddr) && !stored.find(w => w.address === profileAddr)) {
         stored = [{ address: profileAddr, mnemonic: '', label: 'Main Wallet' }, ...stored];
         saveStoredWallets(stored);
       }
+      // Filter out wallets with invalid addresses
+      stored = stored.filter(w => w.address && isValidKaspaAddress(w.address));
       setWallets(stored);
 
       // Fetch KAS price
@@ -259,9 +277,16 @@ export default function TerraPage() {
         await Promise.all(stored.map(async (w) => {
           if (!w.address) return;
           try {
-            const balRes = await base44.functions.invoke('getKaspaBalance', { address: w.address });
+            // Validate address format before calling API
+            const addr = w.address.startsWith('kaspa:') ? w.address : `kaspa:${w.address}`;
+            if (!/^kaspa:[a-z0-9]{61,63}$/.test(addr)) {
+              console.warn(`[Terra] Invalid address format: ${addr.slice(0, 20)}... (${addr.length} chars)`);
+              balMap[w.address] = 0;
+              return;
+            }
+            const balRes = await base44.functions.invoke('getKaspaBalance', { address: addr });
             const bal = balRes?.data?.balanceKAS ?? balRes?.data?.balance ?? balRes?.data?.kaspa ?? 0;
-            console.log(`[Terra] Balance for ${w.address.slice(0, 10)}...: ${bal} KAS`);
+            console.log(`[Terra] Balance for ${addr.slice(0, 16)}...: ${bal} KAS`);
             balMap[w.address] = bal;
           } catch (e) {
             console.error(`[Terra] Failed to fetch balance for ${w.address}:`, e);
@@ -277,14 +302,19 @@ export default function TerraPage() {
   };
 
   const addWallet = (w) => {
-    const newWallet = { address: w.address, mnemonic: w.mnemonic || '', label: w.label || `Wallet ${wallets.length + 1}` };
+    const normalizedAddr = normalizeAddress(w.address);
+    if (!isValidKaspaAddress(normalizedAddr)) {
+      console.error(`[Terra] Refusing to add invalid address: ${w.address}`);
+      return;
+    }
+    const newWallet = { address: normalizedAddr, mnemonic: w.mnemonic || '', label: w.label || `Wallet ${wallets.length + 1}` };
     const updated = [...wallets, newWallet];
     setWallets(updated);
     saveStoredWallets(updated);
     setActiveWalletIdx(updated.length - 1);
     // save primary to user profile if first
     if (wallets.length === 0) {
-      base44.auth.updateMe({ created_wallet_address: w.address }).catch(() => {});
+      base44.auth.updateMe({ created_wallet_address: normalizedAddr }).catch(() => {});
     }
   };
 
