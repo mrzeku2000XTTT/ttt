@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, Search, AlertTriangle, CheckCircle, XCircle, ExternalLink, ArrowLeft, Loader2, Globe, Lock, Server, Code, Eye, Scan, Fingerprint, Activity } from "lucide-react";
+import { Shield, Search, AlertTriangle, CheckCircle, XCircle, ArrowLeft, Loader2, Globe, Lock, Server, Code, Eye, Scan, Fingerprint, Activity, Copy, Check } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
 import ScanResultCard from "@/components/security/ScanResultCard";
@@ -81,9 +81,19 @@ export default function SecurityAudit() {
     startScan(`${SCAN_PROMPT_BASE}\n\nAnalyze this URL: ${target}`, target);
   };
 
+  const [scanAppInfo, setScanAppInfo] = useState(null);
+  const [copiedIdx, setCopiedIdx] = useState(null);
+
+  const copyRec = (text, idx) => {
+    navigator.clipboard.writeText(text);
+    setCopiedIdx(idx);
+    setTimeout(() => setCopiedIdx(null), 2000);
+  };
+
   const handleAppScan = async (app) => {
     const appName = app.name;
     const appPath = app.path;
+    setScanAppInfo(app);
     setUrl(appName);
     setScanTarget(appName);
     setScanning(true);
@@ -324,11 +334,11 @@ Base your findings ONLY on what you can see in the actual source code above. Do 
               className="space-y-6"
             >
               {/* Score Card */}
-              <div className={`bg-gradient-to-br from-white/[0.05] to-white/[0.01] border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl ${scoreGlow(results.overall_score)}`}>
-                <div className="flex flex-col sm:flex-row items-center gap-6">
+              <div className={`bg-gradient-to-br from-white/[0.05] to-white/[0.01] border border-white/[0.08] rounded-3xl p-5 sm:p-8 shadow-2xl ${scoreGlow(results.overall_score)}`}>
+                <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start sm:gap-6">
                   {/* Score Ring */}
-                  <div className="relative w-28 h-28 flex-shrink-0">
-                    <svg className="w-28 h-28 -rotate-90" viewBox="0 0 100 100">
+                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0">
+                    <svg className="w-24 h-24 sm:w-28 sm:h-28 -rotate-90" viewBox="0 0 100 100">
                       <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="6" />
                       <motion.circle
                         cx="50" cy="50" r="40" fill="none"
@@ -345,7 +355,7 @@ Base your findings ONLY on what you can see in the actual source code above. Do 
                         initial={{ opacity: 0, scale: 0.5 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.3 }}
-                        className={`text-3xl font-black ${scoreColor(results.overall_score)}`}
+                        className={`text-2xl sm:text-3xl font-black ${scoreColor(results.overall_score)}`}
                       >
                         {results.overall_score}
                       </motion.span>
@@ -353,17 +363,18 @@ Base your findings ONLY on what you can see in the actual source code above. Do 
                     </div>
                   </div>
 
-                  <div className="flex-1 min-w-0 text-center sm:text-left">
-                    <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
-                      <span className="text-white font-bold text-lg truncate">{results.url_analyzed}</span>
-                      <a href={results.url_analyzed} target="_blank" rel="noopener noreferrer" className="text-white/15 hover:text-white/40 transition-colors">
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
+                  <div className="flex-1 min-w-0 text-center sm:text-left w-full">
+                    {/* App name + icon instead of URL */}
+                    <div className="flex items-center justify-center sm:justify-start gap-3 mb-2">
+                      {scanAppInfo?.icon && (
+                        <img src={scanAppInfo.icon} alt="" className={`w-8 h-8 ${scanAppInfo?.round ? 'rounded-full' : 'rounded-lg'} border border-white/10`} />
+                      )}
+                      <span className="text-white font-bold text-lg truncate">{scanTarget || results.url_analyzed}</span>
                     </div>
                     <div className="mb-3">
                       <SeverityBadge severity={results.overall_risk} />
                     </div>
-                    <p className="text-white/45 text-sm leading-relaxed">{results.summary}</p>
+                    <p className="text-white/45 text-xs sm:text-sm leading-relaxed">{results.summary}</p>
                   </div>
                 </div>
               </div>
@@ -407,10 +418,17 @@ Base your findings ONLY on what you can see in the actual source code above. Do 
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.5 + i * 0.05 }}
-                        className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04]"
+                        className="flex items-start gap-2 sm:gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] group"
                       >
                         <span className="w-5 h-5 rounded-full bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 text-[10px] font-bold flex-shrink-0 mt-0.5">{i + 1}</span>
-                        <span className="text-white/55 text-xs leading-relaxed">{rec}</span>
+                        <span className="text-white/55 text-xs leading-relaxed flex-1 break-words">{rec}</span>
+                        <button
+                          onClick={() => copyRec(rec, i)}
+                          className="flex-shrink-0 mt-0.5 p-1.5 rounded-lg hover:bg-white/[0.06] text-white/20 hover:text-white/60 transition-all opacity-60 group-hover:opacity-100"
+                          title="Copy"
+                        >
+                          {copiedIdx === i ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                        </button>
                       </motion.div>
                     ))}
                   </div>
@@ -418,15 +436,15 @@ Base your findings ONLY on what you can see in the actual source code above. Do 
               )}
 
               {/* Scan Again */}
-              <div className="text-center space-y-3 pt-2">
+              <div className="text-center space-y-3 pt-2 pb-8">
                 <button
-                  onClick={() => { setResults(null); setUrl(""); }}
+                  onClick={() => { setResults(null); setUrl(""); setScanAppInfo(null); }}
                   className="px-6 py-2.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] rounded-xl text-white/50 hover:text-white/80 text-xs font-medium transition-all"
                 >
                   Scan Another Target
                 </button>
                 <p className="text-white/10 text-[10px]">
-                  AI-powered assessment based on public information. Does not perform active penetration testing.
+                  AI-powered assessment based on actual page source code analysis.
                 </p>
               </div>
             </motion.div>
