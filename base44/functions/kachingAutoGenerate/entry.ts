@@ -4,7 +4,6 @@ import { wordlist } from 'npm:@scure/bip39@1.3.0/wordlists/english';
 import { KaspaWallet } from 'npm:@okxweb3/coin-kaspa@2.4.9';
 
 // Fixed 15-minute round boundaries aligned to UTC clock
-// Rounds: :00, :15, :30, :45 of every hour
 const ROUND_MS = 15 * 60 * 1000;
 
 function getCurrentRoundEnd() {
@@ -14,6 +13,17 @@ function getCurrentRoundEnd() {
 function getCurrentRoundStart() {
   return new Date(Math.floor(Date.now() / ROUND_MS) * ROUND_MS);
 }
+
+const COINS = [
+  { id: 'bitcoin', symbol: 'BTC', icon: '₿' },
+  { id: 'ethereum', symbol: 'ETH', icon: 'Ξ' },
+  { id: 'solana', symbol: 'SOL', icon: '◎' },
+  { id: 'ripple', symbol: 'XRP', icon: '✕' },
+  { id: 'dogecoin', symbol: 'DOGE', icon: 'Ð' },
+  { id: 'binancecoin', symbol: 'BNB', icon: '⬡' },
+  { id: 'hyperliquid', symbol: 'HYPE', icon: '⚡' },
+  { id: 'kaspa', symbol: 'KAS', icon: '◆' },
+];
 
 Deno.serve(async (req) => {
   try {
@@ -48,66 +58,47 @@ Deno.serve(async (req) => {
       return { mnemonic, privateKey, address: cleanAddress };
     }
 
-    // 1. NBA Games
+    // Fetch all coin prices from CoinGecko in one call
+    const coinIds = COINS.map(c => c.id).join(',');
+    let priceData = {};
     try {
-      const tz = 'America/Chicago';
-      const now = new Date();
-      const dateStr = now.toLocaleDateString('en-CA', { timeZone: tz }).replace(/-/g, '');
-      const nbaRes = await fetch(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${dateStr}`);
-      const nbaData = await nbaRes.json();
-      
-      for (const event of (nbaData?.events || []).slice(0, 3)) {
-        const comp = event.competitions?.[0];
-        if (!comp) continue;
-        const away = comp.competitors?.find(c => c.homeAway === 'away');
-        const home = comp.competitors?.find(c => c.homeAway === 'home');
-        if (!away || !home) continue;
-        if (comp.status?.type?.name === 'STATUS_FINAL') continue;
+      const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinIds}&vs_currencies=usd&include_24hr_change=true`);
+      priceData = await res.json();
+    } catch (e) {
+      console.error('CoinGecko fetch failed:', e.message);
+      return Response.json({ error: 'Failed to fetch prices' }, { status: 500 });
+    }
 
-        const escrow = await createEscrow();
-        const gameNumber = escrow.address.slice(0, 8).toUpperCase();
-
-        const game = await base44.asServiceRole.entities.PredictionGame.create({
-          game_number: gameNumber,
-          escrow_address: escrow.address,
-          escrow_private_key: escrow.privateKey,
-          escrow_mnemonic: escrow.mnemonic,
-          market_id: `nba_${event.id}_${roundEnd.getTime()}`,
-          question: `Will ${home.team.shortDisplayName} be leading ${away.team.shortDisplayName} in 15 min?`,
-          yes_label: `${home.team.shortDisplayName} leads`,
-          no_label: `${away.team.shortDisplayName} leads or tied`,
-          category: 'Sports',
-          subcategory: 'NBA',
-          source_data: `ESPN game ${event.id}`,
-          status: 'open',
-          start_time: roundStart.toISOString(),
-          end_time: roundEnd.toISOString(),
-          total_pool_kas: 0, yes_pool_kas: 0, no_pool_kas: 0,
-          yes_count: 0, no_count: 0, bot_status: 'ready'
-        });
-
-        createdGames.push({ id: game.id, game_number: gameNumber, question: game.question });
+    // Create a prediction game for each coin
+    for (const coin of COINS) {
+      const data = priceData[coin.id];
+      if (!data?.usd) {
+        console.log(`No price data for ${coin.symbol}, skipping`);
+        continue;
       }
-    } catch (e) { console.error('NBA game gen failed:', e.message); }
 
-    // 2. Crypto price predictions
-    try {
-      const cryptoRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,kaspa,ethereum&vs_currencies=usd');
-      const cryptoData = await cryptoRes.json();
-      
-      const coins = [
-        { id: 'bitcoin', symbol: 'BTC' },
-        { id: 'kaspa', symbol: 'KAS' },
-        { id: 'ethereum', symbol: 'ETH' },
-      ];
+      const price = data.usd;
+      const change24h = data.usd_24h_change;
 
-      for (const coin of coins) {
-        const price = cryptoData[coin.id]?.usd;
-        if (!price) continue;
+      // Format price nicely based on magnitude
+      let target;
+      if (price >= 10000) target = Math.round(price);
+      else if (price >= 100) target = parseFloat(price.toFixed(1));
+      else if (price >= 1) target = parseFloat(price.toFixed(2));
+      else if (price >= 0.01) target = parseFloat(price.toFixed(4));
+      else target = parseFloat(price.toFixed(6));
 
+      const formattedPrice = target.toLocaleString('en-US', { maximumFractionDigits: 6 });
+
+      try {
         const escrow = await createEscrow();
         const gameNumber = escrow.address.slice(0, 8).toUpperCase();
-        const target = coin.symbol === 'BTC' ? Math.round(price) : parseFloat(price.toFixed(price > 100 ? 0 : 4));
+
+        // Kaspa gets a special custom question style
+        const isKaspa = coin.symbol === 'KAS';
+        const question = isKaspa
+          ? `Will KAS break above $${formattedPrice} this round?`
+          : `Will ${coin.symbol} be above $${formattedPrice} in 15 min?`;
 
         const game = await base44.asServiceRole.entities.PredictionGame.create({
           game_number: gameNumber,
@@ -115,12 +106,12 @@ Deno.serve(async (req) => {
           escrow_private_key: escrow.privateKey,
           escrow_mnemonic: escrow.mnemonic,
           market_id: `crypto_${coin.id}_${roundEnd.getTime()}`,
-          question: `Will ${coin.symbol} be above $${target.toLocaleString()} in 15 minutes?`,
-          yes_label: `Above $${target.toLocaleString()}`,
-          no_label: `At or below $${target.toLocaleString()}`,
+          question,
+          yes_label: `Above $${formattedPrice}`,
+          no_label: `At or below $${formattedPrice}`,
           category: 'Crypto',
           subcategory: coin.symbol,
-          source_data: `CoinGecko ${coin.id} price at ${target}`,
+          source_data: `CoinGecko ${coin.id} price at $${formattedPrice} | 24h: ${change24h?.toFixed(2) || '?'}%`,
           status: 'open',
           start_time: roundStart.toISOString(),
           end_time: roundEnd.toISOString(),
@@ -128,13 +119,15 @@ Deno.serve(async (req) => {
           yes_count: 0, no_count: 0, bot_status: 'ready'
         });
 
-        createdGames.push({ id: game.id, game_number: gameNumber, question: game.question });
+        createdGames.push({ id: game.id, game_number: gameNumber, symbol: coin.symbol, question: game.question, price: formattedPrice });
+      } catch (e) {
+        console.error(`Failed to create ${coin.symbol} game:`, e.message);
       }
-    } catch (e) { console.error('Crypto game gen failed:', e.message); }
+    }
 
-    return Response.json({ 
-      success: true, 
-      games_created: createdGames.length, 
+    return Response.json({
+      success: true,
+      games_created: createdGames.length,
       games: createdGames,
       round: { start: roundStart.toISOString(), end: roundEnd.toISOString() }
     });
