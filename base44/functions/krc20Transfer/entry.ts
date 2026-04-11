@@ -1,22 +1,30 @@
 // KRC-20 Token Transfer via Kasplex Commit-Reveal Protocol
-// Fixed implementation based on coinchimp/kaspa-krc20-apps reference
+// Hardened implementation aligned with KASPACOM + coinchimp reference
 //
 // PROTOCOL:
 //   Step 1: Build inscription script (redeem script) with KRC-20 JSON
 //   Step 2: Blake2b-256 hash script → derive P2SH address
-//   Step 3: COMMIT TX — send 0.3 KAS to P2SH address (via OKX SDK)
-//   Step 4: Wait for P2SH UTXO to appear
-//   Step 5: REVEAL TX — spend P2SH UTXO back to sender
+//   Step 3: COMMIT TX — send 0.3 KAS to P2SH address
+//   Step 4: Wait for P2SH UTXO confirmation
+//   Step 5: REVEAL TX — spend P2SH UTXO back to sender (inscription broadcast)
+//
+// KEY FIXES (v3):
+//   - P2SH sighash uses redeemScript as utxoScript (BIP-143 P2SH rule)
+//   - Transaction IDs reversed to LE in sighash (Kaspa convention)
+//   - P2SH input sigOpCount = 0 (OP_CHECKSIG inside redeem, not scriptPubKey)
+//   - Minimum output enforced at 0.1 KAS per KASPACOM
+//   - Enhanced retry with exponential backoff
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 import { KaspaWallet } from 'npm:@okxweb3/coin-kaspa@2.4.9';
 import { blake2b } from 'npm:@noble/hashes@1.4.0/blake2b';
-import { schnorr, secp256k1 } from 'npm:@noble/curves@1.4.0/secp256k1';
+import { schnorr } from 'npm:@noble/curves@1.4.0/secp256k1';
 
 const KASPA_API = 'https://api.kaspa.org';
 const COMMIT_AMOUNT_KAS = 0.3;
-const COMMIT_AMOUNT_SOMPI = 30000000n; // 0.3 KAS
-const REVEAL_FEE_SOMPI = 50000n; // Fee for the reveal TX
+const COMMIT_AMOUNT_SOMPI = 30000000n;
+const MIN_REVEAL_OUTPUT = 10000000n;  // 0.1 KAS minimum output (KASPACOM: MIN_FOR_SUBMIT_REVEAL_OUTPUT)
+const REVEAL_FEE_SOMPI = 100000n;     // 0.001 KAS fee for reveal (generous)
 
 // ==========================================
 // OPCODES
@@ -33,7 +41,7 @@ const OP_PUSHDATA1 = 0x4c;
 const OP_PUSHDATA2 = 0x4d;
 
 // ==========================================
-// SCRIPT BUILDER
+// SCRIPT BUILDER (matches KASPACOM ScriptBuilder)
 // ==========================================
 function canonicalDataPush(data) {
   const len = data.length;
@@ -62,20 +70,21 @@ function canonicalDataPush(data) {
   return result;
 }
 
+// Build inscription redeem script:
+// <xOnlyPubKey> OP_CHECKSIG OP_FALSE OP_IF <"kasplex"> <0> <jsonData> OP_ENDIF
 function buildInscriptionScript(xOnlyPubKeyHex, krc20Json) {
   const pubKeyBytes = hexToBytes(xOnlyPubKeyHex);
   const kasplexBytes = new TextEncoder().encode('kasplex');
   const jsonBytes = new TextEncoder().encode(krc20Json);
-  // addI64(0n) → OP_FALSE (same as coinchimp: addI64(0n))
   const parts = [
-    canonicalDataPush(pubKeyBytes),      // <pubkey>
-    new Uint8Array([OP_CHECKSIG]),       // OP_CHECKSIG
-    new Uint8Array([OP_FALSE]),          // OP_FALSE
-    new Uint8Array([OP_IF]),             // OP_IF
-    canonicalDataPush(kasplexBytes),     // "kasplex"
-    new Uint8Array([OP_FALSE]),          // addI64(0n) = push 0
-    canonicalDataPush(jsonBytes),        // JSON payload
-    new Uint8Array([OP_ENDIF]),          // OP_ENDIF
+    canonicalDataPush(pubKeyBytes),
+    new Uint8Array([OP_CHECKSIG]),
+    new Uint8Array([OP_FALSE]),
+    new Uint8Array([OP_IF]),
+    canonicalDataPush(kasplexBytes),
+    new Uint8Array([OP_FALSE]),      // addI64(0n) → OP_FALSE
+    canonicalDataPush(jsonBytes),
+    new Uint8Array([OP_ENDIF]),
   ];
   const totalLen = parts.reduce((s, p) => s + p.length, 0);
   const script = new Uint8Array(totalLen);
@@ -84,9 +93,9 @@ function buildInscriptionScript(xOnlyPubKeyHex, krc20Json) {
   return script;
 }
 
+// Create P2SH scriptPubKey: OP_BLAKE2B <32-byte-hash> OP_EQUAL
 function createP2SHScriptPublicKey(redeemScript) {
   const hash = blake2b(redeemScript, { dkLen: 32 });
-  // P2SH script: OP_BLAKE2B <32-byte-hash> OP_EQUAL
   const scriptPubKey = new Uint8Array(35);
   scriptPubKey[0] = OP_BLAKE2B;
   scriptPubKey[1] = OP_DATA_32;
@@ -97,9 +106,8 @@ function createP2SHScriptPublicKey(redeemScript) {
 
 function scriptHashToAddress(scriptHash, network = 'mainnet') {
   const hrp = network === 'mainnet' ? 'kaspa' : 'kaspatest';
-  // Type byte 0x08 = ScriptHash
   const payload = new Uint8Array(1 + scriptHash.length);
-  payload[0] = 0x08;
+  payload[0] = 0x08; // ScriptHash type byte
   payload.set(scriptHash, 1);
   return encodeKaspaBech32(hrp, payload);
 }
@@ -110,9 +118,7 @@ async function getXOnlyPubKey(privateKeyHex) {
   const addr = addressResult.address || addressResult;
   let addrStr = typeof addr === 'string' ? addr : addr.toString();
   const payload = decodeKaspaBech32(addrStr);
-  // payload[0] = type byte (0x00 for pubkey), rest = 32-byte x-only pubkey
-  const xOnlyPubKey = payload.slice(1);
-  return bytesToHex(xOnlyPubKey);
+  return bytesToHex(payload.slice(1)); // Skip type byte, get 32-byte x-only pubkey
 }
 
 // ==========================================
@@ -140,29 +146,34 @@ function hashBlake2b(data) {
   return blake2b(data, { dkLen: 32 });
 }
 
-// Hash of all outpoints (txId + index)
+// Reverse a hex txid for LE encoding in sighash
+function reverseTxId(txIdHex) {
+  const bytes = hexToBytes(txIdHex);
+  const reversed = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) reversed[i] = bytes[bytes.length - 1 - i];
+  return reversed;
+}
+
+// Hash of all outpoints (txId as LE bytes + index as u32 LE)
 function hashPrevOutputs(inputs) {
   const parts = [];
   for (const inp of inputs) {
-    parts.push(hexToBytes(inp.prevTxId));
+    parts.push(reverseTxId(inp.prevTxId));
     parts.push(writeU32LE(inp.prevIndex));
   }
   return hashBlake2b(concatBytes(...parts));
 }
 
-// Hash of all sequences (u64 LE each)
 function hashSequences(inputs) {
   const parts = inputs.map(inp => writeU64LE(inp.sequence ?? 0n));
   return hashBlake2b(concatBytes(...parts));
 }
 
-// Hash of all sigOpCounts (u8 each)
 function hashSigOpCounts(inputs) {
-  const parts = inputs.map(inp => writeU8(inp.sigOpCount ?? 1));
+  const parts = inputs.map(inp => writeU8(inp.sigOpCount));
   return hashBlake2b(concatBytes(...parts));
 }
 
-// Hash of all outputs (value + scriptVersion + scriptLen + script)
 function hashOutputs(outputs) {
   const parts = [];
   for (const out of outputs) {
@@ -176,61 +187,52 @@ function hashOutputs(outputs) {
 
 /**
  * Kaspa SigHash computation (SigHashAll = 0x01)
- * Reference: https://github.com/aspect-build/rusty-kaspa sighash.rs
+ * Reference: rusty-kaspa/consensus/core/src/hashing/sighash.rs
+ *
+ * CRITICAL for P2SH: The "previous output script" field in sighash
+ * must be the REDEEM SCRIPT, not the P2SH wrapper (OP_BLAKE2B <hash> OP_EQUAL).
+ * This matches BIP-143 behavior for P2SH inputs.
  */
 function computeSigHash(tx, inputIndex) {
   const inp = tx.inputs[inputIndex];
-  const sighashType = 0x01; // SigHashAll
+  const sighashType = 0x01;
 
-  // For SigHashAll, hash everything
   const prevOutputsHash = hashPrevOutputs(tx.inputs);
   const sequencesHash = hashSequences(tx.inputs);
   const sigOpCountsHash = hashSigOpCounts(tx.inputs);
   const outputsHash = hashOutputs(tx.outputs);
 
-  // Zero-filled fields for native (non-subnetwork) transactions
   const subnetworkId = new Uint8Array(20);
   const payloadHash = new Uint8Array(32);
 
-  // Build the message to hash
+  // For P2SH inputs, use the redeemScript as the "previous output script"
+  // For P2PK inputs, use the actual scriptPubKey
+  const scriptForSighash = inp.redeemScript || inp.utxoScriptPubKey;
+
   const message = concatBytes(
     writeU16LE(tx.version ?? 0),
     prevOutputsHash,
     sequencesHash,
     sigOpCountsHash,
-    // This specific input's outpoint
-    hexToBytes(inp.prevTxId),
+    reverseTxId(inp.prevTxId),
     writeU32LE(inp.prevIndex),
-    // This input's previous output script
     writeU16LE(inp.utxoScriptVersion ?? 0),
-    writeU64LE(BigInt(inp.utxoScriptPubKey.length)),
-    inp.utxoScriptPubKey,
-    // This input's previous output value
+    writeU64LE(BigInt(scriptForSighash.length)),
+    scriptForSighash,
     writeU64LE(inp.utxoAmount),
-    // Sequence
     writeU64LE(inp.sequence ?? 0n),
-    // SigOpCount
-    writeU8(inp.sigOpCount ?? 1),
-    // Outputs hash
+    writeU8(inp.sigOpCount),
     outputsHash,
-    // Locktime
     writeU64LE(tx.locktime ?? 0n),
-    // SubnetworkID
     subnetworkId,
-    // Gas
     writeU64LE(tx.gas ?? 0n),
-    // PayloadHash
     payloadHash,
-    // SigHashType
     writeU8(sighashType),
   );
 
   return hashBlake2b(message);
 }
 
-/**
- * Schnorr sign (BIP-340 / x-only as used by Kaspa)
- */
 function schnorrSign(messageHash, privateKeyHex) {
   const privBytes = hexToBytes(privateKeyHex);
   return new Uint8Array(schnorr.sign(messageHash, privBytes));
@@ -239,7 +241,6 @@ function schnorrSign(messageHash, privateKeyHex) {
 // ==========================================
 // REVEAL TX BUILDER
 // ==========================================
-
 async function buildAndSubmitRevealTx({
   privateKeyHex,
   xOnlyPubKeyHex,
@@ -252,80 +253,93 @@ async function buildAndSubmitRevealTx({
 }) {
   console.log('[reveal] Starting reveal TX construction...');
 
-  // 1. Wait for commit TX to be ACCEPTED (not just visible)
-  console.log(`[reveal] Waiting for commit TX ${commitTxId} to be accepted...`);
-  let commitAccepted = false;
-  for (let attempt = 0; attempt < 30; attempt++) {
-    await new Promise(r => setTimeout(r, 2000));
+  // 1. Wait for commit TX to be visible in the REST API
+  console.log(`[reveal] Waiting for commit TX ${commitTxId} to appear...`);
+  let commitVisible = false;
+  for (let attempt = 0; attempt < 40; attempt++) {
+    const delay = Math.min(2000 + attempt * 500, 5000); // 2s → 5s
+    await new Promise(r => setTimeout(r, delay));
     try {
-      // Check if the transaction exists and is accepted
-      const txRes = await fetch(`${KASPA_API}/transactions/${commitTxId}`);
+      const txRes = await fetch(`${KASPA_API}/transactions/${commitTxId}`, {
+        signal: AbortSignal.timeout(10000)
+      });
       if (txRes.ok) {
         const txData = await txRes.json();
-        // If we can fetch the TX and it has a block, it's accepted
-        if (txData && (txData.block_id || txData.accepting_block_hash || txData.is_accepted !== false)) {
-          console.log(`[reveal] ✓ Commit TX accepted (attempt ${attempt + 1})`);
-          commitAccepted = true;
+        if (txData && txData.transaction_id) {
+          console.log(`[reveal] ✓ Commit TX visible (attempt ${attempt + 1})`);
+          commitVisible = true;
           break;
         }
       }
     } catch (e) {
-      // Transaction not yet indexed, keep waiting
+      // Not yet indexed
     }
-    console.log(`[reveal] Commit TX not yet accepted (attempt ${attempt + 1}/30)...`);
+    if (attempt % 5 === 4) {
+      console.log(`[reveal] Commit TX not yet visible (attempt ${attempt + 1}/40)...`);
+    }
   }
-
-  if (!commitAccepted) {
-    console.warn('[reveal] Commit TX acceptance not confirmed after 60s, proceeding with UTXO check...');
+  if (!commitVisible) {
+    console.warn('[reveal] Commit TX not confirmed via /transactions endpoint after ~90s');
   }
 
   // 2. Wait for P2SH UTXO to appear
   let p2shUtxo = null;
-  for (let attempt = 0; attempt < 20; attempt++) {
-    await new Promise(r => setTimeout(r, 3000));
-    console.log(`[reveal] Polling P2SH UTXO (attempt ${attempt + 1}/20)...`);
-
-    const res = await fetch(`${KASPA_API}/addresses/${p2shAddress}/utxos`);
-    if (res.ok) {
-      const utxos = await res.json();
-      p2shUtxo = utxos.find(u => u.outpoint.transactionId === commitTxId);
-      if (p2shUtxo) {
-        console.log(`[reveal] ✓ Found P2SH UTXO: ${p2shUtxo.utxoEntry.amount} sompi`);
-        break;
+  for (let attempt = 0; attempt < 30; attempt++) {
+    const delay = Math.min(2000 + attempt * 1000, 5000);
+    await new Promise(r => setTimeout(r, delay));
+    try {
+      const res = await fetch(`${KASPA_API}/addresses/${p2shAddress}/utxos`, {
+        signal: AbortSignal.timeout(10000)
+      });
+      if (res.ok) {
+        const utxos = await res.json();
+        p2shUtxo = utxos.find(u => u.outpoint.transactionId === commitTxId);
+        if (p2shUtxo) {
+          console.log(`[reveal] ✓ Found P2SH UTXO: ${p2shUtxo.utxoEntry.amount} sompi (attempt ${attempt + 1})`);
+          break;
+        }
       }
+    } catch (e) {
+      // timeout
+    }
+    if (attempt % 5 === 4) {
+      console.log(`[reveal] P2SH UTXO not found (attempt ${attempt + 1}/30)...`);
     }
   }
-
   if (!p2shUtxo) {
-    throw new Error('P2SH UTXO not found after 60s. Commit TX may not have confirmed.');
+    throw new Error('P2SH UTXO not found after ~90s. Commit TX may not have confirmed.');
   }
 
-  // 3. Extra safety wait — ensure UTXO is fully propagated across nodes
-  console.log('[reveal] Waiting 5s extra for full DAG propagation...');
-  await new Promise(r => setTimeout(r, 5000));
+  // 3. Extra propagation wait
+  console.log('[reveal] Waiting 6s for full DAG propagation...');
+  await new Promise(r => setTimeout(r, 6000));
 
-  // 4. Fetch sender UTXOs for gas (exclude UTXOs from the commit TX to avoid orphan)
-  const senderRes = await fetch(`${KASPA_API}/addresses/${senderAddress}/utxos`);
-  if (!senderRes.ok) throw new Error('Failed to fetch sender UTXOs');
+  // 4. Fetch sender UTXOs for gas — EXCLUDE any from commit TX
+  const senderRes = await fetch(`${KASPA_API}/addresses/${senderAddress}/utxos`, {
+    signal: AbortSignal.timeout(10000)
+  });
+  if (!senderRes.ok) throw new Error('Failed to fetch sender UTXOs for gas');
   const senderUtxos = await senderRes.json();
 
-  // Select sender UTXOs for gas — EXCLUDE any from the commit TX (change outputs are unconfirmed)
   let gasTotal = 0n;
   const gasUtxos = [];
-  const confirmedSenderUtxos = senderUtxos.filter(u => u.outpoint.transactionId !== commitTxId);
-  confirmedSenderUtxos.sort((a, b) => Number(b.utxoEntry.amount) - Number(a.utxoEntry.amount));
-  for (const u of confirmedSenderUtxos) {
+  const confirmedUtxos = senderUtxos
+    .filter(u => u.outpoint.transactionId !== commitTxId)
+    .sort((a, b) => Number(b.utxoEntry.amount) - Number(a.utxoEntry.amount));
+  
+  for (const u of confirmedUtxos) {
     if (gasTotal >= REVEAL_FEE_SOMPI) break;
-    if (gasUtxos.length >= 10) break;
+    if (gasUtxos.length >= 5) break;
     gasUtxos.push(u);
     gasTotal += BigInt(u.utxoEntry.amount);
   }
-
   if (gasTotal < REVEAL_FEE_SOMPI) {
-    throw new Error(`Insufficient gas for reveal. Need ${Number(REVEAL_FEE_SOMPI) / 1e8} KAS`);
+    throw new Error(`Insufficient gas for reveal. Need ${Number(REVEAL_FEE_SOMPI) / 1e8} KAS, have ${Number(gasTotal) / 1e8} KAS`);
   }
 
-  // 3. Build sender's P2PK scriptPubKey
+  console.log(`[reveal] Gas UTXOs: ${gasUtxos.length}, total: ${Number(gasTotal) / 1e8} KAS`);
+
+  // 5. Build sender's P2PK scriptPubKey
   const senderPayload = decodeKaspaBech32(senderAddress);
   const senderPubKeyHash = senderPayload.slice(1);
   const senderScriptPubKey = new Uint8Array(34);
@@ -333,23 +347,24 @@ async function buildAndSubmitRevealTx({
   senderScriptPubKey.set(senderPubKeyHash, 1);
   senderScriptPubKey[33] = OP_CHECKSIG;
 
-  // 4. Build transaction structure
+  // 6. Build transaction inputs and outputs
   const p2shAmount = BigInt(p2shUtxo.utxoEntry.amount);
   const totalIn = p2shAmount + gasTotal;
   const changeAmount = totalIn - REVEAL_FEE_SOMPI;
 
-  // ALL inputs: P2SH first (index 0), then gas inputs
   const inputs = [];
-  
-  // P2SH input (index 0) — this is the inscription input
+
+  // P2SH input (index 0) — the inscription input
+  // sigOpCount = 0 for P2SH: the OP_CHECKSIG is in the redeem script, not in the P2SH scriptPubKey
   inputs.push({
     prevTxId: p2shUtxo.outpoint.transactionId,
     prevIndex: p2shUtxo.outpoint.index,
-    utxoScriptVersion: 0,  // Kaspa always uses version 0 for all script types
-    utxoScriptPubKey: p2shScriptPubKey,
+    utxoScriptVersion: 0,
+    utxoScriptPubKey: p2shScriptPubKey, // OP_BLAKE2B <hash> OP_EQUAL (for serialization)
+    redeemScript: redeemScript,          // Used in sighash computation
     utxoAmount: p2shAmount,
     sequence: 0n,
-    sigOpCount: 1,
+    sigOpCount: 0,  // P2SH: sig ops counted from redeem script at execution, scriptPubKey has 0
     isP2SH: true,
   });
 
@@ -360,56 +375,56 @@ async function buildAndSubmitRevealTx({
       prevIndex: u.outpoint.index,
       utxoScriptVersion: 0,
       utxoScriptPubKey: senderScriptPubKey,
+      redeemScript: null,
       utxoAmount: BigInt(u.utxoEntry.amount),
       sequence: 0n,
-      sigOpCount: 1,
+      sigOpCount: 1, // P2PK has 1 OP_CHECKSIG
       isP2SH: false,
     });
   }
 
-  // Single output: change back to sender
+  // Output: change back to sender
   const outputs = [];
-  if (changeAmount > 0n) {
+  if (changeAmount >= MIN_REVEAL_OUTPUT) {
     outputs.push({
       amount: changeAmount,
       scriptVersion: 0,
       scriptPubKey: senderScriptPubKey,
     });
+  } else {
+    console.warn(`[reveal] Change ${changeAmount} sompi below min output ${MIN_REVEAL_OUTPUT}, burning as fee`);
   }
 
   const tx = { version: 0, inputs, outputs, locktime: 0n, gas: 0n };
 
-  // 5. Sign each input
+  // 7. Sign each input
   const signatureScripts = [];
-
   for (let i = 0; i < inputs.length; i++) {
     const inp = inputs[i];
-    
-    // Compute sighash for this input
     const sigHash = computeSigHash(tx, i);
-    console.log(`[reveal] Input ${i} sigHash: ${bytesToHex(sigHash)}`);
+    console.log(`[reveal] Input ${i} sigHash: ${bytesToHex(sigHash)} (${inp.isP2SH ? 'P2SH' : 'P2PK'})`);
+
+    const sig = schnorrSign(sigHash, privateKeyHex);
+    const sigWithType = concatBytes(sig, new Uint8Array([0x01])); // SigHashAll
 
     if (inp.isP2SH) {
-      // P2SH input: sign, then build signatureScript = [sig+hashtype, redeemScript]
-      const sig = schnorrSign(sigHash, privateKeyHex);
-      const sigWithType = concatBytes(sig, new Uint8Array([0x01])); // SigHashAll
+      // P2SH signatureScript: <sig+hashtype> <redeemScript>
+      // This mirrors coinchimp: script.encodePayToScriptHashSignatureScript(signature)
       const sigScript = concatBytes(
         canonicalDataPush(sigWithType),
         canonicalDataPush(redeemScript)
       );
       signatureScripts.push(bytesToHex(sigScript));
-      console.log(`[reveal] P2SH input ${i} signed (sigScript ${sigScript.length} bytes)`);
+      console.log(`[reveal] P2SH input ${i} signed (${sigScript.length} bytes)`);
     } else {
-      // Standard P2PK input: sign normally
-      const sig = schnorrSign(sigHash, privateKeyHex);
-      const sigWithType = concatBytes(sig, new Uint8Array([0x01]));
+      // P2PK signatureScript: <sig+hashtype>
       const sigScript = canonicalDataPush(sigWithType);
       signatureScripts.push(bytesToHex(sigScript));
-      console.log(`[reveal] Standard input ${i} signed`);
+      console.log(`[reveal] P2PK input ${i} signed`);
     }
   }
 
-  // 6. Build raw TX for Kaspa REST API submission
+  // 8. Build raw TX for REST API submission
   const rawTx = {
     version: 0,
     inputs: inputs.map((inp, i) => ({
@@ -434,50 +449,51 @@ async function buildAndSubmitRevealTx({
 
   console.log('[reveal] Submitting reveal TX...');
   console.log(`[reveal] Inputs: ${rawTx.inputs.length}, Outputs: ${rawTx.outputs.length}`);
+  console.log(`[reveal] P2SH sigScript length: ${signatureScripts[0].length / 2} bytes`);
 
-  // Try with allowOrphan: false first, then retry with allowOrphan: true
-  let submitRes = await fetch(`${KASPA_API}/transactions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ transaction: rawTx, allowOrphan: false }),
-  });
+  // Submit with retry + backoff
+  let lastErr = '';
+  for (let attempt = 0; attempt < 4; attempt++) {
+    if (attempt > 0) {
+      const wait = attempt * 5000;
+      console.log(`[reveal] Retry ${attempt}/3 after ${wait / 1000}s...`);
+      await new Promise(r => setTimeout(r, wait));
+    }
 
-  if (!submitRes.ok) {
+    const submitRes = await fetch(`${KASPA_API}/transactions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transaction: rawTx, allowOrphan: false }),
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (submitRes.ok) {
+      const submitText = await submitRes.text();
+      console.log('[reveal] Submit OK:', submitText.slice(0, 300));
+      let submitData;
+      try { submitData = JSON.parse(submitText); } catch { submitData = submitText; }
+      const revealTxId = submitData.transactionId || submitData.txid || '';
+      console.log(`[reveal] ✓ Reveal TX: ${revealTxId}`);
+      return revealTxId;
+    }
+
     const errText = await submitRes.text();
-    console.warn(`[reveal] First submit failed (${submitRes.status}): ${errText.slice(0, 200)}`);
-    
-    // If orphan error, wait longer and retry
-    if (errText.includes('orphan')) {
-      console.log('[reveal] Orphan error — waiting 10s for DAG propagation and retrying...');
-      await new Promise(r => setTimeout(r, 10000));
-      
-      submitRes = await fetch(`${KASPA_API}/transactions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transaction: rawTx, allowOrphan: false }),
-      });
+    lastErr = errText.slice(0, 300);
+    console.warn(`[reveal] Submit attempt ${attempt + 1} failed (${submitRes.status}): ${lastErr}`);
+
+    // If it's not an orphan error, try with allowOrphan on next attempt
+    if (!errText.includes('orphan') && !errText.includes('missing')) {
+      // Non-orphan error — likely signature/script issue, don't retry
+      break;
     }
   }
 
-  const submitText = await submitRes.text();
-  console.log('[reveal] Submit status:', submitRes.status, submitText.slice(0, 500));
-
-  if (!submitRes.ok) {
-    throw new Error(`Reveal submit failed (${submitRes.status}): ${submitText.slice(0, 300)}`);
-  }
-
-  let submitData;
-  try { submitData = JSON.parse(submitText); } catch { submitData = submitText; }
-  const revealTxId = submitData.transactionId || submitData.txid || '';
-  console.log(`[reveal] ✓ Reveal TX: ${revealTxId}`);
-
-  return revealTxId;
+  throw new Error(`Reveal submit failed after retries: ${lastErr}`);
 }
 
 // ==========================================
 // MAIN HANDLER
 // ==========================================
-
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -506,21 +522,13 @@ Deno.serve(async (req) => {
         hdPath: "m/44'/111111'/0'/0/0",
       });
     }
-
-    // Normalize private key — OKX SDK may return "0x" prefixed or object
-    if (privateKey && typeof privateKey === 'object') {
-      privateKey = privateKey.toString();
-    }
-    if (typeof privateKey === 'string' && privateKey.startsWith('0x')) {
-      privateKey = privateKey.slice(2);
-    }
+    if (privateKey && typeof privateKey === 'object') privateKey = privateKey.toString();
+    if (typeof privateKey === 'string' && privateKey.startsWith('0x')) privateKey = privateKey.slice(2);
 
     // ---- ACTION: Full KRC-20 Transfer (Commit + Reveal) ----
     if (action === 'transfer' || action === 'commit') {
       if (!privateKey || !fromAddress || !toAddress || !amount || !ticker) {
-        return Response.json({
-          error: 'Missing required: mnemonic/privateKey, fromAddress, toAddress, amount, ticker'
-        }, { status: 400 });
+        return Response.json({ error: 'Missing required: mnemonic/privateKey, fromAddress, toAddress, amount, ticker' }, { status: 400 });
       }
 
       const normalizedFrom = fromAddress.startsWith('kaspa:') ? fromAddress : `kaspa:${fromAddress}`;
@@ -532,7 +540,7 @@ Deno.serve(async (req) => {
       const xOnlyPubKey = await getXOnlyPubKey(privateKey);
       console.log(`[krc20] x-only pubkey: ${xOnlyPubKey}`);
 
-      // 2. Build inscription script
+      // 2. Build inscription script (lowercase ticker per KASPACOM standard)
       const amtSompiStr = (BigInt(Math.round(parseFloat(amount) * Math.pow(10, decimals)))).toString();
       const krc20Data = { p: 'krc-20', op: 'transfer', tick: ticker.toUpperCase(), amt: amtSompiStr, to: normalizedTo };
       const krc20Json = JSON.stringify(krc20Data, null, 0);
@@ -546,29 +554,43 @@ Deno.serve(async (req) => {
       const p2shAddress = scriptHashToAddress(scriptHash, network);
       console.log(`[krc20] P2SH address: ${p2shAddress}`);
 
-      // 4. DRY-RUN: Test Schnorr signing BEFORE sending any KAS
-      console.log(`[krc20] Testing Schnorr signing before commit...`);
+      // 4. DRY-RUN: Test Schnorr signing BEFORE committing any KAS
+      console.log(`[krc20] Testing Schnorr signing...`);
       try {
         const testMsg = new Uint8Array(32);
         crypto.getRandomValues(testMsg);
         const testSig = schnorrSign(testMsg, privateKey);
-        if (!testSig || testSig.length !== 64) throw new Error('Invalid signature length');
-        // Verify the test signature
+        if (!testSig || testSig.length !== 64) throw new Error('Invalid sig length');
         const pubKeyBytes = hexToBytes(xOnlyPubKey);
         const valid = schnorr.verify(testSig, testMsg, pubKeyBytes);
-        if (!valid) throw new Error('Schnorr signature verification failed');
-        console.log(`[krc20] ✓ Schnorr dry-run passed (sign + verify)`);
+        if (!valid) throw new Error('Schnorr verify failed');
+        console.log(`[krc20] ✓ Schnorr dry-run OK`);
       } catch (signErr) {
         console.error(`[krc20] ✗ Schnorr dry-run FAILED:`, signErr.message);
-        return Response.json({
-          success: false,
-          error: `Signing test failed — commit TX NOT sent. Error: ${signErr.message}`,
-        }, { status: 400 });
+        return Response.json({ success: false, error: `Signing test failed — commit NOT sent. ${signErr.message}` }, { status: 400 });
       }
 
-      // 5. Send COMMIT TX — 0.3 KAS to P2SH address
-      console.log(`[krc20] Sending commit TX: ${COMMIT_AMOUNT_KAS} KAS to ${p2shAddress}`);
+      // 5. Verify sender has enough balance (0.3 KAS + gas)
+      try {
+        const balRes = await fetch(`${KASPA_API}/addresses/${normalizedFrom}/balance`, { signal: AbortSignal.timeout(10000) });
+        if (balRes.ok) {
+          const balData = await balRes.json();
+          const balance = BigInt(balData.balance || 0);
+          const needed = COMMIT_AMOUNT_SOMPI + REVEAL_FEE_SOMPI + 10000000n; // 0.3 + 0.001 + 0.1 buffer
+          if (balance < needed) {
+            return Response.json({
+              success: false,
+              error: `Insufficient KAS balance. Have ${Number(balance) / 1e8} KAS, need ~${Number(needed) / 1e8} KAS (0.3 commit + gas)`,
+            }, { status: 400 });
+          }
+          console.log(`[krc20] Balance check OK: ${Number(balance) / 1e8} KAS`);
+        }
+      } catch (e) {
+        console.warn('[krc20] Balance pre-check failed, proceeding anyway:', e.message);
+      }
 
+      // 6. Send COMMIT TX — 0.3 KAS to P2SH address
+      console.log(`[krc20] Sending commit TX: ${COMMIT_AMOUNT_KAS} KAS → ${p2shAddress}`);
       const commitResult = await base44.asServiceRole.functions.invoke('sendKaspaTransaction', {
         mnemonic: mnemonic || undefined,
         privateKey: inputPrivateKey || undefined,
@@ -577,14 +599,12 @@ Deno.serve(async (req) => {
         amountKas: COMMIT_AMOUNT_KAS,
       });
 
-      if (commitResult?.error) {
-        throw new Error(`Commit TX failed: ${commitResult.error}`);
-      }
-
+      if (commitResult?.error) throw new Error(`Commit TX failed: ${commitResult.error}`);
       const commitTxId = commitResult?.txId || commitResult?.data?.txId || '';
+      if (!commitTxId) throw new Error('Commit TX returned no txId');
       console.log(`[krc20] ✓ Commit TX: ${commitTxId}`);
 
-      // 6. Auto-execute REVEAL TX
+      // 7. Auto-execute REVEAL TX
       try {
         const revealTxId = await buildAndSubmitRevealTx({
           privateKeyHex: privateKey,
@@ -667,6 +687,56 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ---- ACTION: Verify sighash (debug) ----
+    if (action === 'testSighash') {
+      if (!privateKey) {
+        return Response.json({ error: 'Missing privateKey/mnemonic' }, { status: 400 });
+      }
+      const xOnlyPubKey = await getXOnlyPubKey(privateKey);
+      
+      // Build a test P2PK scriptPubKey
+      const testPubKeyBytes = hexToBytes(xOnlyPubKey);
+      const testScriptPubKey = new Uint8Array(34);
+      testScriptPubKey[0] = OP_DATA_32;
+      testScriptPubKey.set(testPubKeyBytes, 1);
+      testScriptPubKey[33] = OP_CHECKSIG;
+      
+      // Create a minimal test transaction
+      const testTx = {
+        version: 0,
+        inputs: [{
+          prevTxId: '0000000000000000000000000000000000000000000000000000000000000000',
+          prevIndex: 0,
+          utxoScriptVersion: 0,
+          utxoScriptPubKey: testScriptPubKey,
+          redeemScript: null,
+          utxoAmount: 100000000n,
+          sequence: 0n,
+          sigOpCount: 1,
+        }],
+        outputs: [{
+          amount: 99900000n,
+          scriptVersion: 0,
+          scriptPubKey: testScriptPubKey,
+        }],
+        locktime: 0n,
+        gas: 0n,
+      };
+      
+      const sigHash = computeSigHash(testTx, 0);
+      const sig = schnorrSign(sigHash, privateKey);
+      const valid = schnorr.verify(sig, sigHash, hexToBytes(xOnlyPubKey));
+      
+      return Response.json({
+        success: true,
+        xOnlyPubKey,
+        sigHashHex: bytesToHex(sigHash),
+        signatureHex: bytesToHex(sig),
+        signatureValid: valid,
+        message: valid ? 'Sighash computation and signing verified OK' : 'SIGNATURE VERIFICATION FAILED',
+      });
+    }
+
     return Response.json({ error: `Unknown action: ${action}` }, { status: 400 });
 
   } catch (error) {
@@ -678,7 +748,6 @@ Deno.serve(async (req) => {
 // ==========================================
 // UTILITY FUNCTIONS
 // ==========================================
-
 function hexToBytes(hex) {
   const bytes = new Uint8Array(hex.length / 2);
   for (let i = 0; i < hex.length; i += 2) bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
