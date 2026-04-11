@@ -234,8 +234,9 @@ function computeSigHash(tx, inputIndex, sighashType = 0x01) {
  * Schnorr sign (x-only / BIP-340 style used by Kaspa)
  */
 function schnorrSign(messageHash, privateKeyHex) {
-  const privKeyBytes = hexToBytes(privateKeyHex);
-  const sig = schnorr.sign(messageHash, privKeyBytes);
+  // @noble/curves schnorr.sign expects hex string or Uint8Array for privKey
+  // Pass hex string directly — it must be 32 bytes (64 hex chars)
+  const sig = schnorr.sign(messageHash, privateKeyHex);
   return new Uint8Array(sig);
 }
 
