@@ -574,23 +574,55 @@ Deno.serve(async (req) => {
         return Response.json({ success: false, error: `Signing test failed — commit NOT sent. ${signErr.message}` }, { status: 400 });
       }
 
-      // 5. Verify sender has enough balance (0.3 KAS + gas)
-      try {
-        const balRes = await fetch(`${KASPA_API}/addresses/${normalizedFrom}/balance`, { signal: AbortSignal.timeout(10000) });
-        if (balRes.ok) {
-          const balData = await balRes.json();
-          const balance = BigInt(balData.balance || 0);
-          const needed = COMMIT_AMOUNT_SOMPI + REVEAL_FEE_SOMPI + 10000000n; // 0.3 + 0.001 + 0.1 buffer
-          if (balance < needed) {
-            return Response.json({
-              success: false,
-              error: `Insufficient KAS balance. Have ${Number(balance) / 1e8} KAS, need ~${Number(needed) / 1e8} KAS (0.3 commit + gas)`,
-            }, { status: 400 });
+      // 5. Verify sender has enough balance (0.3 KAS + gas) — MANDATORY check
+      const needed = COMMIT_AMOUNT_SOMPI + REVEAL_FEE_SOMPI + 10000000n; // 0.3 + 0.001 + 0.1 buffer
+      let balanceCheckPassed = false;
+      for (let balAttempt = 0; balAttempt < 3; balAttempt++) {
+        try {
+          const balRes = await fetch(`${KASPA_API}/addresses/${normalizedFrom}/balance`, { signal: AbortSignal.timeout(15000) });
+          if (balRes.ok) {
+            const balData = await balRes.json();
+            const balance = BigInt(balData.balance || 0);
+            if (balance < needed) {
+              return Response.json({
+                success: false,
+                error: `Insufficient KAS balance. You have ${Number(balance) / 1e8} KAS but need at least ${Number(needed) / 1e8} KAS (0.3 KAS commit + gas fees). Please add more KAS to your wallet before sending KRC-20 tokens.`,
+              }, { status: 400 });
+            }
+            console.log(`[krc20] Balance check OK: ${Number(balance) / 1e8} KAS`);
+            balanceCheckPassed = true;
+            break;
           }
-          console.log(`[krc20] Balance check OK: ${Number(balance) / 1e8} KAS`);
+        } catch (e) {
+          console.warn(`[krc20] Balance check attempt ${balAttempt + 1} failed:`, e.message);
+          if (balAttempt < 2) await new Promise(r => setTimeout(r, 2000));
         }
-      } catch (e) {
-        console.warn('[krc20] Balance pre-check failed, proceeding anyway:', e.message);
+      }
+      // If all balance checks timed out, try UTXO fallback
+      if (!balanceCheckPassed) {
+        try {
+          const utxoRes = await fetch(`${KASPA_API}/addresses/${normalizedFrom}/utxos`, { signal: AbortSignal.timeout(15000) });
+          if (utxoRes.ok) {
+            const utxos = await utxoRes.json();
+            const totalSompi = utxos.reduce((s, u) => s + BigInt(u?.utxoEntry?.amount || 0), 0n);
+            if (totalSompi < needed) {
+              return Response.json({
+                success: false,
+                error: `Insufficient KAS balance. You have ${Number(totalSompi) / 1e8} KAS but need at least ${Number(needed) / 1e8} KAS. Please add more KAS first.`,
+              }, { status: 400 });
+            }
+            console.log(`[krc20] UTXO balance check OK: ${Number(totalSompi) / 1e8} KAS`);
+            balanceCheckPassed = true;
+          }
+        } catch (e) {
+          console.warn('[krc20] UTXO balance check also failed:', e.message);
+        }
+      }
+      if (!balanceCheckPassed) {
+        return Response.json({
+          success: false,
+          error: 'Could not verify your KAS balance (Kaspa API unavailable). Please try again in a moment.',
+        }, { status: 503 });
       }
 
       // 6. Send COMMIT TX — 0.3 KAS to P2SH address
