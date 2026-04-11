@@ -1,13 +1,14 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
 // User places a bet — immediately confirmed & pool updated
+// Optionally includes tx_hash_in from an on-chain KAS transfer
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { game_id, side, amount_kas, user_wallet_address } = await req.json();
+    const { game_id, side, amount_kas, user_wallet_address, tx_hash_in } = await req.json();
 
     if (!game_id || !side || !amount_kas || !user_wallet_address) {
       return Response.json({ error: 'Missing fields' }, { status: 400 });
@@ -30,8 +31,8 @@ Deno.serve(async (req) => {
     }
 
     // Clean wallet address (remove kaspa: prefix if present)
-    const cleanWallet = user_wallet_address.startsWith('kaspa:') 
-      ? user_wallet_address.slice(6) 
+    const cleanWallet = user_wallet_address.startsWith('kaspa:')
+      ? user_wallet_address.slice(6)
       : user_wallet_address;
 
     // Create bet record — immediately confirmed
@@ -43,7 +44,8 @@ Deno.serve(async (req) => {
       side,
       amount_kas: amt,
       status: 'confirmed',
-      verified: true
+      verified: true,
+      tx_hash_in: tx_hash_in || '',
     });
 
     // Update game pool counters immediately
@@ -60,7 +62,7 @@ Deno.serve(async (req) => {
 
     await base44.asServiceRole.entities.PredictionGame.update(game.id, updateData);
 
-    console.log(`Bet placed: ${user.email} bet ${amt} KAS on ${side} for game #${game.game_number}`);
+    console.log(`Bet placed: ${user.email} bet ${amt} KAS on ${side} for game #${game.game_number} | tx: ${tx_hash_in || 'none'}`);
 
     return Response.json({
       success: true,
@@ -69,11 +71,12 @@ Deno.serve(async (req) => {
       amount_kas: amt,
       side,
       game_number: game.game_number,
+      tx_hash_in: tx_hash_in || null,
       updated_pool: {
         total: updateData.total_pool_kas,
         yes: updateData.yes_pool_kas || game.yes_pool_kas || 0,
-        no: updateData.no_pool_kas || game.no_pool_kas || 0
-      }
+        no: updateData.no_pool_kas || game.no_pool_kas || 0,
+      },
     });
   } catch (error) {
     console.error('kachingPlaceBet error:', error.message);

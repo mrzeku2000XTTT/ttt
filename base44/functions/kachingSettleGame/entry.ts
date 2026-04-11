@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
-// Judge + Settlement: determines winner, calculates payouts
+// Judge + Settlement: determines winner, calculates payouts, sends KAS from escrow to winners
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
 
     const { game_id, force_result } = await req.json().catch(() => ({}));
 
-    // Get games to settle (either specific or all expired open games)
+    // Get games to settle
     let games;
     if (game_id) {
       games = await base44.asServiceRole.entities.PredictionGame.filter({ id: game_id });
@@ -26,10 +26,9 @@ Deno.serve(async (req) => {
 
     for (const game of games) {
       try {
-        // Mark as judging
         await base44.asServiceRole.entities.PredictionGame.update(game.id, {
           status: 'judging',
-          bot_status: 'processing'
+          bot_status: 'processing',
         });
 
         // JUDGE: Determine result
@@ -37,23 +36,21 @@ Deno.serve(async (req) => {
         let judgeReason = '';
 
         if (!result) {
-          // For crypto games, fetch current price from CoinGecko and compare
           if (game.category === 'Crypto' && game.source_data) {
             try {
-              result = await judgeCryptoGame(game, base44);
-              judgeReason = result.reason;
-              result = result.result;
+              const r = await judgeCryptoGame(game);
+              result = r.result;
+              judgeReason = r.reason;
             } catch (e) {
               console.error('Crypto judge failed:', e.message);
-              // Fallback to LLM
-              const llmResult = await judgWithLLM(game, base44);
-              result = llmResult.result;
-              judgeReason = llmResult.reason;
+              const r = await judgeWithLLM(game, base44);
+              result = r.result;
+              judgeReason = r.reason;
             }
           } else {
-            const llmResult = await judgWithLLM(game, base44);
-            result = llmResult.result;
-            judgeReason = llmResult.reason;
+            const r = await judgeWithLLM(game, base44);
+            result = r.result;
+            judgeReason = r.reason;
           }
         } else {
           judgeReason = 'Manually set by admin';
@@ -64,68 +61,77 @@ Deno.serve(async (req) => {
         // Get all confirmed bets
         const allBets = await base44.asServiceRole.entities.GameBet.filter({
           game_id: game.id,
-          status: 'confirmed'
+          status: 'confirmed',
         });
 
         const winners = allBets.filter(b => b.side === result);
         const losers = allBets.filter(b => b.side !== result);
 
-        // Calculate payouts
         const totalPool = allBets.reduce((s, b) => s + b.amount_kas, 0);
         const winnerPool = winners.reduce((s, b) => s + b.amount_kas, 0);
         const loserPool = losers.reduce((s, b) => s + b.amount_kas, 0);
 
-        console.log(`Pool: total=${totalPool}, winners=${winnerPool} (${winners.length}), losers=${loserPool} (${losers.length})`);
+        console.log(`Pool: total=${totalPool}, winners=${winnerPool}(${winners.length}), losers=${loserPool}(${losers.length})`);
+
+        const txHashes = [];
 
         if (result === 'push' || allBets.length === 0) {
           // Refund everyone
           for (const bet of allBets) {
+            const txHash = await sendPayout(base44, game, bet.user_wallet_address, bet.amount_kas);
             await base44.asServiceRole.entities.GameBet.update(bet.id, {
               status: 'refunded',
-              payout_kas: bet.amount_kas
+              payout_kas: bet.amount_kas,
+              tx_hash_out: txHash || '',
             });
+            if (txHash) txHashes.push(txHash);
           }
         } else if (winners.length > 0) {
-          // Winners split the ENTIRE pool proportionally to their bet size
-          // payout = (my_bet / total_winner_bets) * total_pool * (1 - fee)
-          const feeFraction = 0.02; // 2% platform fee
+          // Winners split entire pool proportionally (minus 2% fee)
+          const feeFraction = 0.02;
           const distributable = totalPool * (1 - feeFraction);
 
           for (const winner of winners) {
             const share = winnerPool > 0 ? (winner.amount_kas / winnerPool) * distributable : 0;
-            const profit = share - winner.amount_kas;
+            const payout = parseFloat(share.toFixed(4));
+
+            const txHash = await sendPayout(base44, game, winner.user_wallet_address, payout);
 
             await base44.asServiceRole.entities.GameBet.update(winner.id, {
               status: 'won',
-              payout_kas: parseFloat(share.toFixed(4))
+              payout_kas: payout,
+              tx_hash_out: txHash || '',
             });
-            console.log(`Winner ${winner.user_wallet_address.slice(0,8)}: bet=${winner.amount_kas}, payout=${share.toFixed(4)}, profit=${profit.toFixed(4)}`);
+            if (txHash) txHashes.push(txHash);
+            console.log(`Winner ${winner.user_wallet_address.slice(0, 8)}: bet=${winner.amount_kas}, payout=${payout}, tx=${txHash || 'none'}`);
           }
 
-          // Mark losers
           for (const loser of losers) {
             await base44.asServiceRole.entities.GameBet.update(loser.id, {
               status: 'lost',
-              payout_kas: 0
+              payout_kas: 0,
             });
           }
         } else {
           // No winners — refund all
           for (const bet of allBets) {
+            const txHash = await sendPayout(base44, game, bet.user_wallet_address, bet.amount_kas);
             await base44.asServiceRole.entities.GameBet.update(bet.id, {
               status: 'refunded',
-              payout_kas: bet.amount_kas
+              payout_kas: bet.amount_kas,
+              tx_hash_out: txHash || '',
             });
+            if (txHash) txHashes.push(txHash);
           }
           judgeReason += ' (No winners — all refunded)';
         }
 
-        // Update game as settled
         await base44.asServiceRole.entities.PredictionGame.update(game.id, {
           status: 'settled',
           result,
           judge_reason: judgeReason,
-          bot_status: 'ready'
+          bot_status: 'ready',
+          settlement_tx_hashes: txHashes,
         });
 
         settlements.push({
@@ -136,15 +142,13 @@ Deno.serve(async (req) => {
           total_pool: totalPool,
           winners: winners.length,
           losers: losers.length,
-          winner_pool: winnerPool,
-          loser_pool: loserPool
+          tx_hashes: txHashes,
         });
-
       } catch (gameError) {
         console.error(`Settlement failed for game ${game.game_number}:`, gameError.message);
         await base44.asServiceRole.entities.PredictionGame.update(game.id, {
           bot_status: 'error',
-          judge_reason: `Settlement error: ${gameError.message}`
+          judge_reason: `Settlement error: ${gameError.message}`,
         });
         settlements.push({ game_id: game.id, error: gameError.message });
       }
@@ -157,60 +161,86 @@ Deno.serve(async (req) => {
   }
 });
 
+// Send payout from game escrow to winner's wallet
+async function sendPayout(base44, game, recipientAddress, amountKas) {
+  if (!game.escrow_mnemonic || !amountKas || amountKas <= 0) {
+    console.log(`Skipping payout: no mnemonic or amount=${amountKas}`);
+    return null;
+  }
+
+  const toAddr = recipientAddress.startsWith('kaspa:') ? recipientAddress : `kaspa:${recipientAddress}`;
+  const fromAddr = game.escrow_address.startsWith('kaspa:') ? game.escrow_address : `kaspa:${game.escrow_address}`;
+
+  try {
+    const res = await base44.asServiceRole.functions.invoke('sendKaspaTransaction', {
+      mnemonic: game.escrow_mnemonic,
+      fromAddress: fromAddr,
+      toAddress: toAddr,
+      amountKas: amountKas,
+    });
+
+    if (res?.data?.error) {
+      console.error(`Payout failed to ${recipientAddress.slice(0, 12)}: ${res.data.error}`);
+      return null;
+    }
+
+    const txId = res?.data?.txId || '';
+    console.log(`Payout ${amountKas} KAS to ${recipientAddress.slice(0, 12)} | TX: ${txId}`);
+    return txId;
+  } catch (err) {
+    console.error(`Payout exception to ${recipientAddress.slice(0, 12)}:`, err.message);
+    return null;
+  }
+}
+
 // Judge crypto games by fetching current price from CoinGecko
-async function judgeCryptoGame(game, base44) {
-  // Extract coin id from source_data like "CoinGecko bitcoin price at $85,000 | 24h: 2.5%"
+async function judgeCryptoGame(game) {
   const sourceMatch = game.source_data?.match(/CoinGecko (\w+) price/);
   const coinId = sourceMatch?.[1];
-  
   if (!coinId) throw new Error('Could not extract coin ID from source_data');
 
-  // Extract target price from question like "Will BTC be above $85,000 in 15 min?"
   const priceMatch = game.question.match(/\$([0-9,.]+)/);
   if (!priceMatch) throw new Error('Could not extract target price from question');
   const targetPrice = parseFloat(priceMatch[1].replace(/,/g, ''));
 
-  // Fetch current price
   const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`);
   const data = await res.json();
   const currentPrice = data[coinId]?.usd;
-
   if (!currentPrice) throw new Error(`No price data for ${coinId}`);
 
   const isAbove = currentPrice > targetPrice;
-  
+
   return {
     result: isAbove ? 'yes' : 'no',
-    reason: `${coinId.toUpperCase()} price at settlement: $${currentPrice.toLocaleString()} vs target $${targetPrice.toLocaleString()} → ${isAbove ? 'ABOVE' : 'AT OR BELOW'}`
+    reason: `${coinId.toUpperCase()} at settlement: $${currentPrice.toLocaleString()} vs target $${targetPrice.toLocaleString()} → ${isAbove ? 'ABOVE' : 'AT OR BELOW'}`,
   };
 }
 
 // Fallback LLM judge
-async function judgWithLLM(game, base44) {
+async function judgeWithLLM(game, base44) {
   try {
-    const judgeRes = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      prompt: `You are a prediction market judge. Determine the result of this prediction:
-      
+    const r = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      prompt: `You are a prediction market judge. Determine the result:
 Question: "${game.question}"
 Category: ${game.category} / ${game.subcategory}
 Source: ${game.source_data}
-Game started: ${game.start_time}
-Game ended: ${game.end_time}
+Started: ${game.start_time}
+Ended: ${game.end_time}
 
-Based on real-world data available now, what is the result?
-Respond with: {"result": "yes" or "no" or "push", "reason": "brief explanation"}`,
+Based on real-world data, what is the result?
+Respond: {"result": "yes" or "no" or "push", "reason": "brief explanation"}`,
       add_context_from_internet: true,
       model: 'gemini_3_flash',
       response_json_schema: {
-        type: "object",
+        type: 'object',
         properties: {
-          result: { type: "string", enum: ["yes", "no", "push"] },
-          reason: { type: "string" }
+          result: { type: 'string', enum: ['yes', 'no', 'push'] },
+          reason: { type: 'string' },
         },
-        required: ["result", "reason"]
-      }
+        required: ['result', 'reason'],
+      },
     });
-    return { result: judgeRes.result, reason: judgeRes.reason };
+    return { result: r.result, reason: r.reason };
   } catch (e) {
     console.error('Judge LLM failed:', e.message);
     return { result: 'push', reason: 'Judge error — refunding all bets' };

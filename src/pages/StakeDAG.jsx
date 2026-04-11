@@ -169,7 +169,7 @@ export default function StakeDAGPage() {
   const openBetModal = (game, side) => {
     if (!walletAddress) { setShowSettings(true); toast.error('Connect wallet first'); return; }
     const isVerified = localStorage.getItem('kaching_verified') === 'true';
-    if (!isVerified) { setShowSettings(true); toast.error('Verify your PIN first'); return; }
+    if (!isVerified) { setShowSettings(true); toast.error('Verify your PIN in settings first'); return; }
     setBetModal({ game, side });
   };
 
@@ -422,6 +422,22 @@ export default function StakeDAGPage() {
         walletBalance={walletBalance}
         onConnectWallet={connectWallet}
         onDisconnectWallet={disconnectWallet}
+        onAutoSignChange={(v) => {
+          if (v) {
+            // Auto-connect linked wallet address
+            try {
+              const linked = localStorage.getItem('kaching_linked_wallet');
+              const wallets = JSON.parse(localStorage.getItem('terra_wallets') || '[]');
+              const w = wallets.find(w => w.address === linked && w.mnemonic);
+              if (w) {
+                const clean = w.address.startsWith('kaspa:') ? w.address.slice(6) : w.address;
+                setWalletAddress(clean);
+                localStorage.setItem('stakedag_wallet', clean);
+                fetchBalance(clean);
+              }
+            } catch {}
+          }
+        }}
       />
       </>}
     </div>

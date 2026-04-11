@@ -1,23 +1,48 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Wallet, Lock, Copy, Check, Shield, Eye, EyeOff } from "lucide-react";
+import { X, Wallet, Lock, Copy, Check, Shield, Eye, EyeOff, Zap, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
-export default function KaChingSettings({ show, onClose, walletAddress, onConnectWallet, onDisconnectWallet, walletBalance }) {
+export default function KaChingSettings({ show, onClose, walletAddress, onConnectWallet, onDisconnectWallet, walletBalance, onAutoSignChange }) {
   const [manualAddr, setManualAddr] = useState("");
   const [pin, setPin] = useState("");
   const [storedPin, setStoredPin] = useState("");
   const [pinVisible, setPinVisible] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [gameAddress, setGameAddress] = useState("");
   const [verified, setVerified] = useState(false);
+  const [autoSign, setAutoSign] = useState(false);
+  const [linkedWallet, setLinkedWallet] = useState(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('kaching_pin');
     if (saved) setStoredPin(saved);
     const savedVerified = localStorage.getItem('kaching_verified');
     if (savedVerified === 'true') setVerified(true);
+    const savedAutoSign = localStorage.getItem('kaching_autosign');
+    if (savedAutoSign === 'true') setAutoSign(true);
+    loadLinkedWallet();
   }, []);
+
+  const loadLinkedWallet = () => {
+    // Check Terra wallets in localStorage
+    try {
+      const terraWallets = JSON.parse(localStorage.getItem('terra_wallets') || '[]');
+      const linked = localStorage.getItem('kaching_linked_wallet');
+      if (linked) {
+        const wallet = terraWallets.find(w => w.address === linked);
+        if (wallet && wallet.mnemonic) {
+          setLinkedWallet(wallet);
+          return;
+        }
+      }
+      // Auto-link first wallet with mnemonic
+      const withMnemonic = terraWallets.find(w => w.mnemonic);
+      if (withMnemonic) {
+        setLinkedWallet(withMnemonic);
+        localStorage.setItem('kaching_linked_wallet', withMnemonic.address);
+      }
+    } catch {}
+  };
 
   const savePin = () => {
     if (pin.length < 4) { toast.error('PIN must be at least 4 digits'); return; }
@@ -30,11 +55,35 @@ export default function KaChingSettings({ show, onClose, walletAddress, onConnec
     if (!storedPin) { toast.error('Set your PIN first'); return; }
     if (pin !== storedPin) { toast.error('Wrong PIN'); return; }
     if (!walletAddress) { toast.error('Connect wallet first'); return; }
-    
     setVerified(true);
     localStorage.setItem('kaching_verified', 'true');
-    toast.success('Verified! You can now bet seamlessly.');
+    toast.success('Verified! Betting enabled.');
     onClose();
+  };
+
+  const toggleAutoSign = () => {
+    if (!linkedWallet?.mnemonic) {
+      toast.error('No Terra wallet with seed phrase found. Import one in Terra first.');
+      return;
+    }
+    if (!verified) {
+      toast.error('Verify your PIN first');
+      return;
+    }
+    const newVal = !autoSign;
+    setAutoSign(newVal);
+    localStorage.setItem('kaching_autosign', newVal ? 'true' : 'false');
+    if (newVal) {
+      // Connect the linked wallet address too
+      if (linkedWallet.address && !walletAddress) {
+        const clean = linkedWallet.address.startsWith('kaspa:') ? linkedWallet.address.slice(6) : linkedWallet.address;
+        onConnectWallet(clean);
+      }
+      toast.success('Auto-Sign ON — bets send real KAS instantly');
+    } else {
+      toast.success('Auto-Sign OFF');
+    }
+    onAutoSignChange?.(newVal);
   };
 
   const copyAddress = () => {
@@ -46,6 +95,11 @@ export default function KaChingSettings({ show, onClose, walletAddress, onConnec
   };
 
   if (!show) return null;
+
+  const terraWallets = (() => {
+    try { return JSON.parse(localStorage.getItem('terra_wallets') || '[]'); } catch { return []; }
+  })();
+  const walletsWithMnemonic = terraWallets.filter(w => w.mnemonic);
 
   return (
     <AnimatePresence>
@@ -61,7 +115,7 @@ export default function KaChingSettings({ show, onClose, walletAddress, onConnec
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 40, opacity: 0 }}
           onClick={e => e.stopPropagation()}
-          className="bg-zinc-950 border border-emerald-500/30 rounded-2xl p-5 w-full max-w-sm max-h-[80vh] overflow-y-auto"
+          className="bg-zinc-950 border border-emerald-500/30 rounded-2xl p-5 w-full max-w-sm max-h-[85vh] overflow-y-auto"
         >
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
@@ -131,7 +185,7 @@ export default function KaChingSettings({ show, onClose, walletAddress, onConnec
           {/* PIN Setup */}
           <div className="mb-5">
             <p className="text-white/40 text-[10px] uppercase tracking-widest font-semibold mb-2">Security PIN</p>
-            <p className="text-white/25 text-[10px] mb-2">Set a PIN to verify bets without signing every time</p>
+            <p className="text-white/25 text-[10px] mb-2">Set a PIN to verify bets</p>
             <div className="flex gap-2 mb-2">
               <div className="relative flex-1">
                 <input
@@ -152,35 +206,109 @@ export default function KaChingSettings({ show, onClose, walletAddress, onConnec
                 </button>
               )}
             </div>
+            {storedPin && !verified && (
+              <button
+                onClick={verifyAndJoin}
+                className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl text-black font-black text-sm shadow-lg shadow-emerald-500/20 mt-2"
+              >
+                Verify PIN & Enable Betting
+              </button>
+            )}
             {storedPin && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 mt-1">
                 <Lock className="w-3 h-3 text-emerald-400" />
-                <span className="text-emerald-400/60 text-[10px]">PIN set</span>
-                <button onClick={() => { setStoredPin(''); localStorage.removeItem('kaching_pin'); setVerified(false); localStorage.removeItem('kaching_verified'); toast.success('PIN cleared'); }} className="text-red-400/50 text-[10px] hover:text-red-400 ml-auto">
+                <span className="text-emerald-400/60 text-[10px]">PIN set {verified && '· Verified ✓'}</span>
+                <button onClick={() => { setStoredPin(''); setPin(''); localStorage.removeItem('kaching_pin'); setVerified(false); setAutoSign(false); localStorage.removeItem('kaching_verified'); localStorage.removeItem('kaching_autosign'); toast.success('PIN cleared'); }} className="text-red-400/50 text-[10px] hover:text-red-400 ml-auto">
                   Reset
                 </button>
               </div>
             )}
           </div>
 
-          {/* Verify & Join */}
-          {storedPin && walletAddress && !verified && (
-            <div className="mb-5">
-              <p className="text-white/40 text-[10px] uppercase tracking-widest font-semibold mb-2">Verify Session</p>
-              <p className="text-white/25 text-[10px] mb-2">Enter your PIN to enable seamless betting</p>
-              <button
-                onClick={verifyAndJoin}
-                className="w-full py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl text-black font-black text-sm shadow-lg shadow-emerald-500/20"
-              >
-                Verify & Join Games
-              </button>
+          {/* Auto-Sign Toggle */}
+          <div className="mb-5">
+            <p className="text-white/40 text-[10px] uppercase tracking-widest font-semibold mb-2">Auto-Sign (Instant Bets)</p>
+            <p className="text-white/25 text-[10px] mb-3">
+              When ON, clicking YES/NO sends real KAS instantly from your linked Terra wallet to the game escrow. No extra confirmation needed.
+            </p>
+
+            <button
+              onClick={toggleAutoSign}
+              className={`w-full flex items-center justify-between p-3.5 rounded-xl border transition-all ${
+                autoSign
+                  ? 'bg-emerald-500/15 border-emerald-500/40'
+                  : 'bg-white/[0.03] border-white/[0.08] hover:border-white/15'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Zap className={`w-5 h-5 ${autoSign ? 'text-emerald-400' : 'text-white/30'}`} />
+                <div className="text-left">
+                  <p className={`text-sm font-bold ${autoSign ? 'text-emerald-400' : 'text-white/60'}`}>
+                    Auto-Sign {autoSign ? 'ON' : 'OFF'}
+                  </p>
+                  <p className="text-white/25 text-[9px]">
+                    {autoSign ? 'Real KAS transactions on every bet' : 'Enable to send KAS instantly'}
+                  </p>
+                </div>
+              </div>
+              <div className={`w-11 h-6 rounded-full flex items-center transition-all ${autoSign ? 'bg-emerald-500 justify-end' : 'bg-white/10 justify-start'}`}>
+                <div className={`w-5 h-5 rounded-full mx-0.5 transition-all ${autoSign ? 'bg-white' : 'bg-white/40'}`} />
+              </div>
+            </button>
+
+            {/* Linked wallet info */}
+            {linkedWallet && (
+              <div className="mt-2 px-3 py-2 bg-white/[0.03] border border-white/[0.06] rounded-lg">
+                <p className="text-white/30 text-[9px] mb-1">Linked Terra Wallet</p>
+                <p className="text-white/50 text-[10px] font-mono truncate">{linkedWallet.address}</p>
+                <p className="text-white/20 text-[9px] mt-0.5">{linkedWallet.label || 'Default wallet'}</p>
+              </div>
+            )}
+
+            {!linkedWallet && (
+              <div className="mt-2 flex items-center gap-2 px-3 py-2 bg-amber-500/8 border border-amber-500/15 rounded-lg">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-400/70" />
+                <span className="text-amber-300/60 text-[10px]">No Terra wallet with seed phrase found. Import one in the Terra app first.</span>
+              </div>
+            )}
+
+            {walletsWithMnemonic.length > 1 && (
+              <div className="mt-2 space-y-1">
+                <p className="text-white/30 text-[9px]">Select wallet:</p>
+                {walletsWithMnemonic.map(w => (
+                  <button
+                    key={w.address}
+                    onClick={() => {
+                      setLinkedWallet(w);
+                      localStorage.setItem('kaching_linked_wallet', w.address);
+                      const clean = w.address.startsWith('kaspa:') ? w.address.slice(6) : w.address;
+                      onConnectWallet(clean);
+                      toast.success(`Linked: ${w.label || w.address.slice(0, 12)}...`);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded-lg border text-[10px] font-mono transition-all ${
+                      linkedWallet?.address === w.address
+                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                        : 'bg-white/[0.02] border-white/[0.06] text-white/40 hover:border-white/15'
+                    }`}
+                  >
+                    {w.label || w.address.slice(0, 20)}...
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {verified && autoSign && linkedWallet && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+              <Zap className="w-4 h-4 text-emerald-400" />
+              <span className="text-emerald-300 text-xs font-bold">Ready — bets send real KAS instantly</span>
             </div>
           )}
 
-          {verified && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+          {verified && !autoSign && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-xl">
               <Check className="w-4 h-4 text-emerald-400" />
-              <span className="text-emerald-300 text-xs font-bold">Session verified — seamless betting active</span>
+              <span className="text-white/50 text-xs">Session verified — enable Auto-Sign for instant bets</span>
             </div>
           )}
         </motion.div>
