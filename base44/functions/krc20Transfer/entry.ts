@@ -511,7 +511,25 @@ Deno.serve(async (req) => {
       const p2shAddress = scriptHashToAddress(scriptHash, network);
       console.log(`[krc20] P2SH address: ${p2shAddress}`);
 
-      // 4. Send COMMIT TX — 0.3 KAS to P2SH address
+      // 4. DRY-RUN: Test Schnorr signing BEFORE sending any KAS
+      //    This prevents wasting 0.3 KAS on commit if reveal signing will fail
+      console.log(`[krc20] Testing Schnorr signing before commit...`);
+      try {
+        const testMsg = new Uint8Array(32); // dummy 32-byte message
+        const testPrivBytes = new Uint8Array(32);
+        for (let i = 0; i < 64; i += 2) testPrivBytes[i / 2] = parseInt(privateKey.substr(i, 2), 16);
+        const testSig = schnorr.sign(testMsg, testPrivBytes);
+        if (!testSig || testSig.length !== 64) throw new Error('Schnorr signing produced invalid signature');
+        console.log(`[krc20] ✓ Schnorr signing dry-run passed`);
+      } catch (signErr) {
+        console.error(`[krc20] ✗ Schnorr signing dry-run FAILED:`, signErr.message);
+        return Response.json({
+          success: false,
+          error: `Signing test failed — commit TX NOT sent (no KAS wasted). Error: ${signErr.message}`,
+        }, { status: 400 });
+      }
+
+      // 5. Send COMMIT TX — 0.3 KAS to P2SH address
       console.log(`[krc20] Sending commit TX: ${COMMIT_AMOUNT_KAS} KAS to ${p2shAddress}`);
       
       const commitResult = await base44.asServiceRole.functions.invoke('sendKaspaTransaction', {
