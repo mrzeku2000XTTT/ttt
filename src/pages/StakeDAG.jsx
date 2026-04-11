@@ -151,7 +151,6 @@ export default function StakeDAGPage() {
     const interval = setInterval(() => {
       loadGames(true);
       if (user?.email) loadUserBets(user.email);
-      verifyDeposits();
     }, 15000);
     return () => clearInterval(interval);
   }, [accessDenied, user]);

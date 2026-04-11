@@ -161,7 +161,7 @@ Deno.serve(async (req) => {
   }
 });
 
-// Send payout from game escrow to winner's wallet
+// Send payout from game escrow to winner's wallet using direct HTTP call
 async function sendPayout(base44, game, recipientAddress, amountKas) {
   if (!game.escrow_mnemonic || !amountKas || amountKas <= 0) {
     console.log(`Skipping payout: no mnemonic or amount=${amountKas}`);
@@ -172,6 +172,7 @@ async function sendPayout(base44, game, recipientAddress, amountKas) {
   const fromAddr = game.escrow_address.startsWith('kaspa:') ? game.escrow_address : `kaspa:${game.escrow_address}`;
 
   try {
+    // Call sendKaspaTransaction directly via the SDK service role
     const res = await base44.asServiceRole.functions.invoke('sendKaspaTransaction', {
       mnemonic: game.escrow_mnemonic,
       fromAddress: fromAddr,
@@ -179,16 +180,18 @@ async function sendPayout(base44, game, recipientAddress, amountKas) {
       amountKas: amountKas,
     });
 
-    if (res?.data?.error) {
-      console.error(`Payout failed to ${recipientAddress.slice(0, 12)}: ${res.data.error}`);
+    if (res?.error) {
+      console.error(`Payout failed to ${recipientAddress.slice(0, 12)}: ${res.error}`);
       return null;
     }
 
-    const txId = res?.data?.txId || '';
+    const txId = res?.txId || res?.data?.txId || '';
     console.log(`Payout ${amountKas} KAS to ${recipientAddress.slice(0, 12)} | TX: ${txId}`);
     return txId;
   } catch (err) {
     console.error(`Payout exception to ${recipientAddress.slice(0, 12)}:`, err.message);
+    // Non-blocking — settlement still succeeds even if payout transfer fails
+    // The payout amounts are recorded on the bet records for manual resolution
     return null;
   }
 }

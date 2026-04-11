@@ -185,14 +185,14 @@ export default function KaChingSettings({ show, onClose, walletAddress, onConnec
           {/* PIN Setup */}
           <div className="mb-5">
             <p className="text-white/40 text-[10px] uppercase tracking-widest font-semibold mb-2">Security PIN</p>
-            <p className="text-white/25 text-[10px] mb-2">Set a PIN to verify bets</p>
+            <p className="text-white/25 text-[10px] mb-2">{!storedPin ? 'Create a PIN to enable betting' : verified ? 'PIN verified' : 'Enter your PIN to verify session'}</p>
             <div className="flex gap-2 mb-2">
               <div className="relative flex-1">
                 <input
                   type={pinVisible ? 'text' : 'password'}
                   value={pin}
                   onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder={storedPin ? '••••' : 'Enter 4-6 digit PIN'}
+                  placeholder={!storedPin ? 'Create 4-6 digit PIN' : 'Enter your PIN'}
                   className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-emerald-500/50 pr-10"
                   maxLength={6}
                 />
@@ -200,20 +200,24 @@ export default function KaChingSettings({ show, onClose, walletAddress, onConnec
                   {pinVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              {!storedPin && (
-                <button onClick={savePin} className="px-3 bg-emerald-500/20 border border-emerald-500/40 rounded-lg text-emerald-300 text-sm font-semibold">
+              {!storedPin ? (
+                <button
+                  onClick={savePin}
+                  disabled={pin.length < 4}
+                  className="px-4 bg-emerald-500/20 border border-emerald-500/40 rounded-lg text-emerald-300 text-sm font-semibold disabled:opacity-30"
+                >
                   Save
                 </button>
-              )}
+              ) : !verified ? (
+                <button
+                  onClick={verifyAndJoin}
+                  disabled={!pin}
+                  className="px-4 bg-emerald-500/20 border border-emerald-500/40 rounded-lg text-emerald-300 text-sm font-semibold disabled:opacity-30"
+                >
+                  Verify
+                </button>
+              ) : null}
             </div>
-            {storedPin && !verified && (
-              <button
-                onClick={verifyAndJoin}
-                className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl text-black font-black text-sm shadow-lg shadow-emerald-500/20 mt-2"
-              >
-                Verify PIN & Enable Betting
-              </button>
-            )}
             {storedPin && (
               <div className="flex items-center gap-2 mt-1">
                 <Lock className="w-3 h-3 text-emerald-400" />
