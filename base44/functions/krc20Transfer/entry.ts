@@ -146,8 +146,18 @@ function writeU64LE(val) {
   return b;
 }
 
+// Kaspa uses KEYED Blake2b for transaction signing hashes
+// Key = b"TransactionSigningHash" (from rusty-kaspa blake2b_hasher! macro)
+const SIGHASH_KEY = new TextEncoder().encode('TransactionSigningHash');
+
 function hashBlake2b(data) {
+  // Plain (unkeyed) blake2b — used for script hashing (P2SH)
   return blake2b(data, { dkLen: 32 });
+}
+
+function hashBlake2bKeyed(data) {
+  // KEYED blake2b — used for ALL sighash computations
+  return blake2b(data, { dkLen: 32, key: SIGHASH_KEY });
 }
 
 // Kaspa transaction IDs are 32-byte hashes used as-is (NO byte reversal unlike Bitcoin)
@@ -162,17 +172,17 @@ function hashPrevOutputs(inputs) {
     parts.push(txIdToBytes(inp.prevTxId));
     parts.push(writeU32LE(inp.prevIndex));
   }
-  return hashBlake2b(concatBytes(...parts));
+  return hashBlake2bKeyed(concatBytes(...parts));
 }
 
 function hashSequences(inputs) {
   const parts = inputs.map(inp => writeU64LE(inp.sequence ?? 0n));
-  return hashBlake2b(concatBytes(...parts));
+  return hashBlake2bKeyed(concatBytes(...parts));
 }
 
 function hashSigOpCounts(inputs) {
   const parts = inputs.map(inp => writeU8(inp.sigOpCount));
-  return hashBlake2b(concatBytes(...parts));
+  return hashBlake2bKeyed(concatBytes(...parts));
 }
 
 function hashOutputs(outputs) {
@@ -183,7 +193,7 @@ function hashOutputs(outputs) {
     parts.push(writeU64LE(BigInt(out.scriptPubKey.length)));
     parts.push(out.scriptPubKey);
   }
-  return hashBlake2b(concatBytes(...parts));
+  return hashBlake2bKeyed(concatBytes(...parts));
 }
 
 /**
@@ -232,7 +242,7 @@ function computeSigHash(tx, inputIndex) {
     writeU8(sighashType),
   );
 
-  return hashBlake2b(message);
+  return hashBlake2bKeyed(message);
 }
 
 function schnorrSign(messageHash, privateKeyHex) {
