@@ -27,6 +27,8 @@ export default function KRC20SendSheet({ onClose, activeWallet, token, onBalance
   const rawBal = parseInt(token?.balance) || 0;
   const humanBal = rawBal / Math.pow(10, dec);
   const hasMnemonic = activeWallet?.mnemonic;
+  const hasPrivateKey = activeWallet?.privateKey;
+  const canSend = hasMnemonic || hasPrivateKey;
 
   const handleKey = (k) => {
     if (k === "⌫") setAmount((a) => a.slice(0, -1));
@@ -43,17 +45,19 @@ export default function KRC20SendSheet({ onClose, activeWallet, token, onBalance
     setStep("sending");
     setErrorMsg("");
     try {
-      if (!hasMnemonic) throw new Error("No seed phrase stored. Import wallet with seed phrase to send KRC-20 tokens.");
+      if (!canSend) throw new Error("No seed phrase or private key stored. Import wallet with seed phrase to send KRC-20 tokens.");
 
-      const res = await base44.functions.invoke("krc20Transfer", {
+      const payload = {
         action: "transfer",
-        mnemonic: activeWallet.mnemonic,
         fromAddress: activeWallet.address,
         toAddress: recipient.trim(),
         amount: amount,
         ticker: tick,
         decimals: dec,
-      });
+      };
+      if (activeWallet.mnemonic) payload.mnemonic = activeWallet.mnemonic;
+      else if (activeWallet.privateKey) payload.privateKey = activeWallet.privateKey;
+      const res = await base44.functions.invoke("krc20Transfer", payload);
 
       if (res.data?.error) throw new Error(res.data.error);
 
@@ -142,10 +146,10 @@ export default function KRC20SendSheet({ onClose, activeWallet, token, onBalance
               ))}
             </div>
 
-            {!hasMnemonic && (
+            {!canSend && (
               <div style={{ background: "rgba(255,149,0,0.08)", border: "1px solid rgba(255,149,0,0.2)", borderRadius: 12, padding: "10px 14px", marginBottom: 12, display: "flex", gap: 8, alignItems: "center" }}>
                 <AlertTriangle size={15} color="#ff9500" />
-                <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 12 }}>No seed phrase stored. Import wallet to send tokens.</span>
+                <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 12 }}>No seed phrase or private key stored. Import wallet to send tokens.</span>
               </div>
             )}
 
