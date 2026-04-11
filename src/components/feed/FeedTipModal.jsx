@@ -391,7 +391,9 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
               <Sparkles className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-white/60">
                 {sendMethod === 'ttt'
-                  ? 'Sent natively via your TTT Wallet (Terra Protocol) — no Kasware needed.'
+                  ? (tipTokenType === 'KRC20'
+                    ? `Native KRC-20 transfer via TTT Wallet — no Kasware needed.`
+                    : 'Sent natively via your TTT Wallet (Terra Protocol) — no Kasware needed.')
                   : 'Tips are sent directly from your Kasware wallet instantly.'}
               </p>
             </div>
