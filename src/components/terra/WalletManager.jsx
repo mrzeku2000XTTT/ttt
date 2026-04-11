@@ -1,10 +1,11 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X, MoreHorizontal, Shield, Trash2, Download, Upload,
-  Copy, Check, Eye, EyeOff, AlertTriangle, ChevronRight, RefreshCw, Plus
+  Copy, Check, Eye, EyeOff, AlertTriangle, ChevronRight, RefreshCw, Plus, Coins, Loader2
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { toast } from "sonner";
 
 const SF = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', sans-serif";
 const ACCENT = "#1a73e8";
@@ -214,6 +215,64 @@ function DeleteConfirmSheet({ wallet, onClose, onDeleted }) {
 
 // ── Wallet Menu Sheet ────────────────────────────────────────────────────────
 function WalletMenuSheet({ wallet, onClose, onBackup, onDelete, onImport }) {
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [rewardStatus, setRewardStatus] = useState(null); // null | 'loading' | 'active' | 'inactive'
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    checkAdmin();
+  }, []);
+
+  const checkAdmin = async () => {
+    try {
+      const user = await base44.auth.me();
+      if (user?.role === 'admin') {
+        setIsAdmin(true);
+        setRewardStatus('loading');
+        const res = await base44.functions.invoke('getPacmanRewardBalance', {});
+        const data = res?.data || res;
+        if (data?.exists && data?.address) {
+          // Check if THIS wallet is the active reward wallet
+          const currentAddr = wallet?.address?.replace('kaspa:', '') || '';
+          const rewardAddr = (data.address || '').replace('kaspa:', '');
+          setRewardStatus(currentAddr === rewardAddr ? 'active' : 'inactive');
+        } else {
+          setRewardStatus('inactive');
+        }
+      }
+    } catch {
+      // not admin or error
+    }
+  };
+
+  const setAsRewardWallet = async () => {
+    if (!wallet?.mnemonic) {
+      toast.error('This wallet has no seed phrase');
+      return;
+    }
+    setSaving(true);
+    try {
+      const addr = wallet.address?.startsWith('kaspa:') ? wallet.address : `kaspa:${wallet.address}`;
+      const res = await base44.functions.invoke('setPacmanRewardWallet', {
+        wallet_name: wallet.label || 'Terra Reward Wallet',
+        kaspa_address: addr,
+        encrypted_mnemonic: wallet.mnemonic,
+      });
+      const data = res?.data || res;
+      if (data?.error) throw new Error(data.error);
+      if (data?.success) {
+        setRewardStatus('active');
+        toast.success('PACMAN reward wallet set!');
+      } else {
+        throw new Error('No success response');
+      }
+    } catch (err) {
+      console.error('setPacmanRewardWallet error:', err);
+      toast.error('Failed: ' + (err.message || 'Unknown error'));
+    }
+    setSaving(false);
+  };
+
   const items = [
     { icon: <Download size={20} color="#34c759" />, label: "Backup Seed Phrase", sub: "View & copy your recovery words", action: onBackup, color: 'rgba(52,199,89,0.1)' },
     { icon: <Upload size={20} color={ACCENT} />, label: "Import Another Wallet", sub: "Add a wallet using seed phrase", action: onImport, color: 'rgba(26,115,232,0.1)' },
@@ -245,6 +304,37 @@ function WalletMenuSheet({ wallet, onClose, onBackup, onDelete, onImport }) {
             <ChevronRight size={16} color="rgba(255,255,255,0.2)" style={{ marginLeft: 'auto' }} />
           </button>
         ))}
+
+        {/* PACMAN Reward Wallet — admin only */}
+        {isAdmin && wallet?.mnemonic && (
+          <div style={{ marginTop: 6 }}>
+            {rewardStatus === 'active' ? (
+              <div style={{ background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.25)', borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 20, background: 'rgba(234,179,8,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Coins size={20} color="#eab308" />
+                </div>
+                <div>
+                  <div style={{ color: '#eab308', fontSize: 14, fontWeight: 700 }}>PACMAN Reward Wallet ✓</div>
+                  <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11, marginTop: 2 }}>This wallet sends PACMAN bonuses to winners</div>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={setAsRewardWallet}
+                disabled={saving || rewardStatus === 'loading'}
+                style={{ width: '100%', background: '#1c1c1e', border: '1px solid rgba(234,179,8,0.25)', borderRadius: 14, padding: '16px', display: 'flex', alignItems: 'center', gap: 14, cursor: saving ? 'default' : 'pointer', textAlign: 'left', opacity: saving ? 0.6 : 1 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 20, background: 'rgba(234,179,8,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {saving ? <Loader2 size={20} color="#eab308" className="animate-spin" /> : <Coins size={20} color="#eab308" />}
+                </div>
+                <div>
+                  <div style={{ color: '#eab308', fontSize: 15, fontWeight: 600 }}>{saving ? 'Setting...' : 'Set as PACMAN Reward Wallet'}</div>
+                  <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12, marginTop: 2 }}>Use this wallet for KRC-20 bonuses</div>
+                </div>
+                <ChevronRight size={16} color="rgba(234,179,8,0.3)" style={{ marginLeft: 'auto' }} />
+              </button>
+            )}
+          </div>
+        )}
       </motion.div>
     </motion.div>
   );

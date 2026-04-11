@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Wallet, Lock, Copy, Check, Shield, Eye, EyeOff, Zap, AlertTriangle, Loader2, Coins } from "lucide-react";
+import { X, Wallet, Lock, Copy, Check, Shield, Eye, EyeOff, Zap, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 
@@ -298,8 +298,7 @@ export default function KaChingSettings({ show, onClose, walletAddress, onConnec
             )}
           </div>
 
-          {/* PACMAN Reward Wallet Section — admin only */}
-          <RewardWalletSection linkedWallet={linkedWallet} />
+
 
           {verified && autoSign && linkedWallet && (
             <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
@@ -317,99 +316,5 @@ export default function KaChingSettings({ show, onClose, walletAddress, onConnec
         </motion.div>
       </motion.div>
     </AnimatePresence>
-  );
-}
-
-function RewardWalletSection({ linkedWallet }) {
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [existingWallet, setExistingWallet] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => { checkStatus(); }, []);
-
-  const checkStatus = async () => {
-    try {
-      const user = await base44.auth.me();
-      if (user?.role !== 'admin') { setLoading(false); return; }
-      setIsAdmin(true);
-      const res = await base44.functions.invoke('getPacmanRewardBalance', {});
-      if (res.data?.exists) {
-        setExistingWallet({ kaspa_address: res.data.address, wallet_name: 'PACMAN Reward Wallet' });
-      }
-    } catch {}
-    setLoading(false);
-  };
-
-  const setAsRewardWallet = async () => {
-    if (!linkedWallet?.mnemonic || !linkedWallet?.address) {
-      toast.error('No Terra wallet with seed phrase linked');
-      return;
-    }
-    setSaving(true);
-    try {
-      const addr = linkedWallet.address.startsWith('kaspa:') ? linkedWallet.address : `kaspa:${linkedWallet.address}`;
-      const res = await base44.functions.invoke('setPacmanRewardWallet', {
-        wallet_name: linkedWallet.label || 'Terra Reward Wallet',
-        kaspa_address: addr,
-        encrypted_mnemonic: linkedWallet.mnemonic,
-      });
-      const data = res?.data || res;
-      if (data?.error) throw new Error(data.error);
-      if (data?.success) {
-        setExistingWallet(data.wallet || { kaspa_address: addr, wallet_name: linkedWallet.label || 'Terra Reward Wallet' });
-        toast.success('PACMAN reward wallet set successfully!');
-      } else {
-        throw new Error('No success response from server');
-      }
-    } catch (err) {
-      console.error('setPacmanRewardWallet error:', err);
-      toast.error('Failed to save: ' + (err.message || 'Unknown error'));
-    }
-    setSaving(false);
-  };
-
-  if (!isAdmin || loading) return null;
-
-  return (
-    <div className="mb-5">
-      <p className="text-white/40 text-[10px] uppercase tracking-widest font-semibold mb-2">PACMAN Reward Wallet</p>
-      {existingWallet ? (
-        <div className="p-3 bg-yellow-500/8 border border-yellow-500/20 rounded-xl space-y-1.5">
-          <div className="flex items-center gap-2">
-            <Coins className="w-4 h-4 text-yellow-400" />
-            <span className="text-yellow-400 text-xs font-bold">Active ✓</span>
-          </div>
-          <p className="text-white/40 text-[9px] font-mono truncate">{existingWallet.kaspa_address}</p>
-          <p className="text-emerald-400/60 text-[9px]">Settlement bot sends PACMAN bonuses from this wallet</p>
-          {linkedWallet?.address && linkedWallet.address !== existingWallet.kaspa_address && linkedWallet.address !== existingWallet.kaspa_address?.replace('kaspa:', '') && (
-            <button
-              onClick={setAsRewardWallet}
-              disabled={saving}
-              className="mt-1 w-full py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/25 rounded-lg text-yellow-400 text-[10px] font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
-            >
-              {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wallet className="w-3 h-3" />}
-              Switch to current Terra wallet
-            </button>
-          )}
-        </div>
-      ) : linkedWallet?.mnemonic ? (
-        <div className="p-3 bg-white/[0.03] border border-white/[0.08] rounded-xl space-y-2">
-          <p className="text-white/30 text-[10px]">Use your linked Terra wallet to distribute PACMAN KRC-20 bonuses to winners.</p>
-          <button
-            onClick={setAsRewardWallet}
-            disabled={saving}
-            className="w-full py-2 bg-yellow-500/15 hover:bg-yellow-500/25 border border-yellow-500/30 rounded-lg text-yellow-400 text-xs font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Coins className="w-3.5 h-3.5" />}
-            Set as PACMAN Reward Wallet
-          </button>
-        </div>
-      ) : (
-        <div className="p-3 bg-white/[0.02] border border-white/[0.06] rounded-xl">
-          <p className="text-white/20 text-[10px]">Link a Terra wallet with seed phrase above to enable PACMAN rewards.</p>
-        </div>
-      )}
-    </div>
   );
 }
