@@ -10,6 +10,7 @@ import BetModal from "@/components/kaching/BetModal";
 import KaChingSettings from "@/components/kaching/KaChingSettings";
 import CategoryTabs from "@/components/kaching/CategoryTabs";
 import GameTimer from "@/components/kaching/GameTimer";
+import { getCurrentRoundEnd, getRemainingMs } from "@/components/kaching/roundClock";
 
 const LOGO_URL = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2c211776c_generated_image.png";
 const ADMIN_GATE = true;
@@ -27,7 +28,6 @@ export default function StakeDAGPage() {
   const [betModal, setBetModal] = useState(null); // { game, side }
   const [user, setUser] = useState(null);
   const [accessDenied, setAccessDenied] = useState(false);
-  const [globalEndTime, setGlobalEndTime] = useState(null);
 
   useEffect(() => { init(); }, []);
 
@@ -51,17 +51,14 @@ export default function StakeDAGPage() {
     } catch { setAccessDenied(true); }
   };
 
+  // The global round end is always the next UTC 15-min boundary — no need for state
+  const globalEndTime = getCurrentRoundEnd().toISOString();
+
   const loadGames = async (silent = false) => {
     if (!silent) setLoading(true);
     try {
       const allGames = await base44.entities.PredictionGame.list('-created_date', 50);
       setGames(allGames);
-      // Find nearest end time for global timer
-      const openGames = allGames.filter(g => g.status === 'open');
-      if (openGames.length > 0) {
-        const nearest = openGames.reduce((min, g) => new Date(g.end_time) < new Date(min.end_time) ? g : min);
-        setGlobalEndTime(nearest.end_time);
-      }
     } catch (err) { console.error('Failed to load games:', err); }
     finally { setLoading(false); }
   };
@@ -205,11 +202,11 @@ export default function StakeDAGPage() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-emerald-500/[0.04] rounded-full blur-[120px]" />
       </div>
 
-      {/* Global Timer Bar */}
-      {globalEndTime && openGames.length > 0 && (
+      {/* Global Timer Bar — always shows countdown to next UTC :00/:15/:30/:45 */}
+      {openGames.length > 0 && (
         <div className="flex-shrink-0 relative z-20 px-4 py-1.5 bg-emerald-500/8 border-b border-emerald-500/15">
           <div className="max-w-4xl mx-auto">
-            <GameTimer endTime={globalEndTime} />
+            <GameTimer />
           </div>
         </div>
       )}

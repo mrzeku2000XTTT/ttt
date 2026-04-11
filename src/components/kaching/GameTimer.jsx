@@ -1,22 +1,31 @@
 import React, { useState, useEffect } from "react";
 import { Clock } from "lucide-react";
+import { getRemainingMs as getGlobalRemaining, ROUND_MS } from "./roundClock";
 
+/**
+ * GameTimer — uses the fixed UTC 15-minute round clock.
+ * If `endTime` is provided, counts down to that specific time.
+ * Otherwise, counts down to the current round boundary.
+ */
 export default function GameTimer({ endTime }) {
-  const [remaining, setRemaining] = useState(getRemainingMs());
-
-  function getRemainingMs() {
-    return Math.max(0, new Date(endTime).getTime() - Date.now());
+  function calcRemaining() {
+    if (endTime) {
+      return Math.max(0, new Date(endTime).getTime() - Date.now());
+    }
+    return getGlobalRemaining();
   }
 
+  const [remaining, setRemaining] = useState(calcRemaining());
+
   useEffect(() => {
-    const interval = setInterval(() => setRemaining(getRemainingMs()), 1000);
+    const interval = setInterval(() => setRemaining(calcRemaining()), 1000);
     return () => clearInterval(interval);
   }, [endTime]);
 
   const totalSecs = Math.floor(remaining / 1000);
   const mins = Math.floor(totalSecs / 60);
   const secs = totalSecs % 60;
-  const pct = Math.max(0, Math.min(100, (remaining / (15 * 60 * 1000)) * 100));
+  const pct = Math.max(0, Math.min(100, (remaining / ROUND_MS) * 100));
   const isUrgent = mins < 2;
 
   return (
