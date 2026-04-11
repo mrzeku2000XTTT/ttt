@@ -14,8 +14,16 @@ const CRYPTO_ICONS = {
   BNB: "https://cryptologos.cc/logos/bnb-bnb-logo.png?v=040",
   DOGE: "https://cryptologos.cc/logos/dogecoin-doge-logo.png?v=040",
   XRP: "https://cryptologos.cc/logos/xrp-xrp-logo.png?v=040",
-  HYPE: "https://cryptologos.cc/logos/hyperliquid-hype-logo.png?v=040",
+  HYPE: "https://dd.dexscreener.com/ds-data/tokens/hyperliquid/0x0000000000000000000000000000000000000000.png",
 };
+
+function CryptoIcon({ ticker, icon }) {
+  const [failed, setFailed] = useState(false);
+  if (icon && !failed) {
+    return <img src={icon} alt={ticker} className="w-8 h-8 rounded-full ring-2 ring-white/10 bg-black object-contain" onError={() => setFailed(true)} />;
+  }
+  return <div className="w-8 h-8 rounded-full bg-violet-500/20 ring-2 ring-violet-500/20 flex items-center justify-center text-xs font-black text-violet-300">{(ticker || '?')[0]}</div>;
+}
 
 export default function LiveGameCard({ game, userBets, onBet }) {
   const [copied, setCopied] = useState(false);
@@ -67,11 +75,7 @@ export default function LiveGameCard({ game, userBets, onBet }) {
           {/* Top row: ticker + price target */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              {icon ? (
-                <img src={icon} alt={ticker} className="w-8 h-8 rounded-full ring-2 ring-white/10" />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-violet-500/20 ring-2 ring-violet-500/20 flex items-center justify-center text-xs font-black text-violet-300">{ticker[0]}</div>
-              )}
+              <CryptoIcon ticker={ticker} icon={icon} />
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-white font-bold text-sm">{ticker}</span>

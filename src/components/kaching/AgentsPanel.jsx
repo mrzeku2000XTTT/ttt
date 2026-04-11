@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import ReactDOM from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bot, Wallet, Copy, Check, RefreshCw, Zap, Power, Send, ChevronDown, ChevronUp, Loader2, Trophy, TrendingUp, X } from "lucide-react";
 import { toast } from "sonner";
@@ -296,10 +297,13 @@ export default function AgentsPanel() {
         ))}
       </div>
 
-      {/* Fund modal */}
-      <AnimatePresence>
-        {fundBot && <FundBotModal bot={fundBot} onClose={handleFundClose} />}
-      </AnimatePresence>
+      {/* Fund modal — portalled to body so it escapes overflow-hidden parents */}
+      {fundBot && ReactDOM.createPortal(
+        <AnimatePresence>
+          <FundBotModal bot={fundBot} onClose={handleFundClose} />
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }
