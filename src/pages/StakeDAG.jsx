@@ -6,6 +6,7 @@ import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import LiveGameCard from "@/components/kaching/LiveGameCard";
+import PacmanRewardPanel from "@/components/kaching/PacmanRewardPanel.jsx";
 import BetModal from "@/components/kaching/BetModal";
 import KaChingSettings from "@/components/kaching/KaChingSettings";
 import GameTimer from "@/components/kaching/GameTimer";
@@ -300,6 +301,8 @@ export default function StakeDAGPage() {
 
           {tab === 'live' && (
             <>
+              {/* PACMAN Reward Wallet */}
+              <PacmanRewardPanel isAdmin={user?.role === 'admin'} />
 
               {loading && games.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-24 gap-4">
