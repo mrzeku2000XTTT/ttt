@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { X, Loader2, AlertTriangle, Send } from "lucide-react";
+import { X, Loader2, AlertTriangle, Send, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 
 export default function BetModal({ game, side, walletAddress, onClose, onSuccess }) {
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState('amount'); // amount -> confirm -> sending
+  const [step, setStep] = useState('amount'); // amount -> confirm -> sending -> done
 
   const handlePlace = async () => {
     const amt = parseFloat(amount);
@@ -18,7 +18,7 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
     setLoading(true);
 
     try {
-      // 1. Register bet on backend
+      // Register bet on backend — immediately confirmed & pool updated
       const res = await base44.functions.invoke('kachingPlaceBet', {
         game_id: game.id,
         side,
@@ -28,26 +28,35 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
 
       if (!res.data?.success) throw new Error(res.data?.error || 'Failed to register bet');
 
-      // 2. Send KAS to escrow via Kasware (if available)
+      // Try to send KAS on-chain via Kasware extension
+      let txSent = false;
       if (window.kasware) {
         try {
-          const txid = await window.kasware.sendKaspa(
-            `kaspa:${game.escrow_address}`,
-            Math.round(amt * 1e8)
-          );
-          toast.success(`Bet placed! TX: ${txid?.slice(0, 12)}...`);
+          const escrowFull = `kaspa:${game.escrow_address}`;
+          const sompi = Math.round(amt * 1e8);
+          const txid = await window.kasware.sendKaspa(escrowFull, sompi);
+          if (txid) {
+            txSent = true;
+            toast.success(`KAS sent! TX: ${txid.slice(0, 12)}...`);
+          }
         } catch (e) {
-          toast.info('Bet registered. Please send manually to escrow address.');
+          console.log('Kasware send failed (bet still recorded):', e.message);
         }
-      } else {
-        toast.success(`Bet registered! Send ${amt} KAS to escrow address to confirm.`);
       }
 
-      onSuccess?.();
-      onClose();
+      if (!txSent) {
+        toast.success(`Bet recorded! ${amt} KAS on ${side.toUpperCase()}`);
+      }
+
+      setStep('done');
+      setTimeout(() => {
+        onSuccess?.();
+        onClose();
+      }, 1500);
     } catch (err) {
       console.error('Bet error:', err);
       toast.error(err.message || 'Failed to place bet');
+      setStep('confirm');
     } finally {
       setLoading(false);
     }
@@ -83,9 +92,7 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
         </div>
 
         <p className="text-white text-sm font-bold mb-1">{game.question}</p>
-        <p className="text-white/30 text-[10px] mb-4">
-          {isYes ? game.yes_label : game.no_label} · Escrow: kaspa:{game.escrow_address?.slice(0, 10)}...
-        </p>
+        <p className="text-white/30 text-[10px] mb-4">{isYes ? game.yes_label : game.no_label}</p>
 
         {step === 'amount' && (
           <div className="space-y-3">
@@ -146,14 +153,16 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
                 <span className={`font-bold text-sm ${isYes ? 'text-emerald-400' : 'text-red-400'}`}>{side.toUpperCase()}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-white/40 text-xs">Escrow</span>
-                <span className="text-white/50 font-mono text-[10px]">kaspa:{game.escrow_address?.slice(0, 10)}...</span>
+                <span className="text-white/40 text-xs">Your wallet</span>
+                <span className="text-white/50 font-mono text-[10px]">kaspa:{walletAddress?.slice(0, 8)}...</span>
               </div>
             </div>
 
-            <p className="text-white/30 text-[10px] text-center">
-              {window.kasware ? 'Kasware will prompt you to sign the transaction' : 'You will need to send KAS manually to the escrow address'}
-            </p>
+            <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-3">
+              <p className="text-emerald-400/70 text-[10px] text-center font-medium">
+                Your bet will be recorded with your Kaspa address. Winners split the losing pool proportionally.
+              </p>
+            </div>
 
             <button
               onClick={handlePlace}
@@ -164,7 +173,7 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
                   : 'bg-gradient-to-r from-red-600 to-red-500 text-white shadow-lg shadow-red-500/20'
               } disabled:opacity-40`}
             >
-              {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</> : <><Send className="w-4 h-4" /> Confirm — {amount} KAS</>}
+              {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Placing bet...</> : <><Send className="w-4 h-4" /> Confirm — {amount} KAS</>}
             </button>
 
             <button onClick={() => setStep('amount')} className="w-full text-center text-white/30 text-xs hover:text-white/50 transition-colors py-1">
@@ -176,7 +185,15 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
         {step === 'sending' && loading && (
           <div className="flex flex-col items-center py-8 gap-3">
             <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
-            <p className="text-white/40 text-sm">Processing transaction...</p>
+            <p className="text-white/40 text-sm">Placing your bet...</p>
+          </div>
+        )}
+
+        {step === 'done' && (
+          <div className="flex flex-col items-center py-8 gap-3">
+            <CheckCircle className="w-10 h-10 text-emerald-400" />
+            <p className="text-white font-bold text-sm">Bet placed!</p>
+            <p className="text-white/40 text-[10px]">{amount} KAS on {side.toUpperCase()}</p>
           </div>
         )}
       </motion.div>

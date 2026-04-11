@@ -1,15 +1,16 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Copy, Check, Users, Zap } from "lucide-react";
+import { Copy, Check, Users, Zap, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import GameTimer from "./GameTimer";
-import { getCurrentRoundEnd } from "./roundClock";
 
 export default function LiveGameCard({ game, userBets, onBet }) {
   const [copied, setCopied] = useState(false);
   const isOpen = game.status === 'open' && new Date(game.end_time) > new Date();
   const isSettled = game.status === 'settled';
-  const userBet = userBets?.find(b => b.game_id === game.id);
+  const myBets = userBets?.filter(b => b.game_id === game.id) || [];
+  const myTotalKas = myBets.reduce((s, b) => s + b.amount_kas, 0);
+  const myWinnings = myBets.reduce((s, b) => s + (b.payout_kas || 0), 0);
 
   const copyGameId = () => {
     navigator.clipboard.writeText(`kaspa:${game.escrow_address}`);
@@ -96,23 +97,36 @@ export default function LiveGameCard({ game, userBets, onBet }) {
         )}
 
         {/* User's bet indicator */}
-        {userBet && (
-          <div className={`mb-3 px-3 py-1.5 rounded-lg border ${
-            userBet.status === 'won' ? 'bg-emerald-500/10 border-emerald-500/25' :
-            userBet.status === 'lost' ? 'bg-red-500/10 border-red-500/25' :
-            'bg-white/5 border-white/10'
-          }`}>
-            <span className="text-white/50 text-[10px]">Your bet: </span>
-            <span className={`text-xs font-bold ${userBet.side === 'yes' ? 'text-emerald-400' : 'text-red-400'}`}>
-              {userBet.side.toUpperCase()} — {userBet.amount_kas} KAS
-            </span>
-            {userBet.status === 'won' && <span className="text-emerald-400 text-xs font-bold ml-2">Won +{userBet.payout_kas?.toFixed(2)} KAS</span>}
-            {userBet.status === 'lost' && <span className="text-red-400 text-xs font-bold ml-2">Lost</span>}
+        {myBets.length > 0 && (
+          <div className="mb-3 space-y-1">
+            {myBets.map(bet => (
+              <div key={bet.id} className={`px-3 py-1.5 rounded-lg border flex items-center justify-between ${
+                bet.status === 'won' ? 'bg-emerald-500/10 border-emerald-500/25' :
+                bet.status === 'lost' ? 'bg-red-500/10 border-red-500/25' :
+                'bg-white/5 border-white/10'
+              }`}>
+                <div>
+                  <span className="text-white/50 text-[10px]">Your bet: </span>
+                  <span className={`text-xs font-bold ${bet.side === 'yes' ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {bet.side.toUpperCase()} — {bet.amount_kas} KAS
+                  </span>
+                </div>
+                <div>
+                  {bet.status === 'won' && <span className="text-emerald-400 text-xs font-bold">+{bet.payout_kas?.toFixed(2)} KAS</span>}
+                  {bet.status === 'lost' && <span className="text-red-400 text-xs font-bold">Lost</span>}
+                  {bet.status === 'confirmed' && <span className="text-blue-400 text-[10px] font-bold">Active</span>}
+                  {bet.status === 'refunded' && <span className="text-amber-400 text-xs font-bold">Refunded {bet.payout_kas?.toFixed(2)} KAS</span>}
+                </div>
+              </div>
+            ))}
+            {myBets.length > 1 && (
+              <div className="text-white/20 text-[9px] text-right">Total wagered: {myTotalKas.toFixed(2)} KAS</div>
+            )}
           </div>
         )}
 
-        {/* Bet buttons */}
-        {isOpen && !userBet && (
+        {/* Bet buttons — always show for open games */}
+        {isOpen && (
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => onBet(game, 'yes')}

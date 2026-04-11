@@ -1,10 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
-import { KaspaWallet } from 'npm:@okxweb3/coin-kaspa@2.4.9';
 
-const KASPA_API = 'https://api.kaspa.org';
-const FEE_SOMPI = 10000;
-
-// Judge + Bot: determines winner, calculates payouts, sends transactions
+// Judge + Settlement: determines winner, calculates payouts
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -25,6 +21,7 @@ Deno.serve(async (req) => {
       games = [...allOpen, ...allLocked].filter(g => new Date(g.end_time) <= new Date());
     }
 
+    console.log(`Settling ${games.length} expired games`);
     const settlements = [];
 
     for (const game of games) {
@@ -35,45 +32,34 @@ Deno.serve(async (req) => {
           bot_status: 'processing'
         });
 
-        // JUDGE AGENT: Determine result from live data
+        // JUDGE: Determine result
         let result = force_result;
         let judgeReason = '';
 
         if (!result) {
-          // Use LLM to judge based on real data
-          const judgePrompt = `You are a prediction market judge. Determine the result of this prediction:
-          
-Question: "${game.question}"
-Category: ${game.category} / ${game.subcategory}
-Source: ${game.source_data}
-Game started: ${game.start_time}
-Game ended: ${game.end_time}
-
-Based on real-world data available at the end time, what is the result?
-You MUST respond with valid JSON only: {"result": "yes" or "no" or "push", "reason": "brief explanation"}`;
-
-          try {
-            const judgeRes = await base44.asServiceRole.integrations.Core.InvokeLLM({
-              prompt: judgePrompt,
-              add_context_from_internet: true,
-              model: 'gemini_3_flash',
-              response_json_schema: {
-                type: "object",
-                properties: {
-                  result: { type: "string", enum: ["yes", "no", "push"] },
-                  reason: { type: "string" }
-                },
-                required: ["result", "reason"]
-              }
-            });
-            result = judgeRes.result;
-            judgeReason = judgeRes.reason;
-          } catch (e) {
-            console.error('Judge LLM failed:', e.message);
-            result = 'push'; // Default to push if judge fails
-            judgeReason = 'Judge error - refunding all bets';
+          // For crypto games, fetch current price from CoinGecko and compare
+          if (game.category === 'Crypto' && game.source_data) {
+            try {
+              result = await judgeCryptoGame(game, base44);
+              judgeReason = result.reason;
+              result = result.result;
+            } catch (e) {
+              console.error('Crypto judge failed:', e.message);
+              // Fallback to LLM
+              const llmResult = await judgWithLLM(game, base44);
+              result = llmResult.result;
+              judgeReason = llmResult.reason;
+            }
+          } else {
+            const llmResult = await judgWithLLM(game, base44);
+            result = llmResult.result;
+            judgeReason = llmResult.reason;
           }
+        } else {
+          judgeReason = 'Manually set by admin';
         }
+
+        console.log(`Game #${game.game_number}: result=${result}, reason=${judgeReason}`);
 
         // Get all confirmed bets
         const allBets = await base44.asServiceRole.entities.GameBet.filter({
@@ -82,72 +68,38 @@ You MUST respond with valid JSON only: {"result": "yes" or "no" or "push", "reas
         });
 
         const winners = allBets.filter(b => b.side === result);
-        const losers = allBets.filter(b => b.side !== result && b.side !== result);
-        
+        const losers = allBets.filter(b => b.side !== result);
+
         // Calculate payouts
         const totalPool = allBets.reduce((s, b) => s + b.amount_kas, 0);
         const winnerPool = winners.reduce((s, b) => s + b.amount_kas, 0);
-        
-        // Get escrow wallet credentials
-        const escrowAddress = `kaspa:${game.escrow_address}`;
-        const privateKey = game.escrow_private_key;
+        const loserPool = losers.reduce((s, b) => s + b.amount_kas, 0);
 
-        if (!privateKey) {
-          throw new Error('Escrow private key not found');
-        }
+        console.log(`Pool: total=${totalPool}, winners=${winnerPool} (${winners.length}), losers=${loserPool} (${losers.length})`);
 
-        // Check escrow balance
-        const balRes = await fetch(`${KASPA_API}/addresses/${escrowAddress}/balance`);
-        const balData = await balRes.json();
-        const escrowBalanceSompi = balData?.balance || 0;
-
-        const txHashes = [];
-
-        if (result === 'push') {
+        if (result === 'push' || allBets.length === 0) {
           // Refund everyone
           for (const bet of allBets) {
-            try {
-              const refundResult = await sendFromEscrow(
-                privateKey, escrowAddress, `kaspa:${bet.user_wallet_address}`,
-                bet.amount_kas
-              );
-              if (refundResult.success) {
-                txHashes.push(refundResult.txId);
-                await base44.asServiceRole.entities.GameBet.update(bet.id, {
-                  status: 'refunded',
-                  payout_kas: bet.amount_kas,
-                  tx_hash_out: refundResult.txId
-                });
-              }
-            } catch (e) { console.error('Refund failed for bet', bet.id, e.message); }
+            await base44.asServiceRole.entities.GameBet.update(bet.id, {
+              status: 'refunded',
+              payout_kas: bet.amount_kas
+            });
           }
-        } else if (winners.length > 0 && totalPool > 0) {
-          // Pay winners proportionally from total pool
-          // Each winner gets: (their_bet / total_winner_bets) * total_pool
+        } else if (winners.length > 0) {
+          // Winners split the ENTIRE pool proportionally to their bet size
+          // payout = (my_bet / total_winner_bets) * total_pool * (1 - fee)
           const feeFraction = 0.02; // 2% platform fee
           const distributable = totalPool * (1 - feeFraction);
-          
+
           for (const winner of winners) {
             const share = winnerPool > 0 ? (winner.amount_kas / winnerPool) * distributable : 0;
-            if (share <= 0.0001) continue; // Skip dust
+            const profit = share - winner.amount_kas;
 
-            try {
-              // Wait briefly between transactions to allow UTXO confirmation
-              await new Promise(r => setTimeout(r, 2000));
-              
-              const payResult = await sendFromEscrow(
-                privateKey, escrowAddress, `kaspa:${winner.user_wallet_address}`,
-                share
-              );
-              if (payResult.success) {
-                txHashes.push(payResult.txId);
-                await base44.asServiceRole.entities.GameBet.update(winner.id, {
-                  status: 'won',
-                  payout_kas: share,
-                  tx_hash_out: payResult.txId
-                });
-              }
-            } catch (e) { console.error('Payout failed for bet', winner.id, e.message); }
+            await base44.asServiceRole.entities.GameBet.update(winner.id, {
+              status: 'won',
+              payout_kas: parseFloat(share.toFixed(4))
+            });
+            console.log(`Winner ${winner.user_wallet_address.slice(0,8)}: bet=${winner.amount_kas}, payout=${share.toFixed(4)}, profit=${profit.toFixed(4)}`);
           }
 
           // Mark losers
@@ -157,24 +109,15 @@ You MUST respond with valid JSON only: {"result": "yes" or "no" or "push", "reas
               payout_kas: 0
             });
           }
-        } else if (winners.length === 0) {
-          // No winners — refund everyone (no valid result)
+        } else {
+          // No winners — refund all
           for (const bet of allBets) {
-            try {
-              const refundResult = await sendFromEscrow(
-                privateKey, escrowAddress, `kaspa:${bet.user_wallet_address}`,
-                bet.amount_kas
-              );
-              if (refundResult.success) {
-                txHashes.push(refundResult.txId);
-                await base44.asServiceRole.entities.GameBet.update(bet.id, {
-                  status: 'refunded',
-                  payout_kas: bet.amount_kas,
-                  tx_hash_out: refundResult.txId
-                });
-              }
-            } catch (e) { console.error('Refund failed:', e.message); }
+            await base44.asServiceRole.entities.GameBet.update(bet.id, {
+              status: 'refunded',
+              payout_kas: bet.amount_kas
+            });
           }
+          judgeReason += ' (No winners — all refunded)';
         }
 
         // Update game as settled
@@ -182,7 +125,6 @@ You MUST respond with valid JSON only: {"result": "yes" or "no" or "push", "reas
           status: 'settled',
           result,
           judge_reason: judgeReason,
-          settlement_tx_hashes: txHashes,
           bot_status: 'ready'
         });
 
@@ -191,10 +133,11 @@ You MUST respond with valid JSON only: {"result": "yes" or "no" or "push", "reas
           game_number: game.game_number,
           result,
           reason: judgeReason,
+          total_pool: totalPool,
           winners: winners.length,
           losers: losers.length,
-          total_pool: totalPool,
-          tx_count: txHashes.length
+          winner_pool: winnerPool,
+          loser_pool: loserPool
         });
 
       } catch (gameError) {
@@ -214,56 +157,62 @@ You MUST respond with valid JSON only: {"result": "yes" or "no" or "push", "reas
   }
 });
 
-async function sendFromEscrow(privateKey, fromAddress, toAddress, amountKas) {
-  const wallet = new KaspaWallet();
-  const amountSompi = Math.round(amountKas * 1e8);
+// Judge crypto games by fetching current price from CoinGecko
+async function judgeCryptoGame(game, base44) {
+  // Extract coin id from source_data like "CoinGecko bitcoin price at $85,000 | 24h: 2.5%"
+  const sourceMatch = game.source_data?.match(/CoinGecko (\w+) price/);
+  const coinId = sourceMatch?.[1];
   
-  // Fetch UTXOs
-  const utxoRes = await fetch(`${KASPA_API}/addresses/${fromAddress}/utxos`);
-  const utxos = await utxoRes.json();
-  if (!utxos?.length) throw new Error('No UTXOs in escrow');
+  if (!coinId) throw new Error('Could not extract coin ID from source_data');
 
-  const needed = amountSompi + FEE_SOMPI;
-  let totalIn = 0;
-  const selected = [];
-  utxos.sort((a, b) => Number(b.utxoEntry.amount) - Number(a.utxoEntry.amount));
-  for (const u of utxos) {
-    if (totalIn >= needed) break;
-    if (selected.length >= 80) break;
-    selected.push(u);
-    totalIn += Number(u.utxoEntry.amount);
+  // Extract target price from question like "Will BTC be above $85,000 in 15 min?"
+  const priceMatch = game.question.match(/\$([0-9,.]+)/);
+  if (!priceMatch) throw new Error('Could not extract target price from question');
+  const targetPrice = parseFloat(priceMatch[1].replace(/,/g, ''));
+
+  // Fetch current price
+  const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`);
+  const data = await res.json();
+  const currentPrice = data[coinId]?.usd;
+
+  if (!currentPrice) throw new Error(`No price data for ${coinId}`);
+
+  const isAbove = currentPrice > targetPrice;
+  
+  return {
+    result: isAbove ? 'yes' : 'no',
+    reason: `${coinId.toUpperCase()} price at settlement: $${currentPrice.toLocaleString()} vs target $${targetPrice.toLocaleString()} → ${isAbove ? 'ABOVE' : 'AT OR BELOW'}`
+  };
+}
+
+// Fallback LLM judge
+async function judgWithLLM(game, base44) {
+  try {
+    const judgeRes = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      prompt: `You are a prediction market judge. Determine the result of this prediction:
+      
+Question: "${game.question}"
+Category: ${game.category} / ${game.subcategory}
+Source: ${game.source_data}
+Game started: ${game.start_time}
+Game ended: ${game.end_time}
+
+Based on real-world data available now, what is the result?
+Respond with: {"result": "yes" or "no" or "push", "reason": "brief explanation"}`,
+      add_context_from_internet: true,
+      model: 'gemini_3_flash',
+      response_json_schema: {
+        type: "object",
+        properties: {
+          result: { type: "string", enum: ["yes", "no", "push"] },
+          reason: { type: "string" }
+        },
+        required: ["result", "reason"]
+      }
+    });
+    return { result: judgeRes.result, reason: judgeRes.reason };
+  } catch (e) {
+    console.error('Judge LLM failed:', e.message);
+    return { result: 'push', reason: 'Judge error — refunding all bets' };
   }
-  if (totalIn < needed) throw new Error(`Insufficient escrow balance: need ${needed/1e8}, have ${totalIn/1e8}`);
-
-  const change = totalIn - amountSompi - FEE_SOMPI;
-  const inputs = selected.map(u => ({
-    txId: u.outpoint.transactionId,
-    vOut: u.outpoint.index,
-    address: fromAddress,
-    amount: Number(u.utxoEntry.amount),
-  }));
-  const outputs = [{ address: toAddress, amount: amountSompi }];
-  if (change > 0) outputs.push({ address: fromAddress, amount: change });
-
-  const signResult = await wallet.signTransaction({
-    data: { inputs, outputs, address: fromAddress, fee: FEE_SOMPI },
-    privateKey,
-  });
-
-  const signed = typeof signResult === 'string' ? JSON.parse(signResult) : signResult;
-  const rawTx = signed.transaction ?? signed.tx ?? signed;
-
-  const submitRes = await fetch(`${KASPA_API}/transactions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ transaction: rawTx, allowOrphan: false }),
-  });
-
-  if (!submitRes.ok) {
-    const txt = await submitRes.text();
-    throw new Error(`Submit failed: ${txt.slice(0, 200)}`);
-  }
-
-  const submitData = await submitRes.json().catch(() => ({}));
-  return { success: true, txId: submitData.transactionId || submitData.txid || 'submitted' };
 }
