@@ -287,11 +287,23 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
               size="sm"
               className={`flex-1 ${tipTokenType === 'KAS' ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white'}`}
             >KAS</Button>
-            <Button
-              onClick={() => setTipTokenType('KRC20')}
-              size="sm"
-              className={`flex-1 ${tipTokenType === 'KRC20' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white'}`}
-            >KRC-20</Button>
+            {hasKasware && (
+              <Button
+                onClick={() => setTipTokenType('KRC20')}
+                size="sm"
+                className={`flex-1 ${tipTokenType === 'KRC20' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white'}`}
+              >KRC-20</Button>
+            )}
+            {!hasKasware && (
+              <div className="flex-1 relative">
+                <Button
+                  disabled
+                  size="sm"
+                  className="w-full bg-white/5 border border-white/10 text-white/30 cursor-not-allowed"
+                >KRC-20</Button>
+                <span className="absolute -top-2 -right-1 bg-amber-500 text-black text-[7px] font-bold px-1.5 py-0.5 rounded-full">Soon</span>
+              </div>
+            )}
           </div>
 
           {tipTokenType === 'KRC20' && (

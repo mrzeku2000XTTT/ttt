@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ProfileTab from "@/components/terra/ProfileTab";
 import WalletManager, { WalletMenuSheet, BackupSeedSheet, ImportWalletSheet, DeleteConfirmSheet } from "@/components/terra/WalletManager";
+import KRC20Tokens from "@/components/terra/KRC20Tokens";
 import ReceiveSheet from "@/components/terra/ReceiveSheet";
 import SendSheet from "@/components/terra/SendSheet";
 import { motion, AnimatePresence } from "framer-motion";
@@ -377,6 +378,9 @@ export default function TerraPage() {
                 </button>
               </div>
             )}
+
+            {/* KRC-20 Tokens */}
+            {walletAddress && <KRC20Tokens walletAddress={walletAddress} />}
 
             {/* KAS Price Info */}
             {kasPrice && (
