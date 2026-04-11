@@ -25,16 +25,31 @@ const SCAN_SCHEMA = {
   }
 };
 
-const SCAN_PROMPT_BASE = `You are a web security auditor. Perform a comprehensive security assessment covering:
-1. SSL/TLS Configuration
-2. HTTP Security Headers - CSP, X-Frame-Options, HSTS, etc.
-3. Common Vulnerabilities - XSS, CSRF, SQL injection, clickjacking
-4. Server Information Exposure
-5. DNS & Domain Security
-6. Cookie Security
-7. Privacy Concerns
-8. Overall Risk Assessment
-Be thorough but realistic - only flag actual concerns.`;
+const SCAN_PROMPT_BASE = `You are an ELITE web application security auditor performing a real penetration test report. You must provide DEEP, SPECIFIC, ACTIONABLE findings — not generic checklists.
+
+CRITICAL CONTEXT — DO NOT flag these as issues:
+- HTTP headers (CSP, HSTS, X-Frame-Options, cookie flags) are managed by the hosting platform (Base44/Vercel) and NOT controllable by the app developer. Do NOT recommend adding them.
+- localStorage usage for wallet private keys/mnemonics is an INTENTIONAL client-side-only design for non-custodial crypto wallets. This is standard practice (like MetaMask). Do NOT flag it as a vulnerability.
+- Public blockchain addresses (Kaspa addresses) are PUBLIC by design. Querying public APIs with them is normal.
+- External CDN scripts from the hosting platform (e.g., builder-bridge.js) are platform infrastructure, not app code.
+
+INSTEAD, focus your audit on REAL application-level concerns:
+1. **Code-Level Vulnerabilities**: Look for actual XSS vectors in user input handling, innerHTML usage, dangerouslySetInnerHTML, unescaped template literals, eval(), document.write()
+2. **Authentication & Authorization**: Are there admin-only functions accessible without proper role checks? Can users escalate privileges? Are API endpoints properly gated?
+3. **Data Exposure**: Are API keys, secrets, or sensitive tokens hardcoded in frontend code? Are there console.log statements leaking sensitive data?
+4. **Smart Contract / Crypto Security**: Are transaction signing flows secure? Could escrow addresses be spoofed? Are there reentrancy-like patterns in bet settlement?
+5. **Input Validation**: Are numeric inputs (bet amounts, transfer amounts) properly validated against overflow, negative values, NaN?
+6. **Race Conditions**: Could rapid-fire API calls create duplicate bets, double-spend scenarios, or inconsistent state?
+7. **Third-Party API Trust**: Are responses from external APIs (CoinGecko, Kaspa API, Kasplex) validated before use? Could a compromised API return malicious data?
+8. **Frontend State Manipulation**: Could a user modify localStorage/sessionStorage values to bypass checks (e.g., faking verification status, PIN hash)?
+
+For each finding:
+- Cite the SPECIFIC code pattern or line you found
+- Explain the EXACT attack scenario (not theoretical)
+- Rate severity based on REAL exploitability, not theoretical risk
+- Provide a CONCRETE fix with code example if possible
+
+Do NOT pad the report with generic recommendations. If something is secure, say so. Quality over quantity.`;
 
 export default function SecurityAudit() {
   const [url, setUrl] = useState("");
