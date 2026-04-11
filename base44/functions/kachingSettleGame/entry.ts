@@ -4,12 +4,17 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user || user.role !== 'admin') {
-      return Response.json({ error: 'Admin only' }, { status: 403 });
+    const body = await req.json().catch(() => ({}));
+    const isAutomation = !!body.automation;
+    
+    if (!isAutomation) {
+      const user = await base44.auth.me();
+      if (!user || user.role !== 'admin') {
+        return Response.json({ error: 'Admin only' }, { status: 403 });
+      }
     }
 
-    const { game_id, force_result } = await req.json().catch(() => ({}));
+    const { game_id, force_result } = body;
 
     // Get games to settle
     let games;

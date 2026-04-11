@@ -8,8 +8,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import LiveGameCard from "@/components/kaching/LiveGameCard";
 import BetModal from "@/components/kaching/BetModal";
 import KaChingSettings from "@/components/kaching/KaChingSettings";
-import CategoryTabs from "@/components/kaching/CategoryTabs";
 import GameTimer from "@/components/kaching/GameTimer";
+import GameLogs from "@/components/kaching/GameLogs";
 import { getCurrentRoundEnd, getRemainingMs } from "@/components/kaching/roundClock";
 
 const LOGO_URL = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2c211776c_generated_image.png";
@@ -17,17 +17,17 @@ const ADMIN_GATE = true;
 
 export default function StakeDAGPage() {
   const [tab, setTab] = useState("live");
-  const [category, setCategory] = useState("All");
   const [games, setGames] = useState([]);
   const [userBets, setUserBets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
+
   const [walletAddress, setWalletAddress] = useState(null);
   const [walletBalance, setWalletBalance] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [betModal, setBetModal] = useState(null); // { game, side }
   const [user, setUser] = useState(null);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [showLogs, setShowLogs] = useState(false);
 
   useEffect(() => { init(); }, []);
 
@@ -48,7 +48,16 @@ export default function StakeDAGPage() {
       }
       loadGames();
       loadUserBets(u.email);
+      // Auto-generate games for current round silently
+      autoGenerate();
     } catch { setAccessDenied(true); }
+  };
+
+  const autoGenerate = async () => {
+    try {
+      await base44.functions.invoke('kachingAutoGenerate', {});
+      loadGames();
+    } catch {}
   };
 
   // The global round end is always the next UTC 15-min boundary — no need for state
@@ -109,19 +118,7 @@ export default function StakeDAGPage() {
     toast.success('Disconnected');
   };
 
-  const generateGames = async () => {
-    setGenerating(true);
-    try {
-      const res = await base44.functions.invoke('kachingAutoGenerate', {});
-      if (res.data?.success) {
-        toast.success(`${res.data.games_created} games created!`);
-        loadGames();
-      } else {
-        toast.error(res.data?.error || 'Failed');
-      }
-    } catch (err) { toast.error('Generation failed'); }
-    finally { setGenerating(false); }
-  };
+
 
   const settleGames = async () => {
     try {
@@ -145,14 +142,22 @@ export default function StakeDAGPage() {
     } catch {}
   };
 
-  // Auto-refresh
+  // Auto-refresh every 30s + auto-generate at round boundaries
   useEffect(() => {
     if (accessDenied) return;
-    const interval = setInterval(() => {
+    const refresh = setInterval(() => {
       loadGames(true);
       if (user?.email) loadUserBets(user.email);
-    }, 15000);
-    return () => clearInterval(interval);
+    }, 30000);
+    // Check for new round every 60s
+    const roundCheck = setInterval(() => {
+      const now = Date.now();
+      const roundMs = 15 * 60 * 1000;
+      const msSinceRound = now % roundMs;
+      // If within first 30s of a new round, auto-generate
+      if (msSinceRound < 30000) autoGenerate();
+    }, 60000);
+    return () => { clearInterval(refresh); clearInterval(roundCheck); };
   }, [accessDenied, user]);
 
   // Auto-settle expired games
@@ -172,16 +177,11 @@ export default function StakeDAGPage() {
     setBetModal({ game, side });
   };
 
-  // Filter games
-  const filteredGames = games.filter(g => {
-    if (category !== 'All' && g.category !== category) return false;
-    return true;
-  });
+  const filteredGames = games;
 
   const openGames = filteredGames.filter(g => g.status === 'open' && new Date(g.end_time) > new Date());
   const judgingGames = filteredGames.filter(g => g.status === 'judging' || g.status === 'locked');
   const settledGames = filteredGames.filter(g => g.status === 'settled');
-  const categories = ['All', ...new Set(games.map(g => g.category).filter(Boolean))];
 
   const isVerified = localStorage.getItem('kaching_verified') === 'true';
   const myActiveBets = userBets.filter(b => b.status === 'confirmed' || b.status === 'pending_deposit');
@@ -275,12 +275,10 @@ export default function StakeDAGPage() {
         ))}
         <div className="ml-auto flex items-center gap-1">
           <button
-            onClick={generateGames}
-            disabled={generating}
-            className="flex items-center gap-1 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[10px] font-bold hover:bg-emerald-500/15 transition-all disabled:opacity-40"
+            onClick={() => setShowLogs(true)}
+            className="flex items-center gap-1 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/40 text-[10px] font-bold hover:bg-white/[0.08] hover:text-white transition-all"
           >
-            {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
-            New Round
+            Logs
           </button>
           <button
             onClick={() => loadGames()}
@@ -297,7 +295,6 @@ export default function StakeDAGPage() {
 
           {tab === 'live' && (
             <>
-              <CategoryTabs categories={categories} active={category} onSelect={setCategory} />
 
               {loading && games.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-24 gap-4">
@@ -412,6 +409,9 @@ export default function StakeDAGPage() {
           />
         )}
       </AnimatePresence>
+
+      {/* Logs */}
+      <GameLogs show={showLogs} onClose={() => setShowLogs(false)} />
 
       {/* Settings */}
       <KaChingSettings
