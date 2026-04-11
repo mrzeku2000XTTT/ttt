@@ -35,14 +35,19 @@ Deno.serve(async (req) => {
 
     const roundStart = getCurrentRoundStart();
     const roundEnd = getCurrentRoundEnd();
+    const roundEndISO = roundEnd.toISOString();
     const createdGames = [];
 
-    // Check if games already exist for this round
+    console.log(`Round: ${roundStart.toISOString()} -> ${roundEndISO}`);
+
+    // Check if crypto games already exist for this exact round
     const existing = await base44.asServiceRole.entities.PredictionGame.filter({
-      end_time: roundEnd.toISOString()
+      end_time: roundEndISO,
+      category: 'Crypto'
     });
+    console.log(`Existing crypto games for this round: ${existing.length}`);
     if (existing.length > 0) {
-      return Response.json({ success: true, games_created: 0, games: [], message: 'Games already exist for this round' });
+      return Response.json({ success: true, games_created: 0, games: [], round: { start: roundStart.toISOString(), end: roundEndISO }, message: `Already have ${existing.length} crypto games for this round` });
     }
 
     // Helper to create escrow wallet
@@ -60,13 +65,21 @@ Deno.serve(async (req) => {
 
     // Fetch all coin prices from CoinGecko in one call
     const coinIds = COINS.map(c => c.id).join(',');
+    console.log(`Fetching prices for: ${coinIds}`);
     let priceData = {};
     try {
       const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinIds}&vs_currencies=usd&include_24hr_change=true`);
-      priceData = await res.json();
+      const text = await res.text();
+      console.log(`CoinGecko status: ${res.status}, body length: ${text.length}`);
+      if (!res.ok) {
+        console.error(`CoinGecko error: ${text.slice(0, 200)}`);
+        return Response.json({ error: `CoinGecko API error: ${res.status}`, detail: text.slice(0, 200) }, { status: 500 });
+      }
+      priceData = JSON.parse(text);
+      console.log(`Got prices for: ${Object.keys(priceData).join(', ')}`);
     } catch (e) {
       console.error('CoinGecko fetch failed:', e.message);
-      return Response.json({ error: 'Failed to fetch prices' }, { status: 500 });
+      return Response.json({ error: 'Failed to fetch prices: ' + e.message }, { status: 500 });
     }
 
     // Create a prediction game for each coin
@@ -94,11 +107,12 @@ Deno.serve(async (req) => {
         const escrow = await createEscrow();
         const gameNumber = escrow.address.slice(0, 8).toUpperCase();
 
-        // Kaspa gets a special custom question style
         const isKaspa = coin.symbol === 'KAS';
         const question = isKaspa
           ? `Will KAS break above $${formattedPrice} this round?`
           : `Will ${coin.symbol} be above $${formattedPrice} in 15 min?`;
+
+        console.log(`Creating game: ${coin.symbol} at $${formattedPrice}`);
 
         const game = await base44.asServiceRole.entities.PredictionGame.create({
           game_number: gameNumber,
@@ -114,12 +128,13 @@ Deno.serve(async (req) => {
           source_data: `CoinGecko ${coin.id} price at $${formattedPrice} | 24h: ${change24h?.toFixed(2) || '?'}%`,
           status: 'open',
           start_time: roundStart.toISOString(),
-          end_time: roundEnd.toISOString(),
+          end_time: roundEndISO,
           total_pool_kas: 0, yes_pool_kas: 0, no_pool_kas: 0,
           yes_count: 0, no_count: 0, bot_status: 'ready'
         });
 
-        createdGames.push({ id: game.id, game_number: gameNumber, symbol: coin.symbol, question: game.question, price: formattedPrice });
+        createdGames.push({ id: game.id, game_number: gameNumber, symbol: coin.symbol, question, price: formattedPrice });
+        console.log(`Created ${coin.symbol} game: ${gameNumber}`);
       } catch (e) {
         console.error(`Failed to create ${coin.symbol} game:`, e.message);
       }
@@ -129,7 +144,7 @@ Deno.serve(async (req) => {
       success: true,
       games_created: createdGames.length,
       games: createdGames,
-      round: { start: roundStart.toISOString(), end: roundEnd.toISOString() }
+      round: { start: roundStart.toISOString(), end: roundEndISO }
     });
   } catch (error) {
     console.error('kachingAutoGenerate error:', error.message);
