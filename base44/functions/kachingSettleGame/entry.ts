@@ -71,7 +71,19 @@ Deno.serve(async (req) => {
         const winnerPool = winners.reduce((s, b) => s + b.amount_kas, 0);
         const loserPool = losers.reduce((s, b) => s + b.amount_kas, 0);
 
-        console.log(`Pool: total=${totalPool}, winners=${winnerPool}(${winners.length}), losers=${loserPool}(${losers.length})`);
+        console.log(`\n========== GAME #${game.game_number} BET LEDGER ==========`);
+        console.log(`Question: ${game.question}`);
+        console.log(`Result: ${result.toUpperCase()} | Reason: ${judgeReason}`);
+        console.log(`Pool: total=${totalPool} KAS, YES=${game.yes_pool_kas}(${game.yes_count}), NO=${game.no_pool_kas}(${game.no_count})`);
+        console.log(`--- YES BETS (${allBets.filter(b=>b.side==='yes').length}) ---`);
+        allBets.filter(b => b.side === 'yes').forEach((b, i) => {
+          console.log(`  [YES #${i+1}] Address: kaspa:${b.user_wallet_address.replace('kaspa:','').slice(0,20)}... | Amount: ${b.amount_kas} KAS | TX_IN: ${b.tx_hash_in || 'none'} | User: ${b.user_email}`);
+        });
+        console.log(`--- NO BETS (${allBets.filter(b=>b.side==='no').length}) ---`);
+        allBets.filter(b => b.side === 'no').forEach((b, i) => {
+          console.log(`  [NO  #${i+1}] Address: kaspa:${b.user_wallet_address.replace('kaspa:','').slice(0,20)}... | Amount: ${b.amount_kas} KAS | TX_IN: ${b.tx_hash_in || 'none'} | User: ${b.user_email}`);
+        });
+        console.log(`--- WINNERS: ${winners.length} | LOSERS: ${losers.length} ---`);
 
         const txHashes = [];
 
@@ -134,6 +146,23 @@ Deno.serve(async (req) => {
           settlement_tx_hashes: txHashes,
         });
 
+        // Build detailed bet ledger for the response
+        const betLedger = allBets.map(b => ({
+          side: b.side,
+          address: `kaspa:${b.user_wallet_address.replace('kaspa:','')}`,
+          amount_kas: b.amount_kas,
+          tx_hash_in: b.tx_hash_in || null,
+          user_email: b.user_email,
+          status: b.status === 'confirmed' ? (b.side === result ? 'won' : (result === 'push' ? 'refunded' : 'lost')) : b.status,
+          payout_kas: b.payout_kas || 0,
+        }));
+
+        console.log(`--- PAYOUTS ---`);
+        betLedger.filter(b => b.payout_kas > 0).forEach(b => {
+          console.log(`  💰 ${b.address.slice(0,30)}... → ${b.payout_kas} KAS (${b.status})`);
+        });
+        console.log(`========== END GAME #${game.game_number} ==========\n`);
+
         settlements.push({
           game_id: game.id,
           game_number: game.game_number,
@@ -143,6 +172,7 @@ Deno.serve(async (req) => {
           winners: winners.length,
           losers: losers.length,
           tx_hashes: txHashes,
+          bet_ledger: betLedger,
         });
       } catch (gameError) {
         console.error(`Settlement failed for game ${game.game_number}:`, gameError.message);
