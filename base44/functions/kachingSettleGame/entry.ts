@@ -167,6 +167,26 @@ Deno.serve(async (req) => {
           settlement_tx_hashes: txHashes,
         });
 
+        // Update bot stats for any bot bets
+        try {
+          const botBets = allBets.filter(b => b.user_email?.endsWith('@kaching.bot'));
+          for (const bb of botBets) {
+            const botName = bb.user_email.replace('bot_', '').replace('@kaching.bot', '').replace(/_/g, ' ');
+            const botEntities = await base44.asServiceRole.entities.KaChingBot.filter({});
+            const bot = botEntities.find(b => b.bot_name.toLowerCase().replace(/\s/g, ' ') === botName);
+            if (bot) {
+              const isWinner = bb.side === result;
+              const profit = isWinner ? (bb.payout_kas || 0) - bb.amount_kas : -bb.amount_kas;
+              await base44.asServiceRole.entities.KaChingBot.update(bot.id, {
+                total_wins: (bot.total_wins || 0) + (isWinner ? 1 : 0),
+                total_profit_kas: (bot.total_profit_kas || 0) + profit,
+              });
+            }
+          }
+        } catch (botErr) {
+          console.warn('Bot stats update failed:', botErr.message);
+        }
+
         // Build detailed bet ledger for the response
         const betLedger = allBets.map(b => ({
           side: b.side,

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft, Wallet, Trophy, Loader2, RefreshCw, Settings, Zap, Plus, TrendingUp } from "lucide-react";
+import { ArrowLeft, Wallet, Trophy, Loader2, RefreshCw, Settings, Zap, Plus, TrendingUp, Bot } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,6 +12,7 @@ import BetModal from "@/components/kaching/BetModal";
 import KaChingSettings from "@/components/kaching/KaChingSettings";
 import GameTimer from "@/components/kaching/GameTimer";
 import GameLogs from "@/components/kaching/GameLogs";
+import AgentsPanel from "@/components/kaching/AgentsPanel";
 import { getCurrentRoundEnd, getRemainingMs } from "@/components/kaching/roundClock";
 
 const LOGO_URL = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2c211776c_generated_image.png";
@@ -31,6 +32,7 @@ export default function StakeDAGPage() {
   const [accessDenied, setAccessDenied] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
   const [isSettling, setIsSettling] = useState(false);
+  const [showAgents, setShowAgents] = useState(false);
 
   useEffect(() => { init(); }, []);
 
@@ -63,8 +65,21 @@ export default function StakeDAGPage() {
       if (created > 0) {
         console.log(`Auto-generated ${created} new games`);
         await loadGames();
+        // Trigger bot auto-betting on new games
+        triggerBotBets();
       }
     } catch {}
+  };
+
+  const triggerBotBets = async () => {
+    try {
+      await base44.functions.invoke('kachingBotManager', { action: 'auto_bet_all' });
+      console.log('Bot auto-bet triggered');
+      // Refresh games after bots bet
+      setTimeout(() => loadGames(true), 8000);
+    } catch (err) {
+      console.log('Bot auto-bet skipped:', err.message);
+    }
   };
 
   // The global round end is always the next UTC 15-min boundary — no need for state
@@ -225,8 +240,14 @@ export default function StakeDAGPage() {
 
   // Only show real games with valid escrow addresses (66+ char kaspa addresses)
   const validGames = games.filter(g => g.escrow_address && g.escrow_address.length >= 60);
-  const openGames = validGames.filter(g => g.status === 'open' && new Date(g.end_time) > new Date());
-  const settledGames = validGames.filter(g => g.status === 'settled');
+  // Sort KAS games first, then by pool size
+  const sortGames = (list) => list.sort((a, b) => {
+    if (a.subcategory === 'KAS' && b.subcategory !== 'KAS') return -1;
+    if (b.subcategory === 'KAS' && a.subcategory !== 'KAS') return 1;
+    return (b.total_pool_kas || 0) - (a.total_pool_kas || 0);
+  });
+  const openGames = sortGames(validGames.filter(g => g.status === 'open' && new Date(g.end_time) > new Date()));
+  const settledGames = sortGames(validGames.filter(g => g.status === 'settled'));
 
   const isVerified = localStorage.getItem('kaching_verified') === 'true';
   const myActiveBets = userBets.filter(b => b.status === 'confirmed' || b.status === 'pending_deposit');
@@ -291,6 +312,30 @@ export default function StakeDAGPage() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Agents Subheader */}
+      <div className="flex-shrink-0 relative z-10 max-w-4xl w-full mx-auto px-4">
+        <button
+          onClick={() => setShowAgents(!showAgents)}
+          className="flex items-center gap-2 w-full py-2 text-left border-b border-white/[0.04]"
+        >
+          <Bot className="w-4 h-4 text-cyan-400" />
+          <span className="text-cyan-400/80 text-xs font-bold">Agents</span>
+          <span className="text-white/15 text-[9px] ml-auto">{showAgents ? 'Hide' : 'Show'}</span>
+        </button>
+        <AnimatePresence>
+          {showAgents && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden pt-2 pb-3"
+            >
+              <AgentsPanel />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Tabs */}

@@ -1,0 +1,75 @@
+{
+  "name": "KaChingBot",
+  "type": "object",
+  "properties": {
+    "bot_name": {
+      "type": "string",
+      "description": "Display name for the bot"
+    },
+    "kaspa_address": {
+      "type": "string",
+      "description": "Bot's Kaspa wallet address"
+    },
+    "encrypted_mnemonic": {
+      "type": "string",
+      "description": "Bot wallet seed phrase (admin only)"
+    },
+    "balance_kas": {
+      "type": "number",
+      "default": 0,
+      "description": "Cached balance in KAS"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether bot is actively betting"
+    },
+    "strategy": {
+      "type": "string",
+      "enum": [
+        "random",
+        "follow",
+        "contrarian"
+      ],
+      "default": "random",
+      "description": "Betting strategy"
+    },
+    "bet_amount_kas": {
+      "type": "number",
+      "default": 1,
+      "description": "Amount to bet per game"
+    },
+    "total_bets": {
+      "type": "number",
+      "default": 0,
+      "description": "Total bets placed"
+    },
+    "total_wins": {
+      "type": "number",
+      "default": 0,
+      "description": "Total bets won"
+    },
+    "total_profit_kas": {
+      "type": "number",
+      "default": 0,
+      "description": "Net profit/loss in KAS"
+    },
+    "avatar_emoji": {
+      "type": "string",
+      "description": "Emoji avatar for display"
+    }
+  },
+  "required": [
+    "bot_name",
+    "kaspa_address",
+    "encrypted_mnemonic"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": {
+      "user.role": "admin"
+    }
+  }
+}

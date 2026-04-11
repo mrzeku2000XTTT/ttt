@@ -61,7 +61,11 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { game_id, side, tx_hash_in } = await req.json();
+    const { game_id, side, tx_hash_in, bot_email, bot_wallet } = await req.json();
+
+    // Support bot bets with explicit email/wallet override
+    const betEmail = bot_email || user.email;
+    const betWalletOverride = bot_wallet || null;
 
     if (!game_id || !side || !tx_hash_in) {
       return Response.json({ error: 'Missing fields: game_id, side, tx_hash_in required' }, { status: 400 });
@@ -108,12 +112,17 @@ Deno.serve(async (req) => {
 
     console.log(`TX VERIFIED: sender=${senderWallet.slice(0, 16)}... amount=${verification.amount_kas} KAS → escrow=${game.escrow_address.slice(0, 16)}...`);
 
+    // Use bot wallet override if provided, otherwise use sender from TX
+    const finalWallet = betWalletOverride
+      ? (betWalletOverride.startsWith('kaspa:') ? betWalletOverride.slice(6) : betWalletOverride)
+      : senderWallet;
+
     // Create bet record with ON-CHAIN verified data
     const bet = await base44.asServiceRole.entities.GameBet.create({
       game_id: game.id,
       game_number: game.game_number,
-      user_email: user.email, // for internal ref only
-      user_wallet_address: senderWallet,
+      user_email: betEmail,
+      user_wallet_address: finalWallet,
       side,
       amount_kas: verification.amount_kas,
       status: 'confirmed',
