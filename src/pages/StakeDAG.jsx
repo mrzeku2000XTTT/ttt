@@ -6,6 +6,7 @@ import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import LiveGameCard from "@/components/kaching/LiveGameCard";
+import SettlementAnimation from "@/components/kaching/SettlementAnimation";
 
 import BetModal from "@/components/kaching/BetModal";
 import KaChingSettings from "@/components/kaching/KaChingSettings";
@@ -29,6 +30,7 @@ export default function StakeDAGPage() {
   const [user, setUser] = useState(null);
   const [accessDenied, setAccessDenied] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
+  const [isSettling, setIsSettling] = useState(false);
 
   useEffect(() => { init(); }, []);
 
@@ -121,15 +123,22 @@ export default function StakeDAGPage() {
 
 
 
-  const settleGames = async () => {
+  const settleGames = async (showAnimation = false) => {
+    if (showAnimation) setIsSettling(true);
     try {
       const res = await base44.functions.invoke('kachingSettleGame', {});
       if (res.data?.success) {
-        toast.success(`${res.data.settlements?.length || 0} games settled`);
-        loadGames();
-        if (user?.email) loadUserBets(user.email);
+        const count = res.data.settlements?.length || 0;
+        if (count > 0) toast.success(`${count} games settled`);
       }
-    } catch (err) { toast.error('Settlement failed'); }
+    } catch (err) { console.error('Settlement error:', err); }
+  };
+
+  const onSettlementAnimationComplete = async () => {
+    setIsSettling(false);
+    await autoGenerate();
+    await loadGames();
+    if (user?.email) loadUserBets(user.email);
   };
 
   const verifyDeposits = async () => {
@@ -143,33 +152,40 @@ export default function StakeDAGPage() {
     } catch {}
   };
 
-  // Auto-refresh every 30s + auto-generate at round boundaries
+  // Auto-refresh every 10s to keep games live + settle at round boundaries
   useEffect(() => {
     if (accessDenied) return;
     const refresh = setInterval(() => {
       loadGames(true);
       if (user?.email) loadUserBets(user.email);
-    }, 30000);
-    // Check for new round every 60s
+    }, 10000);
+    // Check every 5s for round boundary → trigger settlement animation
     const roundCheck = setInterval(() => {
-      const now = Date.now();
+      const remaining = getRemainingMs();
+      // When round just ended (within 5s past boundary) and not already settling
+      if (remaining > 14.9 * 60 * 1000 && !isSettling) {
+        // We just crossed a boundary — settle and show animation
+        settleGames(true);
+      }
+      // Auto-generate new games 30s into new round
       const roundMs = 15 * 60 * 1000;
-      const msSinceRound = now % roundMs;
-      // If within first 30s of a new round, auto-generate
-      if (msSinceRound < 30000) autoGenerate();
-    }, 60000);
+      const msSinceRound = Date.now() % roundMs;
+      if (msSinceRound > 3000 && msSinceRound < 8000 && !isSettling) {
+        autoGenerate();
+      }
+    }, 5000);
     return () => { clearInterval(refresh); clearInterval(roundCheck); };
-  }, [accessDenied, user]);
+  }, [accessDenied, user, isSettling]);
 
-  // Auto-settle expired games
+  // Auto-settle expired games (check every 15s)
   useEffect(() => {
     if (accessDenied) return;
     const interval = setInterval(() => {
       const expired = games.filter(g => g.status === 'open' && new Date(g.end_time) <= new Date());
-      if (expired.length > 0) settleGames();
-    }, 30000);
+      if (expired.length > 0 && !isSettling) settleGames(true);
+    }, 15000);
     return () => clearInterval(interval);
-  }, [games, accessDenied]);
+  }, [games, accessDenied, isSettling]);
 
   const openBetModal = (game, side) => {
     // Check for any usable wallet (Terra wallets with mnemonic or TTT wallet with PK)
@@ -303,20 +319,23 @@ export default function StakeDAGPage() {
             <>
 
 
-              {loading && games.length === 0 ? (
+              {/* Settlement Animation */}
+              <SettlementAnimation active={isSettling} onComplete={onSettlementAnimationComplete} />
+
+              {!isSettling && loading && games.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-24 gap-4">
                   <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
                   <p className="text-white/25 text-sm">Loading games...</p>
                 </div>
-              ) : openGames.length === 0 ? (
+              ) : !isSettling && openGames.length === 0 ? (
                 <div className="text-center py-16">
                   <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mx-auto mb-4">
                     <Zap className="w-6 h-6 text-white/10" />
                   </div>
                   <p className="text-white/25 text-sm font-medium">No active games</p>
-                  <p className="text-white/15 text-xs mt-1">Click "New Round" to generate predictions</p>
+                  <p className="text-white/15 text-xs mt-1">New round starting soon...</p>
                 </div>
-              ) : (
+              ) : !isSettling && (
                 <section>
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
