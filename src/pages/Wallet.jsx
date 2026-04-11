@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { motion, AnimatePresence } from "framer-motion";
 import QRScanner from "@/components/wallet/QRScanner";
 import KRC20Tokens from "@/components/terra/KRC20Tokens";
+import KRC20SendSheet from "@/components/terra/KRC20SendSheet";
 
 // ── Toast ──────────────────────────────────────────────────────────────────────
 const Toast = ({ message, type, onClose }) => (
@@ -108,6 +109,9 @@ export default function WalletPage() {
   // Receive/Request QR state
   const [requestAmount, setRequestAmount] = useState('');
   const [showReceiveQR, setShowReceiveQR] = useState(false);
+
+  // KRC-20 send state
+  const [krc20SendToken, setKrc20SendToken] = useState(null);
 
   const showToast = (message, type = 'success', duration = 3000) => {
     setToast({ message, type });
@@ -756,7 +760,7 @@ export default function WalletPage() {
             </Card>
 
             {/* KRC-20 Tokens */}
-            <KRC20Tokens walletAddress={address} />
+            <KRC20Tokens walletAddress={address} onSendToken={(token) => setKrc20SendToken(token)} />
 
             {/* PIN Setup */}
             {showPinSetup && !pinSet && (
@@ -856,6 +860,29 @@ export default function WalletPage() {
             </div>
           </div>
         )}
+
+        {/* KRC-20 Send Sheet */}
+        <AnimatePresence>
+          {krc20SendToken && (() => {
+            const wallets = JSON.parse(localStorage.getItem('terra_wallets') || '[]');
+            const terraW = wallets.find(w => {
+              const wAddr = w.address?.replace('kaspa:', '');
+              const curAddr = address?.replace('kaspa:', '');
+              return wAddr === curAddr && w.mnemonic;
+            });
+            const activeWalletObj = terraW
+              ? { address: terraW.address, mnemonic: terraW.mnemonic }
+              : null;
+            return (
+              <KRC20SendSheet
+                token={krc20SendToken}
+                activeWallet={activeWalletObj}
+                onClose={() => setKrc20SendToken(null)}
+                onBalanceUpdate={() => fetchBalance(address)}
+              />
+            );
+          })()}
+        </AnimatePresence>
       </div>
     </div>
   );
