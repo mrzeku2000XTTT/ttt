@@ -200,16 +200,16 @@ export default function AgentsPanel() {
 
   const loadBots = async () => {
     try {
-      const existing = await base44.entities.KaChingBot.filter({});
-      if (existing.length === 0) {
-        // Auto-create bots on first load
-        const res = await base44.functions.invoke('kachingBotManager', { action: 'create_bots' });
-        if (res.data?.bots) {
-          const created = await base44.entities.KaChingBot.filter({});
-          setBots(created);
-        }
+      // First try to list existing bots via backend (never exposes mnemonics)
+      const res = await base44.functions.invoke('kachingBotManager', { action: 'list_bots' });
+      if (res.data?.bots?.length > 0) {
+        setBots(res.data.bots);
       } else {
-        setBots(existing);
+        // No bots yet — create them
+        const createRes = await base44.functions.invoke('kachingBotManager', { action: 'create_bots' });
+        if (createRes.data?.bots) {
+          setBots(createRes.data.bots);
+        }
       }
     } catch (err) {
       console.error('Failed to load bots:', err);
@@ -220,9 +220,10 @@ export default function AgentsPanel() {
   const refreshBalances = async () => {
     setRefreshing(true);
     try {
-      await base44.functions.invoke('kachingBotManager', { action: 'refresh_balances' });
-      const updated = await base44.entities.KaChingBot.filter({});
-      setBots(updated);
+      const res = await base44.functions.invoke('kachingBotManager', { action: 'refresh_balances' });
+      if (res.data?.results) {
+        setBots(res.data.results);
+      }
       toast.success('Balances refreshed');
     } catch {}
     setRefreshing(false);
@@ -230,9 +231,11 @@ export default function AgentsPanel() {
 
   const toggleBot = async (bot) => {
     try {
-      await base44.entities.KaChingBot.update(bot.id, { is_active: !bot.is_active });
-      setBots(prev => prev.map(b => b.id === bot.id ? { ...b, is_active: !b.is_active } : b));
-      toast.success(`${bot.bot_name} ${bot.is_active ? 'disabled' : 'enabled'}`);
+      const res = await base44.functions.invoke('kachingBotManager', { action: 'toggle_bot', bot_id: bot.id });
+      if (res.data?.success) {
+        setBots(prev => prev.map(b => b.id === bot.id ? { ...b, is_active: !b.is_active } : b));
+        toast.success(`${bot.bot_name} ${bot.is_active ? 'disabled' : 'enabled'}`);
+      }
     } catch (err) {
       toast.error('Failed to toggle bot');
     }

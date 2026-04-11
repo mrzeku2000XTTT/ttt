@@ -12,7 +12,7 @@
     },
     "encrypted_mnemonic": {
       "type": "string",
-      "description": "Bot wallet seed phrase (admin only)"
+      "description": "Bot wallet seed phrase (admin only, never expose to frontend)"
     },
     "balance_kas": {
       "type": "number",
@@ -61,13 +61,18 @@
   },
   "required": [
     "bot_name",
-    "kaspa_address",
-    "encrypted_mnemonic"
+    "kaspa_address"
   ],
   "rls": {
-    "create": true,
-    "read": true,
-    "update": true,
+    "create": {
+      "user.role": "admin"
+    },
+    "read": {
+      "user.role": "admin"
+    },
+    "update": {
+      "user.role": "admin"
+    },
     "delete": {
       "user.role": "admin"
     }

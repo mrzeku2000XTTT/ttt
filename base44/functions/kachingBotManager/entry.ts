@@ -19,11 +19,32 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Helper: strip sensitive fields from bot data
+    const safeBotData = (b) => ({
+      id: b.id,
+      bot_name: b.bot_name,
+      kaspa_address: b.kaspa_address,
+      balance_kas: b.balance_kas || 0,
+      is_active: b.is_active || false,
+      strategy: b.strategy || 'random',
+      bet_amount_kas: b.bet_amount_kas || 1,
+      total_bets: b.total_bets || 0,
+      total_wins: b.total_wins || 0,
+      total_profit_kas: b.total_profit_kas || 0,
+      avatar_emoji: b.avatar_emoji || '🤖',
+    });
+
+    // ---- LIST BOTS (safe, no mnemonics) ----
+    if (action === 'list_bots') {
+      const bots = await base44.asServiceRole.entities.KaChingBot.filter({});
+      return Response.json({ success: true, bots: bots.map(safeBotData) });
+    }
+
     // ---- CREATE BOTS ----
     if (action === 'create_bots') {
       const existing = await base44.asServiceRole.entities.KaChingBot.filter({});
       if (existing.length >= 2) {
-        return Response.json({ success: true, message: 'Bots already exist', bots: existing.map(b => ({ id: b.id, name: b.bot_name, address: b.kaspa_address, balance: b.balance_kas })) });
+        return Response.json({ success: true, message: 'Bots already exist', bots: existing.map(safeBotData) });
       }
 
       const botConfigs = [
@@ -60,7 +81,7 @@ Deno.serve(async (req) => {
         console.log(`Created bot ${cfg.name}: kaspa:${cleanAddress.slice(0, 16)}...`);
       }
 
-      return Response.json({ success: true, bots: created.map(b => ({ id: b.id, name: b.bot_name, address: b.kaspa_address, emoji: b.avatar_emoji })) });
+      return Response.json({ success: true, bots: created.map(safeBotData) });
     }
 
     // ---- REFRESH BALANCES ----
@@ -76,24 +97,34 @@ Deno.serve(async (req) => {
             const data = await res.json();
             const bal = (data.balance || 0) / 1e8;
             await base44.asServiceRole.entities.KaChingBot.update(bot.id, { balance_kas: bal });
-            results.push({ id: bot.id, name: bot.bot_name, balance: bal });
+            results.push(safeBotData({ ...bot, balance_kas: bal }));
           } else {
-            // Try UTXO fallback
             const utxoRes = await fetch(`${KASPA_API}/addresses/${addr}/utxos`, { signal: AbortSignal.timeout(10000) });
             if (utxoRes.ok) {
               const utxos = await utxoRes.json();
               const bal = utxos.reduce((s, u) => s + (u?.utxoEntry?.amount || 0), 0) / 1e8;
               await base44.asServiceRole.entities.KaChingBot.update(bot.id, { balance_kas: bal });
-              results.push({ id: bot.id, name: bot.bot_name, balance: bal });
+              results.push(safeBotData({ ...bot, balance_kas: bal }));
             }
           }
         } catch (e) {
           console.warn(`Balance fetch failed for ${bot.bot_name}:`, e.message);
-          results.push({ id: bot.id, name: bot.bot_name, balance: bot.balance_kas, error: e.message });
+          results.push({ ...safeBotData(bot), error: e.message });
         }
       }
 
       return Response.json({ success: true, results });
+    }
+
+    // ---- TOGGLE BOT ----
+    if (action === 'toggle_bot') {
+      const { bot_id } = body;
+      if (!bot_id) return Response.json({ error: 'bot_id required' }, { status: 400 });
+      const bots = await base44.asServiceRole.entities.KaChingBot.filter({ id: bot_id });
+      const bot = bots[0];
+      if (!bot) return Response.json({ error: 'Bot not found' }, { status: 404 });
+      await base44.asServiceRole.entities.KaChingBot.update(bot.id, { is_active: !bot.is_active });
+      return Response.json({ success: true, bot: safeBotData({ ...bot, is_active: !bot.is_active }) });
     }
 
     // ---- BOT PLACE BET ----
