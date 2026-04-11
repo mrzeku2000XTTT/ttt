@@ -243,16 +243,36 @@ async function sendPayout(base44, game, recipientAddress, amountKas) {
   const toAddr = recipientAddress.startsWith('kaspa:') ? recipientAddress : `kaspa:${recipientAddress}`;
   const fromAddr = game.escrow_address.startsWith('kaspa:') ? game.escrow_address : `kaspa:${game.escrow_address}`;
 
-  // Deduct TX fee from payout so escrow can actually send
-  const TX_FEE = 0.0002; // 0.0002 KAS covers the Kaspa minimum fee
-  const actualSend = parseFloat((amountKas - TX_FEE).toFixed(4));
-  if (actualSend <= 0) {
-    console.log(`Payout amount ${amountKas} too small after fee deduction`);
+  // First check the actual escrow balance on-chain
+  let escrowBalance = 0;
+  try {
+    const balRes = await fetch(`https://api.kaspa.org/addresses/${fromAddr}/balance`, { signal: AbortSignal.timeout(10000) });
+    if (balRes.ok) {
+      escrowBalance = ((await balRes.json()).balance || 0) / 1e8;
+    }
+  } catch (e) {
+    console.warn(`Escrow balance check failed: ${e.message}`);
+  }
+
+  if (escrowBalance <= 0.001) {
+    console.log(`Escrow ${fromAddr.slice(0, 20)} has insufficient balance: ${escrowBalance} KAS`);
     return null;
   }
 
+  // Send the LESSER of requested payout or (escrow balance - fee reserve)
+  // This prevents "Insufficient balance" errors when escrow has exactly the bet amount
+  const TX_FEE = 0.001; // generous fee reserve
+  const maxSendable = parseFloat((escrowBalance - TX_FEE).toFixed(4));
+  const actualSend = parseFloat(Math.min(amountKas, maxSendable).toFixed(4));
+
+  if (actualSend <= 0) {
+    console.log(`Payout amount ${amountKas} too small after fee deduction (escrow has ${escrowBalance})`);
+    return null;
+  }
+
+  console.log(`Payout: sending ${actualSend} KAS (requested ${amountKas}, escrow balance ${escrowBalance}, fee reserve ${TX_FEE}) to ${toAddr.slice(0, 20)}...`);
+
   try {
-    // Call sendKaspaTransaction directly via the SDK service role
     const res = await base44.asServiceRole.functions.invoke('sendKaspaTransaction', {
       mnemonic: game.escrow_mnemonic,
       fromAddress: fromAddr,
@@ -266,7 +286,7 @@ async function sendPayout(base44, game, recipientAddress, amountKas) {
     }
 
     const txId = res?.txId || res?.data?.txId || '';
-    console.log(`Payout ${actualSend} KAS (original ${amountKas}, fee ${TX_FEE}) to ${recipientAddress.slice(0, 12)} | TX: ${txId}`);
+    console.log(`Payout ${actualSend} KAS to ${recipientAddress.slice(0, 12)} | TX: ${txId}`);
     return txId;
   } catch (err) {
     console.error(`Payout exception to ${recipientAddress.slice(0, 12)}:`, err.message);
