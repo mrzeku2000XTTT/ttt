@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
     const { game_id, side, tx_hash_in, bot_email, bot_wallet } = await req.json();
 
     // Support bot bets with explicit email/wallet override
-    const betEmail = bot_email || user.email;
+    const betEmail = bot_email || user.email || '';
     const betWalletOverride = bot_wallet || null;
 
     if (!game_id || !side || !tx_hash_in) {
@@ -118,17 +118,19 @@ Deno.serve(async (req) => {
       : senderWallet;
 
     // Create bet record with ON-CHAIN verified data
-    const bet = await base44.asServiceRole.entities.GameBet.create({
+    const betData = {
       game_id: game.id,
       game_number: game.game_number,
-      user_email: betEmail,
       user_wallet_address: finalWallet,
       side,
       amount_kas: verification.amount_kas,
       status: 'confirmed',
       verified: true,
       tx_hash_in: tx_hash_in,
-    });
+    };
+    // Include email if available (optional)
+    if (betEmail) betData.user_email = betEmail;
+    const bet = await base44.asServiceRole.entities.GameBet.create(betData);
 
     // Update game pool counters
     const updateData = {

@@ -52,7 +52,7 @@ export default function StakeDAGPage() {
         fetchBalance(clean);
       }
       loadGames();
-      loadUserBets(u.email);
+      loadUserBets();
       // Auto-generate games for current round silently
       autoGenerate();
     } catch { setAccessDenied(true); }
@@ -94,10 +94,17 @@ export default function StakeDAGPage() {
     finally { setLoading(false); }
   };
 
-  const loadUserBets = async (email) => {
-    if (!email) return;
+  const loadUserBets = async () => {
     try {
-      setUserBets(await base44.entities.GameBet.filter({ user_email: email }, '-created_date', 100));
+      // Load bets by wallet address (primary) or email (fallback)
+      const addr = walletAddress || localStorage.getItem('stakedag_wallet');
+      if (addr) {
+        const cleanAddr = addr.startsWith('kaspa:') ? addr.slice(6) : addr;
+        const bets = await base44.entities.GameBet.filter({ user_wallet_address: cleanAddr }, '-created_date', 100);
+        setUserBets(bets);
+      } else if (user?.email) {
+        setUserBets(await base44.entities.GameBet.filter({ user_email: user.email }, '-created_date', 100));
+      }
     } catch {}
   };
 
@@ -158,7 +165,7 @@ export default function StakeDAGPage() {
     // Immediately generate new games after settlement
     await autoGenerate();
     await loadGames();
-    if (user?.email) loadUserBets(user.email);
+    loadUserBets();
     // Double-check after a short delay in case CoinGecko was slow
     setTimeout(async () => {
       await autoGenerate();
@@ -182,7 +189,7 @@ export default function StakeDAGPage() {
     if (accessDenied) return;
     const refresh = setInterval(() => {
       loadGames(true);
-      if (user?.email) loadUserBets(user.email);
+      loadUserBets();
     }, 10000);
     // Check every 5s for round boundary → trigger settlement animation
     const roundCheck = setInterval(() => {
@@ -484,7 +491,7 @@ export default function StakeDAGPage() {
             onClose={() => setBetModal(null)}
             onSuccess={() => {
               loadGames();
-              if (user?.email) loadUserBets(user.email);
+              loadUserBets();
             }}
           />
         )}

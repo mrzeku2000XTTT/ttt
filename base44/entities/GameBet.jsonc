@@ -10,7 +10,8 @@
       "type": "string"
     },
     "user_email": {
-      "type": "string"
+      "type": "string",
+      "description": "User email (optional, for tracking)"
     },
     "user_wallet_address": {
       "type": "string",
@@ -58,7 +59,6 @@
   "required": [
     "game_id",
     "game_number",
-    "user_email",
     "user_wallet_address",
     "side",
     "amount_kas"
