@@ -136,13 +136,13 @@ function FundBotModal({ bot, onClose }) {
   return (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] flex items-center justify-center p-4"
       onClick={onClose}
     >
       <motion.div
         initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
         onClick={e => e.stopPropagation()}
-        className="bg-zinc-950 border border-emerald-500/20 rounded-2xl p-4 w-full max-w-xs space-y-3"
+        className="bg-zinc-950/100 border border-emerald-500/20 rounded-2xl p-4 w-full max-w-xs space-y-3 shadow-2xl shadow-black/80"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
