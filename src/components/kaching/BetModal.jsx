@@ -86,16 +86,32 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
       toast.success('KAS sent! Verifying...');
       setStep('verifying');
 
-      // Wait for TX to propagate then verify on-chain
-      await new Promise(r => setTimeout(r, 4000));
+      // Retry verification — Kaspa REST API can take 5-15s to index a new TX
+      let verifyRes = null;
+      let lastErr = '';
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const waitMs = 5000 + attempt * 3000; // 5s, 8s, 11s, 14s, 17s
+        await new Promise(r => setTimeout(r, waitMs));
+        try {
+          const res = await base44.functions.invoke('kachingPlaceBet', {
+            game_id: game.id,
+            side,
+            tx_hash_in: txHash,
+          });
+          if (res.data?.success) {
+            verifyRes = res;
+            break;
+          }
+          lastErr = res.data?.error || 'Verification failed';
+          // If TX already used, it's a dupe — stop retrying
+          if (lastErr.includes('already been used')) break;
+        } catch (e) {
+          lastErr = e.message || 'Verification request failed';
+        }
+        if (attempt < 4) console.log(`Verify attempt ${attempt + 1} failed, retrying...`);
+      }
 
-      const verifyRes = await base44.functions.invoke('kachingPlaceBet', {
-        game_id: game.id,
-        side,
-        tx_hash_in: txHash,
-      });
-
-      if (!verifyRes.data?.success) throw new Error(verifyRes.data?.error || 'Verification failed');
+      if (!verifyRes?.data?.success) throw new Error(lastErr || 'TX not confirmed after retries');
 
       setVerifiedData({ ...verifyRes.data, tx_hash_in: txHash });
       setStep('done');
