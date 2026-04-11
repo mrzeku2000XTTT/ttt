@@ -1,99 +1,97 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { X, Loader2, AlertTriangle, Zap, CheckCircle, Send, Copy, Check, Search, ExternalLink } from "lucide-react";
+import { X, Loader2, Zap, CheckCircle, ExternalLink, Wallet, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 
 export default function BetModal({ game, side, walletAddress, onClose, onSuccess }) {
-  const [step, setStep] = useState('send'); // send -> verify -> done
-  const [txHash, setTxHash] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [verifiedData, setVerifiedData] = useState(null);
-  const [autoSign, setAutoSign] = useState(false);
-  const [linkedWallet, setLinkedWallet] = useState(null);
+  const [step, setStep] = useState('amount'); // amount -> sending -> verifying -> done
   const [amount, setAmount] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [verifiedData, setVerifiedData] = useState(null);
+  const [activeWallet, setActiveWallet] = useState(null);
+  const [walletBalance, setWalletBalance] = useState(null);
 
   useEffect(() => {
-    const isAutoSign = localStorage.getItem('kaching_autosign') === 'true';
-    setAutoSign(isAutoSign);
-    if (isAutoSign) {
-      try {
-        const terraWallets = JSON.parse(localStorage.getItem('terra_wallets') || '[]');
-        const linkedAddr = localStorage.getItem('kaching_linked_wallet');
-        const w = linkedAddr
-          ? terraWallets.find(w => w.address === linkedAddr && w.mnemonic)
-          : terraWallets.find(w => w.mnemonic);
-        if (w) setLinkedWallet(w);
-      } catch {}
-    }
+    // Find active Terra wallet with mnemonic
+    try {
+      const wallets = JSON.parse(localStorage.getItem('terra_wallets') || '[]');
+      const linked = localStorage.getItem('kaching_linked_wallet');
+      const w = linked
+        ? wallets.find(w => w.address === linked && w.mnemonic)
+        : wallets.find(w => w.mnemonic);
+      if (w) {
+        setActiveWallet(w);
+        fetchBalance(w.address);
+      }
+    } catch {}
   }, []);
+
+  const fetchBalance = async (addr) => {
+    try {
+      const clean = addr.replace('kaspa:', '');
+      const res = await fetch(`https://api.kaspa.org/addresses/kaspa:${clean}/balance`);
+      if (res.ok) {
+        const data = await res.json();
+        setWalletBalance((data.balance || 0) / 1e8);
+      }
+    } catch {}
+  };
 
   const escrowFull = game.escrow_address?.startsWith('kaspa:')
     ? game.escrow_address
     : `kaspa:${game.escrow_address}`;
 
-  const copyEscrow = () => {
-    navigator.clipboard.writeText(escrowFull);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast.success('Escrow address copied');
-  };
-
-  // Step 1: Auto-sign sends KAS and gets TX hash automatically
-  const handleAutoSend = async () => {
+  const handlePlaceBet = async () => {
     const amt = parseFloat(amount);
-    if (!amt || amt < 0.1) { toast.error('Min 0.1 KAS'); return; }
-    if (!linkedWallet?.mnemonic) { toast.error('No linked wallet'); return; }
+    if (!amt || amt < 0.1) { toast.error('Min bet: 0.1 KAS'); return; }
+    if (!activeWallet?.mnemonic) { toast.error('No wallet with seed phrase found'); return; }
+    if (walletBalance !== null && amt > walletBalance) { toast.error('Insufficient balance'); return; }
 
     setLoading(true);
+    setStep('sending');
+
     try {
+      // Step 1: Send KAS from native wallet to escrow
       const txRes = await base44.functions.invoke('sendKaspaTransaction', {
-        mnemonic: linkedWallet.mnemonic,
-        fromAddress: linkedWallet.address,
+        mnemonic: activeWallet.mnemonic,
+        fromAddress: activeWallet.address,
         toAddress: escrowFull,
         amountKas: amt,
       });
 
       if (txRes.data?.error) throw new Error(txRes.data.error);
-      const hash = txRes.data.txId || '';
-      setTxHash(hash);
-      toast.success(`KAS sent! TX: ${hash.slice(0, 16)}...`);
+      const txHash = txRes.data.txId || '';
+      if (!txHash) throw new Error('No transaction ID returned');
 
-      // Wait a moment for TX to propagate, then verify
-      setStep('verify');
-      setTimeout(() => verifyTx(hash), 3000);
-    } catch (err) {
-      toast.error(`Send failed: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
+      toast.success(`KAS sent! Verifying...`);
+      setStep('verifying');
 
-  // Step 2: Verify TX hash on-chain via backend
-  const verifyTx = async (hash) => {
-    const h = hash || txHash.trim();
-    if (!h) { toast.error('Enter a transaction hash'); return; }
+      // Step 2: Wait for TX to propagate then verify on-chain
+      await new Promise(r => setTimeout(r, 4000));
 
-    setLoading(true);
-    try {
-      const res = await base44.functions.invoke('kachingPlaceBet', {
+      const verifyRes = await base44.functions.invoke('kachingPlaceBet', {
         game_id: game.id,
         side,
-        tx_hash_in: h,
+        tx_hash_in: txHash,
       });
 
-      if (!res.data?.success) throw new Error(res.data?.error || 'Verification failed');
+      if (!verifyRes.data?.success) throw new Error(verifyRes.data?.error || 'Verification failed');
 
-      setVerifiedData(res.data);
+      setVerifiedData({ ...verifyRes.data, tx_hash_in: txHash });
       setStep('done');
-      toast.success('Bet verified on-chain!');
+      toast.success('Bet placed & verified on-chain!');
+
+      // Refresh balance
+      fetchBalance(activeWallet.address);
+
       setTimeout(() => {
         onSuccess?.();
         onClose();
       }, 2500);
     } catch (err) {
-      toast.error(err.message || 'Verification failed');
+      toast.error(err.message || 'Transaction failed');
+      setStep('amount');
     } finally {
       setLoading(false);
     }
@@ -132,138 +130,126 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
         <p className="text-white text-sm font-bold mb-1">{game.question}</p>
         <p className="text-white/30 text-[10px] mb-4">{isYes ? game.yes_label : game.no_label}</p>
 
-        {/* STEP 1: Send KAS to escrow */}
-        {step === 'send' && (
-          <div className="space-y-3">
-            {/* Escrow address — copy to send KAS */}
-            <div className="p-3 bg-white/[0.02] border border-white/[0.06] rounded-xl">
-              <p className="text-white/30 text-[9px] font-bold uppercase tracking-wider mb-1">Send KAS to this escrow</p>
-              <div className="flex items-center gap-2">
-                <p className="text-emerald-400/80 text-[10px] font-mono flex-1 truncate">{escrowFull}</p>
-                <button onClick={copyEscrow} className="text-white/30 hover:text-emerald-400 transition-colors">
-                  {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                </button>
-              </div>
+        {/* No wallet warning */}
+        {!activeWallet && (
+          <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl mb-4">
+            <div className="flex items-center gap-2 mb-1">
+              <AlertTriangle className="w-4 h-4 text-amber-400" />
+              <span className="text-amber-400 text-xs font-bold">No Wallet Found</span>
             </div>
-
-            {/* Auto-sign flow */}
-            {autoSign && linkedWallet ? (
-              <>
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/8 border border-emerald-500/20 rounded-lg">
-                  <Zap className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-emerald-400/80 text-[10px] font-bold">Auto-Sign — sends real KAS on-chain</span>
-                </div>
-                <div className="relative">
-                  <input
-                    type="number"
-                    value={amount}
-                    onChange={e => setAmount(e.target.value)}
-                    placeholder="Amount in KAS (min 0.1)"
-                    className="w-full bg-black/30 border border-white/[0.08] focus:border-emerald-500/40 rounded-xl px-4 py-3 text-white text-lg font-bold pr-16 focus:outline-none transition-colors"
-                    autoFocus
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 text-sm font-bold">KAS</span>
-                </div>
-                <div className="flex gap-1.5">
-                  {[1, 5, 10, 25, 50, 100].map(v => (
-                    <button
-                      key={v}
-                      onClick={() => setAmount(v.toString())}
-                      className="flex-1 py-2 bg-white/[0.03] hover:bg-emerald-500/10 border border-white/[0.06] hover:border-emerald-500/20 rounded-lg text-xs text-white/40 hover:text-emerald-300 font-bold transition-all"
-                    >
-                      {v}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  onClick={handleAutoSend}
-                  disabled={loading || !parseFloat(amount) || parseFloat(amount) < 0.1}
-                  className={`w-full py-3.5 rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2 ${
-                    isYes
-                      ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 text-black shadow-lg shadow-emerald-500/20'
-                      : 'bg-gradient-to-r from-red-600 to-red-500 text-white shadow-lg shadow-red-500/20'
-                  } disabled:opacity-30`}
-                >
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-                  Send {amount || '0'} KAS & Verify
-                </button>
-              </>
-            ) : (
-              <>
-                {/* Manual flow: user sends KAS externally then pastes TX */}
-                <div className="px-3 py-2 bg-amber-500/8 border border-amber-500/15 rounded-xl">
-                  <p className="text-amber-300/80 text-[10px] font-bold mb-1">Manual Bet — 3 Steps:</p>
-                  <ol className="text-amber-300/50 text-[9px] space-y-0.5 list-decimal list-inside">
-                    <li>Copy the escrow address above</li>
-                    <li>Send KAS to it from your wallet (Kasware, etc.)</li>
-                    <li>Paste your TX hash below to verify</li>
-                  </ol>
-                </div>
-                <button
-                  onClick={() => setStep('verify')}
-                  className="w-full py-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-white font-bold text-sm transition-all flex items-center justify-center gap-2"
-                >
-                  <Search className="w-4 h-4" />
-                  I've sent KAS — Enter TX Hash
-                </button>
-              </>
-            )}
+            <p className="text-amber-300/60 text-[10px]">
+              Import or create a wallet in Terra first. Your wallet needs a seed phrase to sign transactions.
+            </p>
           </div>
         )}
 
-        {/* STEP 2: Verify TX hash */}
-        {step === 'verify' && (
+        {/* STEP: Enter amount */}
+        {step === 'amount' && activeWallet && (
           <div className="space-y-3">
-            <div className="p-3 bg-white/[0.02] border border-white/[0.06] rounded-xl">
-              <p className="text-white/30 text-[9px] font-bold uppercase tracking-wider mb-2">Kaspa Transaction Hash</p>
+            {/* Wallet info */}
+            <div className="flex items-center gap-2 px-3 py-2 bg-white/[0.03] border border-white/[0.06] rounded-xl">
+              <Wallet className="w-3.5 h-3.5 text-emerald-400/60" />
+              <span className="text-white/40 text-[10px] font-mono truncate flex-1">
+                {activeWallet.address?.slice(0, 24)}...
+              </span>
+              {walletBalance !== null && (
+                <span className="text-emerald-400 text-[10px] font-bold">{walletBalance.toFixed(2)} KAS</span>
+              )}
+            </div>
+
+            {/* Amount input */}
+            <div className="relative">
               <input
-                type="text"
-                value={txHash}
-                onChange={e => setTxHash(e.target.value)}
-                placeholder="Paste your TX hash here..."
-                className="w-full bg-black/30 border border-white/[0.08] focus:border-emerald-500/40 rounded-lg px-3 py-2.5 text-white text-xs font-mono focus:outline-none transition-colors"
+                type="number"
+                value={amount}
+                onChange={e => setAmount(e.target.value)}
+                placeholder="Amount in KAS (min 0.1)"
+                className="w-full bg-black/30 border border-white/[0.08] focus:border-emerald-500/40 rounded-xl px-4 py-3 text-white text-lg font-bold pr-16 focus:outline-none transition-colors"
                 autoFocus
               />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 text-sm font-bold">KAS</span>
             </div>
 
-            <div className="flex items-center gap-2 px-3 py-2 bg-blue-500/8 border border-blue-500/15 rounded-xl">
-              <Search className="w-3.5 h-3.5 text-blue-400/70" />
-              <span className="text-blue-300/60 text-[10px]">
-                We'll verify this TX on the Kaspa blockchain to confirm your bet
-              </span>
+            {/* Quick amounts */}
+            <div className="flex gap-1.5">
+              {[1, 5, 10, 25, 50, 100].map(v => (
+                <button
+                  key={v}
+                  onClick={() => setAmount(v.toString())}
+                  className="flex-1 py-2 bg-white/[0.03] hover:bg-emerald-500/10 border border-white/[0.06] hover:border-emerald-500/20 rounded-lg text-xs text-white/40 hover:text-emerald-300 font-bold transition-all"
+                >
+                  {v}
+                </button>
+              ))}
             </div>
 
+            {/* Potential payout */}
+            {parseFloat(amount) > 0 && (
+              <div className="px-3 py-2 bg-white/[0.02] border border-white/[0.05] rounded-xl">
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="text-white/30">Potential payout if {side} wins:</span>
+                  <span className="text-emerald-400 font-bold">
+                    {(() => {
+                      const pool = (game.yes_pool_kas || 0) + (game.no_pool_kas || 0) + parseFloat(amount);
+                      const sidePool = (side === 'yes' ? game.yes_pool_kas || 0 : game.no_pool_kas || 0) + parseFloat(amount);
+                      const share = sidePool > 0 ? (parseFloat(amount) / sidePool) * pool * 0.98 : 0;
+                      return share.toFixed(2);
+                    })()} KAS
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Place bet button */}
             <button
-              onClick={() => verifyTx()}
-              disabled={loading || !txHash.trim()}
+              onClick={handlePlaceBet}
+              disabled={loading || !parseFloat(amount) || parseFloat(amount) < 0.1}
               className={`w-full py-3.5 rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2 ${
                 isYes
                   ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 text-black shadow-lg shadow-emerald-500/20'
                   : 'bg-gradient-to-r from-red-600 to-red-500 text-white shadow-lg shadow-red-500/20'
               } disabled:opacity-30`}
             >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-              {loading ? 'Verifying on-chain...' : 'Verify & Place Bet'}
+              <Zap className="w-4 h-4" />
+              Place {amount || '0'} KAS on {side.toUpperCase()}
             </button>
+
+            <p className="text-white/15 text-[8px] text-center">
+              Sends KAS directly from your wallet to escrow · Verified on Kaspa blockchain
+            </p>
           </div>
         )}
 
-        {/* STEP 3: Done — show verified on-chain data */}
+        {/* STEP: Sending TX */}
+        {step === 'sending' && (
+          <div className="flex flex-col items-center py-8 gap-3">
+            <Loader2 className="w-10 h-10 text-emerald-400 animate-spin" />
+            <p className="text-white font-bold text-sm">Sending {amount} KAS...</p>
+            <p className="text-white/30 text-[10px]">Signing transaction from your wallet</p>
+          </div>
+        )}
+
+        {/* STEP: Verifying on-chain */}
+        {step === 'verifying' && (
+          <div className="flex flex-col items-center py-8 gap-3">
+            <Loader2 className="w-10 h-10 text-blue-400 animate-spin" />
+            <p className="text-white font-bold text-sm">Verifying on-chain...</p>
+            <p className="text-white/30 text-[10px]">Confirming transaction on Kaspa blockchain</p>
+          </div>
+        )}
+
+        {/* STEP: Done */}
         {step === 'done' && verifiedData && (
           <div className="space-y-3">
             <div className="flex flex-col items-center py-4 gap-2">
               <CheckCircle className="w-10 h-10 text-emerald-400" />
-              <p className="text-white font-bold text-sm">Verified On-Chain!</p>
+              <p className="text-white font-bold text-sm">Bet Placed!</p>
             </div>
 
             <div className="p-3 bg-emerald-500/5 border border-emerald-500/15 rounded-xl space-y-2">
-              <div>
-                <p className="text-white/30 text-[8px] uppercase tracking-wider">Sender Wallet</p>
-                <p className="text-emerald-400 text-[10px] font-mono truncate">{verifiedData.sender_address}</p>
-              </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-white/30 text-[8px] uppercase tracking-wider">Amount Verified</p>
+                  <p className="text-white/30 text-[8px] uppercase tracking-wider">Amount</p>
                   <p className="text-white font-bold text-sm">{verifiedData.amount_kas} KAS</p>
                 </div>
                 <div className="text-right">
@@ -272,17 +258,23 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
                 </div>
               </div>
               <div>
-                <p className="text-white/30 text-[8px] uppercase tracking-wider">TX Hash</p>
-                <a
-                  href={`https://explorer.kaspa.org/txs/${verifiedData.tx_hash_in}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-400/60 text-[9px] font-mono truncate flex items-center gap-1 hover:text-blue-400"
-                >
-                  {verifiedData.tx_hash_in}
-                  <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                </a>
+                <p className="text-white/30 text-[8px] uppercase tracking-wider">Wallet</p>
+                <p className="text-emerald-400 text-[10px] font-mono truncate">{verifiedData.sender_address}</p>
               </div>
+              {verifiedData.tx_hash_in && (
+                <div>
+                  <p className="text-white/30 text-[8px] uppercase tracking-wider">TX Hash</p>
+                  <a
+                    href={`https://explorer.kaspa.org/txs/${verifiedData.tx_hash_in}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-400/60 text-[9px] font-mono truncate flex items-center gap-1 hover:text-blue-400"
+                  >
+                    {verifiedData.tx_hash_in}
+                    <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         )}
