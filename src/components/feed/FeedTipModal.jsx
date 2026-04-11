@@ -23,10 +23,12 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
   const [tipError, setTipError] = useState('');
   const mobile = isMobileDevice();
 
-  // On mobile, default to TTT wallet if available, else kasware
+  // Detect Kasware availability + TTT wallet
   const tttWalletAddress = user?.created_wallet_address || localStorage.getItem('ttt_wallet_address');
   const tttPrivateKey = localStorage.getItem('ttt_wallet_pk');
-  const defaultMethod = mobile && tttWalletAddress ? 'ttt' : 'kasware';
+  const hasKasware = typeof window !== 'undefined' && !!window.kasware;
+  // Auto-default to TTT if Kasware is unavailable (mobile, preview, no extension)
+  const defaultMethod = (!hasKasware && tttWalletAddress) ? 'ttt' : hasKasware ? 'kasware' : 'ttt';
   const [sendMethod, setSendMethod] = useState(defaultMethod);
   const [tipPin, setTipPin] = useState('');
   const [pinVerified, setPinVerified] = useState(false);
@@ -247,8 +249,8 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
             <div className="text-white font-mono text-sm break-all">{tippingPost.author_wallet_address}</div>
           </div>
 
-          {/* Send Method (mobile only) */}
-          {mobile && (
+          {/* Send Method — show when TTT wallet exists or Kasware detected */}
+          {(tttWalletAddress || hasKasware) && (
             <div>
               <div className="text-xs text-white/50 mb-2">Send via</div>
               <div className="flex gap-2">
@@ -262,7 +264,7 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
                     TTT Wallet
                   </Button>
                 )}
-                {(kaswareWallet?.connected || window.kasware) && (
+                {hasKasware && (
                   <Button
                     onClick={() => setSendMethod('kasware')}
                     size="sm"
@@ -272,32 +274,9 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
                   </Button>
                 )}
               </div>
-            </div>
-          )}
-
-          {/* Token Type (KRC20 only on kasware) */}
-          <div className="flex gap-2">
-            <Button
-              onClick={() => { setTipTokenType('KAS'); setTipKrc20Ticker(''); }}
-              size="sm"
-              className={`flex-1 ${tipTokenType === 'KAS' ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white'}`}
-            >KAS</Button>
-              <Button
-              onClick={() => setTipTokenType('KRC20')}
-              size="sm"
-              className={`flex-1 ${tipTokenType === 'KRC20' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white'}`}
-            >KRC-20</Button>
-          </div>
-
-          {tipTokenType === 'KRC20' && (
-            <div>
-              <label className="text-sm text-white/60 mb-2 block">Token Ticker</label>
-              <Input
-                value={tipKrc20Ticker}
-                onChange={e => setTipKrc20Ticker(e.target.value.toUpperCase())}
-                placeholder="e.g., KSPR, LEGEND"
-                className="bg-white/5 border-white/10 text-white text-center h-10 font-semibold"
-              />
+              {!hasKasware && !tttWalletAddress && (
+                <p className="text-xs text-amber-400 mt-2">No wallet detected. Set up a TTT wallet in Terra or install Kasware extension.</p>
+              )}
             </div>
           )}
 
