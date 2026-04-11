@@ -177,11 +177,10 @@ export default function StakeDAGPage() {
     setBetModal({ game, side });
   };
 
-  const filteredGames = games;
-
-  const openGames = filteredGames.filter(g => g.status === 'open' && new Date(g.end_time) > new Date());
-  const judgingGames = filteredGames.filter(g => g.status === 'judging' || g.status === 'locked');
-  const settledGames = filteredGames.filter(g => g.status === 'settled');
+  // Only show real games with valid escrow addresses (66+ char kaspa addresses)
+  const validGames = games.filter(g => g.escrow_address && g.escrow_address.length >= 60);
+  const openGames = validGames.filter(g => g.status === 'open' && new Date(g.end_time) > new Date());
+  const settledGames = validGames.filter(g => g.status === 'settled');
 
   const isVerified = localStorage.getItem('kaching_verified') === 'true';
   const myActiveBets = userBets.filter(b => b.status === 'confirmed' || b.status === 'pending_deposit');
@@ -310,29 +309,15 @@ export default function StakeDAGPage() {
                   <p className="text-white/15 text-xs mt-1">Click "New Round" to generate predictions</p>
                 </div>
               ) : (
-                <>
-                  {judgingGames.length > 0 && (
-                    <section>
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
-                        <span className="text-amber-400/80 text-[10px] font-bold uppercase tracking-[0.15em]">Judging</span>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {judgingGames.map(g => <LiveGameCard key={g.id} game={g} userBets={userBets} onBet={openBetModal} />)}
-                      </div>
-                    </section>
-                  )}
-
-                  <section>
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-                      <span className="text-emerald-400/60 text-[10px] font-bold uppercase tracking-[0.15em]">Open — {openGames.length} games</span>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {openGames.map(g => <LiveGameCard key={g.id} game={g} userBets={userBets} onBet={openBetModal} />)}
-                    </div>
-                  </section>
-                </>
+                <section>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                    <span className="text-emerald-400/60 text-[10px] font-bold uppercase tracking-[0.15em]">Live — {openGames.length} markets</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {openGames.map(g => <LiveGameCard key={g.id} game={g} userBets={userBets} onBet={openBetModal} />)}
+                  </div>
+                </section>
               )}
             </>
           )}
