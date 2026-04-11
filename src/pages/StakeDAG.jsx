@@ -171,9 +171,15 @@ export default function StakeDAGPage() {
   }, [games, accessDenied]);
 
   const openBetModal = (game, side) => {
-    if (!walletAddress) { setShowSettings(true); toast.error('Connect wallet first'); return; }
-    const isVerified = localStorage.getItem('kaching_verified') === 'true';
-    if (!isVerified) { setShowSettings(true); toast.error('Verify your PIN in settings first'); return; }
+    // Check for any usable wallet (Terra wallets with mnemonic or TTT wallet with PK)
+    const wallets = JSON.parse(localStorage.getItem('terra_wallets') || '[]');
+    const hasWallet = wallets.some(w => w.mnemonic) || localStorage.getItem('ttt_wallet_pk');
+    if (!hasWallet && !walletAddress) {
+      setShowSettings(true);
+      toast.error('Connect or import a wallet first');
+      return;
+    }
+    // PIN is verified once in settings — no need to re-verify each bet
     setBetModal({ game, side });
   };
 

@@ -13,16 +13,25 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
   const [walletBalance, setWalletBalance] = useState(null);
 
   useEffect(() => {
-    // Find active Terra wallet with mnemonic
+    // Use same wallet discovery as feed tipping
     try {
       const wallets = JSON.parse(localStorage.getItem('terra_wallets') || '[]');
       const linked = localStorage.getItem('kaching_linked_wallet');
       const w = linked
         ? wallets.find(w => w.address === linked && w.mnemonic)
         : wallets.find(w => w.mnemonic);
+      
       if (w) {
         setActiveWallet(w);
         fetchBalance(w.address);
+      } else {
+        // Fallback: check TTT wallet (same as feed tip modal)
+        const tttAddr = localStorage.getItem('ttt_wallet_address');
+        const tttPk = localStorage.getItem('ttt_wallet_pk');
+        if (tttAddr && tttPk) {
+          setActiveWallet({ address: tttAddr, privateKey: tttPk });
+          fetchBalance(tttAddr);
+        }
       }
     } catch {}
   }, []);
@@ -45,29 +54,39 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
   const handlePlaceBet = async () => {
     const amt = parseFloat(amount);
     if (!amt || amt < 0.1) { toast.error('Min bet: 0.1 KAS'); return; }
-    if (!activeWallet?.mnemonic) { toast.error('No wallet with seed phrase found'); return; }
+    if (!activeWallet) { toast.error('No wallet found — import in Terra first'); return; }
     if (walletBalance !== null && amt > walletBalance) { toast.error('Insufficient balance'); return; }
 
     setLoading(true);
     setStep('sending');
 
     try {
-      // Step 1: Send KAS from native wallet to escrow
-      const txRes = await base44.functions.invoke('sendKaspaTransaction', {
-        mnemonic: activeWallet.mnemonic,
+      // Build TX payload same as feed tipping
+      const txPayload = {
         fromAddress: activeWallet.address,
         toAddress: escrowFull,
         amountKas: amt,
-      });
+      };
+
+      // Use mnemonic if available (Terra wallets), else privateKey (TTT wallet)
+      if (activeWallet.mnemonic) {
+        txPayload.mnemonic = activeWallet.mnemonic;
+      } else if (activeWallet.privateKey) {
+        txPayload.privateKey = activeWallet.privateKey;
+      } else {
+        throw new Error('No signing key available');
+      }
+
+      const txRes = await base44.functions.invoke('sendKaspaTransaction', txPayload);
 
       if (txRes.data?.error) throw new Error(txRes.data.error);
       const txHash = txRes.data.txId || '';
       if (!txHash) throw new Error('No transaction ID returned');
 
-      toast.success(`KAS sent! Verifying...`);
+      toast.success('KAS sent! Verifying...');
       setStep('verifying');
 
-      // Step 2: Wait for TX to propagate then verify on-chain
+      // Wait for TX to propagate then verify on-chain
       await new Promise(r => setTimeout(r, 4000));
 
       const verifyRes = await base44.functions.invoke('kachingPlaceBet', {
@@ -80,9 +99,7 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
 
       setVerifiedData({ ...verifyRes.data, tx_hash_in: txHash });
       setStep('done');
-      toast.success('Bet placed & verified on-chain!');
-
-      // Refresh balance
+      toast.success('Bet placed & verified!');
       fetchBalance(activeWallet.address);
 
       setTimeout(() => {
@@ -90,7 +107,14 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
         onClose();
       }, 2500);
     } catch (err) {
-      toast.error(err.message || 'Transaction failed');
+      const msg = err.message || 'Transaction failed';
+      if (msg.includes('storage mass')) {
+        toast.error('Storage mass error — consolidate UTXOs in wallet settings');
+      } else if (msg.includes('false stack') || msg.includes('signature')) {
+        toast.error('Key expired — reimport wallet in Terra');
+      } else {
+        toast.error(msg);
+      }
       setStep('amount');
     } finally {
       setLoading(false);
@@ -98,6 +122,8 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
   };
 
   const isYes = side === 'yes';
+  const pool = (game.yes_pool_kas || 0) + (game.no_pool_kas || 0);
+  const sidePool = side === 'yes' ? (game.yes_pool_kas || 0) : (game.no_pool_kas || 0);
 
   return (
     <motion.div
@@ -130,15 +156,15 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
         <p className="text-white text-sm font-bold mb-1">{game.question}</p>
         <p className="text-white/30 text-[10px] mb-4">{isYes ? game.yes_label : game.no_label}</p>
 
-        {/* No wallet warning */}
-        {!activeWallet && (
-          <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl mb-4">
+        {/* No wallet */}
+        {!activeWallet && step === 'amount' && (
+          <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
             <div className="flex items-center gap-2 mb-1">
               <AlertTriangle className="w-4 h-4 text-amber-400" />
               <span className="text-amber-400 text-xs font-bold">No Wallet Found</span>
             </div>
             <p className="text-amber-300/60 text-[10px]">
-              Import or create a wallet in Terra first. Your wallet needs a seed phrase to sign transactions.
+              Import or create a wallet in Terra first. Needs a seed phrase to sign.
             </p>
           </div>
         )}
@@ -157,7 +183,6 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
               )}
             </div>
 
-            {/* Amount input */}
             <div className="relative">
               <input
                 type="number"
@@ -170,7 +195,6 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 text-sm font-bold">KAS</span>
             </div>
 
-            {/* Quick amounts */}
             <div className="flex gap-1.5">
               {[1, 5, 10, 25, 50, 100].map(v => (
                 <button
@@ -183,24 +207,24 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
               ))}
             </div>
 
-            {/* Potential payout */}
+            {/* Potential payout — no fee */}
             {parseFloat(amount) > 0 && (
               <div className="px-3 py-2 bg-white/[0.02] border border-white/[0.05] rounded-xl">
                 <div className="flex items-center justify-between text-[10px]">
-                  <span className="text-white/30">Potential payout if {side} wins:</span>
+                  <span className="text-white/30">Potential payout:</span>
                   <span className="text-emerald-400 font-bold">
                     {(() => {
-                      const pool = (game.yes_pool_kas || 0) + (game.no_pool_kas || 0) + parseFloat(amount);
-                      const sidePool = (side === 'yes' ? game.yes_pool_kas || 0 : game.no_pool_kas || 0) + parseFloat(amount);
-                      const share = sidePool > 0 ? (parseFloat(amount) / sidePool) * pool * 0.98 : 0;
+                      const newPool = pool + parseFloat(amount);
+                      const newSidePool = sidePool + parseFloat(amount);
+                      const share = newSidePool > 0 ? (parseFloat(amount) / newSidePool) * newPool : 0;
                       return share.toFixed(2);
                     })()} KAS
                   </span>
                 </div>
+                <p className="text-white/15 text-[8px] mt-0.5">0% platform fee · 100% goes to winners</p>
               </div>
             )}
 
-            {/* Place bet button */}
             <button
               onClick={handlePlaceBet}
               disabled={loading || !parseFloat(amount) || parseFloat(amount) < 0.1}
@@ -215,37 +239,36 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
             </button>
 
             <p className="text-white/15 text-[8px] text-center">
-              Sends KAS directly from your wallet to escrow · Verified on Kaspa blockchain
+              Sends KAS natively from your wallet · Verified on Kaspa blockchain
             </p>
           </div>
         )}
 
-        {/* STEP: Sending TX */}
+        {/* Sending */}
         {step === 'sending' && (
           <div className="flex flex-col items-center py-8 gap-3">
             <Loader2 className="w-10 h-10 text-emerald-400 animate-spin" />
             <p className="text-white font-bold text-sm">Sending {amount} KAS...</p>
-            <p className="text-white/30 text-[10px]">Signing transaction from your wallet</p>
+            <p className="text-white/30 text-[10px]">Signing from your native wallet</p>
           </div>
         )}
 
-        {/* STEP: Verifying on-chain */}
+        {/* Verifying */}
         {step === 'verifying' && (
           <div className="flex flex-col items-center py-8 gap-3">
             <Loader2 className="w-10 h-10 text-blue-400 animate-spin" />
             <p className="text-white font-bold text-sm">Verifying on-chain...</p>
-            <p className="text-white/30 text-[10px]">Confirming transaction on Kaspa blockchain</p>
+            <p className="text-white/30 text-[10px]">Confirming on Kaspa blockchain</p>
           </div>
         )}
 
-        {/* STEP: Done */}
+        {/* Done */}
         {step === 'done' && verifiedData && (
           <div className="space-y-3">
             <div className="flex flex-col items-center py-4 gap-2">
               <CheckCircle className="w-10 h-10 text-emerald-400" />
               <p className="text-white font-bold text-sm">Bet Placed!</p>
             </div>
-
             <div className="p-3 bg-emerald-500/5 border border-emerald-500/15 rounded-xl space-y-2">
               <div className="flex items-center justify-between">
                 <div>
@@ -256,10 +279,6 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
                   <p className="text-white/30 text-[8px] uppercase tracking-wider">Side</p>
                   <p className={`font-black text-sm ${isYes ? 'text-emerald-400' : 'text-red-400'}`}>{side.toUpperCase()}</p>
                 </div>
-              </div>
-              <div>
-                <p className="text-white/30 text-[8px] uppercase tracking-wider">Wallet</p>
-                <p className="text-emerald-400 text-[10px] font-mono truncate">{verifiedData.sender_address}</p>
               </div>
               {verifiedData.tx_hash_in && (
                 <div>

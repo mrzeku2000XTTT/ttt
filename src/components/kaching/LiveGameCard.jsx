@@ -140,7 +140,7 @@ export default function LiveGameCard({ game, userBets, onBet }) {
                   {game.settlement_tx_hashes.length} TX sent
                 </span>
                 <p className="text-white/15 text-[7px] mt-0.5">
-                  Pool: {total.toFixed(2)} KAS · Fee: {(total * 0.02).toFixed(2)} KAS
+                  Pool: {total.toFixed(2)} KAS · 0% fee
                 </p>
               </div>
             ) : isSettled ? (

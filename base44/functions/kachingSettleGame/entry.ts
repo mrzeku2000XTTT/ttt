@@ -104,9 +104,8 @@ Deno.serve(async (req) => {
             if (txHash) txHashes.push(txHash);
           }
         } else if (winners.length > 0) {
-          // Winners split entire pool proportionally (minus 2% fee)
-          const feeFraction = 0.02;
-          const distributable = totalPool * (1 - feeFraction);
+          // Winners split entire pool proportionally (no fee)
+          const distributable = totalPool;
 
           for (const winner of winners) {
             const share = winnerPool > 0 ? (winner.amount_kas / winnerPool) * distributable : 0;

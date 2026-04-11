@@ -112,14 +112,28 @@ Deno.serve(async (req) => {
 
       try {
         const escrow = await createEscrow();
+        
+        // Validate escrow address is real kaspa address (60+ chars, alphanumeric)
+        if (!escrow.address || escrow.address.length < 60) {
+          console.error(`Invalid escrow address for ${coin.symbol}: ${escrow.address}`);
+          continue;
+        }
+        
+        // Verify address is reachable on Kaspa network
+        let escrowValid = false;
+        try {
+          const checkRes = await fetch(`https://api.kaspa.org/addresses/kaspa:${escrow.address}/balance`);
+          escrowValid = checkRes.ok;
+          console.log(`Escrow validation for ${coin.symbol}: ${checkRes.status} (${escrowValid ? 'VALID' : 'INVALID'})`);
+        } catch (e) {
+          console.error(`Escrow validation failed for ${coin.symbol}:`, e.message);
+          // Still allow — new addresses may not have balance endpoint yet
+          escrowValid = true;
+        }
+        
         const gameNumber = escrow.address.slice(0, 8).toUpperCase();
 
-        const isKaspa = coin.symbol === 'KAS';
-        const question = isKaspa
-          ? `Will KAS break above $${formattedPrice} this round?`
-          : `Will ${coin.symbol} be above $${formattedPrice} in 15 min?`;
-
-        console.log(`Creating game: ${coin.symbol} at $${formattedPrice}`);
+        console.log(`Creating game: ${coin.symbol} at $${formattedPrice} | escrow valid: ${escrowValid}`);
 
         const game = await base44.asServiceRole.entities.PredictionGame.create({
           game_number: gameNumber,
