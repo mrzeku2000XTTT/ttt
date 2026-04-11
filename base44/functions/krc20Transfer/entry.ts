@@ -8,10 +8,10 @@
 //   Step 4: Wait for P2SH UTXO confirmation
 //   Step 5: REVEAL TX — spend P2SH UTXO back to sender (inscription broadcast)
 //
-// KEY FIXES (v3):
-//   - P2SH sighash uses redeemScript as utxoScript (BIP-143 P2SH rule)
+// KEY FIXES (v4):
+//   - Sighash always uses actual UTXO scriptPubKey (P2SH wrapper), NOT redeem script
+//   - Kaspa sighash differs from Bitcoin BIP-143: no script substitution for P2SH
 //   - Transaction IDs reversed to LE in sighash (Kaspa convention)
-//   - P2SH input sigOpCount = 0 (OP_CHECKSIG inside redeem, not scriptPubKey)
 //   - Minimum output enforced at 0.1 KAS per KASPACOM
 //   - Enhanced retry with exponential backoff
 
@@ -187,11 +187,13 @@ function hashOutputs(outputs) {
 
 /**
  * Kaspa SigHash computation (SigHashAll = 0x01)
- * Reference: rusty-kaspa/consensus/core/src/hashing/sighash.rs
+ * Reference: kaspa-mdbook.aspectron.com/transactions/sighashes.html
  *
- * CRITICAL for P2SH: The "previous output script" field in sighash
- * must be the REDEEM SCRIPT, not the P2SH wrapper (OP_BLAKE2B <hash> OP_EQUAL).
- * This matches BIP-143 behavior for P2SH inputs.
+ * IMPORTANT: Unlike Bitcoin BIP-143, Kaspa does NOT substitute the redeem
+ * script for P2SH inputs in the sighash. Field 9 is always
+ * "txIn.PreviousOutput.ScriptPubKey" — the actual UTXO script on-chain.
+ * For P2SH inputs this is the wrapper (OP_BLAKE2B <hash> OP_EQUAL).
+ * The redeem script is only revealed in the signatureScript, not in sighash.
  */
 function computeSigHash(tx, inputIndex) {
   const inp = tx.inputs[inputIndex];
@@ -205,9 +207,8 @@ function computeSigHash(tx, inputIndex) {
   const subnetworkId = new Uint8Array(20);
   const payloadHash = new Uint8Array(32);
 
-  // For P2SH inputs, use the redeemScript as the "previous output script"
-  // For P2PK inputs, use the actual scriptPubKey
-  const scriptForSighash = inp.redeemScript || inp.utxoScriptPubKey;
+  // ALWAYS use the actual UTXO scriptPubKey — no P2SH script substitution in Kaspa
+  const scriptForSighash = inp.utxoScriptPubKey;
 
   const message = concatBytes(
     writeU16LE(tx.version ?? 0),
@@ -358,17 +359,15 @@ async function buildAndSubmitRevealTx({
   const inputs = [];
 
   // P2SH input (index 0) — the inscription input
-  // sigOpCount MUST be 1: the redeem script contains OP_CHECKSIG, and the node
-  // enforces that actual sig ops don't exceed the declared count.
+  // sigOpCount = 1: the redeem script contains OP_CHECKSIG
   inputs.push({
     prevTxId: p2shUtxo.outpoint.transactionId,
     prevIndex: p2shUtxo.outpoint.index,
     utxoScriptVersion: 0,
-    utxoScriptPubKey: p2shScriptPubKey,
-    redeemScript: redeemScript,
+    utxoScriptPubKey: p2shScriptPubKey,  // P2SH wrapper (OP_BLAKE2B <hash> OP_EQUAL) — used in sighash
     utxoAmount: p2shAmount,
     sequence: 0n,
-    sigOpCount: 1,  // Redeem script has OP_CHECKSIG = 1 sig op
+    sigOpCount: 1,
     isP2SH: true,
   });
 
@@ -379,10 +378,9 @@ async function buildAndSubmitRevealTx({
       prevIndex: u.outpoint.index,
       utxoScriptVersion: 0,
       utxoScriptPubKey: senderScriptPubKey,
-      redeemScript: null,
       utxoAmount: BigInt(u.utxoEntry.amount),
       sequence: 0n,
-      sigOpCount: 1, // P2PK has 1 OP_CHECKSIG
+      sigOpCount: 1,
       isP2SH: false,
     });
   }
