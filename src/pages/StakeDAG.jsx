@@ -111,41 +111,18 @@ export default function StakeDAGPage() {
     } catch {}
   };
 
-  const fetchBalance = useCallback(async (addr, forceApi = false) => {
+  const fetchBalance = useCallback((addr) => {
     if (!addr) return;
     const fullAddr = addr.startsWith('kaspa:') ? addr : `kaspa:${addr}`;
 
-    // Try reading from Terra's cached balances first (no API call)
-    if (!forceApi) {
-      try {
-        const cached = JSON.parse(localStorage.getItem('terra_balances') || '{}');
-        const cachedBal = cached[fullAddr];
-        if (cachedBal !== undefined && cachedBal !== '?' && cachedBal !== null) {
-          setWalletBalance(Number(cachedBal) || 0);
-          return;
-        }
-      } catch {}
-    }
-
-    // Fallback: fetch from API (only on forceApi or no cached data)
+    // Read from Terra's cached balances (Terra/Wallet pages keep this fresh)
     try {
-      const cleanAddr = fullAddr.replace('kaspa:', '');
-      const balRes = await fetch(`https://api.kaspa.org/addresses/kaspa:${cleanAddr}/balance`);
-      if (balRes.ok) {
-        const data = await balRes.json();
-        const balanceSompi = Number(data?.balance) || 0;
-        const balKas = balanceSompi / 1e8;
-        setWalletBalance(balKas);
-        // Update Terra cache so it stays in sync
-        try {
-          const cached = JSON.parse(localStorage.getItem('terra_balances') || '{}');
-          cached[fullAddr] = balKas;
-          localStorage.setItem('terra_balances', JSON.stringify(cached));
-        } catch {}
+      const cached = JSON.parse(localStorage.getItem('terra_balances') || '{}');
+      const cachedBal = cached[fullAddr];
+      if (cachedBal !== undefined && cachedBal !== '?' && cachedBal !== null) {
+        setWalletBalance(Number(cachedBal) || 0);
       }
-    } catch (err) {
-      console.error('Balance fetch error:', err);
-    }
+    } catch {}
   }, []);
 
   const connectWallet = (addr) => {
@@ -206,8 +183,8 @@ export default function StakeDAGPage() {
     const refresh = setInterval(() => {
       loadGames(true);
       loadUserBets();
-      // Always fetch live balance from API
-      if (walletAddress) fetchBalance(walletAddress, true);
+      // Read balance from Terra's localStorage cache
+      if (walletAddress) fetchBalance(walletAddress);
     }, 10000);
     // Check every 5s for round boundary → trigger settlement animation
     const roundCheck = setInterval(() => {
