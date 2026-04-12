@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import QRScanner from "@/components/wallet/QRScanner";
 import KRC20Tokens from "@/components/terra/KRC20Tokens";
 import KRC20SendSheet from "@/components/terra/KRC20SendSheet";
+import KaChingWalletToggle from "@/components/kaching/KaChingWalletToggle";
 
 // ── Toast ──────────────────────────────────────────────────────────────────────
 const Toast = ({ message, type, onClose }) => (
@@ -758,6 +759,14 @@ export default function WalletPage() {
                 )}
               </CardContent>
             </Card>
+
+            {/* KaChing Integration */}
+            <div className="mb-4">
+              <KaChingWalletToggle
+                walletAddress={address}
+                hasMnemonic={!!(mnemonic || localStorage.getItem('ttt_wallet_pk'))}
+              />
+            </div>
 
             {/* KRC-20 Tokens */}
             <KRC20Tokens walletAddress={address} onSendToken={(token) => setKrc20SendToken(token)} />

@@ -5,6 +5,7 @@ import KRC20Tokens from "@/components/terra/KRC20Tokens";
 import KRC20SendSheet from "@/components/terra/KRC20SendSheet";
 import ReceiveSheet from "@/components/terra/ReceiveSheet";
 import SendSheet from "@/components/terra/SendSheet";
+import KaChingWalletToggle from "@/components/kaching/KaChingWalletToggle";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -421,6 +422,16 @@ export default function TerraPage() {
                   style={{ background: ACCENT, color: 'white', border: 'none', borderRadius: 14, padding: '14px 32px', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: SF, width: '100%' }}>
                   Create Wallet
                 </button>
+              </div>
+            )}
+
+            {/* KaChing Integration */}
+            {walletAddress && (
+              <div style={{ margin: '0 16px 16px' }}>
+                <KaChingWalletToggle
+                  walletAddress={walletAddress}
+                  hasMnemonic={!!activeWallet?.mnemonic}
+                />
               </div>
             )}
 

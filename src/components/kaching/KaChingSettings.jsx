@@ -22,6 +22,15 @@ export default function KaChingSettings({ show, onClose, walletAddress, onConnec
     const savedAutoSign = localStorage.getItem('kaching_autosign');
     if (savedAutoSign === 'true') setAutoSign(true);
     loadLinkedWallet();
+    // Listen for changes from other pages (Terra/Wallet toggle)
+    const handler = () => {
+      const as = localStorage.getItem('kaching_autosign') === 'true';
+      setAutoSign(as);
+      if (localStorage.getItem('kaching_verified') === 'true') setVerified(true);
+      loadLinkedWallet();
+    };
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
   }, []);
 
   const loadLinkedWallet = () => {
@@ -71,14 +80,25 @@ export default function KaChingSettings({ show, onClose, walletAddress, onConnec
     setAutoSign(newVal);
     localStorage.setItem('kaching_autosign', newVal ? 'true' : 'false');
     if (newVal) {
-      if (linkedWallet.address && !walletAddress) {
-        const clean = linkedWallet.address.startsWith('kaspa:') ? linkedWallet.address.slice(6) : linkedWallet.address;
-        onConnectWallet(clean);
+      // Link this wallet and set verified
+      if (linkedWallet.address) {
+        localStorage.setItem('kaching_linked_wallet', linkedWallet.address);
+        localStorage.setItem('kaching_verified', 'true');
+        if (!walletAddress) {
+          const clean = linkedWallet.address.startsWith('kaspa:') ? linkedWallet.address.slice(6) : linkedWallet.address;
+          onConnectWallet(clean);
+        }
       }
       toast.success('Auto-Sign ON — bets send real KAS instantly');
     } else {
+      // Clear KaChing link
+      localStorage.removeItem('kaching_linked_wallet');
+      localStorage.removeItem('kaching_verified');
+      localStorage.removeItem('stakedag_wallet');
       toast.success('Auto-Sign OFF');
     }
+    // Notify other tabs
+    window.dispatchEvent(new Event('storage'));
     onAutoSignChange?.(newVal);
   };
 

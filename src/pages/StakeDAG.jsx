@@ -39,6 +39,27 @@ export default function StakeDAGPage() {
 
   useEffect(() => { init(); }, []);
 
+  // Listen for KaChing wallet changes from Terra/Wallet pages
+  useEffect(() => {
+    const handler = () => {
+      const linked = localStorage.getItem('kaching_linked_wallet');
+      const autosign = localStorage.getItem('kaching_autosign') === 'true';
+      if (linked && autosign) {
+        const clean = linked.startsWith('kaspa:') ? linked.slice(6) : linked;
+        setWalletAddress(clean);
+        localStorage.setItem('stakedag_wallet', clean);
+        fetchBalance(clean);
+      } else if (!autosign && walletAddress) {
+        // Was turned off from another page
+        setWalletAddress(null);
+        setWalletBalance(0);
+        localStorage.removeItem('stakedag_wallet');
+      }
+    };
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
+  }, [walletAddress, fetchBalance]);
+
   const init = async () => {
     try {
       const u = await base44.auth.me();
@@ -121,7 +142,27 @@ export default function StakeDAGPage() {
       const cachedBal = cached[fullAddr];
       if (cachedBal !== undefined && cachedBal !== '?' && cachedBal !== null) {
         setWalletBalance(Number(cachedBal) || 0);
+        return;
       }
+    } catch {}
+    // Fallback: also check Wallet page balance via getKaspaBalance
+    // (lightweight, no CoinGecko involved)
+    try {
+      const clean = fullAddr.replace('kaspa:', '');
+      fetch(`https://api.kaspa.org/addresses/kaspa:${clean}/balance`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data?.balance !== undefined) {
+            const bal = (data.balance || 0) / 1e8;
+            setWalletBalance(bal);
+            // Update Terra cache
+            try {
+              const c = JSON.parse(localStorage.getItem('terra_balances') || '{}');
+              c[fullAddr] = bal;
+              localStorage.setItem('terra_balances', JSON.stringify(c));
+            } catch {}
+          }
+        }).catch(() => {});
     } catch {}
   }, []);
 
