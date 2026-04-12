@@ -114,21 +114,38 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
             ticker: 'PACMAN',
             decimals: 8,
           };
-          if (activeWallet.mnemonic) krc20Payload.mnemonic = activeWallet.mnemonic;
-          else if (activeWallet.privateKey) krc20Payload.privateKey = activeWallet.privateKey;
+          // Pass BOTH mnemonic and privateKey — krc20Transfer can derive from either
+          if (activeWallet.mnemonic) {
+            krc20Payload.mnemonic = activeWallet.mnemonic;
+          }
+          if (activeWallet.privateKey) {
+            krc20Payload.privateKey = activeWallet.privateKey;
+          }
+          // If neither mnemonic nor privateKey, try localStorage fallback
+          if (!krc20Payload.mnemonic && !krc20Payload.privateKey) {
+            const storedPK = localStorage.getItem('ttt_wallet_pk');
+            if (storedPK) krc20Payload.privateKey = storedPK;
+          }
 
-          const krc20Res = await base44.functions.invoke('krc20Transfer', krc20Payload);
-          const krc20Data = krc20Res.data || krc20Res;
-          if (krc20Data?.success) {
-            pacmanTxHash = krc20Data.commitTxId || '';
-            toast.success('PACMAN sent!');
+          if (!krc20Payload.mnemonic && !krc20Payload.privateKey) {
+            console.warn('No signing key available for KRC-20 transfer');
+            toast.warning('PACMAN skipped — no signing key for KRC-20');
           } else {
-            console.warn('KRC20 transfer issue:', krc20Data?.error);
-            toast.warning('PACMAN transfer failed — KAS bet still placed');
+            console.log('Sending KRC-20 transfer:', JSON.stringify({ ...krc20Payload, mnemonic: krc20Payload.mnemonic ? '[REDACTED]' : undefined, privateKey: krc20Payload.privateKey ? '[REDACTED]' : undefined }));
+            const krc20Res = await base44.functions.invoke('krc20Transfer', krc20Payload);
+            const krc20Data = krc20Res.data || krc20Res;
+            console.log('KRC-20 transfer result:', JSON.stringify(krc20Data));
+            if (krc20Data?.success) {
+              pacmanTxHash = krc20Data.commitTxId || '';
+              toast.success('PACMAN sent!');
+            } else {
+              console.warn('KRC20 transfer returned error:', krc20Data?.error);
+              toast.error(`PACMAN failed: ${krc20Data?.error || 'Unknown error'}`);
+            }
           }
         } catch (krc20Err) {
-          console.warn('KRC20 transfer error:', krc20Err.message);
-          toast.warning('PACMAN transfer failed — KAS bet still placed');
+          console.error('KRC20 transfer error:', krc20Err.message);
+          toast.error(`PACMAN failed: ${krc20Err.message}`);
         }
       }
 
@@ -162,6 +179,7 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
       setVerifiedData({ ...verifyRes.data, tx_hash_in: kasTxHash, tx_hash_pacman_in: pacmanTxHash });
       setStep('done');
       toast.success('Bet placed & verified!');
+      // Refresh balances immediately
       fetchBalance(activeWallet.address);
       if (pacAmt > 0) fetchPacmanBalance(activeWallet.address);
 

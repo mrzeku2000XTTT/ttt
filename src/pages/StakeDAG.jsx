@@ -479,6 +479,8 @@ export default function StakeDAGPage() {
             onSuccess={() => {
               loadGames();
               loadUserBets();
+              // Refresh header balance after bet
+              if (walletAddress) fetchBalance(walletAddress);
             }}
           />
         )}
