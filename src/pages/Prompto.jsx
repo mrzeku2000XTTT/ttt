@@ -395,7 +395,8 @@ export default function PromptPage() {
     const userMsg = {
       id: Date.now(), role: "user",
       content: isAnalyzeRun ? `[Image Analysis] ${currentPrompt || 'Analyze and generate replication prompt'}` : currentPrompt,
-      imagePreview: currentImage?.preview
+      imagePreview: currentImage?.preview,
+      imageUrl: currentImage?.url || null
     };
     const streamMsg = { id: streamId, role: "assistant", content: "", streaming: true };
 
@@ -422,18 +423,44 @@ export default function PromptPage() {
     try {
       const kb = getKnowledgeContext();
 
+      // Build conversation history from this session (last 10 exchanges max)
+      const currentSessions = sessionsRef.current;
+      const thisSession = currentSessions.find(s => s.id === sessionId);
+      const prevMessages = thisSession?.messages?.filter(m => !m.streaming && m.content) || [];
+      // Include the user message we just added
+      const allMsgs = [...prevMessages, userMsg];
+      // Build history string (last 20 messages to stay within token limits)
+      const historySlice = allMsgs.slice(-20);
+      const historyStr = historySlice.map(m => {
+        if (m.role === 'user') {
+          return `User: ${m.content}${m.imagePreview ? ' [sent an image]' : ''}`;
+        }
+        // Truncate long assistant messages to keep context manageable
+        const content = m.content?.length > 500 ? m.content.slice(0, 500) + '...' : m.content;
+        return `Assistant: ${content}`;
+      }).join('\n\n');
+
       let aiResponse;
       if (isAnalyzeRun) {
         aiResponse = await base44.integrations.Core.InvokeLLM({
-          prompt: `Analyze this image. Output: visual analysis (style, colors, lighting, composition), then 3 replication prompts (Exact Match, Enhanced, Alternative) each in code blocks. Add 2-3 tips.${currentPrompt ? ` User goal: ${currentPrompt}` : ''}${kb}`,
+          prompt: `You are PROMPTO, an AI image prompt engineer.${kb}\n\n--- Conversation so far ---\n${historyStr}\n--- End ---\n\nAnalyze this image. Output: visual analysis (style, colors, lighting, composition), then 3 replication prompts (Exact Match, Enhanced, Alternative) each in code blocks. Add 2-3 tips.${currentPrompt ? ` User goal: ${currentPrompt}` : ''}`,
           file_urls: [currentImage.url]
         });
       } else {
         const system = `You are PROMPTO, a friendly AI image prompt engineer. If the user sends a casual greeting or general question, respond naturally and briefly — do NOT generate image prompts for greetings or small talk. Only when the user describes an image idea or asks for prompt help, output 3 prompt variations (Direct, Cinematic, Stylized) each in code blocks with detailed descriptions and 3 refinement suggestions.${kb}`;
 
-        const params = currentImage
-          ? { prompt: `${system}\n\nUser: "${currentPrompt || 'describe and prompt this image'}"`, file_urls: [currentImage.url] }
-          : { prompt: `${system}\n\nUser: "${currentPrompt}"` };
+        // Collect file_urls from recent messages that had images
+        const recentImageUrls = [];
+        // Check last few user messages for uploaded images
+        for (const m of allMsgs.slice(-6)) {
+          if (m.imageUrl) recentImageUrls.push(m.imageUrl);
+        }
+        if (currentImage) recentImageUrls.push(currentImage.url);
+
+        const fullPrompt = `${system}\n\n--- Conversation ---\n${historyStr}\n--- End ---\n\nRespond to the user's latest message. Keep the conversation context in mind.`;
+
+        const params = { prompt: fullPrompt };
+        if (recentImageUrls.length > 0) params.file_urls = recentImageUrls;
 
         aiResponse = await base44.integrations.Core.InvokeLLM(params);
       }
