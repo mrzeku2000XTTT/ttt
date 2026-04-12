@@ -138,68 +138,95 @@ Deno.serve(async (req) => {
           const distributableKas = totalPool; // 0% fee
           const distributablePacman = totalPacmanPool; // All PACMAN in pool goes to winners
 
+          // CRITICAL: Aggregate payouts by wallet address to avoid draining escrow on first TX
+          // Multiple bets from same wallet on same game should be paid in a single transaction
+          const payoutsByAddress = {};
           for (const winner of winners) {
-            // KAS payout: proportional share of total KAS pool
             const kasShare = winnerPool > 0 ? (winner.amount_kas / winnerPool) * distributableKas : 0;
             const kasPayout = parseFloat(kasShare.toFixed(4));
-
-            // PACMAN payout: proportional share of total PACMAN pool (peer-to-peer)
             const pacmanShare = winnerPacmanPool > 0
               ? ((winner.amount_pacman || 0) / winnerPacmanPool) * distributablePacman
               : (winners.length > 0 ? distributablePacman / winners.length : 0);
             const pacmanPayout = Math.round(pacmanShare);
-
             const toAddr = normalizeAddress(winner.user_wallet_address);
-            console.log(`WINNER → ${toAddr} | KAS: ${kasPayout} | PACMAN: ${pacmanPayout}`);
+            
+            if (!payoutsByAddress[toAddr]) {
+              payoutsByAddress[toAddr] = { totalKas: 0, totalPacman: 0, bets: [] };
+            }
+            payoutsByAddress[toAddr].totalKas += kasPayout;
+            payoutsByAddress[toAddr].totalPacman += pacmanPayout;
+            payoutsByAddress[toAddr].bets.push({ winner, kasPayout, pacmanPayout });
+          }
 
-            // Send KAS payout + KRC-20 PACMAN payout
-            const [txHash, krc20Result] = await Promise.all([
-              sendPayout(base44, game, toAddr, kasPayout),
-              pacmanPayout > 0 ? sendKRC20FromEscrow(base44, game, toAddr, pacmanPayout) : Promise.resolve(null),
-            ]);
+          // Process payouts per unique address (one KAS TX + one PACMAN TX per address)
+          for (const [toAddr, payout] of Object.entries(payoutsByAddress)) {
+            const aggKas = parseFloat(payout.totalKas.toFixed(4));
+            const aggPacman = payout.totalPacman;
 
-            // Admin bonus PACMAN (only if one-sided — no losers to take from)
-            let adminBonus = 0;
+            console.log(`WINNER → ${toAddr} | Total KAS: ${aggKas} | Total PACMAN: ${aggPacman} | Bets: ${payout.bets.length}`);
+
+            // Send one aggregated KAS payout + one aggregated PACMAN payout per address
+            let txHash = null;
+            let krc20Result = null;
+            try {
+              [txHash, krc20Result] = await Promise.all([
+                aggKas > 0 ? sendPayout(base44, game, toAddr, aggKas) : Promise.resolve(null),
+                aggPacman > 0 ? sendKRC20FromEscrow(base44, game, toAddr, aggPacman) : Promise.resolve(null),
+              ]);
+            } catch (payErr) {
+              console.error(`Payout failed for ${toAddr}:`, payErr.message);
+            }
+
+            if (txHash) txHashes.push(txHash);
+
+            // Admin bonus PACMAN per address (only if one-sided)
+            let totalAdminBonus = 0;
             let adminBonusResult = null;
             if (isOneSided) {
-              adminBonus = Math.max(1, Math.round(winner.amount_kas * 10));
+              totalAdminBonus = Math.max(1, Math.round(aggKas * 10));
               try {
-                adminBonusResult = await sendAdminPacmanBonus(base44, toAddr, adminBonus);
+                adminBonusResult = await sendAdminPacmanBonus(base44, toAddr, totalAdminBonus);
               } catch (e) { console.warn('Admin bonus failed:', e.message); }
             }
 
-            const receipt = {
-              result: result.toUpperCase(),
-              question: game.question,
-              total_pool_kas: totalPool,
-              total_pool_pacman: totalPacmanPool,
-              your_bet_kas: winner.amount_kas,
-              your_bet_pacman: winner.amount_pacman || 0,
-              your_side: winner.side,
-              payout_kas: kasPayout,
-              payout_pacman: pacmanPayout,
-              kas_tx_hash: txHash || '',
-              pacman_tx_hash: krc20Result?.commitTxId || '',
-              pacman_bonus: adminBonus,
-              pacman_tx_commit: adminBonusResult?.commitTxId || '',
-              pacman_tx_reveal: adminBonusResult?.revealTxId || '',
-              settled_at: settledAt,
-              judge_reason: judgeReason,
-              notes: isOneSided
-                ? `🎉 You WON Game #${game.game_number}! One-sided bet — KAS refunded (${kasPayout} KAS). ${adminBonus > 0 ? `Admin bonus: ${adminBonus} PACMAN.` : ''}`
-                : `🎉 You WON Game #${game.game_number}! You bet ${winner.amount_kas} KAS${winner.amount_pacman ? ` + ${winner.amount_pacman} PACMAN` : ''} on ${winner.side.toUpperCase()} and won ${kasPayout} KAS${pacmanPayout > 0 ? ` + ${pacmanPayout} PACMAN` : ''} from the pool.`
-            };
+            // Update each bet record with its individual payout + the shared TX hash
+            for (const { winner, kasPayout, pacmanPayout } of payout.bets) {
+              const adminBonusPer = payout.bets.length > 1
+                ? Math.round(totalAdminBonus * (winner.amount_kas / payout.totalKas))
+                : totalAdminBonus;
 
-            await base44.asServiceRole.entities.GameBet.update(winner.id, {
-              status: 'won',
-              payout_kas: kasPayout,
-              payout_pacman: pacmanPayout,
-              tx_hash_out: txHash || '',
-              tx_hash_pacman_out: krc20Result?.commitTxId || '',
-              receipt,
-            });
-            if (txHash) txHashes.push(txHash);
-            console.log(`✅ Winner settled: kas=${kasPayout}, pacman=${pacmanPayout}, adminBonus=${adminBonus}`);
+              const receipt = {
+                result: result.toUpperCase(),
+                question: game.question,
+                total_pool_kas: totalPool,
+                total_pool_pacman: totalPacmanPool,
+                your_bet_kas: winner.amount_kas,
+                your_bet_pacman: winner.amount_pacman || 0,
+                your_side: winner.side,
+                payout_kas: kasPayout,
+                payout_pacman: pacmanPayout,
+                kas_tx_hash: txHash || '',
+                pacman_tx_hash: krc20Result?.commitTxId || '',
+                pacman_bonus: adminBonusPer,
+                pacman_tx_commit: adminBonusResult?.commitTxId || '',
+                pacman_tx_reveal: adminBonusResult?.revealTxId || '',
+                settled_at: settledAt,
+                judge_reason: judgeReason,
+                notes: isOneSided
+                  ? `🎉 You WON Game #${game.game_number}! One-sided bet — KAS refunded (${kasPayout} KAS). ${adminBonusPer > 0 ? `Admin bonus: ${adminBonusPer} PACMAN.` : ''}`
+                  : `🎉 You WON Game #${game.game_number}! You bet ${winner.amount_kas} KAS${winner.amount_pacman ? ` + ${winner.amount_pacman} PACMAN` : ''} on ${winner.side.toUpperCase()} and won ${kasPayout} KAS${pacmanPayout > 0 ? ` + ${pacmanPayout} PACMAN` : ''} from the pool.`
+              };
+
+              await base44.asServiceRole.entities.GameBet.update(winner.id, {
+                status: 'won',
+                payout_kas: kasPayout,
+                payout_pacman: pacmanPayout,
+                tx_hash_out: txHash || '',
+                tx_hash_pacman_out: krc20Result?.commitTxId || '',
+                receipt,
+              });
+              console.log(`✅ Winner settled: kas=${kasPayout}, pacman=${pacmanPayout}, adminBonus=${adminBonusPer}`);
+            }
           }
 
           for (const loser of losers) {
