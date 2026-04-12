@@ -1,0 +1,88 @@
+{
+  "name": "DesignTemplate",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Template name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Brief description of the template"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Landing Page",
+        "Dashboard",
+        "E-Commerce",
+        "Portfolio",
+        "Blog",
+        "SaaS",
+        "Mobile App",
+        "Admin Panel"
+      ],
+      "description": "Template category"
+    },
+    "style": {
+      "type": "string",
+      "enum": [
+        "Minimal",
+        "Bold",
+        "Glassmorphism",
+        "Neomorphism",
+        "Dark Mode",
+        "Gradient",
+        "Retro",
+        "Corporate"
+      ],
+      "description": "Design style"
+    },
+    "preview_url": {
+      "type": "string",
+      "description": "Preview image URL"
+    },
+    "canvas_data": {
+      "type": "string",
+      "description": "JSON string of canvas layout data (sections, colors, fonts, etc.)"
+    },
+    "color_palette": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Hex color palette used"
+    },
+    "fonts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Fonts used in the design"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Searchable tags"
+    },
+    "likes": {
+      "type": "number",
+      "default": 0
+    },
+    "views": {
+      "type": "number",
+      "default": 0
+    },
+    "is_public": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "title",
+    "category",
+    "style"
+  ]
+}

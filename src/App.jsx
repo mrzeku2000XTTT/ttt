@@ -23,6 +23,7 @@ import V1Page from './pages/V1';
 import KlockPage from './pages/Klock';
 import StakeDAGPage from './pages/StakeDAG';
 import SecurityAuditPage from './pages/SecurityAudit';
+import CanvasPage from './pages/Canvas';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -87,6 +88,7 @@ const AuthenticatedApp = () => {
       <Route path="/Klock" element={<KlockPage />} />
       <Route path="/StakeDAG" element={<StakeDAGPage />} />
       <Route path="/SecurityAudit" element={<SecurityAuditPage />} />
+      <Route path="/Canvas" element={<CanvasPage />} />
       <Route path="/ValorantArena" element={<ValorantArenaPage />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
