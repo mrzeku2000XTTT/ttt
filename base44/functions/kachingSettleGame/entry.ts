@@ -458,7 +458,7 @@ async function sendAdminPacmanBonus(base44, recipientAddress, amountPacman) {
   }
 }
 
-// Judge crypto games by fetching current price from CoinGecko
+// Judge crypto games by fetching current price — CoinGecko with retries + KAS fallback
 async function judgeCryptoGame(game) {
   const sourceMatch = game.source_data?.match(/CoinGecko (\w+) price/);
   const coinId = sourceMatch?.[1];
@@ -468,10 +468,49 @@ async function judgeCryptoGame(game) {
   if (!priceMatch) throw new Error('Could not extract target price from question');
   const targetPrice = parseFloat(priceMatch[1].replace(/,/g, ''));
 
-  const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`);
-  const data = await res.json();
-  const currentPrice = data[coinId]?.usd;
-  if (!currentPrice) throw new Error(`No price data for ${coinId}`);
+  let currentPrice = null;
+
+  // Attempt 1: CoinGecko (with retry)
+  for (let attempt = 0; attempt < 3 && !currentPrice; attempt++) {
+    try {
+      if (attempt > 0) await new Promise(r => setTimeout(r, 2000 * attempt));
+      const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`, { signal: AbortSignal.timeout(8000) });
+      if (res.status === 429) { console.warn(`CoinGecko rate limited (attempt ${attempt + 1})`); continue; }
+      if (!res.ok) continue;
+      const data = await res.json();
+      currentPrice = data[coinId]?.usd;
+    } catch (e) { console.warn(`CoinGecko attempt ${attempt + 1} failed: ${e.message}`); }
+  }
+
+  // Attempt 2: For KAS specifically, try Kaspa API as fallback
+  if (!currentPrice && coinId === 'kaspa') {
+    try {
+      const res = await fetch('https://api.kaspa.org/info/price', { signal: AbortSignal.timeout(8000) });
+      if (res.ok) {
+        const data = await res.json();
+        currentPrice = data?.price || null;
+        if (currentPrice) console.log(`KAS price from Kaspa API fallback: $${currentPrice}`);
+      }
+    } catch (e) { console.warn(`Kaspa API price fallback failed: ${e.message}`); }
+  }
+
+  // Attempt 3: CoinCap API as second fallback for any coin
+  if (!currentPrice) {
+    const coinCapMap = { kaspa: 'kaspa', bitcoin: 'bitcoin', ethereum: 'ethereum', solana: 'solana', dogecoin: 'dogecoin' };
+    const capId = coinCapMap[coinId];
+    if (capId) {
+      try {
+        const res = await fetch(`https://api.coincap.io/v2/assets/${capId}`, { signal: AbortSignal.timeout(8000) });
+        if (res.ok) {
+          const data = await res.json();
+          currentPrice = parseFloat(data?.data?.priceUsd);
+          if (currentPrice) console.log(`${coinId} price from CoinCap fallback: $${currentPrice}`);
+        }
+      } catch (e) { console.warn(`CoinCap fallback failed: ${e.message}`); }
+    }
+  }
+
+  if (!currentPrice) throw new Error(`No price data for ${coinId} after all attempts`);
 
   const isAbove = currentPrice > targetPrice;
 
