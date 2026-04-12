@@ -194,6 +194,8 @@ export default function StakeDAGPage() {
     const refresh = setInterval(() => {
       loadGames(true);
       loadUserBets();
+      // Auto-refresh wallet balance
+      if (walletAddress) fetchBalance(walletAddress);
     }, 10000);
     // Check every 5s for round boundary → trigger settlement animation
     const roundCheck = setInterval(() => {
