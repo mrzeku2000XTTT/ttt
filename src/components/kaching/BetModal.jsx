@@ -102,8 +102,32 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
       toast.success('KAS sent!');
 
       // Step 2: Send PACMAN KRC-20 to escrow (if any)
+      // IMPORTANT: Must wait for KAS TX to confirm first, otherwise the KRC-20 commit
+      // will try to spend the same UTXO that the KAS TX already spent (UTXO collision)
       let pacmanTxHash = '';
       if (pacAmt > 0) {
+        setSendStatus('Waiting for KAS TX to confirm before sending PACMAN...');
+        // Wait for the KAS TX change output to become available as a new UTXO
+        let kasConfirmed = false;
+        for (let waitAttempt = 0; waitAttempt < 12; waitAttempt++) {
+          await new Promise(r => setTimeout(r, 3000));
+          try {
+            const txCheck = await fetch(`https://api.kaspa.org/transactions/${kasTxHash}`);
+            if (txCheck.ok) {
+              const txData = await txCheck.json();
+              if (txData?.transaction_id || txData?.is_accepted) {
+                kasConfirmed = true;
+                // Extra 2s buffer for UTXO indexing
+                await new Promise(r => setTimeout(r, 2000));
+                break;
+              }
+            }
+          } catch {}
+        }
+        if (!kasConfirmed) {
+          console.warn('KAS TX not confirmed after 36s — attempting PACMAN anyway');
+        }
+
         setSendStatus('Sending PACMAN tokens...');
         try {
           const krc20Payload = {
@@ -114,27 +138,18 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
             ticker: 'PACMAN',
             decimals: 8,
           };
-          // Pass BOTH mnemonic and privateKey — krc20Transfer can derive from either
-          if (activeWallet.mnemonic) {
-            krc20Payload.mnemonic = activeWallet.mnemonic;
-          }
-          if (activeWallet.privateKey) {
-            krc20Payload.privateKey = activeWallet.privateKey;
-          }
-          // If neither mnemonic nor privateKey, try localStorage fallback
+          if (activeWallet.mnemonic) krc20Payload.mnemonic = activeWallet.mnemonic;
+          if (activeWallet.privateKey) krc20Payload.privateKey = activeWallet.privateKey;
           if (!krc20Payload.mnemonic && !krc20Payload.privateKey) {
             const storedPK = localStorage.getItem('ttt_wallet_pk');
             if (storedPK) krc20Payload.privateKey = storedPK;
           }
 
           if (!krc20Payload.mnemonic && !krc20Payload.privateKey) {
-            console.warn('No signing key available for KRC-20 transfer');
             toast.warning('PACMAN skipped — no signing key for KRC-20');
           } else {
-            console.log('Sending KRC-20 transfer:', JSON.stringify({ ...krc20Payload, mnemonic: krc20Payload.mnemonic ? '[REDACTED]' : undefined, privateKey: krc20Payload.privateKey ? '[REDACTED]' : undefined }));
             const krc20Res = await base44.functions.invoke('krc20Transfer', krc20Payload);
             const krc20Data = krc20Res.data || krc20Res;
-            console.log('KRC-20 transfer result:', JSON.stringify(krc20Data));
             if (krc20Data?.success) {
               pacmanTxHash = krc20Data.commitTxId || '';
               toast.success('PACMAN sent!');
