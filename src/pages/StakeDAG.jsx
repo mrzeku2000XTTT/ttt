@@ -206,8 +206,8 @@ export default function StakeDAGPage() {
     const refresh = setInterval(() => {
       loadGames(true);
       loadUserBets();
-      // Read balance from Terra cache (no API call)
-      if (walletAddress) fetchBalance(walletAddress);
+      // Always fetch live balance from API
+      if (walletAddress) fetchBalance(walletAddress, true);
     }, 10000);
     // Check every 5s for round boundary → trigger settlement animation
     const roundCheck = setInterval(() => {
