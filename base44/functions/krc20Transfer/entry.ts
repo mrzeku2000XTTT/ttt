@@ -598,53 +598,44 @@ Deno.serve(async (req) => {
       }
 
       // 5. Verify sender has enough balance (0.3 KAS + gas) — MANDATORY check
+      // Use UTXO-based check with retries since after a recent TX the balance endpoint
+      // may be stale (change output not yet indexed)
       const needed = COMMIT_AMOUNT_SOMPI + REVEAL_FEE_SOMPI + 10000000n; // 0.3 + 0.001 + 0.1 buffer
       let balanceCheckPassed = false;
-      for (let balAttempt = 0; balAttempt < 3; balAttempt++) {
-        try {
-          const balRes = await fetch(`${KASPA_API}/addresses/${normalizedFrom}/balance`, { signal: AbortSignal.timeout(15000) });
-          if (balRes.ok) {
-            const balData = await balRes.json();
-            const balance = BigInt(balData.balance || 0);
-            if (balance < needed) {
-              return Response.json({
-                success: false,
-                error: `Insufficient KAS balance. You have ${Number(balance) / 1e8} KAS but need at least ${Number(needed) / 1e8} KAS (0.3 KAS commit + gas fees). Please add more KAS to your wallet before sending KRC-20 tokens.`,
-              }, { status: 400 });
-            }
-            console.log(`[krc20] Balance check OK: ${Number(balance) / 1e8} KAS`);
-            balanceCheckPassed = true;
-            break;
-          }
-        } catch (e) {
-          console.warn(`[krc20] Balance check attempt ${balAttempt + 1} failed:`, e.message);
-          if (balAttempt < 2) await new Promise(r => setTimeout(r, 2000));
+      for (let balAttempt = 0; balAttempt < 8; balAttempt++) {
+        // Wait between retries (first attempt is immediate)
+        if (balAttempt > 0) {
+          const waitMs = 2000 + balAttempt * 1000;
+          console.log(`[krc20] Balance check retry ${balAttempt}/7, waiting ${waitMs}ms...`);
+          await new Promise(r => setTimeout(r, waitMs));
         }
-      }
-      // If all balance checks timed out, try UTXO fallback
-      if (!balanceCheckPassed) {
         try {
+          // Prefer UTXO aggregation — more accurate after recent TXs
           const utxoRes = await fetch(`${KASPA_API}/addresses/${normalizedFrom}/utxos`, { signal: AbortSignal.timeout(15000) });
           if (utxoRes.ok) {
             const utxos = await utxoRes.json();
-            const totalSompi = utxos.reduce((s, u) => s + BigInt(u?.utxoEntry?.amount || 0), 0n);
-            if (totalSompi < needed) {
+            const totalSompi = (utxos || []).reduce((s, u) => s + BigInt(u?.utxoEntry?.amount || 0), 0n);
+            if (totalSompi >= needed) {
+              console.log(`[krc20] UTXO balance check OK: ${Number(totalSompi) / 1e8} KAS (attempt ${balAttempt + 1})`);
+              balanceCheckPassed = true;
+              break;
+            } else if (balAttempt >= 7) {
               return Response.json({
                 success: false,
-                error: `Insufficient KAS balance. You have ${Number(totalSompi) / 1e8} KAS but need at least ${Number(needed) / 1e8} KAS. Please add more KAS first.`,
+                error: `Insufficient KAS balance. You have ${Number(totalSompi) / 1e8} KAS but need at least ${Number(needed) / 1e8} KAS (0.3 KAS commit + gas fees). Please add more KAS to your wallet before sending KRC-20 tokens.`,
               }, { status: 400 });
             }
-            console.log(`[krc20] UTXO balance check OK: ${Number(totalSompi) / 1e8} KAS`);
-            balanceCheckPassed = true;
+            // Not enough yet — change output may not be indexed, retry
+            console.log(`[krc20] UTXO balance ${Number(totalSompi) / 1e8} KAS < needed ${Number(needed) / 1e8} KAS, retrying...`);
           }
         } catch (e) {
-          console.warn('[krc20] UTXO balance check also failed:', e.message);
+          console.warn(`[krc20] Balance check attempt ${balAttempt + 1} failed:`, e.message);
         }
       }
       if (!balanceCheckPassed) {
         return Response.json({
           success: false,
-          error: 'Could not verify your KAS balance (Kaspa API unavailable). Please try again in a moment.',
+          error: 'Could not verify your KAS balance after retries (change output may still be indexing). Please try again in a moment.',
         }, { status: 503 });
       }
 
