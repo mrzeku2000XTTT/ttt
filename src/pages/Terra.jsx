@@ -303,6 +303,8 @@ export default function TerraPage() {
           }
         }
         setBalances(balMap);
+        // Persist balances to localStorage so other apps (KaChing) can read them
+        try { localStorage.setItem('terra_balances', JSON.stringify(balMap)); } catch {}
       }
     } catch (err) {
       console.log('Terra load error:', err);

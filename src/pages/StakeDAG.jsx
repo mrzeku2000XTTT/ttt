@@ -111,15 +111,37 @@ export default function StakeDAGPage() {
     } catch {}
   };
 
-  const fetchBalance = useCallback(async (addr) => {
+  const fetchBalance = useCallback(async (addr, forceApi = false) => {
     if (!addr) return;
+    const fullAddr = addr.startsWith('kaspa:') ? addr : `kaspa:${addr}`;
+
+    // Try reading from Terra's cached balances first (no API call)
+    if (!forceApi) {
+      try {
+        const cached = JSON.parse(localStorage.getItem('terra_balances') || '{}');
+        const cachedBal = cached[fullAddr];
+        if (cachedBal !== undefined && cachedBal !== '?' && cachedBal !== null) {
+          setWalletBalance(Number(cachedBal) || 0);
+          return;
+        }
+      } catch {}
+    }
+
+    // Fallback: fetch from API (only on forceApi or no cached data)
     try {
-      const cleanAddr = addr.startsWith('kaspa:') ? addr.replace('kaspa:', '') : addr;
+      const cleanAddr = fullAddr.replace('kaspa:', '');
       const balRes = await fetch(`https://api.kaspa.org/addresses/kaspa:${cleanAddr}/balance`);
       if (balRes.ok) {
         const data = await balRes.json();
         const balanceSompi = Number(data?.balance) || 0;
-        setWalletBalance(balanceSompi / 1e8);
+        const balKas = balanceSompi / 1e8;
+        setWalletBalance(balKas);
+        // Update Terra cache so it stays in sync
+        try {
+          const cached = JSON.parse(localStorage.getItem('terra_balances') || '{}');
+          cached[fullAddr] = balKas;
+          localStorage.setItem('terra_balances', JSON.stringify(cached));
+        } catch {}
       }
     } catch (err) {
       console.error('Balance fetch error:', err);
@@ -184,7 +206,7 @@ export default function StakeDAGPage() {
     const refresh = setInterval(() => {
       loadGames(true);
       loadUserBets();
-      // Auto-refresh wallet balance
+      // Read balance from Terra cache (no API call)
       if (walletAddress) fetchBalance(walletAddress);
     }, 10000);
     // Check every 5s for round boundary → trigger settlement animation
@@ -472,8 +494,8 @@ export default function StakeDAGPage() {
             onSuccess={() => {
               loadGames();
               loadUserBets();
-              // Refresh header balance after bet
-              if (walletAddress) fetchBalance(walletAddress);
+              // Force API refresh after a bet (balance actually changed)
+              if (walletAddress) fetchBalance(walletAddress, true);
             }}
           />
         )}
