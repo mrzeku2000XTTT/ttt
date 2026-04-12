@@ -409,11 +409,21 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
                 </div>
               )}
               {verifiedData.tx_hash_in && (
-                <div>
+                <div className="pt-1 border-t border-white/[0.04]">
                   <p className="text-white/30 text-[8px] uppercase tracking-wider">KAS TX</p>
                   <a href={`https://explorer.kaspa.org/txs/${verifiedData.tx_hash_in}`} target="_blank" rel="noopener noreferrer"
                     className="text-blue-400/60 text-[9px] font-mono truncate flex items-center gap-1 hover:text-blue-400">
                     {verifiedData.tx_hash_in}
+                    <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                  </a>
+                </div>
+              )}
+              {verifiedData.tx_hash_pacman_in && (
+                <div>
+                  <p className="text-yellow-400/30 text-[8px] uppercase tracking-wider">PACMAN TX</p>
+                  <a href={`https://explorer.kaspa.org/txs/${verifiedData.tx_hash_pacman_in}`} target="_blank" rel="noopener noreferrer"
+                    className="text-yellow-400/60 text-[9px] font-mono truncate flex items-center gap-1 hover:text-yellow-400">
+                    {verifiedData.tx_hash_pacman_in}
                     <ExternalLink className="w-3 h-3 flex-shrink-0" />
                   </a>
                 </div>
