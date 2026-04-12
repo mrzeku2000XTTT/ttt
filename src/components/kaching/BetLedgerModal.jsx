@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Copy, Check, ExternalLink, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { X, Copy, Check, ExternalLink, ArrowUpRight, ArrowDownRight, Coins } from "lucide-react";
 import { toast } from "sonner";
 
 function CopyableField({ label, value, mono = true }) {
@@ -40,16 +40,11 @@ function BetRow({ bet }) {
             isYes ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'
           }`}>{bet.side.toUpperCase()}</span>
           <span className="text-white font-bold text-sm">{bet.amount_kas} KAS</span>
-        </div>
-        <div className="flex items-center gap-2">
-          {bet.payout_kas > 0 && (
-            <span className="text-emerald-400 text-[10px] font-bold flex items-center gap-0.5">
-              <ArrowUpRight className="w-3 h-3" />+{bet.payout_kas.toFixed(2)}
+          {(bet.amount_pacman || 0) > 0 && (
+            <span className="text-yellow-400 text-[10px] font-bold flex items-center gap-0.5">
+              <Coins className="w-3 h-3" />{bet.amount_pacman} PAC
             </span>
           )}
-          <span className={`text-[9px] font-bold uppercase ${statusColors[bet.status] || 'text-white/30'}`}>
-            {bet.status?.replace('_', ' ')}
-          </span>
         </div>
       </div>
 
@@ -73,6 +68,20 @@ function BetRow({ bet }) {
         </div>
       )}
 
+      {/* PACMAN TX Hash In */}
+      {bet.tx_hash_pacman_in && (
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-yellow-400/30 text-[9px] flex-shrink-0">PAC TX</span>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <CopyableField label="PACMAN TX" value={bet.tx_hash_pacman_in} />
+            <a href={`https://explorer.kaspa.org/txs/${bet.tx_hash_pacman_in}`} target="_blank" rel="noopener noreferrer"
+              className="text-yellow-400/40 hover:text-yellow-400 flex-shrink-0 transition-colors">
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* TX Hash Out (payout) */}
       {bet.tx_hash_out && (
         <div className="flex items-center justify-between gap-2">
@@ -81,6 +90,20 @@ function BetRow({ bet }) {
             <CopyableField label="Payout TX" value={bet.tx_hash_out} />
             <a href={`https://explorer.kaspa.org/txs/${bet.tx_hash_out}`} target="_blank" rel="noopener noreferrer"
               className="text-emerald-400/40 hover:text-emerald-400 flex-shrink-0 transition-colors">
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* PACMAN TX Hash Out (payout) */}
+      {bet.tx_hash_pacman_out && (
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-yellow-400/30 text-[9px] flex-shrink-0">PAC Out</span>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <CopyableField label="PACMAN Payout TX" value={bet.tx_hash_pacman_out} />
+            <a href={`https://explorer.kaspa.org/txs/${bet.tx_hash_pacman_out}`} target="_blank" rel="noopener noreferrer"
+              className="text-yellow-400/40 hover:text-yellow-400 flex-shrink-0 transition-colors">
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
