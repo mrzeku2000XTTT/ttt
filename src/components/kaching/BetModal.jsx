@@ -79,6 +79,7 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
     if (!activeWallet) { toast.error('No wallet found — import in Terra first'); return; }
     if (walletBalance !== null && kasAmt > walletBalance) { toast.error('Insufficient KAS balance'); return; }
     if (pacAmt > 0 && pacmanBalance !== null && pacAmt > pacmanBalance) { toast.error('Insufficient PACMAN balance'); return; }
+    if (pacAmt > 0 && walletBalance !== null && (walletBalance - kasAmt) < 0.35) { toast.error('Need at least 0.35 KAS remaining after your bet for the PACMAN transfer fee'); return; }
 
     setLoading(true);
     setStep('sending');
@@ -160,7 +161,12 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
           }
         } catch (krc20Err) {
           console.error('KRC20 transfer error:', krc20Err.message);
-          toast.error(`PACMAN failed: ${krc20Err.message}`);
+          const msg = krc20Err.message || '';
+          if (msg.includes('400') || msg.includes('Insufficient') || msg.includes('balance')) {
+            toast.error('PACMAN failed — not enough KAS left for the 0.3 KAS commit fee. KAS bet still went through.');
+          } else {
+            toast.error(`PACMAN failed: ${msg}`);
+          }
         }
       }
 
