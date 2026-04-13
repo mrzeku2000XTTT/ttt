@@ -18,16 +18,9 @@ export default function NewsToast() {
   const [liveNews, setLiveNews] = useState([]);
 
   useEffect(() => {
-    const wasDismissed = sessionStorage.getItem("news_toast_dismissed");
-    if (wasDismissed) {
-      setDismissed(true);
-      return;
-    }
-
-    // Fetch live news
+    // Clear previous session dismissal on fresh mount so toast always shows on Feed entry
     fetchNews();
-
-    const showTimer = setTimeout(() => setVisible(true), 1500);
+    const showTimer = setTimeout(() => setVisible(true), 800);
     return () => clearTimeout(showTimer);
   }, []);
 
@@ -77,8 +70,8 @@ export default function NewsToast() {
         animate={{ y: 0, opacity: 1, scale: 1 }}
         exit={{ y: 100, opacity: 0, scale: 0.95 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="fixed left-3 right-3 md:left-auto md:right-6 md:bottom-6 z-[95] md:max-w-sm"
-        style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))' }}
+        className="fixed left-3 right-3 md:left-auto md:right-6 z-[100] md:max-w-sm"
+        style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}
       >
         <div className="relative bg-black/95 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden">
           {/* Progress bar */}

@@ -904,6 +904,7 @@ export default function Layout({ children, currentPageName }) {
         </div>
         </div>
       </div>
+      {currentPageName === 'Feed' && <NewsToast />}
       {currentPageName === 'Feed' && <KaiChatbot />}
       <React.Suspense fallback={null}>
         <MiniPlayer currentPage={currentPageName} />
