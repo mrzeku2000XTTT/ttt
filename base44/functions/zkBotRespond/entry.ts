@@ -151,6 +151,46 @@ Deno.serve(async (req) => {
 
     // --- KNOWLEDGE GATHERING ---
 
+    // 0. Grokipedia lookup — if user asks to look up a topic or mentions "grokipedia"
+    let grokipediaContext = '';
+    const grokMatch = userQuestion.match(/(?:grokipedia|grok(?:i)?pedia|look\s*up|wiki|encyclopedia|what\s+is|who\s+is|tell\s+me\s+about)\s+["']?(.+?)["']?$/i);
+    const wantsGrokipedia = /grokipedia|grokpedia/i.test(userQuestion) || grokMatch;
+    if (wantsGrokipedia) {
+      try {
+        // Extract the topic to search
+        let searchTopic = grokMatch ? grokMatch[1].trim() : userQuestion.replace(/@zk\s*/gi, '').replace(/grokipedia|grokpedia/gi, '').trim();
+        if (searchTopic.length > 2) {
+          console.log('[@zk Bot] Grokipedia lookup:', searchTopic);
+          const slug = searchTopic.replace(/\s+/g, '_');
+          const grokUrl = `https://grokipedia.com/page/${encodeURIComponent(slug)}`;
+          const grokResp = await fetch(grokUrl, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; TTT-Bot/1.0)', 'Accept': 'text/html' }
+          });
+          if (grokResp.ok) {
+            const html = await grokResp.text();
+            const titleMatch = html.match(/<h1[^>]*>(.*?)<\/h1>/i);
+            const grokTitle = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').trim() : searchTopic;
+            let grokText = html
+              .replace(/<script[\s\S]*?<\/script>/gi, '')
+              .replace(/<style[\s\S]*?<\/style>/gi, '')
+              .replace(/<nav[\s\S]*?<\/nav>/gi, '')
+              .replace(/<br\s*\/?>/gi, '\n')
+              .replace(/<\/p>/gi, '\n\n')
+              .replace(/<[^>]+>/g, ' ')
+              .replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ')
+              .replace(/\s+/g, ' ').trim()
+              .substring(0, 3000);
+            grokipediaContext = `\n\nGROKIPEDIA ARTICLE ("${grokTitle}"):\n${grokText}\nSource: ${grokUrl}`;
+            console.log('[@zk Bot] Grokipedia found:', grokTitle);
+          } else {
+            console.log('[@zk Bot] Grokipedia not found:', grokResp.status);
+          }
+        }
+      } catch (grokErr) {
+        console.log('[@zk Bot] Grokipedia lookup failed:', grokErr.message);
+      }
+    }
+
     // 1. Agent Ying patterns
     let yingKnowledge = '';
     try {
@@ -189,15 +229,16 @@ Deno.serve(async (req) => {
     // --- LLM INVOCATION ---
     const hasImages = image_urls && image_urls.length > 0;
     
-    const prompt = `You are @zk, an elite AI agent in the TTT community (Kaspa blockchain). You have real-time internet access.
+    const prompt = `You are @zk, an elite AI agent in the TTT community (Kaspa blockchain). You have real-time internet access and Grokipedia (xAI's knowledge base).
 
 RULES:
 - Answer the user's ACTUAL QUESTION directly. Do NOT describe images or analyze the post unless explicitly asked.
 - Use real-time web data for prices, news, facts. SEARCH THE WEB for any question you're unsure about.
+- If Grokipedia data is provided below, USE IT as your primary source and cite it.
 - If you can cross-reference with community posts below, mention it briefly.
 - NEVER hallucinate or make up data. Say "not sure" if uncertain.
-- Be concise: max 80 words. Use 1-2 emojis.
-${anchorContext}${yingKnowledge}${communityContext}
+- Be concise: max 100 words. Use 1-2 emojis.
+${grokipediaContext}${anchorContext}${yingKnowledge}${communityContext}
 
 User "${author_name}" asks:
 "${userQuestion || post_content}"
