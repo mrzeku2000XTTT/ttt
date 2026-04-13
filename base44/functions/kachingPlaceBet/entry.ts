@@ -81,7 +81,10 @@ Deno.serve(async (req) => {
     if (!game) return Response.json({ error: 'Game not found' }, { status: 404 });
     if (game.status !== 'open') return Response.json({ error: 'Game not open for bets' }, { status: 400 });
 
-    if (new Date(game.end_time) <= new Date()) {
+    // Allow a 90-second grace period after end_time for bets that were 
+    // initiated (KAS sent) before the round ended but verified after
+    const graceMs = 90 * 1000;
+    if (new Date(game.end_time).getTime() + graceMs <= Date.now()) {
       return Response.json({ error: 'Game has ended' }, { status: 400 });
     }
 

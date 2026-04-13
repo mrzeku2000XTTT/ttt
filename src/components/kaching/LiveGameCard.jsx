@@ -29,7 +29,9 @@ export default function LiveGameCard({ game, userBets, onBet }) {
   const [copied, setCopied] = useState(false);
   const [allBets, setAllBets] = useState([]);
   const [showLedgerModal, setShowLedgerModal] = useState(false);
-  const isOpen = game.status === 'open' && new Date(game.end_time) > new Date();
+  const timeLeft = new Date(game.end_time).getTime() - Date.now();
+  const isOpen = game.status === 'open' && timeLeft > 0;
+  const tooLateToBet = isOpen && timeLeft < 30000; // less than 30s left
   const isSettled = game.status === 'settled';
   const myBets = userBets?.filter(b => b.game_id === game.id) || [];
 
@@ -155,9 +157,15 @@ export default function LiveGameCard({ game, userBets, onBet }) {
           {/* Bet buttons */}
           {isOpen && (
             <div className="grid grid-cols-2 gap-2 pt-1">
+              {tooLateToBet && (
+                <div className="col-span-2 text-center py-2">
+                  <span className="text-amber-400/60 text-[10px] font-bold">Round closing — bets locked</span>
+                </div>
+              )}
               <button
                 onClick={() => onBet(game, 'yes')}
-                className="group/btn relative py-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 hover:border-emerald-500/40 transition-all duration-200 overflow-hidden"
+                disabled={tooLateToBet}
+                className={`group/btn relative py-3 rounded-xl border transition-all duration-200 overflow-hidden ${tooLateToBet ? 'opacity-30 cursor-not-allowed bg-white/[0.02] border-white/[0.06]' : 'bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20 hover:border-emerald-500/40'}`}
               >
                 <div className="absolute inset-0 bg-gradient-to-t from-emerald-500/5 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity" />
                 <span className="relative text-emerald-400 text-base font-black block">YES</span>
@@ -165,7 +173,8 @@ export default function LiveGameCard({ game, userBets, onBet }) {
               </button>
               <button
                 onClick={() => onBet(game, 'no')}
-                className="group/btn relative py-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 hover:border-rose-500/40 transition-all duration-200 overflow-hidden"
+                disabled={tooLateToBet}
+                className={`group/btn relative py-3 rounded-xl border transition-all duration-200 overflow-hidden ${tooLateToBet ? 'opacity-30 cursor-not-allowed bg-white/[0.02] border-white/[0.06]' : 'bg-rose-500/10 hover:bg-rose-500/20 border-rose-500/20 hover:border-rose-500/40'}`}
               >
                 <div className="absolute inset-0 bg-gradient-to-t from-rose-500/5 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity" />
                 <span className="relative text-rose-400 text-base font-black block">NO</span>
