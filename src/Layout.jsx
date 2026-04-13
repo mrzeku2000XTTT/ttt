@@ -13,6 +13,7 @@ const MiniPlayer = React.lazy(() => import("@/components/MiniPlayer").catch(() =
 const VideoPlayerProvider = React.lazy(() => import("@/components/VideoPlayerContext").then(m => ({ default: m.VideoPlayerProvider })).catch(() => ({ default: ({ children }) => <>{children}</> })));
 
 import KaiChatbot from "@/components/feed/KaiChatbot";
+import NewsToast from "@/components/feed/NewsToast";
 import {
   DropdownMenu,
   DropdownMenuContent,

@@ -25,6 +25,7 @@ import StakeDAGPage from './pages/StakeDAG';
 import SecurityAuditPage from './pages/SecurityAudit';
 import CanvasPage from './pages/Canvas';
 import HikaruPage from './pages/Hikaru';
+import TTTV2Page from './pages/TTTV2';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -91,6 +92,7 @@ const AuthenticatedApp = () => {
       <Route path="/SecurityAudit" element={<SecurityAuditPage />} />
       <Route path="/Canvas" element={<CanvasPage />} />
       <Route path="/Hikaru" element={<HikaruPage />} />
+      <Route path="/TTTV2" element={<TTTV2Page />} />
       <Route path="/ValorantArena" element={<ValorantArenaPage />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
