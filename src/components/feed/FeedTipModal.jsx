@@ -3,17 +3,23 @@ import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DollarSign, Wallet, Loader2, X, Sparkles, AlertCircle, Smartphone } from "lucide-react";
+import { DollarSign, Wallet, Loader2, X, Sparkles, AlertCircle, Smartphone, Globe } from "lucide-react";
 
 const isMobileDevice = () => {
   if (typeof window === 'undefined') return false;
   const ua = navigator.userAgent;
-  // Covers phones, iPads (including newer iPads that report as Mac), and Android tablets
   const isTouchDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
   const isIPadPro = /Macintosh/i.test(ua) && navigator.maxTouchPoints > 1;
   const isNarrowScreen = window.innerWidth < 1024;
   return isTouchDevice || isIPadPro || isNarrowScreen;
 };
+
+function loadTerraWallets() {
+  try {
+    const raw = JSON.parse(localStorage.getItem('terra_wallets') || '[]');
+    return raw.filter(w => w.address && w.mnemonic);
+  } catch { return []; }
+}
 
 export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose, onSuccess }) {
   const [tipAmount, setTipAmount] = useState('');
@@ -23,12 +29,16 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
   const [tipError, setTipError] = useState('');
   const mobile = isMobileDevice();
 
-  // Detect Kasware availability + TTT wallet
+  // Detect Kasware availability + TTT wallet + Terra wallets
   const tttWalletAddress = user?.created_wallet_address || localStorage.getItem('ttt_wallet_address');
   const tttPrivateKey = localStorage.getItem('ttt_wallet_pk');
   const hasKasware = typeof window !== 'undefined' && !!window.kasware;
-  // Auto-default to TTT if Kasware is unavailable (mobile, preview, no extension)
-  const defaultMethod = (!hasKasware && tttWalletAddress) ? 'ttt' : hasKasware ? 'kasware' : 'ttt';
+  const terraWallets = loadTerraWallets();
+  const hasTerra = terraWallets.length > 0;
+  const [selectedTerraIdx, setSelectedTerraIdx] = useState(0);
+
+  // Auto-default priority: Terra > TTT > Kasware
+  const defaultMethod = hasTerra ? 'terra' : (!hasKasware && tttWalletAddress) ? 'ttt' : hasKasware ? 'kasware' : 'ttt';
   const [sendMethod, setSendMethod] = useState(defaultMethod);
   const [tipPin, setTipPin] = useState('');
   const [pinVerified, setPinVerified] = useState(false);
@@ -37,7 +47,6 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
   const [showMnemonicFallback, setShowMnemonicFallback] = useState(false);
   const pinHash = localStorage.getItem('ttt_wallet_pin_hash');
   const hasPinSet = !!pinHash;
-  // tttPrivateKey may be null on a different device even if wallet address exists in profile
   const tttPrivateKeyMissing = !tttPrivateKey && sendMethod === 'ttt';
 
   const verifyPin = async () => {
@@ -61,7 +70,11 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
       return;
     }
 
-    // KRC-20 via TTT wallet uses native krc20Transfer backend
+    // Terra wallet validation
+    if (sendMethod === 'terra' && (!terraWallets[selectedTerraIdx]?.mnemonic)) {
+      setTipError('Selected Terra wallet has no seed phrase. Import it in Terra first.');
+      return;
+    }
 
     // TTT wallet: need either cached PK or mnemonic as fallback
     if (sendMethod === 'ttt' && !tttPrivateKey && !tipMnemonic.trim()) {
@@ -80,9 +93,34 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
       const tipAmountValue = parseFloat(tipAmount);
       let txId;
 
-      if (sendMethod === 'ttt') {
+      if (sendMethod === 'terra') {
+        // Terra wallet — use mnemonic from terra_wallets
+        const terraWallet = terraWallets[selectedTerraIdx];
+        if (!terraWallet?.mnemonic) throw new Error('Terra wallet has no seed phrase');
         if (tipTokenType === 'KRC20') {
-          // Native KRC-20 transfer via krc20Transfer backend (commit-reveal)
+          const krcRes = await base44.functions.invoke('krc20Transfer', {
+            action: 'transfer',
+            fromAddress: terraWallet.address,
+            toAddress: tippingPost.author_wallet_address,
+            amount: String(tipAmountValue),
+            ticker: tipKrc20Ticker.toUpperCase(),
+            decimals: 8,
+            mnemonic: terraWallet.mnemonic,
+          });
+          if (!krcRes.data?.success || krcRes.data?.error) throw new Error(krcRes.data?.error || 'KRC-20 transfer failed');
+          txId = krcRes.data?.commitTxId || 'krc20-tx';
+        } else {
+          const res = await base44.functions.invoke('sendKaspaTransaction', {
+            fromAddress: terraWallet.address,
+            toAddress: tippingPost.author_wallet_address,
+            amountKas: tipAmountValue,
+            mnemonic: terraWallet.mnemonic,
+          });
+          if (!res.data?.success || res.data?.error) throw new Error(res.data?.error || 'Transaction failed');
+          txId = res.data?.txId || 'terra-tx';
+        }
+      } else if (sendMethod === 'ttt') {
+        if (tipTokenType === 'KRC20') {
           const krc20Payload = {
             action: 'transfer',
             fromAddress: tttWalletAddress,
@@ -97,12 +135,9 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
             krc20Payload.mnemonic = tipMnemonic.trim();
           }
           const krcRes = await base44.functions.invoke('krc20Transfer', krc20Payload);
-          if (!krcRes.data?.success || krcRes.data?.error) {
-            throw new Error(krcRes.data?.error || 'KRC-20 transfer failed');
-          }
+          if (!krcRes.data?.success || krcRes.data?.error) throw new Error(krcRes.data?.error || 'KRC-20 transfer failed');
           txId = krcRes.data?.commitTxId || 'krc20-tx';
         } else {
-          // Use Terra Protocol (TTT wallet backend) for KAS
           const txPayload = {
             fromAddress: tttWalletAddress,
             toAddress: tippingPost.author_wallet_address,
@@ -114,9 +149,7 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
             txPayload.mnemonic = tipMnemonic.trim();
           }
           const res = await base44.functions.invoke('sendKaspaTransaction', txPayload);
-          if (!res.data?.success || res.data?.error) {
-            throw new Error(res.data?.error || 'Transaction failed');
-          }
+          if (!res.data?.success || res.data?.error) throw new Error(res.data?.error || 'Transaction failed');
           txId = res.data?.txId || 'ttt-tx';
         }
       } else {
@@ -139,7 +172,7 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
         }
       }
 
-      const senderWallet = sendMethod === 'ttt' ? tttWalletAddress : (kaswareWallet?.address || user?.created_wallet_address);
+      const senderWallet = sendMethod === 'terra' ? terraWallets[selectedTerraIdx]?.address : sendMethod === 'ttt' ? tttWalletAddress : (kaswareWallet?.address || user?.created_wallet_address);
       const senderName = user?.username || (senderWallet ? `${senderWallet.slice(0, 8)}...` : 'Anonymous');
       const ticker = tipTokenType === 'KRC20' ? tipKrc20Ticker.toUpperCase() : 'KAS';
 
@@ -249,11 +282,21 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
             <div className="text-white font-mono text-sm break-all">{tippingPost.author_wallet_address}</div>
           </div>
 
-          {/* Send Method — show when TTT wallet exists or Kasware detected */}
-          {(tttWalletAddress || hasKasware) && (
+          {/* Send Method — show wallet choices */}
+          {(tttWalletAddress || hasKasware || hasTerra) && (
             <div>
-              <div className="text-xs text-white/50 mb-2">Send via</div>
-              <div className="flex gap-2">
+              <div className="text-xs text-white/50 mb-2">Send from</div>
+              <div className="flex gap-2 flex-wrap">
+                {hasTerra && (
+                  <Button
+                    onClick={() => setSendMethod('terra')}
+                    size="sm"
+                    className={`flex-1 flex items-center gap-1 ${sendMethod === 'terra' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'}`}
+                  >
+                    <Globe className="w-3 h-3" />
+                    Terra
+                  </Button>
+                )}
                 {tttWalletAddress && (
                   <Button
                     onClick={() => setSendMethod('ttt')}
@@ -274,8 +317,32 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
                   </Button>
                 )}
               </div>
-              {!hasKasware && !tttWalletAddress && (
-                <p className="text-xs text-amber-400 mt-2">No wallet detected. Set up a TTT wallet in Terra or install Kasware extension.</p>
+              {/* Terra wallet selector when multiple wallets exist */}
+              {sendMethod === 'terra' && terraWallets.length > 1 && (
+                <div className="mt-2 space-y-1">
+                  {terraWallets.map((tw, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setSelectedTerraIdx(i)}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-xs font-mono transition-all ${
+                        i === selectedTerraIdx
+                          ? 'bg-blue-500/20 border border-blue-500/40 text-blue-300'
+                          : 'bg-white/5 border border-white/10 text-white/50 hover:bg-white/10'
+                      }`}
+                    >
+                      {tw.label || `Wallet ${i + 1}`}: {tw.address?.slice(0, 12)}...{tw.address?.slice(-6)}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {sendMethod === 'terra' && terraWallets.length === 1 && (
+                <div className="mt-2 bg-blue-500/10 border border-blue-500/30 rounded-lg px-3 py-2">
+                  <div className="text-[10px] text-blue-400 mb-0.5">{terraWallets[0].label || 'Terra Wallet'}</div>
+                  <div className="text-xs text-white/60 font-mono">{terraWallets[0].address?.slice(0, 14)}...{terraWallets[0].address?.slice(-6)}</div>
+                </div>
+              )}
+              {!hasKasware && !tttWalletAddress && !hasTerra && (
+                <p className="text-xs text-amber-400 mt-2">No wallet detected. Set up a wallet in Terra or install Kasware extension.</p>
               )}
             </div>
           )}
@@ -395,10 +462,12 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
             <div className="bg-white/5 border border-white/10 rounded-lg p-3 flex items-start gap-2">
               <Sparkles className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-white/60">
-                {sendMethod === 'ttt'
+                {sendMethod === 'terra'
+                  ? 'Sent natively via your Terra wallet — no extensions needed.'
+                  : sendMethod === 'ttt'
                   ? (tipTokenType === 'KRC20'
                     ? `Native KRC-20 transfer via TTT Wallet — no Kasware needed.`
-                    : 'Sent natively via your TTT Wallet (Terra Protocol) — no Kasware needed.')
+                    : 'Sent natively via your TTT Wallet — no Kasware needed.')
                   : 'Tips are sent directly from your Kasware wallet instantly.'}
               </p>
             </div>
