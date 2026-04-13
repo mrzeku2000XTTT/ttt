@@ -18,8 +18,9 @@ Deno.serve(async (req) => {
     console.log('[@zk Bot] User question:', userQuestion);
 
     // Detect if user is asking @zk to generate an image
-    const isImageRequest = /\b(create|generate|make|draw|design|paint)\s+(an?\s+)?(image|picture|photo|art|illustration|logo|icon)/i.test(userQuestion) ||
-                           /\b(image|picture|art)\s+of\b/i.test(userQuestion);
+    const isImageRequest = /\b(create|generate|make|draw|design|paint)\b.{0,20}\b(image|picture|photo|art|illustration|logo|icon)\b/i.test(userQuestion) ||
+                           /\b(image|picture|art)\s+of\b/i.test(userQuestion) ||
+                           /\b(draw|paint|design|sketch)\b.{0,30}(me|a|an|the)\b/i.test(userQuestion);
 
     // Create placeholder comment as a REPLY under the caller's comment
     let botComment;
@@ -57,9 +58,13 @@ Deno.serve(async (req) => {
     if (isImageRequest) {
       console.log('[@zk Bot] Image generation request detected');
       try {
-        // Extract the actual image description
+        // Extract the actual image description — strip action words and image nouns
         const imagePrompt = userQuestion
-          .replace(/\b(create|generate|make|draw|design|paint)\s+(an?\s+)?(image|picture|photo|art|illustration|logo|icon)\s*(of|for|with|showing|depicting)?\s*/gi, '')
+          .replace(/\b(create|generate|make|draw|design|paint|sketch)\b/gi, '')
+          .replace(/\b(an?|the)\s+(image|picture|photo|art|illustration|logo|icon)\b/gi, '')
+          .replace(/\b(image|picture|photo|art|illustration|logo|icon)\b/gi, '')
+          .replace(/\b(of|for|with|showing|depicting|me)\b/gi, '')
+          .replace(/\s+/g, ' ')
           .trim() || 'creative abstract digital art with vibrant colors';
 
         console.log('[@zk Bot] Image prompt:', imagePrompt);
