@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Heart, Send, Loader2, Trash2, DollarSign, X, Wallet, Sparkles, CornerDownRight, Smartphone, AlertCircle } from "lucide-react";
+import { Heart, Send, Loader2, Trash2, DollarSign, X, Wallet, Sparkles, CornerDownRight, Smartphone, AlertCircle, Download, Maximize2 } from "lucide-react";
 import { format } from "date-fns";
 
 export default function CommentSection({ postId, currentUser, onCommentAdded }) {
@@ -23,6 +23,7 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
   const [isSendingTip, setIsSendingTip] = useState(false);
   const [commenterTips, setCommenterTips] = useState({});
   const [zkIsResponding, setZkIsResponding] = useState(false);
+  const [fullscreenImage, setFullscreenImage] = useState(null);
   const [tipTokenType, setTipTokenType] = useState("KAS");
   const [tipKrc20Ticker, setTipKrc20Ticker] = useState("PACMAN");
   const [tipError, setTipError] = useState('');
@@ -756,7 +757,14 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                         <div className="text-white text-sm mb-2 space-y-1">
                           {comment.comment_text?.split('\n').map((line, li) => {
                             const imgMatch = line.match(/^!\[.*?\]\((https?:\/\/.+)\)$/);
-                            if (imgMatch) return <img key={li} src={imgMatch[1]} alt="Generated" className="rounded-lg max-w-full mt-1 border border-white/10" />;
+                            if (imgMatch) return (
+                              <div key={li} className="relative group inline-block mt-1 cursor-pointer" onClick={() => setFullscreenImage(imgMatch[1])}>
+                                <img src={imgMatch[1]} alt="Generated" className="rounded-lg max-h-48 object-cover border border-white/10" />
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                  <Maximize2 className="w-5 h-5 text-white" />
+                                </div>
+                              </div>
+                            );
                             if (/^https?:\/\/.+\.(png|jpg|jpeg|webp|gif)/i.test(line.trim()) || (line.trim().startsWith('http') && comment.author_name === '@zk' && comment.comment_text?.includes('![Generated'))) return null;
                             return <p key={li}>{line}</p>;
                           })}
@@ -868,7 +876,14 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                                 <div className="text-white text-xs mb-1 space-y-1">
                                   {reply.comment_text?.split('\n').map((line, li) => {
                                     const imgMatch = line.match(/^!\[.*?\]\((https?:\/\/.+)\)$/);
-                                    if (imgMatch) return <img key={li} src={imgMatch[1]} alt="Generated" className="rounded-lg max-w-full mt-1 border border-white/10" />;
+                                    if (imgMatch) return (
+                                      <div key={li} className="relative group inline-block mt-1 cursor-pointer" onClick={() => setFullscreenImage(imgMatch[1])}>
+                                        <img src={imgMatch[1]} alt="Generated" className="rounded-lg max-h-48 object-cover border border-white/10" />
+                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                          <Maximize2 className="w-4 h-4 text-white" />
+                                        </div>
+                                      </div>
+                                    );
                                     if (/^https?:\/\/.+\.(png|jpg|jpeg|webp|gif)/i.test(line.trim()) || (line.trim().startsWith('http') && reply.author_name === '@zk' && reply.comment_text?.includes('![Generated'))) return null;
                                     return <p key={li}>{line}</p>;
                                   })}
@@ -1170,6 +1185,48 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                 </div>
               </div>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Fullscreen Image Viewer */}
+      <AnimatePresence>
+        {fullscreenImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[9999] flex flex-col items-center justify-center p-4"
+            onClick={() => setFullscreenImage(null)}
+          >
+            <button
+              onClick={() => setFullscreenImage(null)}
+              className="absolute top-4 right-4 z-10 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <img
+              src={fullscreenImage}
+              alt="Full size"
+              className="max-w-full max-h-[80vh] object-contain rounded-xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const a = document.createElement('a');
+                a.href = fullscreenImage;
+                a.download = `zk-image-${Date.now()}.png`;
+                a.target = '_blank';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+              }}
+              className="mt-4 flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white text-sm font-medium transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Save Image
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
