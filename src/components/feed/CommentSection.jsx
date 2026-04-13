@@ -728,7 +728,14 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                             {comment.created_date ? format(new Date(comment.created_date), 'MMM d, yyyy HH:mm') + ' UTC' : 'Unknown date'}
                           </div>
                         </div>
-                        <p className="text-white text-sm mb-2">{comment.comment_text}</p>
+                        <div className="text-white text-sm mb-2 space-y-1">
+                          {comment.comment_text?.split('\n').map((line, li) => {
+                            const imgMatch = line.match(/^!\[.*?\]\((https?:\/\/.+)\)$/);
+                            if (imgMatch) return <img key={li} src={imgMatch[1]} alt="Generated" className="rounded-lg max-w-full mt-1 border border-white/10" />;
+                            if (/^https?:\/\/.+\.(png|jpg|jpeg|webp|gif)/i.test(line.trim()) || (line.trim().startsWith('http') && comment.author_name === '@zk' && comment.comment_text?.includes('![Generated'))) return null;
+                            return <p key={li}>{line}</p>;
+                          })}
+                        </div>
                         <div className="flex items-center gap-3">
                           <Button
                             onClick={() => setReplyingTo(replyingTo?.id === comment.id ? null : comment)}
@@ -833,7 +840,16 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                                     {reply.created_date ? format(new Date(reply.created_date), 'MMM d, HH:mm') : ''}
                                   </div>
                                 </div>
-                                <p className="text-white text-xs mb-1">{reply.comment_text}</p>
+                                <div className="text-white text-xs mb-1 space-y-1">
+                                  {reply.comment_text?.split('\n').map((line, li) => {
+                                    // Render generated images inline
+                                    const imgMatch = line.match(/^!\[.*?\]\((https?:\/\/.+)\)$/);
+                                    if (imgMatch) return <img key={li} src={imgMatch[1]} alt="Generated" className="rounded-lg max-w-full mt-1 border border-white/10" />;
+                                    // Render bare image URLs as images
+                                    if (/^https?:\/\/.+\.(png|jpg|jpeg|webp|gif)/i.test(line.trim()) || (line.trim().startsWith('http') && reply.author_name === '@zk' && reply.comment_text?.includes('![Generated'))) return null;
+                                    return <p key={li}>{line}</p>;
+                                  })}
+                                </div>
                                 {reply.created_by === currentUser?.email && (
                                   <Button
                                     onClick={() => handleDeleteComment(reply.id)}
