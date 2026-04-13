@@ -12,7 +12,13 @@ export async function downloadImage(url, filename = "hikaru-image.png") {
     document.body.removeChild(a);
     URL.revokeObjectURL(blobUrl);
   } catch {
-    // Fallback: open in new tab if CORS blocks fetch
-    window.open(url, "_blank");
+    // Fallback: create a link with download attribute (no new tab)
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.setAttribute("target", "_self");
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
 }

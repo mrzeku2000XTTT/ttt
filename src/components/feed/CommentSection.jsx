@@ -1212,15 +1212,27 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
               onClick={(e) => e.stopPropagation()}
             />
             <button
-              onClick={(e) => {
+              onClick={async (e) => {
                 e.stopPropagation();
-                const a = document.createElement('a');
-                a.href = fullscreenImage;
-                a.download = `zk-image-${Date.now()}.png`;
-                a.target = '_blank';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
+                try {
+                  const res = await fetch(fullscreenImage);
+                  const blob = await res.blob();
+                  const blobUrl = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = blobUrl;
+                  a.download = `zk-image-${Date.now()}.png`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(blobUrl);
+                } catch {
+                  const a = document.createElement('a');
+                  a.href = fullscreenImage;
+                  a.download = `zk-image-${Date.now()}.png`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                }
               }}
               className="mt-4 flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white text-sm font-medium transition-colors"
             >
