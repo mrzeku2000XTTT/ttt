@@ -17,10 +17,16 @@ Deno.serve(async (req) => {
     const userQuestion = post_content.replace(/@zk\s*/gi, '').trim();
     console.log('[@zk Bot] User question:', userQuestion);
 
-    // Detect if user is asking @zk to generate an image
+    // Detect if user is asking @zk to generate or ITERATE on an image
     const isImageRequest = /\b(create|generate|make|draw|design|paint)\b.{0,20}\b(image|picture|photo|art|illustration|logo|icon)\b/i.test(userQuestion) ||
                            /\b(image|picture|art)\s+of\b/i.test(userQuestion) ||
                            /\b(draw|paint|design|sketch)\b.{0,30}(me|a|an|the)\b/i.test(userQuestion);
+
+    // Detect iteration/edit requests ("make it red", "turn the owl into a tiger", "change the background", "make the owl a black tiger")
+    const isIterationRequest = /\b(make|turn|change|transform|convert|edit|modify|replace|add|remove|swap|give)\b.{0,40}\b(it|the|this|into|to|a|an)\b/i.test(userQuestion) ||
+                               /\b(make|turn)\s+(it|the|this|him|her)\b/i.test(userQuestion) ||
+                               /\b(can\s*u|canu|could you|can you|please)\s+(make|turn|change|edit|modify|give)\b/i.test(userQuestion);
+    const isImageOrIteration = isImageRequest || isIterationRequest;
 
     // Create placeholder comment as a REPLY under the caller's comment
     let botComment;
@@ -54,24 +60,58 @@ Deno.serve(async (req) => {
       return Response.json({ success: false, error: `Failed to create comment: ${createErr.message}` }, { status: 200 });
     }
 
-    // --- IMAGE GENERATION MODE ---
-    if (isImageRequest) {
-      console.log('[@zk Bot] Image generation request detected');
+    // --- IMAGE GENERATION / ITERATION MODE ---
+    if (isImageOrIteration) {
+      console.log('[@zk Bot] Image generation/iteration request detected, isIteration:', isIterationRequest);
       try {
-        // Extract the actual image description — strip action words and image nouns
-        const imagePrompt = userQuestion
-          .replace(/\b(create|generate|make|draw|design|paint|sketch)\b/gi, '')
-          .replace(/\b(an?|the)\s+(image|picture|photo|art|illustration|logo|icon)\b/gi, '')
-          .replace(/\b(image|picture|photo|art|illustration|logo|icon)\b/gi, '')
-          .replace(/\b(of|for|with|showing|depicting|me)\b/gi, '')
-          .replace(/\s+/g, ' ')
-          .trim() || 'creative abstract digital art with vibrant colors';
+        // Look for previous @zk images in this post's comments to use as reference
+        let referenceImageUrls = [];
+        if (isIterationRequest) {
+          try {
+            const postComments = await base44.asServiceRole.entities.PostComment.filter(
+              { post_id: post_id, author_name: '@zk' }, '-created_date', 20
+            );
+            for (const c of postComments) {
+              if (c.id === botComment.id) continue; // skip our placeholder
+              const imgMatch = c.comment_text?.match(/!\[.*?\]\((https?:\/\/.+?)\)/);
+              if (imgMatch) {
+                referenceImageUrls.push(imgMatch[1]);
+                break; // use the most recent @zk image
+              }
+            }
+            console.log('[@zk Bot] Found reference images:', referenceImageUrls.length);
+          } catch (refErr) {
+            console.log('[@zk Bot] Could not load reference images:', refErr.message);
+          }
+        }
 
-        console.log('[@zk Bot] Image prompt:', imagePrompt);
+        // For iteration: use the full user question as the prompt (it describes what to change)
+        // For new images: strip action words
+        let imagePrompt;
+        if (isIterationRequest && referenceImageUrls.length > 0) {
+          imagePrompt = userQuestion.trim();
+        } else {
+          imagePrompt = userQuestion
+            .replace(/\b(create|generate|make|draw|design|paint|sketch)\b/gi, '')
+            .replace(/\b(an?|the)\s+(image|picture|photo|art|illustration|logo|icon)\b/gi, '')
+            .replace(/\b(image|picture|photo|art|illustration|logo|icon)\b/gi, '')
+            .replace(/\b(of|for|with|showing|depicting|me)\b/gi, '')
+            .replace(/\s+/g, ' ')
+            .trim() || 'creative abstract digital art with vibrant colors';
+        }
 
-        const result = await base44.asServiceRole.integrations.Core.GenerateImage({
-          prompt: `High quality, detailed: ${imagePrompt}`,
-        });
+        console.log('[@zk Bot] Image prompt:', imagePrompt, '| refs:', referenceImageUrls.length);
+
+        const genParams = {
+          prompt: referenceImageUrls.length > 0
+            ? `Based on the reference image, apply this edit: ${imagePrompt}. High quality, detailed.`
+            : `High quality, detailed: ${imagePrompt}`,
+        };
+        if (referenceImageUrls.length > 0) {
+          genParams.existing_image_urls = referenceImageUrls;
+        }
+
+        const result = await base44.asServiceRole.integrations.Core.GenerateImage(genParams);
 
         console.log('[@zk Bot] Image result:', JSON.stringify(result));
 
