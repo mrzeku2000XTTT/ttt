@@ -4,7 +4,7 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
-    const { post_id, post_content, author_name, image_urls } = await req.json();
+    const { post_id, post_content, author_name, image_urls, parent_comment_id } = await req.json();
 
     console.log('[@zk Bot] Starting analysis for post:', post_id);
     console.log('[@zk Bot] Content:', post_content);
@@ -16,17 +16,32 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing post_id or post_content' }, { status: 400 });
     }
 
-    // Create placeholder comment FIRST (using service role to bypass RLS)
-    console.log('[@zk Bot] Creating placeholder comment...');
+    // Create placeholder comment as a REPLY under the caller's comment
+    console.log('[@zk Bot] Creating placeholder comment (parent:', parent_comment_id || 'none', ')...');
     let botComment;
     try {
-      botComment = await base44.asServiceRole.entities.PostComment.create({
+      const commentData = {
         post_id: post_id,
         author_name: '@zk',
         author_wallet_address: 'zk_bot_system',
         comment_text: '🤖 Agent ZK scanning with Ying capabilities...',
         likes: 0
-      });
+      };
+      if (parent_comment_id) {
+        commentData.parent_comment_id = parent_comment_id;
+      }
+      botComment = await base44.asServiceRole.entities.PostComment.create(commentData);
+      // Update parent comment replies count
+      if (parent_comment_id) {
+        try {
+          const parentComments = await base44.asServiceRole.entities.PostComment.filter({ id: parent_comment_id });
+          if (parentComments.length > 0) {
+            await base44.asServiceRole.entities.PostComment.update(parent_comment_id, {
+              replies_count: (parentComments[0].replies_count || 0) + 1
+            });
+          }
+        } catch (e) { console.log('[@zk Bot] Could not update parent replies_count:', e.message); }
+      }
       console.log('[@zk Bot] Placeholder comment created:', botComment.id);
     } catch (createErr) {
       console.error('[@zk Bot] Failed to create comment:', createErr.message, createErr);

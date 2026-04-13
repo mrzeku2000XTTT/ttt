@@ -234,12 +234,13 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
             ? post[0].media_files.filter(f => f.type === 'image').map(f => f.url)
             : (post[0]?.image_url ? [post[0].image_url] : []);
 
-          // Call zkBot and wait for response (no polling, just wait)
+          // Call zkBot and wait for response — pass parent_comment_id so reply nests under caller
           await base44.functions.invoke('zkBotRespond', { 
             post_id: postId,
             post_content: newComment.trim(),
             author_name: authorName,
-            image_urls: imageUrls
+            image_urls: imageUrls,
+            parent_comment_id: createdComment.id
           });
 
           // Single reload after bot completes
