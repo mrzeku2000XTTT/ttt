@@ -103,15 +103,13 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
       toast.success('KAS sent!');
 
       // Step 2: Send PACMAN KRC-20 to escrow (if any)
-      // IMPORTANT: Must wait for KAS TX to confirm first, otherwise the KRC-20 commit
-      // will try to spend the same UTXO that the KAS TX already spent (UTXO collision)
       let pacmanTxHash = '';
       if (pacAmt > 0) {
         setSendStatus('Waiting for KAS TX to confirm before sending PACMAN...');
         // Wait for the KAS TX change output to become available as a new UTXO
         let kasConfirmed = false;
-        for (let waitAttempt = 0; waitAttempt < 12; waitAttempt++) {
-          await new Promise(r => setTimeout(r, 3000));
+        for (let waitAttempt = 0; waitAttempt < 8; waitAttempt++) {
+          await new Promise(r => setTimeout(r, 2000));
           try {
             const txCheck = await fetch(`https://api.kaspa.org/transactions/${kasTxHash}`);
             if (txCheck.ok) {
@@ -126,7 +124,7 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
           } catch {}
         }
         if (!kasConfirmed) {
-          console.warn('KAS TX not confirmed after 36s — attempting PACMAN anyway');
+          console.warn('KAS TX not confirmed after 16s — attempting PACMAN anyway');
         }
 
         setSendStatus('Sending PACMAN tokens...');
@@ -176,8 +174,8 @@ export default function BetModal({ game, side, walletAddress, onClose, onSuccess
 
       let verifyRes = null;
       let lastErr = '';
-      for (let attempt = 0; attempt < 5; attempt++) {
-        const waitMs = 5000 + attempt * 3000;
+      for (let attempt = 0; attempt < 8; attempt++) {
+        const waitMs = attempt === 0 ? 2000 : 3000;
         await new Promise(r => setTimeout(r, waitMs));
         try {
           const res = await base44.functions.invoke('kachingPlaceBet', {
