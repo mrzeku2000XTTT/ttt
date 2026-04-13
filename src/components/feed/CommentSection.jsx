@@ -352,6 +352,8 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
         replies_count: (parentComment.replies_count || 0) + 1
         });
 
+        // Capture replyingTo BEFORE clearing state
+        const repliedToComment = replyingTo;
         const replyContent = replyText.trim();
         setReplyText("");
         setReplyingTo(null);
@@ -361,14 +363,14 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
         }
 
         // If replying to @zk or mentioning @zk in a reply, trigger bot
-        const zkInReply = replyContent.toLowerCase().includes('@zk') || parentComment.author_name === '@zk';
+        const zkInReply = replyContent.toLowerCase().includes('@zk') || parentComment.author_name === '@zk' || repliedToComment?.author_name === '@zk';
         if (zkInReply) {
           setZkIsResponding(true);
           try {
             // Find the @zk comment being replied to for image iteration context
             let zkRefCommentId = null;
-            if (replyingTo && replyingTo.author_name === '@zk') {
-              zkRefCommentId = replyingTo.id;
+            if (repliedToComment && repliedToComment.author_name === '@zk') {
+              zkRefCommentId = repliedToComment.id;
             } else if (parentComment.author_name === '@zk') {
               zkRefCommentId = parentComment.id;
             }
