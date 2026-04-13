@@ -30,27 +30,6 @@ const PRODUCTS = [
 ];
 
 /* ─── components ─── */
-function Counter({ target, suffix = "" }) {
-  const [count, setCount] = useState(0);
-  const ref = useRef(null);
-  const started = useRef(false);
-
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting && !started.current) {
-        started.current = true;
-        let v = 0;
-        const step = Math.max(1, Math.ceil(target / 90));
-        const t = setInterval(() => { v += step; if (v >= target) { v = target; clearInterval(t); } setCount(v); }, 16);
-      }
-    }, { threshold: 0.4 });
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, [target]);
-
-  return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
-}
-
 function PhaseCard({ data, idx }) {
   const done = data.status === "completed";
   const active = data.status === "active";
@@ -107,9 +86,9 @@ export default function TTTV2Page() {
   const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
   const [news, setNews] = useState([]);
   const [posts, setPosts] = useState([]);
-  const [stats, setStats] = useState({ users: 120, posts: 130, kasTipped: 150, apps: 85 });
+  const [kasData, setKasData] = useState({ price: null, change24h: null, loading: true });
 
-  useEffect(() => { loadContent(); loadStats(); }, []);
+  useEffect(() => { loadContent(); loadKasPrice(); }, []);
 
   const loadContent = async () => {
     try {
@@ -125,18 +104,17 @@ export default function TTTV2Page() {
     } catch { /* fallback empty */ }
   };
 
-  const loadStats = async () => {
+  const loadKasPrice = async () => {
     try {
-      const res = await base44.functions.invoke('getTTTStats', {});
-      if (res.data && !res.data.error) {
-        setStats({
-          users: res.data.users || 120,
-          posts: res.data.posts || 130,
-          kasTipped: res.data.kasTipped || 150,
-          apps: res.data.apps || 85,
-        });
+      const res = await base44.functions.invoke('getKaspaPrice', {});
+      if (res.data?.price) {
+        setKasData({ price: res.data.price, change24h: res.data.change24h || 0, loading: false });
+      } else {
+        setKasData(prev => ({ ...prev, loading: false }));
       }
-    } catch { /* use defaults */ }
+    } catch {
+      setKasData(prev => ({ ...prev, loading: false }));
+    }
   };
 
   return (
@@ -191,20 +169,44 @@ export default function TTTV2Page() {
         </motion.div>
       </motion.section>
 
-      {/* ── stats ribbon ── */}
-      <section className="border-y border-zinc-200/60 bg-white py-10 px-5">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
-          {[
-            { label: "Users", value: stats.users, suffix: "+" },
-            { label: "Posts", value: stats.posts, suffix: "+" },
-            { label: "KAS Tipped", value: stats.kasTipped, suffix: "+" },
-            { label: "Apps", value: stats.apps, suffix: "" },
-          ].map((s, i) => (
-            <motion.div key={s.label} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }} className="text-center">
-              <div className="text-3xl sm:text-4xl font-[900] text-zinc-900"><Counter target={s.value} suffix={s.suffix} /></div>
-              <div className="text-xs text-zinc-400 font-medium mt-1 tracking-wide uppercase">{s.label}</div>
-            </motion.div>
-          ))}
+      {/* ── KAS market ribbon ── */}
+      <section className="border-y border-zinc-200/60 bg-white py-8 px-5">
+        <div className="max-w-5xl mx-auto">
+          {kasData.loading ? (
+            <div className="flex items-center justify-center gap-2 text-zinc-400 text-sm py-4">
+              <div className="w-4 h-4 border-2 border-zinc-300 border-t-zinc-600 rounded-full animate-spin" />
+              Loading market data…
+            </div>
+          ) : kasData.price ? (
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-12">
+              <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="flex items-center gap-3">
+                <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/13e8ec094_image.png" alt="KAS" className="w-8 h-8 rounded-full" />
+                <div>
+                  <div className="text-[11px] text-zinc-400 font-medium tracking-wide uppercase">Kaspa Price</div>
+                  <div className="text-2xl sm:text-3xl font-[900] text-zinc-900">${kasData.price.toFixed(4)}</div>
+                </div>
+              </motion.div>
+              <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.08 }} className="text-center">
+                <div className="text-[11px] text-zinc-400 font-medium tracking-wide uppercase">24h Change</div>
+                <div className={`text-2xl sm:text-3xl font-[900] ${kasData.change24h >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                  {kasData.change24h >= 0 ? '+' : ''}{kasData.change24h.toFixed(2)}%
+                </div>
+              </motion.div>
+              <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.16 }} className="text-center">
+                <div className="text-[11px] text-zinc-400 font-medium tracking-wide uppercase">Network</div>
+                <div className="text-lg sm:text-xl font-[900] text-zinc-900">blockDAG</div>
+                <div className="text-[10px] text-zinc-400">32 blocks/sec</div>
+              </motion.div>
+              <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.24 }}>
+                <a href="https://kaspa.org" target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-cyan-600 hover:text-cyan-700 transition-colors">
+                  kaspa.org <ExternalLink className="w-3 h-3" />
+                </a>
+              </motion.div>
+            </div>
+          ) : (
+            <div className="text-center text-zinc-400 text-sm py-4">Market data unavailable</div>
+          )}
         </div>
       </section>
 
