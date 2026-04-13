@@ -347,10 +347,14 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
         comment_text: replyText.trim()
         });
 
-        // Update parent comment replies count
-        await base44.entities.PostComment.update(parentComment.id, {
-        replies_count: (parentComment.replies_count || 0) + 1
-        });
+        // Update parent comment replies count (don't let this block the flow)
+        try {
+          await base44.entities.PostComment.update(parentComment.id, {
+            replies_count: (parentComment.replies_count || 0) + 1
+          });
+        } catch (e) {
+          console.log('Could not update replies_count:', e.message);
+        }
 
         // Capture replyingTo BEFORE clearing state
         const repliedToComment = replyingTo;
