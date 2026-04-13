@@ -107,8 +107,9 @@ export default function TTTV2Page() {
   const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
   const [news, setNews] = useState([]);
   const [posts, setPosts] = useState([]);
+  const [stats, setStats] = useState({ users: 120, posts: 130, kasTipped: 150, apps: 85 });
 
-  useEffect(() => { loadContent(); }, []);
+  useEffect(() => { loadContent(); loadStats(); }, []);
 
   const loadContent = async () => {
     try {
@@ -122,6 +123,20 @@ export default function TTTV2Page() {
         date: new Date(x.created_date).toLocaleDateString(),
       })));
     } catch { /* fallback empty */ }
+  };
+
+  const loadStats = async () => {
+    try {
+      const res = await base44.functions.invoke('getTTTStats', {});
+      if (res.data && !res.data.error) {
+        setStats({
+          users: res.data.users || 120,
+          posts: res.data.posts || 130,
+          kasTipped: res.data.kasTipped || 150,
+          apps: res.data.apps || 85,
+        });
+      }
+    } catch { /* use defaults */ }
   };
 
   return (
@@ -180,10 +195,10 @@ export default function TTTV2Page() {
       <section className="border-y border-zinc-200/60 bg-white py-10 px-5">
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
           {[
-            { label: "Users", value: 12500, suffix: "+" },
-            { label: "Posts", value: 25000, suffix: "+" },
-            { label: "KAS Tipped", value: 45000, suffix: "+" },
-            { label: "Apps", value: 80, suffix: "+" },
+            { label: "Users", value: stats.users, suffix: "+" },
+            { label: "Posts", value: stats.posts, suffix: "+" },
+            { label: "KAS Tipped", value: stats.kasTipped, suffix: "+" },
+            { label: "Apps", value: stats.apps, suffix: "" },
           ].map((s, i) => (
             <motion.div key={s.label} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }} className="text-center">
               <div className="text-3xl sm:text-4xl font-[900] text-zinc-900"><Counter target={s.value} suffix={s.suffix} /></div>
