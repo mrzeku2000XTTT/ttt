@@ -127,15 +127,14 @@ Deno.serve(async (req) => {
     // --- LLM INVOCATION ---
     const hasImages = image_urls && image_urls.length > 0;
     
-    // The key: treat user's message as a DIRECT QUESTION, not about the post
     const prompt = `You are @zk, an elite AI agent in the TTT community (Kaspa blockchain). You have real-time internet access.
 
 RULES:
 - Answer the user's ACTUAL QUESTION directly. Do NOT describe images or analyze the post unless explicitly asked.
-- Use real-time web data for prices, news, facts.
+- Use real-time web data for prices, news, facts. SEARCH THE WEB for any question you're unsure about.
 - If you can cross-reference with community posts below, mention it briefly.
 - NEVER hallucinate or make up data. Say "not sure" if uncertain.
-- Be concise: max 50 words. Use 1-2 emojis.
+- Be concise: max 80 words. Use 1-2 emojis.
 ${anchorContext}${yingKnowledge}${communityContext}
 
 User "${author_name}" asks:
@@ -145,27 +144,46 @@ Answer their question directly:`;
 
     console.log('[@zk Bot] Invoking LLM, hasImages:', hasImages);
 
-    let llmResponse;
+    let analysis = '';
+    
+    // Try with web search first (gemini_3_flash supports add_context_from_internet)
     try {
       if (hasImages) {
-        llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+        analysis = await base44.asServiceRole.integrations.Core.InvokeLLM({
           prompt: prompt,
           file_urls: image_urls,
           model: 'gemini_3_flash',
         });
       } else {
-        llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+        analysis = await base44.asServiceRole.integrations.Core.InvokeLLM({
           prompt: prompt,
           add_context_from_internet: true,
           model: 'gemini_3_flash',
         });
       }
-    } catch (llmErr) {
-      console.error('[@zk Bot] InvokeLLM failed:', llmErr.message);
-      throw new Error(`LLM failed: ${llmErr.message}`);
+    } catch (llmErr1) {
+      console.error('[@zk Bot] Primary LLM failed:', llmErr1.message);
+      // Fallback: try without web search
+      try {
+        analysis = await base44.asServiceRole.integrations.Core.InvokeLLM({
+          prompt: prompt,
+          model: 'gemini_3_flash',
+        });
+      } catch (llmErr2) {
+        console.error('[@zk Bot] Fallback LLM also failed:', llmErr2.message);
+        // Last resort: default model
+        try {
+          analysis = await base44.asServiceRole.integrations.Core.InvokeLLM({
+            prompt: `Answer concisely: ${userQuestion || post_content}`,
+          });
+        } catch (llmErr3) {
+          console.error('[@zk Bot] All LLM attempts failed:', llmErr3.message);
+          analysis = `\u{1F916} Couldn't process right now. Error: ${llmErr1.message}. Try again!`;
+        }
+      }
     }
 
-    const analysis = llmResponse || '🤖 Could not generate a response. Try again!';
+    if (!analysis) analysis = '\u{1F916} Could not generate a response. Try again!';
     console.log('[@zk Bot] Final:', analysis.substring(0, 100));
 
     // Update placeholder comment
