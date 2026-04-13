@@ -55,6 +55,17 @@ export default function KaiChatbot() {
     'what\'s new', 'whats new', 'latest updates', 'community posts', 'ttt posts'
   ];
 
+  const USER_POST_KEYWORDS = [
+    'posts by', 'what has', 'what did', 'posted', 'analyze user', 'user posts',
+    'examine posts', 'who posted', 'show me posts from', 'check posts',
+    'what does', 'posting', 'activity', 'said'
+  ];
+
+  const isUserPostRequest = (msg) => {
+    const lower = msg.toLowerCase();
+    return USER_POST_KEYWORDS.some(kw => lower.includes(kw));
+  };
+
   const isFeedRequest = (msg) => {
     const lower = msg.toLowerCase();
     return FEED_KEYWORDS.some(kw => lower.includes(kw));
@@ -82,6 +93,29 @@ export default function KaiChatbot() {
       return;
     }
 
+    // Detect user-specific post analysis
+    if (isUserPostRequest(userMsg)) {
+      setMessages(prev => [...prev, { role: "action", content: "Analyzing user posts... 🔍" }]);
+      try {
+        const posts = await base44.entities.Post.list('-created_date', 50);
+        const postData = posts.map(p => `[${p.author_name}] ${p.content?.slice(0, 150)}${p.media_files?.length ? ' [has media]' : ''} (${p.likes || 0} likes, ${p.comments_count || 0} comments)`).join('\n');
+        const analysis = await base44.integrations.Core.InvokeLLM({
+          prompt: `You are Kai, an AI assistant for the TTT community. Here are the 50 most recent posts from the TTT feed:\n\n${postData}\n\nUser question: "${userMsg}"\n\nAnswer the user's question about specific users or posting activity. Be specific, cite usernames and what they posted. Keep it concise, friendly, and use emojis.`,
+        });
+        setMessages(prev => [
+          ...prev.filter(m => m.role !== 'action'),
+          { role: "assistant", content: analysis }
+        ]);
+      } catch (err) {
+        setMessages(prev => [
+          ...prev.filter(m => m.role !== 'action'),
+          { role: "assistant", content: "Couldn't analyze posts right now. Try again! 🙏" }
+        ]);
+      }
+      setIsLoading(false);
+      return;
+    }
+
     // Detect feed request
     if (isFeedRequest(userMsg)) {
       setMessages(prev => [...prev, { role: "action", content: "Checking TTT Feed... 📡" }]);
@@ -106,9 +140,17 @@ export default function KaiChatbot() {
     }
 
     try {
+      // Fetch recent posts for context so Kai always knows what's happening
+      let feedContext = '';
+      try {
+        const recentPosts = await base44.entities.Post.list('-created_date', 15);
+        if (recentPosts.length > 0) {
+          feedContext = `\n\nRecent TTT Feed activity (for context):\n${recentPosts.map(p => `- ${p.author_name}: ${p.content?.slice(0, 80)}`).join('\n')}`;
+        }
+      } catch {} 
       const context = messages.slice(-6).map(m => `${m.role === 'user' ? 'User' : 'Kai'}: ${m.content}`).join('\n');
       const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are Kai, a helpful AI assistant embedded in TTT (a Kaspa blockchain community app). You're knowledgeable about Kaspa, crypto, the TTT platform features (Feed, AgentZK, DAGKnight, Bridge, etc.), and general topics. Keep responses concise, friendly, and helpful. Use emojis occasionally.\n\nConversation so far:\n${context}\n\nUser: ${userMsg}\n\nRespond as Kai:`,
+        prompt: `You are Kai, a helpful AI assistant embedded in TTT (a Kaspa blockchain community app). You're knowledgeable about Kaspa, crypto, the TTT platform features (Feed, AgentZK, DAGKnight, Bridge, etc.), and general topics. You have access to the community feed and can reference what users have posted. Keep responses concise, friendly, and helpful. Use emojis occasionally.${feedContext}\n\nConversation so far:\n${context}\n\nUser: ${userMsg}\n\nRespond as Kai:`,
       });
       setMessages(prev => [...prev, { role: "assistant", content: response }]);
     } catch (err) {
