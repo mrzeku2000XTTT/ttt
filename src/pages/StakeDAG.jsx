@@ -111,10 +111,25 @@ export default function StakeDAGPage() {
     } catch {}
   };
 
-  const fetchBalance = useCallback((addr) => {
+  const fetchBalance = useCallback((addr, forceApi = false) => {
     if (!addr) return;
     const clean = addr.startsWith('kaspa:') ? addr.slice(6) : addr;
-    fetch(`https://api.kaspa.org/addresses/kaspa:${clean}/balance`)
+    const fullAddr = `kaspa:${clean}`;
+
+    // On periodic refreshes, read Terra's localStorage cache (Terra keeps it fresh)
+    if (!forceApi) {
+      try {
+        const cached = JSON.parse(localStorage.getItem('terra_balances') || '{}');
+        const val = cached[fullAddr];
+        if (val !== undefined && val !== '?' && val !== null) {
+          setWalletBalance(Number(val) || 0);
+          return;
+        }
+      } catch {}
+    }
+
+    // Fresh API call on init or when forced (after a bet)
+    fetch(`https://api.kaspa.org/addresses/${fullAddr}/balance`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (data?.balance !== undefined) {
@@ -122,7 +137,7 @@ export default function StakeDAGPage() {
           setWalletBalance(bal);
           try {
             const c = JSON.parse(localStorage.getItem('terra_balances') || '{}');
-            c[`kaspa:${clean}`] = bal;
+            c[fullAddr] = bal;
             localStorage.setItem('terra_balances', JSON.stringify(c));
           } catch {}
         }
@@ -495,7 +510,7 @@ export default function StakeDAGPage() {
             onSuccess={() => {
               loadGames();
               loadUserBets();
-              // Force API refresh after a bet (balance actually changed)
+                      // Force API refresh after a bet (balance actually changed)
               if (walletAddress) fetchBalance(walletAddress, true);
             }}
           />
