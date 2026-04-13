@@ -136,15 +136,13 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
   const handleComment = async () => {
     if (!newComment.trim()) return;
 
-    // Check if calling ZK bot
-    const zkMatch = newComment.trim().match(/^@zk\s+(.+)/i);
-
+    const commentText = newComment.trim();
     setIsCommenting(true);
+    setNewComment("");
     try {
       let authorName = '';
       let authorWalletAddress = '';
 
-      // Try to get wallet address - Kasware, user, or manual
       if (window.kasware) {
         try {
           const accounts = await window.kasware.getAccounts();
@@ -156,12 +154,10 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
         }
       }
 
-      // If user is logged in, use their details
       if (currentUser) {
         authorName = currentUser.username || '';
         authorWalletAddress = currentUser.created_wallet_address || authorWalletAddress;
 
-        // Only use AgentZK username if no TTT username exists
         if (!authorName && authorWalletAddress) {
           try {
             const profiles = await base44.entities.AgentZKProfile.filter({
@@ -175,21 +171,18 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
           }
         }
 
-        // Fallback for logged in users
         if (!authorName) {
           authorName = authorWalletAddress 
             ? `${authorWalletAddress.slice(0, 6)}...${authorWalletAddress.slice(-4)}`
             : currentUser.email.split('@')[0];
         }
       } else {
-        // Not logged in - check manual address or wallet
         const manualAddress = localStorage.getItem('manual_kaspa_address');
         if (!authorWalletAddress && manualAddress?.trim()) {
           authorWalletAddress = manualAddress.trim();
         }
         
         if (authorWalletAddress) {
-          // Try to get username from WalletProfile for manual address
           try {
             const profiles = await base44.entities.WalletProfile.filter({ wallet_address: authorWalletAddress });
             if (profiles && profiles.length > 0 && profiles[0].username) {
@@ -199,7 +192,6 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
             console.log('Could not fetch username from WalletProfile');
           }
           
-          // Fallback to truncated address
           if (!authorName) {
             authorName = `${authorWalletAddress.slice(0, 6)}...${authorWalletAddress.slice(-4)}`;
           }
@@ -214,23 +206,21 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
         post_id: postId,
         author_name: authorName,
         author_wallet_address: authorWalletAddress,
-        comment_text: newComment.trim()
+        comment_text: commentText
       });
 
-      setNewComment("");
-      
       if (onCommentAdded) {
         onCommentAdded();
       }
 
       // If @zk was mentioned anywhere, have it respond
-      const zkMentioned = newComment.toLowerCase().includes('@zk');
+      const zkMentioned = commentText.toLowerCase().includes('@zk');
+      console.log('[CommentSection] zkMentioned:', zkMentioned, 'text:', commentText);
       if (zkMentioned) {
         setZkIsResponding(true);
 
         try {
-          // Only send post images if user explicitly asks about the image
-          const lowerMsg = newComment.toLowerCase();
+          const lowerMsg = commentText.toLowerCase();
           const wantsImageAnalysis = /analyz|describ|what('s| is) (this|the) (image|picture|photo)|look at|examine (this|the) (image|picture)/i.test(lowerMsg);
           let imageUrls = [];
           if (wantsImageAnalysis) {
@@ -240,16 +230,15 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
               : (post[0]?.image_url ? [post[0].image_url] : []);
           }
 
-          // Call zkBot — pass parent_comment_id so reply nests under caller
+          console.log('[CommentSection] Calling zkBotRespond for top-level comment');
           await base44.functions.invoke('zkBotRespond', { 
             post_id: postId,
-            post_content: newComment.trim(),
+            post_content: commentText,
             author_name: authorName,
             image_urls: imageUrls,
             parent_comment_id: createdComment.id
           });
 
-          // Single reload after bot completes
           await loadComments();
           if (onCommentAdded) onCommentAdded();
         } catch (err) {
@@ -261,146 +250,145 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
       } else {
         await loadComments();
       }
+    } catch (err) {
+      console.error('Failed to comment:', err);
+    } finally {
+      setIsCommenting(false);
+    }
+  };
+
+  const handleReplyToComment = async (parentComment) => {
+    if (!replyText.trim()) return;
+
+    // Capture values BEFORE any state changes
+    const replyContent = replyText.trim();
+    const repliedToComment = replyingTo;
+    
+    setIsCommenting(true);
+    setReplyText("");
+    setReplyingTo(null);
+    
+    try {
+      let authorName = '';
+      let authorWalletAddress = '';
+
+      if (window.kasware) {
+        try {
+          const accounts = await window.kasware.getAccounts();
+          if (accounts && accounts.length > 0) {
+            authorWalletAddress = accounts[0];
+          }
         } catch (err) {
-        console.error('Failed to comment:', err);
-        } finally {
-        setIsCommenting(false);
+          console.log('Failed to get Kasware wallet:', err);
         }
-        };
+      }
 
-        const handleReplyToComment = async (parentComment) => {
-          if (!replyText.trim()) return;
+      if (currentUser) {
+        authorName = currentUser.username || '';
+        authorWalletAddress = currentUser.created_wallet_address || authorWalletAddress;
 
-          setIsCommenting(true);
+        if (!authorName && authorWalletAddress) {
           try {
-            let authorName = '';
-            let authorWalletAddress = '';
-
-            // Try to get wallet address - Kasware, user, or manual
-            if (window.kasware) {
-              try {
-                const accounts = await window.kasware.getAccounts();
-                if (accounts && accounts.length > 0) {
-                  authorWalletAddress = accounts[0];
-                }
-              } catch (err) {
-                console.log('Failed to get Kasware wallet:', err);
-              }
+            const profiles = await base44.entities.AgentZKProfile.filter({
+              wallet_address: authorWalletAddress
+            });
+            if (profiles.length > 0 && profiles[0].username) {
+              authorName = profiles[0].username;
             }
+          } catch (err) {
+            console.log('No AgentZK profile found');
+          }
+        }
 
-            // If user is logged in, use their details
-            if (currentUser) {
-              authorName = currentUser.username || '';
-              authorWalletAddress = currentUser.created_wallet_address || authorWalletAddress;
+        if (!authorName) {
+          authorName = authorWalletAddress 
+            ? `${authorWalletAddress.slice(0, 6)}...${authorWalletAddress.slice(-4)}`
+            : currentUser.email.split('@')[0];
+        }
+      } else {
+        const manualAddress = localStorage.getItem('manual_kaspa_address');
+        if (!authorWalletAddress && manualAddress?.trim()) {
+          authorWalletAddress = manualAddress.trim();
+        }
 
-              if (!authorName && authorWalletAddress) {
-                try {
-                  const profiles = await base44.entities.AgentZKProfile.filter({
-                    wallet_address: authorWalletAddress
-                  });
-                  if (profiles.length > 0 && profiles[0].username) {
-                    authorName = profiles[0].username;
-                  }
-                } catch (err) {
-                  console.log('No AgentZK profile found');
-                }
-              }
-
-              if (!authorName) {
-                authorName = authorWalletAddress 
-                  ? `${authorWalletAddress.slice(0, 6)}...${authorWalletAddress.slice(-4)}`
-                  : currentUser.email.split('@')[0];
-              }
-            } else {
-              // Not logged in - check manual address or wallet
-              const manualAddress = localStorage.getItem('manual_kaspa_address');
-              if (!authorWalletAddress && manualAddress?.trim()) {
-                authorWalletAddress = manualAddress.trim();
-              }
-
-              if (authorWalletAddress) {
-                // Try to get username from WalletProfile for manual address
-                try {
-                  const profiles = await base44.entities.WalletProfile.filter({ wallet_address: authorWalletAddress });
-                  if (profiles && profiles.length > 0 && profiles[0].username) {
-                    authorName = profiles[0].username;
-                  }
-                } catch (err) {
-                  console.log('Could not fetch username from WalletProfile');
-                }
-
-                if (!authorName) {
-                  authorName = `${authorWalletAddress.slice(0, 6)}...${authorWalletAddress.slice(-4)}`;
-                }
-              } else {
-                alert('Please connect wallet to reply');
-                setIsCommenting(false);
-                return;
-              }
+        if (authorWalletAddress) {
+          try {
+            const profiles = await base44.entities.WalletProfile.filter({ wallet_address: authorWalletAddress });
+            if (profiles && profiles.length > 0 && profiles[0].username) {
+              authorName = profiles[0].username;
             }
+          } catch (err) {
+            console.log('Could not fetch username from WalletProfile');
+          }
 
-        const createdReply = await base44.entities.PostComment.create({
+          if (!authorName) {
+            authorName = `${authorWalletAddress.slice(0, 6)}...${authorWalletAddress.slice(-4)}`;
+          }
+        } else {
+          alert('Please connect wallet to reply');
+          setIsCommenting(false);
+          return;
+        }
+      }
+
+      const createdReply = await base44.entities.PostComment.create({
         post_id: postId,
         parent_comment_id: parentComment.id,
         author_name: authorName,
         author_wallet_address: authorWalletAddress,
-        comment_text: replyText.trim()
+        comment_text: replyContent
+      });
+
+      // Update parent comment replies count (don't let this block the flow)
+      try {
+        await base44.entities.PostComment.update(parentComment.id, {
+          replies_count: (parentComment.replies_count || 0) + 1
         });
+      } catch (e) {
+        console.log('Could not update replies_count:', e.message);
+      }
 
-        // Update parent comment replies count (don't let this block the flow)
-        try {
-          await base44.entities.PostComment.update(parentComment.id, {
-            replies_count: (parentComment.replies_count || 0) + 1
-          });
-        } catch (e) {
-          console.log('Could not update replies_count:', e.message);
-        }
-
-        // Capture replyingTo BEFORE clearing state
-        const repliedToComment = replyingTo;
-        const replyContent = replyText.trim();
-        setReplyText("");
-        setReplyingTo(null);
-
-        if (onCommentAdded) {
+      if (onCommentAdded) {
         onCommentAdded();
-        }
+      }
 
-        // If replying to @zk or mentioning @zk in a reply, trigger bot
-        const zkInReply = replyContent.toLowerCase().includes('@zk') || parentComment.author_name === '@zk' || repliedToComment?.author_name === '@zk';
-        if (zkInReply) {
-          setZkIsResponding(true);
-          try {
-            // Find the @zk comment being replied to for image iteration context
-            let zkRefCommentId = null;
-            if (repliedToComment && repliedToComment.author_name === '@zk') {
-              zkRefCommentId = repliedToComment.id;
-            } else if (parentComment.author_name === '@zk') {
-              zkRefCommentId = parentComment.id;
-            }
-
-            await base44.functions.invoke('zkBotRespond', {
-              post_id: postId,
-              post_content: replyContent,
-              author_name: authorName,
-              image_urls: [],
-              parent_comment_id: createdReply.id,
-              zk_ref_comment_id: zkRefCommentId
-            });
-          } catch (err) {
-            console.error('ZK bot reply failed:', err);
-          } finally {
-            setZkIsResponding(false);
+      // If replying to @zk or mentioning @zk in a reply, trigger bot
+      const zkInReply = replyContent.toLowerCase().includes('@zk') || parentComment.author_name === '@zk' || repliedToComment?.author_name === '@zk';
+      console.log('[CommentSection] Reply zkInReply:', zkInReply, 'text:', replyContent, 'parent:', parentComment.author_name, 'repliedTo:', repliedToComment?.author_name);
+      if (zkInReply) {
+        setZkIsResponding(true);
+        try {
+          // Find the @zk comment being replied to for image iteration context
+          let zkRefCommentId = null;
+          if (repliedToComment && repliedToComment.author_name === '@zk') {
+            zkRefCommentId = repliedToComment.id;
+          } else if (parentComment.author_name === '@zk') {
+            zkRefCommentId = parentComment.id;
           }
-        }
 
-        await loadComments();
+          console.log('[CommentSection] Calling zkBotRespond for reply, parent_comment_id:', createdReply.id);
+          await base44.functions.invoke('zkBotRespond', {
+            post_id: postId,
+            post_content: replyContent,
+            author_name: authorName,
+            image_urls: [],
+            parent_comment_id: createdReply.id,
+            zk_ref_comment_id: zkRefCommentId
+          });
         } catch (err) {
-        console.error('Failed to reply to comment:', err);
+          console.error('ZK bot reply failed:', err);
         } finally {
-        setIsCommenting(false);
+          setZkIsResponding(false);
         }
-        };
+      }
+
+      await loadComments();
+    } catch (err) {
+      console.error('Failed to reply to comment:', err);
+    } finally {
+      setIsCommenting(false);
+    }
+  };
 
   const handleLikeComment = async (comment) => {
     if (!currentUser) {
