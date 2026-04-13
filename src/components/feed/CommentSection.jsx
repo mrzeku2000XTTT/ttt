@@ -228,13 +228,18 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
         setZkIsResponding(true);
 
         try {
-          // Get the post data to find images
-          const post = await base44.entities.Post.filter({ id: postId });
-          const imageUrls = post[0]?.media_files 
-            ? post[0].media_files.filter(f => f.type === 'image').map(f => f.url)
-            : (post[0]?.image_url ? [post[0].image_url] : []);
+          // Only send post images if user explicitly asks about the image
+          const lowerMsg = newComment.toLowerCase();
+          const wantsImageAnalysis = /analyz|describ|what('s| is) (this|the) (image|picture|photo)|look at|examine (this|the) (image|picture)/i.test(lowerMsg);
+          let imageUrls = [];
+          if (wantsImageAnalysis) {
+            const post = await base44.entities.Post.filter({ id: postId });
+            imageUrls = post[0]?.media_files 
+              ? post[0].media_files.filter(f => f.type === 'image').map(f => f.url)
+              : (post[0]?.image_url ? [post[0].image_url] : []);
+          }
 
-          // Call zkBot and wait for response — pass parent_comment_id so reply nests under caller
+          // Call zkBot — pass parent_comment_id so reply nests under caller
           await base44.functions.invoke('zkBotRespond', { 
             post_id: postId,
             post_content: newComment.trim(),
@@ -333,7 +338,7 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
               }
             }
 
-        await base44.entities.PostComment.create({
+        const createdReply = await base44.entities.PostComment.create({
         post_id: postId,
         parent_comment_id: parentComment.id,
         author_name: authorName,
@@ -346,11 +351,31 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
         replies_count: (parentComment.replies_count || 0) + 1
         });
 
+        const replyContent = replyText.trim();
         setReplyText("");
         setReplyingTo(null);
 
         if (onCommentAdded) {
         onCommentAdded();
+        }
+
+        // If replying to @zk or mentioning @zk in a reply, trigger bot
+        const zkInReply = replyContent.toLowerCase().includes('@zk') || parentComment.author_name === '@zk';
+        if (zkInReply) {
+          setZkIsResponding(true);
+          try {
+            await base44.functions.invoke('zkBotRespond', {
+              post_id: postId,
+              post_content: replyContent,
+              author_name: authorName,
+              image_urls: [],
+              parent_comment_id: createdReply.id
+            });
+          } catch (err) {
+            console.error('ZK bot reply failed:', err);
+          } finally {
+            setZkIsResponding(false);
+          }
         }
 
         await loadComments();
@@ -637,7 +662,7 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
               <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
               <div className="flex-1">
                 <span className="text-cyan-400 text-sm font-medium">@zk analyzing...</span>
-                <div className="text-white/40 text-xs mt-0.5">Searching web + processing context</div>
+                <div className="text-white/40 text-xs mt-0.5">Real-time intelligence + fact-checking</div>
               </div>
             </div>
           </motion.div>
@@ -842,27 +867,90 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                                 </div>
                                 <div className="text-white text-xs mb-1 space-y-1">
                                   {reply.comment_text?.split('\n').map((line, li) => {
-                                    // Render generated images inline
                                     const imgMatch = line.match(/^!\[.*?\]\((https?:\/\/.+)\)$/);
                                     if (imgMatch) return <img key={li} src={imgMatch[1]} alt="Generated" className="rounded-lg max-w-full mt-1 border border-white/10" />;
-                                    // Render bare image URLs as images
                                     if (/^https?:\/\/.+\.(png|jpg|jpeg|webp|gif)/i.test(line.trim()) || (line.trim().startsWith('http') && reply.author_name === '@zk' && reply.comment_text?.includes('![Generated'))) return null;
                                     return <p key={li}>{line}</p>;
                                   })}
                                 </div>
-                                {reply.created_by === currentUser?.email && (
+                                <div className="flex items-center gap-2 mt-1">
                                   <Button
-                                    onClick={() => handleDeleteComment(reply.id)}
+                                    onClick={() => {
+                                      setReplyingTo(replyingTo?.id === reply.id ? null : reply);
+                                      // Auto-prepend @zk if replying to @zk's reply
+                                      if (reply.author_name === '@zk') {
+                                        setReplyText('@zk ');
+                                      } else {
+                                        setReplyText('');
+                                      }
+                                    }}
                                     variant="ghost"
                                     size="sm"
-                                    className="text-white/30 hover:text-red-400 h-auto p-0 text-xs flex items-center gap-1"
+                                    className={`h-auto p-0 text-[10px] flex items-center gap-1 ${replyingTo?.id === reply.id ? 'text-cyan-400' : 'text-white/30 hover:text-cyan-400'}`}
                                   >
-                                    <Trash2 className="w-2 h-2" />
-                                    Delete
+                                    <CornerDownRight className="w-2.5 h-2.5" />
+                                    Reply
                                   </Button>
-                                )}
+                                  {reply.created_by === currentUser?.email && (
+                                    <Button
+                                      onClick={() => handleDeleteComment(reply.id)}
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-white/30 hover:text-red-400 h-auto p-0 text-[10px] flex items-center gap-1"
+                                    >
+                                      <Trash2 className="w-2 h-2" />
+                                      Delete
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
                             </div>
+
+                            {/* Reply input for nested replies (including @zk conversations) */}
+                            <AnimatePresence>
+                              {replyingTo?.id === reply.id && (
+                                <motion.div
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: 'auto' }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  className="mt-2"
+                                >
+                                  <div className="bg-white/5 border border-cyan-500/30 rounded-lg p-2 border-l-2 border-l-cyan-500">
+                                    <div className="flex items-center gap-1 mb-1 text-[10px] text-cyan-400">
+                                      <CornerDownRight className="w-2.5 h-2.5" />
+                                      <span>Replying to {reply.author_name}</span>
+                                    </div>
+                                    <div className="flex gap-1.5">
+                                      <Input
+                                        value={replyText}
+                                        onChange={(e) => setReplyText(e.target.value)}
+                                        onKeyPress={(e) => e.key === 'Enter' && handleReplyToComment(comment)}
+                                        placeholder={reply.author_name === '@zk' ? 'Talk to @zk...' : 'Write a reply...'}
+                                        className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/30 h-7 text-xs"
+                                        disabled={isCommenting}
+                                        autoFocus
+                                      />
+                                      <Button
+                                        onClick={() => { setReplyingTo(null); setReplyText(''); }}
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-white/40 hover:text-white h-7 px-1.5"
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </Button>
+                                      <Button
+                                        onClick={() => handleReplyToComment(comment)}
+                                        disabled={isCommenting || !replyText.trim()}
+                                        size="sm"
+                                        className="bg-cyan-500 text-white hover:bg-cyan-600 h-7 px-2"
+                                      >
+                                        {isCommenting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
                           </motion.div>
                         ))}
                       </AnimatePresence>

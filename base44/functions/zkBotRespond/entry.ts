@@ -13,10 +13,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing post_id or post_content' }, { status: 400 });
     }
 
+    // Extract the actual user question (strip @zk prefix)
+    const userQuestion = post_content.replace(/@zk\s*/gi, '').trim();
+    console.log('[@zk Bot] User question:', userQuestion);
+
     // Detect if user is asking @zk to generate an image
-    const lowerContent = post_content.toLowerCase();
-    const isImageRequest = /(@zk\s+)?(create|generate|make|draw|design|paint)\s+(an?\s+)?(image|picture|photo|art|illustration|logo|icon)/i.test(lowerContent) ||
-                           /(@zk\s+)?(image|picture|art)\s+of/i.test(lowerContent);
+    const isImageRequest = /\b(create|generate|make|draw|design|paint)\s+(an?\s+)?(image|picture|photo|art|illustration|logo|icon)/i.test(userQuestion) ||
+                           /\b(image|picture|art)\s+of\b/i.test(userQuestion);
 
     // Create placeholder comment as a REPLY under the caller's comment
     let botComment;
@@ -26,8 +29,8 @@ Deno.serve(async (req) => {
         author_name: '@zk',
         author_wallet_address: 'zk_bot_system',
         comment_text: isImageRequest 
-          ? '🎨 Agent ZK generating image...' 
-          : '🤖 Agent ZK analyzing with real-time intelligence...',
+          ? '🎨 Generating image...' 
+          : '🤖 Searching & analyzing...',
         likes: 0
       };
       if (parent_comment_id) {
@@ -54,19 +57,22 @@ Deno.serve(async (req) => {
     if (isImageRequest) {
       console.log('[@zk Bot] Image generation request detected');
       try {
-        // Extract the prompt (remove @zk and trigger words)
-        const imagePrompt = post_content
-          .replace(/@zk/gi, '')
-          .replace(/\b(create|generate|make|draw|design|paint)\s+(an?\s+)?(image|picture|photo|art|illustration|logo|icon)\s*(of|for|with|showing|depicting)?/gi, '')
-          .trim() || 'creative abstract digital art';
+        // Extract the actual image description
+        const imagePrompt = userQuestion
+          .replace(/\b(create|generate|make|draw|design|paint)\s+(an?\s+)?(image|picture|photo|art|illustration|logo|icon)\s*(of|for|with|showing|depicting)?\s*/gi, '')
+          .trim() || 'creative abstract digital art with vibrant colors';
+
+        console.log('[@zk Bot] Image prompt:', imagePrompt);
 
         const result = await base44.asServiceRole.integrations.Core.GenerateImage({
-          prompt: imagePrompt,
+          prompt: `High quality, detailed: ${imagePrompt}`,
         });
+
+        console.log('[@zk Bot] Image result:', JSON.stringify(result));
 
         if (result?.url) {
           await base44.asServiceRole.entities.PostComment.update(botComment.id, {
-            comment_text: `🎨 Here's what I created: "${imagePrompt.slice(0, 80)}"\n\n![Generated Image](${result.url})\n\n${result.url}`
+            comment_text: `🎨 "${imagePrompt.slice(0, 60)}"\n\n![Generated Image](${result.url})`
           });
           return Response.json({ success: true, analysis: 'Image generated', image_url: result.url });
         } else {
@@ -75,7 +81,7 @@ Deno.serve(async (req) => {
       } catch (imgErr) {
         console.error('[@zk Bot] Image generation failed:', imgErr.message);
         await base44.asServiceRole.entities.PostComment.update(botComment.id, {
-          comment_text: `🤖 Sorry, image generation failed: ${imgErr.message}. Try again!`
+          comment_text: `🤖 Image generation failed — ${imgErr.message}. Try a different prompt!`
         });
         return Response.json({ success: false, error: imgErr.message }, { status: 200 });
       }
@@ -83,157 +89,123 @@ Deno.serve(async (req) => {
 
     // --- KNOWLEDGE GATHERING ---
 
-    // 1. Agent Ying patterns + visions
+    // 1. Agent Ying patterns
     let yingKnowledge = '';
     try {
-      const [patterns, visions] = await Promise.all([
-        base44.asServiceRole.entities.AgentYingPattern.list('-created_date', 20),
-        base44.asServiceRole.entities.AgentYingVision.list('-created_date', 10),
-      ]);
+      const patterns = await base44.asServiceRole.entities.AgentYingPattern.list('-created_date', 10);
       if (patterns.length > 0) {
-        yingKnowledge += `\nRecent Patterns: ${patterns.slice(0, 5).map(p => p.pattern_text).join('; ')}`;
-      }
-      if (visions.length > 0) {
-        yingKnowledge += `\nRecent Visions: ${visions.slice(0, 3).map(v => v.vision_text).join('; ')}`;
+        yingKnowledge = `\nPast insights: ${patterns.slice(0, 3).map(p => p.verification_rules?.[0] || '').filter(Boolean).join('; ')}`;
       }
     } catch (err) {
-      console.log('[@zk Bot] Could not load Ying knowledge:', err.message);
+      console.log('[@zk Bot] Could not load knowledge:', err.message);
     }
 
-    // 2. Recent community posts + comments for cross-referencing (Kai-level awareness)
+    // 2. Recent community posts + comments for cross-referencing
     let communityContext = '';
     try {
-      const [recentPosts, recentComments] = await Promise.all([
-        base44.asServiceRole.entities.Post.list('-created_date', 30),
-        base44.asServiceRole.entities.PostComment.list('-created_date', 40),
-      ]);
+      const recentPosts = await base44.asServiceRole.entities.Post.list('-created_date', 25);
       if (recentPosts.length > 0) {
-        communityContext += `\n\nRECENT TTT FEED POSTS (use to cross-reference and fact-check claims):\n`;
+        communityContext += `\n\nRECENT TTT FEED POSTS:\n`;
         communityContext += recentPosts.map(p => 
-          `[${p.author_name}] ${p.content?.slice(0, 120)}${p.likes > 0 ? ` (${p.likes} likes)` : ''}`
-        ).join('\n');
-      }
-      if (recentComments.length > 0) {
-        communityContext += `\n\nRECENT COMMENTS:\n`;
-        communityContext += recentComments.map(c => 
-          `[${c.author_name}] ${c.comment_text?.slice(0, 80)}`
+          `[${p.author_name}] ${p.content?.slice(0, 100)}`
         ).join('\n');
       }
     } catch (err) {
-      console.log('[@zk Bot] Could not load community context:', err.message);
+      console.log('[@zk Bot] Could not load posts:', err.message);
     }
 
-    // 3. Continuity anchors from Arh'tuun (anti-hallucination grounding)
+    // 3. Continuity anchors (anti-hallucination)
     let anchorContext = '';
     try {
-      const anchors = await base44.asServiceRole.entities.ContinuityAnchor.list('-created_date', 10);
+      const anchors = await base44.asServiceRole.entities.ContinuityAnchor.list('-created_date', 5);
       if (anchors.length > 0) {
-        anchorContext = `\n\nGROUNDED FACTS (Arh'tuun anchors — these are verified truths, never contradict them):\n`;
-        anchorContext += anchors.map(a => `• ${a.anchor_text || a.content || ''}`).slice(0, 5).join('\n');
+        anchorContext = `\n\nVERIFIED FACTS (never contradict):\n` +
+          anchors.map(a => `• ${a.anchor_text || a.content || ''}`).filter(a => a.length > 2).join('\n');
       }
-    } catch (err) {
-      console.log('[@zk Bot] Could not load anchors:', err.message);
-    }
+    } catch {}
 
     // --- LLM INVOCATION ---
     const hasImages = image_urls && image_urls.length > 0;
     
-    const systemInstructions = `You are @zk, an elite AI agent embedded in the TTT Feed — a Kaspa blockchain community platform.
+    // The key: treat user's message as a DIRECT QUESTION, not about the post
+    const prompt = `You are @zk, an elite AI agent in the TTT community (Kaspa blockchain). You have real-time internet access.
 
-CORE RULES (Arh'tuun Protocol — NO HALLUCINATION):
-- NEVER fabricate data, prices, dates, or statistics. If unsure, say "I'm not certain" or "based on available data."
-- Cross-reference claims against the community posts and comments provided below.
-- If someone claims something that contradicts community data or verified anchors, flag it.
-- Use real-time internet search results as your primary source of truth.
-- When citing information, be specific about the source.
-${anchorContext}
-${yingKnowledge}
-${communityContext}`;
+RULES:
+- Answer the user's ACTUAL QUESTION directly. Do NOT describe images or analyze the post unless explicitly asked.
+- Use real-time web data for prices, news, facts.
+- If you can cross-reference with community posts below, mention it briefly.
+- NEVER hallucinate or make up data. Say "not sure" if uncertain.
+- Be concise: max 50 words. Use 1-2 emojis.
+${anchorContext}${yingKnowledge}${communityContext}
 
-    const userPrompt = hasImages
-      ? `Analyze the IMAGE(S) in this post by ${author_name}${post_content ? `:\n"${post_content}"` : ''}
+User "${author_name}" asks:
+"${userQuestion || post_content}"
 
-Describe what you see accurately. Cross-reference with community context if relevant. Be concise, factual, max 40 words. Use 1-2 emojis.`
-      : `Question/post from ${author_name}:
-"${post_content}"
-
-Instructions:
-1. Search the web for the most current, accurate answer.
-2. Cross-reference with community posts/comments above if relevant.
-3. If the claim can be verified or debunked by community data, mention it.
-4. Be factual, concise, and authoritative. Max 50 words. Use 1-2 emojis.
-5. If discussing prices or stats, cite real data from web search.`;
+Answer their question directly:`;
 
     console.log('[@zk Bot] Invoking LLM, hasImages:', hasImages);
 
     let llmResponse;
     try {
       if (hasImages) {
-        // Vision mode — no internet, but use gemini for image analysis
         llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
-          prompt: `${systemInstructions}\n\n${userPrompt}`,
+          prompt: prompt,
           file_urls: image_urls,
           model: 'gemini_3_flash',
         });
       } else {
-        // Text mode — full internet + gemini for real-time intelligence
         llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
-          prompt: `${systemInstructions}\n\n${userPrompt}`,
+          prompt: prompt,
           add_context_from_internet: true,
           model: 'gemini_3_flash',
         });
       }
     } catch (llmErr) {
       console.error('[@zk Bot] InvokeLLM failed:', llmErr.message);
-      throw new Error(`InvokeLLM failed: ${llmErr.message}`);
+      throw new Error(`LLM failed: ${llmErr.message}`);
     }
 
-    const analysis = llmResponse || '🤖 Analysis complete but no response generated.';
-    console.log('[@zk Bot] Final analysis:', analysis.substring(0, 100));
+    const analysis = llmResponse || '🤖 Could not generate a response. Try again!';
+    console.log('[@zk Bot] Final:', analysis.substring(0, 100));
 
-    // Update placeholder comment with the analysis
+    // Update placeholder comment
     await base44.asServiceRole.entities.PostComment.update(botComment.id, {
       comment_text: analysis
     });
 
-    // Save pattern for learning
+    // Save pattern
     try {
       await base44.asServiceRole.entities.AgentYingPattern.create({
         pattern_id: `zk_${Date.now()}`,
         task_type: 'research',
         confidence: 0.85,
-        verification_rules: [`@zk analyzed: "${post_content.substring(0, 80)}..."`],
+        verification_rules: [`@zk: "${userQuestion?.substring(0, 80)}"`],
         examples: [analysis.substring(0, 200)],
         usage_count: 1,
         success_rate: 1,
       });
-    } catch (err) {
-      console.log('[@zk Bot] Could not save pattern:', err.message);
-    }
+    } catch {}
 
     return Response.json({ success: true, analysis });
   } catch (error) {
     console.error('[@zk Bot] Critical error:', error.message);
 
     try {
-      const base44 = createClientFromRequest(req);
+      const base44Fallback = createClientFromRequest(req);
       const body = await req.clone().json().catch(() => ({}));
       if (body.post_id) {
-        await base44.asServiceRole.entities.PostComment.create({
+        await base44Fallback.asServiceRole.entities.PostComment.create({
           post_id: body.post_id,
           author_name: '@zk',
           author_wallet_address: 'zk_bot_system',
-          comment_text: `🤖 Agent ZK encountered an error: ${error.message}\n\nTrying again should work!`,
+          comment_text: `🤖 Error: ${error.message}. Try again!`,
           likes: 0
         });
       }
-    } catch (fallbackErr) {
-      console.error('[@zk Bot] Could not create error comment:', fallbackErr.message);
-    }
+    } catch {}
 
     return Response.json({ 
       success: false,
-      analysis: `🤖 Agent ZK encountered an error: ${error.message}`,
       error: error.message
     }, { status: 200 });
   }
