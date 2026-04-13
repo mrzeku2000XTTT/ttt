@@ -199,9 +199,13 @@ Instructions:
     // Save pattern for learning
     try {
       await base44.asServiceRole.entities.AgentYingPattern.create({
-        pattern_text: `@zk analyzed: "${post_content.substring(0, 100)}..." → ${analysis.substring(0, 80)}`,
-        pattern_type: 'feed_analysis',
-        confidence_score: 0.85
+        pattern_id: `zk_${Date.now()}`,
+        task_type: 'research',
+        confidence: 0.85,
+        verification_rules: [`@zk analyzed: "${post_content.substring(0, 80)}..."`],
+        examples: [analysis.substring(0, 200)],
+        usage_count: 1,
+        success_rate: 1,
       });
     } catch (err) {
       console.log('[@zk Bot] Could not save pattern:', err.message);
