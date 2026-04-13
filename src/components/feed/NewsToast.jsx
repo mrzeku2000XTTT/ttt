@@ -5,10 +5,10 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 
 const NEWS_ITEMS = [
-  { id: 1, title: "Kaspa DAGKnight Consensus Upgrade", summary: "The latest consensus protocol brings faster finality and enhanced security to the Kaspa network.", tag: "Protocol" },
-  { id: 2, title: "TTT Platform v2.0 Preview Available", summary: "Explore the new light-mode interface and animated roadmap for the next generation of TTT.", tag: "TTT" },
-  { id: 3, title: "KRC-20 Token Standard Update", summary: "New improvements to the KRC-20 standard enable more efficient token operations on Kaspa.", tag: "Tokens" },
-  { id: 4, title: "Community Growth Milestone", summary: "TTT community has surpassed a new milestone in active daily users and transactions.", tag: "Community" },
+  { id: 1, title: "TTT Feed Now Live", summary: "Share posts, tip creators with KAS, and interact with the @zk AI bot in the community feed.", tag: "TTT" },
+  { id: 2, title: "Agent ZK Identity System", summary: "Verify your wallet, claim your TTT ID, and connect with other agents in the network.", tag: "Agent ZK" },
+  { id: 3, title: "KRC-20 Tipping Enabled", summary: "Send PACMAN and other KRC-20 tokens as tips directly on posts and comments.", tag: "Tipping" },
+  { id: 4, title: "StakeDAG Prediction Markets", summary: "Place KAS bets on prediction games and earn from correct outcomes.", tag: "StakeDAG" },
 ];
 
 export default function NewsToast() {
@@ -37,19 +37,34 @@ export default function NewsToast() {
 
   const fetchNews = async () => {
     try {
+      // Pull recent stamped news from TTT platform
       const stamped = await base44.entities.StampedNews.list("-created_date", 5);
-      if (stamped.length > 0) {
-        setLiveNews(
-          stamped.map((n) => ({
-            id: n.id,
-            title: n.news_title,
-            summary: n.news_summary || "Latest update from the TTT network.",
-            tag: n.news_category || "News",
-          }))
-        );
+      // Also pull recent popular posts as "community news"
+      const posts = await base44.entities.Post.list("-created_date", 10);
+      
+      const newsFromStamped = stamped.map((n) => ({
+        id: `s_${n.id}`,
+        title: n.news_title,
+        summary: n.news_summary || "Latest update from the TTT network.",
+        tag: n.news_category || "TTT News",
+      }));
+
+      const hotPosts = posts
+        .filter(p => !p.parent_post_id && p.content && p.content.length > 20)
+        .slice(0, 3)
+        .map((p) => ({
+          id: `p_${p.id}`,
+          title: `${p.author_name}: ${p.content.slice(0, 60)}${p.content.length > 60 ? '...' : ''}`,
+          summary: p.content.slice(0, 120),
+          tag: p.tips_received > 0 ? "🔥 Trending" : "Community",
+        }));
+
+      const combined = [...newsFromStamped, ...hotPosts].slice(0, 6);
+      if (combined.length > 0) {
+        setLiveNews(combined);
       }
     } catch {
-      // fallback to static
+      // fallback to static TTT news
     }
   };
 
@@ -149,7 +164,7 @@ function ExpandedToast({ news, items, currentNews, setCurrentNews, onMinimize, o
             <div className="w-6 h-6 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 rounded-lg flex items-center justify-center">
               <Newspaper className="w-3 h-3 text-cyan-400" />
             </div>
-            <span className="text-white/50 text-[10px] font-medium tracking-wider uppercase">Live</span>
+            <span className="text-white/50 text-[10px] font-medium tracking-wider uppercase">TTT News</span>
             <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
           </div>
           <div className="flex items-center gap-1">
@@ -212,7 +227,7 @@ function ExpandedToast({ news, items, currentNews, setCurrentNews, onMinimize, o
             className="flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 font-medium transition-colors group"
           >
             <Sparkles className="w-3 h-3" />
-            TTT 2.0
+            More
             <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </div>
