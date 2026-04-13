@@ -103,7 +103,32 @@ export default function SecurityAudit() {
     if (!target.startsWith("http://") && !target.startsWith("https://")) {
       target = "https://" + target;
     }
-    startScan(`${SCAN_PROMPT_BASE}\n\nAnalyze this URL: ${target}`, target);
+    // For external URLs, use a generic security audit prompt WITHOUT Base44 context
+    const isBase44 = target.includes('base44.com') || target.includes('localhost');
+    const externalPrompt = `You are an ELITE web application security auditor. Perform a thorough security analysis of the given URL.
+
+IMPORTANT: Do NOT assume anything about the hosting platform. Analyze what you can actually determine from the URL and publicly available information. Do NOT claim the site is built on any specific platform (Base44, WordPress, etc.) unless you have concrete evidence.
+
+For each category, provide specific, honest findings:
+- SSL/TLS: Certificate validity, protocol version
+- Security Headers: Check for CSP, HSTS, X-Frame-Options, X-Content-Type-Options
+- Vulnerabilities: Any known CVEs, exposed endpoints, injection risks
+- Server Exposure: Server header leaks, technology fingerprinting
+- DNS Security: DNSSEC, SPF, DMARC records
+- Cookie Security: Secure flags, HttpOnly, SameSite attributes
+- Privacy Concerns: Trackers, third-party scripts, data collection
+
+For each finding:
+- Be SPECIFIC about what you found
+- Explain the real-world risk
+- Provide actionable remediation
+- Rate severity honestly
+
+If you cannot determine something, say so honestly instead of guessing.
+
+Analyze this URL: ${target}`;
+    const prompt = isBase44 ? `${SCAN_PROMPT_BASE}\n\nAnalyze this URL: ${target}` : externalPrompt;
+    startScan(prompt, target);
   };
 
   const [scanAppInfo, setScanAppInfo] = useState(null);
