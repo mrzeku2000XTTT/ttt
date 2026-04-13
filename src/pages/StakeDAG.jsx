@@ -15,6 +15,7 @@ import KaChingSettings from "@/components/kaching/KaChingSettings";
 import GameTimer from "@/components/kaching/GameTimer";
 import GameLogs from "@/components/kaching/GameLogs";
 import AgentsPanel from "@/components/kaching/AgentsPanel";
+import RoundEndAlert from "@/components/kaching/RoundEndAlert";
 import { getCurrentRoundEnd, getRemainingMs } from "@/components/kaching/roundClock";
 
 const LOGO_URL = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2c211776c_generated_image.png";
@@ -518,6 +519,8 @@ export default function StakeDAGPage() {
       </AnimatePresence>
 
       <GameLogs show={showLogs} onClose={() => setShowLogs(false)} />
+
+      <RoundEndAlert openGames={openGames} userBets={userBets} />
 
       <BetReceipt
         show={!!receiptBet}
