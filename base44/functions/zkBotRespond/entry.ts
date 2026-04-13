@@ -4,7 +4,7 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
-    const { post_id, post_content, author_name, image_urls, parent_comment_id } = await req.json();
+    const { post_id, post_content, author_name, image_urls, parent_comment_id, zk_ref_comment_id } = await req.json();
 
     console.log('[@zk Bot] Starting analysis for post:', post_id);
     console.log('[@zk Bot] Content:', post_content);
@@ -20,13 +20,17 @@ Deno.serve(async (req) => {
     // Detect if user is asking @zk to generate or ITERATE on an image
     const isImageRequest = /\b(create|generate|make|draw|design|paint)\b.{0,20}\b(image|picture|photo|art|illustration|logo|icon)\b/i.test(userQuestion) ||
                            /\b(image|picture|art)\s+of\b/i.test(userQuestion) ||
-                           /\b(draw|paint|design|sketch)\b.{0,30}(me|a|an|the)\b/i.test(userQuestion);
+                           /\b(draw|paint|design|sketch)\b.{0,30}(me|a|an|the)\b/i.test(userQuestion) ||
+                           /\b(create|generate|draw|paint|sketch|design)\s+(a|an|the|me)\s+/i.test(userQuestion);
 
     // Detect iteration/edit requests ("make it red", "turn the owl into a tiger", "change the background", "make the owl a black tiger")
     const isIterationRequest = /\b(make|turn|change|transform|convert|edit|modify|replace|add|remove|swap|give)\b.{0,40}\b(it|the|this|into|to|a|an)\b/i.test(userQuestion) ||
                                /\b(make|turn)\s+(it|the|this|him|her)\b/i.test(userQuestion) ||
-                               /\b(can\s*u|canu|could you|can you|please)\s+(make|turn|change|edit|modify|give)\b/i.test(userQuestion);
-    const isImageOrIteration = isImageRequest || isIterationRequest;
+                               /\b(can\s*u|canu|could you|can you|please)\s+(make|turn|change|edit|modify|give|create|draw)\b/i.test(userQuestion);
+
+    // If user replied to an @zk image comment, always treat as image iteration
+    const hasZkRef = !!zk_ref_comment_id;
+    const isImageOrIteration = isImageRequest || isIterationRequest || hasZkRef;
 
     // Create placeholder comment as a REPLY under the caller's comment
     let botComment;
@@ -66,23 +70,36 @@ Deno.serve(async (req) => {
       try {
         // Look for previous @zk images in this post's comments to use as reference
         let referenceImageUrls = [];
-        if (isIterationRequest) {
-          try {
+        // Always try to find reference images — from the specific @zk comment being replied to, or any recent @zk image in thread
+        try {
+          // First: check if we have a direct reference to the @zk comment (user clicked Reply on an @zk image)
+          if (zk_ref_comment_id) {
+            const refComments = await base44.asServiceRole.entities.PostComment.filter({ id: zk_ref_comment_id });
+            if (refComments.length > 0) {
+              const imgMatch = refComments[0].comment_text?.match(/!\[.*?\]\((https?:\/\/.+?)\)/);
+              if (imgMatch) {
+                referenceImageUrls.push(imgMatch[1]);
+                console.log('[@zk Bot] Found reference image from replied-to comment:', imgMatch[1].substring(0, 60));
+              }
+            }
+          }
+          // Fallback: search recent @zk images in the post
+          if (referenceImageUrls.length === 0) {
             const postComments = await base44.asServiceRole.entities.PostComment.filter(
               { post_id: post_id, author_name: '@zk' }, '-created_date', 20
             );
             for (const c of postComments) {
-              if (c.id === botComment.id) continue; // skip our placeholder
+              if (c.id === botComment.id) continue;
               const imgMatch = c.comment_text?.match(/!\[.*?\]\((https?:\/\/.+?)\)/);
               if (imgMatch) {
                 referenceImageUrls.push(imgMatch[1]);
-                break; // use the most recent @zk image
+                break;
               }
             }
-            console.log('[@zk Bot] Found reference images:', referenceImageUrls.length);
-          } catch (refErr) {
-            console.log('[@zk Bot] Could not load reference images:', refErr.message);
           }
+          console.log('[@zk Bot] Total reference images found:', referenceImageUrls.length);
+        } catch (refErr) {
+          console.log('[@zk Bot] Could not load reference images:', refErr.message);
         }
 
         // For iteration: use the full user question as the prompt (it describes what to change)

@@ -365,12 +365,21 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
         if (zkInReply) {
           setZkIsResponding(true);
           try {
+            // Find the @zk comment being replied to for image iteration context
+            let zkRefCommentId = null;
+            if (replyingTo && replyingTo.author_name === '@zk') {
+              zkRefCommentId = replyingTo.id;
+            } else if (parentComment.author_name === '@zk') {
+              zkRefCommentId = parentComment.id;
+            }
+
             await base44.functions.invoke('zkBotRespond', {
               post_id: postId,
               post_content: replyContent,
               author_name: authorName,
               image_urls: [],
-              parent_comment_id: createdReply.id
+              parent_comment_id: createdReply.id,
+              zk_ref_comment_id: zkRefCommentId
             });
           } catch (err) {
             console.error('ZK bot reply failed:', err);
@@ -939,7 +948,7 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                                       <Input
                                         value={replyText}
                                         onChange={(e) => setReplyText(e.target.value)}
-                                        onKeyPress={(e) => e.key === 'Enter' && handleReplyToComment(comment)}
+                                        onKeyPress={(e) => e.key === 'Enter' && handleReplyToComment(reply.parent_comment_id ? comment : reply)}
                                         placeholder={reply.author_name === '@zk' ? 'Talk to @zk...' : 'Write a reply...'}
                                         className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/30 h-7 text-xs"
                                         disabled={isCommenting}
@@ -954,7 +963,7 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
                                         <X className="w-3 h-3" />
                                       </Button>
                                       <Button
-                                        onClick={() => handleReplyToComment(comment)}
+                                        onClick={() => handleReplyToComment(reply.parent_comment_id ? comment : reply)}
                                         disabled={isCommenting || !replyText.trim()}
                                         size="sm"
                                         className="bg-cyan-500 text-white hover:bg-cyan-600 h-7 px-2"
