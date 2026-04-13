@@ -101,6 +101,8 @@ export default function KaiChatbot() {
         const postData = posts.map(p => `[${p.author_name}] ${p.content?.slice(0, 150)}${p.media_files?.length ? ' [has media]' : ''} (${p.likes || 0} likes, ${p.comments_count || 0} comments)`).join('\n');
         const analysis = await base44.integrations.Core.InvokeLLM({
           prompt: `You are Kai, an AI assistant for the TTT community. Here are the 50 most recent posts from the TTT feed:\n\n${postData}\n\nUser question: "${userMsg}"\n\nAnswer the user's question about specific users or posting activity. Be specific, cite usernames and what they posted. Keep it concise, friendly, and use emojis.`,
+          add_context_from_internet: true,
+          model: 'gemini_3_flash',
         });
         setMessages(prev => [
           ...prev.filter(m => m.role !== 'action'),
@@ -124,6 +126,8 @@ export default function KaiChatbot() {
         const feedSummary = posts.map(p => `- ${p.author_name}: ${p.content?.slice(0, 120)}`).join('\n');
         const summary = await base44.integrations.Core.InvokeLLM({
           prompt: `You are Kai, an AI assistant for the TTT community. Here are the 20 most recent posts from the TTT feed:\n\n${feedSummary}\n\nProvide a friendly, concise summary of what the community is talking about. Highlight key themes, hot topics, and any interesting discussions. Keep it under 200 words. Use emojis.`,
+          add_context_from_internet: true,
+          model: 'gemini_3_flash',
         });
         setMessages(prev => [
           ...prev.filter(m => m.role !== 'action'),
@@ -150,7 +154,9 @@ export default function KaiChatbot() {
       } catch {} 
       const context = messages.slice(-6).map(m => `${m.role === 'user' ? 'User' : 'Kai'}: ${m.content}`).join('\n');
       const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are Kai, a helpful AI assistant embedded in TTT (a Kaspa blockchain community app). You're knowledgeable about Kaspa, crypto, the TTT platform features (Feed, AgentZK, DAGKnight, Bridge, etc.), and general topics. You have access to the community feed and can reference what users have posted. Keep responses concise, friendly, and helpful. Use emojis occasionally.${feedContext}\n\nConversation so far:\n${context}\n\nUser: ${userMsg}\n\nRespond as Kai:`,
+        prompt: `You are Kai, a helpful AI assistant embedded in TTT (a Kaspa blockchain community app). You're knowledgeable about Kaspa, crypto, the TTT platform features (Feed, AgentZK, DAGKnight, Bridge, etc.), and general topics. You have access to the community feed and can reference what users have posted. You also have real-time internet access — use it to give accurate, up-to-date answers about crypto prices, news, events, and any topic. Keep responses concise, friendly, and helpful. Use emojis occasionally.${feedContext}\n\nConversation so far:\n${context}\n\nUser: ${userMsg}\n\nRespond as Kai:`,
+        add_context_from_internet: true,
+        model: 'gemini_3_flash',
       });
       setMessages(prev => [...prev, { role: "assistant", content: response }]);
     } catch (err) {
