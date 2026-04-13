@@ -113,32 +113,20 @@ export default function StakeDAGPage() {
 
   const fetchBalance = useCallback((addr) => {
     if (!addr) return;
-    const fullAddr = addr.startsWith('kaspa:') ? addr : `kaspa:${addr}`;
-
-    try {
-      const cached = JSON.parse(localStorage.getItem('terra_balances') || '{}');
-      const cachedBal = cached[fullAddr];
-      if (cachedBal !== undefined && cachedBal !== '?' && cachedBal !== null) {
-        setWalletBalance(Number(cachedBal) || 0);
-        return;
-      }
-    } catch {}
-    try {
-      const clean = fullAddr.replace('kaspa:', '');
-      fetch(`https://api.kaspa.org/addresses/kaspa:${clean}/balance`)
-        .then(r => r.ok ? r.json() : null)
-        .then(data => {
-          if (data?.balance !== undefined) {
-            const bal = (data.balance || 0) / 1e8;
-            setWalletBalance(bal);
-            try {
-              const c = JSON.parse(localStorage.getItem('terra_balances') || '{}');
-              c[fullAddr] = bal;
-              localStorage.setItem('terra_balances', JSON.stringify(c));
-            } catch {}
-          }
-        }).catch(() => {});
-    } catch {}
+    const clean = addr.startsWith('kaspa:') ? addr.slice(6) : addr;
+    fetch(`https://api.kaspa.org/addresses/kaspa:${clean}/balance`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.balance !== undefined) {
+          const bal = (data.balance || 0) / 1e8;
+          setWalletBalance(bal);
+          try {
+            const c = JSON.parse(localStorage.getItem('terra_balances') || '{}');
+            c[`kaspa:${clean}`] = bal;
+            localStorage.setItem('terra_balances', JSON.stringify(c));
+          } catch {}
+        }
+      }).catch(() => {});
   }, []);
 
   // Listen for KaChing wallet changes from Terra/Wallet pages
