@@ -4,11 +4,11 @@ import { X, Newspaper, ChevronRight, Sparkles, GripHorizontal, Minus } from "luc
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 
-const NEWS_ITEMS = [
-  { id: 1, title: "TTT Feed Now Live", summary: "Share posts, tip creators with KAS, and interact with the @zk AI bot in the community feed.", tag: "TTT" },
-  { id: 2, title: "Agent ZK Identity System", summary: "Verify your wallet, claim your TTT ID, and connect with other agents in the network.", tag: "Agent ZK" },
-  { id: 3, title: "KRC-20 Tipping Enabled", summary: "Send PACMAN and other KRC-20 tokens as tips directly on posts and comments.", tag: "Tipping" },
-  { id: 4, title: "StakeDAG Prediction Markets", summary: "Place KAS bets on prediction games and earn from correct outcomes.", tag: "StakeDAG" },
+const FALLBACK_ITEMS = [
+  { id: 1, title: "TTT Feed Now Live", summary: "Share posts, tip creators with KAS, and interact with the @zk AI bot.", tag: "TTT" },
+  { id: 2, title: "Agent ZK Identity", summary: "Verify your wallet and claim your cryptographic Agent ZK identity.", tag: "Agent ZK" },
+  { id: 3, title: "KRC-20 Tipping", summary: "Send PACMAN and other KRC-20 tokens as tips on posts and comments.", tag: "Tipping" },
+  { id: 4, title: "StakeDAG Markets", summary: "Place KAS bets on prediction games and earn from correct outcomes.", tag: "StakeDAG" },
 ];
 
 export default function NewsToast() {
@@ -20,14 +20,14 @@ export default function NewsToast() {
   const constraintsRef = useRef(null);
 
   useEffect(() => {
-    fetchNews();
+    fetchDailyKaspaNews();
     const showTimer = setTimeout(() => setVisible(true), 800);
     return () => clearTimeout(showTimer);
   }, []);
 
   useEffect(() => {
     if (!visible || dismissed || minimized) return;
-    const items = liveNews.length > 0 ? liveNews : NEWS_ITEMS;
+    const items = liveNews.length > 0 ? liveNews : FALLBACK_ITEMS;
     if (items.length <= 1) return;
     const interval = setInterval(() => {
       setCurrentNews((prev) => (prev + 1) % items.length);
@@ -35,36 +35,46 @@ export default function NewsToast() {
     return () => clearInterval(interval);
   }, [visible, dismissed, minimized, liveNews]);
 
-  const fetchNews = async () => {
+  const fetchDailyKaspaNews = async () => {
+    const cacheKey = 'kaspa_toast_news';
+    const cacheDate = 'kaspa_toast_news_date';
+    const today = new Date().toDateString();
     try {
-      // Pull recent stamped news from TTT platform
-      const stamped = await base44.entities.StampedNews.list("-created_date", 5);
-      // Also pull recent popular posts as "community news"
-      const posts = await base44.entities.Post.list("-created_date", 10);
-      
-      const newsFromStamped = stamped.map((n) => ({
-        id: `s_${n.id}`,
-        title: n.news_title,
-        summary: n.news_summary || "Latest update from the TTT network.",
-        tag: n.news_category || "TTT News",
-      }));
-
-      const hotPosts = posts
-        .filter(p => !p.parent_post_id && p.content && p.content.length > 20)
-        .slice(0, 3)
-        .map((p) => ({
-          id: `p_${p.id}`,
-          title: `${p.author_name}: ${p.content.slice(0, 60)}${p.content.length > 60 ? '...' : ''}`,
-          summary: p.content.slice(0, 120),
-          tag: p.tips_received > 0 ? "🔥 Trending" : "Community",
-        }));
-
-      const combined = [...newsFromStamped, ...hotPosts].slice(0, 6);
-      if (combined.length > 0) {
-        setLiveNews(combined);
+      const cached = localStorage.getItem(cacheKey);
+      const cachedDay = localStorage.getItem(cacheDate);
+      if (cached && cachedDay === today) {
+        setLiveNews(JSON.parse(cached));
+        return;
+      }
+      const res = await base44.integrations.Core.InvokeLLM({
+        prompt: `Give me 4 brief, real Kaspa blockchain news or community updates as of today. Topics: development, hashrate, ecosystem, KRC-20, community milestones. Be factual and current.`,
+        add_context_from_internet: true,
+        model: 'gemini_3_flash',
+        response_json_schema: {
+          type: "object",
+          properties: {
+            items: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  summary: { type: "string" },
+                  tag: { type: "string" }
+                }
+              }
+            }
+          }
+        }
+      });
+      if (res?.items?.length) {
+        const mapped = res.items.map((n, i) => ({ id: `k_${i}`, ...n }));
+        setLiveNews(mapped);
+        localStorage.setItem(cacheKey, JSON.stringify(mapped));
+        localStorage.setItem(cacheDate, today);
       }
     } catch {
-      // fallback to static TTT news
+      // fallback to static items
     }
   };
 
@@ -74,7 +84,7 @@ export default function NewsToast() {
     sessionStorage.setItem("news_toast_dismissed", "true");
   };
 
-  const items = liveNews.length > 0 ? liveNews : NEWS_ITEMS;
+  const items = liveNews.length > 0 ? liveNews : FALLBACK_ITEMS;
   const news = items[currentNews] || items[0];
 
   if (dismissed || !visible || !news) return null;
@@ -94,8 +104,8 @@ export default function NewsToast() {
           animate={{ y: 0, opacity: 1, scale: 1 }}
           exit={{ y: 60, opacity: 0, scale: 0.9 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="fixed right-3 z-[100] touch-none"
-          style={{ bottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))', left: minimized ? 'auto' : '12px' }}
+          className="fixed z-[100] touch-none lg:left-3 lg:right-auto right-3"
+          style={{ bottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))', left: minimized ? undefined : undefined }}
         >
           {minimized ? (
             <MinimizedPill
@@ -223,7 +233,7 @@ function ExpandedToast({ news, items, currentNews, setCurrentNews, onMinimize, o
             ))}
           </div>
           <Link
-            to="/TTTV2"
+            to="/"
             className="flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 font-medium transition-colors group"
           >
             <Sparkles className="w-3 h-3" />

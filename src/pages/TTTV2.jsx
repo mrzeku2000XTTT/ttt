@@ -4,9 +4,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
   CheckCircle2, Zap, Shield, Globe, Users, Layers, Rocket, Star,
-  ChevronDown, ExternalLink, ArrowUpRight, Newspaper, MessageSquare,
+  ChevronDown, ExternalLink, ArrowUpRight, MessageSquare,
   Sparkles, Play, ChevronRight, TrendingUp, Bot, Gamepad2, Wallet,
-  Lock, Image, Radio, Crown
+  Lock, Image, Crown
 } from "lucide-react";
 
 /* ─── data ─── */
@@ -84,24 +84,60 @@ export default function TTTV2Page() {
   const { scrollYProgress } = useScroll();
   const heroScale = useTransform(scrollYProgress, [0, 0.15], [1, 0.97]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
-  const [news, setNews] = useState([]);
   const [posts, setPosts] = useState([]);
+  const [kaspaUpdates, setKaspaUpdates] = useState([]);
   const [kasData, setKasData] = useState({ price: null, change24h: null, loading: true });
 
-  useEffect(() => { loadContent(); loadKasPrice(); }, []);
+  useEffect(() => { loadContent(); loadKasPrice(); loadDailyKaspaUpdates(); }, []);
 
   const loadContent = async () => {
     try {
-      const [s, p] = await Promise.all([
-        base44.entities.StampedNews.list("-created_date", 4),
-        base44.entities.Post.list("-created_date", 20),
-      ]);
-      setNews(s.map(n => ({ id: n.id, title: n.news_title, summary: n.news_summary || "", tag: n.news_category || "TTT", date: new Date(n.created_date).toLocaleDateString() })));
-      setPosts(p.filter(x => !x.parent_post_id && x.content?.length > 30).slice(0, 4).map(x => ({
+      const p = await base44.entities.Post.list("-created_date", 20);
+      setPosts(p.filter(x => !x.parent_post_id && x.content?.length > 30).slice(0, 6).map(x => ({
         id: x.id, author: x.author_name, text: x.content.slice(0, 140), tips: x.tips_received || 0, likes: x.likes || 0,
         date: new Date(x.created_date).toLocaleDateString(),
       })));
     } catch { /* fallback empty */ }
+  };
+
+  const loadDailyKaspaUpdates = async () => {
+    const cacheKey = 'kaspa_daily_updates';
+    const cacheDate = 'kaspa_daily_updates_date';
+    const today = new Date().toDateString();
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      const cachedDay = localStorage.getItem(cacheDate);
+      if (cached && cachedDay === today) {
+        setKaspaUpdates(JSON.parse(cached));
+        return;
+      }
+      const res = await base44.integrations.Core.InvokeLLM({
+        prompt: `Give me 4 real, current Kaspa blockchain community updates or news headlines as of today. Focus on: development progress, hashrate milestones, ecosystem growth, partnerships, KRC-20 tokens, or community events. Be factual and concise.`,
+        add_context_from_internet: true,
+        model: 'gemini_3_flash',
+        response_json_schema: {
+          type: "object",
+          properties: {
+            updates: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  summary: { type: "string" },
+                  tag: { type: "string" }
+                }
+              }
+            }
+          }
+        }
+      });
+      if (res?.updates?.length) {
+        setKaspaUpdates(res.updates);
+        localStorage.setItem(cacheKey, JSON.stringify(res.updates));
+        localStorage.setItem(cacheDate, today);
+      }
+    } catch { /* silent */ }
   };
 
   const loadKasPrice = async () => {
@@ -131,7 +167,7 @@ export default function TTTV2Page() {
           <a href="#roadmap" className="hover:text-zinc-900 transition-colors">Roadmap</a>
           <a href="#news" className="hover:text-zinc-900 transition-colors">News</a>
         </div>
-        <Link to="/Feed" className="text-[13px] font-semibold text-white bg-black hover:bg-zinc-800 px-4 py-1.5 rounded-full transition-colors">
+        <Link to="/Home" className="text-[13px] font-semibold text-white bg-black hover:bg-zinc-800 px-4 py-1.5 rounded-full transition-colors">
           Open TTT
         </Link>
       </nav>
@@ -238,68 +274,65 @@ export default function TTTV2Page() {
         </div>
       </section>
 
-      {/* ── news + community ── */}
-      {(news.length > 0 || posts.length > 0) && (
-        <section id="news" className="py-20 sm:py-28 px-5 bg-white">
-          <div className="max-w-5xl mx-auto">
-            <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-14">
-              <p className="text-[13px] font-semibold text-zinc-400 tracking-wide uppercase mb-2">Live</p>
-              <h2 className="text-3xl sm:text-4xl font-[900] tracking-tight">From the network.</h2>
-            </motion.div>
+      {/* ── community + kaspa updates ── */}
+      <section id="news" className="py-20 sm:py-28 px-5 bg-white">
+        <div className="max-w-5xl mx-auto">
+          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-14">
+            <p className="text-[13px] font-semibold text-zinc-400 tracking-wide uppercase mb-2">Live</p>
+            <h2 className="text-3xl sm:text-4xl font-[900] tracking-tight">From the network.</h2>
+          </motion.div>
 
-            <div className="grid md:grid-cols-2 gap-10">
-              {/* stamped news */}
-              {news.length > 0 && (
-                <div>
-                  <h3 className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-2">
-                    <Sparkles className="w-3.5 h-3.5 text-cyan-500" /> Stamped News
-                  </h3>
-                  <div className="space-y-3">
-                    {news.map(n => (
-                      <motion.div key={n.id} initial={{ opacity: 0, x: -10 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
-                        className="p-4 rounded-xl ring-1 ring-zinc-100 hover:ring-zinc-200 hover:shadow-md transition-all duration-300 bg-zinc-50/50">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-[10px] font-bold text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded-md">{n.tag}</span>
-                          <span className="text-[10px] text-zinc-300">{n.date}</span>
-                        </div>
-                        <p className="text-[13px] font-semibold text-zinc-800 leading-snug line-clamp-2">{n.title}</p>
-                        {n.summary && <p className="text-[11px] text-zinc-400 mt-1 line-clamp-2">{n.summary}</p>}
-                      </motion.div>
-                    ))}
-                  </div>
+          <div className="grid md:grid-cols-2 gap-10">
+            {/* Kaspa community updates */}
+            {kaspaUpdates.length > 0 && (
+              <div>
+                <h3 className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5 text-cyan-500" /> Kaspa Updates
+                </h3>
+                <div className="space-y-3">
+                  {kaspaUpdates.map((u, i) => (
+                    <motion.div key={i} initial={{ opacity: 0, x: -10 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
+                      className="p-4 rounded-xl ring-1 ring-zinc-100 hover:ring-zinc-200 hover:shadow-md transition-all duration-300 bg-zinc-50/50">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-[10px] font-bold text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded-md">{u.tag}</span>
+                      </div>
+                      <p className="text-[13px] font-semibold text-zinc-800 leading-snug line-clamp-2">{u.title}</p>
+                      {u.summary && <p className="text-[11px] text-zinc-400 mt-1 line-clamp-2">{u.summary}</p>}
+                    </motion.div>
+                  ))}
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* community posts */}
-              {posts.length > 0 && (
-                <div>
-                  <h3 className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-2">
-                    <MessageSquare className="w-3.5 h-3.5 text-cyan-500" /> Community
-                  </h3>
-                  <div className="space-y-3">
-                    {posts.map(p => (
-                      <motion.div key={p.id} initial={{ opacity: 0, x: 10 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
-                        className="p-4 rounded-xl ring-1 ring-zinc-100 hover:ring-zinc-200 hover:shadow-md transition-all duration-300 bg-zinc-50/50">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-[12px] font-semibold text-zinc-700">{p.author}</span>
-                          <span className="text-[10px] text-zinc-300">{p.date}</span>
+            {/* latest user posts */}
+            {posts.length > 0 && (
+              <div>
+                <h3 className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-2">
+                  <MessageSquare className="w-3.5 h-3.5 text-cyan-500" /> Latest Posts
+                </h3>
+                <div className="space-y-3">
+                  {posts.map(p => (
+                    <motion.div key={p.id} initial={{ opacity: 0, x: 10 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
+                      className="p-4 rounded-xl ring-1 ring-zinc-100 hover:ring-zinc-200 hover:shadow-md transition-all duration-300 bg-zinc-50/50">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[12px] font-semibold text-zinc-700">{p.author}</span>
+                        <span className="text-[10px] text-zinc-300">{p.date}</span>
+                      </div>
+                      <p className="text-[12px] text-zinc-500 leading-relaxed line-clamp-2">{p.text}</p>
+                      {(p.tips > 0 || p.likes > 0) && (
+                        <div className="flex items-center gap-3 mt-2 text-[10px] text-zinc-400">
+                          {p.tips > 0 && <span className="text-cyan-600 font-semibold">💰 {p.tips} KAS</span>}
+                          {p.likes > 0 && <span>♥ {p.likes}</span>}
                         </div>
-                        <p className="text-[12px] text-zinc-500 leading-relaxed line-clamp-2">{p.text}</p>
-                        {(p.tips > 0 || p.likes > 0) && (
-                          <div className="flex items-center gap-3 mt-2 text-[10px] text-zinc-400">
-                            {p.tips > 0 && <span className="text-cyan-600 font-semibold">💰 {p.tips} KAS</span>}
-                            {p.likes > 0 && <span>♥ {p.likes}</span>}
-                          </div>
-                        )}
-                      </motion.div>
-                    ))}
-                  </div>
+                      )}
+                    </motion.div>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
       {/* ── roadmap ── */}
       <section id="roadmap" className="py-20 sm:py-28 px-5">

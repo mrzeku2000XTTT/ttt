@@ -62,7 +62,8 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route path="/Xunhua" element={<XunhuaPage />} />
-      <Route path="/" element={
+      <Route path="/" element={<TTTV2Page />} />
+      <Route path="/Home" element={
         <LayoutWrapper currentPageName={mainPageKey}>
           <MainPage />
         </LayoutWrapper>
