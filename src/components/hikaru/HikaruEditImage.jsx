@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Upload, Paintbrush, Loader2, Download, Image as ImageIcon } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
+import { downloadImage } from "@/components/hikaru/hikaruDownload";
 
 const QUICK_EDITS = [
   "Remove background",
@@ -143,10 +144,11 @@ export default function HikaruEditImage() {
               {loading ? "Editing..." : "Apply Edit"}
             </button>
             {resultUrl && (
-              <a href={resultUrl} download target="_blank" rel="noopener noreferrer"
+              <button
+                onClick={() => downloadImage(resultUrl, "hikaru-edited.png")}
                 className="px-4 py-3 rounded-xl bg-white/[0.06] border border-white/[0.08] text-white/60 hover:text-white font-bold text-sm flex items-center gap-2 transition-colors">
                 <Download className="w-4 h-4" />
-              </a>
+              </button>
             )}
             <button
               onClick={() => { setOriginalUrl(null); setResultUrl(null); setEditPrompt(""); }}

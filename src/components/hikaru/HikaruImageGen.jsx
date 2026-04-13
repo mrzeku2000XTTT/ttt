@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Sparkles, Loader2, Download, Copy, Check, RefreshCw } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
+import { downloadImage } from "@/components/hikaru/hikaruDownload";
 
 const STYLES = ["Photorealistic", "Anime", "Oil Painting", "3D Render", "Watercolor", "Pixel Art", "Cinematic", "Concept Art"];
 
@@ -97,15 +98,12 @@ export default function HikaruImageGen() {
           <div className="p-4 flex items-center justify-between">
             <p className="text-white/40 text-xs truncate flex-1 mr-4">{prompt}</p>
             <div className="flex items-center gap-2">
-              <a
-                href={result}
-                download="hikaru-generated.png"
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                onClick={() => downloadImage(result, "hikaru-generated.png")}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.06] border border-white/[0.08] text-white/60 hover:text-white text-xs font-medium transition-colors"
               >
                 <Download className="w-3.5 h-3.5" /> Download
-              </a>
+              </button>
               <button
                 onClick={() => { setResult(null); generate(); }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500/15 border border-purple-500/25 text-purple-300 text-xs font-medium hover:bg-purple-500/25 transition-colors"
