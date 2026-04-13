@@ -13,9 +13,7 @@ export default function CanvasHeader({ searchQuery, onSearchChange, viewMode, on
           </Link>
 
           <div className="flex items-center gap-2.5 flex-1">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-              <span className="text-white font-black text-sm">C</span>
-            </div>
+            <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/b26fd671d_generated_image.png" alt="Canvas" className="w-9 h-9 rounded-xl object-cover" />
             <div>
               <h1 className="text-white font-bold text-base leading-none">Canvas</h1>
               <p className="text-white/25 text-[10px] mt-0.5">UI/UX Templates</p>
