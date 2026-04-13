@@ -147,7 +147,7 @@ export default function AppStorePage() {
     { name: "Klock", icon: "Activity", path: "Klock", category: "Tools", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3a8b4c791_generated_image.png" },
     { name: "KaChing", icon: "TrendingUp", path: "StakeDAG", category: "Games", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2c211776c_generated_image.png", adminOnly: true },
     { name: "Security Audit", icon: "Link2", path: "SecurityAudit", category: "Security", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/81791a703_generated_image.png" },
-    { name: "Canvas", icon: "Link2", path: "Canvas", category: "Creative", defaultIcon: "https://ui-avatars.com/api/?name=Ca&size=128&background=6366f1&color=fff&bold=true" },
+    { name: "Canvas", icon: "Link2", path: "Canvas", category: "Creative", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/b26fd671d_generated_image.png" },
       ];
 
   const getIconComponent = (iconName) => {

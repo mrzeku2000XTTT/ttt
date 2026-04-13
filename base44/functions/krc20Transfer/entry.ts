@@ -251,6 +251,119 @@ function schnorrSign(messageHash, privateKeyHex) {
 }
 
 // ==========================================
+// COMMIT TX BUILDER (manual, avoids OKX SDK storage mass issues)
+// ==========================================
+async function buildAndSubmitCommitTx({
+  privateKeyHex,
+  senderAddress,
+  p2shAddress,
+  p2shScriptPubKey,
+  commitAmountSompi,
+}) {
+  // Fetch sender UTXOs
+  const utxoRes = await fetch(`${KASPA_API}/addresses/${senderAddress}/utxos`, {
+    signal: AbortSignal.timeout(15000)
+  });
+  if (!utxoRes.ok) throw new Error(`Failed to fetch sender UTXOs: ${utxoRes.status}`);
+  const allUtxos = await utxoRes.json();
+  if (!allUtxos || allUtxos.length === 0) throw new Error('No UTXOs available for commit TX');
+
+  // Select UTXOs (largest first, max 2 to keep mass low)
+  allUtxos.sort((a, b) => Number(b.utxoEntry.amount) - Number(a.utxoEntry.amount));
+  const feeSompi = 10000n; // 0.0001 KAS
+  const needed = commitAmountSompi + feeSompi;
+  let totalIn = 0n;
+  const selectedUtxos = [];
+  for (const u of allUtxos) {
+    if (totalIn >= needed) break;
+    if (selectedUtxos.length >= 2) break;
+    selectedUtxos.push(u);
+    totalIn += BigInt(u.utxoEntry.amount);
+  }
+  if (totalIn < needed) throw new Error(`Insufficient balance for commit: have ${Number(totalIn)/1e8} KAS, need ${Number(needed)/1e8} KAS`);
+
+  // Build sender scriptPubKey
+  const senderPayload = decodeKaspaBech32(senderAddress);
+  const senderPubKeyHash = senderPayload.slice(1);
+  const senderScriptPubKey = new Uint8Array(34);
+  senderScriptPubKey[0] = OP_DATA_32;
+  senderScriptPubKey.set(senderPubKeyHash, 1);
+  senderScriptPubKey[33] = OP_CHECKSIG;
+
+  // Build inputs
+  const inputs = selectedUtxos.map(u => ({
+    prevTxId: u.outpoint.transactionId,
+    prevIndex: u.outpoint.index,
+    utxoScriptVersion: 0,
+    utxoScriptPubKey: senderScriptPubKey,
+    utxoAmount: BigInt(u.utxoEntry.amount),
+    sequence: 0n,
+    sigOpCount: 1,
+    isP2SH: false,
+  }));
+
+  // Build outputs: P2SH output + change
+  const changeAmount = totalIn - commitAmountSompi - feeSompi;
+  const outputs = [
+    { amount: commitAmountSompi, scriptVersion: 0, scriptPubKey: p2shScriptPubKey },
+  ];
+  if (changeAmount >= 10000000n) { // 0.1 KAS min
+    outputs.push({ amount: changeAmount, scriptVersion: 0, scriptPubKey: senderScriptPubKey });
+  }
+
+  const tx = { version: 0, inputs, outputs, locktime: 0n, gas: 0n };
+
+  // Sign each input
+  const signatureScripts = [];
+  for (let i = 0; i < inputs.length; i++) {
+    const sigHash = computeSigHash(tx, i);
+    const sig = schnorrSign(sigHash, privateKeyHex);
+    const sigWithType = concatBytes(sig, new Uint8Array([0x01]));
+    signatureScripts.push(bytesToHex(canonicalDataPush(sigWithType)));
+  }
+
+  // Build raw TX
+  const rawTx = {
+    version: 0,
+    inputs: inputs.map((inp, i) => ({
+      previousOutpoint: { transactionId: inp.prevTxId, index: inp.prevIndex },
+      signatureScript: signatureScripts[i],
+      sequence: "0",
+      sigOpCount: inp.sigOpCount,
+    })),
+    outputs: outputs.map(out => ({
+      amount: out.amount.toString(),
+      scriptPublicKey: { version: out.scriptVersion, scriptPublicKey: bytesToHex(out.scriptPubKey) },
+    })),
+    lockTime: "0",
+    subnetworkId: "0000000000000000000000000000000000000000",
+  };
+
+  // Submit
+  console.log(`[commit] Submitting commit TX (${inputs.length} inputs, ${outputs.length} outputs)...`);
+  let lastErr = '';
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await new Promise(r => setTimeout(r, 3000));
+    const submitRes = await fetch(`${KASPA_API}/transactions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transaction: rawTx, allowOrphan: false }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (submitRes.ok) {
+      const submitData = await submitRes.json().catch(() => ({}));
+      const txId = submitData.transactionId || '';
+      console.log(`[commit] ✓ Commit TX accepted: ${txId}`);
+      return txId;
+    }
+    lastErr = (await submitRes.text()).slice(0, 500);
+    console.warn(`[commit] Attempt ${attempt + 1} failed: ${lastErr}`);
+    if (!lastErr.includes('orphan')) break;
+  }
+  throw new Error(`Commit TX failed: ${lastErr}`);
+}
+
+// ==========================================
 // REVEAL TX BUILDER
 // ==========================================
 async function buildAndSubmitRevealTx({
@@ -639,19 +752,15 @@ Deno.serve(async (req) => {
         }, { status: 503 });
       }
 
-      // 6. Send COMMIT TX — 0.3 KAS to P2SH address
+      // 6. Send COMMIT TX — 0.3 KAS to P2SH address (built manually to avoid OKX SDK storage mass issues with P2SH outputs)
       console.log(`[krc20] Sending commit TX: ${COMMIT_AMOUNT_KAS} KAS → ${p2shAddress}`);
-      const commitResult = await base44.asServiceRole.functions.invoke('sendKaspaTransaction', {
-        mnemonic: mnemonic || undefined,
-        privateKey: inputPrivateKey || undefined,
-        fromAddress: normalizedFrom,
-        toAddress: p2shAddress,
-        amountKas: COMMIT_AMOUNT_KAS,
+      const commitTxId = await buildAndSubmitCommitTx({
+        privateKeyHex: privateKey,
+        senderAddress: normalizedFrom,
+        p2shAddress,
+        p2shScriptPubKey,
+        commitAmountSompi: COMMIT_AMOUNT_SOMPI,
       });
-
-      if (commitResult?.error) throw new Error(`Commit TX failed: ${commitResult.error}`);
-      const commitTxId = commitResult?.txId || commitResult?.data?.txId || '';
-      if (!commitTxId) throw new Error('Commit TX returned no txId');
       console.log(`[krc20] ✓ Commit TX: ${commitTxId}`);
 
       // 7. Auto-execute REVEAL TX
