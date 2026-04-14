@@ -12,6 +12,7 @@ import WhatsNew from "@/components/tttv2/WhatsNew";
 import TTTVMini from "@/components/tttv2/TTTVMini";
 import CommunityVideos from "@/components/tttv2/CommunityVideos";
 import KaspaAvatarChat from "@/components/kaspa/KaspaAvatarChat";
+import MobileNavToast from "@/components/tttv2/MobileNavToast";
 
 /* ─── roadmap data ─── */
 const ROADMAP = [
@@ -295,6 +296,9 @@ export default function TTTV2Page() {
 
       {/* KAI floating chat */}
       <KaspaAvatarChat />
+
+      {/* Mobile nav toast */}
+      <MobileNavToast />
 
       {/* ── footer ── */}
       <footer className="py-8 px-5 border-t border-zinc-200/50">
