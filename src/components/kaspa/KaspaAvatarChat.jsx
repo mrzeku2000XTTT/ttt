@@ -214,6 +214,13 @@ export default function KaspaAvatarChat() {
   const isFeedRequest = (msg) => FEED_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
   const isUserPostRequest = (msg) => USER_POST_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
 
+  // Detect if a question is about TTT platform (no internet needed)
+  const isTTTQuestion = (msg) => {
+    const lower = msg.toLowerCase();
+    const tttKeywords = ['suggest', 'recommend', 'app', 'ttt', 'feature', 'what can', 'how do i', 'where', 'which app', 'open', 'use', 'wallet', 'bridge', 'feed', 'agent', 'hikaru', 'xunhua', 'terra', 'zeku', 'stakedag', 'arcade', 'shop', 'marketplace', 'courses', 'nft', 'mint', 'profile', 'subscription', 'dagknight'];
+    return tttKeywords.some(kw => lower.includes(kw));
+  };
+
   // Typewriter effect - animate typing for the current typing message
   useEffect(() => {
     if (typingIndex < 0 || typingIndex >= messages.length) return;
@@ -366,9 +373,11 @@ User: ${userMsg}
 
 Respond as KAI:${speedInstruction}`;
 
+      // Skip internet search for TTT platform questions — much faster
+      const needsInternet = !isFast && !isTTTQuestion(userMsg);
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: kaiMode === "classic" ? classicPrompt : kaiPrompt,
-        add_context_from_internet: !isFast,
+        add_context_from_internet: needsInternet,
         model: "gemini_3_flash",
       });
       addAssistantMessage(response);
