@@ -264,11 +264,10 @@ export default function CommunityVideos() {
                 {playingId === v.id ? (
                   <div className="aspect-video">
                     <iframe
-                      src={`https://www.youtube-nocookie.com/embed/${v.video_id}?autoplay=1&rel=0`}
-                      className="w-full h-full"
+                      src={`https://www.youtube.com/embed/${v.video_id}?autoplay=1&rel=0`}
+                      className="w-full h-full border-0"
                       allowFullScreen
-                      allow="autoplay; encrypted-media; picture-in-picture"
-                      referrerPolicy="no-referrer"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     />
                   </div>
                 ) : (
