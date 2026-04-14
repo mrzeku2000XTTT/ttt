@@ -4,7 +4,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
   CheckCircle2, ExternalLink, ArrowUpRight,
-  ChevronRight, ChevronDown, Monitor, Upload, X
+  ChevronRight, ChevronDown, Monitor, Upload, X,
+  Volume2, VolumeX
 } from "lucide-react";
 
 import HeroHeader from "@/components/tttv2/HeroHeader";
@@ -75,18 +76,36 @@ export default function TTTV2Page() {
   const [kaspaUpdates, setKaspaUpdates] = useState([]);
   const [kasData, setKasData] = useState({ price: null, change24h: null, loading: true });
   const [embeddedSite, setEmbeddedSite] = useState(null);
-  const [heroVideoUrl, setHeroVideoUrl] = useState(() => localStorage.getItem("tttv2_hero_video") || "");
+  const [heroVideoUrl, setHeroVideoUrl] = useState("");
+  const [heroMuted, setHeroMuted] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showVideoUpload, setShowVideoUpload] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const heroVideoRef = React.useRef(null);
 
-  useEffect(() => { loadContent(); loadKasPrice(); loadDailyKaspaUpdates(); checkAdmin(); }, []);
+  useEffect(() => { loadContent(); loadKasPrice(); loadDailyKaspaUpdates(); checkAdmin(); loadHeroVideo(); }, []);
 
   const checkAdmin = async () => {
     try {
       const user = await base44.auth.me();
       setIsAdmin(user?.role === "admin");
     } catch {}
+  };
+
+  const loadHeroVideo = async () => {
+    try {
+      const configs = await base44.entities.KAIConfig.filter({ config_key: "hero_video_url" });
+      if (configs.length > 0 && configs[0].config_value) {
+        setHeroVideoUrl(configs[0].config_value);
+      } else {
+        // Fallback: check localStorage for admin-set video and persist it
+        const local = localStorage.getItem("tttv2_hero_video");
+        if (local) setHeroVideoUrl(local);
+      }
+    } catch {
+      const local = localStorage.getItem("tttv2_hero_video");
+      if (local) setHeroVideoUrl(local);
+    }
   };
 
   const handleVideoUpload = async (e) => {
@@ -97,14 +116,27 @@ export default function TTTV2Page() {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       setHeroVideoUrl(file_url);
       localStorage.setItem("tttv2_hero_video", file_url);
+      // Persist to DB so all users see it
+      const existing = await base44.entities.KAIConfig.filter({ config_key: "hero_video_url" });
+      if (existing.length > 0) {
+        await base44.entities.KAIConfig.update(existing[0].id, { config_value: file_url });
+      } else {
+        await base44.entities.KAIConfig.create({ config_key: "hero_video_url", config_value: file_url });
+      }
     } catch {}
     setUploadingVideo(false);
     setShowVideoUpload(false);
   };
 
-  const removeHeroVideo = () => {
+  const removeHeroVideo = async () => {
     setHeroVideoUrl("");
     localStorage.removeItem("tttv2_hero_video");
+    try {
+      const existing = await base44.entities.KAIConfig.filter({ config_key: "hero_video_url" });
+      if (existing.length > 0) {
+        await base44.entities.KAIConfig.update(existing[0].id, { config_value: "" });
+      }
+    } catch {}
   };
 
   const loadContent = async () => {
@@ -204,13 +236,29 @@ export default function TTTV2Page() {
           {/* Video overlay — responsive fit */}
           {heroVideoUrl && (
             <video
+              ref={heroVideoRef}
               src={heroVideoUrl}
-              autoPlay loop playsInline
+              autoPlay loop playsInline muted={heroMuted}
               className="absolute inset-0 w-full h-full object-contain sm:object-cover opacity-40 mix-blend-screen"
             />
           )}
           <div className="absolute inset-0 bg-black/50" />
         </div>
+
+        {/* Mute/Unmute toggle */}
+        {heroVideoUrl && (
+          <button
+            onClick={() => {
+              setHeroMuted(prev => !prev);
+              if (heroVideoRef.current) heroVideoRef.current.muted = !heroVideoRef.current.muted;
+            }}
+            className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm ring-1 ring-white/20 flex items-center justify-center text-white/70 hover:text-white hover:bg-black/70 transition-all"
+            title={heroMuted ? "Unmute" : "Mute"}
+          >
+            {heroMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+          </button>
+        )}
+
         <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1, ease: [.22,1,.36,1] }} className="relative max-w-3xl mx-auto">
           <p className="text-[13px] font-semibold text-cyan-400 tracking-wide uppercase mb-4">Introducing TTT 2.0</p>
           <h1 className="text-[clamp(2.5rem,7vw,5.5rem)] font-[900] leading-[0.92] tracking-tight mb-5">
