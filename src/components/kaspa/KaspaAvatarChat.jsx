@@ -121,6 +121,66 @@ const USER_POST_KEYWORDS = [
   'what does', 'posting', 'activity', 'said'
 ];
 
+// App directory for "open X" detection
+const APP_DIRECTORY = [
+  { names: ['hikaru'], path: 'Hikaru', label: 'Hikaru 🖼️', desc: 'AI image generation studio' },
+  { names: ['xunhua', 'xùnhuà'], path: 'Xunhua', label: 'Xunhua 🎨', desc: 'AI sketch-to-image studio' },
+  { names: ['terra'], path: 'Terra', label: 'Terra 💰', desc: 'Kaspa wallet manager' },
+  { names: ['feed', 'ttt feed'], path: 'Feed', label: 'TTT Feed 📝', desc: 'Community social feed' },
+  { names: ['agent zk', 'agentzk', 'zk'], path: 'AgentZK', label: 'Agent ZK 🔐', desc: 'Cryptographic identity system' },
+  { names: ['bridge', 'send kas'], path: 'Bridge', label: 'Send KAS 🌉', desc: 'Transfer KAS between L1/L2' },
+  { names: ['stakedag', 'stake dag', 'prediction'], path: 'StakeDAG', label: 'StakeDAG 🎯', desc: 'Prediction markets' },
+  { names: ['dagknight', 'dag knight'], path: 'DAGKnightWallet', label: 'DAGKnight ⚔️', desc: 'Advanced multi-wallet' },
+  { names: ['zeku', 'zeku ai'], path: 'ZekuAI', label: 'Zeku AI 🤖', desc: 'Premium AI assistant' },
+  { names: ['tttv', 'browser', 'tv'], path: 'Browser', label: 'TTTV 📺', desc: 'Media browser & player' },
+  { names: ['arcade', 'games'], path: 'Arcade', label: 'Arcade 🎮', desc: 'Games & entertainment' },
+  { names: ['shop'], path: 'Shop', label: 'Shop 🛒', desc: 'Buy items with KAS' },
+  { names: ['marketplace'], path: 'Marketplace', label: 'Marketplace 🏪', desc: 'P2P marketplace' },
+  { names: ['nft', 'nft mint', 'mint'], path: 'NFTMint', label: 'NFT Mint 🏆', desc: 'Create & mint NFTs' },
+  { names: ['wallet'], path: 'Wallet', label: 'Wallet 👛', desc: 'Kaspa wallet' },
+  { names: ['profile'], path: 'Profile', label: 'Profile 👤', desc: 'User profile' },
+  { names: ['app store', 'appstore', 'apps'], path: 'AppStore', label: 'App Store 📱', desc: '80+ community apps' },
+  { names: ['courses', 'university', 'learn', 'kaskool'], path: 'Courses', label: 'Courses 📚', desc: 'Kaspa education' },
+  { names: ['countdown'], path: 'Countdown', label: 'Countdown ⏰', desc: 'Kaspa milestone timer' },
+  { names: ['analytics'], path: 'Analytics', label: 'Analytics 📊', desc: 'Platform analytics' },
+  { names: ['subscription', 'premium'], path: 'Subscription', label: 'Subscription 👑', desc: 'Premium subscription' },
+  { names: ['settings'], path: 'Settings', label: 'Settings ⚙️', desc: 'App settings' },
+  { names: ['canvas'], path: 'Canvas', label: 'Canvas 🎨', desc: 'Template design studio' },
+  { names: ['prompto', 'prompt'], path: 'Prompto', label: 'Prompto ✍️', desc: 'AI prompt engineering' },
+  { names: ['cinekas', 'movies'], path: 'Cinekas', label: 'Cinekas 🎬', desc: 'Movie browser' },
+  { names: ['speed'], path: 'Speed', label: 'Speed ⚡', desc: 'Quick image generation' },
+  { names: ['security', 'audit'], path: 'SecurityAudit', label: 'Security Audit 🔒', desc: 'Security scanning' },
+  { names: ['dag feed'], path: 'DAGFeed', label: 'DAG Feed 🌐', desc: 'DAG-focused content feed' },
+  { names: ['global history', 'history'], path: 'GlobalHistory', label: 'Global History 🕐', desc: 'Global transaction tracker' },
+  { names: ['area 51', 'area51'], path: 'Area51', label: 'Area 51 👽', desc: 'Experimental zone' },
+  { names: ['voxa', 'voice'], path: 'Voxa', label: 'Voxa 🎤', desc: 'Voice/audio tools' },
+  { names: ['freedom'], path: 'Freedom', label: 'Freedom 🕊️', desc: 'Privacy tools' },
+  { names: ['farlands'], path: 'Farlands', label: 'Farlands 🌍', desc: 'Exploration game' },
+  { names: ['klock', 'clock'], path: 'Klock', label: 'Klock 🕐', desc: 'Clock/timer' },
+  { names: ['categories'], path: 'Categories', label: 'Categories 📂', desc: 'App dashboard' },
+  { names: ['kivr', 'phone'], path: 'KivR', label: 'KivR 📞', desc: 'IVR/phone system' },
+  { names: ['kaspa node', 'node map'], path: 'KaspaNodeMap', label: 'Node Map 🗺️', desc: 'Kaspa network node map' },
+  { names: ['what is kaspa', 'kaspa info'], path: 'WhatIsKaspa', label: 'What is Kaspa 📖', desc: 'Kaspa education page' },
+];
+
+const detectOpenApp = (msg) => {
+  const lower = msg.toLowerCase().trim();
+  // Match patterns: "open X", "go to X", "take me to X", "launch X", "navigate to X"
+  const openPatterns = [/^open\s+(.+)$/i, /^go\s+to\s+(.+)$/i, /^take\s+me\s+to\s+(.+)$/i, /^launch\s+(.+)$/i, /^navigate\s+to\s+(.+)$/i, /^start\s+(.+)$/i];
+  for (const pattern of openPatterns) {
+    const match = lower.match(pattern);
+    if (match) {
+      const appName = match[1].trim().replace(/[?.!]/g, '');
+      for (const app of APP_DIRECTORY) {
+        if (app.names.some(n => appName === n || appName.includes(n))) {
+          return app;
+        }
+      }
+    }
+  }
+  return null;
+};
+
 export default function KaspaAvatarChat() {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
@@ -261,6 +321,18 @@ export default function KaspaAvatarChat() {
     setInput("");
     setMessages(prev => [...prev, { role: "user", content: userMsg }]);
     setIsLoading(true);
+
+    // "Open X" → instant app link with button
+    const openApp = detectOpenApp(userMsg);
+    if (openApp) {
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: `Opening **${openApp.label.replace(/\s*[🎨🖼️💰📝🔐🌉🎯⚔️🤖📺🎮🛒🏪🏆👛👤📱📚⏰📊👑⚙️✍️🎬⚡🔒🌐🕐👽🎤🕊️🌍📂📞🗺️📖]/g, '')}** — ${openApp.desc}`,
+        links: [{ label: `Open ${openApp.label}`, path: openApp.path }]
+      }]);
+      setIsLoading(false);
+      return;
+    }
 
     // Image/drawing → suggest Xunhua with clickable button (don't auto-redirect)
     if (isImageRequest(userMsg)) {

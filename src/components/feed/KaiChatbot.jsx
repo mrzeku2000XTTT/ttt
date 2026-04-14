@@ -76,12 +76,73 @@ export default function KaiChatbot() {
     return IMAGE_KEYWORDS.some(kw => lower.includes(kw));
   };
 
+  const APP_DIRECTORY = [
+    { names: ['hikaru'], path: 'Hikaru', label: 'Hikaru 🖼️', desc: 'AI image generation studio' },
+    { names: ['xunhua', 'xùnhuà'], path: 'Xunhua', label: 'Xunhua 🎨', desc: 'AI sketch-to-image studio' },
+    { names: ['terra'], path: 'Terra', label: 'Terra 💰', desc: 'Kaspa wallet manager' },
+    { names: ['feed', 'ttt feed'], path: 'Feed', label: 'TTT Feed 📝', desc: 'Community social feed' },
+    { names: ['agent zk', 'agentzk', 'zk'], path: 'AgentZK', label: 'Agent ZK 🔐', desc: 'Cryptographic identity' },
+    { names: ['bridge', 'send kas'], path: 'Bridge', label: 'Send KAS 🌉', desc: 'Transfer KAS between L1/L2' },
+    { names: ['stakedag', 'stake dag'], path: 'StakeDAG', label: 'StakeDAG 🎯', desc: 'Prediction markets' },
+    { names: ['dagknight', 'dag knight'], path: 'DAGKnightWallet', label: 'DAGKnight ⚔️', desc: 'Advanced multi-wallet' },
+    { names: ['zeku', 'zeku ai'], path: 'ZekuAI', label: 'Zeku AI 🤖', desc: 'Premium AI assistant' },
+    { names: ['tttv', 'browser', 'tv'], path: 'Browser', label: 'TTTV 📺', desc: 'Media browser & player' },
+    { names: ['arcade', 'games'], path: 'Arcade', label: 'Arcade 🎮', desc: 'Games & entertainment' },
+    { names: ['shop'], path: 'Shop', label: 'Shop 🛒', desc: 'Buy items with KAS' },
+    { names: ['marketplace'], path: 'Marketplace', label: 'Marketplace 🏪', desc: 'P2P marketplace' },
+    { names: ['nft', 'nft mint', 'mint'], path: 'NFTMint', label: 'NFT Mint 🏆', desc: 'Create & mint NFTs' },
+    { names: ['wallet'], path: 'Wallet', label: 'Wallet 👛', desc: 'Kaspa wallet' },
+    { names: ['profile'], path: 'Profile', label: 'Profile 👤', desc: 'User profile' },
+    { names: ['app store', 'appstore', 'apps'], path: 'AppStore', label: 'App Store 📱', desc: '80+ community apps' },
+    { names: ['courses', 'university', 'learn'], path: 'Courses', label: 'Courses 📚', desc: 'Kaspa education' },
+    { names: ['countdown'], path: 'Countdown', label: 'Countdown ⏰', desc: 'Milestone timer' },
+    { names: ['analytics'], path: 'Analytics', label: 'Analytics 📊', desc: 'Platform analytics' },
+    { names: ['canvas'], path: 'Canvas', label: 'Canvas 🎨', desc: 'Template design studio' },
+    { names: ['prompto', 'prompt'], path: 'Prompto', label: 'Prompto ✍️', desc: 'AI prompt engineering' },
+    { names: ['speed'], path: 'Speed', label: 'Speed ⚡', desc: 'Quick image generation' },
+    { names: ['security', 'audit'], path: 'SecurityAudit', label: 'Security Audit 🔒', desc: 'Security scanning' },
+    { names: ['area 51', 'area51'], path: 'Area51', label: 'Area 51 👽', desc: 'Experimental zone' },
+    { names: ['categories'], path: 'Categories', label: 'Categories 📂', desc: 'App dashboard' },
+    { names: ['voxa'], path: 'Voxa', label: 'Voxa 🎤', desc: 'Voice/audio tools' },
+    { names: ['freedom'], path: 'Freedom', label: 'Freedom 🕊️', desc: 'Privacy tools' },
+    { names: ['cinekas', 'movies'], path: 'Cinekas', label: 'Cinekas 🎬', desc: 'Movie browser' },
+  ];
+
+  const detectOpenApp = (msg) => {
+    const lower = msg.toLowerCase().trim();
+    const openPatterns = [/^open\s+(.+)$/i, /^go\s+to\s+(.+)$/i, /^take\s+me\s+to\s+(.+)$/i, /^launch\s+(.+)$/i, /^navigate\s+to\s+(.+)$/i, /^start\s+(.+)$/i];
+    for (const pattern of openPatterns) {
+      const match = lower.match(pattern);
+      if (match) {
+        const appName = match[1].trim().replace(/[?.!]/g, '');
+        for (const app of APP_DIRECTORY) {
+          if (app.names.some(n => appName === n || appName.includes(n))) {
+            return app;
+          }
+        }
+      }
+    }
+    return null;
+  };
+
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
     const userMsg = input.trim();
     setInput("");
     setMessages(prev => [...prev, { role: "user", content: userMsg }]);
     setIsLoading(true);
+
+    // "Open X" → instant app link with button
+    const openApp = detectOpenApp(userMsg);
+    if (openApp) {
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: `Opening **${openApp.label.replace(/\s*[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '')}** — ${openApp.desc}`,
+        links: [{ label: `Open ${openApp.label}`, path: openApp.path }]
+      }]);
+      setIsLoading(false);
+      return;
+    }
 
     // Detect image/drawing intent — suggest apps with clickable buttons
     if (isImageRequest(userMsg)) {
