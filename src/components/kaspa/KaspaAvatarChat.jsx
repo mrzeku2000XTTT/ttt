@@ -21,7 +21,7 @@ const KAI_FACTS = [
 
 export default function KaspaAvatarChat() {
   const [isOpen, setIsOpen] = useState(false);
-  const [videoUrl] = useState(() => localStorage.getItem(STORAGE_KEY) || "");
+  const [videoUrl, setVideoUrl] = useState(() => localStorage.getItem(STORAGE_KEY) || "");
   const [messages, setMessages] = useState([
     { role: "assistant", content: "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem." }
   ]);
@@ -30,6 +30,37 @@ export default function KaspaAvatarChat() {
   const [bubbleText, setBubbleText] = useState(KAI_FACTS[0]);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Fetch global KAI video URL from database (visible to all users)
+  useEffect(() => {
+    const fetchGlobalVideo = async () => {
+      try {
+        const configs = await base44.entities.KAIConfig.filter({ config_key: "avatar_video_url" });
+        if (configs.length > 0 && configs[0].config_value) {
+          setVideoUrl(configs[0].config_value);
+        }
+      } catch { /* ignore for non-auth */ }
+    };
+
+    // If admin has a local video, sync it to the global entity
+    const syncLocalToGlobal = async () => {
+      const localUrl = localStorage.getItem(STORAGE_KEY);
+      if (!localUrl) return;
+      try {
+        const configs = await base44.entities.KAIConfig.filter({ config_key: "avatar_video_url" });
+        if (configs.length > 0) {
+          if (configs[0].config_value !== localUrl) {
+            await base44.entities.KAIConfig.update(configs[0].id, { config_value: localUrl });
+          }
+        } else {
+          await base44.entities.KAIConfig.create({ config_key: "avatar_video_url", config_value: localUrl });
+        }
+      } catch { /* not admin or not auth */ }
+    };
+
+    fetchGlobalVideo();
+    syncLocalToGlobal();
+  }, []);
 
   // Rotate speech bubble facts — no flash, just swap text
   useEffect(() => {

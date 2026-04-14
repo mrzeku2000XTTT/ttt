@@ -1,0 +1,24 @@
+{
+  "name": "KAIConfig",
+  "type": "object",
+  "properties": {
+    "config_key": {
+      "type": "string",
+      "description": "Config key name (e.g. 'avatar_video_url')"
+    },
+    "config_value": {
+      "type": "string",
+      "description": "Config value"
+    }
+  },
+  "required": [
+    "config_key",
+    "config_value"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
+  }
+}
