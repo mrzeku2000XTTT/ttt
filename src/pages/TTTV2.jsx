@@ -9,8 +9,7 @@ import {
 
 import ProductGrid from "@/components/tttv2/ProductGrid";
 import WhatsNew from "@/components/tttv2/WhatsNew";
-import KaspaExplainer from "@/components/tttv2/KaspaExplainer";
-import CommunityVideos from "@/components/tttv2/CommunityVideos";
+import TTTVMini from "@/components/tttv2/TTTVMini";
 import KaspaAvatarChat from "@/components/kaspa/KaspaAvatarChat";
 
 /* ─── roadmap data ─── */
@@ -237,14 +236,11 @@ export default function TTTV2Page() {
       {/* ── Products ── */}
       <ProductGrid />
 
-      {/* ── Kaspa Explainer ── */}
-      <KaspaExplainer />
+      {/* ── TTTV Mini Player ── */}
+      <TTTVMini />
 
       {/* ── What's New (updates + posts + coming soon) ── */}
       <WhatsNew kaspaUpdates={kaspaUpdates} posts={posts} />
-
-      {/* ── Community Videos ── */}
-      <CommunityVideos />
 
       {/* ── Roadmap ── */}
       <section id="roadmap" className="py-20 sm:py-28 px-5">
