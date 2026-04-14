@@ -116,8 +116,8 @@ function App() {
         <Router>
           <NavigationTracker />
           <AuthenticatedApp />
+          <KaSshiPlayer />
         </Router>
-        <KaSshiPlayer />
         <Toaster />
         <VisualEditAgent />
       </QueryClientProvider>
