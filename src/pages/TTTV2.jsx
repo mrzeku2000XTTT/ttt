@@ -226,7 +226,9 @@ export default function TTTV2Page() {
       </nav>
 
       {/* ── new hero ── */}
-      <HeroHeader />
+      <div className="pt-12">
+        <HeroHeader />
+      </div>
 
       {/* ── original hero ── */}
       <section className="relative py-14 sm:py-20 px-5 text-center overflow-hidden">
