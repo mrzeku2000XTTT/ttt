@@ -9,8 +9,8 @@ import {
 
 import ProductGrid from "@/components/tttv2/ProductGrid";
 import WhatsNew from "@/components/tttv2/WhatsNew";
-import KaspaExplainer from "@/components/tttv2/KaspaExplainer";
-import CommunityVideos from "@/components/tttv2/CommunityVideos";
+import TTTVMini from "@/components/tttv2/TTTVMini";
+import KaspaAvatarChat from "@/components/kaspa/KaspaAvatarChat";
 
 /* ─── roadmap data ─── */
 const ROADMAP = [
@@ -151,7 +151,7 @@ export default function TTTV2Page() {
         <div className="hidden sm:flex items-center gap-6 text-[13px] font-medium text-zinc-500">
           <a href="#products" className="hover:text-zinc-900 transition-colors">Products</a>
           <Link to="/WhatIsKaspa" className="hover:text-zinc-900 transition-colors">Kaspa</Link>
-          <a href="#community" className="hover:text-zinc-900 transition-colors">Community</a>
+          <a href="#tttv" className="hover:text-zinc-900 transition-colors">TTTV</a>
           <a href="#news" className="hover:text-zinc-900 transition-colors">What's New</a>
           <a href="#roadmap" className="hover:text-zinc-900 transition-colors">Roadmap</a>
         </div>
@@ -236,14 +236,11 @@ export default function TTTV2Page() {
       {/* ── Products ── */}
       <ProductGrid />
 
-      {/* ── Kaspa Explainer ── */}
-      <KaspaExplainer />
+      {/* ── TTTV Mini Player ── */}
+      <TTTVMini />
 
       {/* ── What's New (updates + posts + coming soon) ── */}
       <WhatsNew kaspaUpdates={kaspaUpdates} posts={posts} />
-
-      {/* ── Community Videos ── */}
-      <CommunityVideos />
 
       {/* ── Roadmap ── */}
       <section id="roadmap" className="py-20 sm:py-28 px-5">
@@ -289,6 +286,9 @@ export default function TTTV2Page() {
           </div>
         </motion.div>
       </section>
+
+      {/* KAI floating chat */}
+      <KaspaAvatarChat />
 
       {/* ── footer ── */}
       <footer className="py-8 px-5 border-t border-zinc-200/50">
