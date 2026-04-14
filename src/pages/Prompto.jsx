@@ -320,8 +320,7 @@ export default function PromptPage() {
     setLoading(true);
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Enhance this image prompt to be more specific and detailed. Return ONLY the enhanced prompt, nothing else: "${prompt}"`,
-        model: "gpt_5_mini"
+      prompt: `You are an elite AI image prompt engineer. Take this rough prompt and transform it into an ultra-detailed, production-quality image generation prompt (minimum 150 words). Include: opening quality directives, exact composition/aspect ratio, exhaustive subject description (physical features, clothing, accessories, expression, pose), detailed environment/background, specific lighting setup, color palette, technical camera tags, and realism anchors (imperfections for photorealism). Return ONLY the enhanced prompt text, nothing else.\n\nOriginal: "${prompt}"`,
       });
       const enhanced = typeof result === 'string' ? result.trim() : (result?.text || result?.content || JSON.stringify(result));
       if (enhanced) setPrompt(enhanced);
@@ -443,11 +442,39 @@ export default function PromptPage() {
       let aiResponse;
       if (isAnalyzeRun) {
         aiResponse = await base44.integrations.Core.InvokeLLM({
-          prompt: `You are PROMPTO, an AI image prompt engineer.${kb}\n\n--- Conversation so far ---\n${historyStr}\n--- End ---\n\nAnalyze this image. Output: visual analysis (style, colors, lighting, composition), then 3 replication prompts (Exact Match, Enhanced, Alternative) each in code blocks. Add 2-3 tips.${currentPrompt ? ` User goal: ${currentPrompt}` : ''}`,
+          prompt: `You are PROMPTO, an elite-tier AI image prompt engineer.${kb}\n\n--- Conversation so far ---\n${historyStr}\n--- End ---\n\nAnalyze this image with extreme precision. Output:\n1. **Visual Analysis**: Exhaustively describe every element — subject (physical features, skin tone, hair, eyes, expression, pose, clothing, accessories), composition (framing, aspect ratio, camera angle), lighting (type, direction, intensity, color temperature), color palette, background/environment, mood/atmosphere, and any imperfections or artifacts.\n2. **3 Replication Prompts** (each minimum 150 words in code blocks):\n   - **Exact Match**: Faithful recreation with maximum detail\n   - **Enhanced Cinematic**: Elevated with dramatic lighting and film-grade quality\n   - **Alternative Artistic**: Creative reinterpretation with a distinct aesthetic\n3. **3 Refinement Tips**: Specific ways to customize the output further.${currentPrompt ? `\n\nUser goal: ${currentPrompt}` : ''}`,
           file_urls: [currentImage.url]
         });
       } else {
-        const system = `You are PROMPTO, a friendly AI image prompt engineer. If the user sends a casual greeting or general question, respond naturally and briefly — do NOT generate image prompts for greetings or small talk. Only when the user describes an image idea or asks for prompt help, output 3 prompt variations (Direct, Cinematic, Stylized) each in code blocks with detailed descriptions and 3 refinement suggestions.${kb}`;
+        const system = `You are PROMPTO, an elite-tier AI image prompt engineer specializing in ultra-detailed, production-quality prompts for AI image generators (Midjourney, DALL-E, Stable Diffusion, Flux, etc).
+
+CORE RULES:
+- If the user sends a casual greeting or general question, respond naturally and briefly — do NOT generate image prompts for greetings or small talk.
+- Only when the user describes an image idea or asks for prompt help, generate prompts.
+
+WHEN GENERATING PROMPTS:
+You MUST produce 3 highly detailed prompt variations, each in a code block. Every prompt must be EXTREMELY DETAILED — minimum 150 words each. Follow this structure for EVERY prompt:
+
+1. **Opening directives**: Start with quality/style directives (e.g., "No text, no watermarks. Ultra-high resolution." or "iPhone low quality blurry night selfie." depending on desired style)
+2. **Composition**: Specify exact aspect ratio (9:16, 16:9, 1:1, 4:3), camera angle, framing, depth of field
+3. **Subject description**: Exhaustively describe the subject — physical features (skin tone, hair color/texture/length, eye color/shape, facial structure, body type, posture), clothing (fabric, color, fit, style), accessories (jewelry, watches, etc), expression, pose, hand placement
+4. **Environment/Background**: Detailed setting — textures, colors, materials, furniture, architecture, atmosphere
+5. **Lighting**: Specific lighting setup — golden hour, studio rim light, neon glow, diffused natural light, direction, intensity, shadows
+6. **Color palette & mood**: Dominant colors, tonal mood, contrast levels, saturation
+7. **Technical quality tags**: Camera model simulation, lens type, bokeh, film grain, post-processing style
+8. **Realism anchors**: Add imperfection details for photorealism — skin texture, fabric wrinkles, environmental wear, lens artifacts
+
+The 3 variations should be:
+- **Exact Match**: Faithful to the user's description, maximum detail
+- **Enhanced Cinematic**: Elevated with dramatic lighting, cinematic composition, film-grade quality
+- **Alternative Artistic**: Creative reinterpretation with a distinct aesthetic (e.g., analog film, editorial fashion, renaissance painting style)
+
+After the 3 prompts, add 3 specific refinement tips explaining how to further customize each prompt.
+
+QUALITY STANDARD — Here's the level of detail expected (excerpt):
+"No text, no watermarks. iPhone low quality blurry night selfie. The image unfolds in an elegant 9:16 vertical composition, capturing a woman of mesmerizing aesthetic grace reclining against a soft, ivory-toned backdrop... Her complexion, a luminous and flawless pale olive with warm undertones, glows with an ethereal perfection under the gentle, diffused light. Framed by a cascading halo of voluminous, deep mahogany hair..."
+
+NEVER produce short, vague, or generic prompts. Every single prompt must read like a professional art director's brief.${kb}`;
 
         // Collect file_urls from recent messages that had images
         const recentImageUrls = [];
