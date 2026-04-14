@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
-  ArrowLeft, ArrowUpRight, Sparkles, Lightbulb, Send,
-  Loader2, RefreshCw, Copy, Check, Rocket, Wand2
+  ArrowLeft, ArrowUpRight, Sparkles, Lightbulb,
+  Loader2, RefreshCw, Copy, Check, Wand2
 } from "lucide-react";
 
 const PROMPTS = [
@@ -54,7 +54,7 @@ Generate a concise, inspiring product concept that includes:
 6. **Why Kaspa** — why blockDAG is perfect for this (1-2 sentences)
 7. **Get Started** — a single next step to begin building
 
-Keep it punchy, visionary, and practical. Use markdown formatting.`,
+Keep it punchy, visionary, and practical.`,
         response_json_schema: {
           type: "object",
           properties: {
@@ -85,50 +85,47 @@ Keep it punchy, visionary, and practical. Use markdown formatting.`,
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] text-zinc-900 selection:bg-violet-200/60">
+    <div className="min-h-screen bg-white text-zinc-900 selection:bg-black/10">
+
       {/* Nav */}
-      <nav className="fixed top-0 inset-x-0 z-50 h-12 flex items-center justify-between px-5 bg-[#F5F5F7]/80 backdrop-blur-2xl backdrop-saturate-150 border-b border-zinc-200/50">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-zinc-500 hover:text-zinc-900 transition-colors">
+      <nav className="fixed top-0 inset-x-0 z-50 h-12 flex items-center justify-between px-5 bg-white/80 backdrop-blur-2xl border-b border-zinc-100">
+        <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-zinc-400 hover:text-zinc-900 transition-colors">
           <ArrowLeft className="w-4 h-4" />
           <span className="text-[13px] font-medium">Back</span>
         </button>
-        <div className="flex items-center gap-2">
-          <Lightbulb className="w-4 h-4 text-amber-500" />
-          <span className="text-[15px] font-[800] tracking-tight">Idea Lab</span>
-        </div>
+        <span className="text-[15px] font-[800] tracking-tight text-zinc-900">Idea Lab</span>
         <Link to="/TTTV2" className="text-[12px] font-semibold text-zinc-400 hover:text-zinc-700 transition-colors">
           TTT 2.0
         </Link>
       </nav>
 
-      <div className="max-w-2xl mx-auto px-5 pt-24 pb-20">
+      <div className="max-w-xl mx-auto px-5 pt-28 pb-24">
+
         {/* Hero */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 ring-1 ring-amber-200/60 mb-5">
-            <Rocket className="w-3 h-3 text-amber-500" />
-            <span className="text-[11px] font-semibold text-amber-600 tracking-wide">Where ideas meet the blockDAG</span>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-14">
+          <div className="w-14 h-14 mx-auto mb-6 rounded-2xl bg-zinc-900 flex items-center justify-center shadow-lg">
+            <Lightbulb className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-[900] tracking-tight leading-[0.95] mb-4">
-            What will you<br />
-            <span className="bg-gradient-to-r from-violet-500 via-pink-500 to-amber-500 bg-clip-text text-transparent">build next?</span>
+          <h1 className="text-[clamp(1.8rem,5vw,3rem)] font-[900] tracking-tight leading-[1.05] mb-3">
+            What will you build?
           </h1>
-          <p className="text-sm text-zinc-400 max-w-md mx-auto leading-relaxed">
-            Describe a rough idea — or just a feeling — and we'll shape it into a full product concept on Kaspa.
+          <p className="text-[15px] text-zinc-400 max-w-sm mx-auto leading-relaxed">
+            Describe a rough idea and we'll shape it into a full product concept on Kaspa.
           </p>
         </motion.div>
 
-        {/* Input */}
-        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="mb-8">
-          <div className="bg-white rounded-2xl ring-1 ring-zinc-200/80 shadow-sm p-4">
+        {/* Input Card */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="mb-10">
+          <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
             <textarea
               value={idea}
               onChange={e => setIdea(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); generate(); } }}
-              placeholder="e.g. A platform where artists can sell AI-generated NFTs using Kaspa..."
+              placeholder="A platform where artists can sell AI-generated NFTs using Kaspa…"
               rows={3}
               className="w-full bg-transparent text-[15px] text-zinc-900 outline-none placeholder-zinc-300 resize-none leading-relaxed"
             />
-            <div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-100">
+            <div className="flex items-center justify-between mt-4 pt-4 border-t border-zinc-200/60">
               <button
                 onClick={randomPrompt}
                 className="flex items-center gap-1.5 text-[12px] font-medium text-zinc-400 hover:text-zinc-600 transition-colors"
@@ -138,10 +135,10 @@ Keep it punchy, visionary, and practical. Use markdown formatting.`,
               <button
                 onClick={generate}
                 disabled={!idea.trim() || generating}
-                className="flex items-center gap-2 h-9 px-5 bg-zinc-900 text-white text-[13px] font-semibold rounded-full disabled:opacity-40 hover:bg-zinc-800 transition-colors"
+                className="flex items-center gap-2 h-10 px-6 bg-zinc-900 text-white text-[13px] font-semibold rounded-full disabled:opacity-30 hover:bg-zinc-800 transition-all"
               >
                 {generating ? (
-                  <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Thinking…</>
+                  <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</>
                 ) : (
                   <><Wand2 className="w-3.5 h-3.5" /> Generate</>
                 )}
@@ -153,16 +150,9 @@ Keep it punchy, visionary, and practical. Use markdown formatting.`,
         {/* Loading */}
         <AnimatePresence>
           {generating && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="text-center py-12"
-            >
-              <div className="inline-flex items-center gap-3 px-5 py-3 bg-white rounded-2xl ring-1 ring-zinc-200/80 shadow-sm">
-                <Loader2 className="w-4 h-4 animate-spin text-violet-500" />
-                <span className="text-[13px] text-zinc-500">Crafting your concept…</span>
-              </div>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-16">
+              <Loader2 className="w-6 h-6 animate-spin text-zinc-300 mx-auto mb-3" />
+              <p className="text-[13px] text-zinc-400">Crafting your concept…</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -174,45 +164,49 @@ Keep it punchy, visionary, and practical. Use markdown formatting.`,
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="bg-white rounded-[20px] ring-1 ring-zinc-200/80 shadow-sm overflow-hidden"
+              className="space-y-0"
             >
-              {/* Header */}
-              <div className="bg-gradient-to-r from-violet-500 via-pink-500 to-amber-500 p-6 sm:p-8">
-                <div className="flex items-start justify-between">
+              {/* Concept Name */}
+              <div className="bg-zinc-900 rounded-t-2xl p-6 sm:p-8">
+                <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-[11px] font-bold text-white/60 uppercase tracking-widest mb-2">Your concept</p>
-                    <h2 className="text-2xl sm:text-3xl font-[900] text-white tracking-tight">{result.name}</h2>
-                    <p className="text-[14px] text-white/80 mt-2 leading-relaxed">{result.one_liner}</p>
+                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.15em] mb-2">Your Concept</p>
+                    <h2 className="text-xl sm:text-2xl font-[900] text-white tracking-tight leading-tight">{result.name}</h2>
+                    <p className="text-[14px] text-zinc-400 mt-2 leading-relaxed">{result.one_liner}</p>
                   </div>
                   <button
                     onClick={copyResult}
-                    className="flex-shrink-0 w-9 h-9 bg-white/20 hover:bg-white/30 rounded-xl flex items-center justify-center transition-colors"
+                    className="flex-shrink-0 w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors"
+                    title="Copy to clipboard"
                   >
-                    {copied ? <Check className="w-4 h-4 text-white" /> : <Copy className="w-4 h-4 text-white" />}
+                    {copied ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5 text-white/60" />}
                   </button>
                 </div>
               </div>
 
-              <div className="p-6 sm:p-8 space-y-6">
+              {/* Content */}
+              <div className="bg-zinc-50 rounded-b-2xl border border-t-0 border-zinc-100 divide-y divide-zinc-100">
                 {/* Problem */}
-                <div>
-                  <h3 className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-2">The Problem</h3>
+                <div className="p-6">
+                  <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">The Problem</h3>
                   <p className="text-[14px] text-zinc-600 leading-relaxed">{result.problem}</p>
                 </div>
 
                 {/* Solution */}
-                <div>
-                  <h3 className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-2">The Solution</h3>
+                <div className="p-6">
+                  <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">The Solution</h3>
                   <p className="text-[14px] text-zinc-600 leading-relaxed">{result.solution}</p>
                 </div>
 
                 {/* Features */}
-                <div>
-                  <h3 className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-3">Key Features</h3>
-                  <div className="grid sm:grid-cols-2 gap-2">
+                <div className="p-6">
+                  <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-3">Key Features</h3>
+                  <div className="space-y-2">
                     {result.features?.map((f, i) => (
-                      <div key={i} className="flex items-start gap-2.5 p-3 bg-zinc-50 rounded-xl">
-                        <Sparkles className="w-3.5 h-3.5 text-violet-500 mt-0.5 flex-shrink-0" />
+                      <div key={i} className="flex items-start gap-3 py-2">
+                        <div className="w-5 h-5 rounded-md bg-zinc-900 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <span className="text-[10px] font-bold text-white">{i + 1}</span>
+                        </div>
                         <span className="text-[13px] text-zinc-600 leading-snug">{f}</span>
                       </div>
                     ))}
@@ -220,22 +214,22 @@ Keep it punchy, visionary, and practical. Use markdown formatting.`,
                 </div>
 
                 {/* Why Kaspa */}
-                <div className="bg-gradient-to-r from-cyan-50 to-blue-50 rounded-xl p-4 ring-1 ring-cyan-100/60">
-                  <h3 className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest mb-2">Why Kaspa</h3>
-                  <p className="text-[13px] text-cyan-700 leading-relaxed">{result.why_kaspa}</p>
+                <div className="p-6">
+                  <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">Why Kaspa</h3>
+                  <p className="text-[14px] text-zinc-600 leading-relaxed">{result.why_kaspa}</p>
                 </div>
 
                 {/* Next Step */}
-                <div className="pt-4 border-t border-zinc-100">
-                  <h3 className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-2">Get Started</h3>
-                  <p className="text-[14px] text-zinc-700 font-medium">{result.next_step}</p>
+                <div className="p-6">
+                  <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">Next Step</h3>
+                  <p className="text-[14px] text-zinc-900 font-medium leading-relaxed">{result.next_step}</p>
                 </div>
 
                 {/* Actions */}
-                <div className="flex flex-wrap gap-3 pt-2">
+                <div className="p-6 flex flex-wrap gap-3">
                   <button
                     onClick={() => { setResult(null); setIdea(""); }}
-                    className="h-10 px-5 text-[13px] font-semibold text-zinc-500 rounded-full ring-1 ring-zinc-200 hover:ring-zinc-300 hover:bg-zinc-50 transition-all"
+                    className="h-10 px-5 text-[13px] font-semibold text-zinc-500 rounded-full border border-zinc-200 hover:border-zinc-300 hover:bg-white transition-all"
                   >
                     New Idea
                   </button>
@@ -252,49 +246,49 @@ Keep it punchy, visionary, and practical. Use markdown formatting.`,
 
         {/* Error */}
         {result?.error && !generating && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-8">
-            <p className="text-sm text-zinc-400">Something went wrong. Try again!</p>
-            <button onClick={generate} className="mt-3 text-[13px] font-semibold text-violet-600 hover:text-violet-700">
-              Retry
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-10">
+            <p className="text-sm text-zinc-400 mb-3">Something went wrong.</p>
+            <button onClick={generate} className="text-[13px] font-semibold text-zinc-900 underline underline-offset-2">
+              Try again
             </button>
           </motion.div>
         )}
 
         {/* History */}
         {history.length > 0 && !generating && !result && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-4">
-            <h3 className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-3">Recent Ideas</h3>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-3">Recent</h3>
             <div className="space-y-2">
               {history.map((h, i) => (
                 <button
                   key={i}
                   onClick={() => { setIdea(h.idea); setResult(h.result); }}
-                  className="w-full text-left p-4 bg-white rounded-xl ring-1 ring-zinc-200/80 hover:ring-zinc-300 transition-all"
+                  className="w-full text-left p-4 bg-zinc-50 rounded-xl border border-zinc-100 hover:border-zinc-200 transition-all"
                 >
-                  <div className="text-[14px] font-semibold text-zinc-800">{h.result.name}</div>
-                  <div className="text-[12px] text-zinc-400 mt-0.5">{h.result.one_liner}</div>
+                  <div className="text-[14px] font-semibold text-zinc-900">{h.result.name}</div>
+                  <div className="text-[12px] text-zinc-400 mt-0.5 line-clamp-1">{h.result.one_liner}</div>
                 </button>
               ))}
             </div>
           </motion.div>
         )}
 
-        {/* Empty state inspiration */}
+        {/* Empty state — prompt suggestions */}
         {!result && !generating && history.length === 0 && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="text-center mt-8">
-            <div className="grid grid-cols-2 gap-2 max-w-md mx-auto">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+            <p className="text-[10px] font-bold text-zinc-300 uppercase tracking-[0.15em] mb-3 text-center">Or start with one of these</p>
+            <div className="grid grid-cols-2 gap-2">
               {PROMPTS.slice(0, 4).map((p, i) => (
                 <button
                   key={i}
                   onClick={() => setIdea(p)}
-                  className="p-3 bg-white rounded-xl ring-1 ring-zinc-200/80 hover:ring-zinc-300 text-left transition-all"
+                  className="p-4 bg-zinc-50 rounded-xl border border-zinc-100 hover:border-zinc-200 text-left transition-all group"
                 >
-                  <Lightbulb className="w-3.5 h-3.5 text-amber-400 mb-1.5" />
+                  <Lightbulb className="w-3.5 h-3.5 text-zinc-300 group-hover:text-zinc-500 mb-2 transition-colors" />
                   <span className="text-[12px] text-zinc-500 leading-snug line-clamp-2">{p}</span>
                 </button>
               ))}
             </div>
-            <p className="text-[11px] text-zinc-300 mt-4">Tap one to get started</p>
           </motion.div>
         )}
       </div>
