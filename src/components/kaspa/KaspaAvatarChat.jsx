@@ -5,6 +5,38 @@ import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
+const KAI_THINKING_PHRASES = [
+  "Scanning the blockDAG…",
+  "Consulting the GHOSTDAG…",
+  "Mining some knowledge…",
+  "Checking the mempool…",
+  "Traversing the DAG…",
+  "Processing blocks…",
+  "Syncing with Kaspa nodes…",
+  "Thinking at 10 BPS…",
+  "Querying the network…",
+  "Reading the chain…",
+];
+
+function KAIThinkingBubble() {
+  const [phrase, setPhrase] = useState(() => KAI_THINKING_PHRASES[Math.floor(Math.random() * KAI_THINKING_PHRASES.length)]);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPhrase(KAI_THINKING_PHRASES[Math.floor(Math.random() * KAI_THINKING_PHRASES.length)]);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+  return (
+    <div className="flex justify-start">
+      <div className="px-3 py-2 rounded-2xl rounded-bl-md flex items-center gap-2 text-[12px]"
+        style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(6,182,212,0.8)" }}>
+        <Loader2 className="w-3 h-3 animate-spin flex-shrink-0" />
+        <span className="italic">{phrase}</span>
+      </div>
+    </div>
+  );
+}
+
 const STORAGE_KEY = "kaspa_avatar_video_url";
 const DEFAULT_AVATAR_IMG = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/13e8ec094_image.png";
 const DEFAULT_VIDEO_URL = "https://base44.app/api/apps/6901295fa9bcfaa0f5ba2c2a/files/mp/public/6901295fa9bcfaa0f5ba2c2a/603409cb0_animation1.mp4";
@@ -551,14 +583,7 @@ Respond as KAI:${speedInstruction}`;
                 </div>
               ))}
               {isLoading && typingIndex < 0 && (
-                <div className="flex justify-start">
-                  <div className="px-3 py-2 rounded-2xl rounded-bl-md flex items-center gap-1.5"
-                    style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                    <div className="w-1.5 h-1.5 bg-cyan-400/60 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <div className="w-1.5 h-1.5 bg-cyan-400/60 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <div className="w-1.5 h-1.5 bg-cyan-400/60 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-                  </div>
-                </div>
+                <KAIThinkingBubble />
               )}
               <div ref={messagesEndRef} />
             </div>
