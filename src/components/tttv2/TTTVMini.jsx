@@ -125,8 +125,8 @@ export default function TTTVMini() {
           </div>
 
           {/* KaSshi.io Embedded */}
-          <div className="mt-10 max-w-5xl mx-auto">
-            <div className="rounded-2xl overflow-hidden ring-1 ring-white/10 bg-black" style={{ aspectRatio: "16/9" }}>
+          <div className="mt-10 w-full">
+            <div className="rounded-2xl overflow-hidden ring-1 ring-white/10 bg-black" style={{ height: "clamp(500px, 70vh, 800px)" }}>
               <iframe
                 src="https://kasshi.io"
                 title="KaSshi.io"
