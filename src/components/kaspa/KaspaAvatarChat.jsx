@@ -56,6 +56,9 @@ export default function KaspaAvatarChat() {
   const [kaiMode, setKaiMode] = useState(() => {
     try { return localStorage.getItem("kai_mode") || "kai"; } catch { return "kai"; }
   }); // "kai" = new KAI (Kaspa expert), "classic" = old Kai (general TTT assistant with tools)
+  const [responseSpeed, setResponseSpeed] = useState(() => {
+    try { return localStorage.getItem("kai_speed") || "fast"; } catch { return "fast"; }
+  }); // "fast" = short answers, "thinking" = detailed/long answers
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -97,6 +100,9 @@ export default function KaspaAvatarChat() {
   useEffect(() => {
     try { localStorage.setItem("kai_mode", kaiMode); } catch {}
   }, [kaiMode]);
+  useEffect(() => {
+    try { localStorage.setItem("kai_speed", responseSpeed); } catch {}
+  }, [responseSpeed]);
 
   // Rotate speech bubble facts
   useEffect(() => {
@@ -123,6 +129,10 @@ export default function KaspaAvatarChat() {
   const isFeedRequest = (msg) => FEED_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
   const isUserPostRequest = (msg) => USER_POST_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
 
+  const speedInstruction = responseSpeed === "fast"
+    ? "\n\nRESPONSE LENGTH: Keep your response VERY SHORT — 1-3 sentences max. Be direct and punchy. No fluff."
+    : "\n\nRESPONSE LENGTH: Give a thorough, detailed response. Explain deeply, provide examples, context, and analysis. Take your time.";
+
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
     const userMsg = input.trim();
@@ -147,7 +157,7 @@ export default function KaspaAvatarChat() {
         const posts = await base44.entities.Post.list('-created_date', 50);
         const postData = posts.map(p => `[${p.author_name}] ${p.content?.slice(0, 150)}${p.media_files?.length ? ' [has media]' : ''} (${p.likes || 0} likes, ${p.comments_count || 0} comments)`).join('\n');
         const analysis = await base44.integrations.Core.InvokeLLM({
-          prompt: `You are KAI, the AI assistant of TTT — the Kaspa Super-App (NOT "Trust The Tech"). TTT is a community platform with Feed, Agent ZK, TTTV, Bridge, StakeDAG, and 80+ apps. Here are the 50 most recent posts from the TTT feed:\n\n${postData}\n\nUser question: "${userMsg}"\n\nAnswer the user's question about specific users or posting activity. Be specific, cite usernames and what they posted. Keep it concise, friendly, and use emojis.`,
+          prompt: `You are KAI, the AI assistant of TTT — the Kaspa Super-App (NOT "Trust The Tech"). TTT is a community platform with Feed, Agent ZK, TTTV, Bridge, StakeDAG, and 80+ apps. Here are the 50 most recent posts from the TTT feed:\n\n${postData}\n\nUser question: "${userMsg}"\n\nAnswer the user's question about specific users or posting activity. Be specific, cite usernames and what they posted.${speedInstruction}`,
           add_context_from_internet: true,
           model: 'gemini_3_flash',
         });
@@ -166,7 +176,7 @@ export default function KaspaAvatarChat() {
         const posts = await base44.entities.Post.list('-created_date', 20);
         const feedSummary = posts.map(p => `- ${p.author_name}: ${p.content?.slice(0, 120)}`).join('\n');
         const summary = await base44.integrations.Core.InvokeLLM({
-          prompt: `You are KAI, the AI assistant of TTT — the Kaspa Super-App (NOT "Trust The Tech"). TTT is a community platform with Feed, Agent ZK, TTTV, Bridge, StakeDAG, and 80+ apps. Here are the 20 most recent posts from the TTT feed:\n\n${feedSummary}\n\nProvide a friendly, concise summary of what the community is talking about. Highlight key themes, hot topics, and any interesting discussions. Keep it under 200 words. Use emojis.`,
+          prompt: `You are KAI, the AI assistant of TTT — the Kaspa Super-App (NOT "Trust The Tech"). TTT is a community platform with Feed, Agent ZK, TTTV, Bridge, StakeDAG, and 80+ apps. Here are the 20 most recent posts from the TTT feed:\n\n${feedSummary}\n\nProvide a summary of what the community is talking about. Highlight key themes, hot topics, and any interesting discussions.${speedInstruction}`,
           add_context_from_internet: true,
           model: 'gemini_3_flash',
         });
@@ -198,7 +208,7 @@ ${context}
 
 User: ${userMsg}
 
-Respond as Kai:`;
+Respond as Kai:${speedInstruction}`;
 
       const kaiPrompt = `You are KAI, the AI assistant of TTT — the Kaspa Super-App.
 
@@ -240,7 +250,7 @@ ${context}
 
 User: ${userMsg}
 
-Respond as KAI:`;
+Respond as KAI:${speedInstruction}`;
 
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: kaiMode === "classic" ? classicPrompt : kaiPrompt,
@@ -408,6 +418,36 @@ Respond as KAI:`;
                   <div className="px-4 py-3 space-y-3">
                     <div className="text-[11px] font-bold text-white/50 uppercase tracking-wider">Settings</div>
                     
+                    {/* Response Speed Toggle */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-[13px] text-white/90 font-medium">Response Mode</div>
+                        <div className="text-[10px] text-white/40">{responseSpeed === "fast" ? "Short & quick answers" : "Detailed & thorough"}</div>
+                      </div>
+                      <div className="flex items-center rounded-full overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.15)" }}>
+                        <button
+                          onClick={() => setResponseSpeed("fast")}
+                          className="px-2.5 py-1 text-[10px] font-bold transition-all"
+                          style={{
+                            background: responseSpeed === "fast" ? "rgba(6,182,212,0.4)" : "transparent",
+                            color: responseSpeed === "fast" ? "rgba(6,182,212,1)" : "rgba(255,255,255,0.4)",
+                          }}
+                        >
+                          ⚡ Fast
+                        </button>
+                        <button
+                          onClick={() => setResponseSpeed("thinking")}
+                          className="px-2.5 py-1 text-[10px] font-bold transition-all"
+                          style={{
+                            background: responseSpeed === "thinking" ? "rgba(168,85,247,0.4)" : "transparent",
+                            color: responseSpeed === "thinking" ? "rgba(192,132,252,1)" : "rgba(255,255,255,0.4)",
+                          }}
+                        >
+                          🧠 Thinking
+                        </button>
+                      </div>
+                    </div>
+
                     {/* Cloud Messages Toggle */}
                     <div className="flex items-center justify-between">
                       <div>
