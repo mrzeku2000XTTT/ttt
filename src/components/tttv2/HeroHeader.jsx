@@ -55,7 +55,7 @@ const FEATURED_APPS = [
   {
     name: "Zeku AI",
     path: "/ZekuAI",
-    logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/a1ed1e05a_IMG_1968.png",
+    logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ede6944ce_generated_image.png",
     size: "medium",
   },
 ];
