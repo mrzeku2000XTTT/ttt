@@ -8,56 +8,56 @@ const PRODUCTS = [
     desc: "Official Kaspa project — blockDAG protocol",
     url: "https://kaspa.org",
     color: "from-cyan-500 to-teal-500",
-    logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/13e8ec094_image.png"
+    logo: "https://cryptologos.cc/logos/kaspa-kas-logo.png?v=041"
   },
   {
     name: "KaspAI",
     desc: "AI-powered Kaspa analytics",
     url: "https://kasp.ai",
     color: "from-violet-500 to-purple-600",
-    logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/d6f99bc5e_generated_image.png"
+    logo: "https://pbs.twimg.com/profile_images/1825985565697167360/LJjUp5PY_400x400.jpg"
   },
   {
     name: "Kasplex",
     desc: "KRC-20 token standard & explorer",
     url: "https://kasplex.org",
     color: "from-amber-500 to-orange-500",
-    logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/273ecff83_generated_image.png"
+    logo: "https://kasplex.org/assets/png/LOGO1-1-DV2KMDbu.png"
   },
   {
     name: "KSPR Bot",
     desc: "KRC-20 minting & trading bot",
-    url: "https://t.me/ksaborbot",
+    url: "https://t.me/kspr_home_bot",
     color: "from-pink-500 to-rose-500",
-    logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/04565f09d_generated_image.png"
+    logo: "https://pbs.twimg.com/profile_images/1719654688747167744/rIb_jn2c_400x400.jpg"
   },
   {
     name: "Kas.fyi",
     desc: "Kaspa blockchain explorer & stats",
     url: "https://kas.fyi",
     color: "from-emerald-500 to-teal-500",
-    logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/c45793efd_generated_image.png"
+    logo: "https://pbs.twimg.com/profile_images/1658547689494286337/wBwyas0P_400x400.jpg"
   },
   {
     name: "KasWare",
     desc: "Browser wallet for Kaspa L1",
     url: "https://kasware.xyz",
     color: "from-blue-500 to-indigo-500",
-    logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2ea9d0166_generated_image.png"
+    logo: "https://www.kasware.xyz/static/media/home-main.6b611fab36e5a2e49994.png"
   },
   {
     name: "Kaspa Hub",
     desc: "Community hub & ecosystem directory",
     url: "https://kaspahub.org",
     color: "from-zinc-600 to-zinc-800",
-    logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4b0087a11_generated_image.png"
+    logo: "https://pbs.twimg.com/profile_images/1822717712076460032/a8UMhB8z_400x400.jpg"
   },
   {
     name: "Tangem × Kaspa",
     desc: "Hardware wallet for KAS",
-    url: "https://tangem.com",
+    url: "https://tangem.com/en/wallet-for/kaspa/",
     color: "from-yellow-500 to-amber-500",
-    logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/759d6a05a_generated_image.png"
+    logo: "https://pbs.twimg.com/profile_images/1795478474100805632/fy0c6gym_400x400.jpg"
   },
 ];
 
