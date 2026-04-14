@@ -114,11 +114,21 @@ export default function HeroHeader() {
       </div>
 
       <div className="relative max-w-3xl mx-auto text-center">
+        {/* TapToTip */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-3"
+        >
+          <span className="text-[13px] font-[800] tracking-widest uppercase text-zinc-400">TapToTip</span>
+        </motion.div>
+
         {/* Badge */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.6, delay: 0.05 }}
           className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-100 ring-1 ring-zinc-200/60 mb-6"
         >
           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
