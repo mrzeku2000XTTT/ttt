@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
   ArrowLeft, ArrowUpRight, Sparkles, Lightbulb,
-  Loader2, RefreshCw, Copy, Check, Wand2
+  Loader2, RefreshCw, Copy, Check, Wand2, Share2, Info
 } from "lucide-react";
 
 const PROMPTS = [
@@ -28,7 +28,18 @@ export default function ExplorePage() {
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem("idea_lab_history");
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+  const [sharing, setSharing] = useState(false);
+  const [shared, setShared] = useState(false);
+
+  useEffect(() => {
+    try { localStorage.setItem("idea_lab_history", JSON.stringify(history)); } catch {}
+  }, [history]);
 
   const randomPrompt = () => {
     const p = PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
@@ -76,12 +87,34 @@ Keep it punchy, visionary, and practical.`,
     setGenerating(false);
   };
 
+  const formatResultText = () => {
+    if (!result || result.error) return "";
+    return `💡 ${result.name}\n${result.one_liner}\n\n🔴 Problem: ${result.problem}\n\n✅ Solution: ${result.solution}\n\n⚡ Key Features:\n${result.features?.map(f => `• ${f}`).join("\n")}\n\n🔷 Why Kaspa: ${result.why_kaspa}\n\n🚀 Next Step: ${result.next_step}\n\n— Generated with TTT Idea Lab`;
+  };
+
   const copyResult = () => {
     if (!result || result.error) return;
-    const text = `${result.name}\n${result.one_liner}\n\nProblem: ${result.problem}\n\nSolution: ${result.solution}\n\nFeatures:\n${result.features?.map(f => `• ${f}`).join("\n")}\n\nWhy Kaspa: ${result.why_kaspa}\n\nNext Step: ${result.next_step}`;
-    navigator.clipboard.writeText(text);
+    navigator.clipboard.writeText(formatResultText());
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const shareToFeed = async () => {
+    if (!result || result.error || sharing) return;
+    setSharing(true);
+    try {
+      const user = await base44.auth.me();
+      await base44.entities.Post.create({
+        content: formatResultText(),
+        author_name: user?.username || user?.full_name || "Idea Lab User",
+        author_wallet_address: user?.created_wallet_address || "",
+      });
+      setShared(true);
+      setTimeout(() => setShared(false), 3000);
+    } catch (err) {
+      alert("Please log in to share ideas to the feed.");
+    }
+    setSharing(false);
   };
 
   return (
@@ -112,6 +145,21 @@ Keep it punchy, visionary, and practical.`,
           <p className="text-[15px] text-zinc-400 max-w-sm mx-auto leading-relaxed">
             Describe a rough idea and we'll shape it into a full product concept on Kaspa.
           </p>
+        </motion.div>
+
+        {/* What is this */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }} className="mb-10 bg-zinc-50 rounded-2xl border border-zinc-100 p-5">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-zinc-200/60 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Info className="w-4 h-4 text-zinc-500" />
+            </div>
+            <div>
+              <h3 className="text-[13px] font-bold text-zinc-800 mb-1">What is Idea Lab?</h3>
+              <p className="text-[12px] text-zinc-500 leading-relaxed">
+                Idea Lab is TTT's AI-powered brainstorming tool. Type any rough concept — even just a few words — and it generates a complete product pitch built for the Kaspa ecosystem. You can copy the result, share it directly to the TTT Feed, or keep iterating. Your generated ideas are saved so you never lose them.
+              </p>
+            </div>
+          </div>
         </motion.div>
 
         {/* Input Card */}
@@ -233,11 +281,19 @@ Keep it punchy, visionary, and practical.`,
                   >
                     New Idea
                   </button>
-                  <Link to="/Feed">
-                    <button className="h-10 px-5 bg-zinc-900 text-white text-[13px] font-semibold rounded-full hover:bg-zinc-800 transition-colors flex items-center gap-2">
-                      Share on Feed <ArrowUpRight className="w-3.5 h-3.5" />
-                    </button>
-                  </Link>
+                  <button
+                    onClick={shareToFeed}
+                    disabled={sharing || shared}
+                    className="h-10 px-5 bg-zinc-900 text-white text-[13px] font-semibold rounded-full hover:bg-zinc-800 disabled:opacity-60 transition-colors flex items-center gap-2"
+                  >
+                    {shared ? (
+                      <><Check className="w-3.5 h-3.5" /> Posted!</>
+                    ) : sharing ? (
+                      <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Posting…</>
+                    ) : (
+                      <><Share2 className="w-3.5 h-3.5" /> Share on Feed</>
+                    )}
+                  </button>
                 </div>
               </div>
             </motion.div>
