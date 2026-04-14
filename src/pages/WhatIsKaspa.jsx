@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
   ArrowLeft, ExternalLink, Zap, Shield, Globe, Layers,
-  TrendingUp, Clock, Users, Cpu, ChevronRight, Loader2
+  TrendingUp, Clock, Users, Cpu, ChevronRight, Loader2, FlaskConical
 } from "lucide-react";
 
 const FEATURES = [
@@ -29,10 +29,13 @@ export default function WhatIsKaspaPage() {
   const [kasData, setKasData] = useState({ price: null, change24h: null, loading: true });
   const [news, setNews] = useState([]);
   const [loadingNews, setLoadingNews] = useState(true);
+  const [rdUpdates, setRdUpdates] = useState([]);
+  const [loadingRd, setLoadingRd] = useState(true);
 
   useEffect(() => {
     loadKasPrice();
     loadKaspaNews();
+    loadCoreRD();
   }, []);
 
   const loadKasPrice = async () => {
@@ -90,6 +93,60 @@ export default function WhatIsKaspaPage() {
       }
     } catch { }
     setLoadingNews(false);
+  };
+
+  const loadCoreRD = async () => {
+    const cacheKey = 'kaspa_core_rd';
+    const cacheDate = 'kaspa_core_rd_date';
+    const today = new Date().toDateString();
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      const cachedDay = localStorage.getItem(cacheDate);
+      if (cached && cachedDay === today) {
+        setRdUpdates(JSON.parse(cached));
+        setLoadingRd(false);
+        return;
+      }
+      const res = await base44.integrations.Core.InvokeLLM({
+        prompt: `Search kaspa.news specifically for the latest Kaspa CORE R&D and protocol development updates. Focus exclusively on:
+- Rust node rewrite progress (Rusty Kaspa / kaspad-rust)
+- GHOSTDAG and DAGKnight protocol research & improvements
+- Consensus layer changes, BPS (blocks per second) upgrades
+- Pruning, archival node, and data layer improvements
+- Smart contract / scripting layer development
+- Core developer updates, GitHub commits, technical blog posts
+- Network performance benchmarks and stress tests
+- Any GIP (Governance Improvement Proposals) or protocol-level changes
+
+Return 6 real, verifiable R&D updates from kaspa.news or official Kaspa developer channels. Be highly technical and factual. Include commit references or PR numbers if available.`,
+        add_context_from_internet: true,
+        model: 'gemini_3_flash',
+        response_json_schema: {
+          type: "object",
+          properties: {
+            updates: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  summary: { type: "string" },
+                  source: { type: "string" },
+                  date: { type: "string" },
+                  category: { type: "string" }
+                }
+              }
+            }
+          }
+        }
+      });
+      if (res?.updates?.length) {
+        setRdUpdates(res.updates);
+        localStorage.setItem(cacheKey, JSON.stringify(res.updates));
+        localStorage.setItem(cacheDate, today);
+      }
+    } catch { }
+    setLoadingRd(false);
   };
 
   return (
@@ -214,6 +271,47 @@ export default function WhatIsKaspaPage() {
               ))}
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Core R&D Updates */}
+      <section className="py-20 sm:py-28 px-5 bg-gradient-to-b from-violet-50 to-white">
+        <div className="max-w-5xl mx-auto">
+          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-14">
+            <div className="inline-flex items-center gap-2 bg-violet-100 text-violet-700 px-4 py-1.5 rounded-full text-[11px] font-bold tracking-wide uppercase mb-4">
+              <FlaskConical className="w-3.5 h-3.5" /> Agent-Scraped from kaspa.news
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-[900] tracking-tight">Core R&D Updates</h2>
+            <p className="text-zinc-400 text-sm mt-2 max-w-xl mx-auto">Latest protocol development, Rust node progress, GHOSTDAG research, and consensus improvements — fetched daily.</p>
+          </motion.div>
+
+          {loadingRd ? (
+            <div className="text-center py-12 text-zinc-400 text-sm">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+              Scanning kaspa.news for R&D updates…
+            </div>
+          ) : rdUpdates.length > 0 ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {rdUpdates.map((item, i) => (
+                <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.06 }}
+                  className="bg-white rounded-2xl p-5 ring-1 ring-violet-200/60 hover:ring-violet-300 hover:shadow-xl transition-all duration-300">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-[10px] font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-md">{item.category || 'R&D'}</span>
+                    {item.date && <span className="text-[10px] text-zinc-400">{item.date}</span>}
+                  </div>
+                  <h3 className="text-sm font-bold text-zinc-900 mb-2 line-clamp-2">{item.title}</h3>
+                  <p className="text-[12px] text-zinc-500 leading-relaxed line-clamp-3">{item.summary}</p>
+                  {item.source && (
+                    <div className="mt-3 pt-2 border-t border-violet-100 text-[10px] text-zinc-400">
+                      Source: {item.source}
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-zinc-400 text-sm">No R&D updates available right now</div>
+          )}
         </div>
       </section>
 
