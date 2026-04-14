@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
   CheckCircle2, ExternalLink, ArrowUpRight,
-  ChevronRight, ChevronDown, Monitor
+  ChevronRight, ChevronDown, Monitor, Upload, X
 } from "lucide-react";
 
 import HeroHeader from "@/components/tttv2/HeroHeader";
@@ -75,8 +75,37 @@ export default function TTTV2Page() {
   const [kaspaUpdates, setKaspaUpdates] = useState([]);
   const [kasData, setKasData] = useState({ price: null, change24h: null, loading: true });
   const [embeddedSite, setEmbeddedSite] = useState(null);
+  const [heroVideoUrl, setHeroVideoUrl] = useState(() => localStorage.getItem("tttv2_hero_video") || "");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showVideoUpload, setShowVideoUpload] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
 
-  useEffect(() => { loadContent(); loadKasPrice(); loadDailyKaspaUpdates(); }, []);
+  useEffect(() => { loadContent(); loadKasPrice(); loadDailyKaspaUpdates(); checkAdmin(); }, []);
+
+  const checkAdmin = async () => {
+    try {
+      const user = await base44.auth.me();
+      setIsAdmin(user?.role === "admin");
+    } catch {}
+  };
+
+  const handleVideoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingVideo(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setHeroVideoUrl(file_url);
+      localStorage.setItem("tttv2_hero_video", file_url);
+    } catch {}
+    setUploadingVideo(false);
+    setShowVideoUpload(false);
+  };
+
+  const removeHeroVideo = () => {
+    setHeroVideoUrl("");
+    localStorage.removeItem("tttv2_hero_video");
+  };
 
   const loadContent = async () => {
     try {
@@ -170,8 +199,35 @@ export default function TTTV2Page() {
       {/* ── original hero ── */}
       <section className="relative py-20 sm:py-28 px-5 text-center overflow-hidden">
         <div className="absolute inset-0">
+          {/* Background image base layer */}
           <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/20b6a8247_generated_image.png" alt="" className="w-full h-full object-cover" />
+          {/* Video overlay — blended with opacity */}
+          {heroVideoUrl && (
+            <video
+              src={heroVideoUrl}
+              autoPlay loop muted playsInline
+              className="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-screen"
+            />
+          )}
           <div className="absolute inset-0 bg-black/30" />
+          {/* Admin video controls */}
+          {isAdmin && (
+            <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
+              {heroVideoUrl && (
+                <button onClick={removeHeroVideo} className="w-8 h-8 bg-black/60 hover:bg-red-600/80 backdrop-blur rounded-full flex items-center justify-center text-white transition-colors" title="Remove video">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+              <label className="w-8 h-8 bg-black/60 hover:bg-white/20 backdrop-blur rounded-full flex items-center justify-center text-white cursor-pointer transition-colors" title="Upload hero video">
+                {uploadingVideo ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Upload className="w-4 h-4" />
+                )}
+                <input type="file" accept="video/*" onChange={handleVideoUpload} className="hidden" />
+              </label>
+            </div>
+          )}
         </div>
         <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1, ease: [.22,1,.36,1] }} className="relative max-w-3xl mx-auto">
           <p className="text-[13px] font-semibold text-cyan-400 tracking-wide uppercase mb-4">Introducing TTT 2.0</p>
