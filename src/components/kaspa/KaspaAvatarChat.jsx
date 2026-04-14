@@ -59,6 +59,9 @@ export default function KaspaAvatarChat() {
   const [responseSpeed, setResponseSpeed] = useState(() => {
     try { return localStorage.getItem("kai_speed") || "fast"; } catch { return "fast"; }
   }); // "fast" = short answers, "thinking" = detailed/long answers
+  const [typingIndex, setTypingIndex] = useState(-1); // index of message being typed, -1 = none
+  const [typingText, setTypingText] = useState("");
+  const typingRef = useRef(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -117,7 +120,7 @@ export default function KaspaAvatarChat() {
     if (isOpen && messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, isOpen]);
+  }, [messages, isOpen, typingText]);
 
   useEffect(() => {
     if (isOpen && inputRef.current) {
@@ -128,6 +131,35 @@ export default function KaspaAvatarChat() {
   const isImageRequest = (msg) => IMAGE_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
   const isFeedRequest = (msg) => FEED_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
   const isUserPostRequest = (msg) => USER_POST_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
+
+  // Typewriter effect - animate typing for the current typing message
+  useEffect(() => {
+    if (typingIndex < 0 || typingIndex >= messages.length) return;
+    const fullText = messages[typingIndex].content;
+    if (typingText.length >= fullText.length) {
+      // Done typing
+      setTypingIndex(-1);
+      setTypingText("");
+      return;
+    }
+    // Type 2-3 chars at a time for speed
+    const charsPerTick = Math.random() > 0.3 ? 2 : 3;
+    typingRef.current = setTimeout(() => {
+      setTypingText(fullText.slice(0, typingText.length + charsPerTick));
+    }, 18);
+    return () => clearTimeout(typingRef.current);
+  }, [typingIndex, typingText, messages]);
+
+  const addAssistantMessage = (content) => {
+    setMessages(prev => {
+      const newMessages = [...prev, { role: "assistant", content }];
+      if (isFast) {
+        setTypingIndex(newMessages.length - 1);
+        setTypingText("");
+      }
+      return newMessages;
+    });
+  };
 
   const isFast = responseSpeed === "fast";
   const speedInstruction = isFast
@@ -162,9 +194,11 @@ export default function KaspaAvatarChat() {
           add_context_from_internet: !isFast,
           model: isFast ? 'gemini_3_flash' : 'gemini_3_flash',
         });
-        setMessages(prev => [...prev.filter(m => m.role !== 'action'), { role: "assistant", content: analysis }]);
+        setMessages(prev => prev.filter(m => m.role !== 'action'));
+        addAssistantMessage(analysis);
       } catch {
-        setMessages(prev => [...prev.filter(m => m.role !== 'action'), { role: "assistant", content: "Couldn't analyze posts right now. Try again! 🙏" }]);
+        setMessages(prev => prev.filter(m => m.role !== 'action'));
+        addAssistantMessage("Couldn't analyze posts right now. Try again! 🙏");
       }
       setIsLoading(false);
       return;
@@ -181,9 +215,11 @@ export default function KaspaAvatarChat() {
           add_context_from_internet: !isFast,
           model: 'gemini_3_flash',
         });
-        setMessages(prev => [...prev.filter(m => m.role !== 'action'), { role: "assistant", content: summary }]);
+        setMessages(prev => prev.filter(m => m.role !== 'action'));
+        addAssistantMessage(summary);
       } catch {
-        setMessages(prev => [...prev.filter(m => m.role !== 'action'), { role: "assistant", content: "Couldn't load the feed right now. Try again! 🙏" }]);
+        setMessages(prev => prev.filter(m => m.role !== 'action'));
+        addAssistantMessage("Couldn't load the feed right now. Try again! 🙏");
       }
       setIsLoading(false);
       return;
@@ -261,9 +297,9 @@ Respond as KAI:${speedInstruction}`;
         add_context_from_internet: !isFast,
         model: "gemini_3_flash",
       });
-      setMessages(prev => [...prev, { role: "assistant", content: response }]);
+      addAssistantMessage(response);
     } catch {
-      setMessages(prev => [...prev, { role: "assistant", content: "Sorry, something went wrong. Try again! 🙏" }]);
+      addAssistantMessage("Sorry, something went wrong. Try again! 🙏");
     } finally {
       setIsLoading(false);
     }
@@ -374,6 +410,7 @@ Respond as KAI:${speedInstruction}`;
                     const next = kaiMode === "kai" ? "classic" : "kai";
                     setKaiMode(next);
                     setIsLoading(false);
+                    setTypingIndex(-1); setTypingText("");
                     setMessages([{ role: "assistant", content: next === "classic"
                       ? "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything — I have internet access and know every feature of the platform."
                       : "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem."
@@ -402,7 +439,7 @@ Respond as KAI:${speedInstruction}`;
                   <Minus className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  onClick={() => { setIsOpen(false); setShowSettings(false); setIsLoading(false); setMessages([{ role: "assistant", content: kaiMode === "classic" ? "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything." : "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem." }]); }}
+                  onClick={() => { setIsOpen(false); setShowSettings(false); setIsLoading(false); setTypingIndex(-1); setTypingText(""); setMessages([{ role: "assistant", content: kaiMode === "classic" ? "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything." : "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem." }]); }}
                   className="w-7 h-7 rounded-full flex items-center justify-center text-white/40 hover:text-red-400 transition-colors hover:bg-white/10"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -507,7 +544,8 @@ Respond as KAI:${speedInstruction}`;
                         borderBottomLeftRadius: "6px",
                       }}
                     >
-                      {msg.content}
+                      {typingIndex === i ? (typingText || "") : msg.content}
+                      {typingIndex === i && <span className="inline-block w-[2px] h-[14px] bg-cyan-400 ml-0.5 animate-pulse align-middle" />}
                     </div>
                   )}
                 </div>
