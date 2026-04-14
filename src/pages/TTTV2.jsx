@@ -357,17 +357,45 @@ export default function TTTV2Page() {
 
             <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
               {[
-                { label: "Buy KAS", url: "https://defi.kaspa.com/swap", color: "from-cyan-400 via-cyan-500 to-blue-600", shadow: "shadow-cyan-500/30" },
-                { label: "Buy PACMAN", url: "https://kaspa.com/tokens/marketplace/token/PACMAN", color: "from-yellow-400 via-amber-500 to-orange-600", shadow: "shadow-amber-500/30" },
-                { label: "Buy BMT", url: "https://defi.kaspa.com/swap", color: "from-purple-400 via-purple-500 to-violet-600", shadow: "shadow-purple-500/30" },
-                { label: "Buy KMI", url: "https://pump.fun/coin/5FVV1jCfJkUNAF55oXjxyQaZzr6X94Vkp9wvzdu4pump", color: "from-emerald-400 via-green-500 to-teal-600", shadow: "shadow-emerald-500/30" },
+                { label: "Buy KAS", url: "https://www.topperpay.com", accent: "border-cyan-500/40 text-cyan-400 hover:border-cyan-400/60 hover:shadow-cyan-500/20" },
+                { label: "Buy PACMAN", url: "https://kaspa.com/tokens/marketplace/token/PACMAN", accent: "border-amber-500/40 text-amber-400 hover:border-amber-400/60 hover:shadow-amber-500/20" },
+                { label: "Buy BMT", url: "https://defi.kaspa.com/swap", accent: "border-purple-500/40 text-purple-400 hover:border-purple-400/60 hover:shadow-purple-500/20" },
+                { label: "Buy KMI", url: "https://pump.fun/coin/5FVV1jCfJkUNAF55oXjxyQaZzr6X94Vkp9wvzdu4pump", accent: "border-emerald-500/40 text-emerald-400 hover:border-emerald-400/60 hover:shadow-emerald-500/20" },
               ].map((token) => (
                 <a key={token.label} href={token.url} target="_blank" rel="noopener noreferrer"
-                  className={`inline-flex items-center gap-2 text-[12px] font-bold text-white bg-gradient-to-br ${token.color} px-5 py-2 rounded-2xl hover:brightness-110 hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg ${token.shadow} ring-1 ring-white/20`}>
+                  className={`inline-flex items-center gap-2 text-[12px] font-bold bg-black/80 backdrop-blur-sm px-5 py-2.5 rounded-2xl border hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg hover:shadow-xl ${token.accent}`}>
                   {token.label}
-                  <ExternalLink className="w-3 h-3 opacity-70" />
+                  <ExternalLink className="w-3 h-3 opacity-50" />
                 </a>
               ))}
+            </div>
+
+            {/* Why Buy Kaspa */}
+            <div className="mt-6 max-w-3xl mx-auto">
+              <button
+                onClick={() => document.getElementById('why-kaspa')?.classList.toggle('hidden')}
+                className="text-[11px] font-semibold text-zinc-500 hover:text-cyan-400 transition-colors cursor-pointer flex items-center gap-1 mx-auto"
+              >
+                Why buy Kaspa? <ChevronDown className="w-3 h-3" />
+              </button>
+              <div id="why-kaspa" className="hidden mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                <div className="bg-white/5 rounded-xl p-3 ring-1 ring-white/10">
+                  <div className="text-[18px] font-[900] text-cyan-400">10 BPS</div>
+                  <div className="text-[10px] text-zinc-500 mt-1">Fastest PoW chain — 10 blocks per second, live on mainnet</div>
+                </div>
+                <div className="bg-white/5 rounded-xl p-3 ring-1 ring-white/10">
+                  <div className="text-[18px] font-[900] text-emerald-400">Fair</div>
+                  <div className="text-[10px] text-zinc-500 mt-1">Zero premine, zero ICO, zero VC — 100% community-driven</div>
+                </div>
+                <div className="bg-white/5 rounded-xl p-3 ring-1 ring-white/10">
+                  <div className="text-[18px] font-[900] text-violet-400">blockDAG</div>
+                  <div className="text-[10px] text-zinc-500 mt-1">Parallel blocks — no orphans, no wasted work, pure throughput</div>
+                </div>
+                <div className="bg-white/5 rounded-xl p-3 ring-1 ring-white/10">
+                  <div className="text-[18px] font-[900] text-amber-400">Growing</div>
+                  <div className="text-[10px] text-zinc-500 mt-1">KRC-20 tokens, smart contracts coming, DeFi ecosystem expanding</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
