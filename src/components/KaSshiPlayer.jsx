@@ -51,15 +51,19 @@ export default function KaSshiPlayer() {
     });
   }, []);
 
-  // Auto-activate when leaving inline page
+  // Auto-activate when leaving inline page (remove !active gate so it always fires)
   useEffect(() => {
     const prevPath = prevPathRef.current;
     prevPathRef.current = location.pathname;
     const wasInline = prevPath === '/' || prevPath === '/TTTV2';
     const hasVisited = localStorage.getItem(KASSHI_INLINE_KEY) === 'true';
-    if (wasInline && !isInlinePage && hasVisited && !active) {
-      setKaSshiGlobal(true);
-      setActive(true);
+    if (wasInline && !isInlinePage && hasVisited) {
+      if (!active) {
+        setKaSshiGlobal(true);
+        setActive(true);
+      }
+      // Always ensure minimized is false so the player is visible on transition
+      setMinimized(false);
     }
   }, [location.pathname]);
 
@@ -146,11 +150,14 @@ export default function KaSshiPlayer() {
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
-        {/* ── Minimized pill ── always rendered, visibility toggled */}
+        {/* ── Minimized pill ── always rendered, visibility toggled via position */}
         <div
           className="cursor-grab active:cursor-grabbing"
           style={{
-            display: minimized ? 'block' : 'none',
+            position: minimized ? 'relative' : 'absolute',
+            left: minimized ? 0 : -9999,
+            top: minimized ? 0 : -9999,
+            pointerEvents: minimized ? 'auto' : 'none',
           }}
         >
           <div className="relative group">
@@ -185,13 +192,17 @@ export default function KaSshiPlayer() {
           </div>
         </div>
 
-        {/* ── Expanded player shell ── always rendered, visibility toggled */}
+        {/* ── Expanded player shell ── always rendered, NEVER display:none (kills audio) */}
         <div
-          className="relative group"
+          className="group"
           style={{
             width: 350,
-            height: 460,
-            display: minimized ? 'none' : 'block',
+            height: minimized ? 0 : 460,
+            overflow: minimized ? 'hidden' : 'visible',
+            position: minimized ? 'absolute' : 'relative',
+            left: minimized ? -9999 : 0,
+            top: minimized ? -9999 : 0,
+            pointerEvents: minimized ? 'none' : 'auto',
           }}
         >
           <div
