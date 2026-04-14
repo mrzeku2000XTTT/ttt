@@ -27,7 +27,6 @@ export default function KaspaAvatarChat() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [bubbleText, setBubbleText] = useState(KAI_FACTS[0]);
-  const [showBubble, setShowBubble] = useState(true);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -108,40 +107,29 @@ Respond as KAI:`,
             exit={{ opacity: 0, scale: 0.8 }}
             className="fixed z-[80] bottom-6 right-4 flex items-end gap-2"
           >
-            {/* Speech bubble */}
-            <AnimatePresence>
-              {showBubble && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8, x: 10 }}
-                  animate={{ opacity: 1, scale: 1, x: 0 }}
-                  exit={{ opacity: 0, scale: 0.8, x: 10 }}
-                  transition={{ duration: 0.3 }}
-                  className="relative mb-2 max-w-[180px]"
-                >
-                  <div
-                    className="px-3 py-2 rounded-2xl rounded-br-sm text-[11px] font-medium leading-snug"
-                    style={{
-                      background: "rgba(0,0,0,0.85)",
-                      color: "rgba(255,255,255,0.9)",
-                      backdropFilter: "blur(20px)",
-                      border: "1px solid rgba(6,182,212,0.25)",
-                      boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
-                    }}
-                  >
-                    {bubbleText}
-                  </div>
-                  {/* Triangle pointer */}
-                  <div
-                    className="absolute -right-1 bottom-1 w-0 h-0"
-                    style={{
-                      borderLeft: "6px solid rgba(0,0,0,0.85)",
-                      borderTop: "4px solid transparent",
-                      borderBottom: "4px solid transparent",
-                    }}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* Speech bubble — no animation, just text swap */}
+            <div className="relative mb-2 max-w-[180px]">
+              <div
+                className="px-3 py-2 rounded-2xl rounded-br-sm text-[11px] font-medium leading-snug"
+                style={{
+                  background: "rgba(0,0,0,0.85)",
+                  color: "rgba(255,255,255,0.9)",
+                  backdropFilter: "blur(20px)",
+                  border: "1px solid rgba(6,182,212,0.25)",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
+                }}
+              >
+                {bubbleText}
+              </div>
+              <div
+                className="absolute -right-1 bottom-1 w-0 h-0"
+                style={{
+                  borderLeft: "6px solid rgba(0,0,0,0.85)",
+                  borderTop: "4px solid transparent",
+                  borderBottom: "4px solid transparent",
+                }}
+              />
+            </div>
 
             {/* Avatar button */}
             <motion.button
