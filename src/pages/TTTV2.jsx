@@ -76,7 +76,8 @@ export default function TTTV2Page() {
   const [kaspaUpdates, setKaspaUpdates] = useState([]);
   const [kasData, setKasData] = useState({ price: null, change24h: null, loading: true });
   const [embeddedSite, setEmbeddedSite] = useState(null);
-  const [heroVideoUrl, setHeroVideoUrl] = useState("");
+  const DEFAULT_HERO_VIDEO = "https://base44.app/api/apps/6901295fa9bcfaa0f5ba2c2a/files/mp/public/6901295fa9bcfaa0f5ba2c2a/603409cb0_animation1.mp4";
+  const [heroVideoUrl, setHeroVideoUrl] = useState(DEFAULT_HERO_VIDEO);
   const [heroMuted, setHeroMuted] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showVideoUpload, setShowVideoUpload] = useState(false);
@@ -97,14 +98,9 @@ export default function TTTV2Page() {
       const configs = await base44.entities.KAIConfig.filter({ config_key: "hero_video_url" });
       if (configs.length > 0 && configs[0].config_value) {
         setHeroVideoUrl(configs[0].config_value);
-      } else {
-        // Fallback: check localStorage for admin-set video and persist it
-        const local = localStorage.getItem("tttv2_hero_video");
-        if (local) setHeroVideoUrl(local);
       }
     } catch {
-      const local = localStorage.getItem("tttv2_hero_video");
-      if (local) setHeroVideoUrl(local);
+      // Default already set in state
     }
   };
 
