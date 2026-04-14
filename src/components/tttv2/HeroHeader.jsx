@@ -60,50 +60,48 @@ const FEATURED_APPS = [
   },
 ];
 
-const sizeMap = {
-  small: "w-14 h-14 sm:w-16 sm:h-16 rounded-[16px]",
-  medium: "w-18 h-18 sm:w-20 sm:h-20 rounded-[20px]",
-  large: "w-22 h-22 sm:w-24 sm:h-24 rounded-[22px]",
-};
-
 const sizePixels = {
-  small: { width: 56, height: 56 },
-  medium: { width: 72, height: 72 },
-  large: { width: 88, height: 88 },
+  small: { width: 56, height: 56, radius: 16 },
+  medium: { width: 72, height: 72, radius: 20 },
+  large: { width: 88, height: 88, radius: 22 },
 };
 
-function AppIcon({ app, index }) {
+function MarqueeIcon({ app }) {
   const s = sizePixels[app.size] || sizePixels.small;
   return (
-    <Link to={app.path}>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.7 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.3 + index * 0.06, type: "spring", stiffness: 260, damping: 20 }}
-        whileHover={{ y: -4, scale: 1.08 }}
-        whileTap={{ scale: 0.95 }}
-        className="flex flex-col items-center gap-1.5 cursor-pointer group"
-      >
+    <Link to={app.path} className="flex-shrink-0">
+      <div className="flex flex-col items-center gap-1.5 cursor-pointer group">
         <div
-          className="shadow-lg group-hover:shadow-xl transition-all duration-300 overflow-hidden flex-shrink-0"
-          style={{
-            width: s.width,
-            height: s.height,
-            borderRadius: app.size === "large" ? 22 : app.size === "medium" ? 20 : 16,
-          }}
+          className="shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300 overflow-hidden flex-shrink-0"
+          style={{ width: s.width, height: s.height, borderRadius: s.radius }}
         >
-          <img
-            src={app.logo}
-            alt={app.name}
-            className="w-full h-full object-cover"
-            draggable={false}
-          />
+          <img src={app.logo} alt={app.name} className="w-full h-full object-cover" draggable={false} />
         </div>
         <span className="text-[11px] font-medium text-zinc-500 group-hover:text-zinc-900 transition-colors truncate max-w-[80px] text-center">
           {app.name}
         </span>
-      </motion.div>
+      </div>
     </Link>
+  );
+}
+
+function ScrollingRow({ apps, direction = "left", speed = 30 }) {
+  const doubled = [...apps, ...apps, ...apps];
+  return (
+    <div className="relative overflow-hidden w-full">
+      {/* Edge fades */}
+      <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-r from-[#F5F5F7] to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-l from-[#F5F5F7] to-transparent z-10 pointer-events-none" />
+      <motion.div
+        className="flex items-end gap-5 sm:gap-6 w-max"
+        animate={{ x: direction === "left" ? ["0%", "-33.333%"] : ["-33.333%", "0%"] }}
+        transition={{ x: { duration: speed, ease: "linear", repeat: Infinity } }}
+      >
+        {doubled.map((app, i) => (
+          <MarqueeIcon key={`${app.name}-${i}`} app={app} />
+        ))}
+      </motion.div>
+    </div>
   );
 }
 
@@ -151,16 +149,15 @@ export default function HeroHeader() {
           80+ apps. One ecosystem. Built on the fastest blockDAG.
         </motion.p>
 
-        {/* App icon grid — mixed sizes */}
+        {/* Animated scrolling app icons — two rows, opposite directions */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.25 }}
-          className="flex flex-wrap items-end justify-center gap-4 sm:gap-5 mb-10"
+          transition={{ duration: 0.8, delay: 0.25 }}
+          className="space-y-4 mb-10 -mx-5"
         >
-          {FEATURED_APPS.map((app, i) => (
-            <AppIcon key={app.name} app={app} index={i} />
-          ))}
+          <ScrollingRow apps={FEATURED_APPS.filter((_, i) => i % 2 === 0)} direction="left" speed={35} />
+          <ScrollingRow apps={FEATURED_APPS.filter((_, i) => i % 2 === 1)} direction="right" speed={40} />
         </motion.div>
 
         {/* CTA */}
