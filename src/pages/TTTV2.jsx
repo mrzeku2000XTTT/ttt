@@ -1,15 +1,18 @@
-import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import React, { useState, useEffect } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
-  CheckCircle2, Zap, Shield, Globe, Users, Layers, Rocket, Star,
-  ChevronDown, ExternalLink, ArrowUpRight, MessageSquare,
-  Sparkles, Play, ChevronRight, TrendingUp, Bot, Gamepad2, Wallet,
-  Lock, Image, Crown
+  CheckCircle2, ChevronDown, ExternalLink, ArrowUpRight,
+  ChevronRight
 } from "lucide-react";
 
-/* ─── data ─── */
+import ProductGrid from "@/components/tttv2/ProductGrid";
+import WhatsNew from "@/components/tttv2/WhatsNew";
+import KaspaExplainer from "@/components/tttv2/KaspaExplainer";
+import CommunityVideos from "@/components/tttv2/CommunityVideos";
+
+/* ─── roadmap data ─── */
 const ROADMAP = [
   { phase: "01", title: "Core Platform", status: "completed", items: ["Community Feed — posts, comments, media", "Kaspa wallet auth (Kasware · Kastle · MetaMask)", "Real-time KAS tipping engine", "Encrypted Notepad & Kaspa stamps", "User profiles & auth system", "App Store — 80+ community apps"] },
   { phase: "02", title: "Identity & Media", status: "completed", items: ["Agent ZK — cryptographic wallet identity", "TTTV media browser & player", "KRC-20 multi-token tipping", "Grokipedia knowledge layer", "@zk AI bot — search · image gen", "Stamped News — blockchain-verified publishing"] },
@@ -18,18 +21,6 @@ const ROADMAP = [
   { phase: "05", title: "Vision", status: "upcoming", items: ["Decentralized app publishing", "ZK-proof identity verification", "DAO treasury management", "Multi-chain bridging", "Agent-to-agent protocol"] },
 ];
 
-const PRODUCTS = [
-  { icon: Users, name: "Feed", desc: "Post, comment, tip & stamp", color: "from-cyan-500 to-blue-500" },
-  { icon: Bot, name: "Agent ZK", desc: "Cryptographic identity", color: "from-violet-500 to-purple-500" },
-  { icon: Gamepad2, name: "StakeDAG", desc: "Prediction markets", color: "from-amber-500 to-orange-500" },
-  { icon: Play, name: "TTTV", desc: "Media browser", color: "from-pink-500 to-rose-500" },
-  { icon: Image, name: "Hikaru", desc: "AI image studio", color: "from-emerald-500 to-teal-500" },
-  { icon: Wallet, name: "Bridge", desc: "Send KAS anywhere", color: "from-blue-500 to-indigo-500" },
-  { icon: Lock, name: "DAGKnight", desc: "Advanced wallet", color: "from-zinc-600 to-zinc-800" },
-  { icon: Crown, name: "App Store", desc: "80+ community apps", color: "from-yellow-500 to-amber-500" },
-];
-
-/* ─── components ─── */
 function PhaseCard({ data, idx }) {
   const done = data.status === "completed";
   const active = data.status === "active";
@@ -40,17 +31,13 @@ function PhaseCard({ data, idx }) {
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.7, delay: idx * 0.1 }}
       className={`relative rounded-[20px] p-6 sm:p-8 transition-all duration-500 ${
-        active
-          ? "bg-white ring-1 ring-cyan-200 shadow-xl shadow-cyan-100/40"
-          : done
-          ? "bg-white/70 ring-1 ring-zinc-200/60"
-          : "bg-zinc-50 ring-1 ring-zinc-200/40"
+        active ? "bg-white ring-1 ring-cyan-200 shadow-xl shadow-cyan-100/40"
+        : done ? "bg-white/70 ring-1 ring-zinc-200/60"
+        : "bg-zinc-50 ring-1 ring-zinc-200/40"
       }`}
     >
       {active && (
-        <span className="absolute -top-3 left-6 px-3 py-1 text-[10px] font-bold tracking-widest bg-black text-white rounded-full">
-          NOW
-        </span>
+        <span className="absolute -top-3 left-6 px-3 py-1 text-[10px] font-bold tracking-widest bg-black text-white rounded-full">NOW</span>
       )}
       <div className="flex items-baseline gap-3 mb-5">
         <span className={`text-4xl font-[900] tracking-tight ${active ? "text-cyan-500" : done ? "text-zinc-300" : "text-zinc-200"}`}>
@@ -78,7 +65,6 @@ function PhaseCard({ data, idx }) {
   );
 }
 
-/* ─── page ─── */
 export default function TTTV2Page() {
   const navigate = useNavigate();
   const { scrollYProgress } = useScroll();
@@ -164,8 +150,9 @@ export default function TTTV2Page() {
         </button>
         <div className="hidden sm:flex items-center gap-6 text-[13px] font-medium text-zinc-500">
           <a href="#products" className="hover:text-zinc-900 transition-colors">Products</a>
+          <a href="#kaspa" className="hover:text-zinc-900 transition-colors">Kaspa</a>
+          <a href="#news" className="hover:text-zinc-900 transition-colors">What's New</a>
           <a href="#roadmap" className="hover:text-zinc-900 transition-colors">Roadmap</a>
-          <a href="#news" className="hover:text-zinc-900 transition-colors">News</a>
         </div>
         <Link to="/Home" className="text-[13px] font-semibold text-white bg-black hover:bg-zinc-800 px-4 py-1.5 rounded-full transition-colors">
           Open TTT
@@ -174,7 +161,6 @@ export default function TTTV2Page() {
 
       {/* ── hero ── */}
       <motion.section style={{ scale: heroScale, opacity: heroOpacity }} className="relative pt-32 pb-24 sm:pt-44 sm:pb-36 px-5 text-center origin-top">
-        {/* ambient glow */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-gradient-radial from-cyan-400/10 via-transparent to-transparent rounded-full blur-3xl" />
         </div>
@@ -246,103 +232,25 @@ export default function TTTV2Page() {
         </div>
       </section>
 
-      {/* ── products grid ── */}
-      <section id="products" className="py-20 sm:py-28 px-5">
-        <div className="max-w-5xl mx-auto">
-          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-14">
-            <p className="text-[13px] font-semibold text-zinc-400 tracking-wide uppercase mb-2">Ecosystem</p>
-            <h2 className="text-3xl sm:text-4xl font-[900] tracking-tight">Everything in one place.</h2>
-          </motion.div>
+      {/* ── Products ── */}
+      <ProductGrid />
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-            {PRODUCTS.map((p, i) => {
-              const Icon = p.icon;
-              return (
-                <motion.div key={p.name} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }} transition={{ delay: i * 0.06 }}
-                  whileHover={{ y: -6, transition: { duration: 0.3 } }}
-                  className="group bg-white rounded-2xl p-5 sm:p-6 ring-1 ring-zinc-200/60 hover:ring-zinc-300 hover:shadow-xl hover:shadow-zinc-200/40 transition-all duration-500 cursor-default">
-                  <div className={`w-10 h-10 rounded-[12px] bg-gradient-to-br ${p.color} flex items-center justify-center mb-4 shadow-lg shadow-zinc-300/30 group-hover:scale-110 transition-transform duration-500`}>
-                    <Icon className="w-5 h-5 text-white" />
-                  </div>
-                  <h3 className="text-sm font-bold text-zinc-900 mb-0.5">{p.name}</h3>
-                  <p className="text-[12px] text-zinc-400 leading-relaxed">{p.desc}</p>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      {/* ── Kaspa Explainer ── */}
+      <KaspaExplainer />
 
-      {/* ── community + kaspa updates ── */}
-      <section id="news" className="py-20 sm:py-28 px-5 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-14">
-            <p className="text-[13px] font-semibold text-zinc-400 tracking-wide uppercase mb-2">Live</p>
-            <h2 className="text-3xl sm:text-4xl font-[900] tracking-tight">From the network.</h2>
-          </motion.div>
+      {/* ── What's New (updates + posts + coming soon) ── */}
+      <WhatsNew kaspaUpdates={kaspaUpdates} posts={posts} />
 
-          <div className="grid md:grid-cols-2 gap-10">
-            {/* Kaspa community updates */}
-            {kaspaUpdates.length > 0 && (
-              <div>
-                <h3 className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-2">
-                  <Sparkles className="w-3.5 h-3.5 text-cyan-500" /> Kaspa Updates
-                </h3>
-                <div className="space-y-3">
-                  {kaspaUpdates.map((u, i) => (
-                    <motion.div key={i} initial={{ opacity: 0, x: -10 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
-                      className="p-4 rounded-xl ring-1 ring-zinc-100 hover:ring-zinc-200 hover:shadow-md transition-all duration-300 bg-zinc-50/50">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-[10px] font-bold text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded-md">{u.tag}</span>
-                      </div>
-                      <p className="text-[13px] font-semibold text-zinc-800 leading-snug line-clamp-2">{u.title}</p>
-                      {u.summary && <p className="text-[11px] text-zinc-400 mt-1 line-clamp-2">{u.summary}</p>}
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            )}
+      {/* ── Community Videos ── */}
+      <CommunityVideos />
 
-            {/* latest user posts */}
-            {posts.length > 0 && (
-              <div>
-                <h3 className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-2">
-                  <MessageSquare className="w-3.5 h-3.5 text-cyan-500" /> Latest Posts
-                </h3>
-                <div className="space-y-3">
-                  {posts.map(p => (
-                    <motion.div key={p.id} initial={{ opacity: 0, x: 10 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
-                      className="p-4 rounded-xl ring-1 ring-zinc-100 hover:ring-zinc-200 hover:shadow-md transition-all duration-300 bg-zinc-50/50">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[12px] font-semibold text-zinc-700">{p.author}</span>
-                        <span className="text-[10px] text-zinc-300">{p.date}</span>
-                      </div>
-                      <p className="text-[12px] text-zinc-500 leading-relaxed line-clamp-2">{p.text}</p>
-                      {(p.tips > 0 || p.likes > 0) && (
-                        <div className="flex items-center gap-3 mt-2 text-[10px] text-zinc-400">
-                          {p.tips > 0 && <span className="text-cyan-600 font-semibold">💰 {p.tips} KAS</span>}
-                          {p.likes > 0 && <span>♥ {p.likes}</span>}
-                        </div>
-                      )}
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* ── roadmap ── */}
+      {/* ── Roadmap ── */}
       <section id="roadmap" className="py-20 sm:py-28 px-5">
         <div className="max-w-5xl mx-auto">
           <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-14">
             <p className="text-[13px] font-semibold text-zinc-400 tracking-wide uppercase mb-2">Progress</p>
             <h2 className="text-3xl sm:text-4xl font-[900] tracking-tight">Built in public.</h2>
           </motion.div>
-
-          {/* timeline */}
           <div className="relative">
             <div className="hidden md:block absolute left-6 top-0 bottom-0 w-px bg-gradient-to-b from-emerald-400/60 via-cyan-400/40 to-zinc-200/30" />
             <div className="space-y-5 md:pl-16">

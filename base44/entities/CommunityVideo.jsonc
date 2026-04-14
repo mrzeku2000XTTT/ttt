@@ -1,0 +1,46 @@
+{
+  "name": "CommunityVideo",
+  "type": "object",
+  "properties": {
+    "youtube_url": {
+      "type": "string",
+      "description": "YouTube video URL"
+    },
+    "video_id": {
+      "type": "string",
+      "description": "Extracted YouTube video ID"
+    },
+    "title": {
+      "type": "string",
+      "description": "Video title"
+    },
+    "added_by_name": {
+      "type": "string",
+      "description": "Username of who added it"
+    },
+    "added_by_wallet": {
+      "type": "string",
+      "description": "Wallet address of who added it"
+    },
+    "section": {
+      "type": "string",
+      "enum": [
+        "kaspa_explainer",
+        "community"
+      ],
+      "default": "community",
+      "description": "Which section this video belongs to"
+    }
+  },
+  "required": [
+    "youtube_url",
+    "video_id",
+    "title"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
+  }
+}
