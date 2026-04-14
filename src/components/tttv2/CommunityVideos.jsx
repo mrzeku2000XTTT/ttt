@@ -29,11 +29,14 @@ export default function CommunityVideos() {
   const [playingId, setPlayingId] = useState(null);
   const [communityNews, setCommunityNews] = useState([]);
   const [loadingNews, setLoadingNews] = useState(true);
+  const [rndNews, setRndNews] = useState([]);
+  const [loadingRnd, setLoadingRnd] = useState(true);
 
   useEffect(() => {
     loadVideos();
     loadUser();
     loadCommunityNews();
+    loadRndNews();
   }, []);
 
   const loadUser = async () => {
@@ -84,6 +87,49 @@ export default function CommunityVideos() {
       }
     } catch { }
     setLoadingNews(false);
+  };
+
+  const loadRndNews = async () => {
+    const cacheKey = 'kaspa_rnd_news_v1';
+    const cacheDate = 'kaspa_rnd_news_v1_date';
+    const today = new Date().toDateString();
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      const cachedDay = localStorage.getItem(cacheDate);
+      if (cached && cachedDay === today) {
+        setRndNews(JSON.parse(cached));
+        setLoadingRnd(false);
+        return;
+      }
+      const res = await base44.integrations.Core.InvokeLLM({
+        prompt: `Go to kaspa.news/rnd and find the latest 6 Kaspa Core R&D updates, developer posts, and protocol research highlights. Focus on: smart contracts (SilverScript/KCC20), DAGKnight consensus, Rusty Kaspa node, Toccata hard fork, KANet, mining improvements, and core developer tweets (Ori Newman, Yonatan Sompolinsky, Hans Moog, etc). Be factual and use real data from kaspa.news/rnd.`,
+        add_context_from_internet: true,
+        model: 'gemini_3_flash',
+        response_json_schema: {
+          type: "object",
+          properties: {
+            updates: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  summary: { type: "string" },
+                  author: { type: "string" },
+                  category: { type: "string" }
+                }
+              }
+            }
+          }
+        }
+      });
+      if (res?.updates?.length) {
+        setRndNews(res.updates);
+        localStorage.setItem(cacheKey, JSON.stringify(res.updates));
+        localStorage.setItem(cacheDate, today);
+      }
+    } catch { }
+    setLoadingRnd(false);
   };
 
   const loadVideos = async () => {
@@ -167,6 +213,44 @@ export default function CommunityVideos() {
               ))}
             </div>
           ) : null}
+        </motion.div>
+
+        {/* Kaspa R&D from kaspa.news/rnd */}
+        <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="mb-16">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <p className="text-[13px] font-semibold text-zinc-400 tracking-wide uppercase mb-2">Core Development</p>
+              <h2 className="text-3xl sm:text-4xl font-[900] tracking-tight">Kaspa R&D</h2>
+            </div>
+            <a href="https://kaspa.news/rnd" target="_blank" rel="noopener noreferrer"
+              className="text-[12px] font-semibold text-cyan-600 hover:text-cyan-700 flex items-center gap-1">
+              kaspa.news/rnd <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+          {loadingRnd ? (
+            <div className="text-center py-8 text-zinc-400 text-sm">
+              <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" /> Loading R&D updates…
+            </div>
+          ) : rndNews.length > 0 ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {rndNews.map((item, i) => (
+                <motion.div key={i} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}
+                  className="bg-white rounded-2xl p-5 ring-1 ring-zinc-200/60 hover:ring-zinc-300 hover:shadow-lg transition-all duration-300">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-6 h-6 rounded-md bg-zinc-900 flex items-center justify-center">
+                      <span className="text-[10px] font-black text-cyan-400">R&D</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded-md">{item.category || 'Research'}</span>
+                  </div>
+                  <h3 className="text-[14px] font-bold text-zinc-900 mb-1.5 line-clamp-2">{item.title}</h3>
+                  <p className="text-[12px] text-zinc-500 line-clamp-3 leading-relaxed">{item.summary}</p>
+                  {item.author && <p className="text-[11px] text-zinc-400 mt-3 font-medium">— {item.author}</p>}
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-zinc-400 text-sm">No R&D updates available</div>
+          )}
         </motion.div>
 
         {/* Videos */}
