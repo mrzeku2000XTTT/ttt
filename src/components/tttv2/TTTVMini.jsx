@@ -167,23 +167,18 @@ export default function TTTVMini() {
               <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }}
                 className="hidden md:block w-56 flex-shrink-0">
                 <div className="relative aspect-video rounded-xl overflow-hidden ring-1 ring-white/10 shadow-lg shadow-black/40">
-                  {sectionVisible ? (
+                  {sectionVisible && (
                     <iframe
-                      src={`https://www.youtube.com/embed/${sideVideos[0].video_id}?autoplay=1&mute=${leftMuted ? 1 : 0}&loop=1&playlist=${sideVideos[0].video_id}&controls=0&showinfo=0&modestbranding=1&rel=0`}
+                      key={`left-${sideVideos[0].video_id}`}
+                      src={`https://www.youtube.com/embed/${sideVideos[0].video_id}?autoplay=1&mute=1&loop=1&playlist=${sideVideos[0].video_id}&controls=0&showinfo=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1`}
                       title={sideVideos[0].title}
-                      className="absolute inset-0 w-full h-full border-0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
-                      allowFullScreen
+                      className="absolute inset-0 w-full h-full border-0 pointer-events-none"
+                      allow="autoplay; encrypted-media"
                     />
-                  ) : (
+                  )}
+                  {!sectionVisible && (
                     <img src={`https://img.youtube.com/vi/${sideVideos[0].video_id}/mqdefault.jpg`} alt={sideVideos[0].title} className="w-full h-full object-cover" />
                   )}
-                  <button
-                    onClick={() => setLeftMuted(prev => !prev)}
-                    className="absolute bottom-2 right-2 z-10 w-7 h-7 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-black/80 transition-all ring-1 ring-white/10"
-                    title={leftMuted ? "Unmute" : "Mute"}>
-                    {leftMuted ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
-                  </button>
                   <div className="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/80 to-transparent pointer-events-none">
                     <p className="text-[10px] text-white font-semibold truncate">{sideVideos[0].title}</p>
                   </div>
@@ -209,23 +204,18 @@ export default function TTTVMini() {
               <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 }}
                 className="hidden md:block w-56 flex-shrink-0">
                 <div className="relative aspect-video rounded-xl overflow-hidden ring-1 ring-white/10 shadow-lg shadow-black/40">
-                  {sectionVisible ? (
+                  {sectionVisible && (
                     <iframe
-                      src={`https://www.youtube.com/embed/${sideVideos[1].video_id}?autoplay=1&mute=${rightMuted ? 1 : 0}&loop=1&playlist=${sideVideos[1].video_id}&controls=0&showinfo=0&modestbranding=1&rel=0`}
+                      key={`right-${sideVideos[1].video_id}`}
+                      src={`https://www.youtube.com/embed/${sideVideos[1].video_id}?autoplay=1&mute=1&loop=1&playlist=${sideVideos[1].video_id}&controls=0&showinfo=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1`}
                       title={sideVideos[1].title}
-                      className="absolute inset-0 w-full h-full border-0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
-                      allowFullScreen
+                      className="absolute inset-0 w-full h-full border-0 pointer-events-none"
+                      allow="autoplay; encrypted-media"
                     />
-                  ) : (
+                  )}
+                  {!sectionVisible && (
                     <img src={`https://img.youtube.com/vi/${sideVideos[1].video_id}/mqdefault.jpg`} alt={sideVideos[1].title} className="w-full h-full object-cover" />
                   )}
-                  <button
-                    onClick={() => setRightMuted(prev => !prev)}
-                    className="absolute bottom-2 right-2 z-10 w-7 h-7 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-black/80 transition-all ring-1 ring-white/10"
-                    title={rightMuted ? "Unmute" : "Mute"}>
-                    {rightMuted ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
-                  </button>
                   <div className="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/80 to-transparent pointer-events-none">
                     <p className="text-[10px] text-white font-semibold truncate">{sideVideos[1].title}</p>
                   </div>
