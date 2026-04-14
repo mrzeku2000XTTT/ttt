@@ -352,6 +352,19 @@ export default function TTTV2Page() {
                   </div>
                 ))}
               </div>
+              <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap mt-4">
+                {[
+                  { label: "Buy KAS", url: "https://www.kaspa.com/buy/kas", color: "from-cyan-500 to-blue-500" },
+                  { label: "Buy PACMAN", url: "https://www.kaspa.com/buy/pacman", color: "from-yellow-500 to-amber-500" },
+                  { label: "Buy BMT", url: "https://www.kaspa.com/buy/bmt", color: "from-purple-500 to-violet-500" },
+                  { label: "Buy KMI", url: "https://www.kaspa.com/buy/kmi", color: "from-emerald-500 to-green-500" },
+                ].map((token) => (
+                  <a key={token.label} href={token.url} target="_blank" rel="noopener noreferrer"
+                    className={`inline-flex items-center gap-1.5 text-[11px] font-bold text-white bg-gradient-to-r ${token.color} px-4 py-1.5 rounded-full hover:opacity-90 hover:scale-105 transition-all shadow-lg`}>
+                    {token.label} <ExternalLink className="w-3 h-3" />
+                  </a>
+                ))}
+              </div>
             </div>
           ) : (
             <div className="text-center text-zinc-500 text-sm py-4">Market data unavailable</div>
