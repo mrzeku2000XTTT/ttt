@@ -4,6 +4,7 @@ import { X, Send, Loader2, Minus, Settings, ImagePlus, FileImage } from "lucide-
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { setKaSshiGlobal, markKaSshiInlineVisited } from "@/components/KaSshiPlayer";
 
 const KAI_THINKING_PHRASES = [
   "Scanning the blockDAG…",
@@ -355,6 +356,19 @@ export default function KaspaAvatarChat() {
     setPendingImages([]);
     setMessages(prev => [...prev, { role: "user", content: userMsg, images: imageUrls.length > 0 ? imageUrls : undefined }]);
     setIsLoading(true);
+
+    // KaSshi / music detection
+    const kasshiKeywords = ['kasshi', 'ka-sshi', 'music', 'play music', 'play some music', 'open music', 'music player', 'listen to music', 'listen'];
+    const isKasshiRequest = kasshiKeywords.some(kw => userMsg.toLowerCase().includes(kw));
+    if (isKasshiRequest) {
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: "🎵 **KaSshi.io** — the TTT music player! Tap below to launch it. Music keeps playing across all pages.",
+        kasshiAction: true,
+      }]);
+      setIsLoading(false);
+      return;
+    }
 
     // "Open X" → instant app link with button
     const openApp = detectOpenApp(userMsg);
@@ -777,6 +791,34 @@ Respond as KAI:${speedInstruction}`;
                       )}
                       {typingIndex === i ? (typingText || "") : msg.content}
                       {typingIndex === i && <span className="inline-block w-[2px] h-[14px] bg-cyan-400 ml-0.5 animate-pulse align-middle" />}
+                      {msg.kasshiAction && (
+                        <div className="mt-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              markKaSshiInlineVisited();
+                              setKaSshiGlobal(true);
+                            }}
+                            className="flex items-center gap-2 px-3.5 py-2 rounded-full text-[11px] font-bold transition-all hover:scale-105"
+                            style={{
+                              background: "linear-gradient(135deg, rgba(168,85,247,0.35), rgba(6,182,212,0.35))",
+                              border: "1px solid rgba(168,85,247,0.5)",
+                              color: "rgba(192,132,252,1)",
+                            }}
+                          >
+                            <span className="flex items-end gap-[2px] h-[12px]">
+                              {[8,12,6,10].map((h,i) => (
+                                <span key={i} className="inline-block w-[2.5px] rounded-sm" style={{
+                                  height: h, background: 'linear-gradient(to top, #a855f7, #06b6d4)',
+                                  animation: `kasshi-eq-chat 0.8s ease-in-out ${i*0.15}s infinite alternate`,
+                                }} />
+                              ))}
+                            </span>
+                            Open KaSshi Player
+                          </button>
+                          <style>{`@keyframes kasshi-eq-chat { 0% { transform: scaleY(0.3); } 100% { transform: scaleY(1); } }`}</style>
+                        </div>
+                      )}
                       {msg.links && msg.links.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mt-2">
                           {msg.links.map((link, li) => (
