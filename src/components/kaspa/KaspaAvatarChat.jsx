@@ -129,7 +129,8 @@ export default function KaspaAvatarChat() {
   const isFeedRequest = (msg) => FEED_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
   const isUserPostRequest = (msg) => USER_POST_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
 
-  const speedInstruction = responseSpeed === "fast"
+  const isFast = responseSpeed === "fast";
+  const speedInstruction = isFast
     ? "\n\nRESPONSE LENGTH: Keep your response VERY SHORT — 1-3 sentences max. Be direct and punchy. No fluff."
     : "\n\nRESPONSE LENGTH: Give a thorough, detailed response. Explain deeply, provide examples, context, and analysis. Take your time.";
 
@@ -152,14 +153,14 @@ export default function KaspaAvatarChat() {
 
     // User post analysis
     if (isUserPostRequest(userMsg)) {
-      setMessages(prev => [...prev, { role: "action", content: "Analyzing user posts... 🔍" }]);
+      if (!isFast) setMessages(prev => [...prev, { role: "action", content: "Analyzing user posts... 🔍" }]);
       try {
-        const posts = await base44.entities.Post.list('-created_date', 50);
-        const postData = posts.map(p => `[${p.author_name}] ${p.content?.slice(0, 150)}${p.media_files?.length ? ' [has media]' : ''} (${p.likes || 0} likes, ${p.comments_count || 0} comments)`).join('\n');
+        const posts = await base44.entities.Post.list('-created_date', isFast ? 20 : 50);
+        const postData = posts.map(p => `[${p.author_name}] ${p.content?.slice(0, isFast ? 80 : 150)}${p.media_files?.length ? ' [has media]' : ''} (${p.likes || 0} likes, ${p.comments_count || 0} comments)`).join('\n');
         const analysis = await base44.integrations.Core.InvokeLLM({
-          prompt: `You are KAI, the AI assistant of TTT — the Kaspa Super-App (NOT "Trust The Tech"). TTT is a community platform with Feed, Agent ZK, TTTV, Bridge, StakeDAG, and 80+ apps. Here are the 50 most recent posts from the TTT feed:\n\n${postData}\n\nUser question: "${userMsg}"\n\nAnswer the user's question about specific users or posting activity. Be specific, cite usernames and what they posted.${speedInstruction}`,
-          add_context_from_internet: true,
-          model: 'gemini_3_flash',
+          prompt: `You are KAI, the AI assistant of TTT — the Kaspa Super-App (NOT "Trust The Tech"). TTT is a community platform with Feed, Agent ZK, TTTV, Bridge, StakeDAG, and 80+ apps. Here are recent posts from the TTT feed:\n\n${postData}\n\nUser question: "${userMsg}"\n\nAnswer the user's question about specific users or posting activity. Be specific, cite usernames and what they posted.${speedInstruction}`,
+          add_context_from_internet: !isFast,
+          model: isFast ? 'gemini_3_flash' : 'gemini_3_flash',
         });
         setMessages(prev => [...prev.filter(m => m.role !== 'action'), { role: "assistant", content: analysis }]);
       } catch {
@@ -171,13 +172,13 @@ export default function KaspaAvatarChat() {
 
     // Feed summary
     if (isFeedRequest(userMsg)) {
-      setMessages(prev => [...prev, { role: "action", content: "Checking TTT Feed... 📡" }]);
+      if (!isFast) setMessages(prev => [...prev, { role: "action", content: "Checking TTT Feed... 📡" }]);
       try {
-        const posts = await base44.entities.Post.list('-created_date', 20);
-        const feedSummary = posts.map(p => `- ${p.author_name}: ${p.content?.slice(0, 120)}`).join('\n');
+        const posts = await base44.entities.Post.list('-created_date', isFast ? 10 : 20);
+        const feedSummary = posts.map(p => `- ${p.author_name}: ${p.content?.slice(0, isFast ? 60 : 120)}`).join('\n');
         const summary = await base44.integrations.Core.InvokeLLM({
-          prompt: `You are KAI, the AI assistant of TTT — the Kaspa Super-App (NOT "Trust The Tech"). TTT is a community platform with Feed, Agent ZK, TTTV, Bridge, StakeDAG, and 80+ apps. Here are the 20 most recent posts from the TTT feed:\n\n${feedSummary}\n\nProvide a summary of what the community is talking about. Highlight key themes, hot topics, and any interesting discussions.${speedInstruction}`,
-          add_context_from_internet: true,
+          prompt: `You are KAI, the AI assistant of TTT — the Kaspa Super-App (NOT "Trust The Tech"). TTT is a community platform with Feed, Agent ZK, TTTV, Bridge, StakeDAG, and 80+ apps. Here are recent posts from the TTT feed:\n\n${feedSummary}\n\nProvide a summary of what the community is talking about.${speedInstruction}`,
+          add_context_from_internet: !isFast,
           model: 'gemini_3_flash',
         });
         setMessages(prev => [...prev.filter(m => m.role !== 'action'), { role: "assistant", content: summary }]);
@@ -191,13 +192,16 @@ export default function KaspaAvatarChat() {
     // General message with feed context
     try {
       let feedContext = '';
-      try {
-        const recentPosts = await base44.entities.Post.list('-created_date', 15);
-        if (recentPosts.length > 0) {
-          feedContext = `\n\nRecent TTT Feed activity (for context):\n${recentPosts.map(p => `- ${p.author_name}: ${p.content?.slice(0, 80)}`).join('\n')}`;
-        }
-      } catch {}
-      const context = messages.slice(-8).map(m => `${m.role === "user" ? "User" : "KAI"}: ${m.content}`).join("\n");
+      // Skip feed fetch in fast mode for instant responses
+      if (!isFast) {
+        try {
+          const recentPosts = await base44.entities.Post.list('-created_date', 15);
+          if (recentPosts.length > 0) {
+            feedContext = `\n\nRecent TTT Feed activity (for context):\n${recentPosts.map(p => `- ${p.author_name}: ${p.content?.slice(0, 80)}`).join('\n')}`;
+          }
+        } catch {}
+      }
+      const context = messages.slice(isFast ? -4 : -8).map(m => `${m.role === "user" ? "User" : "KAI"}: ${m.content}`).join("\n");
 
       const classicPrompt = `You are Kai, a helpful AI assistant embedded in TTT (the Kaspa Super-App — NOT "Trust The Tech"). TTT is a massive community-built platform on Kaspa with 80+ apps, a social feed, AI agents, prediction markets, wallets, and more. The tagline is "Unchain Humanity."
 
@@ -254,7 +258,7 @@ Respond as KAI:${speedInstruction}`;
 
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: kaiMode === "classic" ? classicPrompt : kaiPrompt,
-        add_context_from_internet: true,
+        add_context_from_internet: !isFast,
         model: "gemini_3_flash",
       });
       setMessages(prev => [...prev, { role: "assistant", content: response }]);
