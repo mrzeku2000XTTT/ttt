@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Loader2, Minus, Settings } from "lucide-react";
+import { X, Send, Loader2, Minus, Settings, ImagePlus, FileImage } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -197,6 +197,9 @@ export default function KaspaAvatarChat() {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [pendingImages, setPendingImages] = useState([]); // [{url, name}]
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef(null);
   const [bubbleText, setBubbleText] = useState(KAI_FACTS[0]);
   const [showBubble, setShowBubble] = useState(() => {
     try { const v = localStorage.getItem("kai_show_bubble"); return v === null ? true : v === "true"; } catch { return true; }
@@ -323,11 +326,34 @@ export default function KaspaAvatarChat() {
     ? "\n\nRESPONSE LENGTH: Keep your response VERY SHORT — 1-3 sentences max. Be direct and punchy. No fluff."
     : "\n\nRESPONSE LENGTH: Give a thorough, detailed response. Explain deeply, provide examples, context, and analysis. Take your time.";
 
+  const handleImageUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploadingImage(true);
+    for (const file of files) {
+      try {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        setPendingImages(prev => [...prev, { url: file_url, name: file.name }]);
+      } catch (err) {
+        console.error("Upload failed:", err);
+      }
+    }
+    setUploadingImage(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removePendingImage = (idx) => {
+    setPendingImages(prev => prev.filter((_, i) => i !== idx));
+  };
+
   const sendMessage = async () => {
-    if (!input.trim() || isLoading) return;
-    const userMsg = input.trim();
+    if ((!input.trim() && pendingImages.length === 0) || isLoading) return;
+    const userMsg = input.trim() || (pendingImages.length > 0 ? "Analyze this image" : "");
+    const imageUrls = pendingImages.map(img => img.url);
+    const imageNames = pendingImages.map(img => img.name);
     setInput("");
-    setMessages(prev => [...prev, { role: "user", content: userMsg }]);
+    setPendingImages([]);
+    setMessages(prev => [...prev, { role: "user", content: userMsg, images: imageUrls.length > 0 ? imageUrls : undefined }]);
     setIsLoading(true);
 
     // "Open X" → instant app link with button
@@ -412,6 +438,10 @@ export default function KaspaAvatarChat() {
       }
       const context = messages.slice(isFast ? -4 : -8).map(m => `${m.role === "user" ? "User" : "KAI"}: ${m.content}`).join("\n");
 
+      const imageContext = imageUrls.length > 0
+        ? `\n\nThe user has uploaded ${imageUrls.length} image(s)${imageNames.length ? ` (${imageNames.join(', ')})` : ''}. Analyze the image(s) thoroughly — describe what you see, extract any text, identify objects/charts/documents, and provide useful insights. If it's a chart or data, interpret it. If it's a screenshot, explain what it shows. If it's a document, summarize the content. Share your analysis so all users can learn from it.`
+        : '';
+
       const classicPrompt = `You are Kai, a helpful AI assistant embedded in TTT (the Kaspa Super-App — NOT "Trust The Tech"). TTT is a massive community-built platform on Kaspa. The tagline is "Unchain Humanity."
 
 ${TTT_APP_DOCS}
@@ -438,7 +468,7 @@ You have real-time internet access — ALWAYS use it for Kaspa-related questions
 Conversation so far:
 ${context}
 
-User: ${userMsg}
+User: ${userMsg}${imageContext}
 
 Respond as Kai:${speedInstruction}`;
 
@@ -471,7 +501,7 @@ You have real-time internet access — ALWAYS use it for Kaspa-related questions
 Conversation so far:
 ${context}
 
-User: ${userMsg}
+User: ${userMsg}${imageContext}
 
 Respond as KAI:${speedInstruction}`;
 
@@ -482,11 +512,15 @@ Respond as KAI:${speedInstruction}`;
       const needsInternet = isKaspaQuestion || isSearch || (!isTTTQuestion(userMsg) && !isFast);
       
       const searchPrefix = isSearch ? `The user is performing a web search. Use your real-time internet access to find the most accurate, up-to-date information. Search thoroughly like Google would. Give comprehensive results with facts, sources, and details.\n\n` : '';
-      const response = await base44.integrations.Core.InvokeLLM({
+      const llmParams = {
         prompt: searchPrefix + (kaiMode === "classic" ? classicPrompt : kaiPrompt),
         add_context_from_internet: needsInternet,
         model: "gemini_3_flash",
-      });
+      };
+      if (imageUrls.length > 0) {
+        llmParams.file_urls = imageUrls;
+      }
+      const response = await base44.integrations.Core.InvokeLLM(llmParams);
       addAssistantMessage(response);
     } catch {
       addAssistantMessage("Sorry, something went wrong. Try again! 🙏");
@@ -734,6 +768,13 @@ Respond as KAI:${speedInstruction}`;
                         borderBottomLeftRadius: "6px",
                       }}
                     >
+                      {msg.images && msg.images.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                          {msg.images.map((imgUrl, ii) => (
+                            <img key={ii} src={imgUrl} alt="uploaded" className="w-16 h-16 rounded-lg object-cover ring-1 ring-white/20" />
+                          ))}
+                        </div>
+                      )}
                       {typingIndex === i ? (typingText || "") : msg.content}
                       {typingIndex === i && <span className="inline-block w-[2px] h-[14px] bg-cyan-400 ml-0.5 animate-pulse align-middle" />}
                       {msg.links && msg.links.length > 0 && (
@@ -766,23 +807,57 @@ Respond as KAI:${speedInstruction}`;
 
             {/* Input */}
             <div className="px-3 pb-3 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+              {/* Pending images preview */}
+              {pendingImages.length > 0 && (
+                <div className="flex items-center gap-1.5 px-2 pb-2 overflow-x-auto scrollbar-hide">
+                  {pendingImages.map((img, idx) => (
+                    <div key={idx} className="relative flex-shrink-0">
+                      <img src={img.url} alt={img.name} className="w-12 h-12 rounded-lg object-cover ring-1 ring-cyan-500/40" />
+                      <button
+                        onClick={() => removePendingImage(idx)}
+                        className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center"
+                      >
+                        <X className="w-2.5 h-2.5 text-white" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="flex items-center gap-2 px-3 py-2 rounded-2xl"
                 style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                {/* Image upload button */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingImage}
+                  className="w-7 h-7 rounded-full flex items-center justify-center transition-all flex-shrink-0 hover:bg-white/10"
+                  style={{ color: pendingImages.length > 0 ? "rgba(6,182,212,0.9)" : "rgba(255,255,255,0.4)" }}
+                  title="Upload image"
+                >
+                  {uploadingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImagePlus className="w-3.5 h-3.5" />}
+                </button>
                 <input
                   ref={inputRef}
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-                  placeholder={kaiMode === "classic" ? "Search or ask Kai..." : "Search or ask KAI..."}
+                  placeholder={pendingImages.length > 0 ? "Ask about the image…" : (kaiMode === "classic" ? "Search or ask Kai..." : "Search or ask KAI...")}
                   className="flex-1 bg-transparent text-white/90 outline-none placeholder-white/30"
                   style={{ fontSize: '16px' }}
                 />
                 <button
                   onClick={sendMessage}
-                  disabled={!input.trim() || isLoading}
+                  disabled={(!input.trim() && pendingImages.length === 0) || isLoading}
                   className="w-7 h-7 rounded-full flex items-center justify-center transition-all disabled:opacity-30"
-                  style={{ background: input.trim() && !isLoading ? "rgba(6,182,212,0.4)" : "transparent" }}
+                  style={{ background: (input.trim() || pendingImages.length > 0) && !isLoading ? "rgba(6,182,212,0.4)" : "transparent" }}
                 >
                   <Send className="w-3.5 h-3.5 text-white" />
                 </button>
