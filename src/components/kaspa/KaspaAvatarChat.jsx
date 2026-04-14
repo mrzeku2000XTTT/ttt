@@ -4,6 +4,7 @@ import { X, Send, Loader2, Minus } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const STORAGE_KEY = "kaspa_avatar_video_url";
+const DEFAULT_AVATAR_IMG = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/13e8ec094_image.png";
 
 const KAI_FACTS = [
   "Kaspa processes 10,000+ TPS 🔷",
@@ -144,7 +145,7 @@ Respond as KAI:`,
               {videoUrl ? (
                 <video ref={videoRef} src={videoUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" onLoadedMetadata={e => { e.target.playbackRate = 0.5; }} />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-black"><span className="text-2xl">🔷</span></div>
+                <img src={DEFAULT_AVATAR_IMG} alt="KAI" className="w-full h-full object-cover" />
               )}
             </motion.button>
           </motion.div>
@@ -179,7 +180,7 @@ Respond as KAI:`,
                   {videoUrl ? (
                     <video ref={headerVideoRef} src={videoUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" onLoadedMetadata={e => { e.target.playbackRate = 0.5; }} />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-black"><span className="text-lg">🔷</span></div>
+                    <img src={DEFAULT_AVATAR_IMG} alt="KAI" className="w-full h-full object-cover" />
                   )}
                 </div>
                 <div>
