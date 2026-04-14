@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Send, Bot, Wallet, RefreshCw, AlertCircle, Grid3x3 } from "lucide-react";
+import { Send, Bot, Wallet, RefreshCw, AlertCircle, Grid3x3, ArrowRightLeft } from "lucide-react";
+import { Link } from "react-router-dom";
 import TransferForm from "../components/bridge/TransferForm";
 import RecentTransactions from "../components/bridge/RecentTransactions";
 import BridgeAssistant from "../components/bridge/BridgeAssistant";
@@ -607,6 +608,16 @@ export default function BridgePage() {
               </div>
 
               <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Link to="/KCbridge">
+                  <Button
+                    className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/30 text-sm"
+                    size="sm"
+                  >
+                    <ArrowRightLeft className="w-4 h-4 mr-1.5" />
+                    KCbridge
+                  </Button>
+                </Link>
+
                 {isIOSDevice && isInNativeWrapper && (
                   <Button
                     onClick={() => setShowIOSModal(true)}
