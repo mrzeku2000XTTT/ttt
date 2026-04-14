@@ -167,9 +167,9 @@ Return 6 real, verifiable R&D updates from kaspa.news or official Kaspa develope
       <section className="pt-24 pb-16 sm:pt-32 sm:pb-24 px-5 text-center bg-gradient-to-b from-zinc-900 to-black text-white">
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto">
           <img
-            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/13e8ec094_image.png"
+            src="https://cryptologos.cc/logos/kaspa-kas-logo.png?v=041"
             alt="Kaspa"
-            className="w-16 h-16 rounded-full mx-auto mb-6 shadow-xl shadow-cyan-500/20"
+            className="w-20 h-20 mx-auto mb-6 drop-shadow-[0_0_20px_rgba(6,182,212,0.4)]"
           />
           <h1 className="text-4xl sm:text-6xl font-[900] tracking-tight mb-4">
             The World's Fastest<br />
@@ -214,6 +214,32 @@ Return 6 real, verifiable R&D updates from kaspa.news or official Kaspa develope
                 </motion.div>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+      {/* Kaspa.com Showcase */}
+      <section className="py-16 sm:py-20 px-5 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-8">
+            <p className="text-[13px] font-semibold text-zinc-400 tracking-wide uppercase mb-2">Official Site</p>
+            <h2 className="text-3xl sm:text-4xl font-[900] tracking-tight">kaspa.org</h2>
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="rounded-2xl overflow-hidden ring-1 ring-zinc-200/60 shadow-xl bg-white" style={{ height: "clamp(450px, 65vh, 750px)" }}>
+            <iframe
+              src="https://kaspa.org"
+              title="Kaspa.org"
+              className="w-full h-full border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+            />
+          </motion.div>
+          <div className="text-center mt-3">
+            <a href="https://kaspa.org" target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-cyan-600 hover:text-cyan-700 transition-colors">
+              Open in new tab <ExternalLink className="w-3 h-3" />
+            </a>
           </div>
         </div>
       </section>
