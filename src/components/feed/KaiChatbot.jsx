@@ -83,13 +83,17 @@ export default function KaiChatbot() {
     setMessages(prev => [...prev, { role: "user", content: userMsg }]);
     setIsLoading(true);
 
-    // Detect image/drawing intent
+    // Detect image/drawing intent — suggest apps with clickable buttons
     if (isImageRequest(userMsg)) {
-      setMessages(prev => [...prev, { role: "action", content: "Opening Xunhua App 🎨" }]);
-      await new Promise(r => setTimeout(r, 1200));
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: "For creating images and drawings, check out **Xunhua** — our AI sketch-to-image studio! 🎨 You can draw on a canvas and AI will render it into a full image. Or try **Hikaru** for text-to-image generation.",
+        links: [
+          { label: "Open Xunhua 🎨", path: "Xunhua" },
+          { label: "Open Hikaru 🖼️", path: "Hikaru" },
+        ]
+      }]);
       setIsLoading(false);
-      setIsOpen(false);
-      navigate(createPageUrl('Xunhua'));
       return;
     }
 
@@ -286,6 +290,24 @@ export default function KaiChatbot() {
                       }}
                     >
                       {msg.content}
+                      {msg.links && msg.links.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {msg.links.map((link, li) => (
+                            <button
+                              key={li}
+                              onClick={() => { setIsOpen(false); navigate(createPageUrl(link.path)); }}
+                              className="px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all hover:scale-105"
+                              style={{
+                                background: 'rgba(6,182,212,0.25)',
+                                border: '1px solid rgba(6,182,212,0.4)',
+                                color: 'rgba(6,182,212,1)',
+                              }}
+                            >
+                              {link.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

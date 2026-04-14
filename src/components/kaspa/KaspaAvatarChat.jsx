@@ -255,13 +255,17 @@ export default function KaspaAvatarChat() {
     setMessages(prev => [...prev, { role: "user", content: userMsg }]);
     setIsLoading(true);
 
-    // Image/drawing → open Xunhua
+    // Image/drawing → suggest Xunhua with clickable button (don't auto-redirect)
     if (isImageRequest(userMsg)) {
-      setMessages(prev => [...prev, { role: "action", content: "Opening Xunhua App 🎨" }]);
-      await new Promise(r => setTimeout(r, 1200));
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: "For creating images and drawings, check out **Xunhua** — our AI sketch-to-image studio! 🎨 You can draw on a canvas and AI will render it into a full image. Or try **Hikaru** for text-to-image generation.",
+        links: [
+          { label: "Open Xunhua 🎨", path: "Xunhua" },
+          { label: "Open Hikaru 🖼️", path: "Hikaru" },
+        ]
+      }]);
       setIsLoading(false);
-      setIsOpen(false);
-      navigate(createPageUrl('Xunhua'));
       return;
     }
 
@@ -327,7 +331,7 @@ ${TTT_APP_DOCS}
 
 KASPA BLOCKCHAIN: blockDAG architecture, GHOSTDAG consensus, kHeavyHash PoW (GPU), fair launch (no premine/ICO), 1-second blocks, 10K+ TPS, targeting 32 BPS, Rust node rewrite, KRC-20 on Kasplex L2. Founded by Yonatan Sompolinsky.
 
-You have real-time internet access — use it for crypto prices, news, events. Keep responses concise, friendly, helpful. Use emojis occasionally. When recommending TTT apps, use the EXACT descriptions above — never guess.${feedContext}
+You have real-time internet access — use it for crypto prices, news, events. Keep responses concise, friendly, helpful. Use emojis occasionally. When recommending TTT apps, use the EXACT descriptions above — never guess. When a user wants to do something (create images, manage wallets, etc.), tell them which specific TTT app to use and why — e.g. "Head to **Hikaru** for AI image generation" or "Use **Terra** to create and manage Kaspa wallets."${feedContext}
 
 Conversation so far:
 ${context}
@@ -353,7 +357,7 @@ KASPA BLOCKCHAIN KNOWLEDGE:
 - KRC-20 token standard on Kasplex L2
 - Founded on research by Yonatan Sompolinsky
 
-You have real-time internet access. Be concise, accurate, friendly. Use emojis occasionally. Always refer to TTT as the platform/app name, never as "Trust The Tech." When recommending apps, use the EXACT descriptions from the docs above — never guess or confuse apps.${feedContext}
+You have real-time internet access. Be concise, accurate, friendly. Use emojis occasionally. Always refer to TTT as the platform/app name, never as "Trust The Tech." When recommending apps, use the EXACT descriptions from the docs above — never guess or confuse apps. When a user wants to do something, tell them which specific TTT app to use — e.g. "Head to **Hikaru** for AI image generation" or "Use **Terra** to create and manage Kaspa wallets." Never confuse app purposes.${feedContext}
 
 Conversation so far:
 ${context}
@@ -616,6 +620,24 @@ Respond as KAI:${speedInstruction}`;
                     >
                       {typingIndex === i ? (typingText || "") : msg.content}
                       {typingIndex === i && <span className="inline-block w-[2px] h-[14px] bg-cyan-400 ml-0.5 animate-pulse align-middle" />}
+                      {msg.links && msg.links.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {msg.links.map((link, li) => (
+                            <button
+                              key={li}
+                              onClick={() => { setIsOpen(false); navigate(createPageUrl(link.path)); }}
+                              className="px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all hover:scale-105"
+                              style={{
+                                background: "rgba(6,182,212,0.25)",
+                                border: "1px solid rgba(6,182,212,0.4)",
+                                color: "rgba(6,182,212,1)",
+                              }}
+                            >
+                              {link.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
