@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 
 const STORAGE_KEY = "kaspa_avatar_video_url";
 const DEFAULT_AVATAR_IMG = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/13e8ec094_image.png";
+const DEFAULT_VIDEO_URL = "https://base44.app/api/apps/6901295fa9bcfaa0f5ba2c2a/files/mp/public/6901295fa9bcfaa0f5ba2c2a/603409cb0_animation1.mp4";
 
 const KAI_FACTS = [
   "Kaspa processes 10,000+ TPS 🔷",
@@ -21,7 +22,7 @@ const KAI_FACTS = [
 
 export default function KaspaAvatarChat() {
   const [isOpen, setIsOpen] = useState(false);
-  const [videoUrl, setVideoUrl] = useState(() => localStorage.getItem(STORAGE_KEY) || "");
+  const [videoUrl, setVideoUrl] = useState(() => localStorage.getItem(STORAGE_KEY) || DEFAULT_VIDEO_URL);
   const [messages, setMessages] = useState([
     { role: "assistant", content: "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem." }
   ]);
