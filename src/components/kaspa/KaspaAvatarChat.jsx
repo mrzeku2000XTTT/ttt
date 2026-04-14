@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, Loader2, Minus, Settings } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 const STORAGE_KEY = "kaspa_avatar_video_url";
 const DEFAULT_AVATAR_IMG = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/13e8ec094_image.png";
@@ -20,7 +22,25 @@ const KAI_FACTS = [
   "Kaspa = fastest PoW crypto",
 ];
 
+const IMAGE_KEYWORDS = [
+  'draw', 'sketch', 'paint', 'create image', 'generate image', 'make image',
+  'make a picture', 'create a picture', 'design', 'illustrate', 'artwork',
+  "let's draw", 'lets draw', 'can you draw', 'draw me', 'draw a', 'draw an',
+  'show me', 'visualize', 'picture of', 'image of', 'art of', 'xunhua'
+];
+const FEED_KEYWORDS = [
+  'feed', 'ttt feed', 'latest posts', 'recent posts', 'whats on the feed',
+  "what's on the feed", 'check feed', 'examine feed', 'what are people saying',
+  "what's new", 'whats new', 'latest updates', 'community posts', 'ttt posts'
+];
+const USER_POST_KEYWORDS = [
+  'posts by', 'what has', 'what did', 'posted', 'analyze user', 'user posts',
+  'examine posts', 'who posted', 'show me posts from', 'check posts',
+  'what does', 'posting', 'activity', 'said'
+];
+
 export default function KaspaAvatarChat() {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [videoUrl, setVideoUrl] = useState(() => localStorage.getItem(STORAGE_KEY) || DEFAULT_VIDEO_URL);
   const [messages, setMessages] = useState([
@@ -93,6 +113,10 @@ export default function KaspaAvatarChat() {
     }
   }, [isOpen]);
 
+  const isImageRequest = (msg) => IMAGE_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
+  const isFeedRequest = (msg) => FEED_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
+  const isUserPostRequest = (msg) => USER_POST_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
+
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
     const userMsg = input.trim();
@@ -100,19 +124,76 @@ export default function KaspaAvatarChat() {
     setMessages(prev => [...prev, { role: "user", content: userMsg }]);
     setIsLoading(true);
 
+    // Image/drawing → open Xunhua
+    if (isImageRequest(userMsg)) {
+      setMessages(prev => [...prev, { role: "action", content: "Opening Xunhua App 🎨" }]);
+      await new Promise(r => setTimeout(r, 1200));
+      setIsLoading(false);
+      setIsOpen(false);
+      navigate(createPageUrl('Xunhua'));
+      return;
+    }
+
+    // User post analysis
+    if (isUserPostRequest(userMsg)) {
+      setMessages(prev => [...prev, { role: "action", content: "Analyzing user posts... 🔍" }]);
+      try {
+        const posts = await base44.entities.Post.list('-created_date', 50);
+        const postData = posts.map(p => `[${p.author_name}] ${p.content?.slice(0, 150)}${p.media_files?.length ? ' [has media]' : ''} (${p.likes || 0} likes, ${p.comments_count || 0} comments)`).join('\n');
+        const analysis = await base44.integrations.Core.InvokeLLM({
+          prompt: `You are KAI, an AI assistant for the TTT community. Here are the 50 most recent posts from the TTT feed:\n\n${postData}\n\nUser question: "${userMsg}"\n\nAnswer the user's question about specific users or posting activity. Be specific, cite usernames and what they posted. Keep it concise, friendly, and use emojis.`,
+          add_context_from_internet: true,
+          model: 'gemini_3_flash',
+        });
+        setMessages(prev => [...prev.filter(m => m.role !== 'action'), { role: "assistant", content: analysis }]);
+      } catch {
+        setMessages(prev => [...prev.filter(m => m.role !== 'action'), { role: "assistant", content: "Couldn't analyze posts right now. Try again! 🙏" }]);
+      }
+      setIsLoading(false);
+      return;
+    }
+
+    // Feed summary
+    if (isFeedRequest(userMsg)) {
+      setMessages(prev => [...prev, { role: "action", content: "Checking TTT Feed... 📡" }]);
+      try {
+        const posts = await base44.entities.Post.list('-created_date', 20);
+        const feedSummary = posts.map(p => `- ${p.author_name}: ${p.content?.slice(0, 120)}`).join('\n');
+        const summary = await base44.integrations.Core.InvokeLLM({
+          prompt: `You are KAI, an AI assistant for the TTT community. Here are the 20 most recent posts from the TTT feed:\n\n${feedSummary}\n\nProvide a friendly, concise summary of what the community is talking about. Highlight key themes, hot topics, and any interesting discussions. Keep it under 200 words. Use emojis.`,
+          add_context_from_internet: true,
+          model: 'gemini_3_flash',
+        });
+        setMessages(prev => [...prev.filter(m => m.role !== 'action'), { role: "assistant", content: summary }]);
+      } catch {
+        setMessages(prev => [...prev.filter(m => m.role !== 'action'), { role: "assistant", content: "Couldn't load the feed right now. Try again! 🙏" }]);
+      }
+      setIsLoading(false);
+      return;
+    }
+
+    // General message with feed context
     try {
+      let feedContext = '';
+      try {
+        const recentPosts = await base44.entities.Post.list('-created_date', 15);
+        if (recentPosts.length > 0) {
+          feedContext = `\n\nRecent TTT Feed activity (for context):\n${recentPosts.map(p => `- ${p.author_name}: ${p.content?.slice(0, 80)}`).join('\n')}`;
+        }
+      } catch {}
       const context = messages.slice(-8).map(m => `${m.role === "user" ? "User" : "KAI"}: ${m.content}`).join("\n");
       const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are KAI, a Kaspa AI assistant. You are an expert on:
-- Kaspa blockDAG architecture, GHOSTDAG/PHANTOM protocol
+        prompt: `You are KAI, an AI assistant embedded in TTT (a Kaspa blockchain community app). You're an expert on:
+- Kaspa blockDAG architecture, GHOSTDAG/PHANTOM protocol, DAGKnight
 - Proof of Work mining (kHeavyHash), GPU mining
 - KRC-20 tokens, Kasplex L2, DeFi ecosystem
 - Kaspa history: fair launch (no premine, no ICO), community governance
-- Rust node rewrite, BPS upgrades, DAGKnight
-- Technical details: 10,000+ TPS, 1-second blocks, 32 BPS target
+- Rust node rewrite, BPS upgrades, 10,000+ TPS, 1-second blocks
+- TTT platform features (Feed, AgentZK, DAGKnight, Bridge, TTTV, etc.)
 - Community projects, exchanges, wallet options
+- General topics — you have real-time internet access
 
-Be concise, accurate, and friendly. Use emojis occasionally. If asked about something unrelated to Kaspa, briefly answer but steer back to Kaspa topics.
+You can also analyze the TTT feed, open Xunhua for drawing, and check user posts. Be concise, accurate, friendly, and use emojis occasionally.${feedContext}
 
 Conversation so far:
 ${context}
@@ -290,21 +371,37 @@ Respond as KAI:`,
             <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-hide">
               {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                  <div
-                    className="max-w-[85%] text-sm leading-relaxed px-3 py-2 rounded-2xl"
-                    style={msg.role === "user" ? {
-                      background: "rgba(6,182,212,0.25)",
-                      color: "rgba(255,255,255,0.95)",
-                      borderBottomRightRadius: "6px",
-                    } : {
-                      background: "rgba(255,255,255,0.07)",
-                      color: "rgba(255,255,255,0.85)",
-                      border: "1px solid rgba(255,255,255,0.08)",
-                      borderBottomLeftRadius: "6px",
-                    }}
-                  >
-                    {msg.content}
-                  </div>
+                  {msg.role === "action" ? (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="flex items-center gap-2 px-3 py-2 rounded-2xl text-sm font-medium"
+                      style={{
+                        background: "linear-gradient(135deg, rgba(6,182,212,0.2), rgba(168,85,247,0.2))",
+                        border: "1px solid rgba(6,182,212,0.35)",
+                        color: "rgba(6,182,212,0.95)",
+                      }}
+                    >
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      {msg.content}
+                    </motion.div>
+                  ) : (
+                    <div
+                      className="max-w-[85%] text-sm leading-relaxed px-3 py-2 rounded-2xl"
+                      style={msg.role === "user" ? {
+                        background: "rgba(6,182,212,0.25)",
+                        color: "rgba(255,255,255,0.95)",
+                        borderBottomRightRadius: "6px",
+                      } : {
+                        background: "rgba(255,255,255,0.07)",
+                        color: "rgba(255,255,255,0.85)",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                        borderBottomLeftRadius: "6px",
+                      }}
+                    >
+                      {msg.content}
+                    </div>
+                  )}
                 </div>
               ))}
               {isLoading && (
