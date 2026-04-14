@@ -1,33 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Minimize2, Maximize, Music } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 
 const KASSHI_STORAGE_KEY = 'kasshi_player_active';
 const KASSHI_POS_KEY = 'kasshi_player_position';
-
-export function useKaSshi() {
-  const [active, setActive] = useState(() => {
-    try { return localStorage.getItem(KASSHI_STORAGE_KEY) === 'true'; } catch { return false; }
-  });
-
-  const open = () => {
-    setActive(true);
-    localStorage.setItem(KASSHI_STORAGE_KEY, 'true');
-  };
-
-  const close = () => {
-    setActive(false);
-    localStorage.removeItem(KASSHI_STORAGE_KEY);
-  };
-
-  return { active, open, close };
-}
+const KASSHI_INLINE_KEY = 'kasshi_inline_visited';
 
 // Global singleton so we can share state without context across lazy-loaded trees
 let globalKaSshiState = { active: false, listeners: new Set() };
-
-export function getKaSshiGlobal() {
-  return globalKaSshiState;
-}
 
 export function setKaSshiGlobal(active) {
   globalKaSshiState.active = active;
@@ -40,12 +20,18 @@ export function subscribeKaSshi(fn) {
   return () => globalKaSshiState.listeners.delete(fn);
 }
 
+// Mark that user has seen the inline KaSshi player (call from TTTVMini)
+export function markKaSshiInlineVisited() {
+  localStorage.setItem(KASSHI_INLINE_KEY, 'true');
+}
+
 // Initialize from localStorage
 try {
   globalKaSshiState.active = localStorage.getItem(KASSHI_STORAGE_KEY) === 'true';
 } catch {}
 
 export default function KaSshiPlayer() {
+  const location = useLocation();
   const [active, setActive] = useState(globalKaSshiState.active);
   const [minimized, setMinimized] = useState(false);
   const [position, setPosition] = useState(() => {
@@ -57,6 +43,10 @@ export default function KaSshiPlayer() {
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
   const playerRef = useRef(null);
+  const prevPathRef = useRef(location.pathname);
+
+  // Pages where KaSshi inline iframe is embedded — hide mini player there
+  const isInlinePage = location.pathname === '/' || location.pathname === '/TTTV2';
 
   useEffect(() => {
     return subscribeKaSshi((val) => {
@@ -64,6 +54,21 @@ export default function KaSshiPlayer() {
       if (val) setMinimized(false);
     });
   }, []);
+
+  // Auto-activate mini player when leaving a page with inline KaSshi
+  useEffect(() => {
+    const prevPath = prevPathRef.current;
+    prevPathRef.current = location.pathname;
+
+    const wasInline = prevPath === '/' || prevPath === '/TTTV2';
+    const hasVisited = localStorage.getItem(KASSHI_INLINE_KEY) === 'true';
+
+    if (wasInline && !isInlinePage && hasVisited) {
+      // User left the landing page where KaSshi was playing — launch mini player
+      setKaSshiGlobal(true);
+      setActive(true);
+    }
+  }, [location.pathname]);
 
   // Dragging
   const handleDragStart = (e) => {
@@ -98,6 +103,9 @@ export default function KaSshiPlayer() {
   };
 
   if (!active) return null;
+
+  // Don't show mini player on pages where KaSshi is already embedded inline
+  if (isInlinePage) return null;
 
   // Minimized floating pill
   if (minimized) {
