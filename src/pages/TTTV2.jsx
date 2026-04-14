@@ -231,7 +231,7 @@ export default function TTTV2Page() {
       </div>
 
       {/* ── original hero ── */}
-      <section className="relative py-14 sm:py-20 px-5 text-center overflow-hidden">
+      <section className="relative py-24 sm:py-36 px-5 text-center overflow-hidden">
         <div className="absolute inset-0">
           <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/20b6a8247_generated_image.png" alt="" className="w-full h-full object-cover opacity-70" />
           {heroVideoUrl && (
