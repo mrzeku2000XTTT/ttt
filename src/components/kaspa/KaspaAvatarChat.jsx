@@ -5,16 +5,44 @@ import { base44 } from "@/api/base44Client";
 
 const STORAGE_KEY = "kaspa_avatar_video_url";
 
+const KAI_FACTS = [
+  "Kaspa processes 10,000+ TPS 🔷",
+  "blockDAG = parallel blocks ⚡",
+  "No premine. No ICO. Fair launch.",
+  "1-second block times!",
+  "GHOSTDAG orders all blocks 🧠",
+  "kHeavyHash = GPU mining ⛏️",
+  "KRC-20 tokens are live on Kaspa",
+  "32 BPS target coming soon 🚀",
+  "Rust node rewrite is complete",
+  "Kaspa = fastest PoW crypto",
+];
+
 export default function KaspaAvatarChat() {
   const [isOpen, setIsOpen] = useState(false);
   const [videoUrl] = useState(() => localStorage.getItem(STORAGE_KEY) || "");
   const [messages, setMessages] = useState([
-    { role: "assistant", content: "Hey! I'm the Kaspa AI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem. 🔷" }
+    { role: "assistant", content: "Hey! I'm KAI 👋 Ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem." }
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [bubbleText, setBubbleText] = useState(KAI_FACTS[0]);
+  const [showBubble, setShowBubble] = useState(true);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Rotate speech bubble facts
+  useEffect(() => {
+    if (isOpen) return;
+    const interval = setInterval(() => {
+      setShowBubble(false);
+      setTimeout(() => {
+        setBubbleText(KAI_FACTS[Math.floor(Math.random() * KAI_FACTS.length)]);
+        setShowBubble(true);
+      }, 400);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen && messagesEndRef.current) {
@@ -36,9 +64,9 @@ export default function KaspaAvatarChat() {
     setIsLoading(true);
 
     try {
-      const context = messages.slice(-8).map(m => `${m.role === "user" ? "User" : "Kaspa AI"}: ${m.content}`).join("\n");
+      const context = messages.slice(-8).map(m => `${m.role === "user" ? "User" : "KAI"}: ${m.content}`).join("\n");
       const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are the Kaspa AI assistant on the "What is Kaspa?" page. You are an expert on:
+        prompt: `You are KAI, a Kaspa AI assistant. You are an expert on:
 - Kaspa blockDAG architecture, GHOSTDAG/PHANTOM protocol
 - Proof of Work mining (kHeavyHash), GPU mining
 - KRC-20 tokens, Kasplex L2, DeFi ecosystem
@@ -54,7 +82,7 @@ ${context}
 
 User: ${userMsg}
 
-Respond as Kaspa AI:`,
+Respond as KAI:`,
         add_context_from_internet: true,
         model: "gemini_3_flash",
       });
@@ -66,31 +94,73 @@ Respond as Kaspa AI:`,
     }
   };
 
-  const AvatarContent = ({ size = "full" }) => {
-    const cls = size === "small" ? "w-full h-full" : "w-full h-full";
+  const AvatarContent = () => {
     if (videoUrl) {
-      return <video src={videoUrl} autoPlay loop muted playsInline className={`${cls} object-cover`} />;
+      return <video src={videoUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />;
     }
-    return <div className={`${cls} flex items-center justify-center`}><span className="text-2xl">🔷</span></div>;
+    return <div className="w-full h-full flex items-center justify-center"><span className="text-2xl">🔷</span></div>;
   };
 
   return (
     <>
-      {/* Floating profile avatar bubble */}
+      {/* Floating KAI bubble + speech cloud */}
       <AnimatePresence>
         {!isOpen && (
-          <motion.button
+          <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            whileHover={{ scale: 1.08 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setIsOpen(true)}
-            className="fixed z-50 bottom-6 right-6 w-16 h-16 rounded-full overflow-hidden shadow-2xl shadow-cyan-500/30 ring-2 ring-cyan-400/50"
-            style={{ background: "linear-gradient(135deg, #0e7490, #7c3aed)" }}
+            className="fixed z-[80] bottom-6 right-4 flex items-end gap-2"
           >
-            <AvatarContent />
-          </motion.button>
+            {/* Speech bubble */}
+            <AnimatePresence>
+              {showBubble && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8, x: 10 }}
+                  animate={{ opacity: 1, scale: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 0.8, x: 10 }}
+                  transition={{ duration: 0.3 }}
+                  className="relative mb-2 max-w-[180px]"
+                >
+                  <div
+                    className="px-3 py-2 rounded-2xl rounded-br-sm text-[11px] font-medium leading-snug"
+                    style={{
+                      background: "rgba(0,0,0,0.85)",
+                      color: "rgba(255,255,255,0.9)",
+                      backdropFilter: "blur(20px)",
+                      border: "1px solid rgba(6,182,212,0.25)",
+                      boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
+                    }}
+                  >
+                    {bubbleText}
+                  </div>
+                  {/* Triangle pointer */}
+                  <div
+                    className="absolute -right-1 bottom-1 w-0 h-0"
+                    style={{
+                      borderLeft: "6px solid rgba(0,0,0,0.85)",
+                      borderTop: "4px solid transparent",
+                      borderBottom: "4px solid transparent",
+                    }}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Avatar button */}
+            <motion.button
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsOpen(true)}
+              className="w-14 h-14 rounded-full overflow-hidden shadow-2xl shadow-cyan-500/30 ring-2 ring-cyan-400/50 flex-shrink-0 relative"
+              style={{ background: "linear-gradient(135deg, #0e7490, #7c3aed)" }}
+            >
+              <AvatarContent />
+              <div className="absolute -top-1 -left-1 bg-black/80 border border-cyan-500/40 rounded-full px-1.5 py-0.5">
+                <span className="text-[8px] font-black text-cyan-400 tracking-wider">KAI</span>
+              </div>
+            </motion.button>
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -102,10 +172,10 @@ Respond as Kaspa AI:`,
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed z-50 bottom-6 right-6 flex flex-col"
+            className="fixed z-[80] bottom-6 right-4 flex flex-col"
             style={{
-              width: "min(400px, calc(100vw - 2rem))",
-              height: "520px",
+              width: "min(380px, calc(100vw - 2rem))",
+              height: "500px",
               borderRadius: "20px",
               background: "rgba(12, 12, 18, 0.92)",
               backdropFilter: "blur(40px)",
@@ -117,13 +187,13 @@ Respond as Kaspa AI:`,
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-cyan-500/40 flex-shrink-0"
+                <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-cyan-500/40 flex-shrink-0"
                   style={{ background: "linear-gradient(135deg, #0e7490, #7c3aed)" }}>
-                  <AvatarContent size="small" />
+                  <AvatarContent />
                 </div>
                 <div>
-                  <div className="text-white font-semibold text-sm">Kaspa AI</div>
-                  <div className="text-white/40 text-[10px]">Ask about Kaspa</div>
+                  <div className="text-white font-bold text-sm tracking-wide">KAI</div>
+                  <div className="text-white/40 text-[10px]">Kaspa AI Assistant</div>
                 </div>
               </div>
               <div className="flex items-center gap-1">
@@ -134,7 +204,7 @@ Respond as Kaspa AI:`,
                   <Minus className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  onClick={() => { setIsOpen(false); setMessages([{ role: "assistant", content: "Hey! I'm the Kaspa AI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem. 🔷" }]); }}
+                  onClick={() => { setIsOpen(false); setMessages([{ role: "assistant", content: "Hey! I'm KAI 👋 Ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem." }]); }}
                   className="w-7 h-7 rounded-full flex items-center justify-center text-white/40 hover:text-red-400 transition-colors hover:bg-white/10"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -186,7 +256,7 @@ Respond as Kaspa AI:`,
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-                  placeholder="Ask about Kaspa..."
+                  placeholder="Ask KAI about Kaspa..."
                   className="flex-1 bg-transparent text-white/90 text-sm outline-none placeholder-white/30"
                 />
                 <button
