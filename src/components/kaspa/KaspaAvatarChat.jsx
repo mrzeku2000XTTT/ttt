@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Loader2, Upload, Trash2, Minus, Video } from "lucide-react";
+import { X, Send, Loader2, Minus } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const STORAGE_KEY = "kaspa_avatar_video_url";
 
 export default function KaspaAvatarChat() {
   const [isOpen, setIsOpen] = useState(false);
-  const [videoUrl, setVideoUrl] = useState(() => localStorage.getItem(STORAGE_KEY) || "");
-  const [uploading, setUploading] = useState(false);
+  const [videoUrl] = useState(() => localStorage.getItem(STORAGE_KEY) || "");
   const [messages, setMessages] = useState([
     { role: "assistant", content: "Hey! I'm the Kaspa AI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem. 🔷" }
   ]);
@@ -16,7 +15,6 @@ export default function KaspaAvatarChat() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
-  const fileRef = useRef(null);
 
   useEffect(() => {
     if (isOpen && messagesEndRef.current) {
@@ -29,30 +27,6 @@ export default function KaspaAvatarChat() {
       setTimeout(() => inputRef.current?.focus(), 300);
     }
   }, [isOpen]);
-
-  const handleUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("video/")) {
-      alert("Please upload a video file (mp4, webm, etc.)");
-      return;
-    }
-    setUploading(true);
-    try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setVideoUrl(file_url);
-      localStorage.setItem(STORAGE_KEY, file_url);
-    } catch (err) {
-      console.error("Upload failed:", err);
-      alert("Failed to upload video");
-    }
-    setUploading(false);
-  };
-
-  const removeVideo = () => {
-    setVideoUrl("");
-    localStorage.removeItem(STORAGE_KEY);
-  };
 
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
@@ -92,9 +66,17 @@ Respond as Kaspa AI:`,
     }
   };
 
+  const AvatarContent = ({ size = "full" }) => {
+    const cls = size === "small" ? "w-full h-full" : "w-full h-full";
+    if (videoUrl) {
+      return <video src={videoUrl} autoPlay loop muted playsInline className={`${cls} object-cover`} />;
+    }
+    return <div className={`${cls} flex items-center justify-center`}><span className="text-2xl">🔷</span></div>;
+  };
+
   return (
     <>
-      {/* Floating avatar bubble */}
+      {/* Floating profile avatar bubble */}
       <AnimatePresence>
         {!isOpen && (
           <motion.button
@@ -107,13 +89,7 @@ Respond as Kaspa AI:`,
             className="fixed z-50 bottom-6 right-6 w-16 h-16 rounded-full overflow-hidden shadow-2xl shadow-cyan-500/30 ring-2 ring-cyan-400/50"
             style={{ background: "linear-gradient(135deg, #0e7490, #7c3aed)" }}
           >
-            {videoUrl ? (
-              <video src={videoUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <span className="text-2xl">🔷</span>
-              </div>
-            )}
+            <AvatarContent />
           </motion.button>
         )}
       </AnimatePresence>
@@ -129,7 +105,7 @@ Respond as Kaspa AI:`,
             className="fixed z-50 bottom-6 right-6 flex flex-col"
             style={{
               width: "min(400px, calc(100vw - 2rem))",
-              height: "560px",
+              height: "520px",
               borderRadius: "20px",
               background: "rgba(12, 12, 18, 0.92)",
               backdropFilter: "blur(40px)",
@@ -138,16 +114,12 @@ Respond as Kaspa AI:`,
               overflow: "hidden",
             }}
           >
-            {/* Header with video avatar */}
+            {/* Header */}
             <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-cyan-500/40 flex-shrink-0"
                   style={{ background: "linear-gradient(135deg, #0e7490, #7c3aed)" }}>
-                  {videoUrl ? (
-                    <video src={videoUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-lg">🔷</div>
-                  )}
+                  <AvatarContent size="small" />
                 </div>
                 <div>
                   <div className="text-white font-semibold text-sm">Kaspa AI</div>
@@ -155,24 +127,6 @@ Respond as Kaspa AI:`,
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                {/* Upload video button */}
-                <button
-                  onClick={() => fileRef.current?.click()}
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-white/40 hover:text-cyan-400 transition-colors hover:bg-white/10"
-                  title={videoUrl ? "Change avatar video" : "Upload avatar video"}
-                >
-                  {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Video className="w-3.5 h-3.5" />}
-                </button>
-                <input ref={fileRef} type="file" accept="video/*" onChange={handleUpload} className="hidden" />
-                {videoUrl && (
-                  <button
-                    onClick={removeVideo}
-                    className="w-7 h-7 rounded-full flex items-center justify-center text-white/40 hover:text-red-400 transition-colors hover:bg-white/10"
-                    title="Remove video"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
                 <button
                   onClick={() => setIsOpen(false)}
                   className="w-7 h-7 rounded-full flex items-center justify-center text-white/40 hover:text-white/80 transition-colors hover:bg-white/10"
@@ -187,15 +141,6 @@ Respond as Kaspa AI:`,
                 </button>
               </div>
             </div>
-
-            {/* Video display area (if video exists, show larger looping version) */}
-            {videoUrl && (
-              <div className="px-4 pt-3">
-                <div className="rounded-xl overflow-hidden ring-1 ring-white/10" style={{ height: "120px" }}>
-                  <video src={videoUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
-                </div>
-              </div>
-            )}
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-hide">
@@ -233,16 +178,6 @@ Respond as Kaspa AI:`,
 
             {/* Input */}
             <div className="px-3 pb-3 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-              {!videoUrl && (
-                <button
-                  onClick={() => fileRef.current?.click()}
-                  className="w-full mb-2 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-medium text-cyan-400 hover:text-cyan-300 transition-colors"
-                  style={{ background: "rgba(6,182,212,0.1)", border: "1px dashed rgba(6,182,212,0.3)" }}
-                >
-                  <Upload className="w-3.5 h-3.5" />
-                  Upload animated avatar video
-                </button>
-              )}
               <div className="flex items-center gap-2 px-3 py-2 rounded-2xl"
                 style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
                 <input
