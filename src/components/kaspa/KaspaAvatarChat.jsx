@@ -89,12 +89,14 @@ Respond as KAI:`,
     }
   };
 
-  const AvatarContent = () => {
-    if (videoUrl) {
-      return <video src={videoUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />;
-    }
-    return <div className="w-full h-full flex items-center justify-center"><span className="text-2xl">🔷</span></div>;
-  };
+  const videoRef = useRef(null);
+  const headerVideoRef = useRef(null);
+
+  // Slow down video playback
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.playbackRate = 0.5;
+    if (headerVideoRef.current) headerVideoRef.current.playbackRate = 0.5;
+  }, [videoUrl, isOpen]);
 
   return (
     <>
@@ -136,10 +138,14 @@ Respond as KAI:`,
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsOpen(true)}
-              className="w-14 h-14 rounded-full overflow-hidden shadow-2xl shadow-cyan-500/30 ring-2 ring-cyan-400/50 flex-shrink-0 relative"
-              style={{ background: "linear-gradient(135deg, #0e7490, #06b6d4)" }}
+              className="w-14 h-14 rounded-full overflow-hidden shadow-2xl shadow-black/40 ring-2 ring-white/20 flex-shrink-0 relative"
+              style={{ background: "#000" }}
             >
-              <AvatarContent />
+              {videoUrl ? (
+                <video ref={videoRef} src={videoUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" onLoadedMetadata={e => { e.target.playbackRate = 0.5; }} />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-black"><span className="text-2xl">🔷</span></div>
+              )}
             </motion.button>
           </motion.div>
         )}
@@ -168,9 +174,13 @@ Respond as KAI:`,
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-cyan-500/40 flex-shrink-0"
-                  style={{ background: "linear-gradient(135deg, #0e7490, #06b6d4)" }}>
-                  <AvatarContent />
+                <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-white/20 flex-shrink-0"
+                  style={{ background: "#000" }}>
+                  {videoUrl ? (
+                    <video ref={headerVideoRef} src={videoUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" onLoadedMetadata={e => { e.target.playbackRate = 0.5; }} />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-black"><span className="text-lg">🔷</span></div>
+                  )}
                 </div>
                 <div>
                   <div className="text-white font-bold text-sm tracking-wide">KAI</div>
