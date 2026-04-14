@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { Play, Search, Youtube, ChevronRight, Upload, X, Loader2, Check, Settings } from "lucide-react";
+import { Play, Search, Youtube, ChevronRight, Upload, X, Loader2, Check, Settings, Volume2, VolumeX } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 export default function TTTVMini() {
@@ -19,6 +19,20 @@ export default function TTTVMini() {
   const [leftUrl, setLeftUrl] = useState("");
   const [rightUrl, setRightUrl] = useState("");
   const [savingSides, setSavingSides] = useState(false);
+  const [leftMuted, setLeftMuted] = useState(true);
+  const [rightMuted, setRightMuted] = useState(true);
+  const [sectionVisible, setSectionVisible] = useState(false);
+  const sectionRef = React.useRef(null);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      setSectionVisible(entry.isIntersecting);
+    }, { threshold: 0.3 });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     loadSideVideos();
@@ -133,7 +147,7 @@ export default function TTTVMini() {
   };
 
   return (
-    <section id="tttv" className="py-20 sm:py-28 px-5 bg-gradient-to-b from-zinc-900 to-black text-white">
+    <section ref={sectionRef} id="tttv" className="py-20 sm:py-28 px-5 bg-gradient-to-b from-zinc-900 to-black text-white">
       <div className="max-w-6xl mx-auto text-center">
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
 
@@ -151,20 +165,29 @@ export default function TTTVMini() {
             {/* Left video */}
             {sideVideos[0] && sideVideos[0].video_id && (
               <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }}
-                className="hidden md:block w-48 flex-shrink-0">
-                <Link to="/Browser">
-                  <div className="relative aspect-video rounded-xl overflow-hidden ring-1 ring-white/10 group cursor-pointer shadow-lg shadow-black/40">
-                    <img src={`https://img.youtube.com/vi/${sideVideos[0].video_id}/mqdefault.jpg`} alt={sideVideos[0].title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                      <div className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow group-hover:scale-110 transition-transform">
-                        <Play className="w-3.5 h-3.5 text-black ml-0.5" />
-                      </div>
-                    </div>
-                    <div className="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
-                      <p className="text-[10px] text-white font-semibold truncate">{sideVideos[0].title}</p>
-                    </div>
+                className="hidden md:block w-56 flex-shrink-0">
+                <div className="relative aspect-video rounded-xl overflow-hidden ring-1 ring-white/10 shadow-lg shadow-black/40">
+                  {sectionVisible ? (
+                    <iframe
+                      src={`https://www.youtube.com/embed/${sideVideos[0].video_id}?autoplay=1&mute=${leftMuted ? 1 : 0}&loop=1&playlist=${sideVideos[0].video_id}&controls=0&showinfo=0&modestbranding=1&rel=0`}
+                      title={sideVideos[0].title}
+                      className="absolute inset-0 w-full h-full border-0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <img src={`https://img.youtube.com/vi/${sideVideos[0].video_id}/mqdefault.jpg`} alt={sideVideos[0].title} className="w-full h-full object-cover" />
+                  )}
+                  <button
+                    onClick={() => setLeftMuted(prev => !prev)}
+                    className="absolute bottom-2 right-2 z-10 w-7 h-7 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-black/80 transition-all ring-1 ring-white/10"
+                    title={leftMuted ? "Unmute" : "Mute"}>
+                    {leftMuted ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+                  </button>
+                  <div className="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/80 to-transparent pointer-events-none">
+                    <p className="text-[10px] text-white font-semibold truncate">{sideVideos[0].title}</p>
                   </div>
-                </Link>
+                </div>
               </motion.div>
             )}
 
@@ -184,20 +207,29 @@ export default function TTTVMini() {
             {/* Right video */}
             {sideVideos[1] && sideVideos[1].video_id && (
               <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 }}
-                className="hidden md:block w-48 flex-shrink-0">
-                <Link to="/Browser">
-                  <div className="relative aspect-video rounded-xl overflow-hidden ring-1 ring-white/10 group cursor-pointer shadow-lg shadow-black/40">
-                    <img src={`https://img.youtube.com/vi/${sideVideos[1].video_id}/mqdefault.jpg`} alt={sideVideos[1].title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                      <div className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow group-hover:scale-110 transition-transform">
-                        <Play className="w-3.5 h-3.5 text-black ml-0.5" />
-                      </div>
-                    </div>
-                    <div className="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
-                      <p className="text-[10px] text-white font-semibold truncate">{sideVideos[1].title}</p>
-                    </div>
+                className="hidden md:block w-56 flex-shrink-0">
+                <div className="relative aspect-video rounded-xl overflow-hidden ring-1 ring-white/10 shadow-lg shadow-black/40">
+                  {sectionVisible ? (
+                    <iframe
+                      src={`https://www.youtube.com/embed/${sideVideos[1].video_id}?autoplay=1&mute=${rightMuted ? 1 : 0}&loop=1&playlist=${sideVideos[1].video_id}&controls=0&showinfo=0&modestbranding=1&rel=0`}
+                      title={sideVideos[1].title}
+                      className="absolute inset-0 w-full h-full border-0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <img src={`https://img.youtube.com/vi/${sideVideos[1].video_id}/mqdefault.jpg`} alt={sideVideos[1].title} className="w-full h-full object-cover" />
+                  )}
+                  <button
+                    onClick={() => setRightMuted(prev => !prev)}
+                    className="absolute bottom-2 right-2 z-10 w-7 h-7 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-black/80 transition-all ring-1 ring-white/10"
+                    title={rightMuted ? "Unmute" : "Mute"}>
+                    {rightMuted ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+                  </button>
+                  <div className="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/80 to-transparent pointer-events-none">
+                    <p className="text-[10px] text-white font-semibold truncate">{sideVideos[1].title}</p>
                   </div>
-                </Link>
+                </div>
               </motion.div>
             )}
           </div>
