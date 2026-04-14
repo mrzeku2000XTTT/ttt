@@ -423,12 +423,12 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" style={{ zIndex: 2 }} />
       </div>
       
-      {/* KASPA Button - Top Left */}
+      {/* KASPA Button + TTT 2.0 - Top Left */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1 }}
-        className="absolute top-4 left-4 md:top-6 md:left-6 z-50"
+        className="absolute top-4 left-4 md:top-6 md:left-6 z-50 flex items-center gap-2"
       >
         <Button
           onClick={handleKaspaClick}
@@ -441,6 +441,13 @@ export default function HomePage() {
           />
           KASPA
         </Button>
+        <Link to="/TTTV2">
+          <Button
+            className="bg-white/10 hover:bg-white/20 border border-white/20 text-white backdrop-blur-sm h-8 px-3 text-xs md:h-10 md:px-4 md:text-sm font-semibold"
+          >
+            TTT 2.0
+          </Button>
+        </Link>
       </motion.div>
 
       {/* Hamburger Menu Button */}
