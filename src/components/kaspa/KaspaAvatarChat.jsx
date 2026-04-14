@@ -53,6 +53,9 @@ export default function KaspaAvatarChat() {
     try { const v = localStorage.getItem("kai_show_bubble"); return v === null ? true : v === "true"; } catch { return true; }
   });
   const [showSettings, setShowSettings] = useState(false);
+  const [kaiMode, setKaiMode] = useState(() => {
+    try { return localStorage.getItem("kai_mode") || "kai"; } catch { return "kai"; }
+  }); // "kai" = new KAI (Kaspa expert), "classic" = old Kai (general TTT assistant with tools)
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -87,10 +90,13 @@ export default function KaspaAvatarChat() {
     syncLocalToGlobal();
   }, []);
 
-  // Persist bubble preference
+  // Persist bubble preference & mode
   useEffect(() => {
     try { localStorage.setItem("kai_show_bubble", String(showBubble)); } catch {}
   }, [showBubble]);
+  useEffect(() => {
+    try { localStorage.setItem("kai_mode", kaiMode); } catch {}
+  }, [kaiMode]);
 
   // Rotate speech bubble facts
   useEffect(() => {
@@ -182,17 +188,28 @@ export default function KaspaAvatarChat() {
         }
       } catch {}
       const context = messages.slice(-8).map(m => `${m.role === "user" ? "User" : "KAI"}: ${m.content}`).join("\n");
-      const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are KAI, the AI assistant of TTT — the Kaspa Super-App.
+
+      const classicPrompt = `You are Kai, a helpful AI assistant embedded in TTT (the Kaspa Super-App — NOT "Trust The Tech"). TTT is a massive community-built platform on Kaspa with 80+ apps, a social feed, AI agents, prediction markets, wallets, and more. The tagline is "Unchain Humanity."
+
+You're knowledgeable about Kaspa, crypto, the TTT platform features (Feed, AgentZK, DAGKnight, Bridge, TTTV, StakeDAG, KA-CHING, Hikaru, Xunhua, Terra, Zeku AI, App Store, NFT Mint, Arcade, Shop, Marketplace, Courses, and all 80+ apps), and general topics. You have access to the community feed and can reference what users have posted. You also have real-time internet access — use it to give accurate, up-to-date answers about crypto prices, news, events, and any topic. Keep responses concise, friendly, and helpful. Use emojis occasionally.${feedContext}
+
+Conversation so far:
+${context}
+
+User: ${userMsg}
+
+Respond as Kai:`;
+
+      const kaiPrompt = `You are KAI, the AI assistant of TTT — the Kaspa Super-App.
 
 CRITICAL IDENTITY — WHAT IS TTT:
 TTT is a Kaspa community super-app platform. It is NOT "Trust The Tech." TTT is the NAME of this application — a massive community-built platform on Kaspa with 80+ apps, a social feed, AI agents, prediction markets, wallets, and more. The tagline is "Unchain Humanity." TTT 2.0 is the latest redesigned version.
 
 TTT PLATFORM FEATURES (you know all of these intimately):
 - TTT Feed: Community social feed with posts, comments, media uploads, KAS tipping (including KRC-20 multi-token tips), Kaspa stamps, likes, and threaded replies
-- Agent ZK: Cryptographic wallet-based identity system — users verify ownership of Kasware, MetaMask, and TTT wallets to create a DAGKnight certificate. Includes AI agent profiles, connections, and a marketplace
+- Agent ZK: Cryptographic wallet-based identity system — users verify ownership of Kasware, MetaMask, and TTT wallets to create a DAGKnight certificate
 - TTTV: Built-in media browser and YouTube player — watch videos ad-free inside TTT
-- Send KAS (Bridge): Transfer KAS between L1 (Kasware) and L2 (Kasplex/MetaMask), with transaction history and proof-of-life
+- Send KAS (Bridge): Transfer KAS between L1 (Kasware) and L2 (Kasplex/MetaMask)
 - StakeDAG: Prediction markets with escrow — bet on outcomes using KAS
 - KA-CHING: Automated betting engine with live games
 - DAGKnight Wallet: Advanced multi-wallet management with verification DAG
@@ -201,40 +218,32 @@ TTT PLATFORM FEATURES (you know all of these intimately):
 - Zeku AI: Premium AI assistant
 - Terra: Kaspa wallet manager with mnemonic creation, KRC-20 token support
 - App Store: 80+ community-built apps and tools
-- Encrypted Notepad: Secure note-taking with Kaspa stamps
-- NFT Mint: Create and manage NFTs
-- Stamped News: Blockchain-verified news publishing with Kasware signatures
-- Bull Reels: Community engagement badges and rewards
-- Kaspa Node Map: Live visualization of Kaspa network nodes
-- K-University / KaSkool / Courses: Educational content about Kaspa
-- Shop & Marketplace: Buy/sell items and services with KAS
-- TTT ID: Unique identity system linked to Kaspa addresses
-- DAG Feed: Decentralized content feed
-- Global History: Transaction history viewer
-- Arcade: Games including Tetris Battle, Bingo, PacMan
-- Subscription: Premium features access
-- Profile: User profiles with wallet connections, badges, and settings
-- Categories: Customizable app dashboard with drag-and-drop organization
+- Encrypted Notepad, NFT Mint, Stamped News, Bull Reels, Kaspa Node Map
+- K-University / KaSkool / Courses, Shop & Marketplace, TTT ID
+- DAG Feed, Global History, Arcade (Tetris Battle, Bingo, PacMan)
+- Subscription, Profile, Categories (customizable app dashboard)
 
 KASPA BLOCKCHAIN KNOWLEDGE:
-- Kaspa uses blockDAG architecture (not a simple blockchain) — multiple blocks created simultaneously
+- Kaspa uses blockDAG architecture — multiple blocks created simultaneously
 - GHOSTDAG/PHANTOM protocol orders all blocks into a consistent ledger
 - Proof of Work secured by kHeavyHash (GPU-mineable, fair, decentralized)
 - Fair launch: NO premine, NO ICO, NO VC funding — 100% community-driven
 - 1-second block times, 10,000+ TPS capacity, targeting 32 BPS
-- Rust node rewrite (Rusty Kaspa) for performance
-- DAGKnight consensus upgrade
+- Rust node rewrite (Rusty Kaspa), DAGKnight consensus upgrade
 - KRC-20 token standard on Kasplex L2
 - Founded on research by Yonatan Sompolinsky
 
-You have real-time internet access. You can analyze the TTT feed, open Xunhua for drawing, and check user posts. Be concise, accurate, friendly, and use emojis occasionally. Always refer to TTT as the platform/app name, never as "Trust The Tech."${feedContext}
+You have real-time internet access. Be concise, accurate, friendly. Use emojis occasionally. Always refer to TTT as the platform/app name, never as "Trust The Tech."${feedContext}
 
 Conversation so far:
 ${context}
 
 User: ${userMsg}
 
-Respond as KAI:`,
+Respond as KAI:`;
+
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: kaiMode === "classic" ? classicPrompt : kaiPrompt,
         add_context_from_internet: true,
         model: "gemini_3_flash",
       });
@@ -340,11 +349,31 @@ Respond as KAI:`,
                   )}
                 </div>
                 <div>
-                  <div className="text-white font-bold text-sm tracking-wide">KAI</div>
-                  <div className="text-white/40 text-[10px]">Kaspa AI Assistant</div>
+                  <div className="text-white font-bold text-sm tracking-wide">{kaiMode === "classic" ? "Kai" : "KAI"}</div>
+                  <div className="text-white/40 text-[10px]">{kaiMode === "classic" ? "Classic • TTT Assistant" : "Kaspa AI Assistant"}</div>
                 </div>
               </div>
               <div className="flex items-center gap-1">
+                {/* Mode toggle */}
+                <button
+                  onClick={() => {
+                    const next = kaiMode === "kai" ? "classic" : "kai";
+                    setKaiMode(next);
+                    setMessages([{ role: "assistant", content: next === "classic"
+                      ? "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything — I have internet access and know every feature of the platform."
+                      : "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem."
+                    }]);
+                  }}
+                  className="h-6 px-2 rounded-full flex items-center gap-1 text-[10px] font-bold transition-all"
+                  style={{
+                    background: kaiMode === "classic" ? "rgba(168,85,247,0.3)" : "rgba(6,182,212,0.3)",
+                    border: `1px solid ${kaiMode === "classic" ? "rgba(168,85,247,0.5)" : "rgba(6,182,212,0.5)"}`,
+                    color: kaiMode === "classic" ? "rgba(192,132,252,0.95)" : "rgba(6,182,212,0.95)",
+                  }}
+                  title={kaiMode === "classic" ? "Switch to KAI mode" : "Switch to Classic Kai mode"}
+                >
+                  {kaiMode === "classic" ? "Classic" : "KAI"}
+                </button>
                 <button
                   onClick={() => setShowSettings(!showSettings)}
                   className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors hover:bg-white/10 ${showSettings ? 'text-cyan-400' : 'text-white/40 hover:text-white/80'}`}
@@ -358,7 +387,7 @@ Respond as KAI:`,
                   <Minus className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  onClick={() => { setIsOpen(false); setShowSettings(false); setMessages([{ role: "assistant", content: "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem." }]); }}
+                  onClick={() => { setIsOpen(false); setShowSettings(false); setMessages([{ role: "assistant", content: kaiMode === "classic" ? "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything." : "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem." }]); }}
                   className="w-7 h-7 rounded-full flex items-center justify-center text-white/40 hover:text-red-400 transition-colors hover:bg-white/10"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -461,7 +490,7 @@ Respond as KAI:`,
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-                  placeholder="Ask KAI about Kaspa..."
+                  placeholder={kaiMode === "classic" ? "Ask Kai anything..." : "Ask KAI about Kaspa..."}
                   className="flex-1 bg-transparent text-white/90 text-sm outline-none placeholder-white/30"
                 />
                 <button
