@@ -54,6 +54,56 @@ const KAI_FACTS = [
   "Kaspa = fastest PoW crypto",
 ];
 
+const TTT_APP_DOCS = `TTT PLATFORM — COMPLETE APP DIRECTORY (use these exact descriptions):
+- TTT Feed: Community social feed — posts, comments, media uploads, KAS tipping (including KRC-20 multi-token tips), Kaspa stamps, likes, threaded replies
+- Agent ZK: Cryptographic wallet-based identity system — users verify ownership of Kasware, MetaMask, and TTT wallets to create a DAGKnight certificate. NOT an AI agent.
+- TTTV: Built-in media browser and YouTube player — watch videos ad-free inside TTT. NOT for creating content.
+- Send KAS (Bridge): Transfer KAS between L1 (Kasware) and L2 (Kasplex/MetaMask). Cross-layer bridge.
+- StakeDAG: Prediction markets with escrow — bet on outcomes using KAS
+- KA-CHING: Automated betting engine with live games and rounds
+- DAGKnight Wallet: Advanced multi-wallet management with verification DAG and blue-score system
+- Hikaru: AI image generation studio — generate images from text prompts. This is for IMAGE GENERATION.
+- Xunhua: AI sketch-to-image studio — draw on a canvas and AI renders it into a full image. This is for DRAWING + AI rendering.
+- Zeku AI: Premium AI assistant with advanced capabilities
+- Terra: Kaspa WALLET manager — create wallets from mnemonic seed phrases, manage multiple wallets, send/receive KAS, view KRC-20 tokens, check balances. Terra is a WALLET app, NOT for image generation or AI.
+- App Store: 80+ community-built apps and tools
+- Encrypted Notepad: Private encrypted notes secured by your identity
+- NFT Mint: Create and mint NFTs on Kaspa
+- Stamped News: Blockchain-verified news publishing with Kasware signatures
+- Bull Reels: Short-form video content feed
+- Kaspa Node Map: Visual map of Kaspa network nodes worldwide
+- K-University / KaSkool / Courses: Educational platform for learning about Kaspa and crypto
+- Shop: Buy items with KAS
+- Marketplace: P2P marketplace for buying/selling with KAS
+- TTT ID: Register a unique identity tied to your Kaspa wallet
+- DAG Feed: Alternative feed focused on DAG-related content
+- Global History: Track global Kaspa network transactions toward milestones
+- Arcade: Games including Tetris Battle, Bingo, PacMan
+- KivR: IVR/phone system with Kaspa wallet integration
+- Canvas: Template design studio
+- Countdown: Kaspa milestone countdown timer
+- Profile: User profile management
+- Categories: Customizable app dashboard with drag-and-drop organization
+- Subscription: Premium subscription management
+- Prompto: AI prompt engineering tool
+- Cinekas: Movie/cinema browser
+- Speed: Quick image generation
+- Farlands: Exploration game
+- Klock: Clock/timer utility
+- Security Audit: App security scanning tool
+- Window: Embedded web browser
+- Freedom: Privacy-focused tools
+- Voxa: Voice/audio tools
+- V1: Legacy version viewer
+
+IMPORTANT CORRECTIONS — DO NOT CONFUSE THESE:
+- Terra = WALLET (seed phrases, send KAS, KRC-20 tokens). NOT image generation.
+- Hikaru = AI IMAGE generation from text. NOT a wallet.
+- Xunhua = AI SKETCH-to-image (canvas drawing). NOT a wallet.
+- Agent ZK = IDENTITY verification. NOT an AI chatbot.
+- Zeku AI = Premium AI ASSISTANT. Different from Agent ZK.
+- TTTV = VIDEO player/browser. NOT for creating videos.`;
+
 const IMAGE_KEYWORDS = [
   'draw', 'sketch', 'paint', 'create image', 'generate image', 'make image',
   'make a picture', 'create a picture', 'design', 'illustrate', 'artwork',
@@ -271,9 +321,13 @@ export default function KaspaAvatarChat() {
       }
       const context = messages.slice(isFast ? -4 : -8).map(m => `${m.role === "user" ? "User" : "KAI"}: ${m.content}`).join("\n");
 
-      const classicPrompt = `You are Kai, a helpful AI assistant embedded in TTT (the Kaspa Super-App — NOT "Trust The Tech"). TTT is a massive community-built platform on Kaspa with 80+ apps, a social feed, AI agents, prediction markets, wallets, and more. The tagline is "Unchain Humanity."
+      const classicPrompt = `You are Kai, a helpful AI assistant embedded in TTT (the Kaspa Super-App — NOT "Trust The Tech"). TTT is a massive community-built platform on Kaspa. The tagline is "Unchain Humanity."
 
-You're knowledgeable about Kaspa, crypto, the TTT platform features (Feed, AgentZK, DAGKnight, Bridge, TTTV, StakeDAG, KA-CHING, Hikaru, Xunhua, Terra, Zeku AI, App Store, NFT Mint, Arcade, Shop, Marketplace, Courses, and all 80+ apps), and general topics. You have access to the community feed and can reference what users have posted. You also have real-time internet access — use it to give accurate, up-to-date answers about crypto prices, news, events, and any topic. Keep responses concise, friendly, and helpful. Use emojis occasionally.${feedContext}
+${TTT_APP_DOCS}
+
+KASPA BLOCKCHAIN: blockDAG architecture, GHOSTDAG consensus, kHeavyHash PoW (GPU), fair launch (no premine/ICO), 1-second blocks, 10K+ TPS, targeting 32 BPS, Rust node rewrite, KRC-20 on Kasplex L2. Founded by Yonatan Sompolinsky.
+
+You have real-time internet access — use it for crypto prices, news, events. Keep responses concise, friendly, helpful. Use emojis occasionally. When recommending TTT apps, use the EXACT descriptions above — never guess.${feedContext}
 
 Conversation so far:
 ${context}
@@ -285,25 +339,9 @@ Respond as Kai:${speedInstruction}`;
       const kaiPrompt = `You are KAI, the AI assistant of TTT — the Kaspa Super-App.
 
 CRITICAL IDENTITY — WHAT IS TTT:
-TTT is a Kaspa community super-app platform. It is NOT "Trust The Tech." TTT is the NAME of this application — a massive community-built platform on Kaspa with 80+ apps, a social feed, AI agents, prediction markets, wallets, and more. The tagline is "Unchain Humanity." TTT 2.0 is the latest redesigned version.
+TTT is a Kaspa community super-app platform. It is NOT "Trust The Tech." TTT is the NAME of this application. The tagline is "Unchain Humanity." TTT 2.0 is the latest redesigned version.
 
-TTT PLATFORM FEATURES (you know all of these intimately):
-- TTT Feed: Community social feed with posts, comments, media uploads, KAS tipping (including KRC-20 multi-token tips), Kaspa stamps, likes, and threaded replies
-- Agent ZK: Cryptographic wallet-based identity system — users verify ownership of Kasware, MetaMask, and TTT wallets to create a DAGKnight certificate
-- TTTV: Built-in media browser and YouTube player — watch videos ad-free inside TTT
-- Send KAS (Bridge): Transfer KAS between L1 (Kasware) and L2 (Kasplex/MetaMask)
-- StakeDAG: Prediction markets with escrow — bet on outcomes using KAS
-- KA-CHING: Automated betting engine with live games
-- DAGKnight Wallet: Advanced multi-wallet management with verification DAG
-- Hikaru: AI image generation studio
-- Xunhua: AI sketch-to-image studio (drawing canvas + AI render)
-- Zeku AI: Premium AI assistant
-- Terra: Kaspa wallet manager with mnemonic creation, KRC-20 token support
-- App Store: 80+ community-built apps and tools
-- Encrypted Notepad, NFT Mint, Stamped News, Bull Reels, Kaspa Node Map
-- K-University / KaSkool / Courses, Shop & Marketplace, TTT ID
-- DAG Feed, Global History, Arcade (Tetris Battle, Bingo, PacMan)
-- Subscription, Profile, Categories (customizable app dashboard)
+${TTT_APP_DOCS}
 
 KASPA BLOCKCHAIN KNOWLEDGE:
 - Kaspa uses blockDAG architecture — multiple blocks created simultaneously
@@ -315,7 +353,7 @@ KASPA BLOCKCHAIN KNOWLEDGE:
 - KRC-20 token standard on Kasplex L2
 - Founded on research by Yonatan Sompolinsky
 
-You have real-time internet access. Be concise, accurate, friendly. Use emojis occasionally. Always refer to TTT as the platform/app name, never as "Trust The Tech."${feedContext}
+You have real-time internet access. Be concise, accurate, friendly. Use emojis occasionally. Always refer to TTT as the platform/app name, never as "Trust The Tech." When recommending apps, use the EXACT descriptions from the docs above — never guess or confuse apps.${feedContext}
 
 Conversation so far:
 ${context}
