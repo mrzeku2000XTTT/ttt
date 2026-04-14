@@ -396,8 +396,9 @@ export default function KaiChatbot() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                  placeholder="Ask Kai anything..."
-                  className="flex-1 bg-transparent text-white/90 text-sm outline-none placeholder-white/30"
+                  placeholder="Search or ask Kai..."
+                  className="flex-1 bg-transparent text-white/90 outline-none placeholder-white/30"
+                  style={{ fontSize: '16px' }}
                 />
                 <button
                   onClick={sendMessage}
