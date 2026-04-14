@@ -146,7 +146,7 @@ export default function TTTV2Page() {
 
       {/* ── nav ── */}
       <nav className="fixed top-0 inset-x-0 z-50 h-12 flex items-center justify-between px-5 bg-[#F5F5F7]/70 backdrop-blur-2xl backdrop-saturate-150 border-b border-zinc-200/50">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 group">
+        <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center gap-1.5 group">
           <span className="text-[15px] font-[900] tracking-tight text-zinc-900 group-hover:text-cyan-600 transition-colors">TTT</span>
           <span className="text-[9px] font-bold bg-black text-white px-1.5 py-[1px] rounded">2.0</span>
         </button>
@@ -199,7 +199,7 @@ export default function TTTV2Page() {
       </section>
 
       {/* ── KAS market ribbon ── */}
-      <section className="py-8 px-5 bg-zinc-900 text-white">
+      <motion.section initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.7 }} className="py-8 px-5 bg-zinc-900 text-white">
         <div className="max-w-5xl mx-auto">
           {kasData.loading ? (
             <div className="flex items-center justify-center gap-2 text-zinc-500 text-sm py-4">
@@ -260,19 +260,27 @@ export default function TTTV2Page() {
             <div className="text-center text-zinc-500 text-sm py-4">Market data unavailable</div>
           )}
         </div>
-      </section>
+      </motion.section>
 
       {/* ── Products ── */}
-      <ProductGrid />
+      <motion.div initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.7 }}>
+        <ProductGrid />
+      </motion.div>
 
       {/* ── TTTV Mini Player ── */}
-      <TTTVMini />
+      <motion.div initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.7, delay: 0.1 }}>
+        <TTTVMini />
+      </motion.div>
 
       {/* ── Community Videos ── */}
-      <CommunityVideos />
+      <motion.div initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.7, delay: 0.1 }}>
+        <CommunityVideos />
+      </motion.div>
 
       {/* ── What's New (updates + posts + coming soon) ── */}
-      <WhatsNew kaspaUpdates={kaspaUpdates} posts={posts} />
+      <motion.div initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.7, delay: 0.1 }}>
+        <WhatsNew kaspaUpdates={kaspaUpdates} posts={posts} />
+      </motion.div>
 
       {/* ── Roadmap ── */}
       <section id="roadmap" className="py-20 sm:py-28 px-5">
@@ -291,7 +299,7 @@ export default function TTTV2Page() {
       </section>
 
       {/* ── CTA ── */}
-      <section className="py-20 sm:py-28 px-5">
+      <motion.section initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.7 }} className="py-20 sm:py-28 px-5">
         <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
           className="max-w-3xl mx-auto text-center bg-zinc-900 rounded-[28px] p-10 sm:p-16 relative overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(6,182,212,0.15),transparent_60%)]" />
@@ -317,7 +325,7 @@ export default function TTTV2Page() {
             </div>
           </div>
         </motion.div>
-      </section>
+      </motion.section>
 
       {/* Embedded site viewer */}
       {embeddedSite && (
@@ -335,7 +343,7 @@ export default function TTTV2Page() {
       <MobileNavToast />
 
       {/* ── footer ── */}
-      <footer className="py-8 px-5 border-t border-zinc-200/50">
+      <motion.footer initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="py-8 px-5 border-t border-zinc-200/50">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-[12px] text-zinc-400">
           <span className="font-medium">TTT 2.0 — Built on Kaspa</span>
           <div className="flex items-center gap-5">
@@ -347,7 +355,7 @@ export default function TTTV2Page() {
             </a>
           </div>
         </div>
-      </footer>
+      </motion.footer>
     </div>
   );
 }
