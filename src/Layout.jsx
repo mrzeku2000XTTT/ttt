@@ -14,7 +14,6 @@ const VideoPlayerProvider = React.lazy(() => import("@/components/VideoPlayerCon
 
 import KaiChatbot from "@/components/feed/KaiChatbot";
 import NewsToast from "@/components/feed/NewsToast";
-import KaspaAvatarChat from "@/components/kaspa/KaspaAvatarChat";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -908,7 +907,6 @@ export default function Layout({ children, currentPageName }) {
       </div>
       {currentPageName === 'Feed' && <NewsToast />}
       {currentPageName === 'Feed' && <KaiChatbot />}
-      <KaspaAvatarChat />
       <React.Suspense fallback={null}>
         <MiniPlayer currentPage={currentPageName} />
       </React.Suspense>

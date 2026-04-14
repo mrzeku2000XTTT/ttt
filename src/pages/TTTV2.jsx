@@ -11,7 +11,6 @@ import ProductGrid from "@/components/tttv2/ProductGrid";
 import WhatsNew from "@/components/tttv2/WhatsNew";
 import KaspaExplainer from "@/components/tttv2/KaspaExplainer";
 import CommunityVideos from "@/components/tttv2/CommunityVideos";
-import KaspaAvatarChat from "@/components/kaspa/KaspaAvatarChat";
 
 /* ─── roadmap data ─── */
 const ROADMAP = [
@@ -290,9 +289,6 @@ export default function TTTV2Page() {
           </div>
         </motion.div>
       </section>
-
-      {/* KAI floating chat */}
-      <KaspaAvatarChat />
 
       {/* ── footer ── */}
       <footer className="py-8 px-5 border-t border-zinc-200/50">
