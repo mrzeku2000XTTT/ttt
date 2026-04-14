@@ -197,42 +197,54 @@ export default function TTTV2Page() {
       </motion.section>
 
       {/* ── KAS market ribbon ── */}
-      <section className="border-y border-zinc-200/60 bg-white py-8 px-5">
+      <section className="py-8 px-5 bg-zinc-900 text-white">
         <div className="max-w-5xl mx-auto">
           {kasData.loading ? (
-            <div className="flex items-center justify-center gap-2 text-zinc-400 text-sm py-4">
-              <div className="w-4 h-4 border-2 border-zinc-300 border-t-zinc-600 rounded-full animate-spin" />
+            <div className="flex items-center justify-center gap-2 text-zinc-500 text-sm py-4">
+              <div className="w-4 h-4 border-2 border-zinc-600 border-t-zinc-300 rounded-full animate-spin" />
               Loading market data…
             </div>
           ) : kasData.price ? (
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-12">
-              <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="flex items-center gap-3">
-                <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/13e8ec094_image.png" alt="KAS" className="w-8 h-8 rounded-full" />
-                <div>
-                  <div className="text-[11px] text-zinc-400 font-medium tracking-wide uppercase">Kaspa Price</div>
-                  <div className="text-2xl sm:text-3xl font-[900] text-zinc-900">${kasData.price.toFixed(4)}</div>
-                </div>
-              </motion.div>
-              <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.08 }} className="text-center">
-                <div className="text-[11px] text-zinc-400 font-medium tracking-wide uppercase">24h Change</div>
-                <div className={`text-2xl sm:text-3xl font-[900] ${kasData.change24h >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                  {kasData.change24h >= 0 ? '+' : ''}{kasData.change24h.toFixed(2)}%
-                </div>
-              </motion.div>
-              <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.16 }} className="text-center">
-                <div className="text-[11px] text-zinc-400 font-medium tracking-wide uppercase">Network</div>
-                <div className="text-lg sm:text-xl font-[900] text-zinc-900">blockDAG</div>
-                <div className="text-[10px] text-zinc-400">32 blocks/sec</div>
-              </motion.div>
-              <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.24 }}>
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-12">
+                <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="flex items-center gap-3">
+                  <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/13e8ec094_image.png" alt="KAS" className="w-8 h-8 rounded-full" />
+                  <div>
+                    <div className="text-[11px] text-zinc-500 font-medium tracking-wide uppercase">Kaspa Price</div>
+                    <div className="text-2xl sm:text-3xl font-[900] text-white">${kasData.price.toFixed(4)}</div>
+                  </div>
+                </motion.div>
+                <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.08 }} className="text-center">
+                  <div className="text-[11px] text-zinc-500 font-medium tracking-wide uppercase">24h Change</div>
+                  <div className={`text-2xl sm:text-3xl font-[900] ${kasData.change24h >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {kasData.change24h >= 0 ? '+' : ''}{kasData.change24h.toFixed(2)}%
+                  </div>
+                </motion.div>
+                <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.16 }} className="text-center">
+                  <div className="text-[11px] text-zinc-500 font-medium tracking-wide uppercase">Network</div>
+                  <div className="text-lg sm:text-xl font-[900] text-white">blockDAG</div>
+                  <div className="text-[10px] text-zinc-500">32 blocks/sec</div>
+                </motion.div>
+              </div>
+              <div className="flex items-center justify-center gap-4 flex-wrap">
                 <a href="https://kaspa.org" target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-cyan-600 hover:text-cyan-700 transition-colors">
+                  className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-cyan-400 hover:text-cyan-300 transition-colors">
                   kaspa.org <ExternalLink className="w-3 h-3" />
                 </a>
-              </motion.div>
+                <span className="text-zinc-700">·</span>
+                <a href="https://kasmi.online" target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-cyan-400 hover:text-cyan-300 transition-colors">
+                  kasmi.online <ExternalLink className="w-3 h-3" />
+                </a>
+                <span className="text-zinc-700">·</span>
+                <a href="https://kaspahub.org" target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-cyan-400 hover:text-cyan-300 transition-colors">
+                  kaspahub.org <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
             </div>
           ) : (
-            <div className="text-center text-zinc-400 text-sm py-4">Market data unavailable</div>
+            <div className="text-center text-zinc-500 text-sm py-4">Market data unavailable</div>
           )}
         </div>
       </section>
