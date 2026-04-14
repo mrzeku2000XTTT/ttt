@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Play, Search, Youtube, ChevronRight, Upload, X, Loader2, Check } from "lucide-react";
@@ -13,6 +13,11 @@ export default function TTTVMini() {
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [sideVideos, setSideVideos] = useState([]);
+
+  useEffect(() => {
+    base44.entities.CommunityVideo.list("-created_date", 2).then(v => setSideVideos(v)).catch(() => {});
+  }, []);
 
   const extractVideoId = (input) => {
     const patterns = [
@@ -76,20 +81,67 @@ export default function TTTVMini() {
 
   return (
     <section id="tttv" className="py-20 sm:py-28 px-5 bg-gradient-to-b from-zinc-900 to-black text-white">
-      <div className="max-w-5xl mx-auto text-center">
+      <div className="max-w-6xl mx-auto text-center">
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="bg-cyan-500 rounded-lg px-3 py-1.5 shadow-[0_0_20px_rgba(6,182,212,0.5)]">
-              <span className="text-black font-[900] text-lg tracking-tight">TTTV</span>
+
+          {/* Header with flanking videos */}
+          <div className="flex items-center justify-center gap-6 mb-8">
+            {/* Left video */}
+            {sideVideos[0] && (
+              <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }}
+                className="hidden md:block w-48 flex-shrink-0">
+                <Link to="/Browser">
+                  <div className="relative aspect-video rounded-xl overflow-hidden ring-1 ring-white/10 group cursor-pointer shadow-lg shadow-black/40">
+                    <img src={`https://img.youtube.com/vi/${sideVideos[0].video_id}/mqdefault.jpg`} alt={sideVideos[0].title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                      <div className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow group-hover:scale-110 transition-transform">
+                        <Play className="w-3.5 h-3.5 text-black ml-0.5" />
+                      </div>
+                    </div>
+                    <div className="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
+                      <p className="text-[10px] text-white font-semibold truncate">{sideVideos[0].title}</p>
+                    </div>
+                  </div>
+                </Link>
+              </motion.div>
+            )}
+
+            {/* Center content */}
+            <div className="flex-1 max-w-xl">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <div className="bg-cyan-500 rounded-lg px-3 py-1.5 shadow-[0_0_20px_rgba(6,182,212,0.5)]">
+                  <span className="text-black font-[900] text-lg tracking-tight">TTTV</span>
+                </div>
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-[900] tracking-tight mb-3">Watch anything.</h2>
+              <p className="text-zinc-400 text-sm max-w-md mx-auto">
+                Paste a YouTube link and watch directly inside TTT — no ads, no distractions.
+              </p>
             </div>
+
+            {/* Right video */}
+            {sideVideos[1] && (
+              <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 }}
+                className="hidden md:block w-48 flex-shrink-0">
+                <Link to="/Browser">
+                  <div className="relative aspect-video rounded-xl overflow-hidden ring-1 ring-white/10 group cursor-pointer shadow-lg shadow-black/40">
+                    <img src={`https://img.youtube.com/vi/${sideVideos[1].video_id}/mqdefault.jpg`} alt={sideVideos[1].title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                      <div className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow group-hover:scale-110 transition-transform">
+                        <Play className="w-3.5 h-3.5 text-black ml-0.5" />
+                      </div>
+                    </div>
+                    <div className="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
+                      <p className="text-[10px] text-white font-semibold truncate">{sideVideos[1].title}</p>
+                    </div>
+                  </div>
+                </Link>
+              </motion.div>
+            )}
           </div>
-          <h2 className="text-3xl sm:text-4xl font-[900] tracking-tight mb-3">Watch anything.</h2>
-          <p className="text-zinc-400 text-sm max-w-md mx-auto mb-8">
-            Paste a YouTube link and watch directly inside TTT — no ads, no distractions.
-          </p>
 
           {/* Search / URL input */}
-          <div className="flex items-center gap-2 max-w-xl mx-auto bg-white/5 backdrop-blur-sm rounded-2xl px-4 py-3 ring-1 ring-white/15 hover:ring-white/25 transition-all">
+          <div className="flex items-center gap-2 max-w-xl mx-auto mt-8 bg-white/5 backdrop-blur-sm rounded-2xl px-4 py-3 ring-1 ring-white/15 hover:ring-white/25 transition-all">
             <Youtube className="w-5 h-5 text-red-400 flex-shrink-0" />
             <input
               value={url}
