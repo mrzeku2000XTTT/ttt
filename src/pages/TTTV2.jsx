@@ -199,17 +199,17 @@ export default function TTTV2Page() {
       {/* ── original hero ── */}
       <section className="relative py-20 sm:py-28 px-5 text-center overflow-hidden">
         <div className="absolute inset-0">
-          {/* Background image base layer */}
-          <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/20b6a8247_generated_image.png" alt="" className="w-full h-full object-cover" />
-          {/* Video overlay — blended with opacity */}
+          {/* Background image base layer — blended */}
+          <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/20b6a8247_generated_image.png" alt="" className="w-full h-full object-cover opacity-50 mix-blend-luminosity" />
+          {/* Video overlay — responsive fit */}
           {heroVideoUrl && (
             <video
               src={heroVideoUrl}
               autoPlay loop playsInline
-              className="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-screen"
+              className="absolute inset-0 w-full h-full object-contain sm:object-cover opacity-40 mix-blend-screen"
             />
           )}
-          <div className="absolute inset-0 bg-black/30" />
+          <div className="absolute inset-0 bg-black/50" />
         </div>
         <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1, ease: [.22,1,.36,1] }} className="relative max-w-3xl mx-auto">
           <p className="text-[13px] font-semibold text-cyan-400 tracking-wide uppercase mb-4">Introducing TTT 2.0</p>
