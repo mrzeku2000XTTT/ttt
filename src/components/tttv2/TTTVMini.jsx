@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { Play, Search, Youtube, ChevronRight, Upload, X, Loader2, Check } from "lucide-react";
+import { Play, Search, Youtube, ChevronRight, Upload, X, Loader2, Check, Settings } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 export default function TTTVMini() {
@@ -13,11 +13,64 @@ export default function TTTVMini() {
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [uploadError, setUploadError] = useState("");
-  const [sideVideos, setSideVideos] = useState([]);
+  const [sideVideos, setSideVideos] = useState([null, null]); // [left, right]
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showSideEdit, setShowSideEdit] = useState(false);
+  const [leftUrl, setLeftUrl] = useState("");
+  const [rightUrl, setRightUrl] = useState("");
+  const [savingSides, setSavingSides] = useState(false);
 
   useEffect(() => {
-    base44.entities.CommunityVideo.list("-created_date", 2).then(v => setSideVideos(v)).catch(() => {});
+    loadSideVideos();
+    base44.auth.me().then(u => setIsAdmin(u?.role === "admin")).catch(() => {});
   }, []);
+
+  const loadSideVideos = async () => {
+    try {
+      const configs = await base44.entities.KAIConfig.filter({ config_key: "tttv_side_videos" });
+      if (configs.length > 0 && configs[0].config_value) {
+        const parsed = JSON.parse(configs[0].config_value);
+        setSideVideos([
+          parsed.left ? { video_id: extractVideoId(parsed.left), title: parsed.leftTitle || "Featured", url: parsed.left } : null,
+          parsed.right ? { video_id: extractVideoId(parsed.right), title: parsed.rightTitle || "Featured", url: parsed.right } : null,
+        ]);
+        setLeftUrl(parsed.left || "");
+        setRightUrl(parsed.right || "");
+      } else {
+        // Fallback to latest community videos
+        const v = await base44.entities.CommunityVideo.list("-created_date", 2);
+        setSideVideos([v[0] || null, v[1] || null]);
+      }
+    } catch {
+      base44.entities.CommunityVideo.list("-created_date", 2).then(v => setSideVideos([v[0] || null, v[1] || null])).catch(() => {});
+    }
+  };
+
+  const saveSideVideos = async () => {
+    setSavingSides(true);
+    try {
+      const leftVid = extractVideoId(leftUrl.trim());
+      const rightVid = extractVideoId(rightUrl.trim());
+      const value = JSON.stringify({
+        left: leftUrl.trim(),
+        right: rightUrl.trim(),
+        leftTitle: "Featured",
+        rightTitle: "Featured",
+      });
+      const existing = await base44.entities.KAIConfig.filter({ config_key: "tttv_side_videos" });
+      if (existing.length > 0) {
+        await base44.entities.KAIConfig.update(existing[0].id, { config_value: value });
+      } else {
+        await base44.entities.KAIConfig.create({ config_key: "tttv_side_videos", config_value: value });
+      }
+      setSideVideos([
+        leftVid ? { video_id: leftVid, title: "Featured", url: leftUrl.trim() } : null,
+        rightVid ? { video_id: rightVid, title: "Featured", url: rightUrl.trim() } : null,
+      ]);
+      setShowSideEdit(false);
+    } catch {}
+    setSavingSides(false);
+  };
 
   const extractVideoId = (input) => {
     const patterns = [
@@ -85,9 +138,18 @@ export default function TTTVMini() {
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
 
           {/* Header with flanking videos */}
-          <div className="flex items-center justify-center gap-6 mb-8">
+          <div className="flex items-center justify-center gap-6 mb-8 relative">
+            {/* Admin edit button */}
+            {isAdmin && (
+              <button onClick={() => setShowSideEdit(true)}
+                className="absolute -top-2 right-0 z-10 w-8 h-8 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+                title="Edit featured videos">
+                <Settings className="w-3.5 h-3.5" />
+              </button>
+            )}
+
             {/* Left video */}
-            {sideVideos[0] && (
+            {sideVideos[0] && sideVideos[0].video_id && (
               <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }}
                 className="hidden md:block w-48 flex-shrink-0">
                 <Link to="/Browser">
@@ -120,7 +182,7 @@ export default function TTTVMini() {
             </div>
 
             {/* Right video */}
-            {sideVideos[1] && (
+            {sideVideos[1] && sideVideos[1].video_id && (
               <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 }}
                 className="hidden md:block w-48 flex-shrink-0">
                 <Link to="/Browser">
@@ -189,6 +251,58 @@ export default function TTTVMini() {
             </div>
             <p className="text-[11px] text-zinc-500 mt-2">Powered by KaSshi.io</p>
           </div>
+
+          {/* Side Videos Edit Modal */}
+          <AnimatePresence>
+            {showSideEdit && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
+                onClick={() => setShowSideEdit(false)}>
+                <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+                  onClick={e => e.stopPropagation()}
+                  className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-md p-6 text-left">
+                  <div className="flex items-center justify-between mb-5">
+                    <h3 className="text-lg font-bold text-white">Edit Featured Videos</h3>
+                    <button onClick={() => setShowSideEdit(false)} className="text-white/40 hover:text-white"><X className="w-5 h-5" /></button>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-xs text-zinc-400 mb-1.5 block">Left Video — YouTube URL</label>
+                      <div className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2.5 ring-1 ring-white/10">
+                        <Youtube className="w-4 h-4 text-red-400 flex-shrink-0" />
+                        <input value={leftUrl} onChange={e => setLeftUrl(e.target.value)}
+                          placeholder="https://youtube.com/watch?v=..."
+                          className="flex-1 bg-transparent text-white text-sm outline-none placeholder-zinc-500" />
+                      </div>
+                      {leftUrl && extractVideoId(leftUrl.trim()) && (
+                        <div className="mt-2 rounded-lg overflow-hidden aspect-video bg-black">
+                          <img src={`https://img.youtube.com/vi/${extractVideoId(leftUrl.trim())}/mqdefault.jpg`} alt="Preview" className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <label className="text-xs text-zinc-400 mb-1.5 block">Right Video — YouTube URL</label>
+                      <div className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2.5 ring-1 ring-white/10">
+                        <Youtube className="w-4 h-4 text-red-400 flex-shrink-0" />
+                        <input value={rightUrl} onChange={e => setRightUrl(e.target.value)}
+                          placeholder="https://youtube.com/watch?v=..."
+                          className="flex-1 bg-transparent text-white text-sm outline-none placeholder-zinc-500" />
+                      </div>
+                      {rightUrl && extractVideoId(rightUrl.trim()) && (
+                        <div className="mt-2 rounded-lg overflow-hidden aspect-video bg-black">
+                          <img src={`https://img.youtube.com/vi/${extractVideoId(rightUrl.trim())}/mqdefault.jpg`} alt="Preview" className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                    </div>
+                    <button onClick={saveSideVideos} disabled={savingSides}
+                      className="w-full h-11 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white font-semibold text-sm rounded-xl flex items-center justify-center gap-2 transition-colors">
+                      {savingSides ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <><Check className="w-4 h-4" /> Save for All Users</>}
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Upload Modal */}
           <AnimatePresence>
