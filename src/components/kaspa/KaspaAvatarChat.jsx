@@ -153,7 +153,7 @@ Respond as KAI:`,
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsOpen(true)}
               className="w-14 h-14 rounded-full overflow-hidden shadow-2xl shadow-cyan-500/30 ring-2 ring-cyan-400/50 flex-shrink-0 relative"
-              style={{ background: "linear-gradient(135deg, #0e7490, #7c3aed)" }}
+              style={{ background: "linear-gradient(135deg, #0e7490, #06b6d4)" }}
             >
               <AvatarContent />
             </motion.button>
@@ -185,7 +185,7 @@ Respond as KAI:`,
             <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-cyan-500/40 flex-shrink-0"
-                  style={{ background: "linear-gradient(135deg, #0e7490, #7c3aed)" }}>
+                  style={{ background: "linear-gradient(135deg, #0e7490, #06b6d4)" }}>
                   <AvatarContent />
                 </div>
                 <div>
