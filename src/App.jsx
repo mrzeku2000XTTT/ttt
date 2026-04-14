@@ -28,6 +28,7 @@ import HikaruPage from './pages/Hikaru';
 import TTTV2Page from './pages/TTTV2';
 import WhatIsKaspaPage from './pages/WhatIsKaspa';
 import ExplorePage from './pages/Explore';
+import AppStoreV2Page from './pages/AppStoreV2';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -98,6 +99,7 @@ const AuthenticatedApp = () => {
       <Route path="/TTTV2" element={<TTTV2Page />} />
       <Route path="/WhatIsKaspa" element={<WhatIsKaspaPage />} />
       <Route path="/Explore" element={<ExplorePage />} />
+      <Route path="/AppStoreV2" element={<AppStoreV2Page />} />
       <Route path="/ValorantArena" element={<ValorantArenaPage />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>

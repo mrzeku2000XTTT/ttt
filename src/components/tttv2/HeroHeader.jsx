@@ -186,7 +186,7 @@ export default function HeroHeader() {
               Get Started <ArrowUpRight className="w-4 h-4" />
             </motion.button>
           </Link>
-          <Link to="/AppStore">
+          <Link to="/AppStoreV2">
             <motion.button
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
