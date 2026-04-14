@@ -75,24 +75,82 @@ Deno.serve(async (req) => {
       return { mnemonic, privateKey, address: cleanAddress };
     }
 
-    // Fetch all coin prices from CoinGecko in one call
+    // Fetch all coin prices — try multiple sources
     const coinIds = coinsToCreate.map(c => c.id).join(',');
     console.log(`Fetching prices for: ${coinIds}`);
     let priceData = {};
+
+    // CoinGecko symbol-to-Binance mapping for fallback
+    const BINANCE_SYMBOLS = {
+      kaspa: 'KASUSDT', bitcoin: 'BTCUSDT', ethereum: 'ETHUSDT',
+      solana: 'SOLUSDT', ripple: 'XRPUSDT', dogecoin: 'DOGEUSDT',
+      binancecoin: 'BNBUSDT', hyperliquid: 'HYPEUSDT',
+    };
+
+    // Source 1: CoinGecko
     try {
       const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinIds}&vs_currencies=usd&include_24hr_change=true`);
-      const text = await res.text();
-      console.log(`CoinGecko status: ${res.status}, body length: ${text.length}`);
-      if (!res.ok) {
-        console.error(`CoinGecko error: ${text.slice(0, 200)}`);
-        return Response.json({ error: `CoinGecko API error: ${res.status}`, detail: text.slice(0, 200) }, { status: 500 });
+      if (res.ok) {
+        priceData = await res.json();
+        console.log(`CoinGecko OK: ${Object.keys(priceData).join(', ')}`);
+      } else {
+        console.log(`CoinGecko rate limited (${res.status}), trying fallbacks...`);
       }
-      priceData = JSON.parse(text);
-      console.log(`Got prices for: ${Object.keys(priceData).join(', ')}`);
     } catch (e) {
-      console.error('CoinGecko fetch failed:', e.message);
-      return Response.json({ error: 'Failed to fetch prices: ' + e.message }, { status: 500 });
+      console.log(`CoinGecko failed: ${e.message}, trying fallbacks...`);
     }
+
+    // Source 2: Binance public API (no key needed) — fill missing coins
+    const missingCoins = coinsToCreate.filter(c => !priceData[c.id]?.usd);
+    if (missingCoins.length > 0) {
+      console.log(`Trying Binance for ${missingCoins.length} missing coins...`);
+      for (const coin of missingCoins) {
+        const sym = BINANCE_SYMBOLS[coin.id];
+        if (!sym) continue;
+        try {
+          const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${sym}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.price) {
+              priceData[coin.id] = { usd: parseFloat(data.price), usd_24h_change: 0 };
+              console.log(`Binance ${coin.id}: $${data.price}`);
+            }
+          }
+        } catch (e) {
+          console.log(`Binance ${coin.id} failed: ${e.message}`);
+        }
+      }
+    }
+
+    // Source 3: CryptoCompare (no key needed for basic) — fill any still missing
+    const stillMissing = coinsToCreate.filter(c => !priceData[c.id]?.usd);
+    if (stillMissing.length > 0) {
+      const symbols = stillMissing.map(c => c.symbol).join(',');
+      console.log(`Trying CryptoCompare for: ${symbols}`);
+      try {
+        const res = await fetch(`https://min-api.cryptocompare.com/data/pricemulti?fsyms=${symbols}&tsyms=USD`);
+        if (res.ok) {
+          const data = await res.json();
+          for (const coin of stillMissing) {
+            if (data[coin.symbol]?.USD) {
+              priceData[coin.id] = { usd: data[coin.symbol].USD, usd_24h_change: 0 };
+              console.log(`CryptoCompare ${coin.symbol}: $${data[coin.symbol].USD}`);
+            }
+          }
+        }
+      } catch (e) {
+        console.log(`CryptoCompare failed: ${e.message}`);
+      }
+    }
+
+    const finalMissing = coinsToCreate.filter(c => !priceData[c.id]?.usd);
+    if (finalMissing.length > 0) {
+      console.log(`Still missing prices for: ${finalMissing.map(c => c.symbol).join(', ')}`);
+    }
+    if (Object.keys(priceData).length === 0) {
+      return Response.json({ error: 'All price sources failed' }, { status: 500 });
+    }
+    console.log(`Final prices available: ${Object.keys(priceData).join(', ')}`);
 
     // Create a prediction game for each missing coin
     for (const coin of coinsToCreate) {
