@@ -31,15 +31,11 @@ export default function KaspaAvatarChat() {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Rotate speech bubble facts
+  // Rotate speech bubble facts — no flash, just swap text
   useEffect(() => {
     if (isOpen) return;
     const interval = setInterval(() => {
-      setShowBubble(false);
-      setTimeout(() => {
-        setBubbleText(KAI_FACTS[Math.floor(Math.random() * KAI_FACTS.length)]);
-        setShowBubble(true);
-      }, 400);
+      setBubbleText(KAI_FACTS[Math.floor(Math.random() * KAI_FACTS.length)]);
     }, 5000);
     return () => clearInterval(interval);
   }, [isOpen]);
