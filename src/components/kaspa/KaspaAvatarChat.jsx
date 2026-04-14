@@ -22,7 +22,7 @@ export default function KaspaAvatarChat() {
   const [isOpen, setIsOpen] = useState(false);
   const [videoUrl] = useState(() => localStorage.getItem(STORAGE_KEY) || "");
   const [messages, setMessages] = useState([
-    { role: "assistant", content: "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem." }
+    { role: "assistant", content: "Hey! I'm KAI 👋 Ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem." }
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -156,6 +156,9 @@ Respond as KAI:`,
               style={{ background: "linear-gradient(135deg, #0e7490, #7c3aed)" }}
             >
               <AvatarContent />
+              <div className="absolute -top-1 -left-1 bg-black/80 border border-cyan-500/40 rounded-full px-1.5 py-0.5">
+                <span className="text-[8px] font-black text-cyan-400 tracking-wider">KAI</span>
+              </div>
             </motion.button>
           </motion.div>
         )}
@@ -201,7 +204,7 @@ Respond as KAI:`,
                   <Minus className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  onClick={() => { setIsOpen(false); setMessages([{ role: "assistant", content: "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem." }]); }}
+                  onClick={() => { setIsOpen(false); setMessages([{ role: "assistant", content: "Hey! I'm KAI 👋 Ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem." }]); }}
                   className="w-7 h-7 rounded-full flex items-center justify-center text-white/40 hover:text-red-400 transition-colors hover:bg-white/10"
                 >
                   <X className="w-3.5 h-3.5" />
