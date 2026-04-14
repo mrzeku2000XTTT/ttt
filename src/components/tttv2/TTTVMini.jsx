@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Play, Search, Youtube, ChevronRight, Upload, X, Loader2, Check, Settings, Volume2, VolumeX, Music } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { markKaSshiInlineVisited } from "@/components/KaSshiPlayer";
+import { markKaSshiInlineVisited, setKaSshiGlobal } from "@/components/KaSshiPlayer";
 
 export default function TTTVMini() {
   const navigate = useNavigate();
@@ -33,6 +33,8 @@ export default function TTTVMini() {
       // Mark KaSshi as visited when user scrolls to TTTV section
       if (entry.isIntersecting) {
         markKaSshiInlineVisited();
+        // Pre-activate the global player so its iframe is loaded and ready
+        setKaSshiGlobal(true);
       }
     }, { threshold: 0.3 });
     observer.observe(el);
