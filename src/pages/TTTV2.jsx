@@ -150,7 +150,8 @@ export default function TTTV2Page() {
         </button>
         <div className="hidden sm:flex items-center gap-6 text-[13px] font-medium text-zinc-500">
           <a href="#products" className="hover:text-zinc-900 transition-colors">Products</a>
-          <a href="#kaspa" className="hover:text-zinc-900 transition-colors">Kaspa</a>
+          <Link to="/WhatIsKaspa" className="hover:text-zinc-900 transition-colors">Kaspa</Link>
+          <a href="#community" className="hover:text-zinc-900 transition-colors">Community</a>
           <a href="#news" className="hover:text-zinc-900 transition-colors">What's New</a>
           <a href="#roadmap" className="hover:text-zinc-900 transition-colors">Roadmap</a>
         </div>

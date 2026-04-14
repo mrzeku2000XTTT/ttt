@@ -26,6 +26,7 @@ import SecurityAuditPage from './pages/SecurityAudit';
 import CanvasPage from './pages/Canvas';
 import HikaruPage from './pages/Hikaru';
 import TTTV2Page from './pages/TTTV2';
+import WhatIsKaspaPage from './pages/WhatIsKaspa';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -94,6 +95,7 @@ const AuthenticatedApp = () => {
       <Route path="/Canvas" element={<CanvasPage />} />
       <Route path="/Hikaru" element={<HikaruPage />} />
       <Route path="/TTTV2" element={<TTTV2Page />} />
+      <Route path="/WhatIsKaspa" element={<WhatIsKaspaPage />} />
       <Route path="/ValorantArena" element={<ValorantArenaPage />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>

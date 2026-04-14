@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { Play, Plus, Trash2, X, Loader2, Save } from "lucide-react";
+import { Play, Plus, Trash2, X, Loader2, Save, Newspaper, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -27,10 +27,13 @@ export default function CommunityVideos() {
   const [saving, setSaving] = useState(false);
   const [user, setUser] = useState(null);
   const [playingId, setPlayingId] = useState(null);
+  const [communityNews, setCommunityNews] = useState([]);
+  const [loadingNews, setLoadingNews] = useState(true);
 
   useEffect(() => {
     loadVideos();
     loadUser();
+    loadCommunityNews();
   }, []);
 
   const loadUser = async () => {
@@ -38,6 +41,49 @@ export default function CommunityVideos() {
       const u = await base44.auth.me();
       setUser(u);
     } catch { /* not logged in */ }
+  };
+
+  const loadCommunityNews = async () => {
+    const cacheKey = 'kaspa_community_news_v2';
+    const cacheDate = 'kaspa_community_news_v2_date';
+    const today = new Date().toDateString();
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      const cachedDay = localStorage.getItem(cacheDate);
+      if (cached && cachedDay === today) {
+        setCommunityNews(JSON.parse(cached));
+        setLoadingNews(false);
+        return;
+      }
+      const res = await base44.integrations.Core.InvokeLLM({
+        prompt: `Search kaspa.news, Twitter/X, and Kaspa community channels for the latest 4 real community news items about Kaspa. Include real headlines, brief summaries, source names. Focus on: community updates, mining, KRC-20 tokens, development, ecosystem. Be factual.`,
+        add_context_from_internet: true,
+        model: 'gemini_3_flash',
+        response_json_schema: {
+          type: "object",
+          properties: {
+            articles: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  summary: { type: "string" },
+                  source: { type: "string" },
+                  category: { type: "string" }
+                }
+              }
+            }
+          }
+        }
+      });
+      if (res?.articles?.length) {
+        setCommunityNews(res.articles);
+        localStorage.setItem(cacheKey, JSON.stringify(res.articles));
+        localStorage.setItem(cacheDate, today);
+      }
+    } catch { }
+    setLoadingNews(false);
   };
 
   const loadVideos = async () => {
@@ -87,8 +133,43 @@ export default function CommunityVideos() {
   const previewId = extractYoutubeId(newUrl);
 
   return (
-    <section className="py-20 sm:py-28 px-5 bg-white">
+    <section id="community" className="py-20 sm:py-28 px-5 bg-white">
       <div className="max-w-5xl mx-auto">
+        {/* Community News from kaspa.news */}
+        <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="mb-16">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <p className="text-[13px] font-semibold text-zinc-400 tracking-wide uppercase mb-2">From the Community</p>
+              <h2 className="text-3xl sm:text-4xl font-[900] tracking-tight">Kaspa News</h2>
+            </div>
+            <a href="https://kaspa.news" target="_blank" rel="noopener noreferrer"
+              className="text-[12px] font-semibold text-cyan-600 hover:text-cyan-700 flex items-center gap-1">
+              kaspa.news <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+          {loadingNews ? (
+            <div className="text-center py-8 text-zinc-400 text-sm">
+              <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" /> Loading news…
+            </div>
+          ) : communityNews.length > 0 ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {communityNews.map((a, i) => (
+                <motion.div key={i} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}
+                  className="bg-white rounded-2xl p-4 ring-1 ring-zinc-200/60 hover:ring-zinc-300 hover:shadow-lg transition-all duration-300">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Newspaper className="w-3.5 h-3.5 text-cyan-500" />
+                    <span className="text-[10px] font-bold text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded-md">{a.category || 'News'}</span>
+                  </div>
+                  <h3 className="text-[13px] font-bold text-zinc-900 mb-1 line-clamp-2">{a.title}</h3>
+                  <p className="text-[11px] text-zinc-500 line-clamp-2">{a.summary}</p>
+                  {a.source && <p className="text-[10px] text-zinc-400 mt-2">via {a.source}</p>}
+                </motion.div>
+              ))}
+            </div>
+          ) : null}
+        </motion.div>
+
+        {/* Videos */}
         <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="flex items-center justify-between mb-10">
           <div>
             <p className="text-[13px] font-semibold text-zinc-400 tracking-wide uppercase mb-2">Community</p>

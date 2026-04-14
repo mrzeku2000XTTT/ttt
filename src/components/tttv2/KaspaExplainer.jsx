@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { ExternalLink, Zap, Shield, Globe, Layers } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ExternalLink, Zap, Shield, Globe, Layers, ChevronRight } from "lucide-react";
 
 const FEATURES = [
   { icon: Zap, title: "10,000+ TPS", desc: "Kaspa processes thousands of transactions per second using its blockDAG architecture.", color: "text-cyan-500 bg-cyan-50" },
@@ -51,13 +52,15 @@ export default function KaspaExplainer() {
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-4">
+          <Link to="/WhatIsKaspa">
+            <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+              className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-white/10 px-6 py-2.5 rounded-full ring-1 ring-white/20 hover:ring-white/40 hover:bg-white/15 transition-all">
+              Learn more about Kaspa <ChevronRight className="w-4 h-4" />
+            </motion.button>
+          </Link>
           <a href="https://kaspa.org" target="_blank" rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-sm font-semibold text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 px-5 py-2.5 rounded-full ring-1 ring-cyan-500/20 hover:ring-cyan-500/40 transition-all">
             kaspa.org <ExternalLink className="w-3.5 h-3.5" />
-          </a>
-          <a href="https://kasplex.org" target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-violet-400 hover:text-violet-300 bg-violet-500/10 px-5 py-2.5 rounded-full ring-1 ring-violet-500/20 hover:ring-violet-500/40 transition-all">
-            Kasplex L2 <ExternalLink className="w-3.5 h-3.5" />
           </a>
         </div>
       </div>
