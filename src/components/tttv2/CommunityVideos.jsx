@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { Play, Plus, Trash2, X, Loader2, Save, Newspaper, ExternalLink } from "lucide-react";
+import { Play, Plus, Trash2, X, Loader2, Save, Newspaper, ExternalLink, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -251,6 +251,7 @@ export default function CommunityVideos() {
             <p className="text-zinc-400 text-sm">No videos yet. Be the first to add one!</p>
           </div>
         ) : (
+          <>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {videos.map((v, i) => (
               <motion.div
@@ -261,32 +262,21 @@ export default function CommunityVideos() {
                 transition={{ delay: i * 0.05 }}
                 className="bg-white rounded-2xl ring-1 ring-zinc-200/60 hover:ring-zinc-300 hover:shadow-xl hover:shadow-zinc-200/40 transition-all duration-300 overflow-hidden group"
               >
-                {playingId === v.id ? (
-                  <div className="aspect-video">
-                    <iframe
-                      src={`https://www.youtube.com/embed/${v.video_id}?autoplay=1&rel=0`}
-                      className="w-full h-full border-0"
-                      allowFullScreen
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    />
-                  </div>
-                ) : (
-                  <div
-                    className="relative aspect-video cursor-pointer"
-                    onClick={() => setPlayingId(v.id)}
-                  >
-                    <img
-                      src={`https://img.youtube.com/vi/${v.video_id}/mqdefault.jpg`}
-                      alt={v.title}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                      <div className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                        <Play className="w-5 h-5 text-zinc-900 ml-0.5" />
-                      </div>
+                <div
+                  className="relative aspect-video cursor-pointer"
+                  onClick={() => setPlayingId(v.id)}
+                >
+                  <img
+                    src={`https://img.youtube.com/vi/${v.video_id}/hqdefault.jpg`}
+                    alt={v.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                    <div className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <Play className="w-5 h-5 text-zinc-900 ml-0.5" />
                     </div>
                   </div>
-                )}
+                </div>
 
                 <div className="p-4">
                   <h3 className="text-sm font-bold text-zinc-900 line-clamp-2 mb-1">{v.title}</h3>
@@ -294,20 +284,85 @@ export default function CommunityVideos() {
                     <span className="text-[11px] text-zinc-400">
                       by {v.added_by_name || "Community"}
                     </span>
-                    {user && (v.created_by === user.email || user.role === "admin") && (
-                      <button
-                        onClick={() => handleDelete(v.id)}
+                    <div className="flex items-center gap-1">
+                      <a
+                        href={`https://www.youtube.com/watch?v=${v.video_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
                         className="text-zinc-300 hover:text-red-500 transition-colors p-1"
-                        title="Delete video"
+                        title="Watch on YouTube"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                      {user && (v.created_by === user.email || user.role === "admin") && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDelete(v.id); }}
+                          className="text-zinc-300 hover:text-red-500 transition-colors p-1"
+                          title="Delete video"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </motion.div>
             ))}
           </div>
+
+          {/* Fullscreen Video Modal */}
+          <AnimatePresence>
+            {playingId && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4"
+                onClick={() => setPlayingId(null)}
+              >
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  className="relative w-full max-w-5xl"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-white font-bold text-sm truncate pr-4">
+                      {videos.find(v => v.id === playingId)?.title}
+                    </h3>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <a
+                        href={`https://www.youtube.com/watch?v=${videos.find(v => v.id === playingId)?.video_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-red-400 hover:text-red-300 text-xs font-semibold flex items-center gap-1"
+                      >
+                        YouTube <ExternalLink className="w-3 h-3" />
+                      </a>
+                      <button
+                        onClick={() => setPlayingId(null)}
+                        className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="relative w-full rounded-xl overflow-hidden ring-1 ring-white/20" style={{ paddingBottom: '56.25%' }}>
+                    <iframe
+                      src={`https://www.youtube.com/embed/${videos.find(v => v.id === playingId)?.video_id}?autoplay=1&rel=0&modestbranding=1`}
+                      title="Video Player"
+                      className="absolute top-0 left-0 w-full h-full border-0"
+                      allowFullScreen
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    />
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          </>
         )}
       </div>
     </section>
