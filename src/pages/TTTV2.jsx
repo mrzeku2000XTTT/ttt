@@ -168,29 +168,30 @@ export default function TTTV2Page() {
       <HeroHeader />
 
       {/* ── original hero ── */}
-      <section className="relative py-20 sm:py-28 px-5 text-center bg-white">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-gradient-radial from-cyan-400/10 via-transparent to-transparent rounded-full blur-3xl" />
+      <section className="relative py-20 sm:py-28 px-5 text-center overflow-hidden">
+        <div className="absolute inset-0">
+          <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/20b6a8247_generated_image.png" alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-black/30" />
         </div>
         <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1, ease: [.22,1,.36,1] }} className="relative max-w-3xl mx-auto">
-          <p className="text-[13px] font-semibold text-cyan-600 tracking-wide uppercase mb-4">Introducing TTT 2.0</p>
+          <p className="text-[13px] font-semibold text-cyan-400 tracking-wide uppercase mb-4">Introducing TTT 2.0</p>
           <h1 className="text-[clamp(2.5rem,7vw,5.5rem)] font-[900] leading-[0.92] tracking-tight mb-5">
-            <span className="text-zinc-900">The Kaspa</span><br />
-            <span className="bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500 bg-clip-text text-transparent">Super-App.</span>
+            <span className="text-white">The Kaspa</span><br />
+            <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-violet-400 bg-clip-text text-transparent">Super-App.</span>
           </h1>
-          <p className="text-base sm:text-lg text-zinc-500 max-w-xl mx-auto leading-relaxed mb-8">
+          <p className="text-base sm:text-lg text-zinc-300 max-w-xl mx-auto leading-relaxed mb-8">
             Feed. Identity. Prediction markets. AI agents. 80+ apps — all powered by the world's fastest blockDAG.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Link to="/Feed">
               <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                className="h-11 px-7 bg-black text-white text-[14px] font-semibold rounded-full shadow-lg shadow-black/15 flex items-center gap-2">
+                className="h-11 px-7 bg-white text-zinc-900 text-[14px] font-semibold rounded-full shadow-lg shadow-black/25 flex items-center gap-2">
                 Get Started <ArrowUpRight className="w-4 h-4" />
               </motion.button>
             </Link>
             <a href="#products">
               <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                className="h-11 px-7 text-zinc-600 text-[14px] font-semibold rounded-full border border-zinc-300 hover:border-zinc-400 transition-colors flex items-center gap-2">
+                className="h-11 px-7 text-white text-[14px] font-semibold rounded-full border border-white/30 hover:border-white/50 hover:bg-white/10 transition-colors flex items-center gap-2">
                 Explore <ChevronDown className="w-4 h-4" />
               </motion.button>
             </a>
