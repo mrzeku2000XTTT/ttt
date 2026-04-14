@@ -298,13 +298,13 @@ export default function TTTV2Page() {
       {/* ── KAS market ribbon ── */}
       <motion.section initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.7 }} className="py-8 px-5 bg-zinc-900 text-white">
         <div className="max-w-5xl mx-auto">
-          {kasData.loading ? (
-            <div className="flex items-center justify-center gap-2 text-zinc-500 text-sm py-4">
-              <div className="w-4 h-4 border-2 border-zinc-600 border-t-zinc-300 rounded-full animate-spin" />
-              Loading market data…
-            </div>
-          ) : kasData.price ? (
-            <div className="space-y-6">
+          <div className="space-y-6">
+            {kasData.loading ? (
+              <div className="flex items-center justify-center gap-2 text-zinc-500 text-sm py-4">
+                <div className="w-4 h-4 border-2 border-zinc-600 border-t-zinc-300 rounded-full animate-spin" />
+                Loading market data…
+              </div>
+            ) : kasData.price ? (
               <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-12">
                 <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="flex items-center gap-3">
                   <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/13e8ec094_image.png" alt="KAS" className="w-8 h-8 rounded-full" />
@@ -325,51 +325,51 @@ export default function TTTV2Page() {
                   <div className="text-[10px] text-zinc-500">32 blocks/sec</div>
                 </motion.div>
               </div>
-              <div className="flex items-center justify-center gap-3 sm:gap-5 flex-wrap">
-                {[
-                  { label: "kaspa.org", url: "https://kaspa.org", embedable: false },
-                  { label: "kasmi.online", url: "https://kasmi.online", embedable: true },
-                  { label: "kaspahub.org", url: "https://kaspahub.org", embedable: true },
-                ].map((site) => (
-                  <div key={site.label} className="flex items-center gap-1">
-                    {site.embedable ? (
-                      <button
-                        onClick={() => setEmbeddedSite(site)}
-                        className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-cyan-400 hover:text-cyan-300 transition-colors"
-                      >
-                        <Monitor className="w-3 h-3" /> {site.label}
-                      </button>
-                    ) : (
-                      <a href={site.url} target="_blank" rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-cyan-400 hover:text-cyan-300 transition-colors">
-                        {site.label} <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
+            ) : null}
+
+            <div className="flex items-center justify-center gap-3 sm:gap-5 flex-wrap">
+              {[
+                { label: "kaspa.org", url: "https://kaspa.org", embedable: false },
+                { label: "kasmi.online", url: "https://kasmi.online", embedable: true },
+                { label: "kaspahub.org", url: "https://kaspahub.org", embedable: true },
+              ].map((site) => (
+                <div key={site.label} className="flex items-center gap-1">
+                  {site.embedable ? (
+                    <button
+                      onClick={() => setEmbeddedSite(site)}
+                      className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-cyan-400 hover:text-cyan-300 transition-colors"
+                    >
+                      <Monitor className="w-3 h-3" /> {site.label}
+                    </button>
+                  ) : (
                     <a href={site.url} target="_blank" rel="noopener noreferrer"
-                      className="w-5 h-5 rounded bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors" title="Open in new tab">
-                      <ExternalLink className="w-2.5 h-2.5 text-zinc-500" />
+                      className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-cyan-400 hover:text-cyan-300 transition-colors">
+                      {site.label} <ExternalLink className="w-3 h-3" />
                     </a>
-                  </div>
-                ))}
-              </div>
-              <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap mt-5">
-                {[
-                  { label: "Buy KAS", url: "https://defi.kaspa.com/swap", color: "from-cyan-400 via-cyan-500 to-blue-600", shadow: "shadow-cyan-500/30" },
-                  { label: "Buy PACMAN", url: "https://kaspa.com/tokens/marketplace/token/PACMAN", color: "from-yellow-400 via-amber-500 to-orange-600", shadow: "shadow-amber-500/30" },
-                  { label: "Buy BMT", url: "https://defi.kaspa.com/swap", color: "from-purple-400 via-purple-500 to-violet-600", shadow: "shadow-purple-500/30" },
-                  { label: "Buy KMI", url: "https://pump.fun/coin/5FVV1jCfJkUNAF55oXjxyQaZzr6X94Vkp9wvzdu4pump", color: "from-emerald-400 via-green-500 to-teal-600", shadow: "shadow-emerald-500/30" },
-                ].map((token) => (
-                  <a key={token.label} href={token.url} target="_blank" rel="noopener noreferrer"
-                    className={`inline-flex items-center gap-2 text-[12px] font-bold text-white bg-gradient-to-br ${token.color} px-5 py-2 rounded-2xl hover:brightness-110 hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg ${token.shadow} ring-1 ring-white/20`}>
-                    {token.label}
-                    <ExternalLink className="w-3 h-3 opacity-70" />
+                  )}
+                  <a href={site.url} target="_blank" rel="noopener noreferrer"
+                    className="w-5 h-5 rounded bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors" title="Open in new tab">
+                    <ExternalLink className="w-2.5 h-2.5 text-zinc-500" />
                   </a>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
-          ) : (
-            <div className="text-center text-zinc-500 text-sm py-4">Market data unavailable</div>
-          )}
+
+            <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
+              {[
+                { label: "Buy KAS", url: "https://defi.kaspa.com/swap", color: "from-cyan-400 via-cyan-500 to-blue-600", shadow: "shadow-cyan-500/30" },
+                { label: "Buy PACMAN", url: "https://kaspa.com/tokens/marketplace/token/PACMAN", color: "from-yellow-400 via-amber-500 to-orange-600", shadow: "shadow-amber-500/30" },
+                { label: "Buy BMT", url: "https://defi.kaspa.com/swap", color: "from-purple-400 via-purple-500 to-violet-600", shadow: "shadow-purple-500/30" },
+                { label: "Buy KMI", url: "https://pump.fun/coin/5FVV1jCfJkUNAF55oXjxyQaZzr6X94Vkp9wvzdu4pump", color: "from-emerald-400 via-green-500 to-teal-600", shadow: "shadow-emerald-500/30" },
+              ].map((token) => (
+                <a key={token.label} href={token.url} target="_blank" rel="noopener noreferrer"
+                  className={`inline-flex items-center gap-2 text-[12px] font-bold text-white bg-gradient-to-br ${token.color} px-5 py-2 rounded-2xl hover:brightness-110 hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg ${token.shadow} ring-1 ring-white/20`}>
+                  {token.label}
+                  <ExternalLink className="w-3 h-3 opacity-70" />
+                </a>
+              ))}
+            </div>
+          </div>
         </div>
       </motion.section>
 
