@@ -229,17 +229,15 @@ export default function TTTV2Page() {
       <HeroHeader />
 
       {/* ── original hero ── */}
-      <section className="relative py-20 sm:py-28 px-5 text-center overflow-hidden">
+      <section className="relative py-14 sm:py-20 px-5 text-center overflow-hidden">
         <div className="absolute inset-0">
-          {/* Background image base layer — blended */}
           <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/20b6a8247_generated_image.png" alt="" className="w-full h-full object-cover opacity-70" />
-          {/* Video overlay — responsive fit */}
           {heroVideoUrl && (
             <video
               ref={heroVideoRef}
               src={heroVideoUrl}
               autoPlay loop playsInline muted={heroMuted}
-              className="absolute inset-0 w-full h-full object-contain sm:object-cover opacity-40 mix-blend-screen"
+              className="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-screen"
             />
           )}
           <div className="absolute inset-0 bg-black/50" />
@@ -252,32 +250,32 @@ export default function TTTV2Page() {
               setHeroMuted(prev => !prev);
               if (heroVideoRef.current) heroVideoRef.current.muted = !heroVideoRef.current.muted;
             }}
-            className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm ring-1 ring-white/20 flex items-center justify-center text-white/70 hover:text-white hover:bg-black/70 transition-all"
+            className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm ring-1 ring-white/20 flex items-center justify-center text-white/70 hover:text-white hover:bg-black/70 transition-all"
             title={heroMuted ? "Unmute" : "Mute"}
           >
-            {heroMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+            {heroMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
           </button>
         )}
 
-        <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1, ease: [.22,1,.36,1] }} className="relative max-w-3xl mx-auto">
-          <p className="text-[13px] font-semibold text-cyan-400 tracking-wide uppercase mb-4">Introducing TTT 2.0</p>
-          <h1 className="text-[clamp(2.5rem,7vw,5.5rem)] font-[900] leading-[0.92] tracking-tight mb-5">
+        <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1, ease: [.22,1,.36,1] }} className="relative max-w-2xl mx-auto">
+          <p className="text-[12px] font-semibold text-cyan-400 tracking-wide uppercase mb-3">Introducing TTT 2.0</p>
+          <h1 className="text-[clamp(2rem,6vw,4rem)] font-[900] leading-[0.95] tracking-tight mb-4">
             <span className="text-white">The Kaspa</span><br />
             <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-violet-400 bg-clip-text text-transparent">Super-App.</span>
           </h1>
-          <p className="text-base sm:text-lg text-zinc-300 max-w-xl mx-auto leading-relaxed mb-8">
+          <p className="text-sm sm:text-base text-zinc-300 max-w-md mx-auto leading-relaxed mb-6">
             Feed. Identity. Prediction markets. AI agents. 80+ apps — all powered by the world's fastest blockDAG.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Link to="/Feed">
               <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                className="h-11 px-7 bg-white text-zinc-900 text-[14px] font-semibold rounded-full shadow-lg shadow-black/25 flex items-center gap-2">
+                className="h-10 px-6 bg-white text-zinc-900 text-[13px] font-semibold rounded-full shadow-lg shadow-black/25 flex items-center gap-2">
                 Get Started <ArrowUpRight className="w-4 h-4" />
               </motion.button>
             </Link>
             <a href="#products">
               <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                className="h-11 px-7 text-white text-[14px] font-semibold rounded-full border border-white/30 hover:border-white/50 hover:bg-white/10 transition-colors flex items-center gap-2">
+                className="h-10 px-6 text-white text-[13px] font-semibold rounded-full border border-white/30 hover:border-white/50 hover:bg-white/10 transition-colors flex items-center gap-2">
                 Explore <ChevronDown className="w-4 h-4" />
               </motion.button>
             </a>
