@@ -29,6 +29,7 @@ export default function KaspaAvatarChat() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [bubbleText, setBubbleText] = useState(KAI_FACTS[0]);
+  const [showBubble, setShowBubble] = useState(true);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -140,10 +141,10 @@ Respond as KAI:`,
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="fixed z-[80] bottom-6 right-4 flex items-end gap-2"
+            className="fixed z-[80] bottom-20 lg:bottom-6 right-4 flex items-end gap-2"
           >
-            {/* Speech bubble — no animation, just text swap */}
-            <div className="relative mb-2 max-w-[180px]">
+            {/* Speech bubble — click to dismiss */}
+            {showBubble && <div className="relative mb-2 max-w-[180px] cursor-pointer" onClick={(e) => { e.stopPropagation(); setShowBubble(false); }}>
               <div
                 className="px-3 py-2 rounded-2xl rounded-br-sm text-[11px] font-medium leading-snug"
                 style={{
@@ -164,7 +165,7 @@ Respond as KAI:`,
                   borderBottom: "4px solid transparent",
                 }}
               />
-            </div>
+            </div>}
 
             {/* Avatar button */}
             <motion.button
@@ -192,7 +193,7 @@ Respond as KAI:`,
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed z-[80] bottom-6 right-4 flex flex-col"
+            className="fixed z-[80] bottom-20 lg:bottom-6 right-4 flex flex-col"
             style={{
               width: "min(380px, calc(100vw - 2rem))",
               height: "500px",
