@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
-  CheckCircle2, ChevronDown, ExternalLink, ArrowUpRight,
+  CheckCircle2, ExternalLink, ArrowUpRight,
   ChevronRight, Monitor
 } from "lucide-react";
 
+import HeroHeader from "@/components/tttv2/HeroHeader";
 import ProductGrid from "@/components/tttv2/ProductGrid";
 import WhatsNew from "@/components/tttv2/WhatsNew";
 import TTTVMini from "@/components/tttv2/TTTVMini";
@@ -70,9 +71,6 @@ function PhaseCard({ data, idx }) {
 
 export default function TTTV2Page() {
   const navigate = useNavigate();
-  const { scrollYProgress } = useScroll();
-  const heroScale = useTransform(scrollYProgress, [0, 0.15], [1, 0.97]);
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
   const [posts, setPosts] = useState([]);
   const [kaspaUpdates, setKaspaUpdates] = useState([]);
   const [kasData, setKasData] = useState({ price: null, change24h: null, loading: true });
@@ -167,36 +165,7 @@ export default function TTTV2Page() {
       </nav>
 
       {/* ── hero ── */}
-      <motion.section style={{ scale: heroScale, opacity: heroOpacity }} className="relative pt-32 pb-24 sm:pt-44 sm:pb-36 px-5 text-center origin-top">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-gradient-radial from-cyan-400/10 via-transparent to-transparent rounded-full blur-3xl" />
-        </div>
-
-        <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, ease: [.22,1,.36,1] }} className="relative max-w-3xl mx-auto">
-          <p className="text-[13px] font-semibold text-cyan-600 tracking-wide uppercase mb-4">Introducing TTT 2.0</p>
-          <h1 className="text-[clamp(2.5rem,7vw,5.5rem)] font-[900] leading-[0.92] tracking-tight mb-5">
-            <span className="text-zinc-900">The Kaspa</span><br />
-            <span className="bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500 bg-clip-text text-transparent">Super-App.</span>
-          </h1>
-          <p className="text-base sm:text-lg text-zinc-500 max-w-xl mx-auto leading-relaxed mb-8">
-            Feed. Identity. Prediction markets. AI agents. 80+ apps — all powered by the world's fastest blockDAG.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <Link to="/Feed">
-              <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                className="h-11 px-7 bg-black text-white text-[14px] font-semibold rounded-full shadow-lg shadow-black/15 flex items-center gap-2">
-                Get Started <ArrowUpRight className="w-4 h-4" />
-              </motion.button>
-            </Link>
-            <a href="#products">
-              <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                className="h-11 px-7 text-zinc-600 text-[14px] font-semibold rounded-full border border-zinc-300 hover:border-zinc-400 transition-colors flex items-center gap-2">
-                Explore <ChevronDown className="w-4 h-4" />
-              </motion.button>
-            </a>
-          </div>
-        </motion.div>
-      </motion.section>
+      <HeroHeader />
 
       {/* ── KAS market ribbon ── */}
       <section className="py-8 px-5 bg-zinc-900 text-white">
