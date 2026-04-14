@@ -25,7 +25,7 @@ const APPS = [
   { name: "KC Bridge", path: "KCbridge", cat: "Finance", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a36a42449_image.png", desc: "Cross-chain bridge" },
   { name: "Kurncy", path: "Kurncy", cat: "Finance", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/009f28f08_image.png", desc: "Currency exchange" },
   { name: "KivR", path: "KivR", cat: "Finance", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a3f7bbc81_IMG_1275.jpg", desc: "IVR + KAS payments" },
-  { name: "VAULT", path: "Vault", cat: "Finance", logo: null, desc: "Secure vault" },
+  { name: "VAULT", path: "Vault", cat: "Finance", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/89ed10669_generated_image.png", desc: "Secure vault" },
 
   // ── AI ──
   { name: "Freedom", path: "Freedom", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/c93b4796d_generated_image.png", desc: "Privacy AI tools" },
@@ -36,7 +36,7 @@ const APPS = [
   { name: "VALORANT", path: "ValorantArena", cat: "Games", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/0aeac6876_image.png", desc: "Arena mode" },
   { name: "KasPlay", path: "KasPlay", cat: "Games", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/17dc7c8d0_image.png", desc: "Kaspa games" },
   { name: "Poki", path: "Poki", cat: "Games", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/cd5bb49da_image.png", desc: "Mini games" },
-  { name: "Duel", path: "DuelLobby", cat: "Games", logo: null, desc: "1v1 duels" },
+  { name: "Duel", path: "DuelLobby", cat: "Games", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/779ea9300_generated_image.png", desc: "1v1 duels" },
   { name: "AYOMUIZ", path: "AYOMUIZHub", cat: "Games", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/120ea91b8_image.png", desc: "Game hub" },
   { name: "Farlands", path: "Farlands", cat: "Games", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/869680b72_IMG_0177.jpeg", desc: "Exploration game" },
 
@@ -51,20 +51,20 @@ const APPS = [
   { name: "Kehinde", path: "Kehinde", cat: "Tools", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a031dc009_image.png", desc: "Utilities" },
   { name: "HAYPHASE", path: "HAYPHASE", cat: "Tools", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/abc403941_image.png", desc: "Phase tools" },
   { name: "Olatomiwa", path: "OlatomiwaHub", cat: "Tools", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/9a93c0d01_image.png", desc: "Hub app" },
-  { name: "Kolade", path: "Kolade", cat: "Tools", logo: null, desc: "Tools" },
+  { name: "Kolade", path: "Kolade", cat: "Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/0dc9474bc_generated_image.png", desc: "Tools" },
   { name: "MODZ", path: "MODZHub", cat: "Tools", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/e4ca8d329_image.png", desc: "Mods hub" },
   { name: "Olivia Apps", path: "OliviaApps", cat: "Tools", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/1f4d18802_image.png", desc: "App collection" },
   { name: "Keystone", path: "Keystone", cat: "Tools", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/dc41afffb_image.png", desc: "Hardware wallet" },
   { name: "Klock", path: "Klock", cat: "Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3a8b4c791_generated_image.png", desc: "Clock / timer" },
   { name: "Speed", path: "Speed", cat: "Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/078ebbdaf_generated_image.png", desc: "Quick image gen" },
-  { name: "DAG", path: "DAGVisualizer", cat: "Tools", logo: null, desc: "DAG visualizer", emoji: "🔷" },
-  { name: "Voxa", path: "Voxa", cat: "Tools", logo: null, desc: "Voice tools", emoji: "🎤" },
+  { name: "DAG", path: "DAGVisualizer", cat: "Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4a4455642_generated_image.png", desc: "DAG visualizer" },
+  { name: "Voxa", path: "Voxa", cat: "Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/d5e854f76_generated_image.png", desc: "Voice tools" },
   { name: "ShiLLz", path: "ShiLLz", cat: "Tools", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/c28359c35_image.png", desc: "Shill manager" },
   { name: "OuTKasTT", path: "OuTKasTT", cat: "Tools", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/3d7232b1d_image.png", desc: "Kaspa tools" },
   { name: "Kasplore", path: "Kasplore", cat: "Tools", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/dbb497c6e_image.png", desc: "Explorer" },
   { name: "ALPHA", path: "ALPHA", cat: "Tools", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/a37146946_image.png", desc: "Alpha tools" },
   { name: "TTT", path: "TTT", cat: "Tools", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/59c961b71_image.png", desc: "Classic TTT" },
-  { name: "SIMPLE", path: "SIMPLE", cat: "Tools", logo: null, desc: "Simple tools", emoji: "😊" },
+  { name: "SIMPLE", path: "SIMPLE", cat: "Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/138abbca3_generated_image.png", desc: "Simple tools" },
   { name: "KasLens", path: "KasLens", cat: "Tools", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/5169e3904_images.png", desc: "Data lens" },
   { name: "Vox Invicta", path: "VoxInvicta", cat: "Tools", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/42e7376e4_image.png", desc: "Voice platform" },
   { name: "MMN", path: "MMN", cat: "Tools", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/2944cc272_image.png", desc: "Network" },
@@ -81,7 +81,7 @@ const APPS = [
 
   // ── Community ──
   { name: "KFANS", path: "KasFans", cat: "Community", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/85ce776d9_image.png", desc: "Fan community" },
-  { name: "Area 51", path: "Area51", cat: "Community", logo: null, desc: "Experimental zone", emoji: "👽" },
+  { name: "Area 51", path: "Area51", cat: "Community", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/63bd53d0e_generated_image.png", desc: "Experimental zone" },
   { name: "KaspaHub", path: "KaspaHub", cat: "Community", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/b3c82bda2_image.png", desc: "Community hub" },
   { name: "DGT", path: "DGT", cat: "Community", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/f87dc6ce0_image.png", desc: "Digital governance" },
 
@@ -89,7 +89,7 @@ const APPS = [
   { name: "Ksocial", path: "Ksocial", cat: "Social", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/7eb35a11e_image.png", desc: "Social network" },
 
   // ── Media ──
-  { name: "CineKas", path: "Cinekas", cat: "Media", logo: null, desc: "Movie browser", emoji: "🎬", admin: true },
+  { name: "CineKas", path: "Cinekas", cat: "Media", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e33356a93_generated_image.png", desc: "Movie browser", admin: true },
 
   // ── Communication ──
   { name: "RufzeitK", path: "RufzeitKHome", cat: "Communication", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/7a9ae8d5f_image.png", desc: "Call system" },
@@ -107,13 +107,6 @@ const APPS = [
 ];
 
 function AppIcon({ app }) {
-  if (app.emoji) {
-    return (
-      <div className="w-full h-full rounded-2xl bg-zinc-100 flex items-center justify-center text-2xl">
-        {app.emoji}
-      </div>
-    );
-  }
   if (app.logo) {
     return (
       <img
@@ -124,7 +117,6 @@ function AppIcon({ app }) {
       />
     );
   }
-  // Fallback — initial letter
   return (
     <div className="w-full h-full rounded-2xl bg-gradient-to-br from-zinc-200 to-zinc-300 flex items-center justify-center">
       <span className="text-xl font-[900] text-zinc-500">{app.name[0]}</span>
