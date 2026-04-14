@@ -234,29 +234,26 @@ export default function TTTV2Page() {
       <section className="relative py-24 sm:py-36 px-5 text-center overflow-hidden">
         <div className="absolute inset-0">
           <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/20b6a8247_generated_image.png" alt="" className="w-full h-full object-contain sm:object-cover opacity-70" />
-          {heroVideoUrl && (
-            <video
-              ref={heroVideoRef}
-              src={heroVideoUrl}
-              autoPlay loop playsInline muted={heroMuted}
-              className="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-screen"
-            />
-          )}
           <div className="absolute inset-0 bg-black/50" />
         </div>
 
-        {/* Mute/Unmute toggle */}
-        {heroVideoUrl && (
-          <button
-            onClick={() => {
-              setHeroMuted(prev => !prev);
-              if (heroVideoRef.current) heroVideoRef.current.muted = !heroVideoRef.current.muted;
-            }}
-            className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm ring-1 ring-white/20 flex items-center justify-center text-white/70 hover:text-white hover:bg-black/70 transition-all"
-            title={heroMuted ? "Unmute" : "Mute"}
-          >
-            {heroMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-          </button>
+        {/* Admin video controls */}
+        {isAdmin && (
+          <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+            {heroVideoUrl ? (
+              <button
+                onClick={removeHeroVideo}
+                className="h-8 px-3 rounded-full bg-red-500/80 hover:bg-red-500 text-white text-[11px] font-semibold flex items-center gap-1.5 transition-colors"
+              >
+                <X className="w-3 h-3" /> Remove Video
+              </button>
+            ) : (
+              <label className="h-8 px-3 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white text-[11px] font-semibold flex items-center gap-1.5 cursor-pointer transition-colors">
+                <Upload className="w-3 h-3" /> {uploadingVideo ? "Uploading…" : "Upload Hero Video"}
+                <input type="file" accept="video/*" onChange={handleVideoUpload} className="hidden" disabled={uploadingVideo} />
+              </label>
+            )}
+          </div>
         )}
 
         <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1, ease: [.22,1,.36,1] }} className="relative max-w-2xl mx-auto">
