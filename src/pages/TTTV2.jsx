@@ -322,7 +322,7 @@ export default function TTTV2Page() {
                 <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.16 }} className="text-center">
                   <div className="text-[11px] text-zinc-500 font-medium tracking-wide uppercase">Network</div>
                   <div className="text-lg sm:text-xl font-[900] text-white">blockDAG</div>
-                  <div className="text-[10px] text-zinc-500">32 blocks/sec</div>
+                  <div className="text-[10px] text-zinc-500">10 blocks/sec</div>
                 </motion.div>
               </div>
             ) : null}
