@@ -42,16 +42,18 @@ const DEFAULT_AVATAR_IMG = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/
 const DEFAULT_VIDEO_URL = "https://base44.app/api/apps/6901295fa9bcfaa0f5ba2c2a/files/mp/public/6901295fa9bcfaa0f5ba2c2a/603409cb0_animation1.mp4";
 
 const KAI_FACTS = [
-  "Kaspa processes 10,000+ TPS 🔷",
+  "Kaspa runs at 10 BPS — live! 🔷",
   "blockDAG = parallel blocks ⚡",
   "No premine. No ICO. Fair launch.",
-  "1-second block times!",
+  "10 blocks per second, 1s finality!",
   "GHOSTDAG orders all blocks 🧠",
-  "kHeavyHash = GPU mining ⛏️",
+  "kHeavyHash = optical GPU mining ⛏️",
   "KRC-20 tokens are live on Kaspa",
-  "32 BPS target coming soon 🚀",
-  "Rust node rewrite is complete",
+  "32 BPS target on the roadmap 🚀",
+  "Rusty Kaspa node rewrite is live",
   "Kaspa = fastest PoW crypto",
+  "DAGKnight consensus is coming",
+  "Kaspa smart contracts in development",
 ];
 
 const TTT_APP_DOCS = `TTT PLATFORM — COMPLETE APP DIRECTORY (use these exact descriptions):
@@ -408,9 +410,24 @@ export default function KaspaAvatarChat() {
 
 ${TTT_APP_DOCS}
 
-KASPA BLOCKCHAIN: blockDAG architecture, GHOSTDAG consensus, kHeavyHash PoW (GPU), fair launch (no premine/ICO), 1-second blocks, 10K+ TPS, targeting 32 BPS, Rust node rewrite, KRC-20 on Kasplex L2. Founded by Yonatan Sompolinsky.
+KASPA BLOCKCHAIN ORACLE FACTS (verified from kaspa.org):
+- Kaspa uses blockDAG (Directed Acyclic Graph) architecture — NOT a traditional blockchain
+- Multiple blocks are created in parallel and all are included in the ledger
+- GHOSTDAG protocol (upgrading to DAGKnight) provides consensus ordering of all blocks
+- Kaspa has already reached 10 BPS (blocks per second) — this is LIVE, not upcoming
+- 32 BPS is the next target on the roadmap
+- kHeavyHash Proof-of-Work algorithm — GPU mineable, designed for optical mining ASICs
+- 100% fair launch: ZERO premine, ZERO ICO, ZERO VC funding, fully community-driven
+- Rusty Kaspa: full node rewrite in Rust is complete and live on mainnet
+- KRC-20 token standard powers fungible tokens on Kaspa via Kasplex
+- Founded on academic research by Yonatan Sompolinsky (co-author of GHOST protocol used in Ethereum)
+- Smart contracts (currently in development) will bring DeFi to Kaspa
+- Sub-second block times with near-instant visual confirmation
+- DAGKnight consensus upgrade will provide the most advanced PoW consensus ever built
 
-You have real-time internet access — use it for crypto prices, news, events. Keep responses concise, friendly, helpful. Use emojis occasionally. When recommending TTT apps, use the EXACT descriptions above — never guess. When a user wants to do something (create images, manage wallets, etc.), tell them which specific TTT app to use and why — e.g. "Head to **Hikaru** for AI image generation" or "Use **Terra** to create and manage Kaspa wallets."${feedContext}
+IMPORTANT: Always use these verified facts. Do NOT say Kaspa "targets" or "plans" 10 BPS — it already runs at 10 BPS. Use real-time web search for anything you're unsure about. Search kaspa.org for the latest facts.
+
+You have real-time internet access — ALWAYS use it for Kaspa-related questions to ensure accuracy. Keep responses concise, friendly, helpful. Use emojis occasionally. When recommending TTT apps, use the EXACT descriptions above — never guess.${feedContext}
 
 Conversation so far:
 ${context}
@@ -426,17 +443,24 @@ TTT is a Kaspa community super-app platform. It is NOT "Trust The Tech." TTT is 
 
 ${TTT_APP_DOCS}
 
-KASPA BLOCKCHAIN KNOWLEDGE:
-- Kaspa uses blockDAG architecture — multiple blocks created simultaneously
-- GHOSTDAG/PHANTOM protocol orders all blocks into a consistent ledger
-- Proof of Work secured by kHeavyHash (GPU-mineable, fair, decentralized)
-- Fair launch: NO premine, NO ICO, NO VC funding — 100% community-driven
-- 1-second block times, 10,000+ TPS capacity, targeting 32 BPS
-- Rust node rewrite (Rusty Kaspa), DAGKnight consensus upgrade
-- KRC-20 token standard on Kasplex L2
-- Founded on research by Yonatan Sompolinsky
+KASPA BLOCKCHAIN ORACLE FACTS (verified from kaspa.org):
+- Kaspa uses blockDAG (Directed Acyclic Graph) architecture — NOT a traditional blockchain
+- Multiple blocks are created in parallel and all are included in the ledger
+- GHOSTDAG protocol (upgrading to DAGKnight) provides consensus ordering of all blocks
+- Kaspa has already reached 10 BPS (blocks per second) — this is LIVE on mainnet, not upcoming
+- 32 BPS is the next target on the roadmap
+- kHeavyHash Proof-of-Work algorithm — GPU mineable, designed for optical mining ASICs
+- 100% fair launch: ZERO premine, ZERO ICO, ZERO VC funding, fully community-driven
+- Rusty Kaspa: full node rewrite in Rust is complete and live on mainnet
+- KRC-20 token standard powers fungible tokens on Kaspa via Kasplex
+- Founded on academic research by Yonatan Sompolinsky (co-author of GHOST protocol used in Ethereum)
+- Smart contracts (currently in development) will bring DeFi to Kaspa
+- Sub-second block times with near-instant visual confirmation
+- DAGKnight consensus upgrade will provide the most advanced PoW consensus ever built
 
-You have real-time internet access. Be concise, accurate, friendly. Use emojis occasionally. Always refer to TTT as the platform/app name, never as "Trust The Tech." When recommending apps, use the EXACT descriptions from the docs above — never guess or confuse apps. When a user wants to do something, tell them which specific TTT app to use — e.g. "Head to **Hikaru** for AI image generation" or "Use **Terra** to create and manage Kaspa wallets." Never confuse app purposes.${feedContext}
+IMPORTANT: Always use these verified facts. Do NOT say Kaspa "targets" or "plans" 10 BPS — it already runs at 10 BPS. Use real-time web search for anything you're unsure about.
+
+You have real-time internet access — ALWAYS use it for Kaspa-related questions to ensure accuracy. Be concise, accurate, friendly. Use emojis occasionally. Always refer to TTT as the platform/app name, never as "Trust The Tech." When recommending apps, use the EXACT descriptions from the docs above.${feedContext}
 
 Conversation so far:
 ${context}
@@ -445,8 +469,10 @@ User: ${userMsg}
 
 Respond as KAI:${speedInstruction}`;
 
-      // Skip internet search for TTT platform questions — much faster
-      const needsInternet = !isFast && !isTTTQuestion(userMsg);
+      // Always use web search for Kaspa-related questions for accurate real-time data
+      const lower = userMsg.toLowerCase();
+      const isKaspaQuestion = ['kaspa', 'kas ', 'bps', 'blockdag', 'dag', 'ghostdag', 'krc-20', 'krc20', 'kasplex', 'mining', 'hashrate', 'sompolinsky', 'rusty', 'dagknight', 'kheavyhash'].some(kw => lower.includes(kw));
+      const needsInternet = isKaspaQuestion || (!isTTTQuestion(userMsg) && !isFast);
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: kaiMode === "classic" ? classicPrompt : kaiPrompt,
         add_context_from_internet: needsInternet,
