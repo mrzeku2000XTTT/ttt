@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
   CheckCircle2, ChevronDown, ExternalLink, ArrowUpRight,
-  ChevronRight
+  ChevronRight, Monitor
 } from "lucide-react";
 
 import ProductGrid from "@/components/tttv2/ProductGrid";
@@ -13,6 +13,7 @@ import TTTVMini from "@/components/tttv2/TTTVMini";
 import CommunityVideos from "@/components/tttv2/CommunityVideos";
 import KaspaAvatarChat from "@/components/kaspa/KaspaAvatarChat";
 import MobileNavToast from "@/components/tttv2/MobileNavToast";
+import EmbeddedSiteViewer from "@/components/tttv2/EmbeddedSiteViewer";
 
 /* ─── roadmap data ─── */
 const ROADMAP = [
@@ -75,6 +76,7 @@ export default function TTTV2Page() {
   const [posts, setPosts] = useState([]);
   const [kaspaUpdates, setKaspaUpdates] = useState([]);
   const [kasData, setKasData] = useState({ price: null, change24h: null, loading: true });
+  const [embeddedSite, setEmbeddedSite] = useState(null);
 
   useEffect(() => { loadContent(); loadKasPrice(); loadDailyKaspaUpdates(); }, []);
 
@@ -226,21 +228,32 @@ export default function TTTV2Page() {
                   <div className="text-[10px] text-zinc-500">32 blocks/sec</div>
                 </motion.div>
               </div>
-              <div className="flex items-center justify-center gap-4 flex-wrap">
-                <a href="https://kaspa.org" target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-cyan-400 hover:text-cyan-300 transition-colors">
-                  kaspa.org <ExternalLink className="w-3 h-3" />
-                </a>
-                <span className="text-zinc-700">·</span>
-                <a href="https://kasmi.online" target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-cyan-400 hover:text-cyan-300 transition-colors">
-                  kasmi.online <ExternalLink className="w-3 h-3" />
-                </a>
-                <span className="text-zinc-700">·</span>
-                <a href="https://kaspahub.org" target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-cyan-400 hover:text-cyan-300 transition-colors">
-                  kaspahub.org <ExternalLink className="w-3 h-3" />
-                </a>
+              <div className="flex items-center justify-center gap-3 sm:gap-5 flex-wrap">
+                {[
+                  { label: "kaspa.org", url: "https://kaspa.org", embedable: false },
+                  { label: "kasmi.online", url: "https://kasmi.online", embedable: true },
+                  { label: "kaspahub.org", url: "https://kaspahub.org", embedable: true },
+                ].map((site) => (
+                  <div key={site.label} className="flex items-center gap-1">
+                    {site.embedable ? (
+                      <button
+                        onClick={() => setEmbeddedSite(site)}
+                        className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-cyan-400 hover:text-cyan-300 transition-colors"
+                      >
+                        <Monitor className="w-3 h-3" /> {site.label}
+                      </button>
+                    ) : (
+                      <a href={site.url} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-cyan-400 hover:text-cyan-300 transition-colors">
+                        {site.label} <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                    <a href={site.url} target="_blank" rel="noopener noreferrer"
+                      className="w-5 h-5 rounded bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors" title="Open in new tab">
+                      <ExternalLink className="w-2.5 h-2.5 text-zinc-500" />
+                    </a>
+                  </div>
+                ))}
               </div>
             </div>
           ) : (
@@ -305,6 +318,15 @@ export default function TTTV2Page() {
           </div>
         </motion.div>
       </section>
+
+      {/* Embedded site viewer */}
+      {embeddedSite && (
+        <EmbeddedSiteViewer
+          url={embeddedSite.url}
+          label={embeddedSite.label}
+          onClose={() => setEmbeddedSite(null)}
+        />
+      )}
 
       {/* KAI floating chat */}
       <KaspaAvatarChat />
