@@ -24,17 +24,15 @@ export default function TTTVMini() {
 
   const handleGo = () => {
     const q = url.trim();
-    if (!q) return;
+    if (!q) {
+      navigate("/Browser");
+      return;
+    }
     const vid = extractVideoId(q);
     if (vid) {
-      // Navigate to TTTV Browser and auto-play
-      navigate("/Browser");
-      // Store in localStorage so Browser picks it up
       localStorage.setItem("tttv_mini_player", JSON.stringify({ videoId: vid, videoUrl: `https://www.youtube.com/embed/${vid}?autoplay=1`, url: q }));
-      window.location.href = "/Browser";
-    } else {
-      navigate("/Browser");
     }
+    navigate("/Browser");
   };
 
   const handleKeyDown = (e) => {
