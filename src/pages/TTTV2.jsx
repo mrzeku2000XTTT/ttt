@@ -352,16 +352,17 @@ export default function TTTV2Page() {
                   </div>
                 ))}
               </div>
-              <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap mt-4">
+              <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap mt-5">
                 {[
-                  { label: "Buy KAS", url: "https://www.kaspa.com/buy/kas", color: "from-cyan-500 to-blue-500" },
-                  { label: "Buy PACMAN", url: "https://www.kaspa.com/buy/pacman", color: "from-yellow-500 to-amber-500" },
-                  { label: "Buy BMT", url: "https://www.kaspa.com/buy/bmt", color: "from-purple-500 to-violet-500" },
-                  { label: "Buy KMI", url: "https://www.kaspa.com/buy/kmi", color: "from-emerald-500 to-green-500" },
+                  { label: "Buy KAS", url: "https://defi.kaspa.com/swap", color: "from-cyan-400 via-cyan-500 to-blue-600", shadow: "shadow-cyan-500/30" },
+                  { label: "Buy PACMAN", url: "https://kaspa.com/tokens/marketplace/token/PACMAN", color: "from-yellow-400 via-amber-500 to-orange-600", shadow: "shadow-amber-500/30" },
+                  { label: "Buy BMT", url: "https://defi.kaspa.com/swap", color: "from-purple-400 via-purple-500 to-violet-600", shadow: "shadow-purple-500/30" },
+                  { label: "Buy KMI", url: "https://pump.fun/coin/5FVV1jCfJkUNAF55oXjxyQaZzr6X94Vkp9wvzdu4pump", color: "from-emerald-400 via-green-500 to-teal-600", shadow: "shadow-emerald-500/30" },
                 ].map((token) => (
                   <a key={token.label} href={token.url} target="_blank" rel="noopener noreferrer"
-                    className={`inline-flex items-center gap-1.5 text-[11px] font-bold text-white bg-gradient-to-r ${token.color} px-4 py-1.5 rounded-full hover:opacity-90 hover:scale-105 transition-all shadow-lg`}>
-                    {token.label} <ExternalLink className="w-3 h-3" />
+                    className={`inline-flex items-center gap-2 text-[12px] font-bold text-white bg-gradient-to-br ${token.color} px-5 py-2 rounded-2xl hover:brightness-110 hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg ${token.shadow} ring-1 ring-white/20`}>
+                    {token.label}
+                    <ExternalLink className="w-3 h-3 opacity-70" />
                   </a>
                 ))}
               </div>
