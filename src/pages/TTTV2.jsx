@@ -10,6 +10,7 @@ import {
 import ProductGrid from "@/components/tttv2/ProductGrid";
 import WhatsNew from "@/components/tttv2/WhatsNew";
 import TTTVMini from "@/components/tttv2/TTTVMini";
+import CommunityVideos from "@/components/tttv2/CommunityVideos";
 import KaspaAvatarChat from "@/components/kaspa/KaspaAvatarChat";
 
 /* ─── roadmap data ─── */
@@ -152,6 +153,7 @@ export default function TTTV2Page() {
           <a href="#products" className="hover:text-zinc-900 transition-colors">Products</a>
           <Link to="/WhatIsKaspa" className="hover:text-zinc-900 transition-colors">Kaspa</Link>
           <a href="#tttv" className="hover:text-zinc-900 transition-colors">TTTV</a>
+          <a href="#community" className="hover:text-zinc-900 transition-colors">Community</a>
           <a href="#news" className="hover:text-zinc-900 transition-colors">What's New</a>
           <a href="#roadmap" className="hover:text-zinc-900 transition-colors">Roadmap</a>
         </div>
@@ -238,6 +240,9 @@ export default function TTTV2Page() {
 
       {/* ── TTTV Mini Player ── */}
       <TTTVMini />
+
+      {/* ── Community Videos ── */}
+      <CommunityVideos />
 
       {/* ── What's New (updates + posts + coming soon) ── */}
       <WhatsNew kaspaUpdates={kaspaUpdates} posts={posts} />
