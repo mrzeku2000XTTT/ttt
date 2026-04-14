@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 
 import HeroHeader from "@/components/tttv2/HeroHeader";
-import ProductGrid from "@/components/tttv2/ProductGrid";
+
 import WhatsNew from "@/components/tttv2/WhatsNew";
 import TTTVMini from "@/components/tttv2/TTTVMini";
 import CommunityVideos from "@/components/tttv2/CommunityVideos";
@@ -300,11 +300,6 @@ export default function TTTV2Page() {
           )}
         </div>
       </motion.section>
-
-      {/* ── Products ── */}
-      <motion.div initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.7 }}>
-        <ProductGrid />
-      </motion.div>
 
       {/* ── TTTV Mini Player ── */}
       <motion.div initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.7, delay: 0.1 }}>

@@ -76,7 +76,7 @@ export default function TTTVMini() {
 
   return (
     <section id="tttv" className="py-20 sm:py-28 px-5 bg-gradient-to-b from-zinc-900 to-black text-white">
-      <div className="max-w-3xl mx-auto text-center">
+      <div className="max-w-5xl mx-auto text-center">
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="bg-cyan-500 rounded-lg px-3 py-1.5 shadow-[0_0_20px_rgba(6,182,212,0.5)]">
@@ -122,6 +122,20 @@ export default function TTTVMini() {
               <Upload className="w-4 h-4" />
               Upload Video
             </motion.button>
+          </div>
+
+          {/* KaSshi.io Embedded */}
+          <div className="mt-10 max-w-5xl mx-auto">
+            <div className="rounded-2xl overflow-hidden ring-1 ring-white/10 bg-black" style={{ aspectRatio: "16/9" }}>
+              <iframe
+                src="https://kasshi.io"
+                title="KaSshi.io"
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+              />
+            </div>
+            <p className="text-[11px] text-zinc-500 mt-2">Powered by KaSshi.io</p>
           </div>
 
           {/* Upload Modal */}
