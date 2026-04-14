@@ -6,7 +6,7 @@ import {
   ArrowLeft, ExternalLink, Zap, Shield, Globe, Layers,
   TrendingUp, Clock, Users, Cpu, ChevronRight, Loader2, FlaskConical
 } from "lucide-react";
-// KAI chat is now global via layout/TTTV2
+import KaspaAvatarChat from "@/components/kaspa/KaspaAvatarChat";
 
 const FEATURES = [
   { icon: Zap, title: "10,000+ TPS", desc: "Kaspa processes thousands of transactions per second using its blockDAG architecture — faster than any other PoW chain.", color: "from-cyan-500 to-blue-500" },
@@ -389,6 +389,7 @@ Return 6 real, verifiable R&D updates from kaspa.news or official Kaspa develope
         </div>
       </section>
 
+      <KaspaAvatarChat />
     </div>
   );
 }
