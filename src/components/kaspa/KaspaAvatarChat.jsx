@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Loader2, Minus } from "lucide-react";
+import { X, Send, Loader2, Minus, Settings } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const STORAGE_KEY = "kaspa_avatar_video_url";
@@ -29,7 +29,10 @@ export default function KaspaAvatarChat() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [bubbleText, setBubbleText] = useState(KAI_FACTS[0]);
-  const [showBubble, setShowBubble] = useState(true);
+  const [showBubble, setShowBubble] = useState(() => {
+    try { const v = localStorage.getItem("kai_show_bubble"); return v === null ? true : v === "true"; } catch { return true; }
+  });
+  const [showSettings, setShowSettings] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -64,14 +67,19 @@ export default function KaspaAvatarChat() {
     syncLocalToGlobal();
   }, []);
 
-  // Rotate speech bubble facts — no flash, just swap text
+  // Persist bubble preference
   useEffect(() => {
-    if (isOpen) return;
+    try { localStorage.setItem("kai_show_bubble", String(showBubble)); } catch {}
+  }, [showBubble]);
+
+  // Rotate speech bubble facts
+  useEffect(() => {
+    if (isOpen || !showBubble) return;
     const interval = setInterval(() => {
       setBubbleText(KAI_FACTS[Math.floor(Math.random() * KAI_FACTS.length)]);
     }, 5000);
     return () => clearInterval(interval);
-  }, [isOpen]);
+  }, [isOpen, showBubble]);
 
   useEffect(() => {
     if (isOpen && messagesEndRef.current) {
@@ -223,19 +231,60 @@ Respond as KAI:`,
               </div>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => setShowSettings(!showSettings)}
+                  className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors hover:bg-white/10 ${showSettings ? 'text-cyan-400' : 'text-white/40 hover:text-white/80'}`}
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => { setIsOpen(false); setShowSettings(false); }}
                   className="w-7 h-7 rounded-full flex items-center justify-center text-white/40 hover:text-white/80 transition-colors hover:bg-white/10"
                 >
                   <Minus className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  onClick={() => { setIsOpen(false); setMessages([{ role: "assistant", content: "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem." }]); }}
+                  onClick={() => { setIsOpen(false); setShowSettings(false); setMessages([{ role: "assistant", content: "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem." }]); }}
                   className="w-7 h-7 rounded-full flex items-center justify-center text-white/40 hover:text-red-400 transition-colors hover:bg-white/10"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
+
+            {/* Settings Panel */}
+            <AnimatePresence>
+              {showSettings && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                  style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+                >
+                  <div className="px-4 py-3 space-y-3">
+                    <div className="text-[11px] font-bold text-white/50 uppercase tracking-wider">Settings</div>
+                    
+                    {/* Cloud Messages Toggle */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-[13px] text-white/90 font-medium">Cloud Messages</div>
+                        <div className="text-[10px] text-white/40">Show floating fact bubbles</div>
+                      </div>
+                      <button
+                        onClick={() => setShowBubble(!showBubble)}
+                        className={`w-10 h-5.5 rounded-full relative transition-colors duration-200 ${showBubble ? 'bg-cyan-500' : 'bg-white/15'}`}
+                        style={{ width: 40, height: 22 }}
+                      >
+                        <div
+                          className="absolute top-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform duration-200"
+                          style={{ width: 18, height: 18, transform: showBubble ? 'translateX(20px)' : 'translateX(2px)' }}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-hide">
