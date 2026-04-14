@@ -112,6 +112,11 @@ const IMAGE_KEYWORDS = [
   "let's draw", 'lets draw', 'can you draw', 'draw me', 'draw a', 'draw an',
   'show me', 'visualize', 'picture of', 'image of', 'art of', 'xunhua'
 ];
+const SEARCH_KEYWORDS = [
+  'search', 'google', 'look up', 'lookup', 'find out', 'what is', 'who is',
+  'when did', 'how much', 'price of', 'latest news', 'current', 'today',
+  'news about', 'tell me about', 'search for', 'research'
+];
 const FEED_KEYWORDS = [
   'feed', 'ttt feed', 'latest posts', 'recent posts', 'whats on the feed',
   "what's on the feed", 'check feed', 'examine feed', 'what are people saying',
@@ -275,6 +280,7 @@ export default function KaspaAvatarChat() {
   const isImageRequest = (msg) => IMAGE_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
   const isFeedRequest = (msg) => FEED_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
   const isUserPostRequest = (msg) => USER_POST_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
+  const isSearchRequest = (msg) => SEARCH_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
 
   // Detect if a question is about TTT platform (no internet needed)
   const isTTTQuestion = (msg) => {
@@ -469,12 +475,15 @@ User: ${userMsg}
 
 Respond as KAI:${speedInstruction}`;
 
-      // Always use web search for Kaspa-related questions for accurate real-time data
+      // Always use web search for Kaspa questions, search requests, and non-TTT questions
       const lower = userMsg.toLowerCase();
       const isKaspaQuestion = ['kaspa', 'kas ', 'bps', 'blockdag', 'dag', 'ghostdag', 'krc-20', 'krc20', 'kasplex', 'mining', 'hashrate', 'sompolinsky', 'rusty', 'dagknight', 'kheavyhash'].some(kw => lower.includes(kw));
-      const needsInternet = isKaspaQuestion || (!isTTTQuestion(userMsg) && !isFast);
+      const isSearch = isSearchRequest(userMsg);
+      const needsInternet = isKaspaQuestion || isSearch || (!isTTTQuestion(userMsg) && !isFast);
+      
+      const searchPrefix = isSearch ? `The user is performing a web search. Use your real-time internet access to find the most accurate, up-to-date information. Search thoroughly like Google would. Give comprehensive results with facts, sources, and details.\n\n` : '';
       const response = await base44.integrations.Core.InvokeLLM({
-        prompt: kaiMode === "classic" ? classicPrompt : kaiPrompt,
+        prompt: searchPrefix + (kaiMode === "classic" ? classicPrompt : kaiPrompt),
         add_context_from_internet: needsInternet,
         model: "gemini_3_flash",
       });
@@ -765,8 +774,9 @@ Respond as KAI:${speedInstruction}`;
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-                  placeholder={kaiMode === "classic" ? "Ask Kai anything..." : "Ask KAI about Kaspa..."}
-                  className="flex-1 bg-transparent text-white/90 text-sm outline-none placeholder-white/30"
+                  placeholder={kaiMode === "classic" ? "Search or ask Kai..." : "Search or ask KAI..."}
+                  className="flex-1 bg-transparent text-white/90 outline-none placeholder-white/30"
+                  style={{ fontSize: '16px' }}
                 />
                 <button
                   onClick={sendMessage}
