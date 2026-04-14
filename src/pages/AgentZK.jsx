@@ -60,42 +60,42 @@ export default function AgentZKPage() {
 
   const checkWallets = async () => {
     // Check Kasware
-    if (typeof window.kasware !== 'undefined') {
-      try {
+    try {
+      if (typeof window !== 'undefined' && window.kasware) {
         const accounts = await window.kasware.getAccounts();
-        if (accounts.length > 0) {
+        if (accounts?.length > 0) {
           const balanceResult = await window.kasware.getBalance();
-          const balance = balanceResult.total || 0; // Kasware returns balance in smallest unit (sompis)
+          const balance = balanceResult?.total || 0;
           setKaswareWallet({
             connected: true,
             address: accounts[0],
-            balance: balance / 1e8 // KAS has 8 decimal places
+            balance: balance / 1e8
           });
         }
-      } catch (err) {
-        console.log('Kasware not connected or error:', err);
       }
+    } catch (err) {
+      console.log('Kasware not connected');
     }
 
     // Check MetaMask
-    if (typeof window.ethereum !== 'undefined') {
-      try {
+    try {
+      if (typeof window !== 'undefined' && window.ethereum) {
         const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-        if (accounts.length > 0) {
+        if (accounts?.length > 0) {
           const balanceWei = await window.ethereum.request({
             method: 'eth_getBalance',
             params: [accounts[0], 'latest']
           });
-          const balanceInEth = Number(BigInt(balanceWei)) / 1e18; // ETH has 18 decimal places
+          const balanceInEth = Number(BigInt(balanceWei)) / 1e18;
           setMetamaskWallet({
             connected: true,
             address: accounts[0],
             balance: balanceInEth
           });
         }
-      } catch (err) {
-        console.log('MetaMask not connected or error:', err);
       }
+    } catch (err) {
+      console.log('MetaMask not connected');
     }
   };
 
@@ -176,11 +176,13 @@ export default function AgentZKPage() {
 
   const loadUserLocation = async () => {
     try {
+      const isAuth = await base44.auth.isAuthenticated();
+      if (!isAuth) return;
       const currentUser = await base44.auth.me();
+      if (!currentUser?.email) return;
       const locations = await base44.entities.UserLocation.filter({
         user_email: currentUser.email
       });
-      
       if (locations.length > 0) {
         setUserLocation(locations[0]);
       }
