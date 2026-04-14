@@ -97,29 +97,24 @@ export default function WhatIsKaspaPage() {
   };
 
   const loadCoreRD = async () => {
-    const cacheKey = 'kaspa_core_rd';
-    const cacheDate = 'kaspa_core_rd_date';
+    const cacheKey = 'kaspa_core_rd_v2';
+    const cacheDate = 'kaspa_core_rd_v2_date';
     const today = new Date().toDateString();
     try {
       const cached = localStorage.getItem(cacheKey);
       const cachedDay = localStorage.getItem(cacheDate);
       if (cached && cachedDay === today) {
-        setRdUpdates(JSON.parse(cached));
-        setLoadingRd(false);
-        return;
+        const parsed = JSON.parse(cached);
+        if (parsed?.length) {
+          setRdUpdates(parsed);
+          setLoadingRd(false);
+          return;
+        }
       }
+    } catch { /* cache read failed, continue to fetch */ }
+    try {
       const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `Search kaspa.news specifically for the latest Kaspa CORE R&D and protocol development updates. Focus exclusively on:
-- Rust node rewrite progress (Rusty Kaspa / kaspad-rust)
-- GHOSTDAG and DAGKnight protocol research & improvements
-- Consensus layer changes, BPS (blocks per second) upgrades
-- Pruning, archival node, and data layer improvements
-- Smart contract / scripting layer development
-- Core developer updates, GitHub commits, technical blog posts
-- Network performance benchmarks and stress tests
-- Any GIP (Governance Improvement Proposals) or protocol-level changes
-
-Return 6 real, verifiable R&D updates from kaspa.news or official Kaspa developer channels. Be highly technical and factual. Include commit references or PR numbers if available.`,
+        prompt: `Search kaspa.news/rnd and official Kaspa developer channels for the latest 6 Kaspa CORE R&D and protocol development updates. Focus on: Rust node rewrite (Rusty Kaspa), GHOSTDAG/DAGKnight research, BPS upgrades, smart contracts/SilverScript, network benchmarks, GIPs. Be factual.`,
         add_context_from_internet: true,
         model: 'gemini_3_flash',
         response_json_schema: {
@@ -146,7 +141,9 @@ Return 6 real, verifiable R&D updates from kaspa.news or official Kaspa develope
         localStorage.setItem(cacheKey, JSON.stringify(res.updates));
         localStorage.setItem(cacheDate, today);
       }
-    } catch { }
+    } catch (err) {
+      console.log('R&D fetch failed:', err);
+    }
     setLoadingRd(false);
   };
 
@@ -167,9 +164,9 @@ Return 6 real, verifiable R&D updates from kaspa.news or official Kaspa develope
       <section className="pt-24 pb-16 sm:pt-32 sm:pb-24 px-5 text-center bg-gradient-to-b from-zinc-900 to-black text-white">
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto">
           <img
-            src="https://cryptologos.cc/logos/kaspa-kas-logo.png?v=041"
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/13e8ec094_image.png"
             alt="Kaspa"
-            className="w-20 h-20 mx-auto mb-6 drop-shadow-[0_0_20px_rgba(6,182,212,0.4)]"
+            className="w-20 h-20 mx-auto mb-6 rounded-full drop-shadow-[0_0_20px_rgba(6,182,212,0.4)]"
           />
           <h1 className="text-4xl sm:text-6xl font-[900] tracking-tight mb-4">
             The World's Fastest<br />
