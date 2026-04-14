@@ -373,6 +373,7 @@ Respond as KAI:${speedInstruction}`;
                   onClick={() => {
                     const next = kaiMode === "kai" ? "classic" : "kai";
                     setKaiMode(next);
+                    setIsLoading(false);
                     setMessages([{ role: "assistant", content: next === "classic"
                       ? "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything — I have internet access and know every feature of the platform."
                       : "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem."
@@ -395,13 +396,13 @@ Respond as KAI:${speedInstruction}`;
                   <Settings className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  onClick={() => { setIsOpen(false); setShowSettings(false); }}
+                  onClick={() => { setIsOpen(false); setShowSettings(false); setIsLoading(false); }}
                   className="w-7 h-7 rounded-full flex items-center justify-center text-white/40 hover:text-white/80 transition-colors hover:bg-white/10"
                 >
                   <Minus className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  onClick={() => { setIsOpen(false); setShowSettings(false); setMessages([{ role: "assistant", content: kaiMode === "classic" ? "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything." : "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem." }]); }}
+                  onClick={() => { setIsOpen(false); setShowSettings(false); setIsLoading(false); setMessages([{ role: "assistant", content: kaiMode === "classic" ? "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything." : "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem." }]); }}
                   className="w-7 h-7 rounded-full flex items-center justify-center text-white/40 hover:text-red-400 transition-colors hover:bg-white/10"
                 >
                   <X className="w-3.5 h-3.5" />
