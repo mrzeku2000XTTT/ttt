@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { Play, Search, Youtube, ChevronRight, Upload, X, Loader2, Check, Settings, Volume2, VolumeX } from "lucide-react";
+import { Play, Search, Youtube, ChevronRight, Upload, X, Loader2, Check, Settings, Volume2, VolumeX, Music } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { setKaSshiGlobal } from "@/components/KaSshiPlayer";
 
 export default function TTTVMini() {
   const navigate = useNavigate();
@@ -260,18 +261,21 @@ export default function TTTVMini() {
             </motion.button>
           </div>
 
-          {/* KaSshi.io Embedded */}
+          {/* KaSshi.io — opens persistent player */}
           <div className="mt-10 w-full">
-            <div className="rounded-2xl overflow-hidden ring-1 ring-white/10 bg-black" style={{ height: "clamp(500px, 70vh, 800px)" }}>
-              <iframe
-                src="https://kasshi.io"
-                title="KaSshi.io"
-                className="w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
-              />
-            </div>
-            <p className="text-[11px] text-zinc-500 mt-2">Powered by KaSshi.io</p>
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setKaSshiGlobal(true)}
+              className="mx-auto flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-600/20 to-pink-600/20 ring-1 ring-purple-500/30 hover:ring-purple-500/50 rounded-2xl transition-all group"
+            >
+              <Music className="w-6 h-6 text-purple-400 group-hover:animate-pulse" />
+              <div className="text-left">
+                <div className="text-white font-bold text-sm">Open KaSshi.io Player</div>
+                <div className="text-zinc-500 text-[11px]">Music keeps playing across all pages</div>
+              </div>
+            </motion.button>
+            <p className="text-[11px] text-zinc-500 mt-2">Powered by KaSshi.io — persistent background playback</p>
           </div>
 
           {/* Side Videos Edit Modal */}

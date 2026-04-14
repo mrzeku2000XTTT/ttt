@@ -29,6 +29,7 @@ import TTTV2Page from './pages/TTTV2';
 import WhatIsKaspaPage from './pages/WhatIsKaspa';
 import ExplorePage from './pages/Explore';
 import AppStoreV2Page from './pages/AppStoreV2';
+import KaSshiPlayer from './components/KaSshiPlayer';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -116,6 +117,7 @@ function App() {
           <NavigationTracker />
           <AuthenticatedApp />
         </Router>
+        <KaSshiPlayer />
         <Toaster />
         <VisualEditAgent />
       </QueryClientProvider>
