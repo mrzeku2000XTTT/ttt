@@ -92,20 +92,19 @@ export default function TTTV2Page() {
     } catch {}
   };
 
+  const HERO_VIDEO_FALLBACK = "https://base44.app/api/apps/6901295fa9bcfaa0f5ba2c2a/files/mp/public/6901295fa9bcfaa0f5ba2c2a/82dea996a_f12bdf5aa_grok-video.mp4";
+
   const loadHeroVideo = async () => {
     try {
       const configs = await base44.entities.KAIConfig.filter({ config_key: "hero_video_url" });
       if (configs.length > 0 && configs[0].config_value) {
         setHeroVideoUrl(configs[0].config_value);
-      } else {
-        // Fallback: check localStorage for admin-set video and persist it
-        const local = localStorage.getItem("tttv2_hero_video");
-        if (local) setHeroVideoUrl(local);
+        return;
       }
-    } catch {
-      const local = localStorage.getItem("tttv2_hero_video");
-      if (local) setHeroVideoUrl(local);
-    }
+    } catch { /* filter may fail for unauthenticated users */ }
+    // Fallback: localStorage then hardcoded URL
+    const local = localStorage.getItem("tttv2_hero_video");
+    setHeroVideoUrl(local || HERO_VIDEO_FALLBACK);
   };
 
   const handleVideoUpload = async (e) => {
