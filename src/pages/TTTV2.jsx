@@ -235,14 +235,20 @@ export default function TTTV2Page() {
         <div className="absolute inset-0">
           <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/20b6a8247_generated_image.png" alt="" className="w-full h-full object-contain sm:object-cover opacity-70" />
           {heroVideoUrl && (
-            <video
-              ref={heroVideoRef}
-              src={heroVideoUrl}
-              autoPlay loop playsInline muted
-              className="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-screen"
-            />
+            <>
+              <video
+                ref={heroVideoRef}
+                src={heroVideoUrl}
+                autoPlay loop playsInline muted
+                className="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-lighten"
+              />
+              {/* Edge fade masks so video blends seamlessly */}
+              <div className="absolute inset-0 pointer-events-none" style={{
+                background: 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 70%, rgba(0,0,0,1) 100%)'
+              }} />
+            </>
           )}
-          <div className="absolute inset-0 bg-black/50" />
+          <div className="absolute inset-0 bg-black/45" />
         </div>
 
         {/* Admin video controls */}
