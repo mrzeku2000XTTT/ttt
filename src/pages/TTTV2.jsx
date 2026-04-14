@@ -205,29 +205,11 @@ export default function TTTV2Page() {
           {heroVideoUrl && (
             <video
               src={heroVideoUrl}
-              autoPlay loop muted playsInline
+              autoPlay loop playsInline
               className="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-screen"
             />
           )}
           <div className="absolute inset-0 bg-black/30" />
-          {/* Admin video controls */}
-          {isAdmin && (
-            <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
-              {heroVideoUrl && (
-                <button onClick={removeHeroVideo} className="w-8 h-8 bg-black/60 hover:bg-red-600/80 backdrop-blur rounded-full flex items-center justify-center text-white transition-colors" title="Remove video">
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-              <label className="w-8 h-8 bg-black/60 hover:bg-white/20 backdrop-blur rounded-full flex items-center justify-center text-white cursor-pointer transition-colors" title="Upload hero video">
-                {uploadingVideo ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <Upload className="w-4 h-4" />
-                )}
-                <input type="file" accept="video/*" onChange={handleVideoUpload} className="hidden" />
-              </label>
-            </div>
-          )}
         </div>
         <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1, ease: [.22,1,.36,1] }} className="relative max-w-3xl mx-auto">
           <p className="text-[13px] font-semibold text-cyan-400 tracking-wide uppercase mb-4">Introducing TTT 2.0</p>
