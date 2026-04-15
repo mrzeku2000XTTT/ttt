@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { setKaSshiGlobal, markKaSshiInlineVisited } from "@/components/KaSshiPlayer";
+import AgentBrowserPanel from "@/components/feed/AgentBrowserPanel";
 
 const KAI_THINKING_PHRASES = [
   "Scanning the blockDAG…",
@@ -182,6 +183,34 @@ const fetchKaspaContext = async (userMessage) => {
     }
   } catch {}
   return '';
+};
+
+const BROWSE_KEYWORDS = [
+  'browse', 'search for', 'look up', 'lookup', 'go to site', 'open link',
+  'open site', 'open website', 'navigate to site', 'visit', 'load site',
+  'google', 'find me', 'check out site', 'show me site'
+];
+
+const isUrlInput = (text) => /^(https?:\/\/|www\.)/i.test(text.trim());
+
+const isBrowseRequest = (msg) => {
+  if (isUrlInput(msg)) return true;
+  const lower = msg.toLowerCase().trim();
+  return BROWSE_KEYWORDS.some(kw => lower.startsWith(kw) || lower.includes(kw));
+};
+
+const getBrowseUrl = (msg) => {
+  const trimmed = msg.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (/^www\./i.test(trimmed)) return `https://${trimmed}`;
+  const urlMatch = trimmed.match(/(https?:\/\/[^\s]+)/i);
+  if (urlMatch) return urlMatch[1];
+  const wwwMatch = trimmed.match(/(www\.[^\s]+)/i);
+  if (wwwMatch) return `https://${wwwMatch[1]}`;
+  const query = trimmed
+    .replace(/^(browse|search for|look up|lookup|go to site|open link|open site|open website|navigate to site|visit|load site|google|find me|check out site|show me site)\s*/i, '')
+    .trim();
+  return `https://www.google.com/search?igu=1&q=${encodeURIComponent(query)}`;
 };
 
 const detectOpenApp = (msg) => {
@@ -369,6 +398,14 @@ export default function KaspaAvatarChat() {
     setPendingImages([]);
     setMessages(prev => [...prev, { role: "user", content: userMsg, images: imageUrls.length > 0 ? imageUrls : undefined }]);
     setIsLoading(true);
+
+    // Browse / search / URL → inline browser panel
+    if (isBrowseRequest(userMsg) && !isImageRequest(userMsg)) {
+      const browseUrl = getBrowseUrl(userMsg);
+      setMessages(prev => [...prev, { role: "browser", url: browseUrl }]);
+      setIsLoading(false);
+      return;
+    }
 
     // KaSshi / music detection
     const kasshiKeywords = ['kasshi', 'ka-sshi', 'music', 'play music', 'play some music', 'open music', 'music player', 'listen to music', 'listen'];
@@ -773,7 +810,11 @@ Respond as KAI:${speedInstruction}`;
             <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-hide">
               {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                  {msg.role === "action" ? (
+                  {msg.role === "browser" ? (
+                    <div className="w-full">
+                      <AgentBrowserPanel url={msg.url} />
+                    </div>
+                  ) : msg.role === "action" ? (
                     <motion.div
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
