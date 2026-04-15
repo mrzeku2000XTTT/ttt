@@ -627,8 +627,20 @@ export const handleGeneralMessage = async (userMsg, imageUrls, imageNames, messa
   let learnedKnowledge = '';
   let feedContext = '';
 
-  if (isFast) {
+  const lower = userMsg.toLowerCase();
+  const isPriceOrMarket = ['price', 'market', 'worth', 'cost', 'how much', 'usd', 'dollar', 'mcap', 'market cap', 'ath', 'volume'].some(kw => lower.includes(kw));
+  const isKaspaRelated = ['kaspa', 'kas ', 'kas?', 'bps', 'blockdag', 'dag', 'ghostdag', 'krc-20', 'krc20', 'kasplex', 'mining', 'hashrate', 'sompolinsky', 'rusty', 'dagknight', 'kheavyhash'].some(kw => lower.includes(kw));
+
+  if (isFast && !isPriceOrMarket && !isKaspaRelated) {
     learnedKnowledge = await loadLearnedKnowledge();
+  } else if (isFast) {
+    // Fast mode but needs live data (price/kaspa queries)
+    const [ctx, knowledge] = await Promise.all([
+      fetchKaspaContext(userMsg),
+      loadLearnedKnowledge(),
+    ]);
+    liveKaspaContext = ctx;
+    learnedKnowledge = knowledge;
   } else {
     const [ctx, knowledge, posts] = await Promise.all([
       fetchKaspaContext(userMsg),
@@ -752,8 +764,7 @@ User: ${userMsg}${imageContext}
 
 Respond as KAI:${speedInstruction}`;
 
-  const lower = userMsg.toLowerCase();
-  const needsInternet = isFast ? isSearch : (isSearch || ['kaspa', 'kas ', 'bps', 'blockdag', 'dag', 'ghostdag', 'krc-20', 'krc20', 'kasplex', 'mining', 'hashrate', 'sompolinsky', 'rusty', 'dagknight', 'kheavyhash'].some(kw => lower.includes(kw)) || !isTTTQuestion(userMsg));
+  const needsInternet = isSearch || isPriceOrMarket || isKaspaRelated || (!isFast && !isTTTQuestion(userMsg));
   const searchPrefix = isSearch ? `The user is performing a web search. Use your real-time internet access to find the most accurate, up-to-date information. Search thoroughly like Google would. Give comprehensive results with facts, sources, and details.\n\n` : '';
   
   const llmParams = {
