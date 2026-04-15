@@ -93,7 +93,12 @@ export const KASPA_NEWS_KEYWORDS = [
   'kaspa news', 'latest post', 'recent post', 'kaspa posts', 'x posts',
   'twitter posts', 'kaspa tweets', 'latest tweets', 'recent tweets',
   'show me posts', 'list posts', 'kaspa x', 'news posts', 'what are people posting',
-  'latest kaspa', 'recent kaspa news', 'kaspa feed'
+  'latest kaspa', 'recent kaspa news', 'kaspa feed',
+  "what's the latest", "whats the latest", "what's happening", "whats happening",
+  'builder news', 'builder tweets', 'developer news', 'developer tweets',
+  'kaspa videos', 'kaspa youtube', 'kaspa reddit', 'reddit posts',
+  'ai pulse', 'pulse report', 'ai summary', 'kaspa digest',
+  'community posts', 'show me news', 'any news'
 ];
 
 export const SEARCH_KEYWORDS = [

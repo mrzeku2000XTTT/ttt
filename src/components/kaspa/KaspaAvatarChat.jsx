@@ -168,8 +168,8 @@ export default function KaspaAvatarChat() {
       // Build / code
       if (isBuildRequest(userMsg)) { await handleBuildRequest(userMsg, ctx); setIsLoading(false); return; }
 
-      // Kaspa news posts
-      if (isKaspaNewsRequest(userMsg)) { await handleKaspaNews(ctx); setIsLoading(false); return; }
+      // Kaspa news posts — now with feed detection
+      if (isKaspaNewsRequest(userMsg)) { await handleKaspaNews(userMsg, ctx); setIsLoading(false); return; }
 
       // Explorer / blockchain lookup
       if (isExplorerRequest(userMsg) && !isImageRequest(userMsg)) {
