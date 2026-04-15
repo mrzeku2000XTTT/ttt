@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
-import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, RotateCw, Home, ExternalLink, Globe, Lock } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, ArrowRight, RotateCw, Home, ExternalLink, Globe, Lock, X, Loader2 } from "lucide-react";
+import { base44 } from "@/api/base44Client";
+import ReactMarkdown from "react-markdown";
 
 const QUICK_LINKS = [
   { label: "Kaspa News", url: "https://kaspa-app-9cc9fe40.base44.app" },
@@ -20,9 +22,24 @@ export default function AgentBrowserPanel({ url: initialUrl, onAskKai }) {
   const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState([initialUrl || DEFAULT_HOME]);
   const [historyIndex, setHistoryIndex] = useState(0);
+  const [floatingAnswer, setFloatingAnswer] = useState(null); // { question, answer, loading }
   const iframeRef = useRef(null);
   const panelRef = useRef(null);
   const prevInitialUrl = useRef(initialUrl);
+
+  const askKaiInline = async (question) => {
+    setFloatingAnswer({ question, answer: "", loading: true });
+    try {
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are KAI, a concise AI assistant for the TTT Kaspa platform. Answer this question in 2-3 sentences max. Be helpful and direct.\n\nQuestion: ${question}`,
+        add_context_from_internet: true,
+        model: 'gemini_3_flash',
+      });
+      setFloatingAnswer({ question, answer: response, loading: false });
+    } catch {
+      setFloatingAnswer({ question, answer: "Sorry, couldn't get an answer right now. Try again!", loading: false });
+    }
+  };
 
   // Sync when parent passes a new URL
   useEffect(() => {
@@ -129,6 +146,51 @@ export default function AgentBrowserPanel({ url: initialUrl, onAskKai }) {
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
             title="Browser"
           />
+
+          {/* Floating KAI answer overlay */}
+          <AnimatePresence>
+            {floatingAnswer && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                className="absolute bottom-2 left-2 right-2 z-10 rounded-xl overflow-hidden"
+                style={{
+                  background: "rgba(10,10,16,0.92)",
+                  backdropFilter: "blur(20px)",
+                  border: "1px solid rgba(6,182,212,0.3)",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+                }}
+              >
+                <div className="flex items-center justify-between px-3 py-1.5" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                  <span className="text-[10px] font-bold text-cyan-400">KAI</span>
+                  <button onClick={() => setFloatingAnswer(null)} className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/10 text-white/40 hover:text-white/80">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+                <div className="px-3 py-2 max-h-[140px] overflow-y-auto scrollbar-hide">
+                  <div className="text-[10px] text-white/40 mb-1 truncate">Q: {floatingAnswer.question}</div>
+                  {floatingAnswer.loading ? (
+                    <div className="flex items-center gap-1.5 text-cyan-400 text-[11px]">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <span>Thinking…</span>
+                    </div>
+                  ) : (
+                    <ReactMarkdown
+                      className="text-[11px] leading-relaxed text-white/85 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+                      components={{
+                        p: ({ children }) => <p className="my-0.5">{children}</p>,
+                        a: ({ children, href }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline">{children}</a>,
+                        strong: ({ children }) => <span className="font-semibold text-white">{children}</span>,
+                      }}
+                    >
+                      {floatingAnswer.answer}
+                    </ReactMarkdown>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -152,11 +214,9 @@ export default function AgentBrowserPanel({ url: initialUrl, onAskKai }) {
                   else if (/^www\./i.test(val)) url = `https://${val}`;
                   else url = `https://${val}`;
                   navigateTo(url);
-                } else if (onAskKai) {
-                  // Send to KAI instead of Google
-                  onAskKai(val);
                 } else {
-                  navigateTo(`https://www.google.com/search?igu=1&q=${encodeURIComponent(val)}`);
+                  // Ask KAI inline over the browser
+                  askKaiInline(val);
                 }
                 e.target.value = "";
                 e.target.blur();
