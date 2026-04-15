@@ -3,7 +3,8 @@
 import {
   IMAGE_KEYWORDS, KASPA_NEWS_KEYWORDS, SEARCH_KEYWORDS,
   FEED_KEYWORDS, USER_POST_KEYWORDS, TRAIN_KEYWORDS,
-  BUILD_KEYWORDS, BRAIN_KEYWORDS, BROWSE_KEYWORDS, VIDEO_KEYWORDS, APP_DIRECTORY
+  BUILD_KEYWORDS, BRAIN_KEYWORDS, BROWSE_KEYWORDS, VIDEO_KEYWORDS,
+  WATCH_THAT_KEYWORDS, FEED_ROUTE_MAP, APP_DIRECTORY
 } from './kaiConstants';
 
 const matchesAny = (msg, keywords) => keywords.some(kw => msg.toLowerCase().includes(kw));
@@ -16,7 +17,33 @@ export const isUserPostRequest = (msg) => matchesAny(msg, USER_POST_KEYWORDS);
 export const isTrainRequest = (msg) => matchesAny(msg, TRAIN_KEYWORDS);
 export const isBuildRequest = (msg) => matchesAny(msg, BUILD_KEYWORDS);
 export const isBrainRequest = (msg) => matchesAny(msg, BRAIN_KEYWORDS);
-export const isVideoRequest = (msg) => matchesAny(msg, VIDEO_KEYWORDS);
+export const isWatchThatRequest = (msg) => matchesAny(msg, WATCH_THAT_KEYWORDS);
+export const isVideoRequest = (msg) => {
+  // Don't match "watch that/it/the first" as a video request
+  if (isWatchThatRequest(msg)) return false;
+  return matchesAny(msg, VIDEO_KEYWORDS);
+};
+
+// Detect which feed to route to based on user message
+export const detectFeedRoute = (msg) => {
+  const lower = msg.toLowerCase();
+  for (const [key, config] of Object.entries(FEED_ROUTE_MAP)) {
+    if (config.keywords.some(kw => lower.includes(kw))) return config.feed;
+  }
+  return null;
+};
+
+// Extract video index from "watch the first/second/third" or "watch #1"
+export const extractVideoIndex = (msg) => {
+  const lower = msg.toLowerCase();
+  if (/\b(first|1st|#1|number 1)\b/.test(lower)) return 0;
+  if (/\b(second|2nd|#2|number 2)\b/.test(lower)) return 1;
+  if (/\b(third|3rd|#3|number 3)\b/.test(lower)) return 2;
+  if (/\b(fourth|4th|#4|number 4)\b/.test(lower)) return 3;
+  if (/\b(fifth|5th|#5|number 5)\b/.test(lower)) return 4;
+  // Default to first (0) for "watch that", "watch it", etc.
+  return 0;
+};
 
 export const isUrlInput = (text) => /^(https?:\/\/|www\.)/i.test(text.trim());
 

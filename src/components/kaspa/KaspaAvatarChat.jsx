@@ -12,11 +12,13 @@ import { STORAGE_KEY, DEFAULT_AVATAR_IMG, DEFAULT_VIDEO_URL, KAI_FACTS } from ".
 import {
   isImageRequest, isKaspaNewsRequest, isSearchRequest, isFeedRequest,
   isUserPostRequest, isTrainRequest, isBuildRequest, isBrainRequest,
-  isBrowseRequest, isExplorerRequest, isVideoRequest, detectOpenApp, getBrowseUrl
+  isBrowseRequest, isExplorerRequest, isVideoRequest, isWatchThatRequest,
+  detectOpenApp, getBrowseUrl, detectFeedRoute
 } from "./kaiDetectors";
 import {
   handleShowBrain, handleTrainOnContent, handleBuildRequest,
-  handleKaspaNews, handleKaspaVideos, handleExplorerRequest, handleUserPostAnalysis,
+  handleKaspaNews, handleKaspaVideos, handleWatchThat, handleFeedRoute,
+  handleExplorerRequest, handleUserPostAnalysis,
   handleFeedSummary, handleGeneralMessage
 } from "./kaiHandlers";
 import { KAIThinkingBubble } from "./KAIAnimations";
@@ -161,6 +163,9 @@ export default function KaspaAvatarChat() {
       // Brain request
       if (isBrainRequest(userMsg)) { await handleShowBrain(ctx); setIsLoading(false); return; }
 
+      // "Watch that" / "learn from that" — ingest video from last feed
+      if (isWatchThatRequest(userMsg)) { await handleWatchThat(userMsg, messages, ctx); setIsLoading(false); return; }
+
       // Train / learn / bare URL
       const hasUrl = /(https?:\/\/[^\s]+)/i.test(userMsg);
       if (isTrainRequest(userMsg) || (hasUrl && !isBrowseRequest(userMsg) && !isExplorerRequest(userMsg))) {
@@ -175,6 +180,12 @@ export default function KaspaAvatarChat() {
 
       // Kaspa news posts
       if (isKaspaNewsRequest(userMsg)) { await handleKaspaNews(ctx); setIsLoading(false); return; }
+
+      // Feed routing — builders, developers, reddit, pulse
+      const feedRoute = detectFeedRoute(userMsg);
+      if (feedRoute && feedRoute !== 'videos' && feedRoute !== 'focused') {
+        await handleFeedRoute(feedRoute, ctx); setIsLoading(false); return;
+      }
 
       // Explorer / blockchain lookup
       if (isExplorerRequest(userMsg) && !isImageRequest(userMsg)) {
@@ -400,7 +411,18 @@ export default function KaspaAvatarChat() {
             <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-hide" style={{ display: (showBrowser && (browserUrl || viewingPost)) ? "none" : undefined }}>
               {messages.map((msg, i) => (
                 <KAIChatMessage key={i} msg={msg} index={i} typingIndex={typingIndex} typingText={typingText}
-                  setIsOpen={setIsOpen} setBrowserUrl={setBrowserUrl} setShowBrowser={setShowBrowser} setViewingPost={setViewingPost} />
+                  setIsOpen={setIsOpen} setBrowserUrl={setBrowserUrl} setShowBrowser={setShowBrowser} setViewingPost={setViewingPost}
+                  onWatchVideo={async (video, idx) => {
+                    // Programmatically trigger "watch the Nth" ingestion
+                    const ordinal = ['first', 'second', 'third', 'fourth', 'fifth'][idx] || 'first';
+                    setMessages(prev => [...prev, { role: "user", content: `Watch the ${ordinal} one` }]);
+                    setIsLoading(true);
+                    try {
+                      await handleWatchThat(`watch the ${ordinal} one`, messages, ctx);
+                    } catch { addAssistantMessage("❌ Something went wrong. Try again!"); }
+                    setIsLoading(false);
+                  }}
+                />
               ))}
               {isLoading && typingIndex < 0 && <KAIThinkingBubble />}
               <div ref={messagesEndRef} />

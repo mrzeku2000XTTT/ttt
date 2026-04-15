@@ -8,10 +8,10 @@ import { setKaSshiGlobal, markKaSshiInlineVisited } from "@/components/KaSshiPla
 import KAINewsCard from "./KAINewsCard";
 import KAIVideoCard from "./KAIVideoCard";
 
-export default function KAIChatMessage({ msg, index, typingIndex, typingText, setIsOpen, setBrowserUrl, setShowBrowser, setViewingPost }) {
+export default function KAIChatMessage({ msg, index, typingIndex, typingText, setIsOpen, setBrowserUrl, setShowBrowser, setViewingPost, onWatchVideo }) {
   const navigate = useNavigate();
 
-  // Video posts — cards with YouTube playback
+  // Video posts — cards with YouTube playback + watch & learn
   if (msg.role === "video_posts") {
     return (
       <div className="flex flex-col gap-2 max-w-[95%]">
@@ -23,13 +23,17 @@ export default function KAIChatMessage({ msg, index, typingIndex, typingText, se
             <KAIVideoCard
               key={i}
               video={video}
+              index={i}
               onPlay={(v) => {
-                // Open YouTube URL in browser panel
                 if (v.url) {
                   setBrowserUrl(v.url);
                   setViewingPost(null);
                   setShowBrowser(true);
                 }
+              }}
+              onWatch={(v, idx) => {
+                // Trigger "watch the Nth one" flow
+                if (onWatchVideo) onWatchVideo(v, idx);
               }}
             />
           ))}

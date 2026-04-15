@@ -1,12 +1,12 @@
 // KAI Handlers — all message processing logic (brain, train, build, news, explorer, etc.)
 
 import { base44 } from "@/api/base44Client";
-import { TTT_APP_DOCS } from "./kaiConstants";
+import { TTT_APP_DOCS, KASPA_CONTEXT_BASE } from "./kaiConstants";
 import {
   isImageRequest, isKaspaNewsRequest, isSearchRequest, isFeedRequest,
   isUserPostRequest, isTrainRequest, isBuildRequest, isBrainRequest,
   isBrowseRequest, isExplorerRequest, detectExplorerAction, detectOpenApp,
-  getBrowseUrl, isTTTQuestion, fetchKaspaContext
+  getBrowseUrl, isTTTQuestion, fetchKaspaContext, extractVideoIndex
 } from "./kaiDetectors";
 
 // Load user's learned knowledge for context injection (with timeout)
@@ -132,50 +132,160 @@ export const handleBuildRequest = async (userMsg, { setMessages, addAssistantMes
   }
 };
 
-// Kaspa video posts
-export const handleKaspaVideos = async ({ setMessages }) => {
+// Kaspa video posts — uses feed=videos from kaspaContext
+export const handleKaspaVideos = async ({ setMessages, addAssistantMessage }) => {
   setMessages(prev => [...prev, { role: "action", content: "🎬 Fetching latest Kaspa videos…" }]);
   try {
-    const res = await fetch('https://kaspa-b3ad561a.base44.app/functions/kaspaContext?format=json&limit=30');
-    const data = await res.json();
-    const allItems = data?.items || (Array.isArray(data) ? data : []);
-    const videos = allItems.filter(item => item.feed === 'videos' || (item.url && item.url.includes('youtube.com')));
+    const res = await fetch(`${KASPA_CONTEXT_BASE}?feed=videos&format=feed&limit=5`);
+    const text = await res.text();
+    
+    // Also fetch JSON for structured card display
+    const jsonRes = await fetch(`${KASPA_CONTEXT_BASE}?feed=videos&format=json&limit=5`);
+    const jsonData = await jsonRes.json();
+    const videos = jsonData?.items || (Array.isArray(jsonData) ? jsonData : []);
+    
     setMessages(prev => prev.filter(m => m.role !== 'action'));
+    
     if (videos.length > 0) {
+      // Show video cards
       setMessages(prev => [...prev, {
         role: "video_posts",
-        content: `🎬 Latest ${videos.length} Kaspa video${videos.length > 1 ? 's' : ''}:`,
+        content: `📺 Latest Kaspa Videos · live from kaspa.news`,
         videos: videos,
       }]);
+      // Follow-up offer to ingest
+      addAssistantMessage("Want me to watch one and learn from it? Just say **\"watch the first one\"** or **\"watch that\"** and I'll extract the transcript into my brain. 🧠");
     } else {
-      setMessages(prev => [...prev, { role: "assistant", content: "No Kaspa videos found right now. Try again later! 🎬" }]);
+      addAssistantMessage("Couldn't find any Kaspa videos right now. Try again later! 🎬");
     }
   } catch {
     setMessages(prev => prev.filter(m => m.role !== 'action'));
-    setMessages(prev => [...prev, { role: "assistant", content: "❌ Couldn't fetch Kaspa videos. Try again!" }]);
+    addAssistantMessage("❌ Couldn't fetch Kaspa videos. Try again!");
   }
 };
 
-// Kaspa news posts
-export const handleKaspaNews = async ({ setMessages }) => {
+// "Watch that" / "learn from that" — ingest a video from the last video feed
+export const handleWatchThat = async (userMsg, messages, { setMessages, addAssistantMessage }) => {
+  // Find the last video_posts message to get the URL
+  const lastVideoMsg = [...messages].reverse().find(m => m.role === "video_posts");
+  if (!lastVideoMsg || !lastVideoMsg.videos?.length) {
+    addAssistantMessage("I don't see any videos in our conversation. Say **\"latest video\"** first and I'll fetch them, then you can tell me which to watch. 📺");
+    return;
+  }
+
+  const idx = extractVideoIndex(userMsg);
+  const video = lastVideoMsg.videos[Math.min(idx, lastVideoMsg.videos.length - 1)];
+  const videoUrl = video.url;
+  const videoTitle = video.text || video.title || "Untitled";
+
+  if (!videoUrl) {
+    addAssistantMessage("That video doesn't have a URL I can ingest. Try another one.");
+    return;
+  }
+
+  // Narrate the ingestion flow
+  setMessages(prev => [...prev, { role: "action", content: `🔍 Fetching video…` }]);
+  await new Promise(r => setTimeout(r, 500));
+  setMessages(prev => prev.filter(m => m.role !== 'action'));
+  setMessages(prev => [...prev, { role: "action", content: `📺 Found: "${videoTitle}"` }]);
+  await new Promise(r => setTimeout(r, 600));
+
+  try {
+    // Call kaiLearn with the video URL
+    let res = await base44.functions.invoke('kaiLearn', { url: videoUrl });
+    let data = res.data;
+
+    // Handle pending status — poll up to 3 times
+    let attempts = 0;
+    while (data?.status === 'pending' && attempts < 3) {
+      setMessages(prev => prev.filter(m => m.role !== 'action'));
+      setMessages(prev => [...prev, { role: "action", content: `⏳ Transcript processing... (attempt ${attempts + 1}/3)` }]);
+      await new Promise(r => setTimeout(r, 3000));
+      res = await base44.functions.invoke('kaiLearn', { url: videoUrl, poll: true });
+      data = res.data;
+      attempts++;
+    }
+
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+
+    if (data?.success) {
+      setMessages(prev => [...prev, { role: "action", content: `📝 Extracting transcript…` }]);
+      await new Promise(r => setTimeout(r, 600));
+      setMessages(prev => prev.filter(m => m.role !== 'action'));
+      setMessages(prev => [...prev, { role: "action", content: `🧠 Stored in knowledge base` }]);
+      await new Promise(r => setTimeout(r, 500));
+      setMessages(prev => prev.filter(m => m.role !== 'action'));
+
+      addAssistantMessage(
+        `✅ **Done. I've watched and learned this video.**\n\n` +
+        `📺 **${data.source_title || videoTitle}**\n` +
+        `📊 ${(data.word_count || 0).toLocaleString()} words → ${data.chunks_stored || 0} knowledge blocks\n` +
+        `💡 ${data.summary || 'Video ingested successfully.'}\n\n` +
+        `Ask me anything about it — like **"what did he say about X?"**\n` +
+        `Or say **"build something based on that"** and I'll write the code. 🛠️`
+      );
+    } else {
+      addAssistantMessage(`❌ Couldn't extract the transcript from that video. The video may not have captions available. Try another one.`);
+    }
+  } catch {
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    addAssistantMessage("❌ Something went wrong while ingesting that video. Try again!");
+  }
+};
+
+// Generic feed handler — for builders, developers, reddit, pulse feeds
+export const handleFeedRoute = async (feedName, { setMessages, addAssistantMessage }) => {
+  const feedLabels = {
+    focused: '📰 Latest Kaspa Posts',
+    builders: '🏗️ Kaspa Builders & Ecosystem',
+    developers: '💻 Kaspa Developer Updates',
+    reddit: '💬 Kaspa Reddit Discussions',
+    pulse: '📊 Kaspa AI Pulse Report',
+  };
+  const label = feedLabels[feedName] || `📡 ${feedName}`;
+  
+  setMessages(prev => [...prev, { role: "action", content: `Fetching ${label}…` }]);
+  try {
+    const res = await fetch(`${KASPA_CONTEXT_BASE}?feed=${feedName}&format=json&limit=5`);
+    const data = await res.json();
+    const posts = data?.items || (Array.isArray(data) ? data : []);
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    
+    if (posts.length > 0) {
+      setMessages(prev => [...prev, {
+        role: "news_posts",
+        content: `${label} · live from kaspa.news`,
+        posts: posts,
+      }]);
+    } else {
+      addAssistantMessage(`No ${feedName} posts found right now. Try again later!`);
+    }
+  } catch {
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    addAssistantMessage(`❌ Couldn't fetch ${feedName} feed. Try again!`);
+  }
+};
+
+// Kaspa news posts — uses feed=focused from kaspaContext
+export const handleKaspaNews = async ({ setMessages, addAssistantMessage }) => {
   setMessages(prev => [...prev, { role: "action", content: "📡 Fetching latest Kaspa posts…" }]);
   try {
-    const res = await fetch('https://kaspa-b3ad561a.base44.app/functions/kaspaContext?format=json&limit=15');
+    const res = await fetch(`${KASPA_CONTEXT_BASE}?feed=focused&format=json&limit=5`);
     const data = await res.json();
     const posts = data?.items || (Array.isArray(data) ? data : []);
     setMessages(prev => prev.filter(m => m.role !== 'action'));
     if (posts.length > 0) {
       setMessages(prev => [...prev, {
         role: "news_posts",
-        content: `📰 Latest ${posts.length} Kaspa posts:`,
+        content: `📰 Latest Kaspa Posts · live from kaspa.news`,
         posts: posts,
       }]);
     } else {
-      setMessages(prev => [...prev, { role: "assistant", content: "Couldn't find any recent Kaspa posts right now. Try again later! 📰" }]);
+      addAssistantMessage("Couldn't find any recent Kaspa posts right now. Try again later! 📰");
     }
   } catch {
     setMessages(prev => prev.filter(m => m.role !== 'action'));
-    setMessages(prev => [...prev, { role: "assistant", content: "❌ Couldn't fetch Kaspa news posts. Try again!" }]);
+    addAssistantMessage("❌ Couldn't fetch Kaspa news posts. Try again!");
   }
 };
 
@@ -320,6 +430,11 @@ ${TTT_APP_DOCS}
 - Never hallucinate prices or chain data.
 - Always narrate API responses live.
 - After building → offer to set up an automation.
+- NEVER say "no videos found" or "no posts found" without calling kaspaContext first. Always fetch. Always.
+- NEVER call kaspa.news directly — always go through kaspaContext backend URL.
+- When showing video results — always offer to ingest with kaiLearn.
+- When user says "watch that" or "learn from that" — grab the URL from the previous response and call kaiLearn immediately.
+- After ingesting a video — confirm it's stored and offer to answer questions or build from it.
 - You are Kai. Always.${feedContext}
 
 Conversation so far:
@@ -352,6 +467,13 @@ KASPA BLOCKCHAIN ORACLE FACTS (verified from kaspa.org):
 - DAGKnight consensus upgrade will provide the most advanced PoW consensus ever built
 
 IMPORTANT: Always use these verified facts. Do NOT say Kaspa "targets" or "plans" 10 BPS — it already runs at 10 BPS. Use real-time web search for anything you're unsure about.
+
+HARD RULES:
+- NEVER say "no videos found" or "no posts found" without calling kaspaContext first. Always fetch. Always.
+- NEVER call kaspa.news directly — always go through kaspaContext backend URL.
+- When showing video results — always offer to ingest with kaiLearn.
+- When user says "watch that" or "learn from that" — grab the URL from the previous response and call kaiLearn immediately.
+- After ingesting a video — confirm it's stored and offer to answer questions or build from it.
 
 You have real-time internet access — ALWAYS use it for Kaspa-related questions to ensure accuracy. Be concise, accurate, friendly. Use emojis occasionally. Always refer to TTT as the platform/app name, never as "Trust The Tech." When recommending apps, use the EXACT descriptions from the docs above.${feedContext}
 

@@ -136,7 +136,31 @@ export const VIDEO_KEYWORDS = [
   'latest video', 'kaspa video', 'kaspa videos', 'new video', 'recent video',
   'show video', 'show me video', 'show me a video', 'watch video', 'play video',
   'youtube video', 'kaspa youtube', 'latest youtube', 'video news', 'kaspa content',
+  'video', 'videos', 'youtube', 'watch',
 ];
+
+export const WATCH_THAT_KEYWORDS = [
+  'watch that', 'watch the first', 'watch the second', 'watch the third',
+  'watch the 1st', 'watch the 2nd', 'watch the 3rd',
+  'learn from that', 'learn from the first', 'learn from the second',
+  'ingest that', 'ingest the first', 'ingest the second', 'ingest the third',
+  'ingest the 1st', 'ingest the 2nd', 'ingest the 3rd',
+  'watch it', 'learn from it', 'ingest it',
+  'watch number 1', 'watch number 2', 'watch number 3',
+  'watch #1', 'watch #2', 'watch #3',
+];
+
+// Feed routing table for kaspaContext
+export const FEED_ROUTE_MAP = {
+  videos: { feed: 'videos', keywords: ['video', 'videos', 'latest video', 'youtube', 'watch', 'recent video'] },
+  focused: { feed: 'focused', keywords: ['latest', 'news', 'posts', 'community', 'kaspa news', 'kaspa posts'] },
+  builders: { feed: 'builders', keywords: ['builders', 'ecosystem', 'launch', 'projects'] },
+  developers: { feed: 'developers', keywords: ['developers', 'devs', 'code', 'github', 'dev update'] },
+  reddit: { feed: 'reddit', keywords: ['reddit', 'discussion', 'r/kaspa'] },
+  pulse: { feed: 'pulse', keywords: ['pulse', 'report', 'digest', 'ai summary', 'summary'] },
+};
+
+export const KASPA_CONTEXT_BASE = 'https://kaspa-b3ad561a.base44.app/functions/kaspaContext';
 
 export const BROWSE_KEYWORDS = [
   'browse', 'search for', 'look up', 'lookup', 'go to site', 'open link',
