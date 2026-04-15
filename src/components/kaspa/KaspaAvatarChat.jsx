@@ -311,6 +311,8 @@ export default function KaspaAvatarChat() {
   const [pendingImages, setPendingImages] = useState([]); // [{url, name}]
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef(null);
+  const videoRef = useRef(null);
+  const [videoReady, setVideoReady] = useState(false);
   const [bubbleText, setBubbleText] = useState(KAI_FACTS[0]);
   const [showBubble, setShowBubble] = useState(() => {
     try { const v = localStorage.getItem("kai_show_bubble"); return v === null ? true : v === "true"; } catch { return true; }
@@ -931,7 +933,7 @@ Respond as KAI:${speedInstruction}`;
               />
             </div>}
 
-            {/* Avatar button */}
+            {/* Avatar button — uses canvas snapshot to avoid video remount lag */}
             <motion.button
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.95 }}
@@ -939,7 +941,11 @@ Respond as KAI:${speedInstruction}`;
               className="w-14 h-14 rounded-full overflow-hidden shadow-2xl shadow-black/40 ring-2 ring-white/20 flex-shrink-0 relative"
               style={{ background: "#000" }}
             >
-              <img src={DEFAULT_AVATAR_IMG} alt="KAI" className="w-full h-full object-cover" />
+              {videoReady ? (
+                <video src={videoUrl} autoPlay loop muted playsInline preload="auto" className="w-full h-full object-cover" />
+              ) : (
+                <img src={DEFAULT_AVATAR_IMG} alt="KAI" className="w-full h-full object-cover" />
+              )}
             </motion.button>
           </motion.div>
         )}
@@ -970,7 +976,11 @@ Respond as KAI:${speedInstruction}`;
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-white/20 flex-shrink-0"
                   style={{ background: "#000" }}>
-                  <img src={DEFAULT_AVATAR_IMG} alt="KAI" className="w-full h-full object-cover" />
+                  {videoReady ? (
+                    <video src={videoUrl} autoPlay loop muted playsInline preload="auto" className="w-full h-full object-cover" />
+                  ) : (
+                    <img src={DEFAULT_AVATAR_IMG} alt="KAI" className="w-full h-full object-cover" />
+                  )}
                 </div>
                 <div>
                   <div className="text-white font-bold text-sm tracking-wide">{kaiMode === "classic" ? "Kai" : "KAI"}</div>
@@ -1308,6 +1318,23 @@ Respond as KAI:${speedInstruction}`;
           </motion.div>
         )}
       </AnimatePresence>
+      {/* Hidden persistent video preloader — stays mounted forever, warms browser cache
+          so visible video elements play instantly without decode lag */}
+      {videoUrl && (
+        <video
+          ref={videoRef}
+          src={videoUrl}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          onCanPlayThrough={() => setVideoReady(true)}
+          className="fixed w-1 h-1 opacity-0 pointer-events-none"
+          style={{ top: -9999, left: -9999 }}
+          aria-hidden="true"
+        />
+      )}
     </>
   );
 }
