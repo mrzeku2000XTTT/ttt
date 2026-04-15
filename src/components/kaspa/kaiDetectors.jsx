@@ -47,6 +47,26 @@ export const extractVideoIndex = (msg) => {
 
 export const isUrlInput = (text) => /^(https?:\/\/|www\.)/i.test(text.trim());
 
+// Detect X.com / Twitter URLs
+export const isXTwitterUrl = (msg) => {
+  return /(https?:\/\/)?(www\.)?(x\.com|twitter\.com)\/\S+/i.test(msg);
+};
+
+// Extract URL from message
+export const extractUrl = (msg) => {
+  const match = msg.match(/(https?:\/\/[^\s]+)/i);
+  return match ? match[1] : null;
+};
+
+// Detect if a URL is suitable for kaiBrowse (not YouTube, not X/Twitter)
+export const isKaiBrowseUrl = (msg) => {
+  const url = extractUrl(msg);
+  if (!url) return false;
+  if (isXTwitterUrl(msg)) return false;
+  if (/youtube\.com|youtu\.be/i.test(url)) return false;
+  return true;
+};
+
 export const isBrowseRequest = (msg) => {
   if (isUrlInput(msg)) return true;
   const lower = msg.toLowerCase().trim();

@@ -13,13 +13,15 @@ import {
   isImageRequest, isKaspaNewsRequest, isSearchRequest, isFeedRequest,
   isUserPostRequest, isTrainRequest, isBuildRequest, isBrainRequest,
   isBrowseRequest, isExplorerRequest, isVideoRequest, isWatchThatRequest,
+  isXTwitterUrl, isKaiBrowseUrl,
   detectOpenApp, getBrowseUrl, detectFeedRoute
 } from "./kaiDetectors";
 import {
   handleShowBrain, handleTrainOnContent, handleBuildRequest,
   handleKaspaNews, handleKaspaVideos, handleWatchThat, handleFeedRoute,
   handleExplorerRequest, handleUserPostAnalysis,
-  handleFeedSummary, handleGeneralMessage
+  handleFeedSummary, handleGeneralMessage,
+  handleKaiBrowse, handleXTwitterLink
 } from "./kaiHandlers";
 import { KAIThinkingBubble } from "./KAIAnimations";
 import KAIChatMessage from "./KAIChatMessage";
@@ -166,9 +168,19 @@ export default function KaspaAvatarChat() {
       // "Watch that" / "learn from that" — ingest video from last feed
       if (isWatchThatRequest(userMsg)) { await handleWatchThat(userMsg, messages, ctx); setIsLoading(false); return; }
 
-      // Train / learn / bare URL
+      // X.com / Twitter links — route to Kaspa agent (MUST be before train/browse)
+      if (isXTwitterUrl(userMsg) && !isTrainRequest(userMsg)) {
+        await handleXTwitterLink(userMsg, ctx); setIsLoading(false); return;
+      }
+
+      // Non-X, non-YouTube URLs → kaiBrowse (scrape + save)
       const hasUrl = /(https?:\/\/[^\s]+)/i.test(userMsg);
-      if (isTrainRequest(userMsg) || (hasUrl && !isBrowseRequest(userMsg) && !isExplorerRequest(userMsg))) {
+      if (hasUrl && isKaiBrowseUrl(userMsg) && !isTrainRequest(userMsg) && !isBrowseRequest(userMsg) && !isExplorerRequest(userMsg)) {
+        await handleKaiBrowse(userMsg, ctx); setIsLoading(false); return;
+      }
+
+      // Train / learn / bare URL (YouTube or explicit "learn this")
+      if (isTrainRequest(userMsg) || (hasUrl && !isBrowseRequest(userMsg) && !isExplorerRequest(userMsg) && !isKaiBrowseUrl(userMsg))) {
         await handleTrainOnContent(userMsg, ctx); setIsLoading(false); return;
       }
 

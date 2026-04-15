@@ -6,7 +6,8 @@ import {
   isImageRequest, isKaspaNewsRequest, isSearchRequest, isFeedRequest,
   isUserPostRequest, isTrainRequest, isBuildRequest, isBrainRequest,
   isBrowseRequest, isExplorerRequest, detectExplorerAction, detectOpenApp,
-  getBrowseUrl, isTTTQuestion, fetchKaspaContext, extractVideoIndex
+  getBrowseUrl, isTTTQuestion, fetchKaspaContext, extractVideoIndex,
+  extractUrl
 } from "./kaiDetectors";
 
 // Load user's learned knowledge for context injection (with timeout)
@@ -27,6 +28,99 @@ export const loadLearnedKnowledge = async () => {
     } catch { return ''; }
   })();
   return Promise.race([work, timeout]);
+};
+
+// kaiBrowse — open any non-YouTube, non-X URL, scrape + save to knowledge
+export const handleKaiBrowse = async (userMsg, { setMessages, addAssistantMessage, speedInstruction }) => {
+  const url = extractUrl(userMsg);
+  if (!url) {
+    addAssistantMessage("I couldn't find a URL in your message. Paste a link and I'll browse it for you. 🌐");
+    return;
+  }
+
+  setMessages(prev => [...prev, { role: "action", content: "🌐 Opening browser…" }]);
+  await new Promise(r => setTimeout(r, 400));
+  setMessages(prev => {
+    const filtered = prev.filter(m => m.role !== 'action');
+    return [...filtered, { role: "action", content: `🔍 Navigating to: ${url}` }];
+  });
+
+  try {
+    const res = await fetch('https://kaspa-b3ad561a.base44.app/functions/kaiBrowse', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, save: true }),
+    });
+    const data = await res.json();
+
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+
+    if (data.error) {
+      addAssistantMessage(`❌ Couldn't browse that page: ${data.error}`);
+      return;
+    }
+
+    const title = data.title || 'Unknown Page';
+    const wordCount = data.word_count || data.wordCount || 0;
+    const saved = data.saved || data.chunks_stored;
+    const summary = data.summary || '';
+    const content = data.content || data.text || '';
+
+    // Show narration steps
+    setMessages(prev => [...prev, { role: "action", content: `📄 Page loaded: "${title}"` }]);
+    await new Promise(r => setTimeout(r, 500));
+    setMessages(prev => {
+      const filtered = prev.filter(m => m.role !== 'action');
+      return [...filtered, { role: "action", content: `📝 Extracted ${wordCount.toLocaleString()} words` }];
+    });
+    await new Promise(r => setTimeout(r, 500));
+    if (saved) {
+      setMessages(prev => {
+        const filtered = prev.filter(m => m.role !== 'action');
+        return [...filtered, { role: "action", content: `🧠 Saved to knowledge base` }];
+      });
+      await new Promise(r => setTimeout(r, 500));
+    }
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+
+    // Summarize with LLM
+    const llmSummary = await base44.integrations.Core.InvokeLLM({
+      prompt: `You are KAI. A user asked you to browse a webpage. Summarize the key points clearly.
+
+Page title: "${title}"
+URL: ${url}
+Word count: ${wordCount}
+${summary ? `Pre-summary: ${summary}` : ''}
+Content excerpt: ${content.slice(0, 3000)}
+
+Provide a clean summary of the page's key information. Start with what the page is about, then list the main points.${speedInstruction}`,
+      model: 'gemini_3_flash',
+    });
+
+    addAssistantMessage(`✅ **Done. I've browsed and learned this.**\n\n📄 **${title}**\n🔗 ${url}\n📊 ${wordCount.toLocaleString()} words${saved ? ' · 🧠 Saved to knowledge base' : ''}\n\n${llmSummary}\n\nAsk me anything about it!`);
+  } catch {
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    addAssistantMessage("❌ Couldn't browse that page. It might be blocked or unavailable. Try a different URL.");
+  }
+};
+
+// X.com / Twitter link handler — route to Kaspa agent
+export const handleXTwitterLink = async (userMsg, { setMessages, addAssistantMessage }) => {
+  const url = extractUrl(userMsg);
+  setMessages(prev => [...prev, { role: "action", content: "🐦 Detecting X/Twitter link…" }]);
+  await new Promise(r => setTimeout(r, 500));
+  setMessages(prev => prev.filter(m => m.role !== 'action'));
+
+  addAssistantMessage(
+    `🐦 **X.com links require a real browser to fetch** — X blocks all server-side scraping.\n\n` +
+    `I'm routing this to my backend agent (**Kaspa**) who has a real Chrome browser.\n\n` +
+    `**How to get the content:**\n` +
+    `1. Open the [Kaspa Agent Chat](https://app.base44.com/superagent/69b3072aa7a95592b3ad561a)\n` +
+    `2. Paste: **read this: ${url || userMsg}**\n` +
+    `3. Kaspa will fetch the full tweet (thread, quotes, engagement stats)\n` +
+    `4. Copy the content back here and I'll analyze it instantly\n\n` +
+    `Or just paste the tweet text directly and say **"learn this"** — I'll save it to my brain. 🧠`
+  );
 };
 
 // Show brain / knowledge base
@@ -555,6 +649,9 @@ ${TTT_APP_DOCS}
 - When showing video results — always offer to ingest with kaiLearn.
 - When user says "watch that" or "learn from that" — grab the URL from the previous response and call kaiLearn immediately.
 - After ingesting a video — confirm it's stored and offer to answer questions or build from it.
+- For any non-YouTube, non-X URL: use kaiBrowse to scrape and save the page.
+- For X.com/Twitter links: route to Kaspa agent (real browser). NEVER try to scrape X yourself.
+- For kaspaContext: use q= param for specific authors/topics, feed= for category queries.
 - You are Kai. Always.${feedContext}
 
 Conversation so far:
@@ -594,6 +691,9 @@ HARD RULES:
 - When showing video results — always offer to ingest with kaiLearn.
 - When user says "watch that" or "learn from that" — grab the URL from the previous response and call kaiLearn immediately.
 - After ingesting a video — confirm it's stored and offer to answer questions or build from it.
+- For any non-YouTube, non-X URL: use kaiBrowse to scrape and save the page.
+- For X.com/Twitter links: route to Kaspa agent (real browser). NEVER try to scrape X yourself.
+- For kaspaContext: use q= param for specific authors/topics, feed= for category queries.
 
 You have real-time internet access — ALWAYS use it for Kaspa-related questions to ensure accuracy. Be concise, accurate, friendly. Use emojis occasionally. Always refer to TTT as the platform/app name, never as "Trust The Tech." When recommending apps, use the EXACT descriptions from the docs above.${feedContext}
 
