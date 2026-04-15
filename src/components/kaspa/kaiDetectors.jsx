@@ -75,6 +75,8 @@ export const isExplorerRequest = (msg) => {
   if (/\b[a-f0-9]{64}\b/i.test(trimmed)) return true;
   if (/(kaspa:[a-z0-9]{10,})/i.test(trimmed)) return true;
   const lower = msg.toLowerCase();
+  const explicitExplorerPhrases = ['check this transaction', 'check transaction', 'check this tx', 'check tx', 'look up transaction', 'look up tx', 'find transaction', 'find tx', 'check this address', 'check address'];
+  if (explicitExplorerPhrases.some(kw => lower.includes(kw))) return true;
   const explicitNetworkPhrases = ['network stats', 'kaspa stats', 'show hashrate', 'show coin supply', 'kaspa network info'];
   return explicitNetworkPhrases.some(kw => lower.includes(kw));
 };

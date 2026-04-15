@@ -304,11 +304,24 @@ export const handleExplorerRequest = async (userMsg, { setMessages, addAssistant
       addAssistantMessage(`❌ ${data.error}`);
     } else {
       const formatted = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are KAI, the Kaspa AI assistant. Format this blockchain data into a clean, readable response. Use markdown links like [Explorer](url) for links. Use emojis sparingly. Be concise. Amounts should show KAS units.\n\nData:\n${JSON.stringify(data, null, 2)}${speedInstruction}`,
+        prompt: `You are KAI, the Kaspa AI assistant. A user asked to look up blockchain data. Format the result as a CLEAR SUMMARY with these rules:
+
+1. Start with a one-line summary (e.g. "This transaction sent X KAS from address A to address B")
+2. Show key details in a clean format:
+   - For transactions: status (accepted/pending), total KAS moved, number of inputs → outputs, block time, and a breakdown of where KAS went
+   - For addresses: balance, total tx count, recent activity
+   - For network: price, hashrate, supply, difficulty
+3. Always include the explorer link at the bottom as: [View on Kaspa Explorer](url)
+4. Use emojis sparingly. Amounts should show KAS units with reasonable decimal places.
+5. If there are multiple outputs, list the top ones clearly showing address (truncated) → amount
+
+Data:
+${JSON.stringify(data, null, 2)}${speedInstruction}`,
       });
       addAssistantMessage(formatted);
     }
-  } catch {
+  } catch (err) {
+    console.error('Explorer error:', err);
     setMessages(prev => prev.filter(m => m.role !== 'action'));
     addAssistantMessage("Couldn't query the blockchain right now. Try again! 🙏");
   }
