@@ -19,39 +19,75 @@ Deno.serve(async (req) => {
     const entity = base44.asServiceRole.entities.KaspaNewsItem;
     const results = { synced: 0, skipped: 0, errors: [] };
 
-    for (const [feedKey, endpoint] of Object.entries(FEEDS)) {
-      try {
-        const res = await fetch(`${BASE}/${endpoint}?limit=20`, {
+    // Load existing tweet_ids for dedup
+    let existingIds = new Set();
+    try {
+      const allExisting = await entity.list('-created_date', 500);
+      (Array.isArray(allExisting) ? allExisting : []).forEach(i => {
+        if (i.tweet_id) existingIds.add(String(i.tweet_id));
+      });
+    } catch (e) {
+      console.log('Preload IDs failed:', e.message);
+    }
+
+    // Fetch all feeds in parallel
+    const feedEntries = Object.entries(FEEDS);
+    const feedResults = await Promise.allSettled(
+      feedEntries.map(async ([feedKey, endpoint]) => {
+        const res = await fetch(`${BASE}/${endpoint}?limit=10`, {
           headers: { 'User-Agent': 'KaiBot/1.0' },
-          signal: AbortSignal.timeout(15000)
+          signal: AbortSignal.timeout(10000)
         });
-        if (!res.ok) { results.errors.push(`${feedKey}: HTTP ${res.status}`); continue; }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         const items = data.data || data.tweets || data.posts || data.videos || data.reports || [];
+        return { feedKey, items };
+      })
+    );
 
-        for (const item of items) {
-          const tweet_id = String(item.id || item.tweet_id || item._id || `${feedKey}_${Date.now()}_${Math.random()}`);
-          const existing = await entity.filter({ tweet_id });
-          if (existing?.length > 0) { results.skipped++; continue; }
+    // Build new records to create
+    const toCreate = [];
+    for (const result of feedResults) {
+      if (result.status === 'rejected') {
+        results.errors.push(result.reason?.message || 'Feed fetch failed');
+        continue;
+      }
+      const { feedKey, items } = result.value;
+      for (const item of items) {
+        const tweet_id = String(item.id || item.tweet_id || item._id || `${feedKey}_${Date.now()}_${Math.random()}`);
+        if (existingIds.has(tweet_id)) { results.skipped++; continue; }
 
-          await entity.create({
-            tweet_id,
-            feed: feedKey,
-            author_username: item.author_username || item.username || item.author?.screen_name || item.author || '',
-            author_name: item.author_name || item.author?.name || item.author_username || '',
-            text: item.text || item.content || item.title || item.description || '',
-            url: item.url || item.tweet_url || item.link || '',
-            likes: item.likes || item.favorite_count || 0,
-            reposts: item.reposts || item.retweet_count || 0,
-            views: item.views || item.view_count || 0,
-            published_at: item.published_at || item.created_at || item.date || new Date().toISOString(),
-            thumbnail: item.thumbnail || item.image || item.media?.[0]?.url || '',
-            raw_json: item,
-          });
-          results.synced++;
-        }
+        const authorObj = typeof item.author === 'object' && item.author !== null ? item.author : null;
+        const authorUsername = String(authorObj?.username || authorObj?.screen_name || (typeof item.author === 'string' ? item.author : '') || item.author_username || item.username || '');
+        const authorName = String(authorObj?.name || (typeof item.author_name === 'string' ? item.author_name : '') || authorUsername);
+
+        toCreate.push({
+          tweet_id,
+          feed: feedKey,
+          author_username: authorUsername,
+          author_name: authorName,
+          text: String(item.text || item.content || item.title || item.description || '').slice(0, 2000),
+          url: String(item.url || item.tweet_url || item.link || ''),
+          likes: Number(item.likes || item.favorite_count || 0),
+          reposts: Number(item.reposts || item.retweet_count || 0),
+          views: Number(item.views || item.view_count || 0),
+          published_at: item.published_at || item.created_at || item.date || new Date().toISOString(),
+          thumbnail: String(item.thumbnail || item.image || item.media?.[0]?.url || ''),
+        });
+        existingIds.add(tweet_id);
+      }
+    }
+
+    // Create new records sequentially to avoid rate limiting
+    for (const record of toCreate) {
+      try {
+        await entity.create(record);
+        results.synced++;
       } catch (e) {
-        results.errors.push(`${feedKey}: ${e.message}`);
+        // Skip duplicates / rate limit errors silently — will retry next run
+        if (!e.message?.includes('Rate limit') && !e.message?.includes('duplicate')) {
+          results.errors.push(e.message || 'Create failed');
+        }
       }
     }
 
