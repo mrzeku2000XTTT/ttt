@@ -2,6 +2,7 @@
 
 import { base44 } from "@/api/base44Client";
 import { TTT_APP_DOCS, KASPA_CONTEXT_BASE } from "./kaiConstants";
+import { KAI_DEV_KNOWLEDGE } from "./kaiDevKnowledge";
 import {
   isImageRequest, isKaspaNewsRequest, isSearchRequest, isFeedRequest,
   isUserPostRequest, isTrainRequest, isBuildRequest, isBrainRequest,
@@ -112,9 +113,9 @@ export const handleTrainOnContent = async (userMsg, { setMessages, addAssistantM
 
 // Vibe Code — full IDE generation
 export const handleVibeCode = async (userMsg, { setMessages, addAssistantMessage, setIsLoading }) => {
-  // Step 1: Show action
-  setMessages(prev => [...prev, { role: "action", content: "🏗️ Let's build it. Calling KaiArchitect…" }]);
-  await new Promise(r => setTimeout(r, 600));
+  // Step 1: Narrate — calling architect
+  setMessages(prev => [...prev, { role: "action", content: "🏗️ Calling KaiArchitect…" }]);
+  await new Promise(r => setTimeout(r, 400));
 
   try {
     // Step 2: Call kaiArchitect
@@ -132,18 +133,27 @@ export const handleVibeCode = async (userMsg, { setMessages, addAssistantMessage
       return;
     }
 
-    // Step 3: Narrate planning
+    // Step 3: Narrate — loading context + planning
     setMessages(prev => prev.filter(m => m.role !== 'action'));
-    setMessages(prev => [...prev, { role: "action", content: "🧠 Planning the data model…" }]);
-    await new Promise(r => setTimeout(r, 500));
+    setMessages(prev => [...prev, { role: "action", content: "📚 Loading Kaspa context + dev knowledge…" }]);
+    await new Promise(r => setTimeout(r, 400));
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    setMessages(prev => [...prev, { role: "action", content: "✅ Plan ready — writing full code now…" }]);
+    await new Promise(r => setTimeout(r, 400));
 
-    // Step 4: Generate full app code via LLM
+    // Step 4: Generate full app code via LLM with FULL dev knowledge
     const codeResponse = await base44.integrations.Core.InvokeLLM({
-      prompt: `${architectPrompt}
+      prompt: `You are KAI — a Kaspa-native AI developer agent that vibe codes full apps like Claude Code.
 
-CRITICAL OUTPUT FORMAT — You MUST respond with ONLY a valid JSON object. No markdown. No code fences. No text before or after. Just the raw JSON.
+${KAI_DEV_KNOWLEDGE}
 
-Generate a complete Kaspa app. Return this exact JSON structure:
+## ARCHITECT CONTEXT (from kaiArchitect):
+${architectPrompt}
+
+## CRITICAL OUTPUT FORMAT
+You MUST respond with ONLY a valid JSON object. No markdown. No code fences. No text before or after. Just the raw JSON.
+
+Return this exact JSON structure:
 
 {
   "app_name": "string — short name",
@@ -163,37 +173,36 @@ Generate a complete Kaspa app. Return this exact JSON structure:
   "pages": [
     {
       "name": "PageName",
-      "code": "full JSX code as a string — import from @/api/base44Client, use base44.entities.EntityName.list() etc, Tailwind dark theme bg-gray-900, mobile-first, complete working code"
+      "code": "full JSX code — import { EntityName } from '@/api/entities' — use EntityName.list(), .create(), .filter(), .update(), .delete() — Tailwind dark theme bg-gray-900 + teal-400 accent — mobile-first — complete working code"
     }
   ],
   "functions": [
     {
       "name": "functionName",
-      "code": "full Deno function code as string — import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25'; Deno.serve(async (req) => { ... });"
+      "code": "full Deno function code — import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25'; Deno.serve(async (req) => { ... }); — handle OPTIONS for CORS — use base44.asServiceRole.entities"
     }
   ],
-  "deploy_steps": ["step 1", "step 2", ...],
+  "deploy_steps": [
+    "Entities → New Entity → [name] → paste schema → Save",
+    "Pages → New Page → [name] → paste JSX → Save",
+    "Functions → New Function → [name] → paste TS → Save & Deploy",
+    "Publish App → live ✅"
+  ],
   "suggested_upgrades": ["upgrade 1", "upgrade 2", "upgrade 3"]
 }
 
-BASE44 CODE RULES:
-- Entities: JSON schema with "type": "object", "properties", "required"
-- Pages: React JSX with "import { base44 } from '@/api/base44Client';" — use base44.entities.EntityName.list(), .create(), .filter(), .update(), .delete()
-- Functions: Deno TypeScript with createClientFromRequest from 'npm:@base44/sdk@0.8.25'
-- UI: dark bg-gray-900 with teal/emerald/cyan accents — Kaspa vibes
-- Every app MUST use at least one live Kaspa API (price, balance, transactions, network)
+RULES:
 - Max 3 entities, 3 pages, 2 functions
 - ZERO placeholders. ZERO "// TODO". Complete working code only.
-
-KASPA APIs (all public, no auth needed):
-- Price: GET https://api.coingecko.com/api/v3/simple/price?ids=kaspa&vs_currencies=usd&include_24hr_change=true
-- Balance: GET https://api.kaspa.org/addresses/{address}/balance
-- Transactions: GET https://api.kaspa.org/addresses/{address}/full-transactions?limit=10
-- Network: GET https://api.kaspa.org/info
+- Every app MUST use at least one live Kaspa API
+- Always dark UI: bg-gray-900 body, bg-gray-800 cards, teal-400 accent
+- Always mobile-first
+- Every response header: "Access-Control-Allow-Origin": "*"
+- Entity auto-fields (never add): id, created_date, updated_date, created_by
 
 USER'S APP IDEA: "${userMsg}"
 
-Remember: respond with ONLY the JSON object, nothing else.`,
+Respond with ONLY the JSON object.`,
       model: 'claude_sonnet_4_6',
     });
 
@@ -271,7 +280,26 @@ export const handleBuildRequest = async (userMsg, { setMessages, addAssistantMes
         setMessages(prev => prev.filter(m => m.role !== 'action'));
       }
     }
-    const buildPrompt = `You are Kai, an AI agent that builds things. A user asked you to build something, and you've gathered context from your knowledge base.\n\nUSER REQUEST: "${userMsg}"\n\nCODE PROMPT FROM KAICODE:\n${data.code_prompt || 'No specific prompt available.'}\n\nCONTEXT FROM LEARNED SOURCES:\n${(data.context || '').slice(0, 3000)}\n\nBASE44 FUNCTION RULES:\n${data.base44_rules || 'Use Deno.serve with createClientFromRequest from npm:@base44/sdk@0.8.25'}\n\nSOURCES: ${JSON.stringify(data.sources || [])}\n\nNow write the COMPLETE function code. Show it in a code block. Explain what it does in plain language. Then tell the user: "To deploy: Base44 app → Functions → New Function → name it [functionName] → paste the code → Save & Deploy." Ask if they want an automation set up.`;
+    const buildPrompt = `You are Kai — a Kaspa-native AI developer that builds full working code.
+
+${KAI_DEV_KNOWLEDGE}
+
+USER REQUEST: "${userMsg}"
+
+CODE PROMPT FROM KAICODE:
+${data.code_prompt || 'No specific prompt available.'}
+
+CONTEXT FROM LEARNED SOURCES:
+${(data.context || '').slice(0, 3000)}
+
+SOURCES: ${JSON.stringify(data.sources || [])}
+
+Now write the COMPLETE function code. Show it in a code block. Explain what it does in plain language. Then tell the user exactly where to paste it:
+- Function: Functions → New Function → camelCase name → paste TS → Save & Deploy
+- Entity: Entities → New Entity → PascalCase name → paste schema → Save
+- Page: Pages → New Page → name → paste JSX → Save
+
+After writing, offer 3 specific upgrades the user can ask for.`;
     const response = await base44.integrations.Core.InvokeLLM({ prompt: buildPrompt, model: 'gemini_3_flash' });
     addAssistantMessage(response);
   } catch {
