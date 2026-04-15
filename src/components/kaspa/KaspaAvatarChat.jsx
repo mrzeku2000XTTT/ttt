@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Loader2, Minus, Settings, ImagePlus } from "lucide-react";
+import { X, Send, Loader2, Minus, Settings, ImagePlus, FileImage } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -894,7 +894,14 @@ Respond as KAI:${speedInstruction}`;
     }
   };
 
+  const videoRef = useRef(null);
   const headerVideoRef = useRef(null);
+
+  // Slow down video playback
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.playbackRate = 0.5;
+    if (headerVideoRef.current) headerVideoRef.current.playbackRate = 0.5;
+  }, [videoUrl, isOpen]);
 
   return (
     <>
@@ -931,7 +938,7 @@ Respond as KAI:${speedInstruction}`;
               />
             </div>}
 
-            {/* Avatar button — static image only, no video to avoid lag */}
+            {/* Avatar button */}
             <motion.button
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.95 }}
@@ -939,7 +946,11 @@ Respond as KAI:${speedInstruction}`;
               className="w-14 h-14 rounded-full overflow-hidden shadow-2xl shadow-black/40 ring-2 ring-white/20 flex-shrink-0 relative"
               style={{ background: "#000" }}
             >
-              <img src={DEFAULT_AVATAR_IMG} alt="KAI" className="w-full h-full object-cover" />
+              {videoUrl ? (
+                <video ref={videoRef} src={videoUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" onLoadedMetadata={e => { e.target.playbackRate = 0.5; }} />
+              ) : (
+                <img src={DEFAULT_AVATAR_IMG} alt="KAI" className="w-full h-full object-cover" />
+              )}
             </motion.button>
           </motion.div>
         )}
@@ -971,14 +982,14 @@ Respond as KAI:${speedInstruction}`;
                 <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-white/20 flex-shrink-0"
                   style={{ background: "#000" }}>
                   {videoUrl ? (
-                    <video ref={headerVideoRef} src={videoUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" onLoadedMetadata={e => { e.target.playbackRate = 1; }} />
+                    <video ref={headerVideoRef} src={videoUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" onLoadedMetadata={e => { e.target.playbackRate = 0.5; }} />
                   ) : (
                     <img src={DEFAULT_AVATAR_IMG} alt="KAI" className="w-full h-full object-cover" />
                   )}
                 </div>
                 <div>
-                  <div className="text-white font-bold text-sm tracking-wide">KAI</div>
-                  <div className="text-white/40 text-[10px]">{kaiMode === "classic" ? "Kaspa Agent Intel" : "Kaspa Avatar Intel"}</div>
+                  <div className="text-white font-bold text-sm tracking-wide">{kaiMode === "classic" ? "Kai" : "KAI"}</div>
+                  <div className="text-white/40 text-[10px]">{kaiMode === "classic" ? "Classic • TTT Assistant" : "Kaspa AI Assistant"}</div>
                 </div>
               </div>
               <div className="flex items-center gap-1">
@@ -990,8 +1001,8 @@ Respond as KAI:${speedInstruction}`;
                     setIsLoading(false);
                     setTypingIndex(-1); setTypingText("");
                     setMessages([{ role: "assistant", content: next === "classic"
-                      ? "Kaspa Agent Intel ready. Ask me anything — TTT, Kaspa, or the web. I can learn, build, and search."
-                      : "Kaspa Avatar Intel here — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem."
+                      ? "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything — I have internet access and know every feature of the platform."
+                      : "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem."
                     }]);
                   }}
                   className="h-6 px-2 rounded-full flex items-center gap-1 text-[10px] font-bold transition-all"
@@ -1000,9 +1011,9 @@ Respond as KAI:${speedInstruction}`;
                     border: `1px solid ${kaiMode === "classic" ? "rgba(168,85,247,0.5)" : "rgba(6,182,212,0.5)"}`,
                     color: kaiMode === "classic" ? "rgba(192,132,252,0.95)" : "rgba(6,182,212,0.95)",
                   }}
-                  title={kaiMode === "classic" ? "Switch to Avatar Intel" : "Switch to Agent Intel"}
+                  title={kaiMode === "classic" ? "Switch to KAI mode" : "Switch to Classic Kai mode"}
                 >
-                  {kaiMode === "classic" ? "Agent" : "Avatar"}
+                  {kaiMode === "classic" ? "Classic" : "KAI"}
                 </button>
                 <button
                   onClick={() => setShowSettings(!showSettings)}
@@ -1017,7 +1028,7 @@ Respond as KAI:${speedInstruction}`;
                   <Minus className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  onClick={() => { setIsOpen(false); setShowSettings(false); setIsLoading(false); setTypingIndex(-1); setTypingText(""); setBrowserUrl(null); setShowBrowser(false); setMessages([{ role: "assistant", content: kaiMode === "classic" ? "Kaspa Agent Intel ready." : "Kaspa Avatar Intel here — ask me anything about Kaspa." }]); }}
+                  onClick={() => { setIsOpen(false); setShowSettings(false); setIsLoading(false); setTypingIndex(-1); setTypingText(""); setBrowserUrl(null); setShowBrowser(false); setMessages([{ role: "assistant", content: kaiMode === "classic" ? "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything." : "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem." }]); }}
                   className="w-7 h-7 rounded-full flex items-center justify-center text-white/40 hover:text-red-400 transition-colors hover:bg-white/10"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -1295,7 +1306,7 @@ Respond as KAI:${speedInstruction}`;
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-                  placeholder={pendingImages.length > 0 ? "Ask about the image…" : "Search or ask KAI..."}
+                  placeholder={pendingImages.length > 0 ? "Ask about the image…" : (kaiMode === "classic" ? "Search or ask Kai..." : "Search or ask KAI...")}
                   className="flex-1 bg-transparent text-white/90 outline-none placeholder-white/30"
                   style={{ fontSize: '16px' }}
                 />
