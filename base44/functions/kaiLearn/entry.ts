@@ -170,8 +170,10 @@ Deno.serve(async (req) => {
     success: true,
     source_title: sourceTitle,
     source_type: sourceType,
+    source_url: url || null,
     word_count: wordCount,
     chunks_stored: chunks.length,
     summary,
+    extracted_content: content.slice(0, 4000),
   });
 });
