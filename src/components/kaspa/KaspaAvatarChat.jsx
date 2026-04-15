@@ -180,14 +180,22 @@ export default function KaspaAvatarChat() {
         await handleXTwitterLink(userMsg, ctx); setIsLoading(false); return;
       }
 
-      // Non-X, non-YouTube URLs → kaiBrowse (scrape + save)
+      // Detect URLs
       const hasUrl = /(https?:\/\/[^\s]+)/i.test(userMsg);
-      if (hasUrl && isKaiBrowseUrl(userMsg) && !isTrainRequest(userMsg) && !isBrowseRequest(userMsg) && !isExplorerRequest(userMsg)) {
+      const isYouTubeUrl = hasUrl && /youtube\.com|youtu\.be/i.test(userMsg);
+
+      // YouTube URLs → always train/learn (watch & learn)
+      if (isYouTubeUrl && !isBrowseRequest(userMsg.replace(/(https?:\/\/[^\s]+)/i, '').trim())) {
+        await handleTrainOnContent(userMsg, ctx); setIsLoading(false); return;
+      }
+
+      // Non-X, non-YouTube URLs → kaiBrowse (scrape + save)
+      if (hasUrl && isKaiBrowseUrl(userMsg) && !isTrainRequest(userMsg) && !isExplorerRequest(userMsg)) {
         await handleKaiBrowse(userMsg, ctx); setIsLoading(false); return;
       }
 
-      // Train / learn / bare URL (YouTube or explicit "learn this")
-      if (isTrainRequest(userMsg) || (hasUrl && !isBrowseRequest(userMsg) && !isExplorerRequest(userMsg) && !isKaiBrowseUrl(userMsg))) {
+      // Train / learn / explicit "learn this" with any URL or text
+      if (isTrainRequest(userMsg)) {
         await handleTrainOnContent(userMsg, ctx); setIsLoading(false); return;
       }
 
