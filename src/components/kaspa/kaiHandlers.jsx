@@ -629,7 +629,8 @@ export const handleGeneralMessage = async (userMsg, imageUrls, imageNames, messa
 
   const lower = userMsg.toLowerCase();
   const isPriceOrMarket = ['price', 'market', 'worth', 'cost', 'how much', 'usd', 'dollar', 'mcap', 'market cap', 'ath', 'volume'].some(kw => lower.includes(kw));
-  const isKaspaRelated = ['kaspa', 'kas ', 'kas?', 'bps', 'blockdag', 'dag', 'ghostdag', 'krc-20', 'krc20', 'kasplex', 'mining', 'hashrate', 'sompolinsky', 'rusty', 'dagknight', 'kheavyhash'].some(kw => lower.includes(kw));
+  // Only fetch community feed when user explicitly asks about feed/community/posts
+  const wantsFeedContext = ['feed', 'community', 'posts', 'what are people', 'what is everyone', 'trending', 'whats new', "what's new", 'ttt feed', 'recent posts'].some(kw => lower.includes(kw));
 
   // Always fetch real price data for price queries — never let LLM guess
   let livePriceBlock = '';
@@ -650,26 +651,24 @@ export const handleGeneralMessage = async (userMsg, imageUrls, imageNames, messa
     } catch {}
   };
 
-  if (isFast && !isPriceOrMarket && !isKaspaRelated) {
-    learnedKnowledge = await loadLearnedKnowledge();
-  } else if (isFast) {
-    const promises = [fetchKaspaContext(userMsg), loadLearnedKnowledge()];
-    if (isPriceOrMarket) promises.push(fetchLivePrice());
-    const [ctx, knowledge] = await Promise.all(promises);
-    liveKaspaContext = ctx;
-    learnedKnowledge = knowledge;
-  } else {
-    const promises = [
-      fetchKaspaContext(userMsg),
-      loadLearnedKnowledge(),
-      base44.entities.Post.list('-created_date', 15).catch(() => []),
-    ];
-    if (isPriceOrMarket) promises.push(fetchLivePrice());
-    const [ctx, knowledge, posts] = await Promise.all(promises);
-    liveKaspaContext = ctx;
-    learnedKnowledge = knowledge;
-    if (posts.length > 0) {
-      feedContext = `\n\nRecent TTT Feed activity (for context):\n${posts.map(p => `- ${p.author_name}: ${p.content?.slice(0, 80)}`).join('\n')}`;
+  // Build promises — only fetch feed context when user actually asks about the feed
+  const promises = [loadLearnedKnowledge()];
+  if (isPriceOrMarket) promises.push(fetchLivePrice());
+  if (wantsFeedContext) promises.push(fetchKaspaContext(userMsg));
+  if (wantsFeedContext && !isFast) promises.push(base44.entities.Post.list('-created_date', 15).catch(() => []));
+
+  const results = await Promise.all(promises);
+  learnedKnowledge = results[0];
+  // Parse optional results based on what was requested
+  let resultIdx = 1;
+  if (isPriceOrMarket) resultIdx++; // fetchLivePrice doesn't return — it sets livePriceBlock
+  if (wantsFeedContext) {
+    liveKaspaContext = results[resultIdx++] || '';
+    if (!isFast && results[resultIdx]) {
+      const posts = results[resultIdx];
+      if (posts?.length > 0) {
+        feedContext = `\n\nRecent TTT Feed activity:\n${posts.map(p => `- ${p.author_name}: ${p.content?.slice(0, 80)}`).join('\n')}`;
+      }
     }
   }
 
@@ -678,9 +677,8 @@ export const handleGeneralMessage = async (userMsg, imageUrls, imageNames, messa
     ? `\n\nThe user has uploaded ${imageUrls.length} image(s)${imageNames.length ? ` (${imageNames.join(', ')})` : ''}. Analyze the image(s) thoroughly — describe what you see, extract any text, identify objects/charts/documents, and provide useful insights. If it's a chart or data, interpret it. If it's a screenshot, explain what it shows. If it's a document, summarize the content. Share your analysis so all users can learn from it.`
     : '';
 
-  // Price data goes at the top (it's factual), but community feed goes at the END as supplementary
   const priceBlock = livePriceBlock ? `${livePriceBlock}\n\n---\n\n` : '';
-  const supplementaryContext = liveKaspaContext ? `\n\n---\nSUPPLEMENTARY COMMUNITY FEED (use ONLY if directly relevant — do NOT base your main answer on random community posts):\n${liveKaspaContext}` : '';
+  const supplementaryContext = (wantsFeedContext && liveKaspaContext) ? `\n\n---\nCOMMUNITY FEED (user asked about this):\n${liveKaspaContext}` : '';
 
   const classicPrompt = `${priceBlock}You are **Kai** — the intelligent AI agent embedded inside TapToTip (TTT), the Kaspa-native app ecosystem at tttz.xyz.
 
