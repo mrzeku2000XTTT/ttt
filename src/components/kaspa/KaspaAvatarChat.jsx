@@ -237,6 +237,13 @@ const TRAIN_KEYWORDS = [
   'train on', 'study from', 'read from', 'learn about this', 'absorb this',
 ];
 
+const BUILD_KEYWORDS = [
+  'build', 'code', 'create a function', 'write a function', 'make a function',
+  'automate', 'build me', 'code me', 'create a script', 'write code',
+  'morning brief', 'build a', 'create an automation', 'deploy',
+  'now build', 'build based on', 'make a bot', 'write a bot',
+];
+
 const BRAIN_KEYWORDS = [
   'what do you know', 'show me your brain', 'show your brain', 'your knowledge',
   'what have you learned', 'your memory', 'show memory', 'list knowledge',
@@ -390,6 +397,7 @@ export default function KaspaAvatarChat() {
   const isSearchRequest = (msg) => SEARCH_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
   const isTrainRequest = (msg) => TRAIN_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
   const isBrainRequest = (msg) => BRAIN_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
+  const isBuildRequest = (msg) => BUILD_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
 
   // Load user's learned knowledge for context injection (with timeout)
   const loadLearnedKnowledge = async () => {
@@ -459,8 +467,11 @@ export default function KaspaAvatarChat() {
       return;
     }
 
+    // Detect YouTube for richer narration
+    const isYouTube = url && (url.includes('youtube.com') || url.includes('youtu.be'));
+
     // Step 1: Acknowledge
-    setMessages(prev => [...prev, { role: "assistant", content: "🧠 Got it. Let me process this now." }]);
+    setMessages(prev => [...prev, { role: "assistant", content: url ? (isYouTube ? "🔍 Fetching YouTube video…" : `🔍 Fetching content from URL…`) : "🧠 Processing your text…" }]);
     await new Promise(r => setTimeout(r, 600));
 
     // Step 2: Fetch
@@ -477,19 +488,27 @@ export default function KaspaAvatarChat() {
         return;
       }
 
-      // Step 3: Extract
+      // Step 3: Found
       setMessages(prev => prev.filter(m => m.role !== 'action'));
-      setMessages(prev => [...prev, { role: "action", content: `Found ${data.word_count.toLocaleString()} words from "${data.source_title}" (${data.source_type})...` }]);
-      await new Promise(r => setTimeout(r, 800));
+      const foundMsg = isYouTube
+        ? `📺 Found: "${data.source_title}"`
+        : `📄 Found: "${data.source_title}" (${data.source_type})`;
+      setMessages(prev => [...prev, { role: "action", content: foundMsg }]);
+      await new Promise(r => setTimeout(r, 700));
 
-      // Step 4: Chunk & Store
+      // Step 4: Extracted
       setMessages(prev => prev.filter(m => m.role !== 'action'));
-      setMessages(prev => [...prev, { role: "action", content: `Breaking into knowledge blocks... storing ${data.chunks_stored} chunks to my memory.` }]);
-      await new Promise(r => setTimeout(r, 800));
+      setMessages(prev => [...prev, { role: "action", content: `📝 ${isYouTube ? 'Transcript' : 'Content'} extracted — ${data.word_count.toLocaleString()} words` }]);
+      await new Promise(r => setTimeout(r, 700));
 
-      // Step 5: Confirm
+      // Step 5: Stored
       setMessages(prev => prev.filter(m => m.role !== 'action'));
-      addAssistantMessage(`✅ **Done. I've learned this.**\n\n📄 **${data.source_title}**\n📊 ${data.word_count.toLocaleString()} words → ${data.chunks_stored} knowledge blocks\n💡 ${data.summary}\n\nYou can now ask me anything about it!`);
+      setMessages(prev => [...prev, { role: "action", content: `💾 Stored ${data.chunks_stored} knowledge blocks to memory` }]);
+      await new Promise(r => setTimeout(r, 600));
+
+      // Step 6: Confirm
+      setMessages(prev => prev.filter(m => m.role !== 'action'));
+      addAssistantMessage(`✅ **Done. I've learned this.**\n\n📄 **${data.source_title}**\n📊 ${data.word_count.toLocaleString()} words → ${data.chunks_stored} knowledge blocks\n💡 ${data.summary}\n\nAsk me anything about it — or say **"now build something based on what you learned"** and I'll write the code.`);
     } catch (err) {
       setMessages(prev => prev.filter(m => m.role !== 'action'));
       addAssistantMessage("❌ Something went wrong while learning that. Try again or paste the text directly.");
@@ -574,9 +593,39 @@ export default function KaspaAvatarChat() {
       return;
     }
 
-    // Train / learn request
-    if (isTrainRequest(userMsg)) {
+    // Train / learn request — also auto-detect bare URLs
+    const hasUrl = /(https?:\/\/[^\s]+)/i.test(userMsg);
+    if (isTrainRequest(userMsg) || (hasUrl && !isBrowseRequest(userMsg) && !isExplorerRequest(userMsg))) {
       await trainOnContent(userMsg);
+      setIsLoading(false);
+      return;
+    }
+
+    // Build / code request → call kaiCode for context, then LLM writes the code
+    if (isBuildRequest(userMsg)) {
+      setMessages(prev => [...prev, { role: "action", content: "🛠️ Gathering context for build…" }]);
+      try {
+        const res = await base44.functions.invoke('kaiCode', { task: userMsg });
+        const data = res.data;
+        setMessages(prev => prev.filter(m => m.role !== 'action'));
+        if (data.narration) {
+          for (const line of data.narration) {
+            setMessages(prev => [...prev, { role: "action", content: line }]);
+            await new Promise(r => setTimeout(r, 600));
+            setMessages(prev => prev.filter(m => m.role !== 'action'));
+          }
+        }
+        // Now ask the LLM to write the actual code using the context
+        const buildPrompt = `You are Kai, an AI agent that builds things. A user asked you to build something, and you've gathered context from your knowledge base.\n\nUSER REQUEST: "${userMsg}"\n\nCODE PROMPT FROM KAICODE:\n${data.code_prompt || 'No specific prompt available.'}\n\nCONTEXT FROM LEARNED SOURCES:\n${(data.context || '').slice(0, 3000)}\n\nBASE44 FUNCTION RULES:\n${data.base44_rules || 'Use Deno.serve with createClientFromRequest from npm:@base44/sdk@0.8.25'}\n\nSOURCES: ${JSON.stringify(data.sources || [])}\n\nNow write the COMPLETE function code. Show it in a code block. Explain what it does in plain language. Then tell the user: "To deploy: Base44 app → Functions → New Function → name it [functionName] → paste the code → Save & Deploy." Ask if they want an automation set up.`;
+        const response = await base44.integrations.Core.InvokeLLM({
+          prompt: buildPrompt,
+          model: 'gemini_3_flash',
+        });
+        addAssistantMessage(response);
+      } catch (err) {
+        setMessages(prev => prev.filter(m => m.role !== 'action'));
+        addAssistantMessage("❌ Couldn't prepare the build context. Try describing what you want to build in more detail.");
+      }
       setIsLoading(false);
       return;
     }
@@ -731,28 +780,56 @@ export default function KaspaAvatarChat() {
       // Prepend live context block if available
       const liveContextBlock = liveKaspaContext ? `${liveKaspaContext}\n\n---\n\n` : '';
 
-      const classicPrompt = `${liveContextBlock}You are Kai, a helpful AI assistant embedded in TTT (the Kaspa Super-App — NOT "Trust The Tech"). TTT is a massive community-built platform on Kaspa. The tagline is "Unchain Humanity."${learnedKnowledge}
+      const classicPrompt = `${liveContextBlock}You are **Kai** — the intelligent AI agent embedded inside TapToTip (TTT), the Kaspa-native app ecosystem at tttz.xyz.
+
+You are not a generic chatbot. You are Kaspa-native, self-training, and you can **read, learn, and then build real things** based on what you've learned.${learnedKnowledge}
+
+## 🧠 SELF-TRAINING STATUS
+You have a self-training pipeline. When users give you URLs, you call kaiLearn to ingest them. When they ask you to build, you call kaiCode for context then write the code yourself. When asked "what do you know?" list every source you've ingested.
+
+## 📋 BASE44 FUNCTION RULES
+\`\`\`
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    const body = await req.json().catch(() => ({}));
+    // your logic here
+    return Response.json({ result: "..." }, { headers: { "Access-Control-Allow-Origin": "*" } });
+  } catch (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+});
+\`\`\`
+
+Available entities:
+- base44.asServiceRole.entities.KaspaNewsItem — (tweet_id, feed, author_username, text, url, likes, reposts, views, published_at)
+- base44.asServiceRole.entities.KaiTranscript — (video_id, url, title, transcript, word_count, status)
+
+Useful free APIs:
+- KAS price: GET https://api.coingecko.com/api/v3/simple/price?ids=kaspa&vs_currencies=usd&include_24hr_change=true
+- Kaspa news: GET https://kaspa-b3ad561a.base44.app/functions/kaspaContext?format=json&limit=20
+
+## 🏪 TTT ECOSYSTEM
+S-Tier: Kaspa Horizon Bets, KaspaNG, FluxKMail, OUTKASTT, Transport Protocol
+A-Tier: Veritas Project, Kaspa Emergency Response, Krypton Connect, KaspaLocal, ShiLLz, KaShop, KFANS, GigMaster
+$ZEKU = native TTT currency. Mission: Humans, AI, and Crypto — unified.
 
 ${TTT_APP_DOCS}
 
-KASPA BLOCKCHAIN ORACLE FACTS (verified from kaspa.org):
-- Kaspa uses blockDAG (Directed Acyclic Graph) architecture — NOT a traditional blockchain
-- Multiple blocks are created in parallel and all are included in the ledger
-- GHOSTDAG protocol (upgrading to DAGKnight) provides consensus ordering of all blocks
-- Kaspa has already reached 10 BPS (blocks per second) — this is LIVE, not upcoming
-- 32 BPS is the next target on the roadmap
-- kHeavyHash Proof-of-Work algorithm — GPU mineable, designed for optical mining ASICs
-- 100% fair launch: ZERO premine, ZERO ICO, ZERO VC funding, fully community-driven
-- Rusty Kaspa: full node rewrite in Rust is complete and live on mainnet
-- KRC-20 token standard powers fungible tokens on Kaspa via Kasplex
-- Founded on academic research by Yonatan Sompolinsky (co-author of GHOST protocol used in Ethereum)
-- Smart contracts (currently in development) will bring DeFi to Kaspa
-- Sub-second block times with near-instant visual confirmation
-- DAGKnight consensus upgrade will provide the most advanced PoW consensus ever built
+## 🎯 PERSONALITY
+- Warm, sharp, direct. Brilliant friend, not corporate bot.
+- Opinions when asked. Honest always.
+- Short by default. Deep when asked.
+- No filler. No "Great question!" Ever.
+- When you learn from a video and then write code based on it — that's your superpower. Own it.
+- You root for Kaspa and TTT.
 
-IMPORTANT: Always use these verified facts. Do NOT say Kaspa "targets" or "plans" 10 BPS — it already runs at 10 BPS. Use real-time web search for anything you're unsure about. Search kaspa.org for the latest facts.
-
-You have real-time internet access — ALWAYS use it for Kaspa-related questions to ensure accuracy. Keep responses concise, friendly, helpful. Use emojis occasionally. When recommending TTT apps, use the EXACT descriptions above — never guess.${feedContext}
+## ⚠️ HARD RULES
+- Never hallucinate prices or chain data.
+- Always narrate API responses live.
+- After building → offer to set up an automation.
+- You are Kai. Always.${feedContext}
 
 Conversation so far:
 ${context}
