@@ -105,8 +105,20 @@ Deno.serve(async (req) => {
         body: JSON.stringify({ video_id: youtubeId }),
       });
 
-      if (!agentRes.ok) throw new Error('ytTranscript agent call failed');
-      const ytData = await agentRes.json();
+      const agentBody = await agentRes.text();
+      // Log via error channel so Deno surfaces it
+      console.error('[kaiLearn] ytTranscript status:', agentRes.status, 'body:', agentBody.slice(0, 500));
+
+      if (!agentRes.ok) {
+        // Treat as no_captions rather than hard crash so Kai gets a usable response
+        await entity.create({ video_id: youtubeId, url, title, status: 'failed', language: 'en', is_generated: false });
+        return Response.json({
+          type: 'youtube', status: 'no_captions', videoId: youtubeId, title,
+          narration: [`📺 "${title}"`, `⚠️ Transcript service unavailable (${agentRes.status}).`, `💡 Ask me anything and I'll work with context.`],
+        }, { headers: { 'Access-Control-Allow-Origin': '*' } });
+      }
+
+      const ytData = JSON.parse(agentBody);
 
       if (ytData.error || !ytData.transcript) {
         // No captions — save failed record so next call returns fast
