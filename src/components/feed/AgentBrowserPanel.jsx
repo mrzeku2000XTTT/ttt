@@ -118,12 +118,13 @@ export default function AgentBrowserPanel({ url: initialUrl }) {
           </div>
         )}
 
-        {/* Iframe — full size, directly interactive */}
-        <div className="flex-1 min-h-0">
+        {/* Iframe — scaled down to fit small panel */}
+        <div className="flex-1 min-h-0 overflow-hidden relative">
           <iframe
             ref={iframeRef}
             src={currentUrl}
-            className="w-full h-full border-0"
+            className="border-0 absolute top-0 left-0"
+            style={{ width: "166.67%", height: "166.67%", transform: "scale(0.6)", transformOrigin: "top left" }}
             onLoad={() => setLoading(false)}
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
             title="Browser"
