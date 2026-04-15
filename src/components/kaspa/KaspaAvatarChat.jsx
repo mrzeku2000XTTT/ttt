@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import AgentBrowserPanel from "@/components/feed/AgentBrowserPanel";
+import KAIPostViewer from "./KAIPostViewer";
 
 // Split modules
 import { STORAGE_KEY, DEFAULT_AVATAR_IMG, DEFAULT_VIDEO_URL, KAI_FACTS } from "./kaiConstants";
@@ -32,6 +33,7 @@ export default function KaspaAvatarChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [browserUrl, setBrowserUrl] = useState(null);
   const [showBrowser, setShowBrowser] = useState(false);
+  const [viewingPost, setViewingPost] = useState(null);
   const [pendingImages, setPendingImages] = useState([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef(null);
@@ -232,7 +234,7 @@ export default function KaspaAvatarChat() {
 
   const resetChat = () => {
     setIsOpen(false); setShowSettings(false); setIsLoading(false);
-    setTypingIndex(-1); setTypingText(""); setBrowserUrl(null); setShowBrowser(false);
+    setTypingIndex(-1); setTypingText(""); setBrowserUrl(null); setShowBrowser(false); setViewingPost(null);
     setMessages([{ role: "assistant", content: kaiMode === "classic"
       ? "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything."
       : "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem."
@@ -317,17 +319,25 @@ export default function KaspaAvatarChat() {
               </div>
             </div>
 
-            {/* Browser tab toggle */}
-            {browserUrl && (
+            {/* Browser/Post tab toggle */}
+            {(browserUrl || viewingPost) && (
               <div className="flex items-center px-2 py-1" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                <button onClick={() => setShowBrowser(false)} className="flex-1 py-1 text-[10px] font-bold rounded-md transition-all text-center"
-                  style={{ background: !showBrowser ? "rgba(255,255,255,0.1)" : "transparent", color: !showBrowser ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.35)" }}>
+                <button onClick={() => { setShowBrowser(false); setViewingPost(null); }} className="flex-1 py-1 text-[10px] font-bold rounded-md transition-all text-center"
+                  style={{ background: !showBrowser && !viewingPost ? "rgba(255,255,255,0.1)" : "transparent", color: !showBrowser && !viewingPost ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.35)" }}>
                   💬 Chat
                 </button>
-                <button onClick={() => setShowBrowser(true)} className="flex-1 py-1 text-[10px] font-bold rounded-md transition-all text-center"
-                  style={{ background: showBrowser ? "rgba(6,182,212,0.2)" : "transparent", color: showBrowser ? "rgba(6,182,212,1)" : "rgba(255,255,255,0.35)" }}>
-                  🌐 Browser
-                </button>
+                {viewingPost && (
+                  <button onClick={() => { setShowBrowser(true); }} className="flex-1 py-1 text-[10px] font-bold rounded-md transition-all text-center"
+                    style={{ background: showBrowser && viewingPost ? "rgba(6,182,212,0.2)" : "transparent", color: showBrowser && viewingPost ? "rgba(6,182,212,1)" : "rgba(255,255,255,0.35)" }}>
+                    📰 Post
+                  </button>
+                )}
+                {browserUrl && !viewingPost && (
+                  <button onClick={() => setShowBrowser(true)} className="flex-1 py-1 text-[10px] font-bold rounded-md transition-all text-center"
+                    style={{ background: showBrowser ? "rgba(6,182,212,0.2)" : "transparent", color: showBrowser ? "rgba(6,182,212,1)" : "rgba(255,255,255,0.35)" }}>
+                    🌐 Browser
+                  </button>
+                )}
               </div>
             )}
 
@@ -371,23 +381,30 @@ export default function KaspaAvatarChat() {
               )}
             </AnimatePresence>
 
+            {/* Post viewer panel */}
+            {showBrowser && viewingPost && (
+              <div className="flex-1 overflow-hidden flex flex-col">
+                <KAIPostViewer post={viewingPost} />
+              </div>
+            )}
+
             {/* Browser panel */}
-            <div className="flex-1 overflow-hidden" style={{ display: showBrowser && browserUrl ? "flex" : "none", flexDirection: "column" }}>
+            <div className="flex-1 overflow-hidden" style={{ display: showBrowser && browserUrl && !viewingPost ? "flex" : "none", flexDirection: "column" }}>
               <AgentBrowserPanel url={browserUrl} key="persistent-browser" onAskKai={(q) => { setShowBrowser(false); setInput(q); setTimeout(() => inputRef.current?.focus(), 100); }} />
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-hide" style={{ display: showBrowser && browserUrl ? "none" : undefined }}>
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-hide" style={{ display: (showBrowser && (browserUrl || viewingPost)) ? "none" : undefined }}>
               {messages.map((msg, i) => (
                 <KAIChatMessage key={i} msg={msg} index={i} typingIndex={typingIndex} typingText={typingText}
-                  setIsOpen={setIsOpen} setBrowserUrl={setBrowserUrl} setShowBrowser={setShowBrowser} />
+                  setIsOpen={setIsOpen} setBrowserUrl={setBrowserUrl} setShowBrowser={setShowBrowser} setViewingPost={setViewingPost} />
               ))}
               {isLoading && typingIndex < 0 && <KAIThinkingBubble />}
               <div ref={messagesEndRef} />
             </div>
 
             {/* Input */}
-            <div className="px-3 pb-3 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.08)", display: showBrowser && browserUrl ? "none" : undefined }}>
+            <div className="px-3 pb-3 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.08)", display: (showBrowser && (browserUrl || viewingPost)) ? "none" : undefined }}>
               {pendingImages.length > 0 && (
                 <div className="flex items-center gap-1.5 px-2 pb-2 overflow-x-auto scrollbar-hide">
                   {pendingImages.map((img, idx) => (

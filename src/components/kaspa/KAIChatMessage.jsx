@@ -7,10 +7,10 @@ import { KAIBlocksAnimation } from "./KAIAnimations";
 import { setKaSshiGlobal, markKaSshiInlineVisited } from "@/components/KaSshiPlayer";
 import KAINewsCard from "./KAINewsCard";
 
-export default function KAIChatMessage({ msg, index, typingIndex, typingText, setIsOpen, setBrowserUrl, setShowBrowser }) {
+export default function KAIChatMessage({ msg, index, typingIndex, typingText, setIsOpen, setBrowserUrl, setShowBrowser, setViewingPost }) {
   const navigate = useNavigate();
 
-  // News posts — rich preview cards with browser integration
+  // News posts — rich preview cards with post viewer
   if (msg.role === "news_posts") {
     return (
       <div className="flex flex-col gap-2 max-w-[95%]">
@@ -22,14 +22,12 @@ export default function KAIChatMessage({ msg, index, typingIndex, typingText, se
             <KAINewsCard
               key={i}
               post={post}
-              onOpenNewsSite={(newsUrl) => { setBrowserUrl(newsUrl); setShowBrowser(true); }}
-              onViewOriginal={(url) => window.open(url, "_blank")}
+              onViewPost={(p) => { setViewingPost(p); setShowBrowser(true); }}
             />
           ))}
         </div>
-        {/* Quick "Browse All" button to open news site */}
         <button
-          onClick={() => { setBrowserUrl("https://kaspa-app-9cc9fe40.base44.app"); setShowBrowser(true); }}
+          onClick={() => { setBrowserUrl("https://kaspa-app-9cc9fe40.base44.app"); setViewingPost(null); setShowBrowser(true); }}
           className="self-start flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-semibold transition-all hover:scale-105 mt-1"
           style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)" }}
         >
