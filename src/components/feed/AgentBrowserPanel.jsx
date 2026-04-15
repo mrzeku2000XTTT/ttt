@@ -131,7 +131,7 @@ export default function AgentBrowserPanel({ url: initialUrl }) {
           ref={iframeRef}
           src={currentUrl}
           className="w-full border-0"
-          style={{ height: 260 }}
+          style={{ height: 180 }}
           onLoad={() => setLoading(false)}
           sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
           title="Browser"
