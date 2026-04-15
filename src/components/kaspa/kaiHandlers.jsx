@@ -133,7 +133,7 @@ export const handleBuildRequest = async (userMsg, { setMessages, addAssistantMes
 };
 
 // Kaspa news posts
-export const handleKaspaNews = async ({ setMessages, addAssistantMessage }) => {
+export const handleKaspaNews = async ({ setMessages }) => {
   setMessages(prev => [...prev, { role: "action", content: "📡 Fetching latest Kaspa posts…" }]);
   try {
     const res = await fetch('https://kaspa-b3ad561a.base44.app/functions/kaspaContext?format=json&limit=15');
@@ -141,22 +141,17 @@ export const handleKaspaNews = async ({ setMessages, addAssistantMessage }) => {
     const posts = data?.items || (Array.isArray(data) ? data : []);
     setMessages(prev => prev.filter(m => m.role !== 'action'));
     if (posts.length > 0) {
-      const postList = posts.map((p, i) => {
-        const author = p.author_username || p.author || 'Unknown';
-        const text = (p.text || p.content || '').slice(0, 200);
-        const url = p.url || '';
-        const likes = p.likes || 0;
-        const reposts = p.reposts || 0;
-        const date = p.published_at ? new Date(p.published_at).toLocaleDateString() : '';
-        return `**${i + 1}. @${author}** ${date ? `(${date})` : ''}\n${text}${url ? `\n[View Post](${url})` : ''}\n❤️ ${likes} · 🔁 ${reposts}`;
-      }).join('\n\n---\n\n');
-      addAssistantMessage(`📰 **Latest ${posts.length} Kaspa Posts:**\n\n${postList}`);
+      setMessages(prev => [...prev, {
+        role: "news_posts",
+        content: `📰 Latest ${posts.length} Kaspa posts:`,
+        posts: posts,
+      }]);
     } else {
-      addAssistantMessage("Couldn't find any recent Kaspa posts right now. Try again later! 📰");
+      setMessages(prev => [...prev, { role: "assistant", content: "Couldn't find any recent Kaspa posts right now. Try again later! 📰" }]);
     }
   } catch {
     setMessages(prev => prev.filter(m => m.role !== 'action'));
-    addAssistantMessage("❌ Couldn't fetch Kaspa news posts. Try again!");
+    setMessages(prev => [...prev, { role: "assistant", content: "❌ Couldn't fetch Kaspa news posts. Try again!" }]);
   }
 };
 

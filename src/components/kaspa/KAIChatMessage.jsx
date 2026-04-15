@@ -5,9 +5,30 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { KAIBlocksAnimation } from "./KAIAnimations";
 import { setKaSshiGlobal, markKaSshiInlineVisited } from "@/components/KaSshiPlayer";
+import KAINewsCard from "./KAINewsCard";
 
 export default function KAIChatMessage({ msg, index, typingIndex, typingText, setIsOpen, setBrowserUrl, setShowBrowser }) {
   const navigate = useNavigate();
+
+  // News posts — rich preview cards
+  if (msg.role === "news_posts") {
+    return (
+      <div className="flex flex-col gap-2 max-w-[95%]">
+        <div className="text-[12px] font-semibold px-1" style={{ color: "rgba(6,182,212,0.9)" }}>
+          {msg.content}
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollSnapType: "x mandatory" }}>
+          {msg.posts.map((post, i) => (
+            <KAINewsCard
+              key={i}
+              post={post}
+              onViewPost={(url) => { setBrowserUrl(url); setShowBrowser(true); }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (msg.role === "action") {
     return (
