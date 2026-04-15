@@ -481,8 +481,8 @@ export default function TTTV2Page() {
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-[12px] text-zinc-400">
           <span className="font-medium">TTT 2.0 — Built on Kaspa</span>
           <div className="flex items-center gap-5">
-            <a href="https://kaspa.org" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-600 transition-colors flex items-center gap-1">
-              Kaspa <ExternalLink className="w-3 h-3" />
+            <a href="https://kasmart.org" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-600 transition-colors flex items-center gap-1">
+              Kasmart <ExternalLink className="w-3 h-3" />
             </a>
             <a href="https://kasplex.org" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-600 transition-colors flex items-center gap-1">
               Kasplex <ExternalLink className="w-3 h-3" />
