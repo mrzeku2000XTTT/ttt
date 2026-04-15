@@ -894,14 +894,7 @@ Respond as KAI:${speedInstruction}`;
     }
   };
 
-  const videoRef = useRef(null);
-  const headerVideoRef = useRef(null);
 
-  // Set normal video playback speed
-  useEffect(() => {
-    if (videoRef.current) videoRef.current.playbackRate = 1.0;
-    if (headerVideoRef.current) headerVideoRef.current.playbackRate = 1.0;
-  }, [videoUrl, isOpen]);
 
   return (
     <>
@@ -946,11 +939,7 @@ Respond as KAI:${speedInstruction}`;
               className="w-14 h-14 rounded-full overflow-hidden shadow-2xl shadow-black/40 ring-2 ring-white/20 flex-shrink-0 relative"
               style={{ background: "#000" }}
             >
-              {videoUrl ? (
-                <video ref={videoRef} src={videoUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" onLoadedMetadata={e => { e.target.playbackRate = 1.0; }} />
-              ) : (
-                <img src={DEFAULT_AVATAR_IMG} alt="KAI" className="w-full h-full object-cover" />
-              )}
+              <img src={DEFAULT_AVATAR_IMG} alt="KAI" className="w-full h-full object-cover" />
             </motion.button>
           </motion.div>
         )}
@@ -981,11 +970,7 @@ Respond as KAI:${speedInstruction}`;
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-white/20 flex-shrink-0"
                   style={{ background: "#000" }}>
-                  {videoUrl ? (
-                    <video ref={headerVideoRef} src={videoUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" onLoadedMetadata={e => { e.target.playbackRate = 1.0; }} />
-                  ) : (
-                    <img src={DEFAULT_AVATAR_IMG} alt="KAI" className="w-full h-full object-cover" />
-                  )}
+                  <img src={DEFAULT_AVATAR_IMG} alt="KAI" className="w-full h-full object-cover" />
                 </div>
                 <div>
                   <div className="text-white font-bold text-sm tracking-wide">{kaiMode === "classic" ? "Kai" : "KAI"}</div>
