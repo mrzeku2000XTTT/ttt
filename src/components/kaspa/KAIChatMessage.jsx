@@ -69,6 +69,54 @@ export default function KAIChatMessage({ msg, index, typingIndex, typingText, se
     );
   }
 
+  // PDF preview
+  if (msg.role === "pdf_preview") {
+    return (
+      <div className="flex flex-col gap-2 max-w-[95%] w-full">
+        <div className="text-[12px] font-semibold px-1" style={{ color: "rgba(6,182,212,0.9)" }}>
+          📄 {msg.content}
+        </div>
+        <div className="rounded-xl overflow-hidden w-full" style={{ border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 4px 20px rgba(0,0,0,0.3)" }}>
+          <iframe src={msg.data_url} width="100%" height="480" style={{ border: "none", display: "block" }} title="Document Preview" />
+        </div>
+        <div className="text-[11px] px-1" style={{ color: "rgba(255,255,255,0.4)" }}>
+          Click 🖨️ Print / Save as PDF inside the document to download it.
+        </div>
+      </div>
+    );
+  }
+
+  // Email preview
+  if (msg.role === "email_preview") {
+    return (
+      <div className="flex flex-col gap-2 max-w-[95%] w-full">
+        <div className="text-[12px] font-semibold px-1" style={{ color: "rgba(6,182,212,0.9)" }}>
+          📧 {msg.content}
+        </div>
+        <div className="rounded-xl overflow-hidden w-full" style={{ border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 4px 20px rgba(0,0,0,0.3)" }}>
+          <iframe src={msg.preview_data_url} width="100%" height="400" style={{ border: "none", display: "block" }} title="Email Preview" />
+        </div>
+        {msg.send_links && (
+          <div className="flex gap-2 flex-wrap px-1">
+            <a href={msg.send_links.gmail} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all hover:scale-105"
+              style={{ background: "rgba(234,67,53,0.2)", border: "1px solid rgba(234,67,53,0.4)", color: "rgba(255,120,100,1)" }}>
+              📧 Open in Gmail
+            </a>
+            <a href={msg.send_links.outlook} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all hover:scale-105"
+              style={{ background: "rgba(0,114,198,0.2)", border: "1px solid rgba(0,114,198,0.4)", color: "rgba(100,180,255,1)" }}>
+              📬 Open in Outlook
+            </a>
+          </div>
+        )}
+        <div className="text-[11px] px-1" style={{ color: "rgba(255,255,255,0.4)" }}>
+          Everything is pre-filled — just click to open your email client and send.
+        </div>
+      </div>
+    );
+  }
+
   if (msg.role === "action") {
     return (
       <div className="flex justify-start">

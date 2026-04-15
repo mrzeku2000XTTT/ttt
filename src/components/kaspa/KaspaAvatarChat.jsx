@@ -13,7 +13,7 @@ import {
   isImageRequest, isKaspaNewsRequest, isSearchRequest, isFeedRequest,
   isUserPostRequest, isTrainRequest, isBuildRequest, isBrainRequest,
   isBrowseRequest, isExplorerRequest, isVideoRequest, isWatchThatRequest,
-  isXTwitterUrl, isKaiBrowseUrl,
+  isXTwitterUrl, isKaiBrowseUrl, isPDFRequest, isEmailRequest,
   detectOpenApp, getBrowseUrl, detectFeedRoute
 } from "./kaiDetectors";
 import {
@@ -21,7 +21,8 @@ import {
   handleKaspaNews, handleKaspaVideos, handleWatchThat, handleFeedRoute,
   handleExplorerRequest, handleUserPostAnalysis,
   handleFeedSummary, handleGeneralMessage,
-  handleKaiBrowse, handleXTwitterLink
+  handleKaiBrowse, handleXTwitterLink,
+  handlePDFRequest, handleEmailRequest
 } from "./kaiHandlers";
 import { KAIThinkingBubble } from "./KAIAnimations";
 import KAIChatMessage from "./KAIChatMessage";
@@ -162,8 +163,14 @@ export default function KaspaAvatarChat() {
     setIsLoading(true);
 
     try {
+      // PDF / document request
+      if (isPDFRequest(userMsg)) { await handlePDFRequest(userMsg, ctx); setIsLoading(false); return; }
+
+      // Email composition request
+      if (isEmailRequest(userMsg)) { await handleEmailRequest(userMsg, ctx); setIsLoading(false); return; }
+
       // Brain request
-      if (isBrainRequest(userMsg)) { await handleShowBrain(ctx); setIsLoading(false); return; }
+      if (isBrainRequest(userMsg)) { await handleShowBrain(userMsg, ctx); setIsLoading(false); return; }
 
       // "Watch that" / "learn from that" — ingest video from last feed
       if (isWatchThatRequest(userMsg)) { await handleWatchThat(userMsg, messages, ctx); setIsLoading(false); return; }

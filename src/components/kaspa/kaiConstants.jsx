@@ -141,7 +141,24 @@ export const BUILD_KEYWORDS = [
 export const BRAIN_KEYWORDS = [
   'what do you know', 'show me your brain', 'show your brain', 'your knowledge',
   'what have you learned', 'your memory', 'show memory', 'list knowledge',
-  'what did you learn', 'knowledge base',
+  'what did you learn', 'knowledge base', 'search your brain', 'search your knowledge',
+  'forget that', 'delete that source', 'how many sources', 'search memory',
+  'browse your brain', 'browse knowledge',
+];
+
+export const PDF_KEYWORDS = [
+  'pdf', 'document', 'worksheet', 'report', 'checklist', 'guide', 'invoice',
+  'printable', 'make a doc', 'create a doc', 'create a pdf', 'make a pdf',
+  'generate a pdf', 'generate a doc', 'write a report', 'make a report',
+  'create a checklist', 'make a checklist', 'create a worksheet', 'make a guide',
+  'create a guide', 'write a document',
+];
+
+export const EMAIL_KEYWORDS = [
+  'compose an email', 'write an email', 'draft an email', 'email to',
+  'draft a message', 'send an email', 'compose a message', 'write a message to',
+  'draft a letter', 'compose email', 'write email', 'email about',
+  'write a letter to', 'compose a letter',
 ];
 
 export const VIDEO_KEYWORDS = [

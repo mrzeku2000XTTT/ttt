@@ -168,8 +168,131 @@ export const handleXTwitterLink = async (userMsg, { setMessages, addAssistantMes
   }
 };
 
-// Show brain / knowledge base
-export const handleShowBrain = async ({ setIsLoading, addAssistantMessage }) => {
+// PDF / document generation
+export const handlePDFRequest = async (userMsg, { setMessages, addAssistantMessage, speedInstruction }) => {
+  // Detect type from message
+  const lower = userMsg.toLowerCase();
+  const type = lower.includes('worksheet') ? 'worksheet'
+    : lower.includes('checklist') ? 'checklist'
+    : lower.includes('report') ? 'report'
+    : lower.includes('invoice') ? 'invoice'
+    : 'document';
+
+  const style = (lower.includes('kaspa') || lower.includes('ttt') || lower.includes('crypto') || lower.includes('blockchain')) ? 'kaspa'
+    : (lower.includes('dev') || lower.includes('code') || lower.includes('technical') || lower.includes('dark')) ? 'dark'
+    : 'clean';
+
+  setMessages(prev => [...prev, { role: "action", content: `📄 Writing ${type} content…` }]);
+
+  // Step 1: have LLM write full content
+  const contentResult = await base44.integrations.Core.InvokeLLM({
+    prompt: `You are KAI writing a ${type} document. The user asked: "${userMsg}"
+
+Write the COMPLETE, DETAILED content for this ${type} using this exact markdown format:
+- ## Section Title for headers
+- - item for bullets
+- - [ ] task for unchecked checkboxes
+- - [x] done for checked checkboxes  
+- **bold** for emphasis
+- {{callout text}} for highlighted callouts
+- --- for dividers
+
+Write at least 200 words of real, useful content. Be comprehensive. Output ONLY the content, no explanation.`,
+    model: 'gemini_3_flash',
+  });
+
+  // Extract title
+  const titleResult = await base44.integrations.Core.InvokeLLM({
+    prompt: `Give a short, clear title (5 words max) for this ${type} based on: "${userMsg}". Output ONLY the title.`,
+  });
+  const title = (typeof titleResult === 'string' ? titleResult : '').trim().replace(/^["']|["']$/g, '') || `${type.charAt(0).toUpperCase() + type.slice(1)}`;
+
+  setMessages(prev => {
+    const filtered = prev.filter(m => m.role !== 'action');
+    return [...filtered, { role: "action", content: `🎨 Building ${type}: "${title}"…` }];
+  });
+
+  // Step 2: call kaiPDF
+  const res = await base44.functions.invoke('kaiPDF', {
+    type, title, content: contentResult, style,
+  });
+  const data = res.data;
+
+  setMessages(prev => prev.filter(m => m.role !== 'action'));
+
+  if (!data.success || !data.data_url) {
+    addAssistantMessage(`❌ Couldn't generate the document. Try again!`);
+    return;
+  }
+
+  setMessages(prev => [...prev, {
+    role: "pdf_preview",
+    content: `${title} — ${type} ready!`,
+    data_url: data.data_url,
+  }]);
+};
+
+// Email composition
+export const handleEmailRequest = async (userMsg, { setMessages, addAssistantMessage, speedInstruction }) => {
+  setMessages(prev => [...prev, { role: "action", content: "📧 Composing email…" }]);
+
+  // Detect tone
+  const lower = userMsg.toLowerCase();
+  const tone = lower.includes('formal') ? 'formal'
+    : lower.includes('casual') || lower.includes('friendly') ? 'casual'
+    : 'professional';
+
+  // Extract recipient hint if any
+  const toMatch = userMsg.match(/(?:to|email)\s+([\w@.]+)/i);
+  const toAddr = toMatch ? toMatch[1] : '';
+
+  // Step 1: LLM writes the full email
+  const emailContent = await base44.integrations.Core.InvokeLLM({
+    prompt: `You are KAI composing an email. The user asked: "${userMsg}"
+
+Write a complete, well-structured ${tone} email body. Include greeting, main content, and sign-off.
+Output ONLY the email body text — no subject line, no "To:", no explanation. Just the body.`,
+    model: 'gemini_3_flash',
+  });
+
+  // Step 2: generate subject
+  const subjectResult = await base44.integrations.Core.InvokeLLM({
+    prompt: `Write a concise email subject line (8 words max) for this email request: "${userMsg}". Output ONLY the subject.`,
+  });
+  const subject = (typeof subjectResult === 'string' ? subjectResult : '').trim().replace(/^["']|["']$/g, '') || 'Hello';
+
+  setMessages(prev => {
+    const filtered = prev.filter(m => m.role !== 'action');
+    return [...filtered, { role: "action", content: `✍️ Building email preview…` }];
+  });
+
+  // Step 3: call kaiMail
+  const res = await base44.functions.invoke('kaiMail', {
+    action: 'compose',
+    to: toAddr,
+    subject,
+    body: typeof emailContent === 'string' ? emailContent : '',
+    tone,
+  });
+  const data = res.data;
+
+  setMessages(prev => prev.filter(m => m.role !== 'action'));
+
+  if (!data.success || !data.preview_data_url) {
+    addAssistantMessage(`❌ Couldn't generate the email preview. Try again!`);
+    return;
+  }
+
+  setMessages(prev => [...prev, {
+    role: "email_preview",
+    content: `Email ready: "${subject}"`,
+    preview_data_url: data.preview_data_url,
+    send_links: data.send_links,
+  }]);
+};
+
+// Show brain / knowledge base — uses kaiKnowledge backend
+export const handleShowBrain = async (userMsg, { setIsLoading, addAssistantMessage, setMessages }) => {
   setIsLoading(true);
   try {
     const isAuth = await base44.auth.isAuthenticated();
@@ -178,26 +301,43 @@ export const handleShowBrain = async ({ setIsLoading, addAssistantMessage }) => 
       setIsLoading(false);
       return;
     }
-    const user = await base44.auth.me();
-    const memories = await base44.entities.AgentMemory.filter({ user_id: user.email });
-    if (memories.length === 0 || !memories[0].long_term?.length) {
-      addAssistantMessage("My brain is empty for you — I haven't been trained yet! Send me a URL or article and say \"learn this\" to get started. 🧠");
-      setIsLoading(false);
-      return;
-    }
-    const blocks = memories[0].long_term;
-    const sources = {};
-    blocks.forEach(b => {
-      const title = b.metadata?.source_title || 'Unknown';
-      if (!sources[title]) {
-        sources[title] = { title, url: b.metadata?.source_url, type: b.metadata?.source_type, chunks: 0, summary: b.metadata?.summary || '', date: b.stored };
+
+    // Check for search intent
+    const lower = (userMsg || '').toLowerCase();
+    const searchMatch = lower.match(/search (?:your (?:brain|knowledge|memory) for |for )(.+)/i) ||
+      lower.match(/(?:find|look for) (.+) in (?:your |my )?(?:brain|knowledge|memory)/i);
+    const deleteMatch = lower.includes('forget') || lower.includes('delete that source');
+
+    if (searchMatch) {
+      const q = searchMatch[1].trim();
+      setMessages(prev => [...prev, { role: "action", content: `🔍 Searching knowledge for "${q}"…` }]);
+      const res = await base44.functions.invoke('kaiKnowledge', { action: 'search', q });
+      const data = res.data;
+      setMessages(prev => prev.filter(m => m.role !== 'action'));
+      if (!data.success || !data.snippets?.length) {
+        addAssistantMessage(`🔍 No results found for **"${q}"** in my knowledge base. Try a different keyword.`);
+      } else {
+        const snippetList = data.snippets.map(s =>
+          `• [${s.type.toUpperCase()}] **${s.source}**\n  "${s.snippet.slice(0, 120)}..."`
+        ).join('\n\n');
+        addAssistantMessage(`🔍 **Found ${data.results_count} match(es) for "${q}":**\n\n${snippetList}`);
       }
-      sources[title].chunks++;
-    });
-    const list = Object.values(sources).map(s =>
-      `• **${s.title}** (${s.type})\n  ${s.chunks} knowledge blocks · ${new Date(s.date).toLocaleDateString()}\n  ${s.summary}`
-    ).join('\n\n');
-    addAssistantMessage(`🧠 **My Brain — ${blocks.length} knowledge blocks from ${Object.keys(sources).length} sources:**\n\n${list}\n\nAsk me anything about these topics!`);
+    } else {
+      const res = await base44.functions.invoke('kaiKnowledge', { action: 'stats' });
+      const data = res.data;
+      if (!data.success || data.total_sources === 0) {
+        addAssistantMessage("My brain is empty for you — I haven't been trained yet! Send me a URL or article and say **\"learn this\"** to get started. 🧠");
+        setIsLoading(false);
+        return;
+      }
+      const byType = Object.entries(data.by_type || {}).map(([type, info]) =>
+        `  • ${type.toUpperCase()}: ${info.count} source(s), ${info.words.toLocaleString()} words`
+      ).join('\n');
+      const recent = (data.recent || []).map(s =>
+        `• [${s.type.toUpperCase()}] **${s.title}** — ${s.words.toLocaleString()} words · ${s.date}`
+      ).join('\n');
+      addAssistantMessage(`🧠 **My Knowledge Base**\n\n📊 **${data.total_sources} sources · ${data.total_words.toLocaleString()} total words · ${data.total_blocks} blocks**\n\n**By type:**\n${byType}\n\n**Recent sources:**\n${recent}\n\nSay **"search your brain for X"** to find specific content, or **"forget [source name]"** to remove one.`);
+    }
   } catch {
     addAssistantMessage("Couldn't access my memory right now. Try again! 🧠");
   }

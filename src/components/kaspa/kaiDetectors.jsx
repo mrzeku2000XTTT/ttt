@@ -4,7 +4,8 @@ import {
   IMAGE_KEYWORDS, KASPA_NEWS_KEYWORDS, SEARCH_KEYWORDS,
   FEED_KEYWORDS, USER_POST_KEYWORDS, TRAIN_KEYWORDS,
   BUILD_KEYWORDS, BRAIN_KEYWORDS, BROWSE_KEYWORDS, VIDEO_KEYWORDS,
-  WATCH_THAT_KEYWORDS, FEED_ROUTE_MAP, APP_DIRECTORY
+  WATCH_THAT_KEYWORDS, FEED_ROUTE_MAP, APP_DIRECTORY,
+  PDF_KEYWORDS, EMAIL_KEYWORDS
 } from './kaiConstants';
 
 const matchesAny = (msg, keywords) => keywords.some(kw => msg.toLowerCase().includes(kw));
@@ -18,6 +19,8 @@ export const isTrainRequest = (msg) => matchesAny(msg, TRAIN_KEYWORDS);
 export const isBuildRequest = (msg) => matchesAny(msg, BUILD_KEYWORDS);
 export const isBrainRequest = (msg) => matchesAny(msg, BRAIN_KEYWORDS);
 export const isWatchThatRequest = (msg) => matchesAny(msg, WATCH_THAT_KEYWORDS);
+export const isPDFRequest = (msg) => matchesAny(msg, PDF_KEYWORDS);
+export const isEmailRequest = (msg) => matchesAny(msg, EMAIL_KEYWORDS);
 export const isVideoRequest = (msg) => {
   // Don't match "watch that/it/the first" as a video request
   if (isWatchThatRequest(msg)) return false;
