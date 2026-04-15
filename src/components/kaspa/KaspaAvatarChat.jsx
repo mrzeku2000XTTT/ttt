@@ -171,6 +171,19 @@ const APP_DIRECTORY = [
   { names: ['what is kaspa', 'kaspa info'], path: 'WhatIsKaspa', label: 'What is Kaspa 📖', desc: 'Kaspa education page' },
 ];
 
+// Fetch live Kaspa context from external knowledge base
+const fetchKaspaContext = async (userMessage) => {
+  try {
+    const encoded = encodeURIComponent(userMessage);
+    const res = await fetch(`https://kaspa-b3ad561a.base44.app/functions/kaspaContext?format=prompt&limit=30&q=${encoded}`);
+    if (res.ok) {
+      const text = await res.text();
+      return text.trim();
+    }
+  } catch {}
+  return '';
+};
+
 const detectOpenApp = (msg) => {
   const lower = msg.toLowerCase().trim();
   // Match patterns: "open X", "go to X", "take me to X", "launch X", "navigate to X"
@@ -440,6 +453,9 @@ export default function KaspaAvatarChat() {
 
     // General message with feed context
     try {
+      // Fetch live Kaspa ecosystem context from knowledge base
+      const liveKaspaContext = await fetchKaspaContext(userMsg);
+
       let feedContext = '';
       // Skip feed fetch in fast mode for instant responses
       if (!isFast) {
@@ -456,7 +472,10 @@ export default function KaspaAvatarChat() {
         ? `\n\nThe user has uploaded ${imageUrls.length} image(s)${imageNames.length ? ` (${imageNames.join(', ')})` : ''}. Analyze the image(s) thoroughly — describe what you see, extract any text, identify objects/charts/documents, and provide useful insights. If it's a chart or data, interpret it. If it's a screenshot, explain what it shows. If it's a document, summarize the content. Share your analysis so all users can learn from it.`
         : '';
 
-      const classicPrompt = `You are Kai, a helpful AI assistant embedded in TTT (the Kaspa Super-App — NOT "Trust The Tech"). TTT is a massive community-built platform on Kaspa. The tagline is "Unchain Humanity."
+      // Prepend live context block if available
+      const liveContextBlock = liveKaspaContext ? `${liveKaspaContext}\n\n---\n\n` : '';
+
+      const classicPrompt = `${liveContextBlock}You are Kai, a helpful AI assistant embedded in TTT (the Kaspa Super-App — NOT "Trust The Tech"). TTT is a massive community-built platform on Kaspa. The tagline is "Unchain Humanity."
 
 ${TTT_APP_DOCS}
 
@@ -486,7 +505,7 @@ User: ${userMsg}${imageContext}
 
 Respond as Kai:${speedInstruction}`;
 
-      const kaiPrompt = `You are KAI, the AI assistant of TTT — the Kaspa Super-App.
+      const kaiPrompt = `${liveContextBlock}You are KAI, the AI assistant of TTT — the Kaspa Super-App.
 
 CRITICAL IDENTITY — WHAT IS TTT:
 TTT is a Kaspa community super-app platform. It is NOT "Trust The Tech." TTT is the NAME of this application. The tagline is "Unchain Humanity." TTT 2.0 is the latest redesigned version.
