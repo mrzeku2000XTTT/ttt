@@ -22,7 +22,6 @@ Deno.serve(async (req) => {
       const memories = await base44.asServiceRole.entities.AgentMemory.filter({ user_id: user.email });
       if (memories.length > 0 && memories[0].long_term?.length) {
         const blocks = memories[0].long_term;
-        // Get all unique sources
         const sourceMap = {};
         blocks.forEach(b => {
           const title = b.metadata?.source_title || 'Unknown';
@@ -36,8 +35,6 @@ Deno.serve(async (req) => {
           }
         });
         sources = Object.values(sourceMap);
-
-        // Get relevant chunks (last 15 chunks, most recent knowledge)
         const relevantChunks = blocks.slice(-15).map(b => b.value);
         context = relevantChunks.join('\n\n');
       }
@@ -45,7 +42,6 @@ Deno.serve(async (req) => {
       console.log('Could not load memories:', e.message);
     }
 
-    // Build the code prompt
     const base44Rules = `## BASE44 BACKEND FUNCTION RULES
 
 Every function must follow this exact pattern:

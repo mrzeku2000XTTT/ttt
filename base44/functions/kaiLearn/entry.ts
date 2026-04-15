@@ -122,7 +122,6 @@ Deno.serve(async (req) => {
       const videoId = ytMatch[1];
       sourceTitle = `YouTube Video ${videoId}`;
 
-      // Use LLM with internet access to extract video content — don't fetch YouTube directly (Cloudflare blocks it)
       try {
         const extracted = await base44.asServiceRole.integrations.Core.InvokeLLM({
           prompt: `Watch and thoroughly analyze this YouTube video: ${url}\n\nExtract ALL key information including:\n- Main topics and themes discussed\n- Key facts, data points, and statistics mentioned\n- Names of people, projects, or organizations referenced\n- Technical details and explanations\n- Opinions and predictions shared\n- Any URLs, links, or resources mentioned\n\nBe as detailed and comprehensive as possible. Include direct quotes where relevant.`,
@@ -130,7 +129,6 @@ Deno.serve(async (req) => {
           model: 'gemini_3_flash',
         });
         content = extracted;
-        // Try to extract a cleaner title from the response
         if (typeof extracted === 'string' && extracted.length > 50) {
           sourceTitle = extracted.split('\n')[0].replace(/^[#*\s]+/, '').slice(0, 100) || sourceTitle;
         }
@@ -153,8 +151,8 @@ Deno.serve(async (req) => {
           signal: AbortSignal.timeout(10000),
         });
         html = await pageRes.text();
-        const titleMatch = html.match(/<title>([^<]*)<\/title>/);
-        sourceTitle = titleMatch ? titleMatch[1].trim() : url;
+        const titleMatch = html.match(/<title[^>]*>(.*?)<\/title>/is);
+        sourceTitle = titleMatch ? titleMatch[1].replace(/&amp;/g,'&').trim() : url;
       } catch {
         // Direct fetch failed, use LLM with internet
       }

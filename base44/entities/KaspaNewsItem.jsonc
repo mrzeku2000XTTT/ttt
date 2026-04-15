@@ -1,0 +1,43 @@
+{
+  "name": "KaspaNewsItem",
+  "type": "object",
+  "properties": {
+    "tweet_id": {
+      "type": "string"
+    },
+    "feed": {
+      "type": "string"
+    },
+    "author_username": {
+      "type": "string"
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "text": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string"
+    },
+    "likes": {
+      "type": "number"
+    },
+    "reposts": {
+      "type": "number"
+    },
+    "views": {
+      "type": "number"
+    },
+    "published_at": {
+      "type": "string"
+    },
+    "thumbnail": {
+      "type": "string"
+    },
+    "raw_json": {
+      "type": "object"
+    }
+  },
+  "required": []
+}
