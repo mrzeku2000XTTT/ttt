@@ -229,4 +229,5 @@ export const APP_DIRECTORY = [
   { names: ['kivr', 'phone'], path: 'KivR', label: 'KivR 📞', desc: 'IVR/phone system' },
   { names: ['kaspa node', 'node map'], path: 'KaspaNodeMap', label: 'Node Map 🗺️', desc: 'Kaspa network node map' },
   { names: ['what is kaspa', 'kaspa info'], path: 'WhatIsKaspa', label: 'What is Kaspa 📖', desc: 'Kaspa education page' },
+  { names: ['kai ide', 'ide', 'vibe code', 'code editor'], path: 'KaiIDE', label: 'KAI IDE 💻', desc: 'Full-screen vibe code IDE' },
 ];

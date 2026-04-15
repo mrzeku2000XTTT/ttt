@@ -243,22 +243,26 @@ Respond with ONLY the JSON object.`,
     // Step 7: Add IDE panel message
     setMessages(prev => [...prev, { role: "kai_ide", ideData }]);
 
-    // Step 8: Summary message
+    // Step 8: Summary message with link to full-screen IDE
     const entityList = (ideData.entities || []).map(e => e.name).join(', ');
     const pageList = (ideData.pages || []).map(p => p.name).join(', ');
     const fnList = (ideData.functions || []).map(f => f.name).join(', ');
     const upgrades = ideData.suggested_upgrades || [];
 
-    let summary = `✅ **${ideData.app_name || 'Your app'}** is ready in the IDE above.\n\nIt includes:\n`;
+    let summary = `✅ **${ideData.app_name || 'Your app'}** is ready!\n\nIt includes:\n`;
     if (ideData.entities?.length) summary += `• ${ideData.entities.length} entit${ideData.entities.length > 1 ? 'ies' : 'y'}: ${entityList}\n`;
     if (ideData.pages?.length) summary += `• ${ideData.pages.length} page${ideData.pages.length > 1 ? 's' : ''}: ${pageList}\n`;
     if (ideData.functions?.length) summary += `• ${ideData.functions.length} function${ideData.functions.length > 1 ? 's' : ''}: ${fnList}\n`;
-    summary += `\nHit the 🚀 Deploy tab for step-by-step instructions.`;
+    summary += `\nCheck the IDE above, or open the **full-screen IDE** for a better view. 🚀`;
     if (upgrades.length > 0) {
       summary += `\n\nWant me to add:\n${upgrades.map(u => `• ${u}?`).join('\n')}`;
     }
 
-    addAssistantMessage(summary);
+    setMessages(prev => [...prev, {
+      role: "assistant",
+      content: summary,
+      links: [{ label: "Open Full-Screen IDE 💻", path: "KaiIDE" }]
+    }]);
   } catch (err) {
     console.error('Vibe code error:', err);
     setMessages(prev => prev.filter(m => m.role !== 'action'));

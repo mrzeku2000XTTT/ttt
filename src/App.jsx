@@ -30,6 +30,7 @@ import WhatIsKaspaPage from './pages/WhatIsKaspa';
 import ExplorePage from './pages/Explore';
 import AppStoreV2Page from './pages/AppStoreV2';
 import KaSshiPlayer from './components/KaSshiPlayer';
+import KaiIDEPage from './pages/KaiIDE';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -101,6 +102,7 @@ const AuthenticatedApp = () => {
       <Route path="/WhatIsKaspa" element={<WhatIsKaspaPage />} />
       <Route path="/Explore" element={<ExplorePage />} />
       <Route path="/AppStoreV2" element={<AppStoreV2Page />} />
+      <Route path="/KaiIDE" element={<KaiIDEPage />} />
       <Route path="/ValorantArena" element={<ValorantArenaPage />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
