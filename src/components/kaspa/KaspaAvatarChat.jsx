@@ -240,6 +240,8 @@ export default function KaspaAvatarChat() {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [browserUrl, setBrowserUrl] = useState(null); // persistent browser URL
+  const [showBrowser, setShowBrowser] = useState(false); // toggle chat vs browser view
   const [pendingImages, setPendingImages] = useState([]); // [{url, name}]
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef(null);
@@ -399,10 +401,12 @@ export default function KaspaAvatarChat() {
     setMessages(prev => [...prev, { role: "user", content: userMsg, images: imageUrls.length > 0 ? imageUrls : undefined }]);
     setIsLoading(true);
 
-    // Browse / search / URL → inline browser panel
+    // Browse / search / URL → persistent browser panel
     if (isBrowseRequest(userMsg) && !isImageRequest(userMsg)) {
       const browseUrl = getBrowseUrl(userMsg);
-      setMessages(prev => [...prev, { role: "browser", url: browseUrl }]);
+      setBrowserUrl(browseUrl);
+      setShowBrowser(true);
+      setMessages(prev => [...prev, { role: "assistant", content: "🌐 Opened in browser panel — tap the Browser tab above to view.", browserLink: browseUrl }]);
       setIsLoading(false);
       return;
     }
@@ -733,13 +737,39 @@ Respond as KAI:${speedInstruction}`;
                   <Minus className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  onClick={() => { setIsOpen(false); setShowSettings(false); setIsLoading(false); setTypingIndex(-1); setTypingText(""); setMessages([{ role: "assistant", content: kaiMode === "classic" ? "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything." : "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem." }]); }}
+                  onClick={() => { setIsOpen(false); setShowSettings(false); setIsLoading(false); setTypingIndex(-1); setTypingText(""); setBrowserUrl(null); setShowBrowser(false); setMessages([{ role: "assistant", content: kaiMode === "classic" ? "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything." : "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem." }]); }}
                   className="w-7 h-7 rounded-full flex items-center justify-center text-white/40 hover:text-red-400 transition-colors hover:bg-white/10"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
+
+            {/* Chat / Browser tab toggle — only show when browser has been opened */}
+            {browserUrl && (
+              <div className="flex items-center px-2 py-1" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                <button
+                  onClick={() => setShowBrowser(false)}
+                  className="flex-1 py-1 text-[10px] font-bold rounded-md transition-all text-center"
+                  style={{
+                    background: !showBrowser ? "rgba(255,255,255,0.1)" : "transparent",
+                    color: !showBrowser ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.35)",
+                  }}
+                >
+                  💬 Chat
+                </button>
+                <button
+                  onClick={() => setShowBrowser(true)}
+                  className="flex-1 py-1 text-[10px] font-bold rounded-md transition-all text-center"
+                  style={{
+                    background: showBrowser ? "rgba(6,182,212,0.2)" : "transparent",
+                    color: showBrowser ? "rgba(6,182,212,1)" : "rgba(255,255,255,0.35)",
+                  }}
+                >
+                  🌐 Browser
+                </button>
+              </div>
+            )}
 
             {/* Settings Panel */}
             <AnimatePresence>
@@ -806,15 +836,19 @@ Respond as KAI:${speedInstruction}`;
               )}
             </AnimatePresence>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-hide">
+            {/* Persistent browser panel — always mounted, toggled via CSS */}
+            <div
+              className="flex-1 overflow-hidden"
+              style={{ display: showBrowser && browserUrl ? "flex" : "none", flexDirection: "column" }}
+            >
+              <AgentBrowserPanel url={browserUrl} key="persistent-browser" />
+            </div>
+
+            {/* Messages — hidden when browser is shown */}
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-hide" style={{ display: showBrowser && browserUrl ? "none" : undefined }}>
               {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                  {msg.role === "browser" ? (
-                    <div className="w-full">
-                      <AgentBrowserPanel url={msg.url} />
-                    </div>
-                  ) : msg.role === "action" ? (
+                  {msg.role === "action" ? (
                     <motion.div
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -879,6 +913,19 @@ Respond as KAI:${speedInstruction}`;
                           <style>{`@keyframes kasshi-eq-chat { 0% { transform: scaleY(0.3); } 100% { transform: scaleY(1); } }`}</style>
                         </div>
                       )}
+                      {msg.browserLink && (
+                        <button
+                          onClick={() => { setBrowserUrl(msg.browserLink); setShowBrowser(true); }}
+                          className="mt-2 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all hover:scale-105 flex items-center gap-1.5"
+                          style={{
+                            background: "rgba(6,182,212,0.2)",
+                            border: "1px solid rgba(6,182,212,0.35)",
+                            color: "rgba(6,182,212,1)",
+                          }}
+                        >
+                          🌐 View in Browser
+                        </button>
+                      )}
                       {msg.links && msg.links.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mt-2">
                           {msg.links.map((link, li) => (
@@ -907,8 +954,8 @@ Respond as KAI:${speedInstruction}`;
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
-            <div className="px-3 pb-3 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+            {/* Input — hidden in browser mode */}
+            <div className="px-3 pb-3 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.08)", display: showBrowser && browserUrl ? "none" : undefined }}>
               {/* Pending images preview */}
               {pendingImages.length > 0 && (
                 <div className="flex items-center gap-1.5 px-2 pb-2 overflow-x-auto scrollbar-hide">
