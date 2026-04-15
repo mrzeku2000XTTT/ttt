@@ -363,13 +363,30 @@ export const handleTrainOnContent = async (userMsg, { setMessages, addAssistantM
   }
 
   const isYouTube = url && (url.includes('youtube.com') || url.includes('youtu.be'));
-  setMessages(prev => [...prev, { role: "assistant", content: url ? (isYouTube ? "🔍 Fetching YouTube video…" : `🔍 Fetching content from URL…`) : "🧠 Processing your text…" }]);
-  await new Promise(r => setTimeout(r, 600));
-  setMessages(prev => [...prev, { role: "action", content: url ? `Fetching content from ${url}...` : "Processing your text..." }]);
-  await new Promise(r => setTimeout(r, 400));
+  setMessages(prev => [...prev, { role: "action", content: url ? (isYouTube ? "📺 Analyzing YouTube video with AI (this takes ~30-60s)…" : `🔍 Fetching content from URL…`) : "🧠 Processing your text…" }]);
+
+  // For YouTube, show rotating progress messages while waiting
+  let progressInterval = null;
+  if (isYouTube) {
+    const progressSteps = [
+      "🔍 Identifying video content…",
+      "🧠 Reading transcript with AI…",
+      "📊 Extracting key information…",
+      "💾 Processing knowledge blocks…",
+    ];
+    let stepIdx = 0;
+    progressInterval = setInterval(() => {
+      stepIdx = (stepIdx + 1) % progressSteps.length;
+      setMessages(prev => {
+        const filtered = prev.filter(m => m.role !== 'action');
+        return [...filtered, { role: "action", content: progressSteps[stepIdx] }];
+      });
+    }, 8000);
+  }
 
   try {
     const res = await base44.functions.invoke('kaiLearn', { url, rawText });
+    if (progressInterval) clearInterval(progressInterval);
     const data = res.data;
     if (!data.success) {
       setMessages(prev => prev.filter(m => m.role !== 'action'));
@@ -389,6 +406,7 @@ export const handleTrainOnContent = async (userMsg, { setMessages, addAssistantM
     setMessages(prev => prev.filter(m => m.role !== 'action'));
     addAssistantMessage(`✅ **Done. I've learned this.**\n\n📄 **${data.source_title}**\n📊 ${data.word_count.toLocaleString()} words → ${data.chunks_stored} knowledge blocks\n💡 ${data.summary}\n\nAsk me anything about it — or say **"now build something based on what you learned"** and I'll write the code.`);
   } catch {
+    if (progressInterval) clearInterval(progressInterval);
     setMessages(prev => prev.filter(m => m.role !== 'action'));
     addAssistantMessage("❌ Something went wrong while learning that. Try again or paste the text directly.");
   }
