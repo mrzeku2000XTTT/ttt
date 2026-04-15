@@ -391,21 +391,24 @@ export default function KaspaAvatarChat() {
   const isTrainRequest = (msg) => TRAIN_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
   const isBrainRequest = (msg) => BRAIN_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
 
-  // Load user's learned knowledge for context injection
+  // Load user's learned knowledge for context injection (with timeout)
   const loadLearnedKnowledge = async () => {
-    try {
-      const isAuth = await base44.auth.isAuthenticated();
-      if (!isAuth) return '';
-      const user = await base44.auth.me();
-      const memories = await base44.entities.AgentMemory.filter({ user_id: user.email });
-      if (memories.length === 0 || !memories[0].long_term?.length) return '';
-      const blocks = memories[0].long_term;
-      // Get summaries and recent chunks (most relevant)
-      const summaries = blocks.filter(b => b.metadata?.summary).map(b => `[${b.metadata.source_title}]: ${b.metadata.summary}`);
-      const recentChunks = blocks.slice(-10).map(b => b.value).join('\n');
-      if (summaries.length === 0) return '';
-      return `\n\nYOUR LEARNED KNOWLEDGE (trained by this user):\nSources learned: ${summaries.join(' | ')}\n\nRecent knowledge context:\n${recentChunks.slice(0, 2000)}`;
-    } catch { return ''; }
+    const timeout = new Promise(resolve => setTimeout(() => resolve(''), 3000));
+    const work = (async () => {
+      try {
+        const isAuth = await base44.auth.isAuthenticated();
+        if (!isAuth) return '';
+        const user = await base44.auth.me();
+        const memories = await base44.entities.AgentMemory.filter({ user_id: user.email });
+        if (memories.length === 0 || !memories[0].long_term?.length) return '';
+        const blocks = memories[0].long_term;
+        const summaries = blocks.filter(b => b.metadata?.summary).map(b => `[${b.metadata.source_title}]: ${b.metadata.summary}`);
+        const recentChunks = blocks.slice(-10).map(b => b.value).join('\n');
+        if (summaries.length === 0) return '';
+        return `\n\nYOUR LEARNED KNOWLEDGE (trained by this user):\nSources learned: ${summaries.join(' | ')}\n\nRecent knowledge context:\n${recentChunks.slice(0, 2000)}`;
+      } catch { return ''; }
+    })();
+    return Promise.race([work, timeout]);
   };
 
   const showBrain = async () => {
@@ -704,8 +707,7 @@ export default function KaspaAvatarChat() {
       let feedContext = '';
 
       if (isFast) {
-        // Only fetch learned knowledge (local DB, fast) — skip external API + feed
-        learnedKnowledge = await loadLearnedKnowledge();
+        // Fast mode: skip all slow fetches, go straight to LLM
       } else {
         // Thinking mode: fetch everything in parallel
         const [ctx, knowledge, posts] = await Promise.all([
