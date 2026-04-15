@@ -15,6 +15,101 @@ Deno.serve(async (req) => {
   let sourceType = 'text';
   let wordCount = 0;
 
+  // X.com / Twitter URLs — route through kaspaContext
+  const isXUrl = (u) => /^https?:\/\/(www\.)?(x\.com|twitter\.com)\//i.test(u);
+  if (url && isXUrl(url)) {
+    try {
+      const tweetRes = await fetch(`https://kaspa-b3ad561a.base44.app/functions/kaspaContext?tweet=${encodeURIComponent(url)}`);
+      const tweetData = await tweetRes.json();
+
+      if (!tweetData.content && !tweetData.text) {
+        return Response.json({
+          success: false,
+          error: tweetData.error || 'Tweet not found or is private/deleted.',
+        });
+      }
+
+      const tweetContent = tweetData.content || tweetData.text || '';
+      const tweetTitle = tweetData.title || tweetData.author || 'Tweet';
+      const tweetWordCount = tweetContent.split(/\s+/).length;
+      const linkedPages = tweetData.linked_pages || [];
+      const cached = tweetData.cached || false;
+
+      // Store tweet to AgentMemory
+      const now = Date.now();
+      const knowledgeBlocks = [{
+        key: `learned:tweet:${tweetTitle.slice(0, 50)}`,
+        value: tweetContent,
+        metadata: {
+          source_url: url,
+          source_title: tweetTitle,
+          source_type: 'tweet',
+          summary: tweetContent.slice(0, 100),
+        },
+        stored: now,
+        accessed: now,
+        access_count: 0,
+      }];
+
+      // Also store linked pages if any
+      for (const page of linkedPages) {
+        if (page.content || page.text) {
+          knowledgeBlocks.push({
+            key: `learned:linked:${(page.title || page.url || '').slice(0, 50)}`,
+            value: page.content || page.text,
+            metadata: {
+              source_url: page.url,
+              source_title: page.title || page.url,
+              source_type: 'linked_page',
+              summary: (page.content || page.text || '').slice(0, 100),
+            },
+            stored: now,
+            accessed: now,
+            access_count: 0,
+          });
+        }
+      }
+
+      let memories = [];
+      try { memories = await base44.entities.AgentMemory.filter({ user_id: user.email }); } catch {}
+
+      try {
+        if (memories.length > 0) {
+          const existing = memories[0];
+          const combined = [...(existing.long_term || []), ...knowledgeBlocks].slice(-200);
+          await base44.entities.AgentMemory.update(existing.id, { long_term: combined });
+        } else {
+          await base44.entities.AgentMemory.create({
+            user_id: user.email,
+            long_term: knowledgeBlocks,
+            short_term: [],
+            episodic: [],
+          });
+        }
+      } catch (e) {
+        console.error('Failed to store tweet to AgentMemory:', e.message || e);
+      }
+
+      return Response.json({
+        success: true,
+        source_title: tweetTitle,
+        source_type: 'tweet',
+        word_count: tweetWordCount,
+        chunks_stored: knowledgeBlocks.length,
+        summary: tweetContent.slice(0, 150),
+        content: tweetContent,
+        linked_pages: linkedPages,
+        cached,
+      });
+    } catch (e) {
+      console.error('kaspaContext tweet fetch failed:', e.message || e);
+      return Response.json({
+        success: false,
+        error: 'Could not fetch that tweet. Try again in a moment.',
+      });
+    }
+  }
+
   if (rawText) {
     content = rawText;
     sourceTitle = 'User-provided text';

@@ -104,8 +104,8 @@ Provide a clean summary of the page's key information. Start with what the page 
   }
 };
 
-// X.com / Twitter link handler — fetch via kaspaContext?tweet=
-export const handleXTwitterLink = async (userMsg, { setMessages, addAssistantMessage, speedInstruction }) => {
+// X.com / Twitter link handler — uses kaiLearn which routes through kaspaContext
+export const handleXTwitterLink = async (userMsg, { setMessages, addAssistantMessage, setIsLoading, speedInstruction }) => {
   const url = extractUrl(userMsg);
   if (!url) {
     addAssistantMessage("I couldn't find a tweet URL in your message. Paste a full x.com or twitter.com link.");
@@ -115,44 +115,56 @@ export const handleXTwitterLink = async (userMsg, { setMessages, addAssistantMes
   setMessages(prev => [...prev, { role: "action", content: "🐦 Fetching tweet…" }]);
 
   try {
-    const res = await fetch(`${KASPA_CONTEXT_BASE}?tweet=${encodeURIComponent(url)}`);
-    const data = await res.json();
+    const res = await base44.functions.invoke('kaiLearn', { url });
+    const data = res.data;
 
     setMessages(prev => prev.filter(m => m.role !== 'action'));
 
-    const content = data.content || data.text || '';
-    const author = data.author || '';
-    const title = data.title || '';
-
-    if (!content || content.includes('Could not extract tweet content')) {
-      addAssistantMessage(`❌ Couldn't fetch that tweet — it may be deleted, private, or the URL is invalid.\n\n🔗 ${url}`);
+    if (!data.success) {
+      addAssistantMessage(`⚠️ ${data.error || "That tweet is deleted, private, or doesn't exist."}\n\n🔗 ${url}`);
       return;
     }
 
-    // Summarize with LLM if user asked a question beyond just pasting
+    const content = data.content || data.summary || '';
+    const title = data.source_title || '';
+    const linkedPages = data.linked_pages || [];
+    const cached = data.cached || false;
+    const wordCount = data.word_count || 0;
+    const chunks = data.chunks_stored || 0;
+
+    // Build narration
+    let msg = '';
+    if (cached) {
+      msg = `🧠 **Already in my memory** — here's what I know:\n\n${content}`;
+    } else {
+      msg = `🐦 **${title}**\n\n${content}`;
+    }
+
+    // Show linked pages if any
+    if (linkedPages.length > 0) {
+      msg += `\n\n🌐 **Also scraped ${linkedPages.length} linked page(s):**`;
+      for (const page of linkedPages) {
+        msg += `\n  • "${page.title || 'Untitled'}" — ${page.url || ''}`;
+      }
+    }
+
+    msg += `\n\n📊 ${wordCount.toLocaleString()} words → ${chunks} knowledge block(s) saved`;
+    msg += `\n\n✅ All saved to memory. Ask me anything about it!`;
+
+    // If user also asked a question alongside the URL
     const userQuestion = userMsg.replace(/(https?:\/\/[^\s]+)/i, '').trim();
-    const hasQuestion = userQuestion.length > 5;
-
-    if (hasQuestion) {
+    if (userQuestion.length > 5) {
       const analysis = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are KAI. A user pasted a tweet and asked: "${userQuestion}"
-
-Tweet content:
-${content}
-
-${author ? `Author: ${author}` : ''}
-${title ? `Title: ${title}` : ''}
-
-Answer the user's question based on the tweet. Quote relevant parts. Be direct.${speedInstruction}`,
+        prompt: `You are KAI. A user pasted a tweet and asked: "${userQuestion}"\n\nTweet content:\n${content}\n\nAnswer based on the tweet. Quote relevant parts. Be direct.${speedInstruction}`,
         model: 'gemini_3_flash',
       });
-      addAssistantMessage(`🐦 ${author ? `**@${author}**` : '**Tweet**'}${title ? ` · ${title}` : ''}\n\n${analysis}`);
-    } else {
-      addAssistantMessage(`🐦 ${author ? `**@${author}**` : '**Tweet fetched**'}${title ? ` · ${title}` : ''}\n\n${content}\n\n🔗 ${url}\n\nAsk me anything about it or say **"learn this"** to save it to my brain. 🧠`);
+      msg += `\n\n---\n\n${analysis}`;
     }
+
+    addAssistantMessage(msg);
   } catch {
     setMessages(prev => prev.filter(m => m.role !== 'action'));
-    addAssistantMessage(`❌ Couldn't fetch that tweet. The service might be temporarily unavailable. Try again in a moment.\n\n🔗 ${url}`);
+    addAssistantMessage(`❌ Couldn't fetch that tweet. Try again in a moment.\n\n🔗 ${url}`);
   }
 };
 
@@ -683,7 +695,7 @@ ${TTT_APP_DOCS}
 - When user says "watch that" or "learn from that" — grab the URL from the previous response and call kaiLearn immediately.
 - After ingesting a video — confirm it's stored and offer to answer questions or build from it.
 - For any non-YouTube, non-X URL: use kaiBrowse to scrape and save the page.
-- For X.com/Twitter links: call kaspaContext?tweet=<url> to fetch directly. NEVER tell users to go to another app.
+- For X.com/Twitter links: call kaiLearn with the URL — it handles everything (fetch, scrape linked pages, save to memory). NEVER redirect users anywhere.
 - For kaspaContext: use q= param for specific authors/topics, feed= for category queries.
 - You are Kai. Always.${feedContext}
 
@@ -725,7 +737,7 @@ HARD RULES:
 - When user says "watch that" or "learn from that" — grab the URL from the previous response and call kaiLearn immediately.
 - After ingesting a video — confirm it's stored and offer to answer questions or build from it.
 - For any non-YouTube, non-X URL: use kaiBrowse to scrape and save the page.
-- For X.com/Twitter links: call kaspaContext?tweet=<url> to fetch directly. NEVER tell users to go to another app.
+- For X.com/Twitter links: call kaiLearn with the URL — it handles everything (fetch, scrape linked pages, save to memory). NEVER redirect users anywhere.
 - For kaspaContext: use q= param for specific authors/topics, feed= for category queries.
 
 You have real-time internet access — ALWAYS use it for Kaspa-related questions to ensure accuracy. Be concise, accurate, friendly. Use emojis occasionally. Always refer to TTT as the platform/app name, never as "Trust The Tech." When recommending apps, use the EXACT descriptions from the docs above.${feedContext}
