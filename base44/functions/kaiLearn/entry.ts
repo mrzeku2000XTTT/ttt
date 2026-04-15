@@ -51,27 +51,38 @@ Deno.serve(async (req) => {
       // Regular URL
       sourceType = 'article';
       let html = '';
+      let isCloudflareBlocked = false;
       try {
         const pageRes = await fetch(url, {
-          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; KaiBot/1.0)' },
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
           redirect: 'follow',
           signal: AbortSignal.timeout(10000),
         });
         html = await pageRes.text();
-        const titleMatch = html.match(/<title>([^<]*)<\/title>/);
-        sourceTitle = titleMatch ? titleMatch[1].trim() : url;
-      } catch {
+        // Detect Cloudflare challenge or captcha pages
+        isCloudflareBlocked = html.includes('Just a moment') || html.includes('cf-browser-verification') || html.includes('_cf_chl_opt');
+        if (!isCloudflareBlocked) {
+          const titleMatch = html.match(/<title>([^<]*)<\/title>/);
+          sourceTitle = titleMatch ? titleMatch[1].trim() : url;
+        } else {
+          console.log('Cloudflare block detected for URL:', url);
+          html = '';
+        }
+      } catch (e) {
+        console.log('Direct fetch failed for URL:', url, e.message || e);
         // Direct fetch failed, use LLM with internet
       }
 
       try {
-        const prompt = html.length > 200
+        // Use LLM with internet when we have no usable HTML content
+        const useInternet = !html || html.length <= 200 || isCloudflareBlocked;
+        const prompt = !useInternet
           ? `Extract all the important information, facts, and key content from this webpage. Be thorough. URL: ${url}\n\nRaw HTML (first 15000 chars):\n${html.slice(0, 15000)}`
-          : `Read and extract all the key information from this URL: ${url}. Be thorough and detailed.`;
+          : `Read and extract ALL the key information, facts, and content from this URL: ${url}\n\nBe thorough and detailed. Include main topics, key facts, data points, names, and any important details.`;
 
         const extracted = await base44.asServiceRole.integrations.Core.InvokeLLM({
           prompt,
-          add_context_from_internet: html.length <= 200,
+          add_context_from_internet: useInternet,
           model: 'gemini_3_flash',
         });
         content = extracted;
