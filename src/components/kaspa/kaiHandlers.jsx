@@ -363,50 +363,68 @@ export const handleTrainOnContent = async (userMsg, { setMessages, addAssistantM
   }
 
   const isYouTube = url && (url.includes('youtube.com') || url.includes('youtu.be'));
-  setMessages(prev => [...prev, { role: "action", content: url ? (isYouTube ? "📺 Analyzing YouTube video with AI (this takes ~30-60s)…" : `🔍 Fetching content from URL…`) : "🧠 Processing your text…" }]);
-
-  // For YouTube, show rotating progress messages while waiting
-  let progressInterval = null;
-  if (isYouTube) {
-    const progressSteps = [
-      "🔍 Identifying video content…",
-      "🧠 Reading transcript with AI…",
-      "📊 Extracting key information…",
-      "💾 Processing knowledge blocks…",
-    ];
-    let stepIdx = 0;
-    progressInterval = setInterval(() => {
-      stepIdx = (stepIdx + 1) % progressSteps.length;
-      setMessages(prev => {
-        const filtered = prev.filter(m => m.role !== 'action');
-        return [...filtered, { role: "action", content: progressSteps[stepIdx] }];
-      });
-    }, 8000);
-  }
+  setMessages(prev => [...prev, { role: "action", content: isYouTube ? "📺 Queuing YouTube transcript…" : "🔍 Fetching content from URL…" }]);
 
   try {
     const res = await base44.functions.invoke('kaiLearn', { url, rawText });
-    if (progressInterval) clearInterval(progressInterval);
     const data = res.data;
-    if (!data.success) {
-      setMessages(prev => prev.filter(m => m.role !== 'action'));
-      addAssistantMessage("❌ Couldn't process that content. Try a different URL or paste the text directly.");
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+
+    // Show narration steps if provided
+    if (data.narration) {
+      for (const line of data.narration) {
+        setMessages(prev => [...prev, { role: "action", content: line }]);
+        await new Promise(r => setTimeout(r, 700));
+        setMessages(prev => prev.filter(m => m.role !== 'action'));
+      }
+    }
+
+    // YouTube pending — poll up to 3x with 10s delay
+    if (data.status === 'pending' && isYouTube) {
+      setMessages(prev => [...prev, { role: "action", content: "⏳ Transcript is being fetched — polling in 10s…" }]);
+      let pollData = data;
+      for (let i = 0; i < 3; i++) {
+        await new Promise(r => setTimeout(r, 10000));
+        setMessages(prev => {
+          const filtered = prev.filter(m => m.role !== 'action');
+          return [...filtered, { role: "action", content: `🔄 Checking transcript… (attempt ${i + 1}/3)` }];
+        });
+        const pollRes = await base44.functions.invoke('kaiLearn', { url, poll: true });
+        pollData = pollRes.data;
+        setMessages(prev => prev.filter(m => m.role !== 'action'));
+        if (pollData.status === 'ready' || pollData.status === 'no_captions' || pollData.status === 'failed') break;
+      }
+
+      if (pollData.status === 'ready') {
+        if (pollData.narration) {
+          for (const line of pollData.narration) {
+            setMessages(prev => [...prev, { role: "action", content: line }]);
+            await new Promise(r => setTimeout(r, 600));
+            setMessages(prev => prev.filter(m => m.role !== 'action'));
+          }
+        }
+        addAssistantMessage(
+          `✅ **Got it. Transcript loaded.**\n\n📺 **${pollData.title}**\n📊 ${(pollData.wordCount || 0).toLocaleString()} words → ${(pollData.chunks || []).length} knowledge blocks\n\nAsk me anything about it — or say **"now build something based on what you learned"** and I'll write the code.`
+        );
+      } else if (pollData.status === 'no_captions') {
+        addAssistantMessage(`📺 **${pollData.title}**\n\n⚠️ This video doesn't have captions available, so I can't get a full transcript. Ask me questions about it and I'll use the title and context to help.`);
+      } else {
+        addAssistantMessage(`⏳ Transcript is still processing for **${pollData.title || 'this video'}**. Try again in 30 seconds — just paste the URL again.`);
+      }
       return;
     }
-    setMessages(prev => prev.filter(m => m.role !== 'action'));
-    const foundMsg = isYouTube ? `📺 Found: "${data.source_title}"` : `📄 Found: "${data.source_title}" (${data.source_type})`;
-    setMessages(prev => [...prev, { role: "action", content: foundMsg }]);
-    await new Promise(r => setTimeout(r, 700));
-    setMessages(prev => prev.filter(m => m.role !== 'action'));
-    setMessages(prev => [...prev, { role: "action", content: `📝 ${isYouTube ? 'Transcript' : 'Content'} extracted — ${data.word_count.toLocaleString()} words` }]);
-    await new Promise(r => setTimeout(r, 700));
-    setMessages(prev => prev.filter(m => m.role !== 'action'));
-    setMessages(prev => [...prev, { role: "action", content: `💾 Stored ${data.chunks_stored} knowledge blocks to memory` }]);
-    await new Promise(r => setTimeout(r, 600));
-    setMessages(prev => prev.filter(m => m.role !== 'action'));
-    addAssistantMessage(`✅ **Done. I've learned this.**\n\n📄 **${data.source_title}**\n📊 ${data.word_count.toLocaleString()} words → ${data.chunks_stored} knowledge blocks\n💡 ${data.summary}\n\nAsk me anything about it — or say **"now build something based on what you learned"** and I'll write the code.`);
+
+    // Ready immediately (cached or web scrape)
+    if (data.status === 'ready') {
+      addAssistantMessage(
+        `✅ **Done. I've learned this.**\n\n${data.type === 'youtube' ? '📺' : '🌐'} **${data.title}**\n📊 ${(data.wordCount || 0).toLocaleString()} words → ${(data.chunks || []).length} knowledge blocks\n\nAsk me anything about it — or say **"now build something based on what you learned"** and I'll write the code.`
+      );
+      return;
+    }
+
+    // Fallback error
+    addAssistantMessage("❌ Couldn't process that content. Try a different URL or paste the text directly.");
   } catch {
-    if (progressInterval) clearInterval(progressInterval);
     setMessages(prev => prev.filter(m => m.role !== 'action'));
     addAssistantMessage("❌ Something went wrong while learning that. Try again or paste the text directly.");
   }
