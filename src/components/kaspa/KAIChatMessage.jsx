@@ -5,33 +5,9 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { KAIBlocksAnimation } from "./KAIAnimations";
 import { setKaSshiGlobal, markKaSshiInlineVisited } from "@/components/KaSshiPlayer";
-import { TweetCard, VideoCard, RedditCard } from "./KAINewsCard";
 
 export default function KAIChatMessage({ msg, index, typingIndex, typingText, setIsOpen, setBrowserUrl, setShowBrowser }) {
   const navigate = useNavigate();
-
-  const handleViewInBrowser = (url) => {
-    setBrowserUrl(url);
-    setShowBrowser(true);
-  };
-
-  // Rich news card rendering
-  if (msg.role === "news_cards") {
-    return (
-      <div className="flex justify-start">
-        <div className="max-w-[90%] space-y-2">
-          <div className="text-[11px] font-bold text-cyan-400/80 px-1">📰 {msg.label} ({msg.posts.length})</div>
-          <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 scrollbar-hide">
-            {msg.posts.map((post, i) => {
-              if (msg.feedType === 'videos') return <VideoCard key={i} video={post} onViewInBrowser={handleViewInBrowser} />;
-              if (msg.feedType === 'reddit') return <RedditCard key={i} post={post} onViewInBrowser={handleViewInBrowser} />;
-              return <TweetCard key={i} post={post} onViewInBrowser={handleViewInBrowser} />;
-            })}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (msg.role === "action") {
     return (

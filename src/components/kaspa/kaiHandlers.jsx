@@ -132,72 +132,31 @@ export const handleBuildRequest = async (userMsg, { setMessages, addAssistantMes
   }
 };
 
-// Detect which kaspa.news feed to call based on user intent
-const detectNewsFeed = (msg) => {
-  const lower = msg.toLowerCase();
-  if (['builder', 'project', 'ecosystem', 'launch'].some(kw => lower.includes(kw)))
-    return { url: 'https://kaspa.news/api/builder-tweets', field: 'tweets', label: 'Builder Updates' };
-  if (['developer', 'dev ', 'devs', 'code', 'github', 'protocol'].some(kw => lower.includes(kw)))
-    return { url: 'https://kaspa.news/api/developer-tweets', field: 'tweets', label: 'Developer Updates' };
-  if (['video', 'youtube', 'watch'].some(kw => lower.includes(kw)))
-    return { url: 'https://kaspa.news/api/kaspa-videos', field: 'videos', label: 'Kaspa Videos', type: 'videos' };
-  if (['reddit', 'discussion'].some(kw => lower.includes(kw)))
-    return { url: 'https://kaspa.news/api/reddit-posts', field: 'posts', label: 'Reddit Discussions', type: 'reddit' };
-  if (['pulse', 'report', 'digest', 'ai summary'].some(kw => lower.includes(kw)))
-    return { url: 'https://kaspa.news/api/reports', field: 'report', label: 'AI Pulse Report', type: 'pulse' };
-  // Default: focused tweets
-  return { url: 'https://kaspa.news/api/focused-tweets', field: 'tweets', label: 'Latest Community Posts' };
-};
-
-// Normalize kaspa.news tweet format to flat card-friendly shape
-const normalizeTweet = (t) => ({
-  author_username: t.author?.username || t.author || 'Unknown',
-  author_name: t.author?.name || t.author?.username || t.author || '',
-  author_avatar: t.author?.profile_image_url || '',
-  text: t.text || '',
-  url: t.url || '',
-  likes: t.public_metrics?.like_count ?? t.likes ?? 0,
-  reposts: t.public_metrics?.retweet_count ?? t.reposts ?? 0,
-  views: t.public_metrics?.view_count ?? t.views ?? 0,
-  published_at: t.createdAt || t.published_at || '',
-  thumbnail: t.thumbnail || '',
-});
-
-// Kaspa news posts — rich card rendering
-export const handleKaspaNews = async (userMsg, { setMessages, addAssistantMessage }) => {
-  const feed = detectNewsFeed(userMsg || '');
-  setMessages(prev => [...prev, { role: "action", content: `📡 Fetching ${feed.label} from kaspa.news…` }]);
+// Kaspa news posts
+export const handleKaspaNews = async ({ setMessages, addAssistantMessage }) => {
+  setMessages(prev => [...prev, { role: "action", content: "📡 Fetching latest Kaspa posts…" }]);
   try {
-    const res = await fetch(feed.url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const res = await fetch('https://kaspa-b3ad561a.base44.app/functions/kaspaContext?format=json&limit=15');
     const data = await res.json();
+    const posts = data?.items || (Array.isArray(data) ? data : []);
     setMessages(prev => prev.filter(m => m.role !== 'action'));
-
-    // Pulse / report → plain text summary
-    if (feed.type === 'pulse') {
-      const report = data?.report || data?.summary || (typeof data === 'string' ? data : JSON.stringify(data));
-      addAssistantMessage(`📊 **AI Pulse Report:**\n\n${typeof report === 'string' ? report : report?.summary || JSON.stringify(report)}`);
-      return;
-    }
-
-    // Get items from the correct field
-    const raw = data?.[feed.field] || data?.items || (Array.isArray(data) ? data : []);
-    const top = raw.slice(0, 8).map(normalizeTweet);
-
-    if (top.length > 0) {
-      setMessages(prev => [...prev, {
-        role: "news_cards",
-        feedType: feed.type || 'tweets',
-        label: feed.label,
-        posts: top,
-      }]);
+    if (posts.length > 0) {
+      const postList = posts.map((p, i) => {
+        const author = p.author_username || p.author || 'Unknown';
+        const text = (p.text || p.content || '').slice(0, 200);
+        const url = p.url || '';
+        const likes = p.likes || 0;
+        const reposts = p.reposts || 0;
+        const date = p.published_at ? new Date(p.published_at).toLocaleDateString() : '';
+        return `**${i + 1}. @${author}** ${date ? `(${date})` : ''}\n${text}${url ? `\n[View Post](${url})` : ''}\n❤️ ${likes} · 🔁 ${reposts}`;
+      }).join('\n\n---\n\n');
+      addAssistantMessage(`📰 **Latest ${posts.length} Kaspa Posts:**\n\n${postList}`);
     } else {
-      addAssistantMessage(`No ${feed.label.toLowerCase()} found right now. Try again later! 📰`);
+      addAssistantMessage("Couldn't find any recent Kaspa posts right now. Try again later! 📰");
     }
-  } catch (err) {
-    console.error('kaspa.news fetch error:', err);
+  } catch {
     setMessages(prev => prev.filter(m => m.role !== 'action'));
-    addAssistantMessage("❌ Couldn't fetch from kaspa.news. Try again!");
+    addAssistantMessage("❌ Couldn't fetch Kaspa news posts. Try again!");
   }
 };
 
