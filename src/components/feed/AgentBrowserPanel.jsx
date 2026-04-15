@@ -318,10 +318,12 @@ export default function AgentBrowserPanel({ url: initialUrl }) {
             title="Browser"
           />
 
-          {/* AI Cursor overlay — pointer-events: none so it doesn't block clicks */}
-          <div className="absolute inset-0 pointer-events-none z-10">
-            <AICursor x={cursorPos.x} y={cursorPos.y} visible={cursorVisible} />
-          </div>
+          {/* AI Cursor overlay — only visible during animation, then hides so iframe is clickable */}
+          {phase !== "done" && (
+            <div className="absolute inset-0 pointer-events-none z-10">
+              <AICursor x={cursorPos.x} y={cursorPos.y} visible={cursorVisible} />
+            </div>
+          )}
         </div>
 
         {/* Status bar */}
@@ -332,6 +334,33 @@ export default function AgentBrowserPanel({ url: initialUrl }) {
             <div className={`w-1.5 h-1.5 rounded-full ${loading ? "bg-yellow-400 animate-pulse" : "bg-emerald-400"}`} />
             <span className="text-[8px] text-white/30">{loading ? "Loading" : "Live"}</span>
           </div>
+        </div>
+      </div>
+
+      {/* URL / Search input */}
+      <div className="flex items-center gap-1.5">
+        <div className="flex-1 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg"
+          style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
+          <Globe className="w-3 h-3 text-white/25 flex-shrink-0" />
+          <input
+            type="text"
+            placeholder="Search or enter URL…"
+            className="flex-1 bg-transparent text-[11px] text-white/80 outline-none placeholder-white/25"
+            style={{ fontSize: "16px" }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && e.target.value.trim()) {
+                const val = e.target.value.trim();
+                let url;
+                if (/^https?:\/\//i.test(val)) url = val;
+                else if (/^www\./i.test(val)) url = `https://${val}`;
+                else if (/\.\w{2,}/.test(val) && !val.includes(" ")) url = `https://${val}`;
+                else url = `https://www.google.com/search?igu=1&q=${encodeURIComponent(val)}`;
+                navigateTo(url);
+                e.target.value = "";
+                e.target.blur();
+              }
+            }}
+          />
         </div>
       </div>
 
