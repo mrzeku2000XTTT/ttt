@@ -220,7 +220,7 @@ Write at least 200 words of real, useful content. Be comprehensive. Output ONLY 
 
   setMessages(prev => prev.filter(m => m.role !== 'action'));
 
-  if (!data.success || !data.data_url) {
+  if (!data.success || !data.file_url) {
     addAssistantMessage(`❌ Couldn't generate the document. Try again!`);
     return;
   }
@@ -228,7 +228,8 @@ Write at least 200 words of real, useful content. Be comprehensive. Output ONLY 
   setMessages(prev => [...prev, {
     role: "pdf_preview",
     content: `${title} — ${type} ready!`,
-    data_url: data.data_url,
+    file_url: data.file_url,
+    pdf_title: title,
   }]);
 };
 

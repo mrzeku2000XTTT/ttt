@@ -76,11 +76,35 @@ export default function KAIChatMessage({ msg, index, typingIndex, typingText, se
         <div className="text-[12px] font-semibold px-1" style={{ color: "rgba(6,182,212,0.9)" }}>
           📄 {msg.content}
         </div>
-        <div className="rounded-xl overflow-hidden w-full" style={{ border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 4px 20px rgba(0,0,0,0.3)" }}>
-          <iframe src={msg.data_url} width="100%" height="480" style={{ border: "none", display: "block" }} title="Document Preview" />
-        </div>
-        <div className="text-[11px] px-1" style={{ color: "rgba(255,255,255,0.4)" }}>
-          Click 🖨️ Print / Save as PDF inside the document to download it.
+        <div className="rounded-xl p-4 flex flex-col gap-3" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-12 rounded flex items-center justify-center flex-shrink-0" style={{ background: "rgba(37,99,235,0.2)", border: "1px solid rgba(37,99,235,0.4)" }}>
+              <span style={{ fontSize: 20 }}>📄</span>
+            </div>
+            <div>
+              <div className="text-white text-[13px] font-semibold">{msg.pdf_title || 'Document'}.pdf</div>
+              <div className="text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>PDF Document · Ready to download</div>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <a
+              href={msg.file_url}
+              download={`${msg.pdf_title || 'document'}.pdf`}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-[12px] font-semibold transition-all hover:scale-105"
+              style={{ background: "rgba(37,99,235,0.3)", border: "1px solid rgba(37,99,235,0.5)", color: "rgba(147,197,253,1)", textDecoration: "none" }}
+            >
+              ⬇️ Download PDF
+            </a>
+            <a
+              href={msg.file_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-[12px] font-semibold transition-all hover:scale-105"
+              style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.8)", textDecoration: "none" }}
+            >
+              👁️ Open PDF
+            </a>
+          </div>
         </div>
       </div>
     );
