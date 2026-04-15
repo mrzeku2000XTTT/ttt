@@ -4,6 +4,7 @@ import { X, Send, Loader2, Minus, Settings, ImagePlus, FileImage } from "lucide-
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import ReactMarkdown from "react-markdown";
 import { setKaSshiGlobal, markKaSshiInlineVisited } from "@/components/KaSshiPlayer";
 import AgentBrowserPanel from "@/components/feed/AgentBrowserPanel";
 
@@ -453,7 +454,7 @@ export default function KaspaAvatarChat() {
           } else {
             // Use LLM to format the response nicely
             const formatted = await base44.integrations.Core.InvokeLLM({
-              prompt: `You are KAI, the Kaspa AI assistant. Format this blockchain data into a clear, readable response with emojis. Be concise but complete. Include the explorer link at the end.\n\nData:\n${JSON.stringify(data, null, 2)}${speedInstruction}`,
+              prompt: `You are KAI, the Kaspa AI assistant. Format this blockchain data into a clean, readable response. Use markdown links like [Explorer](url) for links. Use emojis sparingly. Be concise. Amounts should show KAS units.\n\nData:\n${JSON.stringify(data, null, 2)}${speedInstruction}`,
             });
             addAssistantMessage(formatted);
           }
@@ -929,16 +930,16 @@ Respond as KAI:${speedInstruction}`;
                     </motion.div>
                   ) : (
                     <div
-                      className="max-w-[85%] text-sm leading-relaxed px-3 py-2 rounded-2xl"
+                      className="max-w-[85%] text-[13px] leading-relaxed px-3.5 py-2.5 rounded-2xl"
                       style={msg.role === "user" ? {
-                        background: "rgba(6,182,212,0.25)",
+                        background: "rgba(6,182,212,0.2)",
                         color: "rgba(255,255,255,0.95)",
-                        borderBottomRightRadius: "6px",
+                        borderBottomRightRadius: "4px",
                       } : {
-                        background: "rgba(255,255,255,0.07)",
+                        background: "rgba(255,255,255,0.05)",
                         color: "rgba(255,255,255,0.85)",
-                        border: "1px solid rgba(255,255,255,0.08)",
-                        borderBottomLeftRadius: "6px",
+                        border: "1px solid rgba(255,255,255,0.06)",
+                        borderBottomLeftRadius: "4px",
                       }}
                     >
                       {msg.images && msg.images.length > 0 && (
@@ -948,7 +949,24 @@ Respond as KAI:${speedInstruction}`;
                           ))}
                         </div>
                       )}
-                      {typingIndex === i ? (typingText || "") : msg.content}
+                      {msg.role === "assistant" ? (
+                        <ReactMarkdown
+                          className="kai-md text-[13px] leading-relaxed [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+                          components={{
+                            p: ({ children }) => <p className="my-1">{children}</p>,
+                            a: ({ children, href }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-cyan-300 underline underline-offset-2 break-all">{children}</a>,
+                            strong: ({ children }) => <span className="font-semibold text-white/95">{children}</span>,
+                            ul: ({ children }) => <ul className="my-1 ml-3 list-disc text-white/70">{children}</ul>,
+                            ol: ({ children }) => <ol className="my-1 ml-3 list-decimal text-white/70">{children}</ol>,
+                            li: ({ children }) => <li className="my-0.5">{children}</li>,
+                            code: ({ children }) => <code className="px-1 py-0.5 rounded bg-white/10 text-cyan-300 text-[11px] font-mono">{children}</code>,
+                          }}
+                        >
+                          {typingIndex === i ? (typingText || "") : msg.content}
+                        </ReactMarkdown>
+                      ) : (
+                        <span>{typingIndex === i ? (typingText || "") : msg.content}</span>
+                      )}
                       {typingIndex === i && <span className="inline-block w-[2px] h-[14px] bg-cyan-400 ml-0.5 animate-pulse align-middle" />}
                       {msg.kasshiAction && (
                         <div className="mt-2">
