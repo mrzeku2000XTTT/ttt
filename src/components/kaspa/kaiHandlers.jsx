@@ -164,20 +164,8 @@ export const handleKaspaVideos = async ({ setMessages, addAssistantMessage }) =>
   }
 };
 
-// "Watch that" / "learn from that" — ingest a video from the last video feed
+// "Watch that" / "learn from that" — open video + ingest if logged in
 export const handleWatchThat = async (userMsg, messages, { setMessages, addAssistantMessage }) => {
-  // Check if user is connected — ingestion requires auth for memory storage
-  try {
-    const isAuth = await base44.auth.isAuthenticated();
-    if (!isAuth) {
-      addAssistantMessage("You need to **connect your wallet** for me to watch and learn videos — I store the knowledge in your personal brain. Connect your TTT wallet and try again! 🧠");
-      return;
-    }
-  } catch {
-    addAssistantMessage("You need to **connect your wallet** for me to watch and learn videos. Connect your TTT wallet and try again! 🧠");
-    return;
-  }
-
   // Find the last video_posts message to get the URL
   const lastVideoMsg = [...messages].reverse().find(m => m.role === "video_posts");
   if (!lastVideoMsg || !lastVideoMsg.videos?.length) {
@@ -191,11 +179,27 @@ export const handleWatchThat = async (userMsg, messages, { setMessages, addAssis
   const videoTitle = video.text || video.title || "Untitled";
 
   if (!videoUrl) {
-    addAssistantMessage("That video doesn't have a URL I can ingest. Try another one.");
+    addAssistantMessage("That video doesn't have a URL I can play. Try another one.");
     return;
   }
 
-  // Narrate the ingestion flow
+  // Check if user is authenticated — ingestion requires auth for memory storage
+  let isAuth = false;
+  try {
+    isAuth = await base44.auth.isAuthenticated();
+  } catch { /* not authenticated */ }
+
+  // If not authenticated, just open the video for viewing
+  if (!isAuth) {
+    setMessages(prev => [...prev, {
+      role: "assistant",
+      content: `📺 **${videoTitle}**\n\nOpened for you below! To also **learn** from this video (ingest transcript into my brain), connect your TTT wallet first. 🧠`,
+      browserLink: videoUrl,
+    }]);
+    return;
+  }
+
+  // Authenticated — proceed with full ingest flow
   setMessages(prev => [...prev, { role: "action", content: `🔍 Fetching video…` }]);
   await new Promise(r => setTimeout(r, 500));
   setMessages(prev => prev.filter(m => m.role !== 'action'));
