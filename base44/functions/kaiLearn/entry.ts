@@ -91,26 +91,47 @@ Deno.serve(async (req) => {
         }, { headers: { 'Access-Control-Allow-Origin': '*' } });
       }
 
-      // New video — get title via oEmbed, create pending record to trigger automation
+      // New video — get title via oEmbed
       let title = `YouTube ${youtubeId}`;
       try {
         const oe = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${youtubeId}&format=json`);
         if (oe.ok) { const d = await oe.json(); title = d.title || title; }
       } catch (_) {}
 
-      if (record) {
-        await entity.update(record.id, { status: 'pending', title });
-      } else {
-        await entity.create({ video_id: youtubeId, url, title, status: 'pending', description: '', language: 'en', is_generated: false });
+      // Route to Kaspa superagent — runs yt-transcript Python skill locally (no IP block)
+      const agentRes = await fetch('https://kaspa-b3ad561a.base44.app/functions/ytTranscript', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ video_id: youtubeId }),
+      });
+
+      if (!agentRes.ok) throw new Error('ytTranscript agent call failed');
+      const ytData = await agentRes.json();
+
+      if (ytData.error || !ytData.transcript) {
+        // No captions — save failed record so next call returns fast
+        await entity.create({ video_id: youtubeId, url, title, status: 'failed', language: 'en', is_generated: false });
+        return Response.json({
+          type: 'youtube', status: 'no_captions', videoId: youtubeId, title,
+          narration: [`📺 "${title}"`, `⚠️ No captions available.`, `💡 Ask me anything and I'll work with context.`],
+        }, { headers: { 'Access-Control-Allow-Origin': '*' } });
       }
 
+      // Save transcript and return ready
+      const transcript = ytData.transcript;
+      const wordCount = ytData.word_count || transcript.split(/\s+/).filter(w => w.length > 0).length;
+      const chunks = chunkText(transcript);
+
+      await entity.create({
+        video_id: youtubeId, url, title, transcript, language: ytData.language_code || 'en',
+        word_count: wordCount, chunk_count: chunks.length,
+        is_generated: ytData.is_generated ?? true, status: 'ready', chunks,
+      });
+
       return Response.json({
-        type: 'youtube', status: 'pending', videoId: youtubeId, title,
-        narration: [
-          `🎬 Got it: "${title}"`,
-          `⏳ Fetching transcript now — takes ~10-15 seconds.`,
-          `💡 Re-call with { "url": "${url}", "poll": true } to check when ready.`
-        ],
+        type: 'youtube', status: 'ready', videoId: youtubeId, title,
+        wordCount, content: transcript, chunks,
+        narration: [`🎬 Learned: "${title}"`, `📝 ${wordCount} words · ${chunks.length} blocks`, `✅ Ask me anything about this video.`],
       }, { headers: { 'Access-Control-Allow-Origin': '*' } });
     }
 

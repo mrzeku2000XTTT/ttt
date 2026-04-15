@@ -379,42 +379,7 @@ export const handleTrainOnContent = async (userMsg, { setMessages, addAssistantM
       }
     }
 
-    // YouTube pending — poll up to 3x with 10s delay
-    if (data.status === 'pending' && isYouTube) {
-      setMessages(prev => [...prev, { role: "action", content: "⏳ Transcript is being fetched — polling in 10s…" }]);
-      let pollData = data;
-      for (let i = 0; i < 3; i++) {
-        await new Promise(r => setTimeout(r, 10000));
-        setMessages(prev => {
-          const filtered = prev.filter(m => m.role !== 'action');
-          return [...filtered, { role: "action", content: `🔄 Checking transcript… (attempt ${i + 1}/3)` }];
-        });
-        const pollRes = await base44.functions.invoke('kaiLearn', { url, poll: true });
-        pollData = pollRes.data;
-        setMessages(prev => prev.filter(m => m.role !== 'action'));
-        if (pollData.status === 'ready' || pollData.status === 'no_captions' || pollData.status === 'failed') break;
-      }
-
-      if (pollData.status === 'ready') {
-        if (pollData.narration) {
-          for (const line of pollData.narration) {
-            setMessages(prev => [...prev, { role: "action", content: line }]);
-            await new Promise(r => setTimeout(r, 600));
-            setMessages(prev => prev.filter(m => m.role !== 'action'));
-          }
-        }
-        addAssistantMessage(
-          `✅ **Got it. Transcript loaded.**\n\n📺 **${pollData.title}**\n📊 ${(pollData.wordCount || 0).toLocaleString()} words → ${(pollData.chunks || []).length} knowledge blocks\n\nAsk me anything about it — or say **"now build something based on what you learned"** and I'll write the code.`
-        );
-      } else if (pollData.status === 'no_captions') {
-        addAssistantMessage(`📺 **${pollData.title}**\n\n⚠️ This video doesn't have captions available, so I can't get a full transcript. Ask me questions about it and I'll use the title and context to help.`);
-      } else {
-        addAssistantMessage(`⏳ Transcript is still processing for **${pollData.title || 'this video'}**. Try again in 30 seconds — just paste the URL again.`);
-      }
-      return;
-    }
-
-    // Ready immediately (cached or web scrape)
+    // Ready immediately (cached, direct fetch, or web scrape)
     if (data.status === 'ready') {
       addAssistantMessage(
         `✅ **Done. I've learned this.**\n\n${data.type === 'youtube' ? '📺' : '🌐'} **${data.title}**\n📊 ${(data.wordCount || 0).toLocaleString()} words → ${(data.chunks || []).length} knowledge blocks\n\nAsk me anything about it — or say **"now build something based on what you learned"** and I'll write the code.`
