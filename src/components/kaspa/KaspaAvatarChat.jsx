@@ -133,6 +133,12 @@ const IMAGE_KEYWORDS = [
   "let's draw", 'lets draw', 'can you draw', 'draw me', 'draw a', 'draw an',
   'show me', 'visualize', 'picture of', 'image of', 'art of', 'xunhua'
 ];
+const KASPA_NEWS_KEYWORDS = [
+  'kaspa news', 'latest post', 'recent post', 'kaspa posts', 'x posts',
+  'twitter posts', 'kaspa tweets', 'latest tweets', 'recent tweets',
+  'show me posts', 'list posts', 'kaspa x', 'news posts', 'what are people posting',
+  'latest kaspa', 'recent kaspa news', 'kaspa feed'
+];
 const SEARCH_KEYWORDS = [
   'search', 'google', 'look up', 'lookup', 'find out', 'who is',
   'when did', 'price of', 'latest news',
@@ -627,6 +633,36 @@ export default function KaspaAvatarChat() {
       } catch (err) {
         setMessages(prev => prev.filter(m => m.role !== 'action'));
         addAssistantMessage("❌ Couldn't prepare the build context. Try describing what you want to build in more detail.");
+      }
+      setIsLoading(false);
+      return;
+    }
+
+    // Kaspa news / X posts — fetch and list actual posts
+    const isKaspaNewsRequest = KASPA_NEWS_KEYWORDS.some(kw => userMsg.toLowerCase().includes(kw));
+    if (isKaspaNewsRequest) {
+      setMessages(prev => [...prev, { role: "action", content: "📡 Fetching latest Kaspa posts…" }]);
+      try {
+        const res = await fetch('https://kaspa-b3ad561a.base44.app/functions/kaspaContext?format=json&limit=15');
+        const posts = await res.json();
+        setMessages(prev => prev.filter(m => m.role !== 'action'));
+        if (Array.isArray(posts) && posts.length > 0) {
+          const postList = posts.map((p, i) => {
+            const author = p.author_username || p.author || 'Unknown';
+            const text = (p.text || p.content || '').slice(0, 200);
+            const url = p.url || '';
+            const likes = p.likes || 0;
+            const reposts = p.reposts || 0;
+            const date = p.published_at ? new Date(p.published_at).toLocaleDateString() : '';
+            return `**${i + 1}. @${author}** ${date ? `(${date})` : ''}\n${text}${url ? `\n[View Post](${url})` : ''}\n❤️ ${likes} · 🔁 ${reposts}`;
+          }).join('\n\n---\n\n');
+          addAssistantMessage(`📰 **Latest ${posts.length} Kaspa Posts:**\n\n${postList}`);
+        } else {
+          addAssistantMessage("Couldn't find any recent Kaspa posts right now. Try again later! 📰");
+        }
+      } catch {
+        setMessages(prev => prev.filter(m => m.role !== 'action'));
+        addAssistantMessage("❌ Couldn't fetch Kaspa news posts. Try again!");
       }
       setIsLoading(false);
       return;
