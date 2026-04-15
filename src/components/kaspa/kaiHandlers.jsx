@@ -328,65 +328,127 @@ ${JSON.stringify(data, null, 2)}${speedInstruction}`,
   return true;
 };
 
-// User post analysis
+// Extract a search keyword/username from user message
+export const extractSearchKeyword = (msg) => {
+  const patterns = [
+    /what did @?(\S+) (say|post|write|tweet)/i,
+    /what has @?(\S+) (said|posted|written|tweeted)/i,
+    /what does @?(\S+) (say|post|think|write)/i,
+    /what is @?(\S+) (saying|posting|writing|tweeting)/i,
+    /what are @?(\S+) (saying|posting|writing|tweeting)/i,
+    /posts? (?:by|from) @?(\S+)/i,
+    /show (?:me )?posts? (?:by|from) @?(\S+)/i,
+    /check @?(\S+?)['']?s? posts/i,
+    /latest (?:from|by) @?(\S+)/i,
+    /find (?:posts? (?:by|from|about)|what) @?(\S+)/i,
+    /any (?:posts?|news|updates) (?:from|by|about) @?(\S+)/i,
+    /@(\S+)/,
+  ];
+  for (const pattern of patterns) {
+    const match = msg.match(pattern);
+    if (match) {
+      const keyword = match[1].replace(/[@'"?!.,]/g, '').trim();
+      if (keyword.length > 1) return keyword;
+    }
+  }
+  // Also try to extract topic keywords like "posts about Toccata", "news about KRC-20"
+  const topicPatterns = [
+    /(?:posts?|news|updates|info) about (.+?)(?:\?|$)/i,
+    /what's being said about (.+?)(?:\?|$)/i,
+    /what are people saying about (.+?)(?:\?|$)/i,
+  ];
+  for (const pattern of topicPatterns) {
+    const match = msg.match(pattern);
+    if (match) return match[1].trim();
+  }
+  return null;
+};
+
+// User post analysis — searches kaspaContext backend + local TTT feed
 export const handleUserPostAnalysis = async (userMsg, { setMessages, addAssistantMessage, isFast, speedInstruction }) => {
-  setMessages(prev => [...prev, { role: "action", content: "🔍 Searching TTT feed posts…" }]);
+  setMessages(prev => [...prev, { role: "action", content: "🔍 Searching posts…" }]);
+
+  const keyword = extractSearchKeyword(userMsg);
+  let kaspaContextPosts = '';
+  let tttFeedPosts = '';
+
   try {
-    // Try to extract a username from the message
-    const lower = userMsg.toLowerCase();
-    const usernamePatterns = [
-      /what did (\S+) (say|post|write)/i,
-      /what has (\S+) (said|posted|written)/i,
-      /what does (\S+) (say|post|think)/i,
-      /posts by (\S+)/i,
-      /show me posts from (\S+)/i,
-      /check (\S+)'?s? posts/i,
-      /@(\S+)/,
-    ];
-    let targetUser = null;
-    for (const pattern of usernamePatterns) {
-      const match = userMsg.match(pattern);
-      if (match) { targetUser = match[1].replace(/[@'"?!.,]/g, '').toLowerCase(); break; }
+    // 1. Search kaspaContext backend with q= param (external Kaspa news/X posts)
+    if (keyword) {
+      setMessages(prev => {
+        const filtered = prev.filter(m => m.role !== 'action');
+        return [...filtered, { role: "action", content: `🔍 Searching kaspa.news for "${keyword}"…` }];
+      });
+      try {
+        const res = await fetch(`${KASPA_CONTEXT_BASE}?q=${encodeURIComponent(keyword)}&format=feed&limit=10`);
+        if (res.ok) {
+          const text = await res.text();
+          if (text.trim() && !text.includes('No results')) {
+            kaspaContextPosts = text.trim();
+          }
+        }
+      } catch { /* kaspaContext search failed, continue */ }
     }
 
-    // Fetch posts — try to find the specific user's posts
-    const allPosts = await base44.entities.Post.list('-created_date', 100);
+    // 2. Also search local TTT feed posts
+    setMessages(prev => {
+      const filtered = prev.filter(m => m.role !== 'action');
+      return [...filtered, { role: "action", content: `🔍 Searching TTT feed…` }];
+    });
+    const allPosts = await base44.entities.Post.list('-created_date', 50);
     let relevantPosts = allPosts;
-    if (targetUser) {
-      const userPosts = allPosts.filter(p => 
-        p.author_name?.toLowerCase().includes(targetUser) ||
-        p.created_by?.toLowerCase().includes(targetUser)
+    if (keyword) {
+      const kw = keyword.toLowerCase();
+      const filtered = allPosts.filter(p =>
+        p.author_name?.toLowerCase().includes(kw) ||
+        p.created_by?.toLowerCase().includes(kw) ||
+        p.content?.toLowerCase().includes(kw)
       );
-      if (userPosts.length > 0) {
-        relevantPosts = userPosts;
-      }
+      if (filtered.length > 0) relevantPosts = filtered;
     }
-
-    const postData = relevantPosts.slice(0, 30).map(p => 
-      `[${p.author_name}] ${p.content?.slice(0, 200)}${p.media_files?.length ? ' [has media]' : ''} (${p.likes || 0} likes, ${p.comments_count || 0} comments, ${new Date(p.created_date).toLocaleDateString()})`
+    tttFeedPosts = relevantPosts.slice(0, 20).map(p =>
+      `[${p.author_name}] ${p.content?.slice(0, 200)} (${p.likes || 0} likes, ${new Date(p.created_date).toLocaleDateString()})`
     ).join('\n');
+
+    // 3. Combine and send to LLM
+    const combinedContext = [
+      kaspaContextPosts ? `=== KASPA NEWS / X POSTS (from kaspa.news) ===\n${kaspaContextPosts}` : '',
+      tttFeedPosts ? `=== TTT COMMUNITY FEED POSTS ===\n${tttFeedPosts}` : '',
+    ].filter(Boolean).join('\n\n');
+
+    if (!combinedContext.trim()) {
+      setMessages(prev => prev.filter(m => m.role !== 'action'));
+      addAssistantMessage(keyword
+        ? `I searched both kaspa.news and the TTT feed for "${keyword}" but couldn't find any matching posts. Try a different name or keyword.`
+        : "I couldn't find any relevant posts. Try being more specific about who or what you're looking for."
+      );
+      return;
+    }
 
     const analysis = await base44.integrations.Core.InvokeLLM({
       prompt: `You are KAI, the AI assistant of TTT — the Kaspa Super-App.
 
-Here are ${targetUser ? `posts by/mentioning "${targetUser}"` : 'recent posts'} from the TTT feed:
+The user asked: "${userMsg}"
+${keyword ? `Search keyword: "${keyword}"` : ''}
 
-${postData}
+Here are the actual posts found:
 
-User question: "${userMsg}"
+${combinedContext}
 
 RULES:
 - Answer ONLY based on the actual posts above. Do NOT make up or hallucinate content.
-- If you cannot find the specific user or content in the posts, say "I couldn't find posts by that user in the recent feed."
 - Quote the actual post content when referencing what someone said.
-- Be specific with usernames, dates, and content.${speedInstruction}`,
+- Include the author (@username), date, and engagement stats when available.
+- If showing X/Twitter posts, include the link if available.
+- Be specific. Cite exact text from the posts.
+- Distinguish between kaspa.news/X posts and TTT community feed posts.${speedInstruction}`,
       model: 'gemini_3_flash',
     });
     setMessages(prev => prev.filter(m => m.role !== 'action'));
     addAssistantMessage(analysis);
   } catch {
     setMessages(prev => prev.filter(m => m.role !== 'action'));
-    addAssistantMessage("Couldn't analyze posts right now. Try again! 🙏");
+    addAssistantMessage("Couldn't search posts right now. Try again! 🙏");
   }
 };
 

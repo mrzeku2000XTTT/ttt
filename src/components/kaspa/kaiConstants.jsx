@@ -116,11 +116,15 @@ export const FEED_KEYWORDS = [
 ];
 
 export const USER_POST_KEYWORDS = [
-  'posts by', 'analyze user', 'user posts',
+  'posts by', 'posts from', 'analyze user', 'user posts',
   'examine posts', 'who posted', 'show me posts from', 'check posts',
-  'what did', 'what has', 'what was', 'what does',
-  'say about', 'posted about', 'wrote about',
-  'check what', 'find what', 'show what'
+  'what did', 'what has', 'what was', 'what does', 'what is',
+  'what are', 'what\'s being said',
+  'say about', 'posted about', 'wrote about', 'tweeted about',
+  'check what', 'find what', 'show what',
+  'latest from @', 'posts about', 'news about', 'updates about',
+  'any posts from', 'any news from', 'anything from',
+  'said about', 'saying about', 'posting about',
 ];
 
 export const TRAIN_KEYWORDS = [
