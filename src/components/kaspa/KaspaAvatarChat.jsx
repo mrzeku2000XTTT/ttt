@@ -213,6 +213,18 @@ const detectExplorerAction = (msg) => {
   return null;
 };
 
+const TRAIN_KEYWORDS = [
+  'train yourself', 'train on this', 'learn this', 'study this', 'read this',
+  'watch this', 'ingest this', 'memorize this', 'remember this', 'learn from',
+  'train on', 'study from', 'read from', 'learn about this', 'absorb this',
+];
+
+const BRAIN_KEYWORDS = [
+  'what do you know', 'show me your brain', 'show your brain', 'your knowledge',
+  'what have you learned', 'your memory', 'show memory', 'list knowledge',
+  'what did you learn', 'knowledge base',
+];
+
 const BROWSE_KEYWORDS = [
   'browse', 'search for', 'look up', 'lookup', 'go to site', 'open link',
   'open site', 'open website', 'navigate to site', 'visit', 'load site',
@@ -358,6 +370,110 @@ export default function KaspaAvatarChat() {
   const isFeedRequest = (msg) => FEED_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
   const isUserPostRequest = (msg) => USER_POST_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
   const isSearchRequest = (msg) => SEARCH_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
+  const isTrainRequest = (msg) => TRAIN_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
+  const isBrainRequest = (msg) => BRAIN_KEYWORDS.some(kw => msg.toLowerCase().includes(kw));
+
+  // Load user's learned knowledge for context injection
+  const loadLearnedKnowledge = async () => {
+    try {
+      const isAuth = await base44.auth.isAuthenticated();
+      if (!isAuth) return '';
+      const user = await base44.auth.me();
+      const memories = await base44.entities.AgentMemory.filter({ user_id: user.email });
+      if (memories.length === 0 || !memories[0].long_term?.length) return '';
+      const blocks = memories[0].long_term;
+      // Get summaries and recent chunks (most relevant)
+      const summaries = blocks.filter(b => b.metadata?.summary).map(b => `[${b.metadata.source_title}]: ${b.metadata.summary}`);
+      const recentChunks = blocks.slice(-10).map(b => b.value).join('\n');
+      if (summaries.length === 0) return '';
+      return `\n\nYOUR LEARNED KNOWLEDGE (trained by this user):\nSources learned: ${summaries.join(' | ')}\n\nRecent knowledge context:\n${recentChunks.slice(0, 2000)}`;
+    } catch { return ''; }
+  };
+
+  const showBrain = async () => {
+    setIsLoading(true);
+    try {
+      const isAuth = await base44.auth.isAuthenticated();
+      if (!isAuth) {
+        addAssistantMessage("You need to be logged in for me to remember things across sessions. Log in and train me! 🧠");
+        setIsLoading(false);
+        return;
+      }
+      const user = await base44.auth.me();
+      const memories = await base44.entities.AgentMemory.filter({ user_id: user.email });
+      if (memories.length === 0 || !memories[0].long_term?.length) {
+        addAssistantMessage("My brain is empty for you — I haven't been trained yet! Send me a URL or article and say \"learn this\" to get started. 🧠");
+        setIsLoading(false);
+        return;
+      }
+      const blocks = memories[0].long_term;
+      // Group by source
+      const sources = {};
+      blocks.forEach(b => {
+        const title = b.metadata?.source_title || 'Unknown';
+        if (!sources[title]) {
+          sources[title] = { title, url: b.metadata?.source_url, type: b.metadata?.source_type, chunks: 0, summary: b.metadata?.summary || '', date: b.stored };
+        }
+        sources[title].chunks++;
+      });
+      const list = Object.values(sources).map(s =>
+        `• **${s.title}** (${s.type})\n  ${s.chunks} knowledge blocks · ${new Date(s.date).toLocaleDateString()}\n  ${s.summary}`
+      ).join('\n\n');
+      addAssistantMessage(`🧠 **My Brain — ${blocks.length} knowledge blocks from ${Object.keys(sources).length} sources:**\n\n${list}\n\nAsk me anything about these topics!`);
+    } catch {
+      addAssistantMessage("Couldn't access my memory right now. Try again! 🧠");
+    }
+    setIsLoading(false);
+  };
+
+  const trainOnContent = async (userMsg) => {
+    // Extract URL from message
+    const urlMatch = userMsg.match(/(https?:\/\/[^\s]+)/i);
+    const url = urlMatch ? urlMatch[1] : null;
+    const rawText = !url ? userMsg.replace(/^(train yourself|train on this|learn this|study this|read this|watch this|ingest this|memorize this|remember this|learn from|train on|study from|read from|learn about this|absorb this)\s*/i, '').trim() : null;
+
+    if (!url && (!rawText || rawText.length < 20)) {
+      addAssistantMessage("Send me a URL, article link, YouTube video, or paste some text and say \"learn this\" — I'll process it and add it to my brain. 🧠");
+      setIsLoading(false);
+      return;
+    }
+
+    // Step 1: Acknowledge
+    setMessages(prev => [...prev, { role: "assistant", content: "🧠 Got it. Let me process this now." }]);
+    await new Promise(r => setTimeout(r, 600));
+
+    // Step 2: Fetch
+    setMessages(prev => [...prev, { role: "action", content: url ? `Fetching content from ${url}...` : "Processing your text..." }]);
+    await new Promise(r => setTimeout(r, 400));
+
+    try {
+      const res = await base44.functions.invoke('kaiLearn', { url, rawText });
+      const data = res.data;
+
+      if (!data.success) {
+        setMessages(prev => prev.filter(m => m.role !== 'action'));
+        addAssistantMessage("❌ Couldn't process that content. Try a different URL or paste the text directly.");
+        return;
+      }
+
+      // Step 3: Extract
+      setMessages(prev => prev.filter(m => m.role !== 'action'));
+      setMessages(prev => [...prev, { role: "action", content: `Found ${data.word_count.toLocaleString()} words from "${data.source_title}" (${data.source_type})...` }]);
+      await new Promise(r => setTimeout(r, 800));
+
+      // Step 4: Chunk & Store
+      setMessages(prev => prev.filter(m => m.role !== 'action'));
+      setMessages(prev => [...prev, { role: "action", content: `Breaking into knowledge blocks... storing ${data.chunks_stored} chunks to my memory.` }]);
+      await new Promise(r => setTimeout(r, 800));
+
+      // Step 5: Confirm
+      setMessages(prev => prev.filter(m => m.role !== 'action'));
+      addAssistantMessage(`✅ **Done. I've learned this.**\n\n📄 **${data.source_title}**\n📊 ${data.word_count.toLocaleString()} words → ${data.chunks_stored} knowledge blocks\n💡 ${data.summary}\n\nYou can now ask me anything about it!`);
+    } catch (err) {
+      setMessages(prev => prev.filter(m => m.role !== 'action'));
+      addAssistantMessage("❌ Something went wrong while learning that. Try again or paste the text directly.");
+    }
+  };
 
   // Detect if a question is about TTT platform (no internet needed)
   const isTTTQuestion = (msg) => {
@@ -429,6 +545,20 @@ export default function KaspaAvatarChat() {
     setPendingImages([]);
     setMessages(prev => [...prev, { role: "user", content: userMsg, images: imageUrls.length > 0 ? imageUrls : undefined }]);
     setIsLoading(true);
+
+    // Brain / knowledge request
+    if (isBrainRequest(userMsg)) {
+      await showBrain();
+      setIsLoading(false);
+      return;
+    }
+
+    // Train / learn request
+    if (isTrainRequest(userMsg)) {
+      await trainOnContent(userMsg);
+      setIsLoading(false);
+      return;
+    }
 
     // Explorer / blockchain lookup
     if (isExplorerRequest(userMsg) && !isImageRequest(userMsg)) {
@@ -552,6 +682,8 @@ export default function KaspaAvatarChat() {
     try {
       // Fetch live Kaspa ecosystem context from knowledge base
       const liveKaspaContext = await fetchKaspaContext(userMsg);
+      // Fetch user's learned knowledge
+      const learnedKnowledge = await loadLearnedKnowledge();
 
       let feedContext = '';
       // Skip feed fetch in fast mode for instant responses
@@ -572,7 +704,7 @@ export default function KaspaAvatarChat() {
       // Prepend live context block if available
       const liveContextBlock = liveKaspaContext ? `${liveKaspaContext}\n\n---\n\n` : '';
 
-      const classicPrompt = `${liveContextBlock}You are Kai, a helpful AI assistant embedded in TTT (the Kaspa Super-App — NOT "Trust The Tech"). TTT is a massive community-built platform on Kaspa. The tagline is "Unchain Humanity."
+      const classicPrompt = `${liveContextBlock}You are Kai, a helpful AI assistant embedded in TTT (the Kaspa Super-App — NOT "Trust The Tech"). TTT is a massive community-built platform on Kaspa. The tagline is "Unchain Humanity."${learnedKnowledge}
 
 ${TTT_APP_DOCS}
 
@@ -602,7 +734,7 @@ User: ${userMsg}${imageContext}
 
 Respond as Kai:${speedInstruction}`;
 
-      const kaiPrompt = `${liveContextBlock}You are KAI, the AI assistant of TTT — the Kaspa Super-App.
+      const kaiPrompt = `${liveContextBlock}You are KAI, the AI assistant of TTT — the Kaspa Super-App.${learnedKnowledge}
 
 CRITICAL IDENTITY — WHAT IS TTT:
 TTT is a Kaspa community super-app platform. It is NOT "Trust The Tech." TTT is the NAME of this application. The tagline is "Unchain Humanity." TTT 2.0 is the latest redesigned version.
