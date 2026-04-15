@@ -103,34 +103,31 @@ export const handleTrainOnContent = async (userMsg, { setMessages, addAssistantM
     await new Promise(r => setTimeout(r, 600));
     setMessages(prev => prev.filter(m => m.role !== 'action'));
 
-    // If we have extracted content, ask LLM to break it down properly for the user
-    if (data.extracted_content && data.extracted_content.length > 50) {
-      try {
-        const breakdown = await base44.integrations.Core.InvokeLLM({
-          prompt: `You are KAI. You just ingested content from a URL. Now present the FULL content to the user in a clear, readable format.
+    // Show the actual extracted content directly — no LLM reinterpretation to avoid hallucination
+    const sourceUrl = data.source_url || url || '';
+    const extractedText = data.extracted_content || '';
 
-SOURCE: "${data.source_title}" (${data.source_type})
-URL: ${data.source_url || url || 'N/A'}
+    if (extractedText.length > 50) {
+      // Extract any links from the content
+      const links = extractedText.match(/https?:\/\/[^\s)>\]]+/g) || [];
+      const uniqueLinks = [...new Set(links)].filter(l => l !== sourceUrl);
 
-EXTRACTED CONTENT:
-${data.extracted_content}
-
-RULES:
-- Present the ACTUAL content — every key point, quote, fact, and detail from the post.
-- If it's a tweet/X post, show the full text exactly as written.
-- Include ALL links, documentation URLs, and references mentioned.
-- Format with markdown for readability.
-- Include the source link at the bottom.
-- Do NOT summarize — show the full breakdown.
-- Start with "✅ **Done. I've learned this.**" then show the content.
-- End with: "Ask me anything about it — or say **"now build something based on what you learned"** and I'll write the code."`,
-          model: 'gemini_3_flash',
-        });
-        addAssistantMessage(breakdown);
-      } catch {
-        // Fallback to basic summary if LLM breakdown fails
-        addAssistantMessage(`✅ **Done. I've learned this.**\n\n📄 **${data.source_title}**\n📊 ${data.word_count.toLocaleString()} words → ${data.chunks_stored} knowledge blocks\n💡 ${data.summary}\n\nAsk me anything about it — or say **"now build something based on what you learned"** and I'll write the code.`);
+      let msg = `✅ **Done. I've learned this.**\n\n`;
+      msg += `📄 **${data.source_title}**\n`;
+      msg += `📊 ${data.word_count.toLocaleString()} words → ${data.chunks_stored} knowledge blocks\n\n`;
+      msg += `---\n\n`;
+      // Show raw extracted content (trimmed to reasonable length)
+      msg += extractedText.slice(0, 2500);
+      if (extractedText.length > 2500) msg += `\n\n*...content continues (${data.word_count.toLocaleString()} words total)*`;
+      msg += `\n\n---\n`;
+      if (uniqueLinks.length > 0) {
+        msg += `\n🔗 **Links mentioned:**\n${uniqueLinks.map(l => `- ${l}`).join('\n')}\n`;
       }
+      if (sourceUrl) {
+        msg += `\n🔗 **Source:** ${sourceUrl}\n`;
+      }
+      msg += `\nAsk me anything about it — or say **"now build something based on what you learned"** and I'll write the code.`;
+      addAssistantMessage(msg);
     } else {
       addAssistantMessage(`✅ **Done. I've learned this.**\n\n📄 **${data.source_title}**\n📊 ${data.word_count.toLocaleString()} words → ${data.chunks_stored} knowledge blocks\n💡 ${data.summary}\n\nAsk me anything about it — or say **"now build something based on what you learned"** and I'll write the code.`);
     }
