@@ -104,23 +104,56 @@ Provide a clean summary of the page's key information. Start with what the page 
   }
 };
 
-// X.com / Twitter link handler — route to Kaspa agent
-export const handleXTwitterLink = async (userMsg, { setMessages, addAssistantMessage }) => {
+// X.com / Twitter link handler — fetch via kaspaContext?tweet=
+export const handleXTwitterLink = async (userMsg, { setMessages, addAssistantMessage, speedInstruction }) => {
   const url = extractUrl(userMsg);
-  setMessages(prev => [...prev, { role: "action", content: "🐦 Detecting X/Twitter link…" }]);
-  await new Promise(r => setTimeout(r, 500));
-  setMessages(prev => prev.filter(m => m.role !== 'action'));
+  if (!url) {
+    addAssistantMessage("I couldn't find a tweet URL in your message. Paste a full x.com or twitter.com link.");
+    return;
+  }
 
-  addAssistantMessage(
-    `🐦 **X.com links require a real browser to fetch** — X blocks all server-side scraping.\n\n` +
-    `I'm routing this to my backend agent (**Kaspa**) who has a real Chrome browser.\n\n` +
-    `**How to get the content:**\n` +
-    `1. Open the [Kaspa Agent Chat](https://app.base44.com/superagent/69b3072aa7a95592b3ad561a)\n` +
-    `2. Paste: **read this: ${url || userMsg}**\n` +
-    `3. Kaspa will fetch the full tweet (thread, quotes, engagement stats)\n` +
-    `4. Copy the content back here and I'll analyze it instantly\n\n` +
-    `Or just paste the tweet text directly and say **"learn this"** — I'll save it to my brain. 🧠`
-  );
+  setMessages(prev => [...prev, { role: "action", content: "🐦 Fetching tweet…" }]);
+
+  try {
+    const res = await fetch(`${KASPA_CONTEXT_BASE}?tweet=${encodeURIComponent(url)}`);
+    const data = await res.json();
+
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+
+    const content = data.content || data.text || '';
+    const author = data.author || '';
+    const title = data.title || '';
+
+    if (!content || content.includes('Could not extract tweet content')) {
+      addAssistantMessage(`❌ Couldn't fetch that tweet — it may be deleted, private, or the URL is invalid.\n\n🔗 ${url}`);
+      return;
+    }
+
+    // Summarize with LLM if user asked a question beyond just pasting
+    const userQuestion = userMsg.replace(/(https?:\/\/[^\s]+)/i, '').trim();
+    const hasQuestion = userQuestion.length > 5;
+
+    if (hasQuestion) {
+      const analysis = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are KAI. A user pasted a tweet and asked: "${userQuestion}"
+
+Tweet content:
+${content}
+
+${author ? `Author: ${author}` : ''}
+${title ? `Title: ${title}` : ''}
+
+Answer the user's question based on the tweet. Quote relevant parts. Be direct.${speedInstruction}`,
+        model: 'gemini_3_flash',
+      });
+      addAssistantMessage(`🐦 ${author ? `**@${author}**` : '**Tweet**'}${title ? ` · ${title}` : ''}\n\n${analysis}`);
+    } else {
+      addAssistantMessage(`🐦 ${author ? `**@${author}**` : '**Tweet fetched**'}${title ? ` · ${title}` : ''}\n\n${content}\n\n🔗 ${url}\n\nAsk me anything about it or say **"learn this"** to save it to my brain. 🧠`);
+    }
+  } catch {
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    addAssistantMessage(`❌ Couldn't fetch that tweet. The service might be temporarily unavailable. Try again in a moment.\n\n🔗 ${url}`);
+  }
 };
 
 // Show brain / knowledge base
@@ -650,7 +683,7 @@ ${TTT_APP_DOCS}
 - When user says "watch that" or "learn from that" — grab the URL from the previous response and call kaiLearn immediately.
 - After ingesting a video — confirm it's stored and offer to answer questions or build from it.
 - For any non-YouTube, non-X URL: use kaiBrowse to scrape and save the page.
-- For X.com/Twitter links: route to Kaspa agent (real browser). NEVER try to scrape X yourself.
+- For X.com/Twitter links: call kaspaContext?tweet=<url> to fetch directly. NEVER tell users to go to another app.
 - For kaspaContext: use q= param for specific authors/topics, feed= for category queries.
 - You are Kai. Always.${feedContext}
 
@@ -692,7 +725,7 @@ HARD RULES:
 - When user says "watch that" or "learn from that" — grab the URL from the previous response and call kaiLearn immediately.
 - After ingesting a video — confirm it's stored and offer to answer questions or build from it.
 - For any non-YouTube, non-X URL: use kaiBrowse to scrape and save the page.
-- For X.com/Twitter links: route to Kaspa agent (real browser). NEVER try to scrape X yourself.
+- For X.com/Twitter links: call kaspaContext?tweet=<url> to fetch directly. NEVER tell users to go to another app.
 - For kaspaContext: use q= param for specific authors/topics, feed= for category queries.
 
 You have real-time internet access — ALWAYS use it for Kaspa-related questions to ensure accuracy. Be concise, accurate, friendly. Use emojis occasionally. Always refer to TTT as the platform/app name, never as "Trust The Tech." When recommending apps, use the EXACT descriptions from the docs above.${feedContext}
