@@ -4,6 +4,7 @@ import { X, Send, Loader2, Sparkles, Minus, ExternalLink } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import AgentBrowserPanel from "./AgentBrowserPanel";
 
 export default function KaiChatbot() {
   const navigate = useNavigate();
@@ -76,6 +77,37 @@ export default function KaiChatbot() {
     return IMAGE_KEYWORDS.some(kw => lower.includes(kw));
   };
 
+  const BROWSE_KEYWORDS = [
+    'browse', 'search for', 'search', 'look up', 'lookup', 'go to', 'open link',
+    'show me', 'navigate to', 'visit', 'load', 'open site', 'open website',
+    'google', 'find me', 'check out'
+  ];
+
+  const isUrl = (text) => /^(https?:\/\/|www\.)/i.test(text.trim());
+
+  const isBrowseRequest = (msg) => {
+    if (isUrl(msg)) return true;
+    const lower = msg.toLowerCase();
+    return BROWSE_KEYWORDS.some(kw => lower.includes(kw));
+  };
+
+  const getBrowseUrl = (msg) => {
+    const trimmed = msg.trim();
+    // Direct URL
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    if (/^www\./i.test(trimmed)) return `https://${trimmed}`;
+    // Extract URL from message
+    const urlMatch = trimmed.match(/(https?:\/\/[^\s]+)/i);
+    if (urlMatch) return urlMatch[1];
+    const wwwMatch = trimmed.match(/(www\.[^\s]+)/i);
+    if (wwwMatch) return `https://${wwwMatch[1]}`;
+    // Treat as search query
+    const query = trimmed
+      .replace(/^(browse|search for|search|look up|lookup|go to|open link|show me|navigate to|visit|load|open site|open website|google|find me|check out)\s*/i, '')
+      .trim();
+    return `https://www.google.com/search?igu=1&q=${encodeURIComponent(query)}`;
+  };
+
   const APP_DIRECTORY = [
     { names: ['hikaru'], path: 'Hikaru', label: 'Hikaru 🖼️', desc: 'AI image generation studio' },
     { names: ['xunhua', 'xùnhuà'], path: 'Xunhua', label: 'Xunhua 🎨', desc: 'AI sketch-to-image studio' },
@@ -131,6 +163,17 @@ export default function KaiChatbot() {
     setInput("");
     setMessages(prev => [...prev, { role: "user", content: userMsg }]);
     setIsLoading(true);
+
+    // Browse / search / URL → inline browser panel
+    if (isBrowseRequest(userMsg)) {
+      const browseUrl = getBrowseUrl(userMsg);
+      setMessages(prev => [...prev, {
+        role: "browser",
+        url: browseUrl,
+      }]);
+      setIsLoading(false);
+      return;
+    }
 
     // "Open X" → instant app link with button
     const openApp = detectOpenApp(userMsg);
@@ -322,7 +365,11 @@ export default function KaiChatbot() {
             <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-hide">
               {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  {msg.role === 'action' ? (
+                  {msg.role === 'browser' ? (
+                    <div className="w-full">
+                      <AgentBrowserPanel url={msg.url} />
+                    </div>
+                  ) : msg.role === 'action' ? (
                     <motion.div
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
