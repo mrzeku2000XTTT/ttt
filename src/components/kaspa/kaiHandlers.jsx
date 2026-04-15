@@ -35,7 +35,7 @@ export const handleShowBrain = async ({ setIsLoading, addAssistantMessage }) => 
   try {
     const isAuth = await base44.auth.isAuthenticated();
     if (!isAuth) {
-      addAssistantMessage("You need to be logged in for me to remember things across sessions. Log in and train me! 🧠");
+      addAssistantMessage("You need to **connect your wallet** for me to remember things across sessions. Connect your TTT wallet and train me! 🧠");
       setIsLoading(false);
       return;
     }
@@ -166,15 +166,15 @@ export const handleKaspaVideos = async ({ setMessages, addAssistantMessage }) =>
 
 // "Watch that" / "learn from that" — ingest a video from the last video feed
 export const handleWatchThat = async (userMsg, messages, { setMessages, addAssistantMessage }) => {
-  // Check if user is logged in — ingestion requires auth for memory storage
+  // Check if user is connected — ingestion requires auth for memory storage
   try {
     const isAuth = await base44.auth.isAuthenticated();
     if (!isAuth) {
-      addAssistantMessage("You need to be **logged in** for me to watch and learn videos — I store the knowledge in your personal brain. Log in and try again! 🧠");
+      addAssistantMessage("You need to **connect your wallet** for me to watch and learn videos — I store the knowledge in your personal brain. Connect your TTT wallet and try again! 🧠");
       return;
     }
   } catch {
-    addAssistantMessage("You need to be **logged in** for me to watch and learn videos. Log in and try again! 🧠");
+    addAssistantMessage("You need to **connect your wallet** for me to watch and learn videos. Connect your TTT wallet and try again! 🧠");
     return;
   }
 
