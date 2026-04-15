@@ -73,6 +73,8 @@ export const handleTrainOnContent = async (userMsg, { setMessages, addAssistantM
   const url = urlMatch ? urlMatch[1] : null;
   const rawText = !url ? userMsg.replace(/^(train yourself|train on this|learn this|study this|read this|watch this|ingest this|memorize this|remember this|learn from|train on|study from|read from|learn about this|absorb this)\s*/i, '').trim() : null;
 
+  console.log('[KAI Train] URL extracted:', url, '| rawText:', rawText?.slice(0, 50));
+
   if (!url && (!rawText || rawText.length < 20)) {
     addAssistantMessage("Send me a URL, article link, YouTube video, or paste some text and say \"learn this\" — I'll process it and add it to my brain. 🧠");
     setIsLoading(false);
@@ -86,8 +88,10 @@ export const handleTrainOnContent = async (userMsg, { setMessages, addAssistantM
   await new Promise(r => setTimeout(r, 400));
 
   try {
+    console.log('[KAI Train] Calling kaiLearn with url:', url, 'rawText:', rawText ? 'yes' : 'no');
     const res = await base44.functions.invoke('kaiLearn', { url, rawText });
     const data = res.data;
+    console.log('[KAI Train] kaiLearn result:', data?.success, data?.source_title);
     if (!data.success) {
       setMessages(prev => prev.filter(m => m.role !== 'action'));
       addAssistantMessage("❌ Couldn't process that content. Try a different URL or paste the text directly.");
@@ -316,13 +320,10 @@ After writing, offer 3 specific upgrades the user can ask for.`;
 export const handleKaspaVideos = async ({ setMessages, addAssistantMessage }) => {
   setMessages(prev => [...prev, { role: "action", content: "🎬 Fetching latest Kaspa videos…" }]);
   try {
-    const res = await fetch(`${KASPA_CONTEXT_BASE}?feed=videos&format=feed&limit=5`);
-    const text = await res.text();
-    
-    // Also fetch JSON for structured card display
     const jsonRes = await fetch(`${KASPA_CONTEXT_BASE}?feed=videos&format=json&limit=5`);
     const jsonData = await jsonRes.json();
     const videos = jsonData?.items || (Array.isArray(jsonData) ? jsonData : []);
+    console.log('[KAI Videos] Fetched', videos.length, 'videos. First URL:', videos[0]?.url);
     
     setMessages(prev => prev.filter(m => m.role !== 'action'));
     
@@ -369,6 +370,7 @@ export const handleWatchThat = async (userMsg, messages, { setMessages, addAssis
   const video = lastVideoMsg.videos[Math.min(idx, lastVideoMsg.videos.length - 1)];
   const videoUrl = video.url;
   const videoTitle = video.text || video.title || "Untitled";
+  console.log('[KAI WatchThat] idx:', idx, 'videoUrl:', videoUrl, 'videoTitle:', videoTitle);
 
   if (!videoUrl) {
     addAssistantMessage("That video doesn't have a URL I can ingest. Try another one.");

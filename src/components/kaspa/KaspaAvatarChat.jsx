@@ -166,9 +166,10 @@ export default function KaspaAvatarChat() {
       // "Watch that" / "learn from that" — ingest video from last feed
       if (isWatchThatRequest(userMsg)) { await handleWatchThat(userMsg, messages, ctx); setIsLoading(false); return; }
 
-      // Train / learn / bare URL
+      // Train / learn / bare URL — YouTube URLs ALWAYS go to learn, never to browser
       const hasUrl = /(https?:\/\/[^\s]+)/i.test(userMsg);
-      if (isTrainRequest(userMsg) || (hasUrl && !isBrowseRequest(userMsg) && !isExplorerRequest(userMsg))) {
+      const hasYoutubeUrl = /(youtube\.com\/watch|youtu\.be\/|youtube\.com\/embed\/)/i.test(userMsg);
+      if (isTrainRequest(userMsg) || hasYoutubeUrl || (hasUrl && !isBrowseRequest(userMsg) && !isExplorerRequest(userMsg))) {
         await handleTrainOnContent(userMsg, ctx); setIsLoading(false); return;
       }
 
