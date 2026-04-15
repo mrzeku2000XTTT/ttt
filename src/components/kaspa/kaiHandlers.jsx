@@ -6,7 +6,8 @@ import {
   isImageRequest, isKaspaNewsRequest, isSearchRequest, isFeedRequest,
   isUserPostRequest, isTrainRequest, isBuildRequest, isBrainRequest,
   isBrowseRequest, isExplorerRequest, detectExplorerAction, detectOpenApp,
-  getBrowseUrl, isTTTQuestion, fetchKaspaContext, extractVideoIndex
+  getBrowseUrl, isTTTQuestion, fetchKaspaContext, extractVideoIndex,
+  isVibeCodeRequest
 } from "./kaiDetectors";
 
 // Load user's learned knowledge for context injection (with timeout)
@@ -106,6 +107,153 @@ export const handleTrainOnContent = async (userMsg, { setMessages, addAssistantM
   } catch {
     setMessages(prev => prev.filter(m => m.role !== 'action'));
     addAssistantMessage("❌ Something went wrong while learning that. Try again or paste the text directly.");
+  }
+};
+
+// Vibe Code — full IDE generation
+export const handleVibeCode = async (userMsg, { setMessages, addAssistantMessage, setIsLoading }) => {
+  // Step 1: Show action
+  setMessages(prev => [...prev, { role: "action", content: "🏗️ Let's build it. Calling KaiArchitect…" }]);
+  await new Promise(r => setTimeout(r, 600));
+
+  try {
+    // Step 2: Call kaiArchitect
+    const archRes = await fetch('https://kaspa-b3ad561a.base44.app/functions/kaiArchitect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idea: userMsg }),
+    });
+    const archData = await archRes.json();
+    const architectPrompt = archData?.architect_prompt || archData?.prompt || '';
+
+    if (!architectPrompt) {
+      setMessages(prev => prev.filter(m => m.role !== 'action'));
+      addAssistantMessage("❌ KaiArchitect couldn't plan this app. Try describing what you want in more detail.");
+      return;
+    }
+
+    // Step 3: Narrate planning
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    setMessages(prev => [...prev, { role: "action", content: "🧠 Planning the data model…" }]);
+    await new Promise(r => setTimeout(r, 500));
+
+    // Step 4: Generate full app code via LLM
+    const codeResponse = await base44.integrations.Core.InvokeLLM({
+      prompt: `${architectPrompt}
+
+CRITICAL OUTPUT FORMAT — You MUST respond with ONLY a valid JSON object. No markdown. No code fences. No text before or after. Just the raw JSON.
+
+Generate a complete Kaspa app. Return this exact JSON structure:
+
+{
+  "app_name": "string — short name",
+  "description": "string — 1-2 sentence description",
+  "kaspa_apis": ["array of API URLs this app uses"],
+  "estimated_time": "string — e.g. '5 minutes'",
+  "entities": [
+    {
+      "name": "EntityName",
+      "schema": {
+        "type": "object",
+        "properties": { ... fields with types ... },
+        "required": ["field1"]
+      }
+    }
+  ],
+  "pages": [
+    {
+      "name": "PageName",
+      "code": "full JSX code as a string — import from @/api/base44Client, use base44.entities.EntityName.list() etc, Tailwind dark theme bg-gray-900, mobile-first, complete working code"
+    }
+  ],
+  "functions": [
+    {
+      "name": "functionName",
+      "code": "full Deno function code as string — import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25'; Deno.serve(async (req) => { ... });"
+    }
+  ],
+  "deploy_steps": ["step 1", "step 2", ...],
+  "suggested_upgrades": ["upgrade 1", "upgrade 2", "upgrade 3"]
+}
+
+BASE44 CODE RULES:
+- Entities: JSON schema with "type": "object", "properties", "required"
+- Pages: React JSX with "import { base44 } from '@/api/base44Client';" — use base44.entities.EntityName.list(), .create(), .filter(), .update(), .delete()
+- Functions: Deno TypeScript with createClientFromRequest from 'npm:@base44/sdk@0.8.25'
+- UI: dark bg-gray-900 with teal/emerald/cyan accents — Kaspa vibes
+- Every app MUST use at least one live Kaspa API (price, balance, transactions, network)
+- Max 3 entities, 3 pages, 2 functions
+- ZERO placeholders. ZERO "// TODO". Complete working code only.
+
+KASPA APIs (all public, no auth needed):
+- Price: GET https://api.coingecko.com/api/v3/simple/price?ids=kaspa&vs_currencies=usd&include_24hr_change=true
+- Balance: GET https://api.kaspa.org/addresses/{address}/balance
+- Transactions: GET https://api.kaspa.org/addresses/{address}/full-transactions?limit=10
+- Network: GET https://api.kaspa.org/info
+
+USER'S APP IDEA: "${userMsg}"
+
+Remember: respond with ONLY the JSON object, nothing else.`,
+      model: 'claude_sonnet_4_6',
+    });
+
+    // Step 5: Parse the response
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+
+    let ideData;
+    try {
+      // Handle string or object response
+      if (typeof codeResponse === 'string') {
+        // Strip markdown fences if present
+        const cleaned = codeResponse.replace(/^```json?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+        ideData = JSON.parse(cleaned);
+      } else {
+        ideData = codeResponse;
+      }
+    } catch (parseErr) {
+      console.error('IDE parse error:', parseErr, 'Raw:', typeof codeResponse === 'string' ? codeResponse.slice(0, 200) : codeResponse);
+      // Fallback: show raw response as a message
+      addAssistantMessage("⚠️ Got the code but couldn't structure it into the IDE. Here's the raw output:\n\n" + (typeof codeResponse === 'string' ? codeResponse.slice(0, 3000) : JSON.stringify(codeResponse).slice(0, 3000)));
+      return;
+    }
+
+    // Step 6: Narrate code generation
+    const narrations = [];
+    if (ideData.entities?.length) narrations.push(`✍️ Writing ${ideData.entities.length} entity schema${ideData.entities.length > 1 ? 's' : ''}…`);
+    if (ideData.pages?.length) narrations.push(`✍️ Writing ${ideData.pages.length} page${ideData.pages.length > 1 ? 's' : ''}…`);
+    if (ideData.functions?.length) narrations.push(`✍️ Writing ${ideData.functions.length} function${ideData.functions.length > 1 ? 's' : ''}…`);
+    narrations.push("⚡ Injecting Kaspa wallet API…");
+    narrations.push("✅ All files ready — check the IDE tabs below");
+
+    for (const line of narrations) {
+      setMessages(prev => [...prev, { role: "action", content: line }]);
+      await new Promise(r => setTimeout(r, 450));
+      setMessages(prev => prev.filter(m => m.role !== 'action'));
+    }
+
+    // Step 7: Add IDE panel message
+    setMessages(prev => [...prev, { role: "kai_ide", ideData }]);
+
+    // Step 8: Summary message
+    const entityList = (ideData.entities || []).map(e => e.name).join(', ');
+    const pageList = (ideData.pages || []).map(p => p.name).join(', ');
+    const fnList = (ideData.functions || []).map(f => f.name).join(', ');
+    const upgrades = ideData.suggested_upgrades || [];
+
+    let summary = `✅ **${ideData.app_name || 'Your app'}** is ready in the IDE above.\n\nIt includes:\n`;
+    if (ideData.entities?.length) summary += `• ${ideData.entities.length} entit${ideData.entities.length > 1 ? 'ies' : 'y'}: ${entityList}\n`;
+    if (ideData.pages?.length) summary += `• ${ideData.pages.length} page${ideData.pages.length > 1 ? 's' : ''}: ${pageList}\n`;
+    if (ideData.functions?.length) summary += `• ${ideData.functions.length} function${ideData.functions.length > 1 ? 's' : ''}: ${fnList}\n`;
+    summary += `\nHit the 🚀 Deploy tab for step-by-step instructions.`;
+    if (upgrades.length > 0) {
+      summary += `\n\nWant me to add:\n${upgrades.map(u => `• ${u}?`).join('\n')}`;
+    }
+
+    addAssistantMessage(summary);
+  } catch (err) {
+    console.error('Vibe code error:', err);
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    addAssistantMessage("❌ Something went wrong building your app. Try again or describe it differently.");
   }
 };
 

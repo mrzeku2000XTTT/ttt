@@ -134,10 +134,19 @@ export const TRAIN_KEYWORDS = [
 ];
 
 export const BUILD_KEYWORDS = [
-  'build', 'code', 'create a function', 'write a function', 'make a function',
-  'automate', 'build me', 'code me', 'create a script', 'write code',
-  'morning brief', 'build a', 'create an automation', 'deploy',
+  'create a function', 'write a function', 'make a function',
+  'automate', 'create a script', 'write code',
+  'morning brief', 'create an automation',
   'now build', 'build based on', 'make a bot', 'write a bot',
+];
+
+export const VIBE_CODE_KEYWORDS = [
+  'build me an app', 'build me a', 'create me an app', 'create me a',
+  'make me an app', 'make me a', 'vibe code', 'code me an app',
+  'code me a', 'i want an app', 'build a kaspa', 'make a kas',
+  'build an app', 'create an app', 'make an app',
+  'build me', 'build a', 'code me', 'deploy',
+  'code', 'build',
 ];
 
 export const BRAIN_KEYWORDS = [

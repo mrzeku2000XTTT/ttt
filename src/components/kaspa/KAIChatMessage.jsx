@@ -7,6 +7,7 @@ import { KAIBlocksAnimation } from "./KAIAnimations";
 import { setKaSshiGlobal, markKaSshiInlineVisited } from "@/components/KaSshiPlayer";
 import KAINewsCard from "./KAINewsCard";
 import KAIVideoCard from "./KAIVideoCard";
+import KaiIDE from "./KaiIDE";
 
 export default function KAIChatMessage({ msg, index, typingIndex, typingText, setIsOpen, setBrowserUrl, setShowBrowser, setViewingPost, onWatchVideo }) {
   const navigate = useNavigate();
@@ -67,6 +68,11 @@ export default function KAIChatMessage({ msg, index, typingIndex, typingText, se
         </button>
       </div>
     );
+  }
+
+  // KAI IDE panel — vibe coding
+  if (msg.role === "kai_ide") {
+    return <KaiIDE ideData={msg.ideData} />;
   }
 
   if (msg.role === "action") {

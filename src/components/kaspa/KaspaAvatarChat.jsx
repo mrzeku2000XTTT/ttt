@@ -13,10 +13,10 @@ import {
   isImageRequest, isKaspaNewsRequest, isSearchRequest, isFeedRequest,
   isUserPostRequest, isTrainRequest, isBuildRequest, isBrainRequest,
   isBrowseRequest, isExplorerRequest, isVideoRequest, isWatchThatRequest,
-  detectOpenApp, getBrowseUrl, detectFeedRoute
+  isVibeCodeRequest, detectOpenApp, getBrowseUrl, detectFeedRoute
 } from "./kaiDetectors";
 import {
-  handleShowBrain, handleTrainOnContent, handleBuildRequest,
+  handleShowBrain, handleTrainOnContent, handleBuildRequest, handleVibeCode,
   handleKaspaNews, handleKaspaVideos, handleWatchThat, handleFeedRoute,
   handleExplorerRequest, handleUserPostAnalysis,
   handleFeedSummary, handleGeneralMessage
@@ -172,7 +172,10 @@ export default function KaspaAvatarChat() {
         await handleTrainOnContent(userMsg, ctx); setIsLoading(false); return;
       }
 
-      // Build / code
+      // Vibe code — full IDE app generation (check BEFORE generic build)
+      if (isVibeCodeRequest(userMsg)) { await handleVibeCode(userMsg, ctx); setIsLoading(false); return; }
+
+      // Build / code (generic function build — only hits if vibe code didn't match)
       if (isBuildRequest(userMsg)) { await handleBuildRequest(userMsg, ctx); setIsLoading(false); return; }
 
       // Kaspa videos
