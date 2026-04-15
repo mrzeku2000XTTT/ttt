@@ -185,6 +185,43 @@ const fetchKaspaContext = async (userMessage) => {
   return '';
 };
 
+const EXPLORER_KEYWORDS = [
+  'transaction', 'tx ', 'txid', 'look up tx', 'check tx', 'find tx',
+  'address balance', 'check balance', 'balance of', 'wallet balance',
+  'block hash', 'block info', 'network stats', 'network info',
+  'hashrate', 'kaspa stats', 'coin supply', 'halving',
+  'explorer', 'look up address', 'check address', 'find address',
+];
+
+const isExplorerRequest = (msg) => {
+  const lower = msg.toLowerCase();
+  // Direct tx hash (64 hex chars)
+  if (/^[a-f0-9]{64}$/i.test(msg.trim())) return true;
+  // Kaspa address
+  if (msg.trim().startsWith('kaspa:')) return true;
+  return EXPLORER_KEYWORDS.some(kw => lower.includes(kw));
+};
+
+const detectExplorerAction = (msg) => {
+  const trimmed = msg.trim();
+  // Direct tx hash
+  if (/^[a-f0-9]{64}$/i.test(trimmed)) return { action: 'transaction', query: trimmed };
+  // Kaspa address
+  if (trimmed.startsWith('kaspa:')) return { action: 'address', query: trimmed };
+  // Extract kaspa address from message
+  const addrMatch = trimmed.match(/(kaspa:[a-z0-9]+)/i);
+  if (addrMatch) return { action: 'address', query: addrMatch[1] };
+  // Extract tx hash from message
+  const txMatch = trimmed.match(/\b([a-f0-9]{64})\b/i);
+  if (txMatch) return { action: 'transaction', query: txMatch[1] };
+  // Network stats keywords
+  const lower = msg.toLowerCase();
+  if (['network stats', 'network info', 'hashrate', 'kaspa stats', 'coin supply', 'halving', 'supply'].some(kw => lower.includes(kw))) {
+    return { action: 'network', query: '' };
+  }
+  return null;
+};
+
 const BROWSE_KEYWORDS = [
   'browse', 'search for', 'look up', 'lookup', 'go to site', 'open link',
   'open site', 'open website', 'navigate to site', 'visit', 'load site',
@@ -401,6 +438,33 @@ export default function KaspaAvatarChat() {
     setPendingImages([]);
     setMessages(prev => [...prev, { role: "user", content: userMsg, images: imageUrls.length > 0 ? imageUrls : undefined }]);
     setIsLoading(true);
+
+    // Explorer / blockchain lookup
+    if (isExplorerRequest(userMsg) && !isImageRequest(userMsg)) {
+      const explorerAction = detectExplorerAction(userMsg);
+      if (explorerAction) {
+        setMessages(prev => [...prev, { role: "action", content: "🔍 Querying Kaspa blockchain…" }]);
+        try {
+          const res = await base44.functions.invoke('kaspaExplorer', explorerAction);
+          const data = res.data;
+          setMessages(prev => prev.filter(m => m.role !== 'action'));
+          if (data.error) {
+            addAssistantMessage(`❌ ${data.error}`);
+          } else {
+            // Use LLM to format the response nicely
+            const formatted = await base44.integrations.Core.InvokeLLM({
+              prompt: `You are KAI, the Kaspa AI assistant. Format this blockchain data into a clear, readable response with emojis. Be concise but complete. Include the explorer link at the end.\n\nData:\n${JSON.stringify(data, null, 2)}${speedInstruction}`,
+            });
+            addAssistantMessage(formatted);
+          }
+        } catch (err) {
+          setMessages(prev => prev.filter(m => m.role !== 'action'));
+          addAssistantMessage("Couldn't query the blockchain right now. Try again! 🙏");
+        }
+        setIsLoading(false);
+        return;
+      }
+    }
 
     // Browse / search / URL → persistent browser panel
     if (isBrowseRequest(userMsg) && !isImageRequest(userMsg)) {
