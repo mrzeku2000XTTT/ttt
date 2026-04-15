@@ -110,7 +110,10 @@ export const FEED_KEYWORDS = [
 
 export const USER_POST_KEYWORDS = [
   'posts by', 'analyze user', 'user posts',
-  'examine posts', 'who posted', 'show me posts from', 'check posts'
+  'examine posts', 'who posted', 'show me posts from', 'check posts',
+  'what did', 'what has', 'what was', 'what does',
+  'say about', 'posted about', 'wrote about',
+  'check what', 'find what', 'show what'
 ];
 
 export const TRAIN_KEYWORDS = [

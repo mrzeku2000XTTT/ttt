@@ -330,13 +330,56 @@ ${JSON.stringify(data, null, 2)}${speedInstruction}`,
 
 // User post analysis
 export const handleUserPostAnalysis = async (userMsg, { setMessages, addAssistantMessage, isFast, speedInstruction }) => {
-  if (!isFast) setMessages(prev => [...prev, { role: "action", content: "Analyzing user posts... 🔍" }]);
+  setMessages(prev => [...prev, { role: "action", content: "🔍 Searching TTT feed posts…" }]);
   try {
-    const posts = await base44.entities.Post.list('-created_date', isFast ? 20 : 50);
-    const postData = posts.map(p => `[${p.author_name}] ${p.content?.slice(0, isFast ? 80 : 150)}${p.media_files?.length ? ' [has media]' : ''} (${p.likes || 0} likes, ${p.comments_count || 0} comments)`).join('\n');
+    // Try to extract a username from the message
+    const lower = userMsg.toLowerCase();
+    const usernamePatterns = [
+      /what did (\S+) (say|post|write)/i,
+      /what has (\S+) (said|posted|written)/i,
+      /what does (\S+) (say|post|think)/i,
+      /posts by (\S+)/i,
+      /show me posts from (\S+)/i,
+      /check (\S+)'?s? posts/i,
+      /@(\S+)/,
+    ];
+    let targetUser = null;
+    for (const pattern of usernamePatterns) {
+      const match = userMsg.match(pattern);
+      if (match) { targetUser = match[1].replace(/[@'"?!.,]/g, '').toLowerCase(); break; }
+    }
+
+    // Fetch posts — try to find the specific user's posts
+    const allPosts = await base44.entities.Post.list('-created_date', 100);
+    let relevantPosts = allPosts;
+    if (targetUser) {
+      const userPosts = allPosts.filter(p => 
+        p.author_name?.toLowerCase().includes(targetUser) ||
+        p.created_by?.toLowerCase().includes(targetUser)
+      );
+      if (userPosts.length > 0) {
+        relevantPosts = userPosts;
+      }
+    }
+
+    const postData = relevantPosts.slice(0, 30).map(p => 
+      `[${p.author_name}] ${p.content?.slice(0, 200)}${p.media_files?.length ? ' [has media]' : ''} (${p.likes || 0} likes, ${p.comments_count || 0} comments, ${new Date(p.created_date).toLocaleDateString()})`
+    ).join('\n');
+
     const analysis = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are KAI, the AI assistant of TTT — the Kaspa Super-App (NOT "Trust The Tech"). TTT is a community platform with Feed, Agent ZK, TTTV, Bridge, StakeDAG, and 80+ apps. Here are recent posts from the TTT feed:\n\n${postData}\n\nUser question: "${userMsg}"\n\nAnswer the user's question about specific users or posting activity. Be specific, cite usernames and what they posted.${speedInstruction}`,
-      add_context_from_internet: !isFast,
+      prompt: `You are KAI, the AI assistant of TTT — the Kaspa Super-App.
+
+Here are ${targetUser ? `posts by/mentioning "${targetUser}"` : 'recent posts'} from the TTT feed:
+
+${postData}
+
+User question: "${userMsg}"
+
+RULES:
+- Answer ONLY based on the actual posts above. Do NOT make up or hallucinate content.
+- If you cannot find the specific user or content in the posts, say "I couldn't find posts by that user in the recent feed."
+- Quote the actual post content when referencing what someone said.
+- Be specific with usernames, dates, and content.${speedInstruction}`,
       model: 'gemini_3_flash',
     });
     setMessages(prev => prev.filter(m => m.role !== 'action'));
