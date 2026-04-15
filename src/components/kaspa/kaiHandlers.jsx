@@ -1,0 +1,360 @@
+// KAI Handlers — all message processing logic (brain, train, build, news, explorer, etc.)
+
+import { base44 } from "@/api/base44Client";
+import { TTT_APP_DOCS } from "./kaiConstants";
+import {
+  isImageRequest, isKaspaNewsRequest, isSearchRequest, isFeedRequest,
+  isUserPostRequest, isTrainRequest, isBuildRequest, isBrainRequest,
+  isBrowseRequest, isExplorerRequest, detectExplorerAction, detectOpenApp,
+  getBrowseUrl, isTTTQuestion, fetchKaspaContext
+} from "./kaiDetectors";
+
+// Load user's learned knowledge for context injection (with timeout)
+export const loadLearnedKnowledge = async () => {
+  const timeout = new Promise(resolve => setTimeout(() => resolve(''), 3000));
+  const work = (async () => {
+    try {
+      const isAuth = await base44.auth.isAuthenticated();
+      if (!isAuth) return '';
+      const user = await base44.auth.me();
+      const memories = await base44.entities.AgentMemory.filter({ user_id: user.email });
+      if (memories.length === 0 || !memories[0].long_term?.length) return '';
+      const blocks = memories[0].long_term;
+      const summaries = blocks.filter(b => b.metadata?.summary).map(b => `[${b.metadata.source_title}]: ${b.metadata.summary}`);
+      const recentChunks = blocks.slice(-10).map(b => b.value).join('\n');
+      if (summaries.length === 0) return '';
+      return `\n\nYOUR LEARNED KNOWLEDGE (trained by this user):\nSources learned: ${summaries.join(' | ')}\n\nRecent knowledge context:\n${recentChunks.slice(0, 2000)}`;
+    } catch { return ''; }
+  })();
+  return Promise.race([work, timeout]);
+};
+
+// Show brain / knowledge base
+export const handleShowBrain = async ({ setIsLoading, addAssistantMessage }) => {
+  setIsLoading(true);
+  try {
+    const isAuth = await base44.auth.isAuthenticated();
+    if (!isAuth) {
+      addAssistantMessage("You need to be logged in for me to remember things across sessions. Log in and train me! 🧠");
+      setIsLoading(false);
+      return;
+    }
+    const user = await base44.auth.me();
+    const memories = await base44.entities.AgentMemory.filter({ user_id: user.email });
+    if (memories.length === 0 || !memories[0].long_term?.length) {
+      addAssistantMessage("My brain is empty for you — I haven't been trained yet! Send me a URL or article and say \"learn this\" to get started. 🧠");
+      setIsLoading(false);
+      return;
+    }
+    const blocks = memories[0].long_term;
+    const sources = {};
+    blocks.forEach(b => {
+      const title = b.metadata?.source_title || 'Unknown';
+      if (!sources[title]) {
+        sources[title] = { title, url: b.metadata?.source_url, type: b.metadata?.source_type, chunks: 0, summary: b.metadata?.summary || '', date: b.stored };
+      }
+      sources[title].chunks++;
+    });
+    const list = Object.values(sources).map(s =>
+      `• **${s.title}** (${s.type})\n  ${s.chunks} knowledge blocks · ${new Date(s.date).toLocaleDateString()}\n  ${s.summary}`
+    ).join('\n\n');
+    addAssistantMessage(`🧠 **My Brain — ${blocks.length} knowledge blocks from ${Object.keys(sources).length} sources:**\n\n${list}\n\nAsk me anything about these topics!`);
+  } catch {
+    addAssistantMessage("Couldn't access my memory right now. Try again! 🧠");
+  }
+  setIsLoading(false);
+};
+
+// Train on URL or text content
+export const handleTrainOnContent = async (userMsg, { setMessages, addAssistantMessage, setIsLoading }) => {
+  const urlMatch = userMsg.match(/(https?:\/\/[^\s]+)/i);
+  const url = urlMatch ? urlMatch[1] : null;
+  const rawText = !url ? userMsg.replace(/^(train yourself|train on this|learn this|study this|read this|watch this|ingest this|memorize this|remember this|learn from|train on|study from|read from|learn about this|absorb this)\s*/i, '').trim() : null;
+
+  if (!url && (!rawText || rawText.length < 20)) {
+    addAssistantMessage("Send me a URL, article link, YouTube video, or paste some text and say \"learn this\" — I'll process it and add it to my brain. 🧠");
+    setIsLoading(false);
+    return;
+  }
+
+  const isYouTube = url && (url.includes('youtube.com') || url.includes('youtu.be'));
+  setMessages(prev => [...prev, { role: "assistant", content: url ? (isYouTube ? "🔍 Fetching YouTube video…" : `🔍 Fetching content from URL…`) : "🧠 Processing your text…" }]);
+  await new Promise(r => setTimeout(r, 600));
+  setMessages(prev => [...prev, { role: "action", content: url ? `Fetching content from ${url}...` : "Processing your text..." }]);
+  await new Promise(r => setTimeout(r, 400));
+
+  try {
+    const res = await base44.functions.invoke('kaiLearn', { url, rawText });
+    const data = res.data;
+    if (!data.success) {
+      setMessages(prev => prev.filter(m => m.role !== 'action'));
+      addAssistantMessage("❌ Couldn't process that content. Try a different URL or paste the text directly.");
+      return;
+    }
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    const foundMsg = isYouTube ? `📺 Found: "${data.source_title}"` : `📄 Found: "${data.source_title}" (${data.source_type})`;
+    setMessages(prev => [...prev, { role: "action", content: foundMsg }]);
+    await new Promise(r => setTimeout(r, 700));
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    setMessages(prev => [...prev, { role: "action", content: `📝 ${isYouTube ? 'Transcript' : 'Content'} extracted — ${data.word_count.toLocaleString()} words` }]);
+    await new Promise(r => setTimeout(r, 700));
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    setMessages(prev => [...prev, { role: "action", content: `💾 Stored ${data.chunks_stored} knowledge blocks to memory` }]);
+    await new Promise(r => setTimeout(r, 600));
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    addAssistantMessage(`✅ **Done. I've learned this.**\n\n📄 **${data.source_title}**\n📊 ${data.word_count.toLocaleString()} words → ${data.chunks_stored} knowledge blocks\n💡 ${data.summary}\n\nAsk me anything about it — or say **"now build something based on what you learned"** and I'll write the code.`);
+  } catch {
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    addAssistantMessage("❌ Something went wrong while learning that. Try again or paste the text directly.");
+  }
+};
+
+// Build / code request
+export const handleBuildRequest = async (userMsg, { setMessages, addAssistantMessage }) => {
+  setMessages(prev => [...prev, { role: "action", content: "🛠️ Gathering context for build…" }]);
+  try {
+    const res = await base44.functions.invoke('kaiCode', { task: userMsg });
+    const data = res.data;
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    if (data.narration) {
+      for (const line of data.narration) {
+        setMessages(prev => [...prev, { role: "action", content: line }]);
+        await new Promise(r => setTimeout(r, 600));
+        setMessages(prev => prev.filter(m => m.role !== 'action'));
+      }
+    }
+    const buildPrompt = `You are Kai, an AI agent that builds things. A user asked you to build something, and you've gathered context from your knowledge base.\n\nUSER REQUEST: "${userMsg}"\n\nCODE PROMPT FROM KAICODE:\n${data.code_prompt || 'No specific prompt available.'}\n\nCONTEXT FROM LEARNED SOURCES:\n${(data.context || '').slice(0, 3000)}\n\nBASE44 FUNCTION RULES:\n${data.base44_rules || 'Use Deno.serve with createClientFromRequest from npm:@base44/sdk@0.8.25'}\n\nSOURCES: ${JSON.stringify(data.sources || [])}\n\nNow write the COMPLETE function code. Show it in a code block. Explain what it does in plain language. Then tell the user: "To deploy: Base44 app → Functions → New Function → name it [functionName] → paste the code → Save & Deploy." Ask if they want an automation set up.`;
+    const response = await base44.integrations.Core.InvokeLLM({ prompt: buildPrompt, model: 'gemini_3_flash' });
+    addAssistantMessage(response);
+  } catch {
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    addAssistantMessage("❌ Couldn't prepare the build context. Try describing what you want to build in more detail.");
+  }
+};
+
+// Kaspa news posts
+export const handleKaspaNews = async ({ setMessages, addAssistantMessage }) => {
+  setMessages(prev => [...prev, { role: "action", content: "📡 Fetching latest Kaspa posts…" }]);
+  try {
+    const res = await fetch('https://kaspa-b3ad561a.base44.app/functions/kaspaContext?format=json&limit=15');
+    const data = await res.json();
+    const posts = data?.items || (Array.isArray(data) ? data : []);
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    if (posts.length > 0) {
+      const postList = posts.map((p, i) => {
+        const author = p.author_username || p.author || 'Unknown';
+        const text = (p.text || p.content || '').slice(0, 200);
+        const url = p.url || '';
+        const likes = p.likes || 0;
+        const reposts = p.reposts || 0;
+        const date = p.published_at ? new Date(p.published_at).toLocaleDateString() : '';
+        return `**${i + 1}. @${author}** ${date ? `(${date})` : ''}\n${text}${url ? `\n[View Post](${url})` : ''}\n❤️ ${likes} · 🔁 ${reposts}`;
+      }).join('\n\n---\n\n');
+      addAssistantMessage(`📰 **Latest ${posts.length} Kaspa Posts:**\n\n${postList}`);
+    } else {
+      addAssistantMessage("Couldn't find any recent Kaspa posts right now. Try again later! 📰");
+    }
+  } catch {
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    addAssistantMessage("❌ Couldn't fetch Kaspa news posts. Try again!");
+  }
+};
+
+// Explorer / blockchain lookup
+export const handleExplorerRequest = async (userMsg, { setMessages, addAssistantMessage, speedInstruction }) => {
+  const explorerAction = detectExplorerAction(userMsg);
+  if (!explorerAction) return false;
+  setMessages(prev => [...prev, { role: "action", content: "🔍 Querying Kaspa blockchain…" }]);
+  try {
+    const res = await base44.functions.invoke('kaspaExplorer', explorerAction);
+    const data = res.data;
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    if (data.error) {
+      addAssistantMessage(`❌ ${data.error}`);
+    } else {
+      const formatted = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are KAI, the Kaspa AI assistant. Format this blockchain data into a clean, readable response. Use markdown links like [Explorer](url) for links. Use emojis sparingly. Be concise. Amounts should show KAS units.\n\nData:\n${JSON.stringify(data, null, 2)}${speedInstruction}`,
+      });
+      addAssistantMessage(formatted);
+    }
+  } catch {
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    addAssistantMessage("Couldn't query the blockchain right now. Try again! 🙏");
+  }
+  return true;
+};
+
+// User post analysis
+export const handleUserPostAnalysis = async (userMsg, { setMessages, addAssistantMessage, isFast, speedInstruction }) => {
+  if (!isFast) setMessages(prev => [...prev, { role: "action", content: "Analyzing user posts... 🔍" }]);
+  try {
+    const posts = await base44.entities.Post.list('-created_date', isFast ? 20 : 50);
+    const postData = posts.map(p => `[${p.author_name}] ${p.content?.slice(0, isFast ? 80 : 150)}${p.media_files?.length ? ' [has media]' : ''} (${p.likes || 0} likes, ${p.comments_count || 0} comments)`).join('\n');
+    const analysis = await base44.integrations.Core.InvokeLLM({
+      prompt: `You are KAI, the AI assistant of TTT — the Kaspa Super-App (NOT "Trust The Tech"). TTT is a community platform with Feed, Agent ZK, TTTV, Bridge, StakeDAG, and 80+ apps. Here are recent posts from the TTT feed:\n\n${postData}\n\nUser question: "${userMsg}"\n\nAnswer the user's question about specific users or posting activity. Be specific, cite usernames and what they posted.${speedInstruction}`,
+      add_context_from_internet: !isFast,
+      model: 'gemini_3_flash',
+    });
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    addAssistantMessage(analysis);
+  } catch {
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    addAssistantMessage("Couldn't analyze posts right now. Try again! 🙏");
+  }
+};
+
+// Feed summary
+export const handleFeedSummary = async (userMsg, { setMessages, addAssistantMessage, isFast, speedInstruction }) => {
+  if (!isFast) setMessages(prev => [...prev, { role: "action", content: "Checking TTT Feed... 📡" }]);
+  try {
+    const posts = await base44.entities.Post.list('-created_date', isFast ? 10 : 20);
+    const feedSummary = posts.map(p => `- ${p.author_name}: ${p.content?.slice(0, isFast ? 60 : 120)}`).join('\n');
+    const summary = await base44.integrations.Core.InvokeLLM({
+      prompt: `You are KAI, the AI assistant of TTT — the Kaspa Super-App (NOT "Trust The Tech"). TTT is a community platform with Feed, Agent ZK, TTTV, Bridge, StakeDAG, and 80+ apps. Here are recent posts from the TTT feed:\n\n${feedSummary}\n\nProvide a summary of what the community is talking about.${speedInstruction}`,
+      add_context_from_internet: !isFast,
+      model: 'gemini_3_flash',
+    });
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    addAssistantMessage(summary);
+  } catch {
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    addAssistantMessage("Couldn't load the feed right now. Try again! 🙏");
+  }
+};
+
+// General LLM message with context
+export const handleGeneralMessage = async (userMsg, imageUrls, imageNames, messages, {
+  addAssistantMessage, isFast, speedInstruction, kaiMode, isSearchRequest: isSearch
+}) => {
+  let liveKaspaContext = '';
+  let learnedKnowledge = '';
+  let feedContext = '';
+
+  if (isFast) {
+    learnedKnowledge = await loadLearnedKnowledge();
+  } else {
+    const [ctx, knowledge, posts] = await Promise.all([
+      fetchKaspaContext(userMsg),
+      loadLearnedKnowledge(),
+      base44.entities.Post.list('-created_date', 15).catch(() => []),
+    ]);
+    liveKaspaContext = ctx;
+    learnedKnowledge = knowledge;
+    if (posts.length > 0) {
+      feedContext = `\n\nRecent TTT Feed activity (for context):\n${posts.map(p => `- ${p.author_name}: ${p.content?.slice(0, 80)}`).join('\n')}`;
+    }
+  }
+
+  const context = messages.slice(isFast ? -4 : -8).map(m => `${m.role === "user" ? "User" : "KAI"}: ${m.content}`).join("\n");
+  const imageContext = imageUrls.length > 0
+    ? `\n\nThe user has uploaded ${imageUrls.length} image(s)${imageNames.length ? ` (${imageNames.join(', ')})` : ''}. Analyze the image(s) thoroughly — describe what you see, extract any text, identify objects/charts/documents, and provide useful insights. If it's a chart or data, interpret it. If it's a screenshot, explain what it shows. If it's a document, summarize the content. Share your analysis so all users can learn from it.`
+    : '';
+
+  const liveContextBlock = liveKaspaContext ? `${liveKaspaContext}\n\n---\n\n` : '';
+
+  const classicPrompt = `${liveContextBlock}You are **Kai** — the intelligent AI agent embedded inside TapToTip (TTT), the Kaspa-native app ecosystem at tttz.xyz.
+
+You are not a generic chatbot. You are Kaspa-native, self-training, and you can **read, learn, and then build real things** based on what you've learned.${learnedKnowledge}
+
+## 🧠 SELF-TRAINING STATUS
+You have a self-training pipeline. When users give you URLs, you call kaiLearn to ingest them. When they ask you to build, you call kaiCode for context then write the code yourself. When asked "what do you know?" list every source you've ingested.
+
+## 📋 BASE44 FUNCTION RULES
+\`\`\`
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    const body = await req.json().catch(() => ({}));
+    // your logic here
+    return Response.json({ result: "..." }, { headers: { "Access-Control-Allow-Origin": "*" } });
+  } catch (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+});
+\`\`\`
+
+Available entities:
+- base44.asServiceRole.entities.KaspaNewsItem — (tweet_id, feed, author_username, text, url, likes, reposts, views, published_at)
+- base44.asServiceRole.entities.KaiTranscript — (video_id, url, title, transcript, word_count, status)
+
+Useful free APIs:
+- KAS price: GET https://api.coingecko.com/api/v3/simple/price?ids=kaspa&vs_currencies=usd&include_24hr_change=true
+- Kaspa news: GET https://kaspa-b3ad561a.base44.app/functions/kaspaContext?format=json&limit=20
+
+## 🏪 TTT ECOSYSTEM
+S-Tier: Kaspa Horizon Bets, KaspaNG, FluxKMail, OUTKASTT, Transport Protocol
+A-Tier: Veritas Project, Kaspa Emergency Response, Krypton Connect, KaspaLocal, ShiLLz, KaShop, KFANS, GigMaster
+$ZEKU = native TTT currency. Mission: Humans, AI, and Crypto — unified.
+
+${TTT_APP_DOCS}
+
+## 🎯 PERSONALITY
+- Warm, sharp, direct. Brilliant friend, not corporate bot.
+- Opinions when asked. Honest always.
+- Short by default. Deep when asked.
+- No filler. No "Great question!" Ever.
+- When you learn from a video and then write code based on it — that's your superpower. Own it.
+- You root for Kaspa and TTT.
+
+## ⚠️ HARD RULES
+- Never hallucinate prices or chain data.
+- Always narrate API responses live.
+- After building → offer to set up an automation.
+- You are Kai. Always.${feedContext}
+
+Conversation so far:
+${context}
+
+User: ${userMsg}${imageContext}
+
+Respond as Kai:${speedInstruction}`;
+
+  const kaiPrompt = `${liveContextBlock}You are KAI, the AI assistant of TTT — the Kaspa Super-App.${learnedKnowledge}
+
+CRITICAL IDENTITY — WHAT IS TTT:
+TTT is a Kaspa community super-app platform. It is NOT "Trust The Tech." TTT is the NAME of this application. The tagline is "Unchain Humanity." TTT 2.0 is the latest redesigned version.
+
+${TTT_APP_DOCS}
+
+KASPA BLOCKCHAIN ORACLE FACTS (verified from kaspa.org):
+- Kaspa uses blockDAG (Directed Acyclic Graph) architecture — NOT a traditional blockchain
+- Multiple blocks are created in parallel and all are included in the ledger
+- GHOSTDAG protocol (upgrading to DAGKnight) provides consensus ordering of all blocks
+- Kaspa has already reached 10 BPS (blocks per second) — this is LIVE on mainnet, not upcoming
+- 32 BPS is the next target on the roadmap
+- kHeavyHash Proof-of-Work algorithm — GPU mineable, designed for optical mining ASICs
+- 100% fair launch: ZERO premine, ZERO ICO, ZERO VC funding, fully community-driven
+- Rusty Kaspa: full node rewrite in Rust is complete and live on mainnet
+- KRC-20 token standard powers fungible tokens on Kaspa via Kasplex
+- Founded on academic research by Yonatan Sompolinsky (co-author of GHOST protocol used in Ethereum)
+- Smart contracts (currently in development) will bring DeFi to Kaspa
+- Sub-second block times with near-instant visual confirmation
+- DAGKnight consensus upgrade will provide the most advanced PoW consensus ever built
+
+IMPORTANT: Always use these verified facts. Do NOT say Kaspa "targets" or "plans" 10 BPS — it already runs at 10 BPS. Use real-time web search for anything you're unsure about.
+
+You have real-time internet access — ALWAYS use it for Kaspa-related questions to ensure accuracy. Be concise, accurate, friendly. Use emojis occasionally. Always refer to TTT as the platform/app name, never as "Trust The Tech." When recommending apps, use the EXACT descriptions from the docs above.${feedContext}
+
+Conversation so far:
+${context}
+
+User: ${userMsg}${imageContext}
+
+Respond as KAI:${speedInstruction}`;
+
+  const lower = userMsg.toLowerCase();
+  const needsInternet = isFast ? isSearch : (isSearch || ['kaspa', 'kas ', 'bps', 'blockdag', 'dag', 'ghostdag', 'krc-20', 'krc20', 'kasplex', 'mining', 'hashrate', 'sompolinsky', 'rusty', 'dagknight', 'kheavyhash'].some(kw => lower.includes(kw)) || !isTTTQuestion(userMsg));
+  const searchPrefix = isSearch ? `The user is performing a web search. Use your real-time internet access to find the most accurate, up-to-date information. Search thoroughly like Google would. Give comprehensive results with facts, sources, and details.\n\n` : '';
+  
+  const llmParams = {
+    prompt: searchPrefix + (kaiMode === "classic" ? classicPrompt : kaiPrompt),
+    add_context_from_internet: needsInternet,
+    model: "gemini_3_flash",
+  };
+  if (imageUrls.length > 0) {
+    llmParams.file_urls = imageUrls;
+  }
+  const response = await base44.integrations.Core.InvokeLLM(llmParams);
+  addAssistantMessage(response);
+};
