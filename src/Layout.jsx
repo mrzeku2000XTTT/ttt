@@ -372,7 +372,7 @@ export default function Layout({ children, currentPageName }) {
         </motion.div>
 
         <div className="flex-1 lg:ml-12">
-        <style>{`
+        <style jsx global>{`
           :root {
             --sat: env(safe-area-inset-top);
             --sar: env(safe-area-inset-right);

@@ -72,6 +72,7 @@ Deno.serve(async (req) => {
     if (!targetSource) {
       return Response.json({ success: false, error: 'Source not found.' });
     }
+    // Remove all blocks belonging to this source
     const indicesToRemove = new Set(targetSource.block_indices);
     const filtered = blocks.filter((_, i) => !indicesToRemove.has(i));
     try {
