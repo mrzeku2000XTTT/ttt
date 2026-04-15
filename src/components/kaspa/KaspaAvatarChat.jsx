@@ -920,7 +920,7 @@ Respond as KAI:${speedInstruction}`;
                     </motion.div>
                   ) : (
                     <div
-                      className="max-w-[85%] text-[13px] leading-relaxed px-3.5 py-2.5 rounded-2xl break-all overflow-hidden"
+                      className="max-w-[85%] text-[13px] leading-relaxed px-3.5 py-2.5 rounded-2xl break-words overflow-hidden"
                       style={msg.role === "user" ? {
                         background: "rgba(6,182,212,0.2)",
                         color: "rgba(255,255,255,0.95)",
