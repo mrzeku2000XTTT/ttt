@@ -10,7 +10,7 @@ import KAINewsCard from "./KAINewsCard";
 export default function KAIChatMessage({ msg, index, typingIndex, typingText, setIsOpen, setBrowserUrl, setShowBrowser }) {
   const navigate = useNavigate();
 
-  // News posts — rich preview cards
+  // News posts — rich preview cards with browser integration
   if (msg.role === "news_posts") {
     return (
       <div className="flex flex-col gap-2 max-w-[95%]">
@@ -22,10 +22,19 @@ export default function KAIChatMessage({ msg, index, typingIndex, typingText, se
             <KAINewsCard
               key={i}
               post={post}
-              onViewPost={(url) => { setBrowserUrl(url); setShowBrowser(true); }}
+              onOpenNewsSite={(newsUrl) => { setBrowserUrl(newsUrl); setShowBrowser(true); }}
+              onViewOriginal={(url) => window.open(url, "_blank")}
             />
           ))}
         </div>
+        {/* Quick "Browse All" button to open news site */}
+        <button
+          onClick={() => { setBrowserUrl("https://kaspa-app-9cc9fe40.base44.app"); setShowBrowser(true); }}
+          className="self-start flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-semibold transition-all hover:scale-105 mt-1"
+          style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)" }}
+        >
+          🌐 Browse all on Kaspa.news
+        </button>
       </div>
     );
   }

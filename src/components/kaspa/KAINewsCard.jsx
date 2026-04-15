@@ -1,7 +1,9 @@
 import React from "react";
-import { Heart, Repeat2, Eye, ExternalLink } from "lucide-react";
+import { Heart, Repeat2, Eye, Globe, ExternalLink } from "lucide-react";
 
-export default function KAINewsCard({ post, onViewPost }) {
+const KASPA_NEWS_URL = "https://kaspa-app-9cc9fe40.base44.app";
+
+export default function KAINewsCard({ post, onOpenNewsSite, onViewOriginal }) {
   const author = post.author_username || post.author || "Unknown";
   const text = (post.text || post.content || "").slice(0, 220);
   const date = post.published_at ? new Date(post.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "";
@@ -36,6 +38,20 @@ export default function KAINewsCard({ post, onViewPost }) {
           <div className="text-[12px] font-semibold text-white/90 truncate">@{author}</div>
           {date && <div className="text-[10px] text-white/35">{date}</div>}
         </div>
+        {/* Small X link */}
+        {url && (
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-colors hover:bg-white/10"
+            style={{ color: "rgba(255,255,255,0.3)" }}
+            title="View on X"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ExternalLink className="w-3 h-3" />
+          </a>
+        )}
       </div>
 
       {/* Body */}
@@ -50,23 +66,21 @@ export default function KAINewsCard({ post, onViewPost }) {
         {views > 0 && <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{views}</span>}
       </div>
 
-      {/* View button */}
-      {url && (
-        <div className="px-3 pb-3 pt-1">
-          <button
-            onClick={() => onViewPost(url)}
-            className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[10px] font-bold transition-all hover:scale-[1.02]"
-            style={{
-              background: "rgba(6,182,212,0.15)",
-              border: "1px solid rgba(6,182,212,0.3)",
-              color: "rgba(6,182,212,0.95)",
-            }}
-          >
-            <ExternalLink className="w-3 h-3" />
-            View Post
-          </button>
-        </div>
-      )}
+      {/* Open in News Browser */}
+      <div className="px-3 pb-3 pt-1">
+        <button
+          onClick={() => onOpenNewsSite(KASPA_NEWS_URL)}
+          className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[10px] font-bold transition-all hover:scale-[1.02]"
+          style={{
+            background: "rgba(6,182,212,0.15)",
+            border: "1px solid rgba(6,182,212,0.3)",
+            color: "rgba(6,182,212,0.95)",
+          }}
+        >
+          <Globe className="w-3 h-3" />
+          Open in Kaspa News
+        </button>
+      </div>
     </div>
   );
 }
