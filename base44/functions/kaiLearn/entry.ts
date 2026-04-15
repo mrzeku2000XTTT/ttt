@@ -27,25 +27,154 @@ Deno.serve(async (req) => {
       const videoId = ytMatch[1];
       sourceTitle = `YouTube Video ${videoId}`;
 
-      // Use LLM with internet access to extract video content — don't fetch YouTube directly (Cloudflare blocks it)
+      // Step 1: Get video title from oEmbed (no API key needed)
       try {
-        const extracted = await base44.asServiceRole.integrations.Core.InvokeLLM({
-          prompt: `Watch and thoroughly analyze this YouTube video: ${url}\n\nExtract ALL key information including:\n- Main topics and themes discussed\n- Key facts, data points, and statistics mentioned\n- Names of people, projects, or organizations referenced\n- Technical details and explanations\n- Opinions and predictions shared\n- Any URLs, links, or resources mentioned\n\nBe as detailed and comprehensive as possible. Include direct quotes where relevant.`,
-          add_context_from_internet: true,
-          model: 'gemini_3_flash',
+        const oembedRes = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
+        if (oembedRes.ok) {
+          const oembedData = await oembedRes.json();
+          if (oembedData.title) sourceTitle = oembedData.title;
+        }
+      } catch { /* title fallback is fine */ }
+
+      // Step 2: Try to get real transcript via YouTube transcript endpoints
+      let transcript = '';
+      
+      // Method A: Fetch YouTube page and extract captions from ytInitialPlayerResponse
+      try {
+        const ytPageRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9',
+          },
+          signal: AbortSignal.timeout(10000),
         });
-        content = extracted;
-        // Try to extract a cleaner title from the response
-        if (typeof extracted === 'string' && extracted.length > 50) {
-          sourceTitle = extracted.split('\n')[0].replace(/^[#*\s]+/, '').slice(0, 100) || sourceTitle;
+        const ytHtml = await ytPageRes.text();
+        console.log(`[kaiLearn] YouTube page fetched: ${ytHtml.length} chars`);
+        
+        // Extract captions URL — try multiple patterns (YouTube changes their format)
+        let captionTracks = null;
+        
+        // Pattern 1: "captionTracks": [...]
+        const p1 = ytHtml.match(/"captionTracks":\s*(\[.*?\])/);
+        if (p1) {
+          try { captionTracks = JSON.parse(p1[1]); } catch {}
+        }
+        
+        // Pattern 2: Look in playerCaptionsTracklistRenderer
+        if (!captionTracks) {
+          const p2 = ytHtml.match(/"playerCaptionsTracklistRenderer":\s*\{[^}]*"captionTracks":\s*(\[[\s\S]*?\])\s*[,}]/);
+          if (p2) {
+            try { captionTracks = JSON.parse(p2[1]); } catch {}
+          }
+        }
+        
+        // Pattern 3: Extract timedtext URL directly and build proper caption track
+        if (!captionTracks) {
+          const urlMatches = [...ytHtml.matchAll(/https?:\\\/\\\/www\.youtube\.com\\\/api\\\/timedtext[^"']*/g)];
+          if (urlMatches.length > 0) {
+            let rawUrl = urlMatches[0][0].replace(/\\\//g, '/').replace(/\\u0026/g, '&');
+            // Ensure it has lang=en and fmt=json3 for reliable extraction
+            if (!rawUrl.includes('lang=')) rawUrl += '&lang=en';
+            if (!rawUrl.includes('fmt=')) rawUrl += '&fmt=json3';
+            captionTracks = [{ baseUrl: rawUrl, languageCode: 'en' }];
+            console.log(`[kaiLearn] Found timedtext URL directly: ${rawUrl.slice(0, 120)}`);
+          }
+        }
+        
+        console.log(`[kaiLearn] Caption tracks found: ${captionTracks ? captionTracks.length : 0}`);
+        
+        if (captionTracks && captionTracks.length > 0) {
+          // Prefer English, fall back to first available, prefer non-auto-generated
+          const enTrack = captionTracks.find(t => t.languageCode === 'en' && !t.kind) 
+            || captionTracks.find(t => t.languageCode === 'en')
+            || captionTracks[0];
+          
+          if (enTrack?.baseUrl) {
+            let captionUrl = enTrack.baseUrl.replace(/\\u0026/g, '&').replace(/\\\//g, '/');
+            // Try JSON3 format first (more reliable), then XML fallback
+            const useJson3 = captionUrl.includes('fmt=json3');
+            if (!useJson3 && !captionUrl.includes('fmt=')) captionUrl += '&fmt=json3';
+            
+            console.log(`[kaiLearn] Fetching captions (json3=${useJson3 || !captionUrl.includes('fmt=srv')}): ${captionUrl.slice(0, 120)}`);
+            const captionRes = await fetch(captionUrl, { 
+              signal: AbortSignal.timeout(10000),
+              headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+            });
+            const captionText = await captionRes.text();
+            console.log(`[kaiLearn] Captions response: ${captionText.length} chars, first 200: ${captionText.slice(0, 200)}`);
+            
+            const lines = [];
+            
+            // Try JSON3 parse first
+            if (captionText.startsWith('{')) {
+              try {
+                const json3 = JSON.parse(captionText);
+                const events = json3.events || [];
+                for (const event of events) {
+                  if (event.segs) {
+                    const segText = event.segs.map(s => s.utf8 || '').join('').trim();
+                    if (segText && segText !== '\n') lines.push(segText);
+                  }
+                }
+              } catch { console.log('[kaiLearn] JSON3 parse failed'); }
+            }
+            
+            // XML fallback
+            if (lines.length === 0 && captionText.includes('<text')) {
+              const textMatches = captionText.matchAll(/<text[^>]*>([\s\S]*?)<\/text>/g);
+              for (const m of textMatches) {
+                const decoded = m[1]
+                  .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+                  .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\n/g, ' ').trim();
+                if (decoded) lines.push(decoded);
+              }
+            }
+            
+            transcript = lines.join(' ');
+            console.log(`[kaiLearn] Extracted real transcript: ${transcript.length} chars, ${lines.length} segments`);
+          }
         }
       } catch (e) {
-        console.error('LLM extraction failed for YouTube:', e.message || e);
-        return Response.json({
-          success: false,
-          error: 'Could not extract video content. The AI service may be temporarily busy. Try again in a moment.',
-          source_title: sourceTitle,
-        });
+        console.log('[kaiLearn] YouTube page transcript extraction failed:', e.message || e);
+      }
+
+      // Method B: If no transcript found, use YouTube Data API with YOUTUBE_API_KEY
+      if (!transcript && Deno.env.get('YOUTUBE_API_KEY')) {
+        try {
+          const apiKey = Deno.env.get('YOUTUBE_API_KEY');
+          const captionsListRes = await fetch(
+            `https://www.googleapis.com/youtube/v3/captions?videoId=${videoId}&part=snippet&key=${apiKey}`,
+            { signal: AbortSignal.timeout(10000) }
+          );
+          if (captionsListRes.ok) {
+            const captionsData = await captionsListRes.json();
+            console.log('[kaiLearn] YouTube API captions list:', captionsData.items?.length || 0, 'tracks');
+          }
+        } catch (e) {
+          console.log('[kaiLearn] YouTube API captions failed:', e.message || e);
+        }
+      }
+
+      // Method C: Fallback to LLM with internet access if no transcript extracted
+      if (!transcript || transcript.length < 50) {
+        console.log('[kaiLearn] No transcript found, falling back to LLM with internet');
+        try {
+          const extracted = await base44.asServiceRole.integrations.Core.InvokeLLM({
+            prompt: `Watch and thoroughly analyze this YouTube video: ${url}\n\nExtract ALL key information including:\n- Main topics and themes discussed\n- Key facts, data points, and statistics mentioned\n- Names of people, projects, or organizations referenced\n- Technical details and explanations\n- Opinions and predictions shared\n\nBe as detailed and comprehensive as possible. Include direct quotes where relevant.`,
+            add_context_from_internet: true,
+            model: 'gemini_3_flash',
+          });
+          content = extracted;
+        } catch (e) {
+          console.error('LLM extraction also failed:', e.message || e);
+          return Response.json({
+            success: false,
+            error: 'Could not extract video content. Try again in a moment.',
+            source_title: sourceTitle,
+          });
+        }
+      } else {
+        content = transcript;
       }
     } else {
       // Regular URL
