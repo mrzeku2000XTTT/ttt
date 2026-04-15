@@ -322,8 +322,8 @@ export default function KaspaAvatarChat() {
             {/* Browser/Post tab toggle */}
             {(browserUrl || viewingPost) && (
               <div className="flex items-center px-2 py-1" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                <button onClick={() => { setShowBrowser(false); setViewingPost(null); }} className="flex-1 py-1 text-[10px] font-bold rounded-md transition-all text-center"
-                  style={{ background: !showBrowser && !viewingPost ? "rgba(255,255,255,0.1)" : "transparent", color: !showBrowser && !viewingPost ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.35)" }}>
+                <button onClick={() => { setShowBrowser(false); }} className="flex-1 py-1 text-[10px] font-bold rounded-md transition-all text-center"
+                  style={{ background: !showBrowser ? "rgba(255,255,255,0.1)" : "transparent", color: !showBrowser ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.35)" }}>
                   💬 Chat
                 </button>
                 {viewingPost && (

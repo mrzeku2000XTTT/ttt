@@ -13,7 +13,8 @@ export default function KAINewsCard({ post, onViewPost }) {
 
   return (
     <div
-      className="rounded-xl overflow-hidden flex-shrink-0"
+      onClick={() => onViewPost(post)}
+      className="rounded-xl overflow-hidden flex-shrink-0 cursor-pointer transition-all hover:border-cyan-500/30"
       style={{
         background: "rgba(255,255,255,0.04)",
         border: "1px solid rgba(255,255,255,0.08)",
@@ -36,14 +37,7 @@ export default function KAINewsCard({ post, onViewPost }) {
           <div className="text-[12px] font-semibold text-white/90 truncate">@{author}</div>
           {date && <div className="text-[10px] text-white/35">{date}</div>}
         </div>
-        {url && (
-          <a href={url} target="_blank" rel="noopener noreferrer"
-            className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-colors hover:bg-white/10"
-            style={{ color: "rgba(255,255,255,0.3)" }}
-            title="View on X" onClick={(e) => e.stopPropagation()}>
-            <ExternalLink className="w-3 h-3" />
-          </a>
-        )}
+
       </div>
 
       {/* Body */}
@@ -58,11 +52,11 @@ export default function KAINewsCard({ post, onViewPost }) {
         {views > 0 && <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{views}</span>}
       </div>
 
-      {/* View Post button — opens rich preview */}
-      <div className="px-3 pb-3 pt-1">
+      {/* Action buttons */}
+      <div className="px-3 pb-3 pt-1 flex gap-1.5">
         <button
-          onClick={() => onViewPost(post)}
-          className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[10px] font-bold transition-all hover:scale-[1.02]"
+          onClick={(e) => { e.stopPropagation(); onViewPost(post); }}
+          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[10px] font-bold transition-all hover:scale-[1.02]"
           style={{
             background: "rgba(6,182,212,0.15)",
             border: "1px solid rgba(6,182,212,0.3)",
@@ -71,6 +65,22 @@ export default function KAINewsCard({ post, onViewPost }) {
         >
           View Post
         </button>
+        {url && (
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all hover:scale-[1.02]"
+            style={{
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              color: "rgba(255,255,255,0.5)",
+            }}
+          >
+            <ExternalLink className="w-3 h-3" /> X
+          </a>
+        )}
       </div>
     </div>
   );
