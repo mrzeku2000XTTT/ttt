@@ -191,29 +191,17 @@ export const handleWatchThat = async (userMsg, messages, { setMessages, addAssis
   await new Promise(r => setTimeout(r, 600));
 
   try {
-    // Call kaiLearn with the video URL
-    let res = await base44.functions.invoke('kaiLearn', { url: videoUrl });
-    let data = res.data;
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    setMessages(prev => [...prev, { role: "action", content: `🧠 Analyzing video content with AI…` }]);
 
-    // Handle pending status — poll up to 3 times
-    let attempts = 0;
-    while (data?.status === 'pending' && attempts < 3) {
-      setMessages(prev => prev.filter(m => m.role !== 'action'));
-      setMessages(prev => [...prev, { role: "action", content: `⏳ Transcript processing... (attempt ${attempts + 1}/3)` }]);
-      await new Promise(r => setTimeout(r, 3000));
-      res = await base44.functions.invoke('kaiLearn', { url: videoUrl, poll: true });
-      data = res.data;
-      attempts++;
-    }
+    const res = await base44.functions.invoke('kaiLearn', { url: videoUrl });
+    const data = res.data;
 
     setMessages(prev => prev.filter(m => m.role !== 'action'));
 
     if (data?.success) {
-      setMessages(prev => [...prev, { role: "action", content: `📝 Extracting transcript…` }]);
+      setMessages(prev => [...prev, { role: "action", content: `💾 Stored ${data.chunks_stored || 0} knowledge blocks` }]);
       await new Promise(r => setTimeout(r, 600));
-      setMessages(prev => prev.filter(m => m.role !== 'action'));
-      setMessages(prev => [...prev, { role: "action", content: `🧠 Stored in knowledge base` }]);
-      await new Promise(r => setTimeout(r, 500));
       setMessages(prev => prev.filter(m => m.role !== 'action'));
 
       addAssistantMessage(
@@ -225,11 +213,13 @@ export const handleWatchThat = async (userMsg, messages, { setMessages, addAssis
         `Or say **"build something based on that"** and I'll write the code. 🛠️`
       );
     } else {
-      addAssistantMessage(`❌ Couldn't extract the transcript from that video. The video may not have captions available. Try another one.`);
+      const errorMsg = data?.error || "Couldn't extract content from that video.";
+      addAssistantMessage(`❌ ${errorMsg} Try another video or try again in a moment.`);
     }
-  } catch {
+  } catch (err) {
     setMessages(prev => prev.filter(m => m.role !== 'action'));
-    addAssistantMessage("❌ Something went wrong while ingesting that video. Try again!");
+    console.error('Watch that error:', err);
+    addAssistantMessage("❌ Something went wrong while ingesting that video. The AI service may be busy — try again in a moment!");
   }
 };
 
