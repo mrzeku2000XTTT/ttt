@@ -15,7 +15,7 @@ const DEFAULT_HOME = "https://kaspa-app-9cc9fe40.base44.app";
 
 
 
-export default function AgentBrowserPanel({ url: initialUrl }) {
+export default function AgentBrowserPanel({ url: initialUrl, onAskKai }) {
   const [currentUrl, setCurrentUrl] = useState(initialUrl || DEFAULT_HOME);
   const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState([initialUrl || DEFAULT_HOME]);
@@ -139,18 +139,25 @@ export default function AgentBrowserPanel({ url: initialUrl }) {
           <Globe className="w-3 h-3 text-white/25 flex-shrink-0" />
           <input
             type="text"
-            placeholder="Search or enter URL…"
+            placeholder="Ask KAI or enter URL…"
             className="flex-1 bg-transparent text-[11px] text-white/80 outline-none placeholder-white/25"
             style={{ fontSize: "16px" }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && e.target.value.trim()) {
                 const val = e.target.value.trim();
-                let url;
-                if (/^https?:\/\//i.test(val)) url = val;
-                else if (/^www\./i.test(val)) url = `https://${val}`;
-                else if (/\.\w{2,}/.test(val) && !val.includes(" ")) url = `https://${val}`;
-                else url = `https://www.google.com/search?igu=1&q=${encodeURIComponent(val)}`;
-                navigateTo(url);
+                // Direct URLs → navigate in browser
+                if (/^https?:\/\//i.test(val) || /^www\./i.test(val) || (/\.\w{2,}/.test(val) && !val.includes(" "))) {
+                  let url;
+                  if (/^https?:\/\//i.test(val)) url = val;
+                  else if (/^www\./i.test(val)) url = `https://${val}`;
+                  else url = `https://${val}`;
+                  navigateTo(url);
+                } else if (onAskKai) {
+                  // Send to KAI instead of Google
+                  onAskKai(val);
+                } else {
+                  navigateTo(`https://www.google.com/search?igu=1&q=${encodeURIComponent(val)}`);
+                }
                 e.target.value = "";
                 e.target.blur();
               }

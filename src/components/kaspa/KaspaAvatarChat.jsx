@@ -897,7 +897,7 @@ Respond as KAI:${speedInstruction}`;
               className="flex-1 overflow-hidden"
               style={{ display: showBrowser && browserUrl ? "flex" : "none", flexDirection: "column" }}
             >
-              <AgentBrowserPanel url={browserUrl} key="persistent-browser" />
+              <AgentBrowserPanel url={browserUrl} key="persistent-browser" onAskKai={(q) => { setShowBrowser(false); setInput(q); setTimeout(() => { inputRef.current?.focus(); }, 100); }} />
             </div>
 
             {/* Messages — hidden when browser is shown */}
