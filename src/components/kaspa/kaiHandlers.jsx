@@ -102,35 +102,7 @@ export const handleTrainOnContent = async (userMsg, { setMessages, addAssistantM
     setMessages(prev => [...prev, { role: "action", content: `💾 Stored ${data.chunks_stored} knowledge blocks to memory` }]);
     await new Promise(r => setTimeout(r, 600));
     setMessages(prev => prev.filter(m => m.role !== 'action'));
-
-    // Show the actual extracted content directly — no LLM reinterpretation to avoid hallucination
-    const sourceUrl = data.source_url || url || '';
-    const extractedText = data.extracted_content || '';
-
-    if (extractedText.length > 50) {
-      // Extract any links from the content
-      const links = extractedText.match(/https?:\/\/[^\s)>\]]+/g) || [];
-      const uniqueLinks = [...new Set(links)].filter(l => l !== sourceUrl);
-
-      let msg = `✅ **Done. I've learned this.**\n\n`;
-      msg += `📄 **${data.source_title}**\n`;
-      msg += `📊 ${data.word_count.toLocaleString()} words → ${data.chunks_stored} knowledge blocks\n\n`;
-      msg += `---\n\n`;
-      // Show raw extracted content (trimmed to reasonable length)
-      msg += extractedText.slice(0, 2500);
-      if (extractedText.length > 2500) msg += `\n\n*...content continues (${data.word_count.toLocaleString()} words total)*`;
-      msg += `\n\n---\n`;
-      if (uniqueLinks.length > 0) {
-        msg += `\n🔗 **Links mentioned:**\n${uniqueLinks.map(l => `- ${l}`).join('\n')}\n`;
-      }
-      if (sourceUrl) {
-        msg += `\n🔗 **Source:** ${sourceUrl}\n`;
-      }
-      msg += `\nAsk me anything about it — or say **"now build something based on what you learned"** and I'll write the code.`;
-      addAssistantMessage(msg);
-    } else {
-      addAssistantMessage(`✅ **Done. I've learned this.**\n\n📄 **${data.source_title}**\n📊 ${data.word_count.toLocaleString()} words → ${data.chunks_stored} knowledge blocks\n💡 ${data.summary}\n\nAsk me anything about it — or say **"now build something based on what you learned"** and I'll write the code.`);
-    }
+    addAssistantMessage(`✅ **Done. I've learned this.**\n\n📄 **${data.source_title}**\n📊 ${data.word_count.toLocaleString()} words → ${data.chunks_stored} knowledge blocks\n💡 ${data.summary}\n\nAsk me anything about it — or say **"now build something based on what you learned"** and I'll write the code.`);
   } catch {
     setMessages(prev => prev.filter(m => m.role !== 'action'));
     addAssistantMessage("❌ Something went wrong while learning that. Try again or paste the text directly.");
