@@ -707,7 +707,8 @@ export default function KaspaAvatarChat() {
       let feedContext = '';
 
       if (isFast) {
-        // Fast mode: skip all slow fetches, go straight to LLM
+        // Fast mode: only load learned knowledge (with timeout), skip slow external calls
+        learnedKnowledge = await loadLearnedKnowledge();
       } else {
         // Thinking mode: fetch everything in parallel
         const [ctx, knowledge, posts] = await Promise.all([
