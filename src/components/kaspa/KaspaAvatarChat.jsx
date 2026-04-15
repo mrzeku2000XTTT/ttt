@@ -272,7 +272,7 @@ export default function KaspaAvatarChat() {
       <AnimatePresence>
         {!isOpen && (
           <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
-            className="fixed z-[80] bottom-20 lg:bottom-6 right-4 flex items-end gap-2">
+            className="fixed z-[9999] bottom-20 lg:bottom-6 right-4 flex items-end gap-2">
             {showBubble && <div className="relative mb-2 max-w-[180px] cursor-pointer" onClick={(e) => { e.stopPropagation(); setShowBubble(false); }}>
               <div className="px-3 py-2 rounded-2xl rounded-br-sm text-[11px] font-medium leading-snug"
                 style={{ background: "rgba(0,0,0,0.85)", color: "rgba(255,255,255,0.9)", backdropFilter: "blur(20px)", border: "1px solid rgba(6,182,212,0.25)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
@@ -298,7 +298,7 @@ export default function KaspaAvatarChat() {
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed z-[80] bottom-20 lg:bottom-6 right-4 flex flex-col"
+            className="fixed z-[9999] bottom-20 lg:bottom-6 right-4 flex flex-col"
             style={{ width: "min(380px, calc(100vw - 2rem))", height: "500px", borderRadius: "20px", background: "rgba(12, 12, 18, 0.92)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 24px 64px rgba(0,0,0,0.6)", overflow: "hidden" }}>
             
             {/* Header */}
