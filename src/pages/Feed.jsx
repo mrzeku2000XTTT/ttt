@@ -2501,7 +2501,7 @@ export default function FeedPage() {
         ))}
       </div>
 
-      <style jsx>{`
+      <style>{`
         @keyframes twinkle {
           0%, 100% { opacity: 0.3; }
           50% { opacity: 1; }
