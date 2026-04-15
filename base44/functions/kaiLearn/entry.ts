@@ -51,60 +51,159 @@ Deno.serve(async (req) => {
       // Check if it's a Twitter/X post
       const isXPost = /^https?:\/\/(x\.com|twitter\.com)\/\w+\/status\/\d+/i.test(url);
       sourceType = isXPost ? 'x_post' : 'article';
-      let html = '';
 
-      // Try direct fetch (will fail for X/Twitter but works for articles)
-      try {
-        const pageRes = await fetch(url, {
-          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
-          redirect: 'follow',
-          signal: AbortSignal.timeout(10000),
-        });
-        html = await pageRes.text();
-        const titleMatch = html.match(/<title>([^<]*)<\/title>/);
-        sourceTitle = titleMatch ? titleMatch[1].trim() : url;
-      } catch {
-        // Direct fetch failed, use LLM with internet
-      }
+      if (isXPost) {
+        // Extract tweet ID from URL
+        const tweetIdMatch = url.match(/status\/(\d+)/);
+        const tweetId = tweetIdMatch ? tweetIdMatch[1] : null;
+        const authorHandle = url.match(/(?:x\.com|twitter\.com)\/(\w+)\/status/)?.[1] || 'unknown';
+        sourceTitle = `X post from @${authorHandle}`;
 
-      try {
-        let prompt;
-        if (isXPost) {
-          // Strict prompt for X/Twitter — forces the LLM to read the actual post
-          prompt = `Go to this exact URL and read the tweet/post: ${url}
+        if (tweetId) {
+          // Try X API first (most reliable)
+          const xApiKey = Deno.env.get('X_API_KEY');
+          if (xApiKey) {
+            try {
+              // Try Bearer token auth first, then Basic auth
+              const tweetRes = await fetch(
+                `https://api.twitter.com/2/tweets/${tweetId}?tweet.fields=text,author_id,created_at,public_metrics,entities,referenced_tweets&expansions=author_id,referenced_tweets.id&user.fields=name,username`,
+                { headers: { 'Authorization': `Bearer ${xApiKey}` }, signal: AbortSignal.timeout(10000) }
+              );
+              if (tweetRes.ok) {
+                const tweetData = await tweetRes.json();
+                const tweet = tweetData.data;
+                const authorUser = tweetData.includes?.users?.find(u => u.id === tweet.author_id);
+                const authorName = authorUser ? `${authorUser.name} (@${authorUser.username})` : `@${authorHandle}`;
+                sourceTitle = `X post from ${authorName}`;
 
-OUTPUT RULES — FOLLOW EXACTLY:
-1. Start with the author's display name and @handle
-2. Copy the EXACT full text of the tweet/post word-for-word. Do NOT paraphrase, summarize, or add your own words.
-3. List every link, URL, or reference mentioned in the post
-4. Note the engagement stats if visible (likes, reposts, replies)
-5. If it's a thread, include all tweets in order
-6. If it quotes or reposts another tweet, include that too with its author
+                let postContent = `Author: ${authorName}\n\nFull text:\n${tweet.text}`;
 
-DO NOT add analysis, opinions, or context. Only output what is actually written in the post.
-DO NOT make up or guess content. If you cannot access the post, say "COULD NOT ACCESS POST".`;
-        } else {
-          prompt = html.length > 200
-            ? `Extract the EXACT text content from this webpage. Copy the actual words written on the page — do NOT paraphrase or summarize. Include all links and references. URL: ${url}\n\nRaw HTML (first 15000 chars):\n${html.slice(0, 15000)}`
-            : `Go to this URL and extract the EXACT text content: ${url}\n\nCopy the actual words written on the page word-for-word. Include all links and references mentioned. Do NOT paraphrase or add your own analysis.`;
+                // Add engagement stats
+                if (tweet.public_metrics) {
+                  const m = tweet.public_metrics;
+                  postContent += `\n\nEngagement: ${m.like_count || 0} likes, ${m.retweet_count || 0} reposts, ${m.reply_count || 0} replies, ${m.impression_count || 0} views`;
+                }
+
+                // Add referenced tweets (quotes, replies)
+                if (tweetData.includes?.tweets?.length > 0) {
+                  for (const ref of tweetData.includes.tweets) {
+                    const refAuthor = tweetData.includes?.users?.find(u => u.id === ref.author_id);
+                    postContent += `\n\nReferenced tweet by ${refAuthor ? `${refAuthor.name} (@${refAuthor.username})` : 'unknown'}:\n${ref.text}`;
+                  }
+                }
+
+                postContent += `\n\nSource: ${url}`;
+                if (tweet.created_at) postContent += `\nPosted: ${new Date(tweet.created_at).toLocaleString()}`;
+
+                content = postContent;
+                console.log(`X API success: ${content.length} chars from tweet ${tweetId}`);
+              } else {
+                console.log(`X API returned ${tweetRes.status}, falling back to LLM`);
+              }
+            } catch (e) {
+              console.log(`X API failed: ${e.message}, falling back to LLM`);
+            }
+          }
         }
 
-        const extracted = await base44.asServiceRole.integrations.Core.InvokeLLM({
-          prompt,
-          add_context_from_internet: true,
-          model: 'gemini_3_flash',
-        });
-        content = extracted;
-        if (!sourceTitle || sourceTitle === url) {
-          sourceTitle = isXPost ? `X post from ${url.match(/x\.com\/(\w+)/)?.[1] || 'unknown'}` : url.replace(/^https?:\/\//, '').split('/')[0];
+        // Fallback 1: Try fxtwitter API (free, no auth needed)
+        if (!content && tweetId) {
+          try {
+            const fxRes = await fetch(`https://api.fxtwitter.com/status/${tweetId}`, {
+              headers: { 'User-Agent': 'KAI/1.0' },
+              signal: AbortSignal.timeout(10000),
+            });
+            if (fxRes.ok) {
+              const fxData = await fxRes.json();
+              const tw = fxData.tweet;
+              if (tw?.text) {
+                const authorName = tw.author?.name ? `${tw.author.name} (@${tw.author.screen_name || authorHandle})` : `@${authorHandle}`;
+                sourceTitle = `X post from ${authorName}`;
+                let postContent = `Author: ${authorName}\n\nFull text:\n${tw.text}`;
+                if (tw.likes || tw.retweets || tw.replies) {
+                  postContent += `\n\nEngagement: ${tw.likes || 0} likes, ${tw.retweets || 0} reposts, ${tw.replies || 0} replies`;
+                }
+                if (tw.created_at) postContent += `\nPosted: ${tw.created_at}`;
+                postContent += `\n\nSource: ${url}`;
+                content = postContent;
+                console.log(`fxtwitter API success: ${content.length} chars`);
+              }
+            } else {
+              console.log(`fxtwitter returned ${fxRes.status}`);
+            }
+          } catch (e) {
+            console.log(`fxtwitter failed: ${e.message}`);
+          }
         }
-      } catch (e) {
-        console.error('LLM extraction failed for URL:', e.message || e);
-        return Response.json({
-          success: false,
-          error: 'Could not extract content. Try again in a moment.',
-          source_title: sourceTitle || url,
-        });
+
+        // Fallback 2: Try vxtwitter API
+        if (!content && tweetId) {
+          try {
+            const vxRes = await fetch(`https://api.vxtwitter.com/status/${tweetId}`, {
+              headers: { 'User-Agent': 'KAI/1.0' },
+              signal: AbortSignal.timeout(10000),
+            });
+            if (vxRes.ok) {
+              const vxData = await vxRes.json();
+              if (vxData.text) {
+                sourceTitle = `X post from @${vxData.user_name || authorHandle}`;
+                content = `Author: ${vxData.user_name || authorHandle}\n\nFull text:\n${vxData.text}\n\nEngagement: ${vxData.likes || 0} likes, ${vxData.retweets || 0} reposts, ${vxData.replies || 0} replies\n\nSource: ${url}`;
+                console.log(`vxtwitter API success: ${content.length} chars`);
+              }
+            }
+          } catch (e) {
+            console.log(`vxtwitter failed: ${e.message}`);
+          }
+        }
+
+        // Fallback 3: LLM with internet (last resort)
+        if (!content) {
+          try {
+            const extracted = await base44.asServiceRole.integrations.Core.InvokeLLM({
+              prompt: `Go to this exact URL and read the tweet/post: ${url}\n\nCopy the EXACT full text of the tweet word-for-word. Include author handle, engagement stats, and any links. Do NOT paraphrase or add opinions. If you cannot access it, say "COULD NOT ACCESS POST".`,
+              add_context_from_internet: true,
+              model: 'gemini_3_flash',
+            });
+            content = extracted;
+          } catch (e) {
+            console.error('LLM extraction failed for X post:', e.message || e);
+            return Response.json({ success: false, error: 'Could not read the X post. Try again.', source_title: sourceTitle });
+          }
+        }
+      } else {
+        // Regular article/webpage
+        let html = '';
+        try {
+          const pageRes = await fetch(url, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
+            redirect: 'follow',
+            signal: AbortSignal.timeout(10000),
+          });
+          html = await pageRes.text();
+          const titleMatch = html.match(/<title>([^<]*)<\/title>/);
+          sourceTitle = titleMatch ? titleMatch[1].trim() : url;
+        } catch {
+          // Direct fetch failed
+        }
+
+        try {
+          const prompt = html.length > 200
+            ? `Extract the EXACT text content from this webpage. Copy the actual words — do NOT paraphrase. Include all links and references. URL: ${url}\n\nRaw HTML (first 15000 chars):\n${html.slice(0, 15000)}`
+            : `Go to this URL and extract the EXACT text content: ${url}\n\nCopy the actual words written on the page word-for-word. Include all links and references mentioned. Do NOT paraphrase.`;
+
+          const extracted = await base44.asServiceRole.integrations.Core.InvokeLLM({
+            prompt,
+            add_context_from_internet: true,
+            model: 'gemini_3_flash',
+          });
+          content = extracted;
+          if (!sourceTitle || sourceTitle === url) {
+            sourceTitle = url.replace(/^https?:\/\//, '').split('/')[0];
+          }
+        } catch (e) {
+          console.error('LLM extraction failed for URL:', e.message || e);
+          return Response.json({ success: false, error: 'Could not extract content. Try again.', source_title: sourceTitle || url });
+        }
       }
     }
   } else {
