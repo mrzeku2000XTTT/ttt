@@ -72,37 +72,45 @@ export default function KAIChatMessage({ msg, index, typingIndex, typingText, se
   // PDF preview
   if (msg.role === "pdf_preview") {
     return (
-      <div className="flex flex-col gap-2 max-w-[95%] w-full">
-        <div className="text-[12px] font-semibold px-1" style={{ color: "rgba(6,182,212,0.9)" }}>
-          📄 {msg.content}
-        </div>
-        <div className="rounded-xl p-4 flex flex-col gap-3" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-12 rounded flex items-center justify-center flex-shrink-0" style={{ background: "rgba(37,99,235,0.2)", border: "1px solid rgba(37,99,235,0.4)" }}>
-              <span style={{ fontSize: 20 }}>📄</span>
+      <div className="flex flex-col gap-1.5 max-w-[95%] w-full">
+        <div className="rounded-2xl overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(37,99,235,0.15) 0%, rgba(6,182,212,0.1) 100%)", border: "1px solid rgba(37,99,235,0.3)" }}>
+          {/* Top strip */}
+          <div className="px-4 pt-4 pb-3 flex items-center gap-3">
+            <div className="w-9 h-11 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "linear-gradient(135deg, #1d4ed8, #0369a1)", boxShadow: "0 2px 8px rgba(29,78,216,0.5)" }}>
+              <svg width="16" height="20" viewBox="0 0 16 20" fill="none">
+                <path d="M2 0h8l6 6v12a2 2 0 01-2 2H2a2 2 0 01-2-2V2a2 2 0 012-2z" fill="rgba(255,255,255,0.15)"/>
+                <path d="M10 0l6 6h-4a2 2 0 01-2-2V0z" fill="rgba(255,255,255,0.3)"/>
+                <path d="M4 10h8M4 13h6" stroke="white" strokeWidth="1.2" strokeLinecap="round"/>
+              </svg>
             </div>
-            <div>
-              <div className="text-white text-[13px] font-semibold">{msg.pdf_title || 'Document'}.pdf</div>
-              <div className="text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>PDF Document · Ready to download</div>
+            <div className="flex-1 min-w-0">
+              <div className="text-white text-[13px] font-semibold truncate">{msg.pdf_title || 'Document'}.pdf</div>
+              <div className="text-[10px] mt-0.5" style={{ color: "rgba(147,197,253,0.7)" }}>✅ PDF ready · Click to download</div>
             </div>
           </div>
-          <div className="flex gap-2">
+          {/* Divider */}
+          <div style={{ height: 1, background: "rgba(37,99,235,0.2)" }} />
+          {/* Action buttons */}
+          <div className="flex">
             <a
               href={msg.file_url}
               download={`${msg.pdf_title || 'document'}.pdf`}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-[12px] font-semibold transition-all hover:scale-105"
-              style={{ background: "rgba(37,99,235,0.3)", border: "1px solid rgba(37,99,235,0.5)", color: "rgba(147,197,253,1)", textDecoration: "none" }}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[12px] font-bold transition-all hover:bg-white/5"
+              style={{ color: "rgba(147,197,253,1)", textDecoration: "none" }}
             >
-              ⬇️ Download PDF
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v8M3 6l3.5 3.5L10 6M1 11h11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              Download
             </a>
+            <div style={{ width: 1, background: "rgba(37,99,235,0.2)" }} />
             <a
               href={msg.file_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-[12px] font-semibold transition-all hover:scale-105"
-              style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.8)", textDecoration: "none" }}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[12px] font-semibold transition-all hover:bg-white/5"
+              style={{ color: "rgba(255,255,255,0.6)", textDecoration: "none" }}
             >
-              👁️ Open PDF
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              Open
             </a>
           </div>
         </div>
