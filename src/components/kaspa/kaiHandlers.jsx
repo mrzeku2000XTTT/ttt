@@ -82,10 +82,8 @@ export const handleTrainOnContent = async (userMsg, { setMessages, addAssistantM
   }
 
   const isYouTube = url && (url.includes('youtube.com') || url.includes('youtu.be'));
-  setMessages(prev => [...prev, { role: "assistant", content: url ? (isYouTube ? "🔍 Fetching YouTube video…" : `🔍 Fetching content from URL…`) : "🧠 Processing your text…" }]);
-  await new Promise(r => setTimeout(r, 600));
-  setMessages(prev => [...prev, { role: "action", content: url ? `Fetching content from ${url}...` : "Processing your text..." }]);
-  await new Promise(r => setTimeout(r, 400));
+  setMessages(prev => [...prev, { role: "action", content: url ? (isYouTube ? "🔍 Fetching YouTube video…" : `🔍 Fetching content from URL…`) : "🧠 Processing your text…" }]);
+  await new Promise(r => setTimeout(r, 800));
 
   try {
     console.log('[KAI Train] Calling kaiLearn with url:', url, 'rawText:', rawText ? 'yes' : 'no');
@@ -97,16 +95,19 @@ export const handleTrainOnContent = async (userMsg, { setMessages, addAssistantM
       addAssistantMessage("❌ Couldn't process that content. Try a different URL or paste the text directly.");
       return;
     }
-    setMessages(prev => prev.filter(m => m.role !== 'action'));
-    const foundMsg = isYouTube ? `📺 Found: "${data.source_title}"` : `📄 Found: "${data.source_title}" (${data.source_type})`;
-    setMessages(prev => [...prev, { role: "action", content: foundMsg }]);
-    await new Promise(r => setTimeout(r, 700));
-    setMessages(prev => prev.filter(m => m.role !== 'action'));
-    setMessages(prev => [...prev, { role: "action", content: `📝 ${isYouTube ? 'Transcript' : 'Content'} extracted — ${data.word_count.toLocaleString()} words` }]);
-    await new Promise(r => setTimeout(r, 700));
-    setMessages(prev => prev.filter(m => m.role !== 'action'));
-    setMessages(prev => [...prev, { role: "action", content: `💾 Stored ${data.chunks_stored} knowledge blocks to memory` }]);
-    await new Promise(r => setTimeout(r, 600));
+    // Show narration steps — replace action each time (filter then add)
+    const narrations = [
+      isYouTube ? `📺 Found: "${data.source_title}"` : `📄 Found: "${data.source_title}" (${data.source_type})`,
+      `📝 ${isYouTube ? 'Transcript' : 'Content'} extracted — ${data.word_count.toLocaleString()} words`,
+      `💾 Stored ${data.chunks_stored} knowledge blocks to memory`,
+    ];
+    for (const line of narrations) {
+      setMessages(prev => {
+        const cleaned = prev.filter(m => m.role !== 'action');
+        return [...cleaned, { role: "action", content: line }];
+      });
+      await new Promise(r => setTimeout(r, 600));
+    }
     setMessages(prev => prev.filter(m => m.role !== 'action'));
     addAssistantMessage(`✅ **Done. I've learned this.**\n\n📄 **${data.source_title}**\n📊 ${data.word_count.toLocaleString()} words → ${data.chunks_stored} knowledge blocks\n💡 ${data.summary}\n\nAsk me anything about it — or say **"now build something based on what you learned"** and I'll write the code.`);
   } catch {
@@ -138,11 +139,15 @@ export const handleVibeCode = async (userMsg, { setMessages, addAssistantMessage
     }
 
     // Step 3: Narrate — loading context + planning
-    setMessages(prev => prev.filter(m => m.role !== 'action'));
-    setMessages(prev => [...prev, { role: "action", content: "📚 Loading Kaspa context + dev knowledge…" }]);
+    setMessages(prev => {
+      const cleaned = prev.filter(m => m.role !== 'action');
+      return [...cleaned, { role: "action", content: "📚 Loading Kaspa context + dev knowledge…" }];
+    });
     await new Promise(r => setTimeout(r, 400));
-    setMessages(prev => prev.filter(m => m.role !== 'action'));
-    setMessages(prev => [...prev, { role: "action", content: "✅ Plan ready — writing full code now…" }]);
+    setMessages(prev => {
+      const cleaned = prev.filter(m => m.role !== 'action');
+      return [...cleaned, { role: "action", content: "✅ Plan ready — writing full code now…" }];
+    });
     await new Promise(r => setTimeout(r, 400));
 
     // Step 4: Generate full app code via LLM with FULL dev knowledge
@@ -377,16 +382,20 @@ export const handleWatchThat = async (userMsg, messages, { setMessages, addAssis
     return;
   }
 
-  // Narrate the ingestion flow
+  // Narrate the ingestion flow — use filter+add in single setState to avoid stacking
   setMessages(prev => [...prev, { role: "action", content: `🔍 Fetching video…` }]);
   await new Promise(r => setTimeout(r, 500));
-  setMessages(prev => prev.filter(m => m.role !== 'action'));
-  setMessages(prev => [...prev, { role: "action", content: `📺 Found: "${videoTitle}"` }]);
+  setMessages(prev => {
+    const cleaned = prev.filter(m => m.role !== 'action');
+    return [...cleaned, { role: "action", content: `📺 Found: "${videoTitle}"` }];
+  });
   await new Promise(r => setTimeout(r, 600));
 
   try {
-    setMessages(prev => prev.filter(m => m.role !== 'action'));
-    setMessages(prev => [...prev, { role: "action", content: `🧠 Analyzing video content with AI…` }]);
+    setMessages(prev => {
+      const cleaned = prev.filter(m => m.role !== 'action');
+      return [...cleaned, { role: "action", content: `🧠 Analyzing video content with AI…` }];
+    });
 
     const res = await base44.functions.invoke('kaiLearn', { url: videoUrl });
     const data = res.data;
