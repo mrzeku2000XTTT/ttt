@@ -90,10 +90,17 @@ export const IMAGE_KEYWORDS = [
 ];
 
 export const KASPA_NEWS_KEYWORDS = [
-  'kaspa news', 'latest post', 'recent post', 'kaspa posts', 'x posts',
-  'twitter posts', 'kaspa tweets', 'latest tweets', 'recent tweets',
-  'show me posts', 'list posts', 'kaspa x', 'news posts', 'what are people posting',
-  'latest kaspa', 'recent kaspa news', 'kaspa feed'
+  'kaspa news', 'latest post', 'latestpost', 'recent post', 'recentpost',
+  'kaspa posts', 'x posts', 'twitter posts', 'kaspa tweets', 'latest tweets',
+  'recent tweets', 'show me posts', 'list posts', 'kaspa x', 'news posts',
+  'what are people posting', 'latest kaspa', 'recent kaspa news', 'kaspa feed',
+  'fetch post', 'fetch latest', 'fetch news', 'fetch kaspa', 'get posts',
+  'get latest', 'get news', 'pull posts', 'pull latest', 'pull news',
+  'grab posts', 'grab latest', 'grab news', 'load posts', 'load latest',
+  'show posts', 'show latest', 'show news', 'show recent',
+  'list all posts', 'all posts', 'new posts', 'newest posts',
+  'whats new', "what's new", 'any new posts', 'any news',
+  'kaspa updates', 'latest updates', 'community news', 'community posts'
 ];
 
 export const SEARCH_KEYWORDS = [
