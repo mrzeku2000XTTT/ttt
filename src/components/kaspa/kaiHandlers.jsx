@@ -184,21 +184,26 @@ export const handlePDFRequest = async (userMsg, { setMessages, addAssistantMessa
 
   setMessages(prev => [...prev, { role: "action", content: `📄 Writing ${type} content…` }]);
 
-  // Step 1: have LLM write full content
+  // Step 1: have LLM write full content — analyze and summarize, not just structure
   const contentResult = await base44.integrations.Core.InvokeLLM({
-    prompt: `You are KAI writing a ${type} document. The user asked: "${userMsg}"
+    prompt: `You are KAI, an expert analyst and writer. The user asked: "${userMsg}"
 
-Write the COMPLETE, DETAILED content for this ${type} using this exact markdown format:
+Your job is to write the COMPLETE content for a ${type} document. 
+
+IMPORTANT: If the user is asking about a specific topic, post, tweet, article, event, or person — RESEARCH and ANALYZE the subject thoroughly. Write an insightful summary with key takeaways, context, and your analysis. Do NOT just describe the format or structure of the source — actually summarize and explain WHAT it says, WHY it matters, and what the key points are.
+
+Use this markdown format:
 - ## Section Title for headers
-- - item for bullets
+- - item for bullets  
 - - [ ] task for unchecked checkboxes
-- - [x] done for checked checkboxes  
+- - [x] done for checked checkboxes
 - **bold** for emphasis
 - {{callout text}} for highlighted callouts
 - --- for dividers
 
-Write at least 200 words of real, useful content. Be comprehensive. Output ONLY the content, no explanation.`,
+Write at least 200 words of real, substantive content. Focus on the actual meaning, insights, and analysis — not structure descriptions. Output ONLY the content, no explanation.`,
     model: 'gemini_3_flash',
+    add_context_from_internet: true,
   });
 
   // Extract title
