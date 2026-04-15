@@ -20,45 +20,9 @@ Deno.serve(async (req) => {
     sourceTitle = 'User-provided text';
     sourceType = 'text';
   } else if (url) {
-    const isXUrl = /^https?:\/\/(www\.)?(x\.com|twitter\.com)\//i.test(url);
     const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
     
-    if (isXUrl) {
-      // X.com / Twitter — route through kaiBrowse for dedicated tweet extraction
-      sourceType = 'x.com';
-      sourceTitle = 'X/Twitter Post';
-      try {
-        const browseRes = await base44.asServiceRole.functions.invoke('kaiBrowse', { url });
-        const browseData = browseRes?.data || browseRes;
-        if (browseData?.success && browseData.content) {
-          content = browseData.content;
-          sourceTitle = `x.com post`;
-          // Try to extract author from content
-          const authorMatch = content.match(/Author:\s*(.+)/);
-          if (authorMatch) sourceTitle = `x.com · ${authorMatch[1].split('\n')[0].trim()}`;
-        } else {
-          // Fallback to LLM with internet
-          const extracted = await base44.asServiceRole.integrations.Core.InvokeLLM({
-            prompt: `Read this tweet/X post and extract ALL content including the main post text, author, any quoted tweets, thread replies, and engagement stats: ${url}`,
-            add_context_from_internet: true,
-            model: 'gemini_3_flash',
-          });
-          content = extracted;
-        }
-      } catch (e) {
-        console.error('kaiBrowse failed for X URL, falling back to LLM:', e.message || e);
-        try {
-          const extracted = await base44.asServiceRole.integrations.Core.InvokeLLM({
-            prompt: `Read this tweet/X post and extract ALL content including the main post text, author, any quoted tweets, thread replies, and engagement stats: ${url}`,
-            add_context_from_internet: true,
-            model: 'gemini_3_flash',
-          });
-          content = extracted;
-        } catch {
-          return Response.json({ success: false, error: 'Could not extract tweet content.', source_title: sourceTitle });
-        }
-      }
-    } else if (ytMatch) {
+    if (ytMatch) {
       sourceType = 'youtube';
       const videoId = ytMatch[1];
       sourceTitle = `YouTube Video ${videoId}`;
