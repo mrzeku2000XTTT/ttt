@@ -48,12 +48,15 @@ Deno.serve(async (req) => {
         });
       }
     } else {
-      // Regular URL
-      sourceType = 'article';
+      // Check if it's a Twitter/X post
+      const isXPost = /^https?:\/\/(x\.com|twitter\.com)\/\w+\/status\/\d+/i.test(url);
+      sourceType = isXPost ? 'x_post' : 'article';
       let html = '';
+
+      // Try direct fetch (will fail for X/Twitter but works for articles)
       try {
         const pageRes = await fetch(url, {
-          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; KaiBot/1.0)' },
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
           redirect: 'follow',
           signal: AbortSignal.timeout(10000),
         });
@@ -65,18 +68,35 @@ Deno.serve(async (req) => {
       }
 
       try {
-        const prompt = html.length > 200
-          ? `Extract all the important information, facts, and key content from this webpage. Be thorough. URL: ${url}\n\nRaw HTML (first 15000 chars):\n${html.slice(0, 15000)}`
-          : `Read and extract all the key information from this URL: ${url}. Be thorough and detailed.`;
+        let prompt;
+        if (isXPost) {
+          // Strict prompt for X/Twitter — forces the LLM to read the actual post
+          prompt = `Go to this exact URL and read the tweet/post: ${url}
+
+OUTPUT RULES — FOLLOW EXACTLY:
+1. Start with the author's display name and @handle
+2. Copy the EXACT full text of the tweet/post word-for-word. Do NOT paraphrase, summarize, or add your own words.
+3. List every link, URL, or reference mentioned in the post
+4. Note the engagement stats if visible (likes, reposts, replies)
+5. If it's a thread, include all tweets in order
+6. If it quotes or reposts another tweet, include that too with its author
+
+DO NOT add analysis, opinions, or context. Only output what is actually written in the post.
+DO NOT make up or guess content. If you cannot access the post, say "COULD NOT ACCESS POST".`;
+        } else {
+          prompt = html.length > 200
+            ? `Extract the EXACT text content from this webpage. Copy the actual words written on the page — do NOT paraphrase or summarize. Include all links and references. URL: ${url}\n\nRaw HTML (first 15000 chars):\n${html.slice(0, 15000)}`
+            : `Go to this URL and extract the EXACT text content: ${url}\n\nCopy the actual words written on the page word-for-word. Include all links and references mentioned. Do NOT paraphrase or add your own analysis.`;
+        }
 
         const extracted = await base44.asServiceRole.integrations.Core.InvokeLLM({
           prompt,
-          add_context_from_internet: html.length <= 200,
+          add_context_from_internet: true,
           model: 'gemini_3_flash',
         });
         content = extracted;
         if (!sourceTitle || sourceTitle === url) {
-          sourceTitle = url.replace(/^https?:\/\//, '').split('/')[0];
+          sourceTitle = isXPost ? `X post from ${url.match(/x\.com\/(\w+)/)?.[1] || 'unknown'}` : url.replace(/^https?:\/\//, '').split('/')[0];
         }
       } catch (e) {
         console.error('LLM extraction failed for URL:', e.message || e);
