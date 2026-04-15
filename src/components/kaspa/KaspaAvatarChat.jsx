@@ -897,10 +897,10 @@ Respond as KAI:${speedInstruction}`;
   const videoRef = useRef(null);
   const headerVideoRef = useRef(null);
 
-  // Slow down video playback
+  // Set normal video playback
   useEffect(() => {
-    if (videoRef.current) videoRef.current.playbackRate = 0.5;
-    if (headerVideoRef.current) headerVideoRef.current.playbackRate = 0.5;
+    if (videoRef.current) videoRef.current.playbackRate = 1;
+    if (headerVideoRef.current) headerVideoRef.current.playbackRate = 1;
   }, [videoUrl, isOpen]);
 
   return (
@@ -947,7 +947,7 @@ Respond as KAI:${speedInstruction}`;
               style={{ background: "#000" }}
             >
               {videoUrl ? (
-                <video ref={videoRef} src={videoUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" onLoadedMetadata={e => { e.target.playbackRate = 0.5; }} />
+                <video ref={videoRef} src={videoUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" onLoadedMetadata={e => { e.target.playbackRate = 1; }} />
               ) : (
                 <img src={DEFAULT_AVATAR_IMG} alt="KAI" className="w-full h-full object-cover" />
               )}
@@ -982,7 +982,7 @@ Respond as KAI:${speedInstruction}`;
                 <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-white/20 flex-shrink-0"
                   style={{ background: "#000" }}>
                   {videoUrl ? (
-                    <video ref={headerVideoRef} src={videoUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" onLoadedMetadata={e => { e.target.playbackRate = 0.5; }} />
+                    <video ref={headerVideoRef} src={videoUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" onLoadedMetadata={e => { e.target.playbackRate = 1; }} />
                   ) : (
                     <img src={DEFAULT_AVATAR_IMG} alt="KAI" className="w-full h-full object-cover" />
                   )}
