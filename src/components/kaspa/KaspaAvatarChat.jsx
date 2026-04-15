@@ -13,10 +13,10 @@ import {
   isImageRequest, isKaspaNewsRequest, isSearchRequest, isFeedRequest,
   isUserPostRequest, isTrainRequest, isBuildRequest, isBrainRequest,
   isBrowseRequest, isExplorerRequest, isVideoRequest, isWatchThatRequest,
-  isVibeCodeRequest, detectOpenApp, getBrowseUrl, detectFeedRoute
+  detectOpenApp, getBrowseUrl, detectFeedRoute
 } from "./kaiDetectors";
 import {
-  handleShowBrain, handleTrainOnContent, handleBuildRequest, handleVibeCode,
+  handleShowBrain, handleTrainOnContent, handleBuildRequest,
   handleKaspaNews, handleKaspaVideos, handleWatchThat, handleFeedRoute,
   handleExplorerRequest, handleUserPostAnalysis,
   handleFeedSummary, handleGeneralMessage
@@ -166,25 +166,13 @@ export default function KaspaAvatarChat() {
       // "Watch that" / "learn from that" — ingest video from last feed
       if (isWatchThatRequest(userMsg)) { await handleWatchThat(userMsg, messages, ctx); setIsLoading(false); return; }
 
-      // Train / learn / bare URL — YouTube URLs ALWAYS go to learn, never to browser
+      // Train / learn / bare URL
       const hasUrl = /(https?:\/\/[^\s]+)/i.test(userMsg);
-      const hasYoutubeUrl = /(youtube\.com\/watch|youtu\.be\/|youtube\.com\/embed\/)/i.test(userMsg);
-      if (isTrainRequest(userMsg) || hasYoutubeUrl || (hasUrl && !isBrowseRequest(userMsg) && !isExplorerRequest(userMsg))) {
+      if (isTrainRequest(userMsg) || (hasUrl && !isBrowseRequest(userMsg) && !isExplorerRequest(userMsg))) {
         await handleTrainOnContent(userMsg, ctx); setIsLoading(false); return;
       }
 
-      // Vibe code — redirect to full-screen IDE (check BEFORE generic build)
-      if (isVibeCodeRequest(userMsg)) {
-        setMessages(prev => [...prev, {
-          role: "assistant",
-          content: "💻 **KAI IDE** is ready — the full-screen vibe coding environment where I generate complete Kaspa apps with entities, pages, functions, and deploy instructions.\n\nTap below to open it and describe what you want to build!",
-          links: [{ label: "Open KAI IDE 💻", path: "KaiIDE" }]
-        }]);
-        setIsLoading(false);
-        return;
-      }
-
-      // Build / code (generic function build — only hits if vibe code didn't match)
+      // Build / code
       if (isBuildRequest(userMsg)) { await handleBuildRequest(userMsg, ctx); setIsLoading(false); return; }
 
       // Kaspa videos
@@ -262,7 +250,7 @@ export default function KaspaAvatarChat() {
     setIsOpen(false); setShowSettings(false); setIsLoading(false);
     setTypingIndex(-1); setTypingText(""); setBrowserUrl(null); setShowBrowser(false); setViewingPost(null);
     setMessages([{ role: "assistant", content: kaiMode === "classic"
-      ? "Hey, I'm the Impostor 🎭 Ask me anything about TTT, Kaspa, or literally anything."
+      ? "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything."
       : "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem."
     }]);
   };
@@ -273,7 +261,7 @@ export default function KaspaAvatarChat() {
       <AnimatePresence>
         {!isOpen && (
           <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
-            className="fixed z-[9999] bottom-20 lg:bottom-6 right-4 flex items-end gap-2">
+            className="fixed z-[80] bottom-20 lg:bottom-6 right-4 flex items-end gap-2">
             {showBubble && <div className="relative mb-2 max-w-[180px] cursor-pointer" onClick={(e) => { e.stopPropagation(); setShowBubble(false); }}>
               <div className="px-3 py-2 rounded-2xl rounded-br-sm text-[11px] font-medium leading-snug"
                 style={{ background: "rgba(0,0,0,0.85)", color: "rgba(255,255,255,0.9)", backdropFilter: "blur(20px)", border: "1px solid rgba(6,182,212,0.25)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
@@ -299,7 +287,7 @@ export default function KaspaAvatarChat() {
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed z-[9999] bottom-20 lg:bottom-6 right-4 flex flex-col"
+            className="fixed z-[80] bottom-20 lg:bottom-6 right-4 flex flex-col"
             style={{ width: "min(380px, calc(100vw - 2rem))", height: "500px", borderRadius: "20px", background: "rgba(12, 12, 18, 0.92)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 24px 64px rgba(0,0,0,0.6)", overflow: "hidden" }}>
             
             {/* Header */}
@@ -313,8 +301,8 @@ export default function KaspaAvatarChat() {
                   )}
                 </div>
                 <div>
-                  <div className="text-white font-bold text-sm tracking-wide">{kaiMode === "classic" ? "Kai 🎭" : "KAI"}</div>
-                  <div className="text-white/40 text-[10px]">{kaiMode === "classic" ? "Impostor • Real Impostor" : "Kaspa AI Assistant"}</div>
+                  <div className="text-white font-bold text-sm tracking-wide">{kaiMode === "classic" ? "Kai" : "KAI"}</div>
+                  <div className="text-white/40 text-[10px]">{kaiMode === "classic" ? "Classic • TTT Assistant" : "Kaspa AI Assistant"}</div>
                 </div>
               </div>
               <div className="flex items-center gap-1">
@@ -322,13 +310,13 @@ export default function KaspaAvatarChat() {
                   const next = kaiMode === "kai" ? "classic" : "kai";
                   setKaiMode(next); setIsLoading(false); setTypingIndex(-1); setTypingText("");
                   setMessages([{ role: "assistant", content: next === "classic"
-                    ? "Hey, I'm the Impostor 🎭 Ask me anything about TTT, Kaspa, or literally anything — I have internet access and know every feature of the platform."
+                    ? "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything — I have internet access and know every feature of the platform."
                     : "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem."
                   }]);
                 }}
                   className="h-6 px-2 rounded-full flex items-center gap-1 text-[10px] font-bold transition-all"
                   style={{ background: kaiMode === "classic" ? "rgba(168,85,247,0.3)" : "rgba(6,182,212,0.3)", border: `1px solid ${kaiMode === "classic" ? "rgba(168,85,247,0.5)" : "rgba(6,182,212,0.5)"}`, color: kaiMode === "classic" ? "rgba(192,132,252,0.95)" : "rgba(6,182,212,0.95)" }}>
-                  {kaiMode === "classic" ? "Impostor" : "KAI"}
+                  {kaiMode === "classic" ? "Classic" : "KAI"}
                 </button>
                 <button onClick={() => setShowSettings(!showSettings)}
                   className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors hover:bg-white/10 ${showSettings ? 'text-cyan-400' : 'text-white/40 hover:text-white/80'}`}>
@@ -463,7 +451,7 @@ export default function KaspaAvatarChat() {
                 </button>
                 <input ref={inputRef} type="text" value={input} onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-                  placeholder={pendingImages.length > 0 ? "Ask about the image…" : (kaiMode === "classic" ? "Ask the Impostor..." : "Search or ask KAI...")}
+                  placeholder={pendingImages.length > 0 ? "Ask about the image…" : (kaiMode === "classic" ? "Search or ask Kai..." : "Search or ask KAI...")}
                   className="flex-1 bg-transparent text-white/90 outline-none placeholder-white/30" style={{ fontSize: '16px' }} />
                 <button onClick={sendMessage} disabled={(!input.trim() && pendingImages.length === 0) || isLoading}
                   className="w-7 h-7 rounded-full flex items-center justify-center transition-all disabled:opacity-30"

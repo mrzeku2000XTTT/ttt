@@ -118,11 +118,12 @@ export const FEED_KEYWORDS = [
 export const USER_POST_KEYWORDS = [
   'posts by', 'posts from', 'analyze user', 'user posts',
   'examine posts', 'who posted', 'show me posts from', 'check posts',
-  'what did @', 'what has @', 'what does @',
-  "what's being said about",
-  'say about @', 'posted about', 'wrote about', 'tweeted about',
-  'latest from @', 'posts about', 'updates from @',
-  'any posts from', 'any news from @', 'anything from @',
+  'what did', 'what has', 'what was', 'what does', 'what is',
+  'what are', 'what\'s being said',
+  'say about', 'posted about', 'wrote about', 'tweeted about',
+  'check what', 'find what', 'show what',
+  'latest from @', 'posts about', 'news about', 'updates about',
+  'any posts from', 'any news from', 'anything from',
   'said about', 'saying about', 'posting about',
 ];
 
@@ -133,19 +134,10 @@ export const TRAIN_KEYWORDS = [
 ];
 
 export const BUILD_KEYWORDS = [
-  'create a function', 'write a function', 'make a function',
-  'automate', 'create a script', 'write code',
-  'morning brief', 'create an automation',
+  'build', 'code', 'create a function', 'write a function', 'make a function',
+  'automate', 'build me', 'code me', 'create a script', 'write code',
+  'morning brief', 'build a', 'create an automation', 'deploy',
   'now build', 'build based on', 'make a bot', 'write a bot',
-];
-
-export const VIBE_CODE_KEYWORDS = [
-  'build me an app', 'build me a', 'create me an app', 'create me a',
-  'make me an app', 'make me a', 'vibe code', 'code me an app',
-  'code me a', 'i want an app', 'build a kaspa', 'make a kas',
-  'build an app', 'create an app', 'make an app',
-  'build me', 'build a', 'code me', 'deploy',
-  'code', 'build',
 ];
 
 export const BRAIN_KEYWORDS = [
@@ -229,5 +221,4 @@ export const APP_DIRECTORY = [
   { names: ['kivr', 'phone'], path: 'KivR', label: 'KivR 📞', desc: 'IVR/phone system' },
   { names: ['kaspa node', 'node map'], path: 'KaspaNodeMap', label: 'Node Map 🗺️', desc: 'Kaspa network node map' },
   { names: ['what is kaspa', 'kaspa info'], path: 'WhatIsKaspa', label: 'What is Kaspa 📖', desc: 'Kaspa education page' },
-  { names: ['kai ide', 'ide', 'vibe code', 'code editor'], path: 'KaiIDE', label: 'KAI IDE 💻', desc: 'Full-screen vibe code IDE' },
 ];

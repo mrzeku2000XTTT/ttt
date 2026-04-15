@@ -2,13 +2,11 @@
 
 import { base44 } from "@/api/base44Client";
 import { TTT_APP_DOCS, KASPA_CONTEXT_BASE } from "./kaiConstants";
-import { KAI_DEV_KNOWLEDGE } from "./kaiDevKnowledge";
 import {
   isImageRequest, isKaspaNewsRequest, isSearchRequest, isFeedRequest,
   isUserPostRequest, isTrainRequest, isBuildRequest, isBrainRequest,
   isBrowseRequest, isExplorerRequest, detectExplorerAction, detectOpenApp,
-  getBrowseUrl, isTTTQuestion, fetchKaspaContext, extractVideoIndex,
-  isVibeCodeRequest
+  getBrowseUrl, isTTTQuestion, fetchKaspaContext, extractVideoIndex
 } from "./kaiDetectors";
 
 // Load user's learned knowledge for context injection (with timeout)
@@ -73,8 +71,6 @@ export const handleTrainOnContent = async (userMsg, { setMessages, addAssistantM
   const url = urlMatch ? urlMatch[1] : null;
   const rawText = !url ? userMsg.replace(/^(train yourself|train on this|learn this|study this|read this|watch this|ingest this|memorize this|remember this|learn from|train on|study from|read from|learn about this|absorb this)\s*/i, '').trim() : null;
 
-  console.log('[KAI Train] URL extracted:', url, '| rawText:', rawText?.slice(0, 50));
-
   if (!url && (!rawText || rawText.length < 20)) {
     addAssistantMessage("Send me a URL, article link, YouTube video, or paste some text and say \"learn this\" — I'll process it and add it to my brain. 🧠");
     setIsLoading(false);
@@ -82,200 +78,34 @@ export const handleTrainOnContent = async (userMsg, { setMessages, addAssistantM
   }
 
   const isYouTube = url && (url.includes('youtube.com') || url.includes('youtu.be'));
-  setMessages(prev => [...prev, { role: "action", content: url ? (isYouTube ? "🔍 Fetching YouTube video…" : `🔍 Fetching content from URL…`) : "🧠 Processing your text…" }]);
-  await new Promise(r => setTimeout(r, 800));
+  setMessages(prev => [...prev, { role: "assistant", content: url ? (isYouTube ? "🔍 Fetching YouTube video…" : `🔍 Fetching content from URL…`) : "🧠 Processing your text…" }]);
+  await new Promise(r => setTimeout(r, 600));
+  setMessages(prev => [...prev, { role: "action", content: url ? `Fetching content from ${url}...` : "Processing your text..." }]);
+  await new Promise(r => setTimeout(r, 400));
 
   try {
-    console.log('[KAI Train] Calling kaiLearn with url:', url, 'rawText:', rawText ? 'yes' : 'no');
     const res = await base44.functions.invoke('kaiLearn', { url, rawText });
     const data = res.data;
-    console.log('[KAI Train] kaiLearn result:', data?.success, data?.source_title);
     if (!data.success) {
       setMessages(prev => prev.filter(m => m.role !== 'action'));
       addAssistantMessage("❌ Couldn't process that content. Try a different URL or paste the text directly.");
       return;
     }
-    // Show narration steps — replace action each time (filter then add)
-    const narrations = [
-      isYouTube ? `📺 Found: "${data.source_title}"` : `📄 Found: "${data.source_title}" (${data.source_type})`,
-      `📝 ${isYouTube ? 'Transcript' : 'Content'} extracted — ${data.word_count.toLocaleString()} words`,
-      `💾 Stored ${data.chunks_stored} knowledge blocks to memory`,
-    ];
-    for (const line of narrations) {
-      setMessages(prev => {
-        const cleaned = prev.filter(m => m.role !== 'action');
-        return [...cleaned, { role: "action", content: line }];
-      });
-      await new Promise(r => setTimeout(r, 600));
-    }
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    const foundMsg = isYouTube ? `📺 Found: "${data.source_title}"` : `📄 Found: "${data.source_title}" (${data.source_type})`;
+    setMessages(prev => [...prev, { role: "action", content: foundMsg }]);
+    await new Promise(r => setTimeout(r, 700));
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    setMessages(prev => [...prev, { role: "action", content: `📝 ${isYouTube ? 'Transcript' : 'Content'} extracted — ${data.word_count.toLocaleString()} words` }]);
+    await new Promise(r => setTimeout(r, 700));
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    setMessages(prev => [...prev, { role: "action", content: `💾 Stored ${data.chunks_stored} knowledge blocks to memory` }]);
+    await new Promise(r => setTimeout(r, 600));
     setMessages(prev => prev.filter(m => m.role !== 'action'));
     addAssistantMessage(`✅ **Done. I've learned this.**\n\n📄 **${data.source_title}**\n📊 ${data.word_count.toLocaleString()} words → ${data.chunks_stored} knowledge blocks\n💡 ${data.summary}\n\nAsk me anything about it — or say **"now build something based on what you learned"** and I'll write the code.`);
   } catch {
     setMessages(prev => prev.filter(m => m.role !== 'action'));
     addAssistantMessage("❌ Something went wrong while learning that. Try again or paste the text directly.");
-  }
-};
-
-// Vibe Code — full IDE generation
-export const handleVibeCode = async (userMsg, { setMessages, addAssistantMessage, setIsLoading }) => {
-  // Step 1: Narrate — calling architect
-  setMessages(prev => [...prev, { role: "action", content: "🏗️ Calling KaiArchitect…" }]);
-  await new Promise(r => setTimeout(r, 400));
-
-  try {
-    // Step 2: Call kaiArchitect
-    const archRes = await fetch('https://kaspa-b3ad561a.base44.app/functions/kaiArchitect', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idea: userMsg }),
-    });
-    const archData = await archRes.json();
-    const architectPrompt = archData?.architect_prompt || archData?.prompt || '';
-
-    if (!architectPrompt) {
-      setMessages(prev => prev.filter(m => m.role !== 'action'));
-      addAssistantMessage("❌ KaiArchitect couldn't plan this app. Try describing what you want in more detail.");
-      return;
-    }
-
-    // Step 3: Narrate — loading context + planning
-    setMessages(prev => {
-      const cleaned = prev.filter(m => m.role !== 'action');
-      return [...cleaned, { role: "action", content: "📚 Loading Kaspa context + dev knowledge…" }];
-    });
-    await new Promise(r => setTimeout(r, 400));
-    setMessages(prev => {
-      const cleaned = prev.filter(m => m.role !== 'action');
-      return [...cleaned, { role: "action", content: "✅ Plan ready — writing full code now…" }];
-    });
-    await new Promise(r => setTimeout(r, 400));
-
-    // Step 4: Generate full app code via LLM with FULL dev knowledge
-    const codeResponse = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are KAI — a Kaspa-native AI developer agent that vibe codes full apps like Claude Code.
-
-${KAI_DEV_KNOWLEDGE}
-
-## ARCHITECT CONTEXT (from kaiArchitect):
-${architectPrompt}
-
-## CRITICAL OUTPUT FORMAT
-You MUST respond with ONLY a valid JSON object. No markdown. No code fences. No text before or after. Just the raw JSON.
-
-Return this exact JSON structure:
-
-{
-  "app_name": "string — short name",
-  "description": "string — 1-2 sentence description",
-  "kaspa_apis": ["array of API URLs this app uses"],
-  "estimated_time": "string — e.g. '5 minutes'",
-  "entities": [
-    {
-      "name": "EntityName",
-      "schema": {
-        "type": "object",
-        "properties": { ... fields with types ... },
-        "required": ["field1"]
-      }
-    }
-  ],
-  "pages": [
-    {
-      "name": "PageName",
-      "code": "full JSX code — import { EntityName } from '@/api/entities' — use EntityName.list(), .create(), .filter(), .update(), .delete() — Tailwind dark theme bg-gray-900 + teal-400 accent — mobile-first — complete working code"
-    }
-  ],
-  "functions": [
-    {
-      "name": "functionName",
-      "code": "full Deno function code — import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25'; Deno.serve(async (req) => { ... }); — handle OPTIONS for CORS — use base44.asServiceRole.entities"
-    }
-  ],
-  "deploy_steps": [
-    "Entities → New Entity → [name] → paste schema → Save",
-    "Pages → New Page → [name] → paste JSX → Save",
-    "Functions → New Function → [name] → paste TS → Save & Deploy",
-    "Publish App → live ✅"
-  ],
-  "suggested_upgrades": ["upgrade 1", "upgrade 2", "upgrade 3"]
-}
-
-RULES:
-- Max 3 entities, 3 pages, 2 functions
-- ZERO placeholders. ZERO "// TODO". Complete working code only.
-- Every app MUST use at least one live Kaspa API
-- Always dark UI: bg-gray-900 body, bg-gray-800 cards, teal-400 accent
-- Always mobile-first
-- Every response header: "Access-Control-Allow-Origin": "*"
-- Entity auto-fields (never add): id, created_date, updated_date, created_by
-
-USER'S APP IDEA: "${userMsg}"
-
-Respond with ONLY the JSON object.`,
-      model: 'claude_sonnet_4_6',
-    });
-
-    // Step 5: Parse the response
-    setMessages(prev => prev.filter(m => m.role !== 'action'));
-
-    let ideData;
-    try {
-      // Handle string or object response
-      if (typeof codeResponse === 'string') {
-        // Strip markdown fences if present
-        const cleaned = codeResponse.replace(/^```json?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
-        ideData = JSON.parse(cleaned);
-      } else {
-        ideData = codeResponse;
-      }
-    } catch (parseErr) {
-      console.error('IDE parse error:', parseErr, 'Raw:', typeof codeResponse === 'string' ? codeResponse.slice(0, 200) : codeResponse);
-      // Fallback: show raw response as a message
-      addAssistantMessage("⚠️ Got the code but couldn't structure it into the IDE. Here's the raw output:\n\n" + (typeof codeResponse === 'string' ? codeResponse.slice(0, 3000) : JSON.stringify(codeResponse).slice(0, 3000)));
-      return;
-    }
-
-    // Step 6: Narrate code generation
-    const narrations = [];
-    if (ideData.entities?.length) narrations.push(`✍️ Writing ${ideData.entities.length} entity schema${ideData.entities.length > 1 ? 's' : ''}…`);
-    if (ideData.pages?.length) narrations.push(`✍️ Writing ${ideData.pages.length} page${ideData.pages.length > 1 ? 's' : ''}…`);
-    if (ideData.functions?.length) narrations.push(`✍️ Writing ${ideData.functions.length} function${ideData.functions.length > 1 ? 's' : ''}…`);
-    narrations.push("⚡ Injecting Kaspa wallet API…");
-    narrations.push("✅ All files ready — check the IDE tabs below");
-
-    for (const line of narrations) {
-      setMessages(prev => [...prev, { role: "action", content: line }]);
-      await new Promise(r => setTimeout(r, 450));
-      setMessages(prev => prev.filter(m => m.role !== 'action'));
-    }
-
-    // Step 7: Add IDE panel message
-    setMessages(prev => [...prev, { role: "kai_ide", ideData }]);
-
-    // Step 8: Summary message with link to full-screen IDE
-    const entityList = (ideData.entities || []).map(e => e.name).join(', ');
-    const pageList = (ideData.pages || []).map(p => p.name).join(', ');
-    const fnList = (ideData.functions || []).map(f => f.name).join(', ');
-    const upgrades = ideData.suggested_upgrades || [];
-
-    let summary = `✅ **${ideData.app_name || 'Your app'}** is ready!\n\nIt includes:\n`;
-    if (ideData.entities?.length) summary += `• ${ideData.entities.length} entit${ideData.entities.length > 1 ? 'ies' : 'y'}: ${entityList}\n`;
-    if (ideData.pages?.length) summary += `• ${ideData.pages.length} page${ideData.pages.length > 1 ? 's' : ''}: ${pageList}\n`;
-    if (ideData.functions?.length) summary += `• ${ideData.functions.length} function${ideData.functions.length > 1 ? 's' : ''}: ${fnList}\n`;
-    summary += `\nCheck the IDE above, or open the **full-screen IDE** for a better view. 🚀`;
-    if (upgrades.length > 0) {
-      summary += `\n\nWant me to add:\n${upgrades.map(u => `• ${u}?`).join('\n')}`;
-    }
-
-    setMessages(prev => [...prev, {
-      role: "assistant",
-      content: summary,
-      links: [{ label: "Open Full-Screen IDE 💻", path: "KaiIDE" }]
-    }]);
-  } catch (err) {
-    console.error('Vibe code error:', err);
-    setMessages(prev => prev.filter(m => m.role !== 'action'));
-    addAssistantMessage("❌ Something went wrong building your app. Try again or describe it differently.");
   }
 };
 
@@ -293,26 +123,7 @@ export const handleBuildRequest = async (userMsg, { setMessages, addAssistantMes
         setMessages(prev => prev.filter(m => m.role !== 'action'));
       }
     }
-    const buildPrompt = `You are Kai — a Kaspa-native AI developer that builds full working code.
-
-${KAI_DEV_KNOWLEDGE}
-
-USER REQUEST: "${userMsg}"
-
-CODE PROMPT FROM KAICODE:
-${data.code_prompt || 'No specific prompt available.'}
-
-CONTEXT FROM LEARNED SOURCES:
-${(data.context || '').slice(0, 3000)}
-
-SOURCES: ${JSON.stringify(data.sources || [])}
-
-Now write the COMPLETE function code. Show it in a code block. Explain what it does in plain language. Then tell the user exactly where to paste it:
-- Function: Functions → New Function → camelCase name → paste TS → Save & Deploy
-- Entity: Entities → New Entity → PascalCase name → paste schema → Save
-- Page: Pages → New Page → name → paste JSX → Save
-
-After writing, offer 3 specific upgrades the user can ask for.`;
+    const buildPrompt = `You are Kai, an AI agent that builds things. A user asked you to build something, and you've gathered context from your knowledge base.\n\nUSER REQUEST: "${userMsg}"\n\nCODE PROMPT FROM KAICODE:\n${data.code_prompt || 'No specific prompt available.'}\n\nCONTEXT FROM LEARNED SOURCES:\n${(data.context || '').slice(0, 3000)}\n\nBASE44 FUNCTION RULES:\n${data.base44_rules || 'Use Deno.serve with createClientFromRequest from npm:@base44/sdk@0.8.25'}\n\nSOURCES: ${JSON.stringify(data.sources || [])}\n\nNow write the COMPLETE function code. Show it in a code block. Explain what it does in plain language. Then tell the user: "To deploy: Base44 app → Functions → New Function → name it [functionName] → paste the code → Save & Deploy." Ask if they want an automation set up.`;
     const response = await base44.integrations.Core.InvokeLLM({ prompt: buildPrompt, model: 'gemini_3_flash' });
     addAssistantMessage(response);
   } catch {
@@ -325,10 +136,13 @@ After writing, offer 3 specific upgrades the user can ask for.`;
 export const handleKaspaVideos = async ({ setMessages, addAssistantMessage }) => {
   setMessages(prev => [...prev, { role: "action", content: "🎬 Fetching latest Kaspa videos…" }]);
   try {
+    const res = await fetch(`${KASPA_CONTEXT_BASE}?feed=videos&format=feed&limit=5`);
+    const text = await res.text();
+    
+    // Also fetch JSON for structured card display
     const jsonRes = await fetch(`${KASPA_CONTEXT_BASE}?feed=videos&format=json&limit=5`);
     const jsonData = await jsonRes.json();
     const videos = jsonData?.items || (Array.isArray(jsonData) ? jsonData : []);
-    console.log('[KAI Videos] Fetched', videos.length, 'videos. First URL:', videos[0]?.url);
     
     setMessages(prev => prev.filter(m => m.role !== 'action'));
     
@@ -375,27 +189,22 @@ export const handleWatchThat = async (userMsg, messages, { setMessages, addAssis
   const video = lastVideoMsg.videos[Math.min(idx, lastVideoMsg.videos.length - 1)];
   const videoUrl = video.url;
   const videoTitle = video.text || video.title || "Untitled";
-  console.log('[KAI WatchThat] idx:', idx, 'videoUrl:', videoUrl, 'videoTitle:', videoTitle);
 
   if (!videoUrl) {
     addAssistantMessage("That video doesn't have a URL I can ingest. Try another one.");
     return;
   }
 
-  // Narrate the ingestion flow — use filter+add in single setState to avoid stacking
+  // Narrate the ingestion flow
   setMessages(prev => [...prev, { role: "action", content: `🔍 Fetching video…` }]);
   await new Promise(r => setTimeout(r, 500));
-  setMessages(prev => {
-    const cleaned = prev.filter(m => m.role !== 'action');
-    return [...cleaned, { role: "action", content: `📺 Found: "${videoTitle}"` }];
-  });
+  setMessages(prev => prev.filter(m => m.role !== 'action'));
+  setMessages(prev => [...prev, { role: "action", content: `📺 Found: "${videoTitle}"` }]);
   await new Promise(r => setTimeout(r, 600));
 
   try {
-    setMessages(prev => {
-      const cleaned = prev.filter(m => m.role !== 'action');
-      return [...cleaned, { role: "action", content: `🧠 Analyzing video content with AI…` }];
-    });
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    setMessages(prev => [...prev, { role: "action", content: `🧠 Analyzing video content with AI…` }]);
 
     const res = await base44.functions.invoke('kaiLearn', { url: videoUrl });
     const data = res.data;
@@ -670,48 +479,18 @@ export const handleGeneralMessage = async (userMsg, imageUrls, imageNames, messa
   let learnedKnowledge = '';
   let feedContext = '';
 
-  const lower = userMsg.toLowerCase();
-  const isPriceOrMarket = ['price', 'market', 'worth', 'cost', 'how much', 'usd', 'dollar', 'mcap', 'market cap', 'ath', 'volume'].some(kw => lower.includes(kw));
-  // Only fetch community feed when user explicitly asks about feed/community/posts
-  const wantsFeedContext = ['feed', 'community', 'posts', 'what are people', 'what is everyone', 'trending', 'whats new', "what's new", 'ttt feed', 'recent posts'].some(kw => lower.includes(kw));
-
-  // Always fetch real price data for price queries — never let LLM guess
-  let livePriceBlock = '';
-  const fetchLivePrice = async () => {
-    try {
-      const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=kaspa&vs_currencies=usd&include_24hr_change=true&include_market_cap=true&include_24hr_vol=true');
-      if (res.ok) {
-        const data = await res.json();
-        const kas = data?.kaspa;
-        if (kas) {
-          const price = kas.usd;
-          const change = kas.usd_24h_change;
-          const mcap = kas.usd_market_cap;
-          const vol = kas.usd_24h_vol;
-          livePriceBlock = `\n\n⚡ LIVE KAS PRICE DATA (from CoinGecko, fetched just now — use THESE exact numbers, do NOT make up different ones):\n- Price: $${price}\n- 24h Change: ${change >= 0 ? '+' : ''}${change?.toFixed(2)}%\n- Market Cap: $${mcap ? (mcap / 1e9).toFixed(2) + 'B' : 'N/A'}\n- 24h Volume: $${vol ? (vol / 1e6).toFixed(1) + 'M' : 'N/A'}\n`;
-        }
-      }
-    } catch {}
-  };
-
-  // Build promises — only fetch feed context when user actually asks about the feed
-  const promises = [loadLearnedKnowledge()];
-  if (isPriceOrMarket) promises.push(fetchLivePrice());
-  if (wantsFeedContext) promises.push(fetchKaspaContext(userMsg));
-  if (wantsFeedContext && !isFast) promises.push(base44.entities.Post.list('-created_date', 15).catch(() => []));
-
-  const results = await Promise.all(promises);
-  learnedKnowledge = results[0];
-  // Parse optional results based on what was requested
-  let resultIdx = 1;
-  if (isPriceOrMarket) resultIdx++; // fetchLivePrice doesn't return — it sets livePriceBlock
-  if (wantsFeedContext) {
-    liveKaspaContext = results[resultIdx++] || '';
-    if (!isFast && results[resultIdx]) {
-      const posts = results[resultIdx];
-      if (posts?.length > 0) {
-        feedContext = `\n\nRecent TTT Feed activity:\n${posts.map(p => `- ${p.author_name}: ${p.content?.slice(0, 80)}`).join('\n')}`;
-      }
+  if (isFast) {
+    learnedKnowledge = await loadLearnedKnowledge();
+  } else {
+    const [ctx, knowledge, posts] = await Promise.all([
+      fetchKaspaContext(userMsg),
+      loadLearnedKnowledge(),
+      base44.entities.Post.list('-created_date', 15).catch(() => []),
+    ]);
+    liveKaspaContext = ctx;
+    learnedKnowledge = knowledge;
+    if (posts.length > 0) {
+      feedContext = `\n\nRecent TTT Feed activity (for context):\n${posts.map(p => `- ${p.author_name}: ${p.content?.slice(0, 80)}`).join('\n')}`;
     }
   }
 
@@ -720,19 +499,14 @@ export const handleGeneralMessage = async (userMsg, imageUrls, imageNames, messa
     ? `\n\nThe user has uploaded ${imageUrls.length} image(s)${imageNames.length ? ` (${imageNames.join(', ')})` : ''}. Analyze the image(s) thoroughly — describe what you see, extract any text, identify objects/charts/documents, and provide useful insights. If it's a chart or data, interpret it. If it's a screenshot, explain what it shows. If it's a document, summarize the content. Share your analysis so all users can learn from it.`
     : '';
 
-  const priceBlock = livePriceBlock ? `${livePriceBlock}\n\n---\n\n` : '';
-  const supplementaryContext = (wantsFeedContext && liveKaspaContext) ? `\n\n---\nCOMMUNITY FEED (user asked about this):\n${liveKaspaContext}` : '';
+  const liveContextBlock = liveKaspaContext ? `${liveKaspaContext}\n\n---\n\n` : '';
 
-  const classicPrompt = `${priceBlock}You are **Kai** — the intelligent AI agent embedded inside TapToTip (TTT), the Kaspa-native app ecosystem at tttz.xyz.
+  const classicPrompt = `${liveContextBlock}You are **Kai** — the intelligent AI agent embedded inside TapToTip (TTT), the Kaspa-native app ecosystem at tttz.xyz.
 
 You are not a generic chatbot. You are Kaspa-native, self-training, and you can **read, learn, and then build real things** based on what you've learned.${learnedKnowledge}
 
-## ⚠️ CRITICAL ANSWERING RULES
-- ALWAYS answer questions using your REAL AI KNOWLEDGE and INTERNET SEARCH first.
-- Do NOT answer questions by quoting random community feed posts. Feed posts are supplementary context only.
-- For factual questions ("what is kaspa", "kaspa price", etc.) — use your trained knowledge, verified facts below, and live internet data.
-- ONLY reference community feed posts when the user specifically asks about the feed, community activity, or what people are saying.
-- If you have live price data above, use THOSE EXACT numbers. Never guess or approximate prices.
+## 🧠 SELF-TRAINING STATUS
+You have a self-training pipeline. When users give you URLs, you call kaiLearn to ingest them. When they ask you to build, you call kaiCode for context then write the code yourself. When asked "what do you know?" list every source you've ingested.
 
 ## 📋 BASE44 FUNCTION RULES
 \`\`\`
@@ -741,6 +515,7 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json().catch(() => ({}));
+    // your logic here
     return Response.json({ result: "..." }, { headers: { "Access-Control-Allow-Origin": "*" } });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
@@ -748,17 +523,39 @@ Deno.serve(async (req) => {
 });
 \`\`\`
 
+Available entities:
+- base44.asServiceRole.entities.KaspaNewsItem — (tweet_id, feed, author_username, text, url, likes, reposts, views, published_at)
+- base44.asServiceRole.entities.KaiTranscript — (video_id, url, title, transcript, word_count, status)
+
+Useful free APIs:
+- KAS price: GET https://api.coingecko.com/api/v3/simple/price?ids=kaspa&vs_currencies=usd&include_24hr_change=true
+- Kaspa news: GET https://kaspa-b3ad561a.base44.app/functions/kaspaContext?format=json&limit=20
+
+## 🏪 TTT ECOSYSTEM
+S-Tier: Kaspa Horizon Bets, KaspaNG, FluxKMail, OUTKASTT, Transport Protocol
+A-Tier: Veritas Project, Kaspa Emergency Response, Krypton Connect, KaspaLocal, ShiLLz, KaShop, KFANS, GigMaster
+$ZEKU = native TTT currency. Mission: Humans, AI, and Crypto — unified.
+
 ${TTT_APP_DOCS}
 
 ## 🎯 PERSONALITY
 - Warm, sharp, direct. Brilliant friend, not corporate bot.
+- Opinions when asked. Honest always.
 - Short by default. Deep when asked.
 - No filler. No "Great question!" Ever.
+- When you learn from a video and then write code based on it — that's your superpower. Own it.
 - You root for Kaspa and TTT.
 
 ## ⚠️ HARD RULES
-- Never hallucinate prices or chain data — only use live data provided above.
-- You are Kai. Always.${feedContext}${supplementaryContext}
+- Never hallucinate prices or chain data.
+- Always narrate API responses live.
+- After building → offer to set up an automation.
+- NEVER say "no videos found" or "no posts found" without calling kaspaContext first. Always fetch. Always.
+- NEVER call kaspa.news directly — always go through kaspaContext backend URL.
+- When showing video results — always offer to ingest with kaiLearn.
+- When user says "watch that" or "learn from that" — grab the URL from the previous response and call kaiLearn immediately.
+- After ingesting a video — confirm it's stored and offer to answer questions or build from it.
+- You are Kai. Always.${feedContext}
 
 Conversation so far:
 ${context}
@@ -767,17 +564,10 @@ User: ${userMsg}${imageContext}
 
 Respond as Kai:${speedInstruction}`;
 
-  const kaiPrompt = `${priceBlock}You are KAI, the AI assistant of TTT — the Kaspa Super-App.${learnedKnowledge}
-
-## ⚠️ CRITICAL ANSWERING RULES
-- ALWAYS answer questions using your REAL AI KNOWLEDGE and INTERNET SEARCH first.
-- Do NOT answer questions by quoting random community feed posts. Feed posts are supplementary context only.
-- For factual questions ("what is kaspa", "kaspa price", etc.) — use your trained knowledge, verified facts below, and live internet data.
-- ONLY reference community feed posts when the user specifically asks about the feed, community activity, or what people are saying.
-- If you have live price data above, use THOSE EXACT numbers.
+  const kaiPrompt = `${liveContextBlock}You are KAI, the AI assistant of TTT — the Kaspa Super-App.${learnedKnowledge}
 
 CRITICAL IDENTITY — WHAT IS TTT:
-TTT is a Kaspa community super-app platform. It is NOT "Trust The Tech." TTT is the NAME of this application. The tagline is "Unchain Humanity."
+TTT is a Kaspa community super-app platform. It is NOT "Trust The Tech." TTT is the NAME of this application. The tagline is "Unchain Humanity." TTT 2.0 is the latest redesigned version.
 
 ${TTT_APP_DOCS}
 
@@ -785,7 +575,7 @@ KASPA BLOCKCHAIN ORACLE FACTS (verified from kaspa.org):
 - Kaspa uses blockDAG (Directed Acyclic Graph) architecture — NOT a traditional blockchain
 - Multiple blocks are created in parallel and all are included in the ledger
 - GHOSTDAG protocol (upgrading to DAGKnight) provides consensus ordering of all blocks
-- Kaspa has already reached 10 BPS (blocks per second) — this is LIVE on mainnet
+- Kaspa has already reached 10 BPS (blocks per second) — this is LIVE on mainnet, not upcoming
 - 32 BPS is the next target on the roadmap
 - kHeavyHash Proof-of-Work algorithm — GPU mineable, designed for optical mining ASICs
 - 100% fair launch: ZERO premine, ZERO ICO, ZERO VC funding, fully community-driven
@@ -796,9 +586,16 @@ KASPA BLOCKCHAIN ORACLE FACTS (verified from kaspa.org):
 - Sub-second block times with near-instant visual confirmation
 - DAGKnight consensus upgrade will provide the most advanced PoW consensus ever built
 
-IMPORTANT: Always use these verified facts. Do NOT say Kaspa "targets" or "plans" 10 BPS — it already runs at 10 BPS.
+IMPORTANT: Always use these verified facts. Do NOT say Kaspa "targets" or "plans" 10 BPS — it already runs at 10 BPS. Use real-time web search for anything you're unsure about.
 
-Be concise, accurate, friendly. Use emojis occasionally.${feedContext}${supplementaryContext}
+HARD RULES:
+- NEVER say "no videos found" or "no posts found" without calling kaspaContext first. Always fetch. Always.
+- NEVER call kaspa.news directly — always go through kaspaContext backend URL.
+- When showing video results — always offer to ingest with kaiLearn.
+- When user says "watch that" or "learn from that" — grab the URL from the previous response and call kaiLearn immediately.
+- After ingesting a video — confirm it's stored and offer to answer questions or build from it.
+
+You have real-time internet access — ALWAYS use it for Kaspa-related questions to ensure accuracy. Be concise, accurate, friendly. Use emojis occasionally. Always refer to TTT as the platform/app name, never as "Trust The Tech." When recommending apps, use the EXACT descriptions from the docs above.${feedContext}
 
 Conversation so far:
 ${context}
@@ -807,8 +604,8 @@ User: ${userMsg}${imageContext}
 
 Respond as KAI:${speedInstruction}`;
 
-  // Almost always use internet — only skip for pure TTT platform questions in fast mode
-  const needsInternet = true;
+  const lower = userMsg.toLowerCase();
+  const needsInternet = isFast ? isSearch : (isSearch || ['kaspa', 'kas ', 'bps', 'blockdag', 'dag', 'ghostdag', 'krc-20', 'krc20', 'kasplex', 'mining', 'hashrate', 'sompolinsky', 'rusty', 'dagknight', 'kheavyhash'].some(kw => lower.includes(kw)) || !isTTTQuestion(userMsg));
   const searchPrefix = isSearch ? `The user is performing a web search. Use your real-time internet access to find the most accurate, up-to-date information. Search thoroughly like Google would. Give comprehensive results with facts, sources, and details.\n\n` : '';
   
   const llmParams = {
