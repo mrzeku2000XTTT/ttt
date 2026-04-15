@@ -132,6 +132,12 @@ export const BRAIN_KEYWORDS = [
   'what did you learn', 'knowledge base',
 ];
 
+export const VIDEO_KEYWORDS = [
+  'latest video', 'kaspa video', 'kaspa videos', 'new video', 'recent video',
+  'show video', 'show me video', 'show me a video', 'watch video', 'play video',
+  'youtube video', 'kaspa youtube', 'latest youtube', 'video news', 'kaspa content',
+];
+
 export const BROWSE_KEYWORDS = [
   'browse', 'search for', 'look up', 'lookup', 'go to site', 'open link',
   'open site', 'open website', 'navigate to site', 'visit', 'load site',

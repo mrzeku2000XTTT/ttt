@@ -12,11 +12,11 @@ import { STORAGE_KEY, DEFAULT_AVATAR_IMG, DEFAULT_VIDEO_URL, KAI_FACTS } from ".
 import {
   isImageRequest, isKaspaNewsRequest, isSearchRequest, isFeedRequest,
   isUserPostRequest, isTrainRequest, isBuildRequest, isBrainRequest,
-  isBrowseRequest, isExplorerRequest, detectOpenApp, getBrowseUrl
+  isBrowseRequest, isExplorerRequest, isVideoRequest, detectOpenApp, getBrowseUrl
 } from "./kaiDetectors";
 import {
   handleShowBrain, handleTrainOnContent, handleBuildRequest,
-  handleKaspaNews, handleExplorerRequest, handleUserPostAnalysis,
+  handleKaspaNews, handleKaspaVideos, handleExplorerRequest, handleUserPostAnalysis,
   handleFeedSummary, handleGeneralMessage
 } from "./kaiHandlers";
 import { KAIThinkingBubble } from "./KAIAnimations";
@@ -169,6 +169,9 @@ export default function KaspaAvatarChat() {
 
       // Build / code
       if (isBuildRequest(userMsg)) { await handleBuildRequest(userMsg, ctx); setIsLoading(false); return; }
+
+      // Kaspa videos
+      if (isVideoRequest(userMsg)) { await handleKaspaVideos(ctx); setIsLoading(false); return; }
 
       // Kaspa news posts
       if (isKaspaNewsRequest(userMsg)) { await handleKaspaNews(ctx); setIsLoading(false); return; }

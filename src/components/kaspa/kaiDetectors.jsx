@@ -3,7 +3,7 @@
 import {
   IMAGE_KEYWORDS, KASPA_NEWS_KEYWORDS, SEARCH_KEYWORDS,
   FEED_KEYWORDS, USER_POST_KEYWORDS, TRAIN_KEYWORDS,
-  BUILD_KEYWORDS, BRAIN_KEYWORDS, BROWSE_KEYWORDS, APP_DIRECTORY
+  BUILD_KEYWORDS, BRAIN_KEYWORDS, BROWSE_KEYWORDS, VIDEO_KEYWORDS, APP_DIRECTORY
 } from './kaiConstants';
 
 const matchesAny = (msg, keywords) => keywords.some(kw => msg.toLowerCase().includes(kw));
@@ -16,6 +16,7 @@ export const isUserPostRequest = (msg) => matchesAny(msg, USER_POST_KEYWORDS);
 export const isTrainRequest = (msg) => matchesAny(msg, TRAIN_KEYWORDS);
 export const isBuildRequest = (msg) => matchesAny(msg, BUILD_KEYWORDS);
 export const isBrainRequest = (msg) => matchesAny(msg, BRAIN_KEYWORDS);
+export const isVideoRequest = (msg) => matchesAny(msg, VIDEO_KEYWORDS);
 
 export const isUrlInput = (text) => /^(https?:\/\/|www\.)/i.test(text.trim());
 

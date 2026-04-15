@@ -6,9 +6,37 @@ import { createPageUrl } from "@/utils";
 import { KAIBlocksAnimation } from "./KAIAnimations";
 import { setKaSshiGlobal, markKaSshiInlineVisited } from "@/components/KaSshiPlayer";
 import KAINewsCard from "./KAINewsCard";
+import KAIVideoCard from "./KAIVideoCard";
 
 export default function KAIChatMessage({ msg, index, typingIndex, typingText, setIsOpen, setBrowserUrl, setShowBrowser, setViewingPost }) {
   const navigate = useNavigate();
+
+  // Video posts — cards with YouTube playback
+  if (msg.role === "video_posts") {
+    return (
+      <div className="flex flex-col gap-2 max-w-[95%]">
+        <div className="text-[12px] font-semibold px-1" style={{ color: "rgba(6,182,212,0.9)" }}>
+          {msg.content}
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollSnapType: "x mandatory" }}>
+          {msg.videos.map((video, i) => (
+            <KAIVideoCard
+              key={i}
+              video={video}
+              onPlay={(v) => {
+                // Open YouTube URL in browser panel
+                if (v.url) {
+                  setBrowserUrl(v.url);
+                  setViewingPost(null);
+                  setShowBrowser(true);
+                }
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   // News posts — rich preview cards with post viewer
   if (msg.role === "news_posts") {

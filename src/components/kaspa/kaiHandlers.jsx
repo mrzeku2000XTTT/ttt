@@ -132,6 +132,30 @@ export const handleBuildRequest = async (userMsg, { setMessages, addAssistantMes
   }
 };
 
+// Kaspa video posts
+export const handleKaspaVideos = async ({ setMessages }) => {
+  setMessages(prev => [...prev, { role: "action", content: "🎬 Fetching latest Kaspa videos…" }]);
+  try {
+    const res = await fetch('https://kaspa-b3ad561a.base44.app/functions/kaspaContext?format=json&limit=30');
+    const data = await res.json();
+    const allItems = data?.items || (Array.isArray(data) ? data : []);
+    const videos = allItems.filter(item => item.feed === 'videos' || (item.url && item.url.includes('youtube.com')));
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    if (videos.length > 0) {
+      setMessages(prev => [...prev, {
+        role: "video_posts",
+        content: `🎬 Latest ${videos.length} Kaspa video${videos.length > 1 ? 's' : ''}:`,
+        videos: videos,
+      }]);
+    } else {
+      setMessages(prev => [...prev, { role: "assistant", content: "No Kaspa videos found right now. Try again later! 🎬" }]);
+    }
+  } catch {
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    setMessages(prev => [...prev, { role: "assistant", content: "❌ Couldn't fetch Kaspa videos. Try again!" }]);
+  }
+};
+
 // Kaspa news posts
 export const handleKaspaNews = async ({ setMessages }) => {
   setMessages(prev => [...prev, { role: "action", content: "📡 Fetching latest Kaspa posts…" }]);
