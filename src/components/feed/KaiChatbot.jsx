@@ -107,6 +107,7 @@ export default function KaiChatbot() {
     const query = trimmed
       .replace(/^(browse|search for|search|look up|lookup|go to|open link|show me|navigate to|visit|load|open site|open website|google|find me|check out)\s*/i, '')
       .trim();
+    if (!query) return "https://kaspa-app-9cc9fe40.base44.app";
     return `https://www.google.com/search?igu=1&q=${encodeURIComponent(query)}`;
   };
 

@@ -94,6 +94,20 @@ export default function AgentBrowserPanel({ url: initialUrl }) {
   const iframeRef = useRef(null);
   const panelRef = useRef(null);
   const phaseTimeouts = useRef([]);
+  const prevInitialUrl = useRef(initialUrl);
+
+  // Sync when parent passes a new URL
+  useEffect(() => {
+    if (initialUrl && initialUrl !== prevInitialUrl.current) {
+      prevInitialUrl.current = initialUrl;
+      setCurrentUrl(initialUrl);
+      setLoading(true);
+      const newHistory = [...history.slice(0, historyIndex + 1), initialUrl];
+      setHistory(newHistory);
+      setHistoryIndex(newHistory.length - 1);
+      runCursorSequence(true);
+    }
+  }, [initialUrl]);
 
   const isHttps = currentUrl?.startsWith("https");
   const activeQuickLink = QUICK_LINKS.find(q => {

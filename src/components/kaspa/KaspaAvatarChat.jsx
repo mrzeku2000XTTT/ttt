@@ -210,6 +210,7 @@ const getBrowseUrl = (msg) => {
   const query = trimmed
     .replace(/^(browse|search for|look up|lookup|go to site|open link|open site|open website|navigate to site|visit|load site|google|find me|check out site|show me site)\s*/i, '')
     .trim();
+  if (!query) return "https://kaspa-app-9cc9fe40.base44.app";
   return `https://www.google.com/search?igu=1&q=${encodeURIComponent(query)}`;
 };
 
