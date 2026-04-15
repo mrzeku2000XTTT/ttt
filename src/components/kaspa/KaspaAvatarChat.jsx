@@ -644,9 +644,10 @@ export default function KaspaAvatarChat() {
       setMessages(prev => [...prev, { role: "action", content: "📡 Fetching latest Kaspa posts…" }]);
       try {
         const res = await fetch('https://kaspa-b3ad561a.base44.app/functions/kaspaContext?format=json&limit=15');
-        const posts = await res.json();
+        const data = await res.json();
+        const posts = data?.items || (Array.isArray(data) ? data : []);
         setMessages(prev => prev.filter(m => m.role !== 'action'));
-        if (Array.isArray(posts) && posts.length > 0) {
+        if (posts.length > 0) {
           const postList = posts.map((p, i) => {
             const author = p.author_username || p.author || 'Unknown';
             const text = (p.text || p.content || '').slice(0, 200);
