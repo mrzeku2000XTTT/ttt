@@ -631,22 +631,41 @@ export const handleGeneralMessage = async (userMsg, imageUrls, imageNames, messa
   const isPriceOrMarket = ['price', 'market', 'worth', 'cost', 'how much', 'usd', 'dollar', 'mcap', 'market cap', 'ath', 'volume'].some(kw => lower.includes(kw));
   const isKaspaRelated = ['kaspa', 'kas ', 'kas?', 'bps', 'blockdag', 'dag', 'ghostdag', 'krc-20', 'krc20', 'kasplex', 'mining', 'hashrate', 'sompolinsky', 'rusty', 'dagknight', 'kheavyhash'].some(kw => lower.includes(kw));
 
+  // Always fetch real price data for price queries — never let LLM guess
+  let livePriceBlock = '';
+  const fetchLivePrice = async () => {
+    try {
+      const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=kaspa&vs_currencies=usd&include_24hr_change=true&include_market_cap=true&include_24hr_vol=true');
+      if (res.ok) {
+        const data = await res.json();
+        const kas = data?.kaspa;
+        if (kas) {
+          const price = kas.usd;
+          const change = kas.usd_24h_change;
+          const mcap = kas.usd_market_cap;
+          const vol = kas.usd_24h_vol;
+          livePriceBlock = `\n\n⚡ LIVE KAS PRICE DATA (from CoinGecko, fetched just now — use THESE exact numbers, do NOT make up different ones):\n- Price: $${price}\n- 24h Change: ${change >= 0 ? '+' : ''}${change?.toFixed(2)}%\n- Market Cap: $${mcap ? (mcap / 1e9).toFixed(2) + 'B' : 'N/A'}\n- 24h Volume: $${vol ? (vol / 1e6).toFixed(1) + 'M' : 'N/A'}\n`;
+        }
+      }
+    } catch {}
+  };
+
   if (isFast && !isPriceOrMarket && !isKaspaRelated) {
     learnedKnowledge = await loadLearnedKnowledge();
   } else if (isFast) {
-    // Fast mode but needs live data (price/kaspa queries)
-    const [ctx, knowledge] = await Promise.all([
-      fetchKaspaContext(userMsg),
-      loadLearnedKnowledge(),
-    ]);
+    const promises = [fetchKaspaContext(userMsg), loadLearnedKnowledge()];
+    if (isPriceOrMarket) promises.push(fetchLivePrice());
+    const [ctx, knowledge] = await Promise.all(promises);
     liveKaspaContext = ctx;
     learnedKnowledge = knowledge;
   } else {
-    const [ctx, knowledge, posts] = await Promise.all([
+    const promises = [
       fetchKaspaContext(userMsg),
       loadLearnedKnowledge(),
       base44.entities.Post.list('-created_date', 15).catch(() => []),
-    ]);
+    ];
+    if (isPriceOrMarket) promises.push(fetchLivePrice());
+    const [ctx, knowledge, posts] = await Promise.all(promises);
     liveKaspaContext = ctx;
     learnedKnowledge = knowledge;
     if (posts.length > 0) {
@@ -659,7 +678,7 @@ export const handleGeneralMessage = async (userMsg, imageUrls, imageNames, messa
     ? `\n\nThe user has uploaded ${imageUrls.length} image(s)${imageNames.length ? ` (${imageNames.join(', ')})` : ''}. Analyze the image(s) thoroughly — describe what you see, extract any text, identify objects/charts/documents, and provide useful insights. If it's a chart or data, interpret it. If it's a screenshot, explain what it shows. If it's a document, summarize the content. Share your analysis so all users can learn from it.`
     : '';
 
-  const liveContextBlock = liveKaspaContext ? `${liveKaspaContext}\n\n---\n\n` : '';
+  const liveContextBlock = (liveKaspaContext || livePriceBlock) ? `${liveKaspaContext}${livePriceBlock}\n\n---\n\n` : '';
 
   const classicPrompt = `${liveContextBlock}You are **Kai** — the intelligent AI agent embedded inside TapToTip (TTT), the Kaspa-native app ecosystem at tttz.xyz.
 
