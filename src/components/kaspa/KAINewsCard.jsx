@@ -22,16 +22,22 @@ function formatCount(n) {
 // Tweet / post card
 export function TweetCard({ post, onViewInBrowser }) {
   const author = post.author_username || post.author || 'Unknown';
+  const name = post.author_name || author;
+  const avatar = post.author_avatar || '';
   const text = (post.text || post.content || '').slice(0, 280);
   const date = post.published_at || post.created_at;
 
   return (
     <div className="rounded-xl p-3 space-y-2" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
       <div className="flex items-center gap-2">
-        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
-          style={{ background: "rgba(6,182,212,0.25)", color: "rgba(6,182,212,1)" }}>
-          {author[0]?.toUpperCase() || '?'}
-        </div>
+        {avatar ? (
+          <img src={avatar} alt={author} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+        ) : (
+          <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
+            style={{ background: "rgba(6,182,212,0.25)", color: "rgba(6,182,212,1)" }}>
+            {author[0]?.toUpperCase() || '?'}
+          </div>
+        )}
         <div className="flex-1 min-w-0">
           <span className="text-[12px] font-semibold text-white/90">@{author}</span>
           {date && <span className="text-[10px] text-white/35 ml-1.5">{timeAgo(date)}</span>}

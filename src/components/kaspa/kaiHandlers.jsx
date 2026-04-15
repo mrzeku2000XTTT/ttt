@@ -149,12 +149,27 @@ const detectNewsFeed = (msg) => {
   return { url: 'https://kaspa.news/api/focused-tweets', field: 'tweets', label: 'Latest Community Posts' };
 };
 
+// Normalize kaspa.news tweet format to flat card-friendly shape
+const normalizeTweet = (t) => ({
+  author_username: t.author?.username || t.author || 'Unknown',
+  author_name: t.author?.name || t.author?.username || t.author || '',
+  author_avatar: t.author?.profile_image_url || '',
+  text: t.text || '',
+  url: t.url || '',
+  likes: t.public_metrics?.like_count ?? t.likes ?? 0,
+  reposts: t.public_metrics?.retweet_count ?? t.reposts ?? 0,
+  views: t.public_metrics?.view_count ?? t.views ?? 0,
+  published_at: t.createdAt || t.published_at || '',
+  thumbnail: t.thumbnail || '',
+});
+
 // Kaspa news posts — rich card rendering
 export const handleKaspaNews = async (userMsg, { setMessages, addAssistantMessage }) => {
   const feed = detectNewsFeed(userMsg || '');
   setMessages(prev => [...prev, { role: "action", content: `📡 Fetching ${feed.label} from kaspa.news…` }]);
   try {
     const res = await fetch(feed.url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     setMessages(prev => prev.filter(m => m.role !== 'action'));
 
@@ -165,11 +180,11 @@ export const handleKaspaNews = async (userMsg, { setMessages, addAssistantMessag
       return;
     }
 
-    const items = data?.[feed.field] || data?.items || (Array.isArray(data) ? data : []);
-    const top = items.slice(0, 8);
+    // Get items from the correct field
+    const raw = data?.[feed.field] || data?.items || (Array.isArray(data) ? data : []);
+    const top = raw.slice(0, 8).map(normalizeTweet);
 
     if (top.length > 0) {
-      // Add a special message type with raw post data for rich card rendering
       setMessages(prev => [...prev, {
         role: "news_cards",
         feedType: feed.type || 'tweets',
@@ -179,7 +194,8 @@ export const handleKaspaNews = async (userMsg, { setMessages, addAssistantMessag
     } else {
       addAssistantMessage(`No ${feed.label.toLowerCase()} found right now. Try again later! 📰`);
     }
-  } catch {
+  } catch (err) {
+    console.error('kaspa.news fetch error:', err);
     setMessages(prev => prev.filter(m => m.role !== 'action'));
     addAssistantMessage("❌ Couldn't fetch from kaspa.news. Try again!");
   }
