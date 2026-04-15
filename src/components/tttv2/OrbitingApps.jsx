@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 
 const FEATURED_APPS = [
@@ -17,82 +17,43 @@ const FEATURED_APPS = [
 ];
 
 export default function OrbitingApps() {
-  const [angle, setAngle] = useState(0);
-  const [hoveredIdx, setHoveredIdx] = useState(-1);
-
-  useEffect(() => {
-    let frame;
-    let lastTime = performance.now();
-    const speed = 0.3; // degrees per frame (~18 deg/sec)
-
-    const animate = (now) => {
-      const delta = now - lastTime;
-      lastTime = now;
-      if (hoveredIdx < 0) {
-        setAngle(prev => (prev + speed * (delta / 16)) % 360);
-      }
-      frame = requestAnimationFrame(animate);
-    };
-    frame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frame);
-  }, [hoveredIdx]);
-
   const count = FEATURED_APPS.length;
-  // Ellipse radii — wider horizontally, compressed vertically for 3D tilt
-  const radiusX = typeof window !== 'undefined' && window.innerWidth < 640 ? 130 : 220;
-  const radiusY = typeof window !== 'undefined' && window.innerWidth < 640 ? 50 : 80;
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+  const radius = isMobile ? 120 : 200;
+  const iconSize = isMobile ? 48 : 64;
 
   return (
-    <div className="relative mx-auto" style={{ width: radiusX * 2 + 100, height: radiusY * 2 + 120 }}>
-      {/* Subtle ellipse track */}
+    <div className="relative mx-auto" style={{ width: radius * 2 + 100, height: radius * 2 + 100 }}>
+      {/* Subtle circle track */}
       <div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-zinc-200/40"
-        style={{ width: radiusX * 2, height: radiusY * 2 }}
+        style={{ width: radius * 2, height: radius * 2 }}
       />
 
       {/* Center glow */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-gradient-radial from-cyan-200/30 via-transparent to-transparent rounded-full blur-2xl" />
 
       {FEATURED_APPS.map((app, i) => {
-        const theta = ((360 / count) * i + angle) * (Math.PI / 180);
-        const x = Math.cos(theta) * radiusX;
-        const y = Math.sin(theta) * radiusY;
-
-        // Scale based on vertical position to simulate 3D depth
-        // Items at the "back" (top, y < 0) are smaller; "front" (bottom, y > 0) are larger
-        const depthFactor = (Math.sin(theta) + 1) / 2; // 0 = back, 1 = front
-        const scale = 0.55 + depthFactor * 0.55;
-        const opacity = 0.4 + depthFactor * 0.6;
-        const zIndex = Math.round(depthFactor * 100);
-        const isHovered = hoveredIdx === i;
-        const iconSize = typeof window !== 'undefined' && window.innerWidth < 640 ? 48 : 64;
+        const theta = ((360 / count) * i - 90) * (Math.PI / 180);
+        const x = Math.cos(theta) * radius;
+        const y = Math.sin(theta) * radius;
 
         return (
           <Link
             key={app.name}
             to={app.path}
-            className="absolute"
+            className="absolute group"
             style={{
               left: `calc(50% + ${x}px)`,
               top: `calc(50% + ${y}px)`,
-              transform: `translate(-50%, -50%) scale(${isHovered ? scale * 1.2 : scale})`,
-              zIndex: isHovered ? 200 : zIndex,
-              opacity: isHovered ? 1 : opacity,
-              transition: 'transform 0.3s ease, opacity 0.3s ease',
+              transform: 'translate(-50%, -50%)',
+              zIndex: 10,
             }}
-            onMouseEnter={() => setHoveredIdx(i)}
-            onMouseLeave={() => setHoveredIdx(-1)}
           >
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col items-center gap-1 transition-transform duration-200 group-hover:scale-110">
               <div
-                className="rounded-[18px] shadow-lg overflow-hidden bg-white ring-1 ring-zinc-200/60"
-                style={{
-                  width: iconSize,
-                  height: iconSize,
-                  boxShadow: isHovered
-                    ? '0 8px 30px rgba(6,182,212,0.3), 0 0 0 2px rgba(6,182,212,0.4)'
-                    : `0 ${4 + depthFactor * 8}px ${8 + depthFactor * 16}px rgba(0,0,0,${0.05 + depthFactor * 0.1})`,
-                }}
+                className="rounded-[18px] shadow-lg overflow-hidden bg-white ring-1 ring-zinc-200/60 transition-shadow duration-200 group-hover:shadow-[0_8px_30px_rgba(6,182,212,0.3),0_0_0_2px_rgba(6,182,212,0.4)]"
+                style={{ width: iconSize, height: iconSize }}
               >
                 <img
                   src={app.logo}
@@ -101,13 +62,7 @@ export default function OrbitingApps() {
                   draggable={false}
                 />
               </div>
-              <span
-                className="text-[10px] font-semibold text-zinc-500 truncate max-w-[72px] text-center transition-colors"
-                style={{
-                  opacity: depthFactor > 0.3 ? 1 : 0,
-                  color: isHovered ? '#0891b2' : undefined,
-                }}
-              >
+              <span className="text-[10px] font-semibold text-zinc-500 truncate max-w-[72px] text-center group-hover:text-cyan-600 transition-colors">
                 {app.name}
               </span>
             </div>
