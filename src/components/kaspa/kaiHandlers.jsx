@@ -166,6 +166,18 @@ export const handleKaspaVideos = async ({ setMessages, addAssistantMessage }) =>
 
 // "Watch that" / "learn from that" — ingest a video from the last video feed
 export const handleWatchThat = async (userMsg, messages, { setMessages, addAssistantMessage }) => {
+  // Check if user is logged in — ingestion requires auth for memory storage
+  try {
+    const isAuth = await base44.auth.isAuthenticated();
+    if (!isAuth) {
+      addAssistantMessage("You need to be **logged in** for me to watch and learn videos — I store the knowledge in your personal brain. Log in and try again! 🧠");
+      return;
+    }
+  } catch {
+    addAssistantMessage("You need to be **logged in** for me to watch and learn videos. Log in and try again! 🧠");
+    return;
+  }
+
   // Find the last video_posts message to get the URL
   const lastVideoMsg = [...messages].reverse().find(m => m.role === "video_posts");
   if (!lastVideoMsg || !lastVideoMsg.videos?.length) {
