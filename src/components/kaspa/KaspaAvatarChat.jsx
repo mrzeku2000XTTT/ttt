@@ -172,8 +172,16 @@ export default function KaspaAvatarChat() {
         await handleTrainOnContent(userMsg, ctx); setIsLoading(false); return;
       }
 
-      // Vibe code — full IDE app generation (check BEFORE generic build)
-      if (isVibeCodeRequest(userMsg)) { await handleVibeCode(userMsg, ctx); setIsLoading(false); return; }
+      // Vibe code — redirect to full-screen IDE (check BEFORE generic build)
+      if (isVibeCodeRequest(userMsg)) {
+        setMessages(prev => [...prev, {
+          role: "assistant",
+          content: "💻 **KAI IDE** is ready — the full-screen vibe coding environment where I generate complete Kaspa apps with entities, pages, functions, and deploy instructions.\n\nTap below to open it and describe what you want to build!",
+          links: [{ label: "Open KAI IDE 💻", path: "KaiIDE" }]
+        }]);
+        setIsLoading(false);
+        return;
+      }
 
       // Build / code (generic function build — only hits if vibe code didn't match)
       if (isBuildRequest(userMsg)) { await handleBuildRequest(userMsg, ctx); setIsLoading(false); return; }
