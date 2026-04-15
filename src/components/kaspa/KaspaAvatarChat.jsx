@@ -116,19 +116,18 @@ const IMAGE_KEYWORDS = [
   'show me', 'visualize', 'picture of', 'image of', 'art of', 'xunhua'
 ];
 const SEARCH_KEYWORDS = [
-  'search', 'google', 'look up', 'lookup', 'find out', 'what is', 'who is',
-  'when did', 'how much', 'price of', 'latest news', 'current', 'today',
-  'news about', 'tell me about', 'search for', 'research'
+  'search', 'google', 'look up', 'lookup', 'find out', 'who is',
+  'when did', 'price of', 'latest news',
+  'news about', 'search for', 'research'
 ];
 const FEED_KEYWORDS = [
-  'feed', 'ttt feed', 'latest posts', 'recent posts', 'whats on the feed',
+  'ttt feed', 'latest posts', 'recent posts', 'whats on the feed',
   "what's on the feed", 'check feed', 'examine feed', 'what are people saying',
-  "what's new", 'whats new', 'latest updates', 'community posts', 'ttt posts'
+  'community posts', 'ttt posts', 'show me the feed'
 ];
 const USER_POST_KEYWORDS = [
-  'posts by', 'what has', 'what did', 'posted', 'analyze user', 'user posts',
-  'examine posts', 'who posted', 'show me posts from', 'check posts',
-  'what does', 'posting', 'activity', 'said'
+  'posts by', 'analyze user', 'user posts',
+  'examine posts', 'who posted', 'show me posts from', 'check posts'
 ];
 
 // App directory for "open X" detection
@@ -186,38 +185,29 @@ const fetchKaspaContext = async (userMessage) => {
   return '';
 };
 
-const EXPLORER_KEYWORDS = [
-  'transaction', 'tx ', 'txid', 'look up tx', 'check tx', 'find tx',
-  'address balance', 'check balance', 'balance of', 'wallet balance',
-  'block hash', 'block info', 'network stats', 'network info',
-  'hashrate', 'kaspa stats', 'coin supply', 'halving',
-  'explorer', 'look up address', 'check address', 'find address',
-];
-
 const isExplorerRequest = (msg) => {
+  const trimmed = msg.trim();
+  // Only trigger for actual hashes, addresses, or explicit network stats commands
+  if (/^[a-f0-9]{64}$/i.test(trimmed)) return true;
+  if (trimmed.startsWith('kaspa:')) return true;
+  if (/\b[a-f0-9]{64}\b/i.test(trimmed)) return true;
+  if (/(kaspa:[a-z0-9]{10,})/i.test(trimmed)) return true;
+  // Only very explicit network stats requests
   const lower = msg.toLowerCase();
-  // Direct tx hash (64 hex chars)
-  if (/^[a-f0-9]{64}$/i.test(msg.trim())) return true;
-  // Kaspa address
-  if (msg.trim().startsWith('kaspa:')) return true;
-  return EXPLORER_KEYWORDS.some(kw => lower.includes(kw));
+  const explicitNetworkPhrases = ['network stats', 'kaspa stats', 'show hashrate', 'show coin supply', 'kaspa network info'];
+  return explicitNetworkPhrases.some(kw => lower.includes(kw));
 };
 
 const detectExplorerAction = (msg) => {
   const trimmed = msg.trim();
-  // Direct tx hash
   if (/^[a-f0-9]{64}$/i.test(trimmed)) return { action: 'transaction', query: trimmed };
-  // Kaspa address
   if (trimmed.startsWith('kaspa:')) return { action: 'address', query: trimmed };
-  // Extract kaspa address from message
-  const addrMatch = trimmed.match(/(kaspa:[a-z0-9]+)/i);
+  const addrMatch = trimmed.match(/(kaspa:[a-z0-9]{10,})/i);
   if (addrMatch) return { action: 'address', query: addrMatch[1] };
-  // Extract tx hash from message
   const txMatch = trimmed.match(/\b([a-f0-9]{64})\b/i);
   if (txMatch) return { action: 'transaction', query: txMatch[1] };
-  // Network stats keywords
   const lower = msg.toLowerCase();
-  if (['network stats', 'network info', 'hashrate', 'kaspa stats', 'coin supply', 'halving', 'supply'].some(kw => lower.includes(kw))) {
+  if (['network stats', 'kaspa stats', 'show hashrate', 'show coin supply', 'kaspa network info'].some(kw => lower.includes(kw))) {
     return { action: 'network', query: '' };
   }
   return null;
