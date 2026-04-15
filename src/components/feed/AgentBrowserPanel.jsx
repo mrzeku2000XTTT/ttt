@@ -126,16 +126,23 @@ export default function AgentBrowserPanel({ url: initialUrl }) {
           </div>
         )}
 
-        {/* Iframe */}
-        <iframe
-          ref={iframeRef}
-          src={currentUrl}
-          className="w-full border-0"
-          style={{ height: 180 }}
-          onLoad={() => setLoading(false)}
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
-          title="Browser"
-        />
+        {/* Iframe — scaled down to fit small panel */}
+        <div className="relative overflow-hidden" style={{ height: 200 }}>
+          <iframe
+            ref={iframeRef}
+            src={currentUrl}
+            className="absolute top-0 left-0 border-0"
+            style={{
+              width: "200%",
+              height: "200%",
+              transform: "scale(0.5)",
+              transformOrigin: "top left",
+            }}
+            onLoad={() => setLoading(false)}
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+            title="Browser"
+          />
+        </div>
       </div>
 
       {/* Quick links */}
