@@ -698,20 +698,26 @@ export default function KaspaAvatarChat() {
 
     // General message with feed context
     try {
-      // Fetch live Kaspa ecosystem context from knowledge base
-      const liveKaspaContext = await fetchKaspaContext(userMsg);
-      // Fetch user's learned knowledge
-      const learnedKnowledge = await loadLearnedKnowledge();
-
+      // Fast mode: skip slow external calls for instant responses
+      let liveKaspaContext = '';
+      let learnedKnowledge = '';
       let feedContext = '';
-      // Skip feed fetch in fast mode for instant responses
-      if (!isFast) {
-        try {
-          const recentPosts = await base44.entities.Post.list('-created_date', 15);
-          if (recentPosts.length > 0) {
-            feedContext = `\n\nRecent TTT Feed activity (for context):\n${recentPosts.map(p => `- ${p.author_name}: ${p.content?.slice(0, 80)}`).join('\n')}`;
-          }
-        } catch {}
+
+      if (isFast) {
+        // Only fetch learned knowledge (local DB, fast) — skip external API + feed
+        learnedKnowledge = await loadLearnedKnowledge();
+      } else {
+        // Thinking mode: fetch everything in parallel
+        const [ctx, knowledge, posts] = await Promise.all([
+          fetchKaspaContext(userMsg),
+          loadLearnedKnowledge(),
+          base44.entities.Post.list('-created_date', 15).catch(() => []),
+        ]);
+        liveKaspaContext = ctx;
+        learnedKnowledge = knowledge;
+        if (posts.length > 0) {
+          feedContext = `\n\nRecent TTT Feed activity (for context):\n${posts.map(p => `- ${p.author_name}: ${p.content?.slice(0, 80)}`).join('\n')}`;
+        }
       }
       const context = messages.slice(isFast ? -4 : -8).map(m => `${m.role === "user" ? "User" : "KAI"}: ${m.content}`).join("\n");
 
@@ -785,11 +791,10 @@ User: ${userMsg}${imageContext}
 
 Respond as KAI:${speedInstruction}`;
 
-      // Always use web search for Kaspa questions, search requests, and non-TTT questions
+      // Use web search only in thinking mode or explicit search requests
       const lower = userMsg.toLowerCase();
-      const isKaspaQuestion = ['kaspa', 'kas ', 'bps', 'blockdag', 'dag', 'ghostdag', 'krc-20', 'krc20', 'kasplex', 'mining', 'hashrate', 'sompolinsky', 'rusty', 'dagknight', 'kheavyhash'].some(kw => lower.includes(kw));
       const isSearch = isSearchRequest(userMsg);
-      const needsInternet = isKaspaQuestion || isSearch || (!isTTTQuestion(userMsg) && !isFast);
+      const needsInternet = isFast ? isSearch : (isSearch || ['kaspa', 'kas ', 'bps', 'blockdag', 'dag', 'ghostdag', 'krc-20', 'krc20', 'kasplex', 'mining', 'hashrate', 'sompolinsky', 'rusty', 'dagknight', 'kheavyhash'].some(kw => lower.includes(kw)) || !isTTTQuestion(userMsg));
       
       const searchPrefix = isSearch ? `The user is performing a web search. Use your real-time internet access to find the most accurate, up-to-date information. Search thoroughly like Google would. Give comprehensive results with facts, sources, and details.\n\n` : '';
       const llmParams = {
