@@ -34,7 +34,7 @@ function CopyButton({ text }) {
 }
 
 export default function ImposterGate({ onIdentityReady }) {
-  const [step, setStep] = useState("idle"); // idle | generating | name | pin | done | error
+  const [step, setStep] = useState("idle"); // idle | import | generating | name | pin | done | error
   const [walletData, setWalletData] = useState(null);
   const [identity, setIdentity] = useState(null);
   const [subagentName, setSubagentName] = useState("");
@@ -44,6 +44,7 @@ export default function ImposterGate({ onIdentityReady }) {
   const [showMnemonic, setShowMnemonic] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [saving, setSaving] = useState(false);
+  const [importMnemonic, setImportMnemonic] = useState("");
 
   const generateWallet = async () => {
     setStep("generating");
@@ -57,6 +58,26 @@ export default function ImposterGate({ onIdentityReady }) {
     } catch (err) {
       setErrorMsg(err.message || "Something broke. Try again.");
       setStep("error");
+    }
+  };
+
+  const importWallet = async () => {
+    const words = importMnemonic.trim().split(/\s+/);
+    if (words.length !== 12 && words.length !== 24) {
+      setErrorMsg("Seed phrase must be 12 or 24 words");
+      return;
+    }
+    setStep("generating");
+    setErrorMsg("");
+    try {
+      const res = await base44.functions.invoke('createKaspaWallet', { mnemonic: importMnemonic.trim() });
+      const data = res.data;
+      if (!data?.address) throw new Error("Import failed — invalid seed phrase");
+      setWalletData(data);
+      setStep("name");
+    } catch (err) {
+      setErrorMsg(err.message || "Import failed. Check your seed phrase.");
+      setStep("import");
     }
   };
 
@@ -129,11 +150,18 @@ export default function ImposterGate({ onIdentityReady }) {
                 <div>· Seed phrase (save it — yours forever)</div>
               </div>
             </div>
-            <button onClick={generateWallet}
-              className="w-full py-2.5 rounded-xl text-sm font-bold tracking-wide transition-all active:scale-95"
-              style={{ background: "rgba(255,50,50,0.15)", border: "1px solid rgba(255,50,50,0.3)", color: "rgba(255,120,120,0.95)" }}>
-              Generate Wallet
-            </button>
+            <div className="flex gap-2">
+              <button onClick={generateWallet}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold tracking-wide transition-all active:scale-95"
+                style={{ background: "rgba(255,50,50,0.15)", border: "1px solid rgba(255,50,50,0.3)", color: "rgba(255,120,120,0.95)" }}>
+                Generate
+              </button>
+              <button onClick={() => { setStep("import"); setErrorMsg(""); }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold tracking-wide transition-all active:scale-95"
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.5)" }}>
+                Import
+              </button>
+            </div>
           </motion.div>
         )}
 
@@ -147,6 +175,38 @@ export default function ImposterGate({ onIdentityReady }) {
                 <motion.div key={i} className="w-1.5 h-1.5 rounded-full bg-red-400/60"
                   animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.2 }} />
               ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* IMPORT */}
+        {step === "import" && (
+          <motion.div key="import" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4 w-full">
+            <div>
+              <div className="text-xl mb-1">📥</div>
+              <div className="text-white font-bold text-sm tracking-widest uppercase">Import Wallet</div>
+              <div className="text-white/35 text-[10px] mt-1">Paste your 12 or 24 word seed phrase.</div>
+            </div>
+            <textarea
+              value={importMnemonic}
+              onChange={e => { setImportMnemonic(e.target.value); setErrorMsg(""); }}
+              placeholder="word1 word2 word3 …"
+              rows={4}
+              className="w-full px-3 py-2.5 rounded-xl font-mono text-[11px] outline-none resize-none transition-all"
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,50,50,0.25)", color: "rgba(255,255,255,0.7)" }}
+            />
+            {errorMsg && <div className="text-[10px] text-red-400/80">{errorMsg}</div>}
+            <div className="flex gap-2">
+              <button onClick={() => { setStep("idle"); setErrorMsg(""); }}
+                className="flex-1 py-2 rounded-xl text-[11px] text-white/35 hover:text-white/60 transition-all"
+                style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                Back
+              </button>
+              <button onClick={importWallet} disabled={!importMnemonic.trim()}
+                className="flex-1 py-2 rounded-xl text-[11px] font-bold transition-all active:scale-95 disabled:opacity-30"
+                style={{ background: "rgba(255,50,50,0.15)", border: "1px solid rgba(255,50,50,0.3)", color: "rgba(255,120,120,0.95)" }}>
+                Import →
+              </button>
             </div>
           </motion.div>
         )}

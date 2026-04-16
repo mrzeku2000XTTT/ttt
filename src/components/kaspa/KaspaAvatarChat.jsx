@@ -27,6 +27,7 @@ import {
 import { KAIThinkingBubble } from "./KAIAnimations";
 import KAIChatMessage from "./KAIChatMessage";
 import ImposterGate from "./ImposterGate";
+import ImposterSettings from "./ImposterSettings";
 
 export default function KaspaAvatarChat() {
   const navigate = useNavigate();
@@ -436,38 +437,54 @@ Respond as IMPOSTER. Max 3 sentences. Be weird. Be real. No emojis unless absolu
             <AnimatePresence>
               {showSettings && (
                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                  className="overflow-hidden" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                  <div className="px-4 py-3 space-y-3">
-                    <div className="text-[11px] font-bold text-white/50 uppercase tracking-wider">Settings</div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-[13px] text-white/90 font-medium">Response Mode</div>
-                        <div className="text-[10px] text-white/40">{responseSpeed === "fast" ? "Short & quick answers" : "Detailed & thorough"}</div>
+                  className="overflow-hidden">
+
+                  {/* Imposter-specific settings */}
+                  {kaiMode === "imposter" && imposterIdentity && (
+                    <ImposterSettings
+                      identity={imposterIdentity}
+                      onLogout={() => {
+                        setImposterIdentity(null);
+                        setShowSettings(false);
+                        setMessages([{ role: "assistant", content: "i'm IMPOSTER. i'm not supposed to be here. ask me something." }]);
+                      }}
+                    />
+                  )}
+
+                  {/* Standard settings (hide for imposter with identity) */}
+                  {!(kaiMode === "imposter" && imposterIdentity) && (
+                    <div className="px-4 py-3 space-y-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                      <div className="text-[11px] font-bold text-white/50 uppercase tracking-wider">Settings</div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-[13px] text-white/90 font-medium">Response Mode</div>
+                          <div className="text-[10px] text-white/40">{responseSpeed === "fast" ? "Short & quick answers" : "Detailed & thorough"}</div>
+                        </div>
+                        <div className="flex items-center rounded-full overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.15)" }}>
+                          <button onClick={() => setResponseSpeed("fast")} className="px-2.5 py-1 text-[10px] font-bold transition-all"
+                            style={{ background: responseSpeed === "fast" ? "rgba(6,182,212,0.4)" : "transparent", color: responseSpeed === "fast" ? "rgba(6,182,212,1)" : "rgba(255,255,255,0.4)" }}>
+                            ⚡ Fast
+                          </button>
+                          <button onClick={() => setResponseSpeed("thinking")} className="px-2.5 py-1 text-[10px] font-bold transition-all"
+                            style={{ background: responseSpeed === "thinking" ? "rgba(168,85,247,0.4)" : "transparent", color: responseSpeed === "thinking" ? "rgba(192,132,252,1)" : "rgba(255,255,255,0.4)" }}>
+                            🧠 Thinking
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center rounded-full overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.15)" }}>
-                        <button onClick={() => setResponseSpeed("fast")} className="px-2.5 py-1 text-[10px] font-bold transition-all"
-                          style={{ background: responseSpeed === "fast" ? "rgba(6,182,212,0.4)" : "transparent", color: responseSpeed === "fast" ? "rgba(6,182,212,1)" : "rgba(255,255,255,0.4)" }}>
-                          ⚡ Fast
-                        </button>
-                        <button onClick={() => setResponseSpeed("thinking")} className="px-2.5 py-1 text-[10px] font-bold transition-all"
-                          style={{ background: responseSpeed === "thinking" ? "rgba(168,85,247,0.4)" : "transparent", color: responseSpeed === "thinking" ? "rgba(192,132,252,1)" : "rgba(255,255,255,0.4)" }}>
-                          🧠 Thinking
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-[13px] text-white/90 font-medium">Cloud Messages</div>
+                          <div className="text-[10px] text-white/40">Show floating fact bubbles</div>
+                        </div>
+                        <button onClick={() => setShowBubble(!showBubble)}
+                          className={`rounded-full relative transition-colors duration-200 ${showBubble ? 'bg-cyan-500' : 'bg-white/15'}`}
+                          style={{ width: 40, height: 22 }}>
+                          <div className="absolute top-0.5 bg-white rounded-full shadow transition-transform duration-200"
+                            style={{ width: 18, height: 18, transform: showBubble ? 'translateX(20px)' : 'translateX(2px)' }} />
                         </button>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-[13px] text-white/90 font-medium">Cloud Messages</div>
-                        <div className="text-[10px] text-white/40">Show floating fact bubbles</div>
-                      </div>
-                      <button onClick={() => setShowBubble(!showBubble)}
-                        className={`rounded-full relative transition-colors duration-200 ${showBubble ? 'bg-cyan-500' : 'bg-white/15'}`}
-                        style={{ width: 40, height: 22 }}>
-                        <div className="absolute top-0.5 bg-white rounded-full shadow transition-transform duration-200"
-                          style={{ width: 18, height: 18, transform: showBubble ? 'translateX(20px)' : 'translateX(2px)' }} />
-                      </button>
-                    </div>
-                  </div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
