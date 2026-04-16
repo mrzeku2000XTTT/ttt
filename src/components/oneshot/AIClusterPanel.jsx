@@ -1,6 +1,27 @@
-import React from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Globe, Palette, Code2, Eye, Layers, CheckCircle2, Loader2, Zap } from "lucide-react";
+import { Globe, Palette, Code2, Eye, Layers, CheckCircle2, Loader2, Zap, Timer } from "lucide-react";
+
+function formatElapsed(ms) {
+  const total = Math.floor(ms / 1000);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  const tenths = Math.floor((ms % 1000) / 100);
+  return `${m}:${s.toString().padStart(2, "0")}.${tenths}`;
+}
+
+function LiveAgentTimer({ startedAt, colorClass }) {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 100);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <span className={`text-[10px] font-mono tabular-nums ${colorClass}`}>
+      {formatElapsed(Date.now() - startedAt)}
+    </span>
+  );
+}
 
 const AGENT_META = {
   scraper:  { name: "Scraper",  icon: Globe,   color: "cyan",    desc: "Fetches HTML, CSS & screenshot" },
@@ -23,6 +44,33 @@ const COLOR_CLASSES = {
  * activity: [{ id, agent, text, time }] — rolling log
  */
 export default function AIClusterPanel({ url, agents, activity }) {
+  // Elapsed timer — starts when the panel mounts, ticks every 100ms
+  const startRef = useRef(Date.now());
+  const [elapsed, setElapsed] = useState(0);
+  const allDone = Object.values(agents).every(a => a.status === "done" || a.status === "error");
+
+  useEffect(() => {
+    if (allDone) return;
+    const id = setInterval(() => setElapsed(Date.now() - startRef.current), 100);
+    return () => clearInterval(id);
+  }, [allDone]);
+
+  // Per-agent timers
+  const [agentTimers, setAgentTimers] = useState({});
+  useEffect(() => {
+    setAgentTimers(prev => {
+      const next = { ...prev };
+      Object.entries(agents).forEach(([key, a]) => {
+        if (a.status === "working" && !next[key]?.startedAt) {
+          next[key] = { startedAt: Date.now(), duration: null };
+        } else if ((a.status === "done" || a.status === "error") && next[key]?.startedAt && next[key]?.duration == null) {
+          next[key] = { ...next[key], duration: Date.now() - next[key].startedAt };
+        }
+      });
+      return next;
+    });
+  }, [agents]);
+
   return (
     <div className="min-h-[80vh] px-6 py-12">
       <div className="max-w-6xl mx-auto">
@@ -37,7 +85,22 @@ export default function AIClusterPanel({ url, agents, activity }) {
             AI Cluster · 5 agents working in parallel
           </motion.div>
           <h2 className="text-3xl sm:text-4xl font-black tracking-tight mb-2">Cloning in real time</h2>
-          <p className="text-white/30 text-sm font-mono truncate max-w-xl mx-auto">{url}</p>
+          <p className="text-white/30 text-sm font-mono truncate max-w-xl mx-auto mb-4">{url}</p>
+
+          {/* Elapsed timer */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="inline-flex items-center gap-3 bg-gradient-to-r from-cyan-500/10 via-violet-500/10 to-pink-500/10 border border-white/10 rounded-2xl px-5 py-2.5 backdrop-blur-sm"
+          >
+            <Timer className={`w-4 h-4 ${allDone ? "text-emerald-400" : "text-violet-400"}`} />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">
+              {allDone ? "Total time" : "Elapsed"}
+            </span>
+            <span className={`text-2xl font-black font-mono tabular-nums ${allDone ? "text-emerald-400" : "text-white"}`}>
+              {formatElapsed(elapsed)}
+            </span>
+          </motion.div>
         </div>
 
         <div className="grid lg:grid-cols-5 gap-4 mb-6">
@@ -104,7 +167,17 @@ export default function AIClusterPanel({ url, agents, activity }) {
                   </div>
                 </div>
 
-                <h3 className="font-bold text-sm text-white mb-1">{meta.name}</h3>
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="font-bold text-sm text-white">{meta.name}</h3>
+                  {agentTimers[key]?.duration != null && (
+                    <span className="text-[10px] font-mono text-emerald-400/80 tabular-nums">
+                      {formatElapsed(agentTimers[key].duration)}
+                    </span>
+                  )}
+                  {isWorking && agentTimers[key]?.startedAt && (
+                    <LiveAgentTimer startedAt={agentTimers[key].startedAt} colorClass={c.text} />
+                  )}
+                </div>
                 <p className="text-white/35 text-[11px] leading-relaxed mb-2">{meta.desc}</p>
 
                 <AnimatePresence mode="wait">
