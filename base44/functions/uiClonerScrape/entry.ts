@@ -154,8 +154,20 @@ Deno.serve(async (req) => {
     const colors = extractColors(allCss);
     const fonts = extractFonts(allCss);
 
-    // 5. Real screenshot via thum.io (free, no API key required for basic use)
-    const screenshotUrl = `https://image.thum.io/get/width/1280/crop/900/noanimate/${encodeURIComponent(finalUrl)}`;
+    // 5. Real screenshot via thum.io, then upload to base44 storage so it has a proper .png URL
+    let screenshotUrl = null;
+    try {
+      const thumUrl = `https://image.thum.io/get/width/1280/crop/900/noanimate/${finalUrl}`;
+      const shotRes = await fetch(thumUrl, { signal: AbortSignal.timeout(15000) });
+      if (shotRes.ok) {
+        const blob = await shotRes.blob();
+        const file = new File([blob], 'screenshot.png', { type: 'image/png' });
+        const uploaded = await base44.asServiceRole.integrations.Core.UploadFile({ file });
+        screenshotUrl = uploaded?.file_url || null;
+      }
+    } catch (e) {
+      console.error('screenshot failed:', e.message);
+    }
 
     // 6. Cleaned structural HTML for the LLM
     const cleanHtml = stripHtml(extractBodyStructure(rawHtml)).slice(0, 18000);
