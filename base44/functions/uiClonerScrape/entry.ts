@@ -155,15 +155,23 @@ Deno.serve(async (req) => {
     const fonts = extractFonts(allCss);
 
     // 5. Real screenshot via thum.io, then upload to base44 storage so it has a proper .png URL
+    // thum.io free tier can be slow on first render; allow up to 45s
     let screenshotUrl = null;
     try {
-      const thumUrl = `https://image.thum.io/get/width/1280/crop/900/noanimate/${finalUrl}`;
-      const shotRes = await fetch(thumUrl, { signal: AbortSignal.timeout(15000) });
+      const thumUrl = `https://image.thum.io/get/width/1280/noanimate/${finalUrl}`;
+      const shotRes = await fetch(thumUrl, { signal: AbortSignal.timeout(45000) });
       if (shotRes.ok) {
         const blob = await shotRes.blob();
-        const file = new File([blob], 'screenshot.png', { type: 'image/png' });
-        const uploaded = await base44.asServiceRole.integrations.Core.UploadFile({ file });
-        screenshotUrl = uploaded?.file_url || null;
+        if (blob.size > 1000) { // skip tiny error images
+          const file = new File([blob], 'screenshot.png', { type: 'image/png' });
+          const uploaded = await base44.asServiceRole.integrations.Core.UploadFile({ file });
+          screenshotUrl = uploaded?.file_url || null;
+          console.log('screenshot uploaded:', screenshotUrl);
+        } else {
+          console.log('screenshot too small, skipping');
+        }
+      } else {
+        console.log('screenshot service returned:', shotRes.status);
       }
     } catch (e) {
       console.error('screenshot failed:', e.message);
