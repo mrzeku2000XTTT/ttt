@@ -51,21 +51,21 @@ export default function KaSshiPlayer() {
     });
   }, []);
 
-  // Auto-activate when leaving inline page (remove !active gate so it always fires)
-  useEffect(() => {
-    const prevPath = prevPathRef.current;
-    prevPathRef.current = location.pathname;
-    const wasInline = prevPath === '/' || prevPath === '/TTTV2';
-    const hasVisited = localStorage.getItem(KASSHI_INLINE_KEY) === 'true';
-    if (wasInline && !isInlinePage && hasVisited) {
-      if (!active) {
-        setKaSshiGlobal(true);
-        setActive(true);
-      }
-      // Always ensure minimized is false so the player is visible on transition
-      setMinimized(false);
-    }
-  }, [location.pathname]);
+  // Auto-activate when leaving inline page
+   useEffect(() => {
+     const prevPath = prevPathRef.current;
+     prevPathRef.current = location.pathname;
+     const wasInline = prevPath === '/' || prevPath === '/TTTV2';
+     const hasVisited = localStorage.getItem(KASSHI_INLINE_KEY) === 'true';
+     if (wasInline && !isInlinePage && hasVisited) {
+       // Only activate if not already active and not minimized
+       if (!active || minimized) {
+         setKaSshiGlobal(true);
+         setActive(true);
+         setMinimized(false);
+       }
+     }
+   }, [location.pathname, active, minimized]);
 
   // Pointer-based drag (mouse + touch)
   const handlePointerDown = useCallback((e) => {

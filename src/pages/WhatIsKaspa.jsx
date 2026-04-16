@@ -26,18 +26,22 @@ const TIMELINE = [
 ];
 
 export default function WhatIsKaspaPage() {
-  const navigate = useNavigate();
-  const [kasData, setKasData] = useState({ price: null, change24h: null, loading: true });
-  const [news, setNews] = useState([]);
-  const [loadingNews, setLoadingNews] = useState(true);
-  const [rdUpdates, setRdUpdates] = useState([]);
-  const [loadingRd, setLoadingRd] = useState(true);
+   const navigate = useNavigate();
+   const [kasData, setKasData] = useState({ price: null, change24h: null, loading: true });
+   const [news, setNews] = useState([]);
+   const [loadingNews, setLoadingNews] = useState(true);
+   const [rdUpdates, setRdUpdates] = useState([]);
+   const [loadingRd, setLoadingRd] = useState(true);
 
-  useEffect(() => {
-    loadKasPrice();
-    loadKaspaNews();
-    loadCoreRD();
-  }, []);
+   useEffect(() => {
+     window.scrollTo(0, 0);
+   }, []);
+
+   useEffect(() => {
+     loadKasPrice();
+     loadKaspaNews();
+     loadCoreRD();
+   }, []);
 
   const loadKasPrice = async () => {
     try {
