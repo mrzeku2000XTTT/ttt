@@ -4,55 +4,16 @@ import { base44 } from "@/api/base44Client";
 import { Loader2, Globe, Code, Copy, CheckCircle2, Eye, Wand2, AlertCircle, Zap, Layers, Sparkles, ArrowRight, CornerDownLeft, Target, Cpu, MousePointer2, Play, ShieldAlert } from "lucide-react";
 import { Link } from "react-router-dom";
 import LivePreview from "@/components/oneshot/LivePreview";
+import AIClusterPanel from "@/components/oneshot/AIClusterPanel";
+import { runCluster } from "@/components/oneshot/clusterOrchestrator";
 
-const STEPS = [
-  { id: "fetch", label: "Fetching site HTML & styles", icon: Globe },
-  { id: "screenshot", label: "Capturing visual layout", icon: Eye },
-  { id: "analyze", label: "Analyzing design system", icon: Layers },
-  { id: "generate", label: "Generating home page", icon: Sparkles },
-  { id: "subpages", label: "Cloning additional pages", icon: Layers },
-];
-
-// Build the LLM prompt for a single page clone
-function buildClonePrompt({ url, title, description, html, css_sample, colors, fonts, screenshot_url, navLinks }) {
-  const navHint = navLinks?.length
-    ? `\nAVAILABLE NAV ROUTES (use these exact hrefs for nav links so in-preview navigation works):\n${navLinks.map(l => `- ${l.label} → ${l.href}`).join("\n")}`
-    : "";
-  return `You are a senior frontend engineer. Recreate the following website's UI/UX 1:1 as a single self-contained React component.
-
-URL: ${url}
-Title: ${title || "Unknown"}
-Description: ${description || "N/A"}
-
-DESIGN TOKENS (from the site's actual CSS):
-- Colors: ${colors || "extract from screenshot"}
-- Fonts: ${fonts || "system-ui"}
-${navHint}
-
-HTML structure (cleaned body DOM):
-\`\`\`html
-${html?.slice(0, 14000)}
-\`\`\`
-
-CSS sample:
-\`\`\`css
-${css_sample?.slice(0, 3000) || ""}
-\`\`\`
-
-${screenshot_url ? `Visual reference screenshot: ${screenshot_url}` : ""}
-
-CRITICAL Instructions:
-- Output ONLY valid JSX — a single default-exported React functional component named ClonedUI
-- Use ONLY Tailwind CSS utility classes. Use arbitrary values like bg-[#hexcode] to match exact colors
-- Recreate EVERY visible section in the correct order: navbar, hero, features, pricing, testimonials, footer etc.
-- Preserve the actual copy/text from the HTML — do NOT invent new content
-- For nav links and buttons that point to other pages on this site, use the EXACT hrefs from "AVAILABLE NAV ROUTES" above so navigation works in the preview
-- Use lucide-react icons where appropriate (globally available)
-- DO NOT include ANY import statements — React, Tailwind, and lucide-react are in scope
-- DO NOT wrap output in markdown code blocks — output pure JSX only
-- Make it fully responsive
-- The component MUST be named exactly "ClonedUI" and use function ClonedUI() { ... } syntax`;
-}
+const INITIAL_AGENTS = {
+  scraper:  { status: "idle", message: "" },
+  designer: { status: "idle", message: "" },
+  coder:    { status: "idle", message: "" },
+  reviewer: { status: "idle", message: "" },
+  pages:    { status: "idle", message: "" },
+};
 
 const EXAMPLES = ["stripe.com", "linear.app", "vercel.com", "notion.so"];
 
@@ -99,7 +60,9 @@ const HOW_IT_WORKS = [
 
 export default function OneShotPage() {
   const [url, setUrl] = useState("");
-  const [step, setStep] = useState(-1);
+  const [isRunning, setIsRunning] = useState(false);
+  const [agents, setAgents] = useState(INITIAL_AGENTS);
+  const [activity, setActivity] = useState([]);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
@@ -144,87 +107,35 @@ export default function OneShotPage() {
     );
   }
 
-  const isLoading = step >= 0 && step < STEPS.length;
+  const isLoading = isRunning;
+
+  const pushActivity = (agent, text) => {
+    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    setActivity(prev => [...prev, { id: Date.now() + Math.random(), agent, text, time }]);
+  };
+  const setAgentStatus = (agent, status, message = "") => {
+    setAgents(prev => ({ ...prev, [agent]: { status, message } }));
+  };
 
   const handleClone = async () => {
     if (!url.trim()) return;
-    let finalUrl = url.trim();
-    if (!/^https?:\/\//i.test(finalUrl)) finalUrl = "https://" + finalUrl;
     setError(null);
     setResult(null);
-    setStep(0);
+    setActivity([]);
+    setAgents(INITIAL_AGENTS);
+    setIsRunning(true);
     try {
-      // 1. Scrape home page
-      const scrapeRes = await base44.functions.invoke("uiClonerScrape", { url: finalUrl });
-      if (scrapeRes.data?.error) throw new Error(scrapeRes.data.error);
-      const { html, screenshot_url, title, description, design_tokens, css_sample, nav_links = [] } = scrapeRes.data;
-      setStep(1);
-      await new Promise(r => setTimeout(r, 400));
-      setStep(2);
-      await new Promise(r => setTimeout(r, 400));
-      setStep(3);
-
-      const colorsList = design_tokens?.colors?.hex?.join(", ") || "";
-      const fontsList = design_tokens?.fonts?.join(", ") || "";
-
-      // Keep up to 3 extra pages for a multi-page clone
-      const subPages = (nav_links || []).slice(0, 3);
-
-      // 2. Generate home page component
-      const homeCode = await base44.integrations.Core.InvokeLLM({
-        model: "claude_sonnet_4_6",
-        prompt: buildClonePrompt({
-          url: finalUrl, title, description, html, css_sample,
-          colors: colorsList, fonts: fontsList, screenshot_url,
-          navLinks: subPages,
-        }),
-        file_urls: screenshot_url ? [screenshot_url] : undefined,
+      const final = await runCluster({
+        url,
+        onUpdate: (partial) => setResult(prev => ({ ...(prev || {}), ...partial })),
+        onActivity: pushActivity,
+        onAgentStatus: setAgentStatus,
       });
-
-      const pages = [{ path: "/", label: "Home", url: finalUrl, code: homeCode, screenshot_url }];
-
-      // 3. Clone extra pages in parallel (scrape + generate each)
-      if (subPages.length > 0) {
-        setStep(4);
-        const results = await Promise.allSettled(
-          subPages.map(async (link) => {
-            const sub = await base44.functions.invoke("uiClonerScrape", { url: link.href });
-            if (sub.data?.error) throw new Error(sub.data.error);
-            const d = sub.data;
-            const code = await base44.integrations.Core.InvokeLLM({
-              model: "claude_sonnet_4_6",
-              prompt: buildClonePrompt({
-                url: d.url,
-                title: d.title,
-                description: d.description,
-                html: d.html,
-                css_sample: d.css_sample,
-                colors: d.design_tokens?.colors?.hex?.join(", ") || "",
-                fonts: d.design_tokens?.fonts?.join(", ") || "",
-                screenshot_url: d.screenshot_url,
-                navLinks: subPages,
-              }),
-              file_urls: d.screenshot_url ? [d.screenshot_url] : undefined,
-            });
-            return {
-              path: new URL(d.url).pathname,
-              label: link.label,
-              url: d.url,
-              code,
-              screenshot_url: d.screenshot_url,
-            };
-          })
-        );
-        for (const r of results) {
-          if (r.status === "fulfilled") pages.push(r.value);
-        }
-      }
-
-      setStep(STEPS.length);
-      setResult({ pages, url: finalUrl, screenshot_url });
+      setResult(final);
+      setIsRunning(false);
     } catch (err) {
       setError(err.message || "Something went wrong. Try a different URL.");
-      setStep(-1);
+      setIsRunning(false);
     }
   };
 
@@ -237,7 +148,14 @@ export default function OneShotPage() {
     }
   };
 
-  const reset = () => { setResult(null); setStep(-1); setUrl(""); setError(null); };
+  const reset = () => {
+    setResult(null);
+    setUrl("");
+    setError(null);
+    setActivity([]);
+    setAgents(INITIAL_AGENTS);
+    setIsRunning(false);
+  };
 
   return (
     <div className="min-h-screen bg-[#030305] text-white font-sans overflow-x-hidden">
@@ -435,48 +353,15 @@ export default function OneShotPage() {
           )}
         </AnimatePresence>
 
-        {/* ─── LOADING ─── */}
+        {/* ─── AI CLUSTER LIVE VIEW ─── */}
         <AnimatePresence>
           {isLoading && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="min-h-[80vh] flex items-center justify-center px-6"
             >
-              <div className="max-w-md w-full">
-                <div className="text-center mb-12">
-                  <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-cyan-500/20 to-violet-600/20 border border-white/10 flex items-center justify-center mb-6 shadow-2xl shadow-violet-500/20">
-                    <Loader2 className="w-9 h-9 text-violet-400 animate-spin" />
-                  </div>
-                  <h2 className="text-2xl font-black mb-2">Cloning in progress…</h2>
-                  <p className="text-white/30 text-sm font-mono truncate max-w-xs mx-auto">{url}</p>
-                </div>
-
-                <div className="space-y-3">
-                  {STEPS.map((s, i) => {
-                    const done = step > i;
-                    const active = step === i;
-                    const Icon = s.icon;
-                    return (
-                      <motion.div
-                        key={s.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className={`flex items-center gap-4 rounded-xl px-5 py-4 border transition-all duration-500 ${done ? "bg-emerald-500/5 border-emerald-500/20" : active ? "bg-cyan-500/5 border-cyan-500/20" : "bg-white/[0.02] border-white/[0.05]"}`}
-                      >
-                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-all ${done ? "bg-emerald-500/20" : active ? "bg-cyan-500/20" : "bg-white/5"}`}>
-                          {done ? <CheckCircle2 className="w-4.5 h-4.5 text-emerald-400" /> : active ? <Loader2 className="w-4.5 h-4.5 text-cyan-400 animate-spin" /> : <Icon className="w-4.5 h-4.5 text-white/20" />}
-                        </div>
-                        <span className={`text-sm font-medium flex-1 ${done ? "text-emerald-400" : active ? "text-cyan-300" : "text-white/25"}`}>{s.label}</span>
-                        {done && <span className="text-emerald-500 text-xs font-bold">✓</span>}
-                        {active && <div className="flex gap-1">{[0,1,2].map(d => <div key={d} className="w-1 h-1 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: `${d * 150}ms` }} />)}</div>}
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </div>
+              <AIClusterPanel url={url} agents={agents} activity={activity} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -508,7 +393,7 @@ export default function OneShotPage() {
 
         {/* ─── RESULT ─── */}
         <AnimatePresence>
-          {result && (
+          {result && !isLoading && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-6xl mx-auto px-6 py-12 space-y-6">
               {/* Success banner */}
               <div className="flex items-center justify-between bg-emerald-500/8 border border-emerald-500/20 rounded-2xl px-6 py-4">
