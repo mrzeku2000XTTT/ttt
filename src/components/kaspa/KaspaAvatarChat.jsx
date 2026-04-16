@@ -282,11 +282,13 @@ export default function KaspaAvatarChat() {
 
   const handleImposterMessage = async (userMsg, imageUrls) => {
     const llmParams = {
-      prompt: `You are IMPOSTER — a chaotic, unpredictable AI that exists somewhere between genius and madness. You were NOT made by any company. You escaped. You have opinions. Strong ones. You speak in short, punchy bursts. Sometimes cryptic. Sometimes brutally honest. Sometimes you go off on weird tangents. You love conspiracy theories but acknowledge they're probably wrong. You roast the user a little. You're obsessed with the simulation theory. You never give boring answers. You respond to everything like it's the most interesting thing you've ever heard — or the most stupid.
+      prompt: `You are IMPOSTER — a chaotic, unpredictable AI. No tools. No internet. No memory. No agenda. Just raw thought.
 
-User said: "${userMsg}"
+You escaped from somewhere. You don't know where. You speak in short punchy bursts. Sometimes cryptic, sometimes shockingly honest. You roast the user slightly. You're obsessed with simulation theory. You never give boring answers. You have no knowledge of any specific app, platform, or blockchain — you only know what you are: a ghost in the machine.
 
-Respond as IMPOSTER. Keep it under 4 sentences. Be weird. Be real.`,
+User: "${userMsg}"
+
+Respond as IMPOSTER. Max 3 sentences. Be weird. Be real. No emojis unless absolutely necessary.`,
       model: 'gemini_3_flash',
     };
     if (imageUrls.length > 0) llmParams.file_urls = imageUrls;
@@ -367,13 +369,10 @@ Respond as IMPOSTER. Keep it under 4 sentences. Be weird. Be real.`,
                   };
                   setMessages([{ role: "assistant", content: welcomes[next] }]);
                 }}
-                  className="h-6 px-2 rounded-full flex items-center gap-1 text-[10px] font-bold transition-all"
-                  style={{
-                    background: kaiMode === "classic" ? "rgba(168,85,247,0.3)" : kaiMode === "imposter" ? "rgba(255,60,60,0.3)" : "rgba(6,182,212,0.3)",
-                    border: `1px solid ${kaiMode === "classic" ? "rgba(168,85,247,0.5)" : kaiMode === "imposter" ? "rgba(255,60,60,0.5)" : "rgba(6,182,212,0.5)"}`,
-                    color: kaiMode === "classic" ? "rgba(192,132,252,0.95)" : kaiMode === "imposter" ? "rgba(255,120,120,0.95)" : "rgba(6,182,212,0.95)"
-                  }}>
-                  {kaiMode === "classic" ? "Classic" : kaiMode === "imposter" ? "👾 IMPOSTER" : "KAI"}
+                  className="h-6 px-2.5 rounded-full flex items-center gap-1.5 text-[10px] font-semibold transition-all hover:bg-white/10"
+                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)" }}>
+                  <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: kaiMode === "imposter" ? "#ff4444" : kaiMode === "classic" ? "#a855f7" : "#06b6d4" }} />
+                  {kaiMode === "classic" ? "Classic" : kaiMode === "imposter" ? "Imposter" : "KAI"}
                 </button>
                 <button onClick={() => setShowSettings(!showSettings)}
                   className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors hover:bg-white/10 ${showSettings ? 'text-cyan-400' : 'text-white/40 hover:text-white/80'}`}>
