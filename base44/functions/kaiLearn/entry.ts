@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
     if (youtubeId) {
       // Proxy YouTube requests to the dedicated kaiLearnBackend function
       const backendRes = await base44.asServiceRole.functions.invoke('kaiLearnBackend', { url });
-      return Response.json(backendRes, { headers: { 'Access-Control-Allow-Origin': '*' } });
+      return Response.json(backendRes?.data ?? backendRes, { headers: { 'Access-Control-Allow-Origin': '*' } });
     }
 
     // Non-YouTube: scrape directly
