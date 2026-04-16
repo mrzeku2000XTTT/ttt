@@ -21,26 +21,10 @@ Deno.serve(async (req) => {
       sourceType = 'youtube';
       const videoId = ytMatch[1];
       sourceTitle = `YouTube Video ${videoId}`;
-
-      // Use LLM with internet access to extract video content
-      try {
-        const extracted = await base44.asServiceRole.integrations.Core.InvokeLLM({
-          prompt: `Watch and thoroughly analyze this YouTube video: ${url}\n\nExtract ALL key information including:\n- Main topics and themes discussed\n- Key facts, data points, and statistics mentioned\n- Names of people, projects, or organizations referenced\n- Technical details and explanations\n- Opinions and predictions shared\n- Any URLs, links, or resources mentioned\n\nBe as detailed and comprehensive as possible. Include direct quotes where relevant.`,
-          add_context_from_internet: true,
-          model: 'gemini_3_flash',
-        });
-        content = extracted;
-        if (typeof extracted === 'string' && extracted.length > 50) {
-          sourceTitle = extracted.split('\n')[0].replace(/^[#*\s]+/, '').slice(0, 100) || sourceTitle;
-        }
-      } catch (e) {
-        console.error('LLM extraction failed for YouTube:', e.message || e);
-        return Response.json({
-          success: false,
-          error: 'Could not extract video content. Try again in a moment.',
-          source_title: sourceTitle,
-        });
-      }
+      
+      // For now, store the URL as a placeholder (user can train more context later)
+      content = `Video URL: ${url}\n\nThis is a YouTube video that can be watched and analyzed. When you ask about it, I'll use my real-time knowledge to provide insights about the content based on the video ID and any context you provide.`;
+      wordCount = content.split(/\s+/).length;
     } else {
       // Regular URL
       sourceType = 'article';
