@@ -353,7 +353,7 @@ Respond as IMPOSTER. Max 3 sentences. Be weird. Be real. No emojis unless absolu
                   )}
                 </div>
                 <div>
-                  <div className="text-white font-bold text-sm tracking-wide">{kaiMode === "classic" ? "Kai" : kaiMode === "imposter" ? "👾 IMPOSTER" : "KAI"}</div>
+                  <div className="text-white font-bold text-sm tracking-wide">Kai</div>
                   <div className="text-white/40 text-[10px]">{kaiMode === "classic" ? "Classic • TTT Assistant" : kaiMode === "imposter" ? "Unknown Origin • Unfiltered" : "Kaspa AI Assistant"}</div>
                 </div>
               </div>
