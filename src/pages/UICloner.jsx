@@ -9,8 +9,50 @@ const STEPS = [
   { id: "fetch", label: "Fetching site HTML & styles", icon: Globe },
   { id: "screenshot", label: "Capturing visual layout", icon: Eye },
   { id: "analyze", label: "Analyzing design system", icon: Layers },
-  { id: "generate", label: "Generating React component", icon: Sparkles },
+  { id: "generate", label: "Generating home page", icon: Sparkles },
+  { id: "subpages", label: "Cloning additional pages", icon: Layers },
 ];
+
+// Build the LLM prompt for a single page clone
+function buildClonePrompt({ url, title, description, html, css_sample, colors, fonts, screenshot_url, navLinks }) {
+  const navHint = navLinks?.length
+    ? `\nAVAILABLE NAV ROUTES (use these exact hrefs for nav links so in-preview navigation works):\n${navLinks.map(l => `- ${l.label} → ${l.href}`).join("\n")}`
+    : "";
+  return `You are a senior frontend engineer. Recreate the following website's UI/UX 1:1 as a single self-contained React component.
+
+URL: ${url}
+Title: ${title || "Unknown"}
+Description: ${description || "N/A"}
+
+DESIGN TOKENS (from the site's actual CSS):
+- Colors: ${colors || "extract from screenshot"}
+- Fonts: ${fonts || "system-ui"}
+${navHint}
+
+HTML structure (cleaned body DOM):
+\`\`\`html
+${html?.slice(0, 14000)}
+\`\`\`
+
+CSS sample:
+\`\`\`css
+${css_sample?.slice(0, 3000) || ""}
+\`\`\`
+
+${screenshot_url ? `Visual reference screenshot: ${screenshot_url}` : ""}
+
+CRITICAL Instructions:
+- Output ONLY valid JSX — a single default-exported React functional component named ClonedUI
+- Use ONLY Tailwind CSS utility classes. Use arbitrary values like bg-[#hexcode] to match exact colors
+- Recreate EVERY visible section in the correct order: navbar, hero, features, pricing, testimonials, footer etc.
+- Preserve the actual copy/text from the HTML — do NOT invent new content
+- For nav links and buttons that point to other pages on this site, use the EXACT hrefs from "AVAILABLE NAV ROUTES" above so navigation works in the preview
+- Use lucide-react icons where appropriate (globally available)
+- DO NOT include ANY import statements — React, Tailwind, and lucide-react are in scope
+- DO NOT wrap output in markdown code blocks — output pure JSX only
+- Make it fully responsive
+- The component MUST be named exactly "ClonedUI" and use function ClonedUI() { ... } syntax`;
+}
 
 const EXAMPLES = ["stripe.com", "linear.app", "vercel.com", "notion.so"];
 
@@ -112,12 +154,12 @@ export default function OneShotPage() {
     setResult(null);
     setStep(0);
     try {
-      setStep(0);
+      // 1. Scrape home page
       const scrapeRes = await base44.functions.invoke("uiClonerScrape", { url: finalUrl });
       if (scrapeRes.data?.error) throw new Error(scrapeRes.data.error);
-      const { html, screenshot_url, title, description, design_tokens, css_sample } = scrapeRes.data;
+      const { html, screenshot_url, title, description, design_tokens, css_sample, nav_links = [] } = scrapeRes.data;
       setStep(1);
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise(r => setTimeout(r, 400));
       setStep(2);
       await new Promise(r => setTimeout(r, 400));
       setStep(3);
@@ -125,47 +167,61 @@ export default function OneShotPage() {
       const colorsList = design_tokens?.colors?.hex?.join(", ") || "";
       const fontsList = design_tokens?.fonts?.join(", ") || "";
 
-      const genRes = await base44.integrations.Core.InvokeLLM({
+      // Keep up to 3 extra pages for a multi-page clone
+      const subPages = (nav_links || []).slice(0, 3);
+
+      // 2. Generate home page component
+      const homeCode = await base44.integrations.Core.InvokeLLM({
         model: "claude_sonnet_4_6",
-        prompt: `You are a senior frontend engineer. Recreate the following website's UI/UX 1:1 as a single self-contained React component.
-
-URL: ${finalUrl}
-Title: ${title || "Unknown"}
-Description: ${description || "N/A"}
-
-DESIGN TOKENS (extracted from the site's actual CSS):
-- Colors used: ${colorsList || "extract from screenshot"}
-- Fonts used: ${fontsList || "use system-ui"}
-
-HTML structure (cleaned body DOM):
-\`\`\`html
-${html?.slice(0, 14000)}
-\`\`\`
-
-CSS sample (from site's stylesheets):
-\`\`\`css
-${css_sample?.slice(0, 4000) || ""}
-\`\`\`
-
-${screenshot_url ? `Visual reference screenshot: ${screenshot_url}` : ""}
-
-CRITICAL Instructions:
-- Output ONLY valid JSX — a single default-exported React functional component named ClonedUI
-- Use ONLY Tailwind CSS utility classes for styling. Match the exact colors from the design tokens above using arbitrary values like bg-[#hexcode] and text-[#hexcode]
-- Match the typography: use font-[fontname] with the actual fonts listed above
-- Recreate EVERY visible section in the correct order: navbar, hero, features, pricing, testimonials, footer etc.
-- Preserve the actual copy/text from the HTML structure — do NOT invent new content
-- Match spacing, layout proportions, and responsive behavior 1:1 with the screenshot
-- For images, use the real image URLs found in the HTML, OR high-quality unsplash placeholders
-- Use lucide-react icons where appropriate (they are globally available)
-- DO NOT include ANY import statements — React, Tailwind, and lucide-react are already in scope
-- DO NOT wrap output in markdown code blocks — output pure JSX only
-- Make it fully responsive (mobile + desktop)
-- The component MUST be named exactly "ClonedUI" and use function ClonedUI() { ... } syntax`,
+        prompt: buildClonePrompt({
+          url: finalUrl, title, description, html, css_sample,
+          colors: colorsList, fonts: fontsList, screenshot_url,
+          navLinks: subPages,
+        }),
         file_urls: screenshot_url ? [screenshot_url] : undefined,
       });
+
+      const pages = [{ path: "/", label: "Home", url: finalUrl, code: homeCode, screenshot_url }];
+
+      // 3. Clone extra pages in parallel (scrape + generate each)
+      if (subPages.length > 0) {
+        setStep(4);
+        const results = await Promise.allSettled(
+          subPages.map(async (link) => {
+            const sub = await base44.functions.invoke("uiClonerScrape", { url: link.href });
+            if (sub.data?.error) throw new Error(sub.data.error);
+            const d = sub.data;
+            const code = await base44.integrations.Core.InvokeLLM({
+              model: "claude_sonnet_4_6",
+              prompt: buildClonePrompt({
+                url: d.url,
+                title: d.title,
+                description: d.description,
+                html: d.html,
+                css_sample: d.css_sample,
+                colors: d.design_tokens?.colors?.hex?.join(", ") || "",
+                fonts: d.design_tokens?.fonts?.join(", ") || "",
+                screenshot_url: d.screenshot_url,
+                navLinks: subPages,
+              }),
+              file_urls: d.screenshot_url ? [d.screenshot_url] : undefined,
+            });
+            return {
+              path: new URL(d.url).pathname,
+              label: link.label,
+              url: d.url,
+              code,
+              screenshot_url: d.screenshot_url,
+            };
+          })
+        );
+        for (const r of results) {
+          if (r.status === "fulfilled") pages.push(r.value);
+        }
+      }
+
       setStep(STEPS.length);
-      setResult({ code: genRes, screenshot_url, url: finalUrl });
+      setResult({ pages, url: finalUrl, screenshot_url });
     } catch (err) {
       setError(err.message || "Something went wrong. Try a different URL.");
       setStep(-1);
@@ -173,8 +229,9 @@ CRITICAL Instructions:
   };
 
   const handleCopy = () => {
-    if (result?.code) {
-      navigator.clipboard.writeText(result.code);
+    const code = result?.pages?.[0]?.code;
+    if (code) {
+      navigator.clipboard.writeText(code);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -494,26 +551,35 @@ CRITICAL Instructions:
                         <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
                         <div className="w-3 h-3 rounded-full bg-emerald-500/50" />
                       </div>
-                      <span className="text-[11px] text-white/25 font-mono">ClonedUI.jsx</span>
+                      <span className="text-[11px] text-white/25 font-mono">
+                        {result.pages.length > 1 ? `${result.pages.length} pages generated` : "ClonedUI.jsx"}
+                      </span>
                     </div>
                     <motion.button
                       whileTap={{ scale: 0.95 }}
                       onClick={handleCopy}
                       className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${copied ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-white/5 text-white/40 hover:text-white hover:bg-white/10 border border-white/10"}`}
                     >
-                      {copied ? <><CheckCircle2 className="w-3.5 h-3.5" />Copied!</> : <><Copy className="w-3.5 h-3.5" />Copy code</>}
+                      {copied ? <><CheckCircle2 className="w-3.5 h-3.5" />Copied!</> : <><Copy className="w-3.5 h-3.5" />Copy home</>}
                     </motion.button>
                   </div>
-                  <div className="bg-[#050507] overflow-auto max-h-[640px]">
-                    <pre className="p-6 text-[12px] text-emerald-300/80 font-mono leading-relaxed whitespace-pre-wrap">
-                      {result.code}
-                    </pre>
+                  <div className="bg-[#050507] overflow-auto max-h-[640px] divide-y divide-white/5">
+                    {result.pages.map((p) => (
+                      <div key={p.path}>
+                        <div className="px-6 py-2 text-[11px] text-violet-400 font-mono bg-white/[0.02] sticky top-0">
+                          {p.label} — {p.path}
+                        </div>
+                        <pre className="p-6 text-[12px] text-emerald-300/80 font-mono leading-relaxed whitespace-pre-wrap">
+                          {p.code}
+                        </pre>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
 
               {activeTab === "preview" && (
-                <LivePreview code={result.code} />
+                <LivePreview pages={result.pages} initialUrl={result.url} />
               )}
 
               {activeTab === "screenshot" && result.screenshot_url && (

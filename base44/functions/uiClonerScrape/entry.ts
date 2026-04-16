@@ -36,6 +36,37 @@ function extractMeta(html, name) {
   return m ? m[1] : '';
 }
 
+function extractNavLinks(html, baseUrl) {
+  // Grab <a href="..."> from the header/nav area (first 8000 chars of body is usually nav)
+  const bodyMatch = html.match(/<body\b[^>]*>([\s\S]*?)<\/body>/i);
+  const body = bodyMatch ? bodyMatch[1] : html;
+  const navArea = body.slice(0, 15000);
+
+  const links = [];
+  const re = /<a[^>]+href=["']([^"'#]+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  const baseHost = (() => { try { return new URL(baseUrl).host; } catch { return ''; } })();
+  let m;
+  const seen = new Set();
+  while ((m = re.exec(navArea)) !== null) {
+    const href = m[1];
+    const text = m[2].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+    if (!href || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('javascript:')) continue;
+    if (!text || text.length < 2 || text.length > 40) continue;
+    const abs = absolutize(baseUrl, href);
+    if (!abs) continue;
+    try {
+      const u = new URL(abs);
+      if (u.host !== baseHost) continue; // same-origin only
+      if (u.pathname === '/' || u.pathname === '') continue; // skip home
+      const clean = `${u.origin}${u.pathname}`;
+      if (seen.has(clean)) continue;
+      seen.add(clean);
+      links.push({ href: clean, label: text });
+    } catch { /* skip */ }
+  }
+  return links.slice(0, 6);
+}
+
 function extractLinkedCSS(html, baseUrl) {
   const links = [];
   const linkRe = /<link[^>]+rel=["']stylesheet["'][^>]*>/gi;
@@ -180,6 +211,9 @@ Deno.serve(async (req) => {
     // 6. Cleaned structural HTML for the LLM
     const cleanHtml = stripHtml(extractBodyStructure(rawHtml)).slice(0, 18000);
 
+    // 7. Extract internal nav links (for multi-page cloning)
+    const navLinks = extractNavLinks(rawHtml, finalUrl);
+
     return Response.json({
       url: finalUrl,
       title,
@@ -193,6 +227,7 @@ Deno.serve(async (req) => {
         stylesheets_found: cssUrls.length,
       },
       screenshot_url: screenshotUrl,
+      nav_links: navLinks,
     });
 
   } catch (err) {
