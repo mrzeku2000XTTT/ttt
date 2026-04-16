@@ -1,0 +1,44 @@
+{
+  "name": "ImposterIdentity",
+  "type": "object",
+  "properties": {
+    "imposter_id": {
+      "type": "string",
+      "description": "Unique Imposter ID (e.g. IMP-XXXX)"
+    },
+    "kaspa_address": {
+      "type": "string",
+      "description": "Generated Kaspa wallet address"
+    },
+    "subagent_name": {
+      "type": "string",
+      "description": "Random subagent codename"
+    },
+    "session_token": {
+      "type": "string",
+      "description": "Client-side session token stored in localStorage"
+    },
+    "message_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of messages sent"
+    },
+    "last_seen": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last activity timestamp"
+    }
+  },
+  "required": [
+    "imposter_id",
+    "kaspa_address",
+    "subagent_name",
+    "session_token"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
+  }
+}

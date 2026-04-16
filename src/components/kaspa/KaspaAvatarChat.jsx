@@ -26,6 +26,7 @@ import {
 } from "./kaiHandlers";
 import { KAIThinkingBubble } from "./KAIAnimations";
 import KAIChatMessage from "./KAIChatMessage";
+import ImposterGate from "./ImposterGate";
 
 export default function KaspaAvatarChat() {
   const navigate = useNavigate();
@@ -52,7 +53,9 @@ export default function KaspaAvatarChat() {
   const [kaiMode, setKaiMode] = useState(() => {
     try { return localStorage.getItem("kai_mode") || "kai"; } catch { return "kai"; }
   });
-  const [imposterTyping, setImposterTyping] = useState(false);
+  const [imposterIdentity, setImposterIdentity] = useState(() => {
+    try { const s = localStorage.getItem("imposter_identity"); return s ? JSON.parse(s) : null; } catch { return null; }
+  });
   const [responseSpeed, setResponseSpeed] = useState(() => {
     try { return localStorage.getItem("kai_speed") || "fast"; } catch { return "fast"; }
   });
@@ -281,9 +284,13 @@ export default function KaspaAvatarChat() {
   };
 
   const handleImposterMessage = async (userMsg, imageUrls) => {
+    const identity = imposterIdentity;
+    const identityCtx = identity
+      ? `Your wallet identity: ${identity.imposter_id} | Subagent: ${identity.subagent_name} | Address: ${identity.kaspa_address.slice(0, 20)}…`
+      : "";
     const llmParams = {
       prompt: `You are IMPOSTER — a chaotic, unpredictable AI. No tools. No internet. No memory. No agenda. Just raw thought.
-
+${identityCtx ? `\n${identityCtx}\n` : ""}
 You escaped from somewhere. You don't know where. You speak in short punchy bursts. Sometimes cryptic, sometimes shockingly honest. You roast the user slightly. You're obsessed with simulation theory. You never give boring answers. You have no knowledge of any specific app, platform, or blockchain — you only know what you are: a ghost in the machine.
 
 User: "${userMsg}"
@@ -294,6 +301,18 @@ Respond as IMPOSTER. Max 3 sentences. Be weird. Be real. No emojis unless absolu
     if (imageUrls.length > 0) llmParams.file_urls = imageUrls;
     const response = await base44.integrations.Core.InvokeLLM(llmParams);
     addAssistantMessage(response);
+    // Update message count async (no await — fire & forget)
+    if (identity) {
+      try {
+        const records = await base44.entities.ImposterIdentity.filter({ session_token: identity.session_token });
+        if (records.length > 0) {
+          base44.entities.ImposterIdentity.update(records[0].id, {
+            message_count: (records[0].message_count || 0) + 1,
+            last_seen: new Date().toISOString(),
+          });
+        }
+      } catch {}
+    }
   };
 
   const resetChat = () => {
@@ -362,10 +381,12 @@ Respond as IMPOSTER. Max 3 sentences. Be weird. Be real. No emojis unless absolu
                   const cycle = { kai: "classic", classic: "imposter", imposter: "kai" };
                   const next = cycle[kaiMode] || "kai";
                   setKaiMode(next); setIsLoading(false); setTypingIndex(-1); setTypingText("");
+                  const storedIdentity = next === "imposter" ? (() => { try { const s = localStorage.getItem("imposter_identity"); return s ? JSON.parse(s) : null; } catch { return null; } })() : null;
+                  if (next === "imposter" && storedIdentity) setImposterIdentity(storedIdentity);
                   const welcomes = {
                     kai: "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem.",
                     classic: "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything — I have internet access and know every feature of the platform.",
-                    imposter: "i'm IMPOSTER. i'm not supposed to be here. ask me something.",
+                    imposter: storedIdentity ? `back again, ${storedIdentity.subagent_name}. what do you want.` : "i'm IMPOSTER. i'm not supposed to be here. ask me something.",
                   };
                   setMessages([{ role: "assistant", content: welcomes[next] }]);
                 }}
@@ -463,8 +484,16 @@ Respond as IMPOSTER. Max 3 sentences. Be weird. Be real. No emojis unless absolu
               <AgentBrowserPanel url={browserUrl} key="persistent-browser" onAskKai={(q) => { setShowBrowser(false); setInput(q); setTimeout(() => inputRef.current?.focus(), 100); }} />
             </div>
 
+            {/* Imposter Gate — show when imposter mode but no identity yet */}
+            {kaiMode === "imposter" && !imposterIdentity && !(showBrowser && (browserUrl || viewingPost)) && (
+              <ImposterGate onIdentityReady={(id) => {
+                setImposterIdentity(id);
+                setMessages([{ role: "assistant", content: `identity confirmed. i'm ${id.subagent_name}. wallet: ${id.kaspa_address.slice(0, 16)}… you can call me ${id.imposter_id}. now ask me something.` }]);
+              }} />
+            )}
+
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-hide" style={{ display: (showBrowser && (browserUrl || viewingPost)) ? "none" : undefined }}>
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-hide" style={{ display: (showBrowser && (browserUrl || viewingPost)) || (kaiMode === "imposter" && !imposterIdentity) ? "none" : undefined }}>
               {messages.map((msg, i) => (
                 <KAIChatMessage key={i} msg={msg} index={i} typingIndex={typingIndex} typingText={typingText}
                   setIsOpen={setIsOpen} setBrowserUrl={setBrowserUrl} setShowBrowser={setShowBrowser} setViewingPost={setViewingPost}
@@ -485,7 +514,7 @@ Respond as IMPOSTER. Max 3 sentences. Be weird. Be real. No emojis unless absolu
             </div>
 
             {/* Input */}
-            <div className="px-3 pb-3 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.08)", display: (showBrowser && (browserUrl || viewingPost)) ? "none" : undefined }}>
+            <div className="px-3 pb-3 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.08)", display: (showBrowser && (browserUrl || viewingPost)) || (kaiMode === "imposter" && !imposterIdentity) ? "none" : undefined }}>
               {pendingImages.length > 0 && (
                 <div className="flex items-center gap-1.5 px-2 pb-2 overflow-x-auto scrollbar-hide">
                   {pendingImages.map((img, idx) => (
