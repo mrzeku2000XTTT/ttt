@@ -154,7 +154,7 @@ export default function KAIChatMessage({ msg, index, typingIndex, typingText, se
 
   // Imposter send transaction confirm card
   if (msg.imposterTx) {
-    const { to_address, amount_kas, from_address, mnemonic } = msg.imposterTx;
+    const { to_address, amount_kas, balance, from_address, mnemonic } = msg.imposterTx;
     const sendTx = async () => {
       setTxState("sending");
       try {
@@ -193,6 +193,12 @@ export default function KAIChatMessage({ msg, index, typingIndex, typingText, se
                 <span className="text-white/40">From</span>
                 <span className="text-white/50 font-mono text-[10px]">{from_address?.slice(0, 24)}…</span>
               </div>
+              {balance !== undefined && balance !== null && (
+                <div className="flex justify-between text-[12px]">
+                  <span className="text-white/40">Balance</span>
+                  <span className="text-green-400/80 font-mono">{balance.toFixed(4)} KAS</span>
+                </div>
+              )}
             </div>
           </div>
 

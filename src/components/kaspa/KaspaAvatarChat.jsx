@@ -286,22 +286,36 @@ export default function KaspaAvatarChat() {
 
   const handleImposterMessage = async (userMsg, imageUrls) => {
     const identity = imposterIdentity;
+
+    // Build conversation state from last assistant action (for multi-turn send flow)
+    const lastAction = [...messages].reverse().find(m => m.imposterAction)?.imposterAction || null;
+
     const res = await base44.functions.invoke('imposterChat', {
       message: userMsg,
       identity: identity ? { imposter_id: identity.imposter_id, subagent_name: identity.subagent_name, kaspa_address: identity.kaspa_address } : null,
+      conversation_state: lastAction,
     });
 
     const data = res.data;
 
     // Handle send transaction action
     if (data?.action?.type === "send_kas") {
-      const { to_address, amount_kas } = data.action;
+      const { to_address, amount_kas, balance } = data.action;
       addAssistantMessage(data.reply || `sending ${amount_kas} KAS to ${to_address.slice(0, 20)}… confirm?`);
-      // Show confirm/cancel buttons via a special message
       setMessages(prev => [...prev, {
         role: "assistant",
         content: null,
-        imposterTx: { to_address, amount_kas, from_address: identity?.kaspa_address, mnemonic: identity?.mnemonic }
+        imposterTx: { to_address, amount_kas, balance, from_address: identity?.kaspa_address, mnemonic: identity?.mnemonic }
+      }]);
+      return;
+    }
+
+    // Handle ask_address / ask_amount — store partial state so next message carries it
+    if (data?.action?.type === "ask_address" || data?.action?.type === "ask_amount" || data?.action?.type === "insufficient_balance") {
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: data.reply,
+        imposterAction: data.action.partial || data.action,
       }]);
       return;
     }

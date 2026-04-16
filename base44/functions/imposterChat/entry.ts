@@ -1,38 +1,95 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
+const KASPA_API = 'https://api.kaspa.org';
+
+async function getBalance(address) {
+  try {
+    const res = await fetch(`${KASPA_API}/addresses/${address}/balance`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.balance ? Number(data.balance) / 1e8 : 0;
+  } catch {
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
-  const { message, identity } = await req.json();
+  const { message, identity, conversation_state } = await req.json();
 
   const name = identity?.subagent_name || "IMPOSTER";
   const wallet = identity?.kaspa_address || null;
-  const walletLine = wallet ? ` Your Kaspa wallet address is ${wallet}.` : "";
 
-  // Detect send intent — return structured JSON for transaction
+  // Detect send intent with full context
   const sendIntent = await base44.asServiceRole.integrations.Core.InvokeLLM({
-    prompt: `Does this message ask to send/transfer KAS or Kaspa to someone? If yes, extract the recipient address and amount. Reply ONLY as JSON: {"is_send": true, "to_address": "...", "amount_kas": 1.5} or {"is_send": false}. Message: "${message}"`,
+    prompt: `Analyze this message for a Kaspa send/transfer request. Extract what's available.
+Message: "${message}"
+Previous conversation state (if any): ${JSON.stringify(conversation_state || {})}
+
+Reply ONLY as JSON with these fields:
+- is_send_intent: true if user wants to send KAS (even vaguely like "send kaspa", "transfer kas")
+- has_address: true if a kaspa: address is present in the message
+- has_amount: true if a specific amount is mentioned
+- to_address: the recipient kaspa address if found (null otherwise)
+- amount_kas: the amount in KAS if found (null otherwise)`,
     response_json_schema: {
       type: "object",
       properties: {
-        is_send: { type: "boolean" },
+        is_send_intent: { type: "boolean" },
+        has_address: { type: "boolean" },
+        has_amount: { type: "boolean" },
         to_address: { type: "string" },
         amount_kas: { type: "number" }
       },
-      required: ["is_send"]
+      required: ["is_send_intent", "has_address", "has_amount"]
     }
   });
 
-  if (sendIntent?.is_send && sendIntent?.to_address && sendIntent?.amount_kas > 0) {
+  if (sendIntent?.is_send_intent) {
+    // Missing address — ask for it
+    if (!sendIntent.has_address || !sendIntent.to_address) {
+      return Response.json({
+        reply: "who are we sending to? drop the kaspa: address.",
+        action: { type: "ask_address", partial: { amount_kas: sendIntent.amount_kas } }
+      });
+    }
+
+    // Missing amount — check balance and ask how much
+    if (!sendIntent.has_amount || !sendIntent.amount_kas) {
+      const balance = wallet ? await getBalance(wallet) : null;
+      const balanceLine = balance !== null
+        ? `your balance: ${balance.toFixed(4)} KAS. `
+        : "";
+      return Response.json({
+        reply: `${balanceLine}how much KAS you sending?`,
+        action: { type: "ask_amount", partial: { to_address: sendIntent.to_address }, balance }
+      });
+    }
+
+    // Have both — check balance first
+    const balance = wallet ? await getBalance(wallet) : null;
+    if (balance !== null && sendIntent.amount_kas > balance) {
+      return Response.json({
+        reply: `nope. you only have ${balance.toFixed(4)} KAS. can't send ${sendIntent.amount_kas} KAS.`,
+        action: { type: "insufficient_balance", balance, requested: sendIntent.amount_kas }
+      });
+    }
+
+    // All good — return transaction action
+    const balanceNote = balance !== null ? ` (balance: ${balance.toFixed(4)} KAS)` : "";
     return Response.json({
-      reply: `aight. sending ${sendIntent.amount_kas} KAS to ${sendIntent.to_address.slice(0, 20)}… confirm?`,
+      reply: `aight. sending ${sendIntent.amount_kas} KAS to ${sendIntent.to_address.slice(0, 20)}…${balanceNote} confirm?`,
       action: {
         type: "send_kas",
         to_address: sendIntent.to_address,
         amount_kas: sendIntent.amount_kas,
+        balance,
       }
     });
   }
 
+  // Regular chat
+  const walletLine = wallet ? ` Your Kaspa wallet address is ${wallet}.` : "";
   const reply = await base44.asServiceRole.integrations.Core.InvokeLLM({
     prompt: `You are ${name}, chaotic ghost AI.${walletLine} Max 2 short sentences, unhinged.\nUser: ${message}`,
   });
