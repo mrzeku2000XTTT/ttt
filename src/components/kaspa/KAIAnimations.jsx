@@ -19,14 +19,31 @@ export function KAIBlocksAnimation() {
   );
 }
 
-export function KAIThinkingBubble() {
+export function KAIThinkingBubble({ mode = "kai" }) {
   const [phrase, setPhrase] = useState(() => KAI_THINKING_PHRASES[Math.floor(Math.random() * KAI_THINKING_PHRASES.length)]);
   useEffect(() => {
+    if (mode === "imposter") return;
     const interval = setInterval(() => {
       setPhrase(KAI_THINKING_PHRASES[Math.floor(Math.random() * KAI_THINKING_PHRASES.length)]);
     }, 2000);
     return () => clearInterval(interval);
-  }, []);
+  }, [mode]);
+
+  if (mode === "imposter") {
+    return (
+      <div className="flex justify-start">
+        <div className="px-3 py-2 rounded-2xl rounded-bl-md flex items-center gap-1.5"
+          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,50,50,0.15)" }}>
+          {[0,1,2].map(i => (
+            <div key={i} className="w-1.5 h-1.5 rounded-full bg-red-400/60"
+              style={{ animation: `imposter-dot 1s ease-in-out ${i * 0.2}s infinite` }} />
+          ))}
+          <style>{`@keyframes imposter-dot { 0%,100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }`}</style>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex justify-start">
       <div className="px-3 py-2 rounded-2xl rounded-bl-md flex items-center gap-2 text-[12px]"

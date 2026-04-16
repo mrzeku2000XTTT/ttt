@@ -526,7 +526,7 @@ Respond as IMPOSTER. Max 3 sentences. Be weird. Be real. No emojis unless absolu
                   }}
                 />
               ))}
-              {isLoading && typingIndex < 0 && <KAIThinkingBubble />}
+              {isLoading && typingIndex < 0 && <KAIThinkingBubble mode={kaiMode} />}
               <div ref={messagesEndRef} />
             </div>
 
