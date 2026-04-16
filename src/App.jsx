@@ -29,6 +29,7 @@ import TTTV2Page from './pages/TTTV2';
 import WhatIsKaspaPage from './pages/WhatIsKaspa';
 import ExplorePage from './pages/Explore';
 import AppStoreV2Page from './pages/AppStoreV2';
+import UIClonerPage from './pages/UICloner';
 import KaSshiPlayer from './components/KaSshiPlayer';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -102,6 +103,7 @@ const AuthenticatedApp = () => {
       <Route path="/Explore" element={<ExplorePage />} />
       <Route path="/AppStoreV2" element={<AppStoreV2Page />} />
       <Route path="/ValorantArena" element={<ValorantArenaPage />} />
+      <Route path="/UICloner" element={<UIClonerPage />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
