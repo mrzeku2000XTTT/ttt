@@ -14,10 +14,17 @@ export default function LivePreview({ code }) {
 
   const cleanCode = (raw) => {
     if (!raw) return "";
-    let c = raw.trim();
-    c = c.replace(/^```(?:jsx?|tsx?|javascript|react)?\n?/i, "").replace(/```\s*$/, "");
-    c = c.replace(/^\s*import\s+[^;]+;?\s*$/gm, "");
+    let c = String(raw).trim();
+    // Strip ALL markdown code fences (anywhere, not just at start/end)
+    c = c.replace(/```(?:jsx?|tsx?|javascript|react|js)?\n?/gi, "");
+    c = c.replace(/```/g, "");
+    // Remove import statements (single and multi-line)
+    c = c.replace(/^\s*import\s+[\s\S]*?from\s+['"][^'"]+['"];?\s*$/gm, "");
+    c = c.replace(/^\s*import\s+['"][^'"]+['"];?\s*$/gm, "");
+    // Remove export default prefix but keep the declaration
     c = c.replace(/export\s+default\s+/g, "");
+    // Remove any other top-level export keywords
+    c = c.replace(/^\s*export\s+/gm, "");
     return c.trim();
   };
 
@@ -53,11 +60,14 @@ export default function LivePreview({ code }) {
 ${safeUserCode}
 </script>
 <script>
+window.addEventListener('error', function(e) {
+  window.parent.postMessage({ __oneshot: 'error', message: (e.message || 'Unknown error') + ' @ line ' + (e.lineno || '?') }, '*');
+});
 (function() {
   function run() {
     try {
-      if (!window.Babel) throw new Error('Babel failed to load');
-      if (!window.React || !window.ReactDOM) throw new Error('React failed to load');
+      if (!window.Babel) throw new Error('Babel CDN failed to load (check network)');
+      if (!window.React || !window.ReactDOM) throw new Error('React CDN failed to load (check network)');
 
       var rawUserCode = document.getElementById('user-code').textContent;
 
