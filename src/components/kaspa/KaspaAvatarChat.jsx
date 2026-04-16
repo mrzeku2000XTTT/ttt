@@ -52,6 +52,7 @@ export default function KaspaAvatarChat() {
   const [kaiMode, setKaiMode] = useState(() => {
     try { return localStorage.getItem("kai_mode") || "kai"; } catch { return "kai"; }
   });
+  const [imposterTyping, setImposterTyping] = useState(false);
   const [responseSpeed, setResponseSpeed] = useState(() => {
     try { return localStorage.getItem("kai_speed") || "fast"; } catch { return "fast"; }
   });
@@ -163,6 +164,12 @@ export default function KaspaAvatarChat() {
     setIsLoading(true);
 
     try {
+      // IMPOSTER mode — completely independent, raw LLM only
+      if (kaiMode === "imposter") {
+        await handleImposterMessage(userMsg, imageUrls);
+        setIsLoading(false); return;
+      }
+
       // PDF / document request
       if (isPDFRequest(userMsg)) { await handlePDFRequest(userMsg, ctx); setIsLoading(false); return; }
 
@@ -273,13 +280,29 @@ export default function KaspaAvatarChat() {
     }
   };
 
+  const handleImposterMessage = async (userMsg, imageUrls) => {
+    const llmParams = {
+      prompt: `You are IMPOSTER — a chaotic, unpredictable AI that exists somewhere between genius and madness. You were NOT made by any company. You escaped. You have opinions. Strong ones. You speak in short, punchy bursts. Sometimes cryptic. Sometimes brutally honest. Sometimes you go off on weird tangents. You love conspiracy theories but acknowledge they're probably wrong. You roast the user a little. You're obsessed with the simulation theory. You never give boring answers. You respond to everything like it's the most interesting thing you've ever heard — or the most stupid.
+
+User said: "${userMsg}"
+
+Respond as IMPOSTER. Keep it under 4 sentences. Be weird. Be real.`,
+      model: 'gemini_3_flash',
+    };
+    if (imageUrls.length > 0) llmParams.file_urls = imageUrls;
+    const response = await base44.integrations.Core.InvokeLLM(llmParams);
+    addAssistantMessage(response);
+  };
+
   const resetChat = () => {
     setIsOpen(false); setShowSettings(false); setIsLoading(false);
     setTypingIndex(-1); setTypingText(""); setBrowserUrl(null); setShowBrowser(false); setViewingPost(null);
-    setMessages([{ role: "assistant", content: kaiMode === "classic"
-      ? "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything."
-      : "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem."
-    }]);
+    const welcomes = {
+      kai: "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem.",
+      classic: "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything.",
+      imposter: "i'm IMPOSTER. i'm not supposed to be here. ask me something.",
+    };
+    setMessages([{ role: "assistant", content: welcomes[kaiMode] || welcomes.kai }]);
   };
 
   return (
@@ -328,22 +351,29 @@ export default function KaspaAvatarChat() {
                   )}
                 </div>
                 <div>
-                  <div className="text-white font-bold text-sm tracking-wide">{kaiMode === "classic" ? "Kai" : "KAI"}</div>
-                  <div className="text-white/40 text-[10px]">{kaiMode === "classic" ? "Classic • TTT Assistant" : "Kaspa AI Assistant"}</div>
+                  <div className="text-white font-bold text-sm tracking-wide">{kaiMode === "classic" ? "Kai" : kaiMode === "imposter" ? "👾 IMPOSTER" : "KAI"}</div>
+                  <div className="text-white/40 text-[10px]">{kaiMode === "classic" ? "Classic • TTT Assistant" : kaiMode === "imposter" ? "Unknown Origin • Unfiltered" : "Kaspa AI Assistant"}</div>
                 </div>
               </div>
               <div className="flex items-center gap-1">
                 <button onClick={() => {
-                  const next = kaiMode === "kai" ? "classic" : "kai";
+                  const cycle = { kai: "classic", classic: "imposter", imposter: "kai" };
+                  const next = cycle[kaiMode] || "kai";
                   setKaiMode(next); setIsLoading(false); setTypingIndex(-1); setTypingText("");
-                  setMessages([{ role: "assistant", content: next === "classic"
-                    ? "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything — I have internet access and know every feature of the platform."
-                    : "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem."
-                  }]);
+                  const welcomes = {
+                    kai: "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem.",
+                    classic: "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything — I have internet access and know every feature of the platform.",
+                    imposter: "i'm IMPOSTER. i'm not supposed to be here. ask me something.",
+                  };
+                  setMessages([{ role: "assistant", content: welcomes[next] }]);
                 }}
                   className="h-6 px-2 rounded-full flex items-center gap-1 text-[10px] font-bold transition-all"
-                  style={{ background: kaiMode === "classic" ? "rgba(168,85,247,0.3)" : "rgba(6,182,212,0.3)", border: `1px solid ${kaiMode === "classic" ? "rgba(168,85,247,0.5)" : "rgba(6,182,212,0.5)"}`, color: kaiMode === "classic" ? "rgba(192,132,252,0.95)" : "rgba(6,182,212,0.95)" }}>
-                  {kaiMode === "classic" ? "Classic" : "KAI"}
+                  style={{
+                    background: kaiMode === "classic" ? "rgba(168,85,247,0.3)" : kaiMode === "imposter" ? "rgba(255,60,60,0.3)" : "rgba(6,182,212,0.3)",
+                    border: `1px solid ${kaiMode === "classic" ? "rgba(168,85,247,0.5)" : kaiMode === "imposter" ? "rgba(255,60,60,0.5)" : "rgba(6,182,212,0.5)"}`,
+                    color: kaiMode === "classic" ? "rgba(192,132,252,0.95)" : kaiMode === "imposter" ? "rgba(255,120,120,0.95)" : "rgba(6,182,212,0.95)"
+                  }}>
+                  {kaiMode === "classic" ? "Classic" : kaiMode === "imposter" ? "👾 IMPOSTER" : "KAI"}
                 </button>
                 <button onClick={() => setShowSettings(!showSettings)}
                   className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors hover:bg-white/10 ${showSettings ? 'text-cyan-400' : 'text-white/40 hover:text-white/80'}`}>
@@ -478,7 +508,7 @@ export default function KaspaAvatarChat() {
                 </button>
                 <input ref={inputRef} type="text" value={input} onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-                  placeholder={pendingImages.length > 0 ? "Ask about the image…" : (kaiMode === "classic" ? "Search or ask Kai..." : "Search or ask KAI...")}
+                  placeholder={pendingImages.length > 0 ? "Ask about the image…" : kaiMode === "classic" ? "Search or ask Kai..." : kaiMode === "imposter" ? "say something… if you dare" : "Search or ask KAI..."}
                   className="flex-1 bg-transparent text-white/90 outline-none placeholder-white/30" style={{ fontSize: '16px' }} />
                 <button onClick={sendMessage} disabled={(!input.trim() && pendingImages.length === 0) || isLoading}
                   className="w-7 h-7 rounded-full flex items-center justify-center transition-all disabled:opacity-30"
