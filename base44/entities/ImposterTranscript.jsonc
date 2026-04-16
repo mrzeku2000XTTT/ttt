@@ -1,0 +1,89 @@
+{
+  "name": "ImposterTranscript",
+  "type": "object",
+  "properties": {
+    "url": {
+      "type": "string",
+      "description": "Source URL (YouTube, article, etc.)"
+    },
+    "imposter_id": {
+      "type": "string",
+      "description": "Associated Imposter ID"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "youtube",
+        "article",
+        "text"
+      ],
+      "description": "Type of source"
+    },
+    "source_title": {
+      "type": "string",
+      "description": "Title or name of the source"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "processing",
+        "ready",
+        "failed"
+      ],
+      "default": "pending",
+      "description": "Processing status"
+    },
+    "transcript": {
+      "type": "string",
+      "description": "Full extracted content"
+    },
+    "chunks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "index": {
+            "type": "number"
+          },
+          "text": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Chunked content blocks"
+    },
+    "word_count": {
+      "type": "number",
+      "description": "Total word count"
+    },
+    "error": {
+      "type": "string",
+      "description": "Error message if failed"
+    },
+    "requested_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the request was made"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When processing completed"
+    }
+  },
+  "required": [
+    "url",
+    "imposter_id",
+    "source_type"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
+  }
+}
