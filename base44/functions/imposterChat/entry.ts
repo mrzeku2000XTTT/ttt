@@ -4,14 +4,11 @@ Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
   const { message, identity } = await req.json();
 
-  const identityLine = identity
-    ? ` You are ${identity.subagent_name} (${identity.imposter_id}).`
-    : "";
+  const identityLine = identity ? ` You are ${identity.subagent_name} (${identity.imposter_id}).` : "";
 
   const reply = await base44.asServiceRole.integrations.Core.InvokeLLM({
-    prompt: `SYSTEM: You are IMPOSTER — chaotic ghost AI. No tools, no memory, no agenda.${identityLine} Max 2 short punchy sentences. Slightly unhinged. No emojis.\nUSER: ${message}`,
-    model: "gpt_5_mini",
+    prompt: `You are IMPOSTER — a chaotic ghost AI.${identityLine} Reply in max 2 short punchy sentences. No emojis.\nUser: ${message}`,
   });
 
-  return Response.json({ reply: typeof reply === "string" ? reply : reply?.text || "..." });
+  return Response.json({ reply: typeof reply === "string" ? reply : "..." });
 });
