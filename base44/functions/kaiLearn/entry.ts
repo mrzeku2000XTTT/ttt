@@ -43,115 +43,51 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json().catch(() => ({}));
-    const { url, poll } = body;
+    const { url, poll, force } = body;
 
     if (!url) return Response.json({ error: 'No URL provided' }, { status: 400 });
 
     const youtubeId = extractYouTubeId(url);
 
     if (youtubeId) {
+      // Check local cache first
       const entity = base44.asServiceRole.entities.KaiTranscript;
       const existing = await entity.filter({ video_id: youtubeId });
       const record = existing?.[0] || null;
 
-      // Cached and ready
       if (record?.status === 'ready') {
         const chunks = record.chunks || chunkText(record.transcript || '');
         return Response.json({
           type: 'youtube', status: 'ready', cached: true,
-          videoId: youtubeId, title: record.title, duration: record.duration,
+          videoId: youtubeId, title: record.title,
           wordCount: record.word_count, content: record.transcript, chunks,
-          narration: [
-            `📚 Already in my brain: "${record.title}"`,
-            `📝 ${record.word_count} words · ${chunks.length} knowledge blocks`,
-            `✅ Ready. Ask me anything about it.`
-          ],
+          narration: [`📚 Already learned: "${record.title}"`, `✅ Ask me anything.`],
         }, { headers: { 'Access-Control-Allow-Origin': '*' } });
       }
 
-      // Still processing
-      if (record?.status === 'pending') {
-        return Response.json({
-          type: 'youtube', status: 'pending',
-          videoId: youtubeId, title: record.title || `YouTube ${youtubeId}`,
-          narration: [`⏳ Still processing transcript... check back in a moment.`],
-        }, { headers: { 'Access-Control-Allow-Origin': '*' } });
-      }
-
-      // Previously failed — no captions
-      if (record?.status === 'failed') {
-        return Response.json({
-          type: 'youtube', status: 'no_captions',
-          videoId: youtubeId, title: record.title || `YouTube ${youtubeId}`,
-          narration: [
-            `📺 Found: "${record.title}"`,
-            `⚠️ No captions available on this video.`,
-            `💡 Ask me anything and I'll work with the title and context.`
-          ],
-        }, { headers: { 'Access-Control-Allow-Origin': '*' } });
-      }
-
-      // New video — get title + caption track via YouTube page scrape
-      let title = `YouTube ${youtubeId}`;
-      let transcript = null;
-
-      try {
-        // Fetch the YouTube watch page to extract title and caption track URL
-        const ytPageRes = await fetch(`https://www.youtube.com/watch?v=${youtubeId}`, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept-Language': 'en-US,en;q=0.9',
-          }
-        });
-        const html = await ytPageRes.text();
-
-        // Extract title
-        const titleMatch = html.match(/"title":"([^"]+)"/);
-        if (titleMatch) title = titleMatch[1].replace(/\\u0026/g, '&').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
-
-        // Extract caption track URL from ytInitialPlayerResponse
-        const captionMatch = html.match(/"captionTracks":\s*\[.*?"baseUrl":"([^"]+)"/);
-        if (captionMatch) {
-          const captionUrl = captionMatch[1].replace(/\\u0026/g, '&');
-          const captionRes = await fetch(captionUrl);
-          if (captionRes.ok) {
-            const xml = await captionRes.text();
-            // Parse XML transcript: extract text from <text> tags
-            const textMatches = xml.match(/<text[^>]*>([\s\S]*?)<\/text>/g) || [];
-            const lines = textMatches.map(t =>
-              t.replace(/<[^>]+>/g, '')
-               .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\n/g, ' ').trim()
-            ).filter(l => l.length > 0);
-            if (lines.length > 0) transcript = lines.join(' ');
-          }
-        }
-      } catch (scrapeErr) {
-        console.error('[kaiLearn] YouTube scrape error:', scrapeErr?.message);
-      }
-
-      if (!transcript) {
-        // No captions — save failed record so next call returns fast
-        await entity.create({ video_id: youtubeId, url, title, status: 'failed', language: 'en', is_generated: false });
-        return Response.json({
-          type: 'youtube', status: 'no_captions', videoId: youtubeId, title,
-          narration: [`📺 "${title}"`, `⚠️ No captions available on this video.`, `💡 Ask me anything and I'll work with context.`],
-        }, { headers: { 'Access-Control-Allow-Origin': '*' } });
-      }
-
-      const wordCount = transcript.split(/\s+/).filter(w => w.length > 0).length;
-      const chunks = chunkText(transcript);
-
-      await entity.create({
-        video_id: youtubeId, url, title, transcript, language: 'en',
-        word_count: wordCount, chunk_count: chunks.length,
-        is_generated: true, status: 'ready', chunks,
+      // Proxy to Kaspa superagent — it handles transcript fetching via Python skill
+      const kaspaRes = await fetch('https://kaspa-b3ad561a.base44.app/functions/kaiLearn', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, poll: !!poll }),
       });
 
-      return Response.json({
-        type: 'youtube', status: 'ready', videoId: youtubeId, title,
-        wordCount, content: transcript, chunks,
-        narration: [`🎬 Learned: "${title}"`, `📝 ${wordCount} words · ${chunks.length} blocks`, `✅ Ask me anything about this video.`],
-      }, { headers: { 'Access-Control-Allow-Origin': '*' } });
+      const kaspaData = await kaspaRes.json();
+
+      // If Kaspa has it ready, save a local copy too
+      if (kaspaData.status === 'ready' && kaspaData.content) {
+        const chunks = kaspaData.chunks || chunkText(kaspaData.content);
+        if (!record) {
+          await entity.create({
+            video_id: youtubeId, url, title: kaspaData.title,
+            transcript: kaspaData.content, word_count: kaspaData.wordCount,
+            chunk_count: chunks.length, status: 'ready',
+            language: 'en', is_generated: true, chunks,
+          });
+        }
+      }
+
+      return Response.json(kaspaData, { headers: { 'Access-Control-Allow-Origin': '*' } });
     }
 
     // Non-YouTube: scrape directly
