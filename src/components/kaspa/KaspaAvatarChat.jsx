@@ -288,7 +288,7 @@ export default function KaspaAvatarChat() {
     const identity = imposterIdentity;
     const res = await base44.functions.invoke('imposterChat', {
       message: userMsg,
-      identity: identity ? { imposter_id: identity.imposter_id, subagent_name: identity.subagent_name } : null,
+      identity: identity ? { imposter_id: identity.imposter_id, subagent_name: identity.subagent_name, kaspa_address: identity.kaspa_address } : null,
     });
     addAssistantMessage(res.data?.reply || "...");
     // Update message count async (fire & forget)
