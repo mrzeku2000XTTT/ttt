@@ -115,35 +115,53 @@ export default function OneShotPage() {
       setStep(0);
       const scrapeRes = await base44.functions.invoke("uiClonerScrape", { url: finalUrl });
       if (scrapeRes.data?.error) throw new Error(scrapeRes.data.error);
-      const { html, screenshot_url } = scrapeRes.data;
+      const { html, screenshot_url, title, description, design_tokens, css_sample } = scrapeRes.data;
       setStep(1);
-      await new Promise(r => setTimeout(r, 600));
+      await new Promise(r => setTimeout(r, 500));
       setStep(2);
       await new Promise(r => setTimeout(r, 400));
       setStep(3);
+
+      const colorsList = design_tokens?.colors?.hex?.join(", ") || "";
+      const fontsList = design_tokens?.fonts?.join(", ") || "";
+
       const genRes = await base44.integrations.Core.InvokeLLM({
         model: "claude_sonnet_4_6",
         prompt: `You are a senior frontend engineer. Recreate the following website's UI/UX 1:1 as a single self-contained React component.
 
 URL: ${finalUrl}
+Title: ${title || "Unknown"}
+Description: ${description || "N/A"}
 
-HTML/DOM snapshot:
+DESIGN TOKENS (extracted from the site's actual CSS):
+- Colors used: ${colorsList || "extract from screenshot"}
+- Fonts used: ${fontsList || "use system-ui"}
+
+HTML structure (cleaned body DOM):
 \`\`\`html
-${html?.slice(0, 12000)}
+${html?.slice(0, 14000)}
 \`\`\`
 
-${screenshot_url ? `Screenshot URL for visual reference: ${screenshot_url}` : ""}
+CSS sample (from site's stylesheets):
+\`\`\`css
+${css_sample?.slice(0, 4000) || ""}
+\`\`\`
 
-Instructions:
+${screenshot_url ? `Visual reference screenshot: ${screenshot_url}` : ""}
+
+CRITICAL Instructions:
 - Output ONLY valid JSX — a single default-exported React functional component named ClonedUI
-- Use only Tailwind CSS classes for ALL styling. No inline styles unless absolutely necessary.
-- Recreate every visible section: navbar, hero, features, footer etc.
-- Match colors, fonts, spacing, layout, and responsive behavior as closely as possible
-- Use placeholder <img> tags with realistic src URLs from unsplash if images are needed
-- Include icons using lucide-react if needed
-- Do NOT include any import statements — assume React, Tailwind, and lucide-react are already available
-- Do NOT wrap in markdown code blocks — output pure JSX only
-- Make it fully responsive (mobile + desktop)`,
+- Use ONLY Tailwind CSS utility classes for styling. Match the exact colors from the design tokens above using arbitrary values like bg-[#hexcode] and text-[#hexcode]
+- Match the typography: use font-[fontname] with the actual fonts listed above
+- Recreate EVERY visible section in the correct order: navbar, hero, features, pricing, testimonials, footer etc.
+- Preserve the actual copy/text from the HTML structure — do NOT invent new content
+- Match spacing, layout proportions, and responsive behavior 1:1 with the screenshot
+- For images, use the real image URLs found in the HTML, OR high-quality unsplash placeholders
+- Use lucide-react icons where appropriate (they are globally available)
+- DO NOT include ANY import statements — React, Tailwind, and lucide-react are already in scope
+- DO NOT wrap output in markdown code blocks — output pure JSX only
+- Make it fully responsive (mobile + desktop)
+- The component MUST be named exactly "ClonedUI" and use function ClonedUI() { ... } syntax`,
         file_urls: screenshot_url ? [screenshot_url] : undefined,
       });
       setStep(STEPS.length);

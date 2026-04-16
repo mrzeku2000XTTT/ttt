@@ -1,72 +1,182 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
+const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
+
+function absolutize(base, href) {
+  try { return new URL(href, base).toString(); } catch { return null; }
+}
+
+async function fetchText(url, timeoutMs = 8000) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': UA, 'Accept': 'text/html,text/css,*/*;q=0.8' },
+      redirect: 'follow',
+      signal: ctrl.signal,
+    });
+    if (!res.ok) return null;
+    return await res.text();
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+function extractTag(html, tag) {
+  const re = new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i');
+  const m = html.match(re);
+  return m ? m[1].trim() : '';
+}
+
+function extractMeta(html, name) {
+  const re = new RegExp(`<meta[^>]+(?:name|property)=["']${name}["'][^>]+content=["']([^"']+)["']`, 'i');
+  const m = html.match(re);
+  return m ? m[1] : '';
+}
+
+function extractLinkedCSS(html, baseUrl) {
+  const links = [];
+  const linkRe = /<link[^>]+rel=["']stylesheet["'][^>]*>/gi;
+  const matches = html.match(linkRe) || [];
+  for (const tag of matches) {
+    const hrefMatch = tag.match(/href=["']([^"']+)["']/i);
+    if (hrefMatch) {
+      const abs = absolutize(baseUrl, hrefMatch[1]);
+      if (abs) links.push(abs);
+    }
+  }
+  return links.slice(0, 5); // cap to 5 stylesheets to stay fast
+}
+
+function extractInlineStyles(html) {
+  const styles = [];
+  const re = /<style\b[^>]*>([\s\S]*?)<\/style>/gi;
+  let m;
+  while ((m = re.exec(html)) !== null) styles.push(m[1]);
+  return styles.join('\n');
+}
+
+function extractColors(css) {
+  const hex = new Set((css.match(/#(?:[0-9a-fA-F]{3}){1,2}\b/g) || []));
+  const rgb = new Set((css.match(/rgba?\([^)]+\)/g) || []));
+  const hsl = new Set((css.match(/hsla?\([^)]+\)/g) || []));
+  return {
+    hex: Array.from(hex).slice(0, 20),
+    rgb: Array.from(rgb).slice(0, 10),
+    hsl: Array.from(hsl).slice(0, 10),
+  };
+}
+
+function extractFonts(css) {
+  const fonts = new Set();
+  const re = /font-family\s*:\s*([^;}"']+)/gi;
+  let m;
+  while ((m = re.exec(css)) !== null) {
+    const clean = m[1].trim().replace(/["']/g, '').split(',')[0].trim();
+    if (clean && clean.length < 60) fonts.add(clean);
+  }
+  return Array.from(fonts).slice(0, 8);
+}
+
+function stripHtml(html) {
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<noscript\b[^<]*(?:(?!<\/noscript>)<[^<]*)*<\/noscript>/gi, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extractBodyStructure(html) {
+  // Extract just <body> content and keep class names + visible text structure
+  const bodyMatch = html.match(/<body\b[^>]*>([\s\S]*?)<\/body>/i);
+  let body = bodyMatch ? bodyMatch[1] : html;
+  body = body
+    .replace(/<svg[\s\S]*?<\/svg>/gi, '<svg/>')
+    .replace(/<img([^>]*?)>/gi, (_, attrs) => {
+      const alt = (attrs.match(/alt=["']([^"']*)["']/i) || [,''])[1];
+      const src = (attrs.match(/src=["']([^"']*)["']/i) || [,''])[1];
+      return `<img src="${src}" alt="${alt}"/>`;
+    });
+  return body;
+}
+
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
 
-  const { url } = await req.json();
+  // Admin gate
+  try {
+    const user = await base44.auth.me();
+    if (!user || user.role !== 'admin') {
+      return Response.json({ error: 'Admin access required' }, { status: 403 });
+    }
+  } catch {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  let payload;
+  try { payload = await req.json(); } catch { return Response.json({ error: 'Invalid JSON' }, { status: 400 }); }
+  const { url } = payload || {};
   if (!url) return Response.json({ error: 'Missing url' }, { status: 400 });
 
   try {
-    // Fetch the raw HTML
-    const fetchRes = await fetch(url, {
+    // 1. Fetch main HTML
+    const res = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'User-Agent': UA,
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
       },
       redirect: 'follow',
     });
+    if (!res.ok) return Response.json({ error: `Failed to fetch: ${res.status} ${res.statusText}` }, { status: 400 });
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('text/html')) return Response.json({ error: 'URL does not return HTML' }, { status: 400 });
 
-    if (!fetchRes.ok) {
-      return Response.json({ error: `Failed to fetch URL: ${fetchRes.status} ${fetchRes.statusText}` }, { status: 400 });
-    }
+    const rawHtml = await res.text();
+    const finalUrl = res.url || url;
 
-    const contentType = fetchRes.headers.get('content-type') || '';
-    if (!contentType.includes('text/html')) {
-      return Response.json({ error: 'URL does not return HTML content' }, { status: 400 });
-    }
+    // 2. Extract metadata
+    const title = extractTag(rawHtml, 'title').slice(0, 200);
+    const description = extractMeta(rawHtml, 'description') || extractMeta(rawHtml, 'og:description');
+    const ogImage = extractMeta(rawHtml, 'og:image');
 
-    const rawHtml = await fetchRes.text();
+    // 3. Fetch linked CSS files in parallel (capped)
+    const cssUrls = extractLinkedCSS(rawHtml, finalUrl);
+    const cssContents = await Promise.all(cssUrls.map(u => fetchText(u, 5000)));
+    const externalCss = cssContents.filter(Boolean).join('\n\n').slice(0, 40000);
+    const inlineCss = extractInlineStyles(rawHtml).slice(0, 20000);
+    const allCss = (inlineCss + '\n' + externalCss).slice(0, 50000);
 
-    // Clean up HTML — strip scripts, keep structure + class names
-    const cleanHtml = rawHtml
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      .replace(/<noscript\b[^<]*(?:(?!<\/noscript>)<[^<]*)*<\/noscript>/gi, '')
-      .replace(/<!--[\s\S]*?-->/g, '')
-      .replace(/\s{2,}/g, ' ')
-      .trim();
+    // 4. Extract design tokens from CSS
+    const colors = extractColors(allCss);
+    const fonts = extractFonts(allCss);
 
-    // Use LLM to take a "screenshot" description + capture inline styles/css vars
-    const llmRes = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      prompt: `Extract the complete visual design system from this HTML. Return a JSON with:
-- color_palette: array of hex colors found in inline styles or common CSS classes
-- typography: font families, sizes used
-- layout: describe the main sections (navbar, hero, features, pricing, footer etc.)
-- components: list of UI components present (buttons, cards, badges etc.)
-- css_framework: detected framework (Tailwind, Bootstrap, custom, etc.)
+    // 5. Real screenshot via thum.io (free, no API key required for basic use)
+    const screenshotUrl = `https://image.thum.io/get/width/1280/crop/900/noanimate/${encodeURIComponent(finalUrl)}`;
 
-HTML (truncated):
-${cleanHtml.slice(0, 6000)}`,
-      response_json_schema: {
-        type: "object",
-        properties: {
-          color_palette: { type: "array", items: { type: "string" } },
-          typography: { type: "object" },
-          layout: { type: "string" },
-          components: { type: "array", items: { type: "string" } },
-          css_framework: { type: "string" },
-        }
-      }
-    });
+    // 6. Cleaned structural HTML for the LLM
+    const cleanHtml = stripHtml(extractBodyStructure(rawHtml)).slice(0, 18000);
 
     return Response.json({
-      html: cleanHtml.slice(0, 15000),
-      design_analysis: llmRes,
-      screenshot_url: null, // real screenshot would need a headless browser service
+      url: finalUrl,
+      title,
+      description,
+      og_image: ogImage,
+      html: cleanHtml,
+      css_sample: allCss.slice(0, 8000),
+      design_tokens: {
+        colors,
+        fonts,
+        stylesheets_found: cssUrls.length,
+      },
+      screenshot_url: screenshotUrl,
     });
 
   } catch (err) {
     console.error('uiClonerScrape error:', err);
-    return Response.json({ error: err.message }, { status: 500 });
+    return Response.json({ error: err.message || 'Scrape failed' }, { status: 500 });
   }
 });
