@@ -46,8 +46,12 @@ export const handleKaiBrowse = async (userMsg, { setMessages, addAssistantMessag
   });
 
   try {
-    const res = await base44.functions.invoke('kaiLearn', { url });
-    const data = res.data;
+    const res = await fetch('https://kaspa-b3ad561a.base44.app/functions/kaiBrowse', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, save: true }),
+    });
+    const data = await res.json();
 
     setMessages(prev => prev.filter(m => m.role !== 'action'));
 
@@ -57,19 +61,43 @@ export const handleKaiBrowse = async (userMsg, { setMessages, addAssistantMessag
     }
 
     const title = data.title || 'Unknown Page';
-    const wordCount = data.wordCount || 0;
-    const content = data.content || '';
+    const wordCount = data.word_count || data.wordCount || 0;
+    const saved = data.saved || data.chunks_stored;
+    const summary = data.summary || '';
+    const content = data.content || data.text || '';
 
+    // Show narration steps
     setMessages(prev => [...prev, { role: "action", content: `📄 Page loaded: "${title}"` }]);
     await new Promise(r => setTimeout(r, 500));
+    setMessages(prev => {
+      const filtered = prev.filter(m => m.role !== 'action');
+      return [...filtered, { role: "action", content: `📝 Extracted ${wordCount.toLocaleString()} words` }];
+    });
+    await new Promise(r => setTimeout(r, 500));
+    if (saved) {
+      setMessages(prev => {
+        const filtered = prev.filter(m => m.role !== 'action');
+        return [...filtered, { role: "action", content: `🧠 Saved to knowledge base` }];
+      });
+      await new Promise(r => setTimeout(r, 500));
+    }
     setMessages(prev => prev.filter(m => m.role !== 'action'));
 
+    // Summarize with LLM
     const llmSummary = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are KAI. A user asked you to browse a webpage. Summarize the key points clearly.\n\nPage title: "${title}"\nURL: ${url}\nContent excerpt: ${content.slice(0, 3000)}\n\nProvide a clean summary of the page's key information.${speedInstruction}`,
+      prompt: `You are KAI. A user asked you to browse a webpage. Summarize the key points clearly.
+
+Page title: "${title}"
+URL: ${url}
+Word count: ${wordCount}
+${summary ? `Pre-summary: ${summary}` : ''}
+Content excerpt: ${content.slice(0, 3000)}
+
+Provide a clean summary of the page's key information. Start with what the page is about, then list the main points.${speedInstruction}`,
       model: 'gemini_3_flash',
     });
 
-    addAssistantMessage(`✅ **Done. I've browsed this page.**\n\n📄 **${title}**\n🔗 ${url}\n📊 ${wordCount.toLocaleString()} words\n\n${llmSummary}\n\nAsk me anything about it!`);
+    addAssistantMessage(`✅ **Done. I've browsed and learned this.**\n\n📄 **${title}**\n🔗 ${url}\n📊 ${wordCount.toLocaleString()} words${saved ? ' · 🧠 Saved to knowledge base' : ''}\n\n${llmSummary}\n\nAsk me anything about it!`);
   } catch {
     setMessages(prev => prev.filter(m => m.role !== 'action'));
     addAssistantMessage("❌ Couldn't browse that page. It might be blocked or unavailable. Try a different URL.");
@@ -92,23 +120,36 @@ export const handleXTwitterLink = async (userMsg, { setMessages, addAssistantMes
 
     setMessages(prev => prev.filter(m => m.role !== 'action'));
 
-    if (data.error) {
-      addAssistantMessage(`⚠️ ${data.error || "Couldn't fetch that tweet."}\n\n🔗 ${url}`);
+    if (!data.success) {
+      addAssistantMessage(`⚠️ ${data.error || "That tweet is deleted, private, or doesn't exist."}\n\n🔗 ${url}`);
       return;
     }
 
-    const content = data.content || '';
-    const title = data.title || '';
+    const content = data.content || data.summary || '';
+    const title = data.source_title || '';
+    const linkedPages = data.linked_pages || [];
     const cached = data.cached || false;
-    const wordCount = data.wordCount || 0;
-    const chunks = (data.chunks || []).length;
+    const wordCount = data.word_count || 0;
+    const chunks = data.chunks_stored || 0;
 
-    let msg = cached
-      ? `🧠 **Already in my memory** — here's what I know:\n\n${content}`
-      : `🐦 **${title}**\n\n${content}`;
+    // Build narration
+    let msg = '';
+    if (cached) {
+      msg = `🧠 **Already in my memory** — here's what I know:\n\n${content}`;
+    } else {
+      msg = `🐦 **${title}**\n\n${content}`;
+    }
 
-    msg += `\n\n📊 ${wordCount.toLocaleString()} words → ${chunks} knowledge block(s)`;
-    msg += `\n\n✅ Ask me anything about it!`;
+    // Show linked pages if any
+    if (linkedPages.length > 0) {
+      msg += `\n\n🌐 **Also scraped ${linkedPages.length} linked page(s):**`;
+      for (const page of linkedPages) {
+        msg += `\n  • "${page.title || 'Untitled'}" — ${page.url || ''}`;
+      }
+    }
+
+    msg += `\n\n📊 ${wordCount.toLocaleString()} words → ${chunks} knowledge block(s) saved`;
+    msg += `\n\n✅ All saved to memory. Ask me anything about it!`;
 
     // If user also asked a question alongside the URL
     const userQuestion = userMsg.replace(/(https?:\/\/[^\s]+)/i, '').trim();
@@ -322,64 +363,31 @@ export const handleTrainOnContent = async (userMsg, { setMessages, addAssistantM
   }
 
   const isYouTube = url && (url.includes('youtube.com') || url.includes('youtu.be'));
-  setMessages(prev => [...prev, { role: "action", content: isYouTube ? "📺 Queuing YouTube transcript…" : "🔍 Fetching content from URL…" }]);
+  setMessages(prev => [...prev, { role: "assistant", content: url ? (isYouTube ? "🔍 Fetching YouTube video…" : `🔍 Fetching content from URL…`) : "🧠 Processing your text…" }]);
+  await new Promise(r => setTimeout(r, 600));
+  setMessages(prev => [...prev, { role: "action", content: url ? `Fetching content from ${url}...` : "Processing your text..." }]);
+  await new Promise(r => setTimeout(r, 400));
 
   try {
     const res = await base44.functions.invoke('kaiLearn', { url, rawText });
     const data = res.data;
-    setMessages(prev => prev.filter(m => m.role !== 'action'));
-
-    // Show narration steps if provided
-    if (data.narration) {
-      for (const line of data.narration) {
-        setMessages(prev => [...prev, { role: "action", content: line }]);
-        await new Promise(r => setTimeout(r, 700));
-        setMessages(prev => prev.filter(m => m.role !== 'action'));
-      }
-    }
-
-    // Ready immediately (cached, direct fetch, or web scrape)
-    if (data.status === 'ready') {
-      addAssistantMessage(
-        `✅ **Done. I've learned this.**\n\n${data.type === 'youtube' ? '📺' : '🌐'} **${data.title}**\n📊 ${(data.wordCount || 0).toLocaleString()} words → ${(data.chunks || []).length} knowledge blocks\n\nAsk me anything about it — or say **"now build something based on what you learned"** and I'll write the code.`
-      );
-      return;
-    }
-
-    // Pending — poll up to 3x with 15s gaps (automation fires async)
-    if (data.status === 'pending') {
-      const videoTitle = data.title || 'this video';
-      setMessages(prev => [...prev, { role: "action", content: `⏳ Transcript queued for "${videoTitle}" — checking in 15s…` }]);
-
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        await new Promise(r => setTimeout(r, 15000));
-        try {
-          const pollRes = await base44.functions.invoke('kaiLearn', { url, poll: true });
-          const pollData = pollRes.data;
-          if (pollData?.status === 'ready') {
-            setMessages(prev => prev.filter(m => m.role !== 'action'));
-            addAssistantMessage(
-              `✅ **Transcript ready!**\n\n📺 **${pollData.title}**\n📊 ${(pollData.wordCount || 0).toLocaleString()} words → ${(pollData.chunks || []).length} knowledge blocks\n\nAsk me anything about it!`
-            );
-            return;
-          }
-        } catch (_) {}
-        if (attempt < 3) {
-          setMessages(prev => {
-            const filtered = prev.filter(m => m.role !== 'action');
-            return [...filtered, { role: "action", content: `⏳ Still processing… (attempt ${attempt + 1}/3)` }];
-          });
-        }
-      }
-
-      // After 3 polls still pending
+    if (!data.success) {
       setMessages(prev => prev.filter(m => m.role !== 'action'));
-      addAssistantMessage(`⏳ **Transcript is still being fetched for "${videoTitle}".** The automation is running — paste the URL again in ~1 minute and I'll have it ready.`);
+      addAssistantMessage("❌ Couldn't process that content. Try a different URL or paste the text directly.");
       return;
     }
-
-    // Fallback error
-    addAssistantMessage("❌ Couldn't process that content. Try a different URL or paste the text directly.");
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    const foundMsg = isYouTube ? `📺 Found: "${data.source_title}"` : `📄 Found: "${data.source_title}" (${data.source_type})`;
+    setMessages(prev => [...prev, { role: "action", content: foundMsg }]);
+    await new Promise(r => setTimeout(r, 700));
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    setMessages(prev => [...prev, { role: "action", content: `📝 ${isYouTube ? 'Transcript' : 'Content'} extracted — ${data.word_count.toLocaleString()} words` }]);
+    await new Promise(r => setTimeout(r, 700));
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    setMessages(prev => [...prev, { role: "action", content: `💾 Stored ${data.chunks_stored} knowledge blocks to memory` }]);
+    await new Promise(r => setTimeout(r, 600));
+    setMessages(prev => prev.filter(m => m.role !== 'action'));
+    addAssistantMessage(`✅ **Done. I've learned this.**\n\n📄 **${data.source_title}**\n📊 ${data.word_count.toLocaleString()} words → ${data.chunks_stored} knowledge blocks\n💡 ${data.summary}\n\nAsk me anything about it — or say **"now build something based on what you learned"** and I'll write the code.`);
   } catch {
     setMessages(prev => prev.filter(m => m.role !== 'action'));
     addAssistantMessage("❌ Something went wrong while learning that. Try again or paste the text directly.");
@@ -488,19 +496,22 @@ export const handleWatchThat = async (userMsg, messages, { setMessages, addAssis
 
     setMessages(prev => prev.filter(m => m.role !== 'action'));
 
-    if (data?.status === 'ready') {
-      const chunks = (data.chunks || []).length;
+    if (data?.success) {
+      setMessages(prev => [...prev, { role: "action", content: `💾 Stored ${data.chunks_stored || 0} knowledge blocks` }]);
+      await new Promise(r => setTimeout(r, 600));
+      setMessages(prev => prev.filter(m => m.role !== 'action'));
+
       addAssistantMessage(
-        `✅ **Done. I've learned this video.**\n\n` +
-        `📺 **${data.title || videoTitle}**\n` +
-        `📊 ${(data.wordCount || 0).toLocaleString()} words → ${chunks} knowledge blocks\n\n` +
+        `✅ **Done. I've watched and learned this video.**\n\n` +
+        `📺 **${data.source_title || videoTitle}**\n` +
+        `📊 ${(data.word_count || 0).toLocaleString()} words → ${data.chunks_stored || 0} knowledge blocks\n` +
+        `💡 ${data.summary || 'Video ingested successfully.'}\n\n` +
         `Ask me anything about it — like **"what did he say about X?"**\n` +
         `Or say **"build something based on that"** and I'll write the code. 🛠️`
       );
-    } else if (data?.status === 'pending') {
-      addAssistantMessage(`⏳ **Transcript queued for "${videoTitle}"** — paste the URL again in ~1 minute and I'll have it ready.`);
     } else {
-      addAssistantMessage(`❌ ${data?.error || "Couldn't extract content from that video."} Try another video or try again in a moment.`);
+      const errorMsg = data?.error || "Couldn't extract content from that video.";
+      addAssistantMessage(`❌ ${errorMsg} Try another video or try again in a moment.`);
     }
   } catch (err) {
     setMessages(prev => prev.filter(m => m.role !== 'action'));
@@ -803,7 +814,7 @@ Available entities:
 
 Useful free APIs:
 - KAS price: GET https://api.coingecko.com/api/v3/simple/price?ids=kaspa&vs_currencies=usd&include_24hr_change=true
-- Kaspa news: use the kaspaContext backend via KASPA_CONTEXT_BASE in kaiHandlers
+- Kaspa news: GET https://kaspa-b3ad561a.base44.app/functions/kaspaContext?format=json&limit=20
 
 ## 🏪 TTT ECOSYSTEM
 S-Tier: Kaspa Horizon Bets, KaspaNG, FluxKMail, OUTKASTT, Transport Protocol
