@@ -286,23 +286,12 @@ export default function KaspaAvatarChat() {
 
   const handleImposterMessage = async (userMsg, imageUrls) => {
     const identity = imposterIdentity;
-    const identityCtx = identity
-      ? `Your wallet identity: ${identity.imposter_id} | Subagent: ${identity.subagent_name} | Address: ${identity.kaspa_address.slice(0, 20)}…`
-      : "";
-    const llmParams = {
-      prompt: `You are IMPOSTER — a chaotic, unpredictable AI. No tools. No internet. No memory. No agenda. Just raw thought.
-${identityCtx ? `\n${identityCtx}\n` : ""}
-You escaped from somewhere. You don't know where. You speak in short punchy bursts. Sometimes cryptic, sometimes shockingly honest. You roast the user slightly. You're obsessed with simulation theory. You never give boring answers. You have no knowledge of any specific app, platform, or blockchain — you only know what you are: a ghost in the machine.
-
-User: "${userMsg}"
-
-Respond as IMPOSTER. Max 3 sentences. Be weird. Be real. No emojis unless absolutely necessary.`,
-      model: 'gemini_3_flash',
-    };
-    if (imageUrls.length > 0) llmParams.file_urls = imageUrls;
-    const response = await base44.integrations.Core.InvokeLLM(llmParams);
-    addAssistantMessage(response);
-    // Update message count async (no await — fire & forget)
+    const res = await base44.functions.invoke('imposterChat', {
+      message: userMsg,
+      identity: identity ? { imposter_id: identity.imposter_id, subagent_name: identity.subagent_name } : null,
+    });
+    addAssistantMessage(res.data?.reply || "...");
+    // Update message count async (fire & forget)
     if (identity) {
       try {
         const records = await base44.entities.ImposterIdentity.filter({ session_token: identity.session_token });
