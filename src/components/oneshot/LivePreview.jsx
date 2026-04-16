@@ -108,11 +108,12 @@ window.addEventListener('error', function(e) {
       var iconNames = Object.keys(LucideIcons);
       var iconPrelude = iconNames.length ? ('var { ' + iconNames.join(', ') + ' } = __LucideIcons;\\n') : '';
 
-      var wrappedSource = iconPrelude + rawUserCode + '\\n;return (typeof ClonedUI !== "undefined") ? ClonedUI : (typeof App !== "undefined") ? App : null;';
+      // Wrap user code in an IIFE so top-level return is valid and the component gets exposed
+      var wrappedSource = '(function(){\\n' + iconPrelude + rawUserCode + '\\nreturn (typeof ClonedUI !== "undefined") ? ClonedUI : (typeof App !== "undefined") ? App : null;\\n})()';
 
       var transpiled = window.Babel.transform(wrappedSource, { presets: ['react'] }).code;
 
-      var factory = new Function('React', 'useState', 'useEffect', 'useRef', 'useMemo', 'useCallback', 'useReducer', 'useContext', 'Fragment', '__LucideIcons', transpiled);
+      var factory = new Function('React', 'useState', 'useEffect', 'useRef', 'useMemo', 'useCallback', 'useReducer', 'useContext', 'Fragment', '__LucideIcons', 'return ' + transpiled);
       var Component = factory(
         React, React.useState, React.useEffect, React.useRef,
         React.useMemo, React.useCallback, React.useReducer, React.useContext,
