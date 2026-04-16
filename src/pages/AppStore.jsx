@@ -149,6 +149,7 @@ export default function AppStorePage() {
     { name: "Security Audit", icon: "Link2", path: "SecurityAudit", category: "Security", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/81791a703_generated_image.png" },
     { name: "Canvas", icon: "Link2", path: "Canvas", category: "Creative", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/b26fd671d_generated_image.png" },
     { name: "Hikaru", icon: "Link2", path: "Hikaru", category: "Creative", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/36834c19a_generated_image.png" },
+    { name: "OneShot", icon: "Link2", path: "UICloner", category: "Dev Tools", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ee7187675_generated_image.png" },
       ];
 
   const getIconComponent = (iconName) => {

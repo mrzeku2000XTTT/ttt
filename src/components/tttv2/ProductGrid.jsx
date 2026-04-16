@@ -59,6 +59,13 @@ const PRODUCTS = [
     color: "from-yellow-500 to-amber-500",
     logo: "https://pbs.twimg.com/profile_images/1795478474100805632/fy0c6gym_400x400.jpg"
   },
+  {
+    name: "OneShot",
+    desc: "Clone any website UI into React code instantly",
+    path: "/UICloner",
+    color: "from-cyan-500 to-violet-600",
+    logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ee7187675_generated_image.png"
+  },
 ];
 
 export default function ProductGrid() {
