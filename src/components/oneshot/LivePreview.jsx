@@ -105,19 +105,58 @@ window.addEventListener('error', function(e) {
         });
       }
 
-      var iconNames = Object.keys(LucideIcons);
-      var iconPrelude = iconNames.length ? ('var { ' + iconNames.join(', ') + ' } = __LucideIcons;\\n') : '';
+      // Fallback icon for any missing lucide name (prevents ReferenceError crashes)
+      var FallbackIcon = function(props) {
+        props = props || {};
+        var size = props.size || 24;
+        return React.createElement('svg', {
+          xmlns: 'http://www.w3.org/2000/svg',
+          width: size, height: size, viewBox: '0 0 24 24',
+          fill: 'none', stroke: 'currentColor', strokeWidth: 2,
+          strokeLinecap: 'round', strokeLinejoin: 'round',
+          className: props.className || ''
+        }, [React.createElement('rect', { key: 0, x: 3, y: 3, width: 18, height: 18, rx: 2 })]);
+      };
+
+      // Wrap LucideIcons in a Proxy so any undefined icon name returns FallbackIcon
+      var IconProxy = (typeof Proxy !== 'undefined') ? new Proxy(LucideIcons, {
+        get: function(target, prop) {
+          if (prop in target) return target[prop];
+          if (typeof prop === 'string' && /^[A-Z]/.test(prop)) return FallbackIcon;
+          return target[prop];
+        }
+      }) : LucideIcons;
+
+      // Reserved names we must NOT shadow (React, hooks, JS globals, DOM types)
+      var RESERVED = {
+        React:1, ReactDOM:1, Fragment:1,
+        useState:1, useEffect:1, useRef:1, useMemo:1, useCallback:1, useReducer:1, useContext:1,
+        Math:1, Date:1, Object:1, Array:1, String:1, Number:1, Boolean:1, JSON:1, Promise:1,
+        Map:1, Set:1, Error:1, RegExp:1, Symbol:1, Proxy:1, Reflect:1,
+        ClonedUI:1, App:1, Component:1, Fragment:1
+      };
+
+      // Extract PascalCase identifiers from user code that look like icon usage
+      var iconRefs = (rawUserCode.match(/\\b[A-Z][a-zA-Z0-9]*\\b/g) || []);
+      var uniqueRefs = {};
+      iconRefs.forEach(function(n) {
+        if (!RESERVED[n] && n.length > 1) uniqueRefs[n] = true;
+      });
+      // Only declare refs that actually exist in LucideIcons OR use fallback
+      var iconAssigns = Object.keys(uniqueRefs).map(function(n) {
+        return 'var ' + n + ' = (__LucideIcons[\\'' + n + '\\'] || __FallbackIcon);';
+      }).join('\\n');
 
       // Wrap user code in an IIFE so top-level return is valid and the component gets exposed
-      var wrappedSource = '(function(){\\n' + iconPrelude + rawUserCode + '\\nreturn (typeof ClonedUI !== "undefined") ? ClonedUI : (typeof App !== "undefined") ? App : null;\\n})()';
+      var wrappedSource = '(function(__FallbackIcon, __LucideIcons){\\n' + iconAssigns + '\\n' + rawUserCode + '\\nreturn (typeof ClonedUI !== "undefined") ? ClonedUI : (typeof App !== "undefined") ? App : null;\\n})(arguments[arguments.length-2], arguments[arguments.length-1])';
 
       var transpiled = window.Babel.transform(wrappedSource, { presets: ['react'] }).code;
 
-      var factory = new Function('React', 'useState', 'useEffect', 'useRef', 'useMemo', 'useCallback', 'useReducer', 'useContext', 'Fragment', '__LucideIcons', 'return ' + transpiled);
+      var factory = new Function('React', 'useState', 'useEffect', 'useRef', 'useMemo', 'useCallback', 'useReducer', 'useContext', 'Fragment', '__FallbackIcon', '__LucideIcons', 'return ' + transpiled);
       var Component = factory(
         React, React.useState, React.useEffect, React.useRef,
         React.useMemo, React.useCallback, React.useReducer, React.useContext,
-        React.Fragment, LucideIcons
+        React.Fragment, FallbackIcon, IconProxy
       );
 
       if (!Component) throw new Error('No component found. Expected "ClonedUI" or "App" in generated code.');
