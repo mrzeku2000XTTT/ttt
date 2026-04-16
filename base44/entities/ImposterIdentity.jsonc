@@ -27,6 +27,68 @@
       "type": "string",
       "format": "date-time",
       "description": "Last activity timestamp"
+    },
+    "learned_knowledge": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Unique key for this knowledge block"
+          },
+          "value": {
+            "type": "string",
+            "description": "Content chunk"
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "source_url": {
+                "type": "string"
+              },
+              "source_title": {
+                "type": "string"
+              },
+              "source_type": {
+                "type": "string",
+                "enum": [
+                  "youtube",
+                  "article",
+                  "text"
+                ]
+              },
+              "chunk_index": {
+                "type": "number"
+              },
+              "total_chunks": {
+                "type": "number"
+              },
+              "summary": {
+                "type": "string"
+              }
+            }
+          },
+          "stored": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "accessed": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "access_count": {
+            "type": "number",
+            "default": 0
+          }
+        }
+      },
+      "default": [],
+      "description": "Knowledge blocks learned from URLs and videos"
+    },
+    "mnemonic": {
+      "type": "string",
+      "description": "BIP39 seed phrase (encrypted or hashed)"
     }
   },
   "required": [
