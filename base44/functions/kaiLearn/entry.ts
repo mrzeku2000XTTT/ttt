@@ -50,44 +50,13 @@ Deno.serve(async (req) => {
     const youtubeId = extractYouTubeId(url);
 
     if (youtubeId) {
-      // Check local cache first
-      const entity = base44.asServiceRole.entities.KaiTranscript;
-      const existing = await entity.filter({ video_id: youtubeId });
-      const record = existing?.[0] || null;
-
-      if (record?.status === 'ready') {
-        const chunks = record.chunks || chunkText(record.transcript || '');
-        return Response.json({
-          type: 'youtube', status: 'ready', cached: true,
-          videoId: youtubeId, title: record.title,
-          wordCount: record.word_count, content: record.transcript, chunks,
-          narration: [`📚 Already learned: "${record.title}"`, `✅ Ask me anything.`],
-        }, { headers: { 'Access-Control-Allow-Origin': '*' } });
-      }
-
-      // Proxy to Kaspa superagent — it handles transcript fetching via Python skill
       const kaspaRes = await fetch('https://kaspa-b3ad561a.base44.app/functions/kaiLearn', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url, poll: !!poll }),
       });
-
-      const kaspaData = await kaspaRes.json();
-
-      // If Kaspa has it ready, save a local copy too
-      if (kaspaData.status === 'ready' && kaspaData.content) {
-        const chunks = kaspaData.chunks || chunkText(kaspaData.content);
-        if (!record) {
-          await entity.create({
-            video_id: youtubeId, url, title: kaspaData.title,
-            transcript: kaspaData.content, word_count: kaspaData.wordCount,
-            chunk_count: chunks.length, status: 'ready',
-            language: 'en', is_generated: true, chunks,
-          });
-        }
-      }
-
-      return Response.json(kaspaData, { headers: { 'Access-Control-Allow-Origin': '*' } });
+      const data = await kaspaRes.json();
+      return Response.json(data, { headers: { 'Access-Control-Allow-Origin': '*' } });
     }
 
     // Non-YouTube: scrape directly
