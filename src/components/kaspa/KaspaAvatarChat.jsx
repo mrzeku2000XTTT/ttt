@@ -290,7 +290,24 @@ export default function KaspaAvatarChat() {
       message: userMsg,
       identity: identity ? { imposter_id: identity.imposter_id, subagent_name: identity.subagent_name, kaspa_address: identity.kaspa_address } : null,
     });
-    addAssistantMessage(res.data?.reply || "...");
+
+    const data = res.data;
+
+    // Handle send transaction action
+    if (data?.action?.type === "send_kas") {
+      const { to_address, amount_kas } = data.action;
+      addAssistantMessage(data.reply || `sending ${amount_kas} KAS to ${to_address.slice(0, 20)}… confirm?`);
+      // Show confirm/cancel buttons via a special message
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: null,
+        imposterTx: { to_address, amount_kas, from_address: identity?.kaspa_address, mnemonic: identity?.mnemonic }
+      }]);
+      return;
+    }
+
+    addAssistantMessage(data?.reply || "...");
+
     // Update message count async (fire & forget)
     if (identity) {
       try {

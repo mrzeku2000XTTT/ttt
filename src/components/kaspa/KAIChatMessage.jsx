@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import { useNavigate } from "react-router-dom";
@@ -7,8 +7,11 @@ import { KAIBlocksAnimation } from "./KAIAnimations";
 import { setKaSshiGlobal, markKaSshiInlineVisited } from "@/components/KaSshiPlayer";
 import KAINewsCard from "./KAINewsCard";
 import KAIVideoCard from "./KAIVideoCard";
+import { base44 } from "@/api/base44Client";
 
 export default function KAIChatMessage({ msg, index, typingIndex, typingText, setIsOpen, setBrowserUrl, setShowBrowser, setViewingPost, onWatchVideo }) {
+  const [txState, setTxState] = useState("idle"); // idle | sending | done | error
+  const [txResult, setTxResult] = useState(null);
   const navigate = useNavigate();
 
   // Video posts — cards with YouTube playback + watch & learn
@@ -145,6 +148,81 @@ export default function KAIChatMessage({ msg, index, typingIndex, typingText, se
         <div className="text-[11px] px-1" style={{ color: "rgba(255,255,255,0.4)" }}>
           Everything is pre-filled — just click to open your email client and send.
         </div>
+      </div>
+    );
+  }
+
+  // Imposter send transaction confirm card
+  if (msg.imposterTx) {
+    const { to_address, amount_kas, from_address, mnemonic } = msg.imposterTx;
+    const sendTx = async () => {
+      setTxState("sending");
+      try {
+        const res = await base44.functions.invoke('sendKaspaTransaction', {
+          mnemonic,
+          fromAddress: from_address,
+          toAddress: to_address,
+          amountKas: amount_kas,
+        });
+        if (res.data?.error) throw new Error(res.data.error);
+        setTxResult(res.data);
+        setTxState("done");
+      } catch (err) {
+        setTxResult({ error: err.message });
+        setTxState("error");
+      }
+    };
+
+    return (
+      <div className="flex justify-start">
+        <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+          className="max-w-[90%] rounded-2xl overflow-hidden"
+          style={{ background: "rgba(255,50,50,0.07)", border: "1px solid rgba(255,50,50,0.25)" }}>
+          <div className="px-4 pt-3 pb-2">
+            <div className="text-[10px] text-red-400/60 uppercase tracking-wider font-bold mb-2">⚡ Transaction Request</div>
+            <div className="space-y-1">
+              <div className="flex justify-between text-[12px]">
+                <span className="text-white/40">Amount</span>
+                <span className="text-white/90 font-bold">{amount_kas} KAS</span>
+              </div>
+              <div className="flex justify-between text-[12px]">
+                <span className="text-white/40">To</span>
+                <span className="text-white/70 font-mono text-[10px]">{to_address.slice(0, 24)}…</span>
+              </div>
+              <div className="flex justify-between text-[12px]">
+                <span className="text-white/40">From</span>
+                <span className="text-white/50 font-mono text-[10px]">{from_address?.slice(0, 24)}…</span>
+              </div>
+            </div>
+          </div>
+
+          {txState === "idle" && (
+            <div className="flex border-t border-red-500/15">
+              <button onClick={sendTx}
+                className="flex-1 py-2.5 text-[12px] font-bold text-red-400 hover:bg-red-500/10 transition-all">
+                ✓ Confirm
+              </button>
+              <div className="w-px bg-red-500/15" />
+              <button onClick={() => setTxState("error")}
+                className="flex-1 py-2.5 text-[12px] text-white/30 hover:bg-white/5 transition-all">
+                ✕ Cancel
+              </button>
+            </div>
+          )}
+          {txState === "sending" && (
+            <div className="py-3 text-center text-[11px] text-red-400/70 animate-pulse">sending…</div>
+          )}
+          {txState === "done" && (
+            <div className="px-4 py-2.5 text-[11px] text-green-400/80">
+              ✓ sent — txid: <span className="font-mono text-[10px] break-all">{String(txResult?.txId || "").slice(0, 32)}…</span>
+            </div>
+          )}
+          {txState === "error" && (
+            <div className="px-4 py-2.5 text-[11px] text-red-400/70">
+              {txResult?.error || "cancelled."}
+            </div>
+          )}
+        </motion.div>
       </div>
     );
   }
