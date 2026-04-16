@@ -49,59 +49,9 @@ Deno.serve(async (req) => {
     const youtubeId = extractYouTubeId(url);
 
     if (youtubeId) {
-      const entity = base44.asServiceRole.entities.KaiTranscript;
-      const existing = await entity.filter({ video_id: youtubeId });
-      const record = existing?.[0] || null;
-
-      // Already ready — return cached
-      if (record?.status === 'ready') {
-        const chunks = record.chunks?.length ? record.chunks : chunkText(record.transcript || '');
-        return Response.json({
-          type: 'youtube', status: 'ready', cached: true,
-          videoId: youtubeId, title: record.title,
-          wordCount: record.word_count, content: record.transcript, chunks,
-          narration: [
-            `📚 Already learned: "${record.title}"`,
-            `✅ Ask me anything about it.`
-          ],
-        }, { headers: { 'Access-Control-Allow-Origin': '*' } });
-      }
-
-      // Still pending — return pending
-      if (record?.status === 'pending') {
-        return Response.json({
-          type: 'youtube', status: 'pending',
-          videoId: youtubeId, title: record.title || `YouTube ${youtubeId}`,
-          narration: [`⏳ Still processing... try again in 15 seconds.`],
-        }, { headers: { 'Access-Control-Allow-Origin': '*' } });
-      }
-
-      // Previously failed — no captions available
-      if (record?.status === 'failed') {
-        return Response.json({
-          type: 'youtube', status: 'no_captions',
-          videoId: youtubeId, title: record.title || `YouTube ${youtubeId}`,
-          narration: [`⚠️ No captions available for this video.`],
-        }, { headers: { 'Access-Control-Allow-Origin': '*' } });
-      }
-
-      // New video — get title via oEmbed, create pending record (triggers entity automation → external agent)
-      let title = `YouTube ${youtubeId}`;
-      try {
-        const oe = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${youtubeId}&format=json`);
-        if (oe.ok) { const d = await oe.json(); title = d.title || title; }
-      } catch (_) {}
-
-      await entity.create({ video_id: youtubeId, url, title, status: 'pending', language: 'en', is_generated: false });
-
-      return Response.json({
-        type: 'youtube', status: 'pending',
-        videoId: youtubeId, title,
-        narration: [
-          `📺 Found: "${title}"`,
-          `⏳ Fetching transcript... I'll check back in ~15 seconds.`
-        ],
-      }, { headers: { 'Access-Control-Allow-Origin': '*' } });
+      // Proxy YouTube requests to the dedicated kaiLearnBackend function
+      const backendRes = await base44.asServiceRole.functions.invoke('kaiLearnBackend', { url });
+      return Response.json(backendRes, { headers: { 'Access-Control-Allow-Origin': '*' } });
     }
 
     // Non-YouTube: scrape directly
