@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { Loader2, Globe, Code, Copy, CheckCircle2, Eye, Wand2, AlertCircle, Zap, Layers, Sparkles, ArrowRight, CornerDownLeft, Target, Cpu, MousePointer2 } from "lucide-react";
+import { Loader2, Globe, Code, Copy, CheckCircle2, Eye, Wand2, AlertCircle, Zap, Layers, Sparkles, ArrowRight, CornerDownLeft, Target, Cpu, MousePointer2, Play } from "lucide-react";
 import { Link } from "react-router-dom";
+import LivePreview from "@/components/oneshot/LivePreview";
 
 const STEPS = [
   { id: "fetch", label: "Fetching site HTML & styles", icon: Globe },
@@ -60,7 +61,7 @@ export default function OneShotPage() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState("code");
+  const [activeTab, setActiveTab] = useState("preview");
 
   const isLoading = step >= 0 && step < STEPS.length;
 
@@ -415,8 +416,9 @@ Instructions:
               {/* Tabs */}
               <div className="flex items-center gap-1 bg-white/[0.03] rounded-xl p-1 w-fit border border-white/[0.07]">
                 {[
+                  { id: "preview", label: "Live Preview", icon: Play },
                   { id: "code", label: "React Code", icon: Code },
-                  ...(result.screenshot_url ? [{ id: "preview", label: "Screenshot", icon: Eye }] : [])
+                  ...(result.screenshot_url ? [{ id: "screenshot", label: "Screenshot", icon: Eye }] : [])
                 ].map(tab => (
                   <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${activeTab === tab.id ? "bg-gradient-to-r from-cyan-500/20 to-violet-500/20 text-white border border-white/10" : "text-white/35 hover:text-white/60"}`}>
@@ -453,7 +455,11 @@ Instructions:
                 </div>
               )}
 
-              {activeTab === "preview" && result.screenshot_url && (
+              {activeTab === "preview" && (
+                <LivePreview code={result.code} />
+              )}
+
+              {activeTab === "screenshot" && result.screenshot_url && (
                 <div className="rounded-2xl overflow-hidden border border-white/[0.07] shadow-2xl shadow-black/60">
                   <div className="bg-zinc-950 border-b border-white/[0.07] px-5 py-3.5 flex items-center gap-2.5">
                     <div className="flex gap-1.5 mr-2">
