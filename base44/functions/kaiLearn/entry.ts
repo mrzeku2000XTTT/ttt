@@ -91,53 +91,60 @@ Deno.serve(async (req) => {
         }, { headers: { 'Access-Control-Allow-Origin': '*' } });
       }
 
-      // New video — get title via oEmbed
+      // New video — get title + caption track via YouTube page scrape
       let title = `YouTube ${youtubeId}`;
+      let transcript = null;
+
       try {
-        const oe = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${youtubeId}&format=json`);
-        if (oe.ok) { const d = await oe.json(); title = d.title || title; }
-      } catch (_) {}
+        // Fetch the YouTube watch page to extract title and caption track URL
+        const ytPageRes = await fetch(`https://www.youtube.com/watch?v=${youtubeId}`, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9',
+          }
+        });
+        const html = await ytPageRes.text();
 
-      // Route to Kaspa superagent — runs yt-transcript Python skill locally (no IP block)
-      const agentRes = await fetch('https://kaspa-b3ad561a.base44.app/functions/ytTranscript', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ video_id: youtubeId }),
-      });
+        // Extract title
+        const titleMatch = html.match(/"title":"([^"]+)"/);
+        if (titleMatch) title = titleMatch[1].replace(/\\u0026/g, '&').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
 
-      const agentBody = await agentRes.text();
-      // Log via error channel so Deno surfaces it
-      console.error('[kaiLearn] ytTranscript status:', agentRes.status, 'body:', agentBody.slice(0, 500));
-
-      if (!agentRes.ok) {
-        // Treat as no_captions rather than hard crash so Kai gets a usable response
-        await entity.create({ video_id: youtubeId, url, title, status: 'failed', language: 'en', is_generated: false });
-        return Response.json({
-          type: 'youtube', status: 'no_captions', videoId: youtubeId, title,
-          narration: [`📺 "${title}"`, `⚠️ Transcript service unavailable (${agentRes.status}).`, `💡 Ask me anything and I'll work with context.`],
-        }, { headers: { 'Access-Control-Allow-Origin': '*' } });
+        // Extract caption track URL from ytInitialPlayerResponse
+        const captionMatch = html.match(/"captionTracks":\s*\[.*?"baseUrl":"([^"]+)"/);
+        if (captionMatch) {
+          const captionUrl = captionMatch[1].replace(/\\u0026/g, '&');
+          const captionRes = await fetch(captionUrl);
+          if (captionRes.ok) {
+            const xml = await captionRes.text();
+            // Parse XML transcript: extract text from <text> tags
+            const textMatches = xml.match(/<text[^>]*>([\s\S]*?)<\/text>/g) || [];
+            const lines = textMatches.map(t =>
+              t.replace(/<[^>]+>/g, '')
+               .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\n/g, ' ').trim()
+            ).filter(l => l.length > 0);
+            if (lines.length > 0) transcript = lines.join(' ');
+          }
+        }
+      } catch (scrapeErr) {
+        console.error('[kaiLearn] YouTube scrape error:', scrapeErr?.message);
       }
 
-      const ytData = JSON.parse(agentBody);
-
-      if (ytData.error || !ytData.transcript) {
+      if (!transcript) {
         // No captions — save failed record so next call returns fast
         await entity.create({ video_id: youtubeId, url, title, status: 'failed', language: 'en', is_generated: false });
         return Response.json({
           type: 'youtube', status: 'no_captions', videoId: youtubeId, title,
-          narration: [`📺 "${title}"`, `⚠️ No captions available.`, `💡 Ask me anything and I'll work with context.`],
+          narration: [`📺 "${title}"`, `⚠️ No captions available on this video.`, `💡 Ask me anything and I'll work with context.`],
         }, { headers: { 'Access-Control-Allow-Origin': '*' } });
       }
 
-      // Save transcript and return ready
-      const transcript = ytData.transcript;
-      const wordCount = ytData.word_count || transcript.split(/\s+/).filter(w => w.length > 0).length;
+      const wordCount = transcript.split(/\s+/).filter(w => w.length > 0).length;
       const chunks = chunkText(transcript);
 
       await entity.create({
-        video_id: youtubeId, url, title, transcript, language: ytData.language_code || 'en',
+        video_id: youtubeId, url, title, transcript, language: 'en',
         word_count: wordCount, chunk_count: chunks.length,
-        is_generated: ytData.is_generated ?? true, status: 'ready', chunks,
+        is_generated: true, status: 'ready', chunks,
       });
 
       return Response.json({
