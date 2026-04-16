@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { Loader2, Globe, Code, Copy, CheckCircle2, Eye, Wand2, AlertCircle, Zap, Layers, Sparkles, ArrowRight, CornerDownLeft, Target, Cpu, MousePointer2, Play } from "lucide-react";
+import { Loader2, Globe, Code, Copy, CheckCircle2, Eye, Wand2, AlertCircle, Zap, Layers, Sparkles, ArrowRight, CornerDownLeft, Target, Cpu, MousePointer2, Play, ShieldAlert } from "lucide-react";
 import { Link } from "react-router-dom";
 import LivePreview from "@/components/oneshot/LivePreview";
 
@@ -62,6 +62,45 @@ export default function OneShotPage() {
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState("preview");
+  const [authState, setAuthState] = useState("checking"); // checking | allowed | denied
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const user = await base44.auth.me();
+        setAuthState(user?.role === "admin" ? "allowed" : "denied");
+      } catch {
+        setAuthState("denied");
+      }
+    })();
+  }, []);
+
+  if (authState === "checking") {
+    return (
+      <div className="min-h-screen bg-[#030305] flex items-center justify-center">
+        <Loader2 className="w-6 h-6 text-violet-400 animate-spin" />
+      </div>
+    );
+  }
+
+  if (authState === "denied") {
+    return (
+      <div className="min-h-screen bg-[#030305] text-white flex items-center justify-center px-6">
+        <div className="max-w-md w-full text-center bg-white/[0.03] border border-white/[0.08] rounded-2xl p-10">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-5">
+            <ShieldAlert className="w-6 h-6 text-red-400" />
+          </div>
+          <h1 className="text-2xl font-black mb-2">Admin access only</h1>
+          <p className="text-white/40 text-sm mb-6">OneShot is restricted to administrators.</p>
+          <Link to="/AppStore">
+            <button className="text-[13px] text-white/60 hover:text-white border border-white/10 hover:border-white/20 rounded-xl px-5 py-2.5 transition-all">
+              ← Back to Apps
+            </button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const isLoading = step >= 0 && step < STEPS.length;
 
