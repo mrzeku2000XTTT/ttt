@@ -62,11 +62,6 @@ Deno.serve(async (req) => {
     // Non-YouTube: scrape directly
     const { title, text, wordCount } = await scrapeUrl(url);
     const chunks = chunkText(text);
-    await base44.asServiceRole.entities.KaiTranscript.create({
-      video_id: `web_${Date.now()}`, url, title, transcript: text,
-      word_count: wordCount, chunk_count: chunks.length,
-      status: 'ready', language: 'en', is_generated: false, chunks,
-    });
     return Response.json({
       type: 'web', status: 'ready', url, title, wordCount, content: text, chunks,
       narration: [
