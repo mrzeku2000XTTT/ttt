@@ -104,6 +104,9 @@ const APPS = [
 
   // ── Security ──
   { name: "Security Audit", path: "SecurityAudit", cat: "Security", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/81791a703_generated_image.png", desc: "Audit your app" },
+
+  // ── New ──
+  { name: "Krust", path: "Krust", cat: "Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/f58b46dd1_image.png", desc: "Web weaver" },
 ];
 
 function AppIcon({ app }) {
