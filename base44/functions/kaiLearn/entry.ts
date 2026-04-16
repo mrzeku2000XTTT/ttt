@@ -13,8 +13,7 @@ function chunkText(text, chunkSize = 400) {
   const words = text.split(/\s+/).filter(w => w.length > 0);
   const chunks = [];
   for (let i = 0; i < words.length; i += chunkSize) {
-    const c = words.slice(i, i + chunkSize).join(' ');
-    if (c.trim()) chunks.push(c);
+    chunks.push(words.slice(i, i + chunkSize).join(' '));
   }
   return chunks.length > 0 ? chunks : [text];
 }
@@ -54,43 +53,47 @@ Deno.serve(async (req) => {
       const existing = await entity.filter({ video_id: youtubeId });
       const record = existing?.[0] || null;
 
-      // STEP 2: Cached and ready — return instantly
+      // Already ready — return cached
       if (record?.status === 'ready') {
-        const chunks = record.chunks || chunkText(record.transcript || '');
+        const chunks = record.chunks?.length ? record.chunks : chunkText(record.transcript || '');
         return Response.json({
           type: 'youtube', status: 'ready', cached: true,
           videoId: youtubeId, title: record.title,
           wordCount: record.word_count, content: record.transcript, chunks,
           narration: [
-            `📚 Already in my brain: "${record.title}"`,
-            `📝 ${record.word_count} words · ${chunks.length} knowledge blocks`,
-            `✅ Ready. Ask me anything about it.`
+            `📚 Already learned: "${record.title}"`,
+            `✅ Ask me anything about it.`
           ],
         }, { headers: { 'Access-Control-Allow-Origin': '*' } });
       }
 
-      // STEP 7 (poll): Still pending — tell Kai to keep waiting
-      if (poll && record?.status === 'pending') {
+      // Still pending — return pending
+      if (record?.status === 'pending') {
         return Response.json({
           type: 'youtube', status: 'pending',
           videoId: youtubeId, title: record.title || `YouTube ${youtubeId}`,
-          narration: [`⏳ Still fetching transcript... checking again soon.`],
+          narration: [`⏳ Still processing... try again in 15 seconds.`],
         }, { headers: { 'Access-Control-Allow-Origin': '*' } });
       }
 
-      // STEP 3: Not cached — get title via oEmbed, create pending record to trigger automation
+      // Previously failed — no captions available
+      if (record?.status === 'failed') {
+        return Response.json({
+          type: 'youtube', status: 'no_captions',
+          videoId: youtubeId, title: record.title || `YouTube ${youtubeId}`,
+          narration: [`⚠️ No captions available for this video.`],
+        }, { headers: { 'Access-Control-Allow-Origin': '*' } });
+      }
+
+      // New video — get title via oEmbed, create pending record (triggers entity automation → external agent)
       let title = `YouTube ${youtubeId}`;
       try {
         const oe = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${youtubeId}&format=json`);
         if (oe.ok) { const d = await oe.json(); title = d.title || title; }
       } catch (_) {}
 
-      // If no existing record at all, create the pending one (triggers entity automation → Kaspa agent)
-      if (!record) {
-        await entity.create({ video_id: youtubeId, url, title, status: 'pending', language: 'en', is_generated: false });
-      }
+      await entity.create({ video_id: youtubeId, url, title, status: 'pending', language: 'en', is_generated: false });
 
-      // STEP 3 response: tell Kai it's pending, poll in ~15s
       return Response.json({
         type: 'youtube', status: 'pending',
         videoId: youtubeId, title,
