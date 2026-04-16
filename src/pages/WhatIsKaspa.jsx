@@ -9,12 +9,12 @@ import {
 import KaspaAvatarChat from "@/components/kaspa/KaspaAvatarChat";
 
 const FEATURES = [
-  { icon: Zap, title: "10,000+ TPS", desc: "Kaspa processes thousands of transactions per second using its blockDAG architecture — faster than any other PoW chain.", color: "from-cyan-500 to-blue-500" },
-  { icon: Shield, title: "Proof of Work", desc: "Secured by kHeavyHash — GPU-mineable, fair, and fully decentralized consensus. No staking, no validators, no trust assumptions.", color: "from-emerald-500 to-green-500" },
-  { icon: Layers, title: "blockDAG", desc: "Unlike a blockchain, Kaspa's DAG allows multiple blocks created simultaneously. No orphan blocks, no wasted work — pure parallel processing.", color: "from-violet-500 to-purple-500" },
-  { icon: Globe, title: "Fair Launch", desc: "No premine, no ICO, no VC funding. 100% community-driven from day one. The most fairly distributed cryptocurrency since Bitcoin.", color: "from-amber-500 to-orange-500" },
-  { icon: Clock, title: "1-Second Blocks", desc: "Kaspa achieves 1-second block times with instant visual confirmation. Transactions settle in seconds, not minutes or hours.", color: "from-pink-500 to-rose-500" },
-  { icon: Cpu, title: "GHOSTDAG Protocol", desc: "The PHANTOM GHOSTDAG protocol orders all blocks — even those created simultaneously — into a consistent, tamper-proof ledger.", color: "from-blue-500 to-indigo-500" },
+  { icon: Zap, title: "10,000+ TPS", desc: "Kaspa processes thousands of transactions per second using its blockDAG architecture — faster than any other PoW chain.", color: "from-cyan-500 to-blue-500", colorStart: "#06b6d4", colorEnd: "#3b82f6" },
+  { icon: Shield, title: "Proof of Work", desc: "Secured by kHeavyHash — GPU-mineable, fair, and fully decentralized consensus. No staking, no validators, no trust assumptions.", color: "from-emerald-500 to-green-500", colorStart: "#10b981", colorEnd: "#22c55e" },
+  { icon: Layers, title: "blockDAG", desc: "Unlike a blockchain, Kaspa's DAG allows multiple blocks created simultaneously. No orphan blocks, no wasted work — pure parallel processing.", color: "from-violet-500 to-purple-500", colorStart: "#8b5cf6", colorEnd: "#a855f7" },
+  { icon: Globe, title: "Fair Launch", desc: "No premine, no ICO, no VC funding. 100% community-driven from day one. The most fairly distributed cryptocurrency since Bitcoin.", color: "from-amber-500 to-orange-500", colorStart: "#f59e0b", colorEnd: "#f97316" },
+  { icon: Clock, title: "1-Second Blocks", desc: "Kaspa achieves 1-second block times with instant visual confirmation. Transactions settle in seconds, not minutes or hours.", color: "from-pink-500 to-rose-500", colorStart: "#ec4899", colorEnd: "#f43f5e" },
+  { icon: Cpu, title: "GHOSTDAG Protocol", desc: "The PHANTOM GHOSTDAG protocol orders all blocks — even those created simultaneously — into a consistent, tamper-proof ledger.", color: "from-blue-500 to-indigo-500", colorStart: "#3b82f6", colorEnd: "#6366f1" },
 ];
 
 const TIMELINE = [
@@ -194,24 +194,55 @@ export default function WhatIsKaspaPage() {
       </section>
 
       {/* Features Grid */}
-      <section className="py-20 sm:py-28 px-5">
-        <div className="max-w-5xl mx-auto">
-          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-14">
-            <p className="text-[13px] font-semibold text-zinc-400 tracking-wide uppercase mb-2">Technology</p>
-            <h2 className="text-3xl sm:text-4xl font-[900] tracking-tight">Why Kaspa is different.</h2>
+      <section className="py-24 sm:py-36 px-5 bg-gradient-to-b from-white via-blue-50/30 to-white">
+        <div className="max-w-6xl mx-auto">
+          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-20">
+            <p className="text-[12px] font-bold text-cyan-600 tracking-widest uppercase mb-3">Technology Stack</p>
+            <h2 className="text-4xl sm:text-5xl font-[950] tracking-tighter mb-4">Why Kaspa is different.</h2>
+            <p className="text-zinc-500 text-base max-w-xl mx-auto">Six core innovations that make Kaspa the fastest, fairest proof-of-work network on Earth.</p>
           </motion.div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {FEATURES.map((f, i) => {
               const Icon = f.icon;
               return (
-                <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}
-                  className="bg-white rounded-2xl p-6 ring-1 ring-zinc-200/60 hover:ring-zinc-300 hover:shadow-xl transition-all duration-300">
-                  <div className={`w-11 h-11 rounded-xl bg-zinc-900 flex items-center justify-center mb-4`}>
-                    <Icon className="w-5 h-5 text-cyan-400" strokeWidth={2} />
+                <motion.div 
+                  key={i} 
+                  initial={{ opacity: 0, y: 30 }} 
+                  whileInView={{ opacity: 1, y: 0 }} 
+                  viewport={{ once: true }} 
+                  transition={{ delay: i * 0.1, type: "spring", stiffness: 100 }}
+                  whileHover={{ y: -8, transition: { duration: 0.2 } }}
+                  className="group relative"
+                  style={{ '--gradient-start': f.colorStart, '--gradient-end': f.colorEnd }}
+                >
+                  {/* Gradient background glow */}
+                  <div className={`absolute -inset-[1px] rounded-2xl bg-gradient-to-br ${f.color} opacity-0 group-hover:opacity-20 blur-xl transition-all duration-500`} />
+                  
+                  {/* Card */}
+                  <div className="relative bg-white/70 backdrop-blur-xl rounded-2xl p-7 ring-1 ring-white/60 group-hover:ring-white/80 shadow-sm group-hover:shadow-2xl transition-all duration-500 overflow-hidden">
+                    {/* Top accent bar */}
+                    <div className={`absolute top-0 inset-x-0 h-1 bg-gradient-to-r ${f.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+                    
+                    {/* Icon */}
+                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${f.color} flex items-center justify-center mb-5 shadow-lg group-hover:shadow-xl transition-all duration-500 transform group-hover:scale-110`}>
+                      <Icon className="w-6 h-6 text-white" strokeWidth={1.5} />
+                    </div>
+                    
+                    {/* Content */}
+                    <h3 className="text-lg font-bold text-zinc-900 mb-2.5 group-hover:text-transparent group-hover:bg-clip-text transition-all duration-300" style={{ backgroundImage: `linear-gradient(135deg, var(--gradient-start), var(--gradient-end))` }}>
+                      {f.title}
+                    </h3>
+                    <p className="text-[13px] text-zinc-600 leading-relaxed group-hover:text-zinc-700 transition-colors duration-300">
+                      {f.desc}
+                    </p>
+                    
+                    {/* Bottom accent */}
+                    <div className="mt-5 pt-4 border-t border-white/30 group-hover:border-white/50 transition-colors duration-300" />
+                    <div className="text-[11px] font-semibold text-transparent bg-clip-text opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ backgroundImage: `linear-gradient(135deg, var(--gradient-start), var(--gradient-end))` }}>
+                      Learn more →
+                    </div>
                   </div>
-                  <h3 className="text-base font-bold text-zinc-900 mb-2">{f.title}</h3>
-                  <p className="text-[13px] text-zinc-500 leading-relaxed">{f.desc}</p>
                 </motion.div>
               );
             })}
