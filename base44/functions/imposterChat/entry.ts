@@ -45,49 +45,48 @@ Reply ONLY as JSON with these fields:
     }
   });
 
-  // Detect learn/train intent
-  const learnIntent = await base44.asServiceRole.integrations.Core.InvokeLLM({
-    prompt: `Does this message ask to learn, train, watch, ingest, study, or learn from a URL or video? Reply ONLY as JSON: {"is_learn": true, "url": "..."} or {"is_learn": false}. Message: "${message}"`,
-    response_json_schema: {
-      type: "object",
-      properties: {
-        is_learn: { type: "boolean" },
-        url: { type: "string" }
-      },
-      required: ["is_learn"]
-    }
-  });
+  // Detect learn/train intent + extract URL directly
+  const urlMatch = message.match(/(https?:\/\/[^\s]+)/);
+  const hasLearnKeywords = /^(fetch|learn|watch|ingest|train on|study|read|absorb)\s/i.test(message);
+  const isLearn = hasLearnKeywords || urlMatch;
 
-  if (learnIntent?.is_learn) {
+  if (isLearn) {
     if (!identity) {
       return Response.json({
         reply: "no identity yet. can't learn without knowing who you are.",
       });
     }
 
-    const urlToLearn = learnIntent.url || message.match(/(https?:\/\/[^\s]+)/)?.[1];
+    const urlToLearn = urlMatch?.[1];
     if (!urlToLearn) {
       return Response.json({
         reply: "drop a URL or video link and i'll learn it.",
       });
     }
 
-    // Call imposterLearn backend
-    const learnRes = await base44.functions.invoke('imposterLearn', {
-      url: urlToLearn,
-      imposter_id: identity.imposter_id,
-      session_token: identity.session_token,
-    });
+    try {
+      // Call imposterLearn backend
+      const learnRes = await base44.functions.invoke('imposterLearn', {
+        url: urlToLearn,
+        imposter_id: identity.imposter_id,
+        session_token: identity.session_token,
+      });
 
-    const learnData = learnRes.data;
-    if (!learnData.success) {
+      const learnData = learnRes.data;
+      if (!learnData.success) {
+        return Response.json({
+          reply: `couldn't learn from that. ${learnData.error || 'try something else.'}`,
+        });
+      }
+
+      const learnMsg = `🧠 learned "${learnData.source_title}" — ${learnData.word_count.toLocaleString()} words, ${learnData.chunks_stored} blocks. ${learnData.summary}`;
+      return Response.json({ reply: learnMsg });
+    } catch (err) {
+      console.error('imposterLearn error:', err);
       return Response.json({
-        reply: `couldn't learn from that. ${learnData.error || 'try something else.'}`,
+        reply: "something went wrong learning that. try again in a moment.",
       });
     }
-
-    const learnMsg = `🧠 learned "${learnData.source_title}" — ${learnData.word_count.toLocaleString()} words, ${learnData.chunks_stored} blocks. ${learnData.summary}`;
-    return Response.json({ reply: learnMsg });
   }
 
   if (sendIntent?.is_send_intent) {
