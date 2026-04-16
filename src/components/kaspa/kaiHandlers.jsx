@@ -387,6 +387,38 @@ export const handleTrainOnContent = async (userMsg, { setMessages, addAssistantM
       return;
     }
 
+    // Pending — poll up to 3x with 15s gaps (automation fires async)
+    if (data.status === 'pending') {
+      const videoTitle = data.title || 'this video';
+      setMessages(prev => [...prev, { role: "action", content: `⏳ Transcript queued for "${videoTitle}" — checking in 15s…` }]);
+
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        await new Promise(r => setTimeout(r, 15000));
+        try {
+          const pollRes = await base44.functions.invoke('kaiLearn', { url, poll: true });
+          const pollData = pollRes.data;
+          if (pollData?.status === 'ready') {
+            setMessages(prev => prev.filter(m => m.role !== 'action'));
+            addAssistantMessage(
+              `✅ **Transcript ready!**\n\n📺 **${pollData.title}**\n📊 ${(pollData.wordCount || 0).toLocaleString()} words → ${(pollData.chunks || []).length} knowledge blocks\n\nAsk me anything about it!`
+            );
+            return;
+          }
+        } catch (_) {}
+        if (attempt < 3) {
+          setMessages(prev => {
+            const filtered = prev.filter(m => m.role !== 'action');
+            return [...filtered, { role: "action", content: `⏳ Still processing… (attempt ${attempt + 1}/3)` }];
+          });
+        }
+      }
+
+      // After 3 polls still pending
+      setMessages(prev => prev.filter(m => m.role !== 'action'));
+      addAssistantMessage(`⏳ **Transcript is still being fetched for "${videoTitle}".** The automation is running — paste the URL again in ~1 minute and I'll have it ready.`);
+      return;
+    }
+
     // Fallback error
     addAssistantMessage("❌ Couldn't process that content. Try a different URL or paste the text directly.");
   } catch {

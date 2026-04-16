@@ -43,20 +43,62 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json().catch(() => ({}));
-    const { url, poll, force } = body;
+    const { url, poll } = body;
 
     if (!url) return Response.json({ error: 'No URL provided' }, { status: 400 });
 
     const youtubeId = extractYouTubeId(url);
 
     if (youtubeId) {
-      const kaspaRes = await fetch('https://kaspa-b3ad561a.base44.app/functions/kaiLearn', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, poll: !!poll }),
-      });
-      const data = await kaspaRes.json();
-      return Response.json(data, { headers: { 'Access-Control-Allow-Origin': '*' } });
+      const entity = base44.asServiceRole.entities.KaiTranscript;
+      const existing = await entity.filter({ video_id: youtubeId });
+      const record = existing?.[0] || null;
+
+      // STEP 2: Cached and ready — return instantly
+      if (record?.status === 'ready') {
+        const chunks = record.chunks || chunkText(record.transcript || '');
+        return Response.json({
+          type: 'youtube', status: 'ready', cached: true,
+          videoId: youtubeId, title: record.title,
+          wordCount: record.word_count, content: record.transcript, chunks,
+          narration: [
+            `📚 Already in my brain: "${record.title}"`,
+            `📝 ${record.word_count} words · ${chunks.length} knowledge blocks`,
+            `✅ Ready. Ask me anything about it.`
+          ],
+        }, { headers: { 'Access-Control-Allow-Origin': '*' } });
+      }
+
+      // STEP 7 (poll): Still pending — tell Kai to keep waiting
+      if (poll && record?.status === 'pending') {
+        return Response.json({
+          type: 'youtube', status: 'pending',
+          videoId: youtubeId, title: record.title || `YouTube ${youtubeId}`,
+          narration: [`⏳ Still fetching transcript... checking again soon.`],
+        }, { headers: { 'Access-Control-Allow-Origin': '*' } });
+      }
+
+      // STEP 3: Not cached — get title via oEmbed, create pending record to trigger automation
+      let title = `YouTube ${youtubeId}`;
+      try {
+        const oe = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${youtubeId}&format=json`);
+        if (oe.ok) { const d = await oe.json(); title = d.title || title; }
+      } catch (_) {}
+
+      // If no existing record at all, create the pending one (triggers entity automation → Kaspa agent)
+      if (!record) {
+        await entity.create({ video_id: youtubeId, url, title, status: 'pending', language: 'en', is_generated: false });
+      }
+
+      // STEP 3 response: tell Kai it's pending, poll in ~15s
+      return Response.json({
+        type: 'youtube', status: 'pending',
+        videoId: youtubeId, title,
+        narration: [
+          `📺 Found: "${title}"`,
+          `⏳ Fetching transcript... I'll check back in ~15 seconds.`
+        ],
+      }, { headers: { 'Access-Control-Allow-Origin': '*' } });
     }
 
     // Non-YouTube: scrape directly
