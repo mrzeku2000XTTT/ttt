@@ -59,11 +59,11 @@ Reply ONLY as JSON with these fields:
         "api_key": SUPERAGENT_KEY,
       };
 
-      // Step 1 — create conversation
+      // Step 1 — create conversation (admin mode enabled)
       const convRes = await fetch(`${API_BASE}/conversations`, {
         method: "POST",
         headers,
-        body: JSON.stringify({}),
+        body: JSON.stringify({ admin_mode: true }),
       });
 
       if (!convRes.ok) {
