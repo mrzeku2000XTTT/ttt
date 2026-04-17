@@ -82,29 +82,45 @@ function AgentEventRow({ event }) {
   );
 }
 
-function AgentLiveView({ events }) {
+function AgentLiveView({ events, active }) {
   const bottomRef = useRef(null);
+  const [collapsed, setCollapsed] = useState(false);
   useEffect(() => {
-    if (bottomRef.current) bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [events.length]);
+    if (bottomRef.current && active) bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [events.length, active]);
+
+  const done = events.find((e) => e.type === "done");
+  const erred = events.find((e) => e.type === "error");
 
   return (
     <div className="flex justify-start w-full">
       <div className="bg-white/[0.03] border border-violet-500/20 rounded-xl px-3 py-2.5 w-full max-w-full">
-        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/5">
-          <Loader2 className="w-3.5 h-3.5 text-violet-400 animate-spin" />
-          <span className="text-white/80 text-[11.5px] font-bold uppercase tracking-widest">Agent working</span>
-          <span className="ml-auto text-[10px] text-white/30 font-mono">{events.length} events</span>
-        </div>
-        <div className="max-h-60 overflow-y-auto pr-1 space-y-0.5">
-          {events.length === 0 && (
-            <p className="text-white/30 text-[11px] italic py-2">Waking up Claude…</p>
+        <button onClick={() => setCollapsed((c) => !c)} className="w-full flex items-center gap-2 mb-2 pb-2 border-b border-white/5 text-left">
+          {active ? (
+            <Loader2 className="w-3.5 h-3.5 text-violet-400 animate-spin" />
+          ) : erred ? (
+            <AlertCircle className="w-3.5 h-3.5 text-red-400" />
+          ) : (
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
           )}
-          {events.map((ev, i) => (
-            <AgentEventRow key={i} event={ev} />
-          ))}
-          <div ref={bottomRef} />
-        </div>
+          <span className="text-white/80 text-[11.5px] font-bold uppercase tracking-widest">
+            {active ? "Agent working" : erred ? "Agent failed" : "Agent trace"}
+          </span>
+          <span className="ml-auto text-[10px] text-white/30 font-mono">
+            {events.length} events {collapsed ? "▸" : "▾"}
+          </span>
+        </button>
+        {!collapsed && (
+          <div className="max-h-60 overflow-y-auto pr-1 space-y-0.5">
+            {events.length === 0 && (
+              <p className="text-white/30 text-[11px] italic py-2">Waking up Claude…</p>
+            )}
+            {events.map((ev, i) => (
+              <AgentEventRow key={i} event={ev} />
+            ))}
+            <div ref={bottomRef} />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -164,7 +180,7 @@ export default function ChatPanel({ history, onSend, sending, agentEvents = [] }
           </div>
         ))}
 
-        {sending && <AgentLiveView events={agentEvents} />}
+        {agentEvents.length > 0 && <AgentLiveView events={agentEvents} active={sending} />}
       </div>
 
       <div className="p-3 border-t border-white/[0.05] flex-shrink-0">
