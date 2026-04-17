@@ -327,6 +327,17 @@ export default function KaspaAvatarChat() {
 
     const data = res.data;
 
+    // Handle image ready — show text reply + embedded image
+    if (data?.action?.type === "image_ready" && data.action.image_url) {
+      if (data.reply) addAssistantMessage(data.reply);
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: null,
+        imposterImage: { image_url: data.action.image_url, prompt: data.action.prompt },
+      }]);
+      return;
+    }
+
     // Handle video ready — show text reply + embedded video
     if (data?.action?.type === "video_ready" && data.action.video_url) {
       if (data.reply) addAssistantMessage(data.reply);

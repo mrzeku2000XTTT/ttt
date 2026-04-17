@@ -81,6 +81,35 @@ Deno.serve(async (req) => {
     }
   });
 
+  // Detect image-generation intent (check BEFORE video so "image" doesn't match video keywords)
+  const hasImageKeywords = /\b(make|create|generate|render|produce|draw|design|give me|show me)\b.*\b(image|picture|pic|photo|art|artwork|drawing|illustration|poster|meme|logo|wallpaper|portrait|scene)\b/i.test(message)
+    || /\b(image|picture|pic|photo|art|artwork|drawing|illustration|poster|meme|logo|wallpaper)\s+(of|about|for|showing|that|with)\b/i.test(message);
+
+  if (hasImageKeywords) {
+    try {
+      // Clean the prompt a bit — strip leading command words so the model focuses on the subject
+      const cleanPrompt = message
+        .replace(/^\s*(hey|yo|please|pls|can you|could you|i want you to|go|now)\s+/i, "")
+        .replace(/^\s*(make|create|generate|render|produce|draw|design|give me|show me)\s+(me\s+)?(an?|the)?\s*/i, "")
+        .trim() || message;
+
+      const img = await base44.asServiceRole.integrations.Core.GenerateImage({
+        prompt: cleanPrompt,
+      });
+      const imageUrl = img?.url;
+      if (!imageUrl) {
+        return Response.json({ reply: "render came back empty. try again with more detail." });
+      }
+      return Response.json({
+        reply: "🖼️ here.",
+        action: { type: "image_ready", image_url: imageUrl, prompt: cleanPrompt },
+      });
+    } catch (err) {
+      console.error("image gen error:", err?.message || err);
+      return Response.json({ reply: "image generator choked. try again." });
+    }
+  }
+
   // Detect video-generation intent
   const hasVideoKeywords = /\b(make|create|generate|render|produce|do)\b.*\b(video|mp4|animation|clip|ad|advert|commercial|reel|short)\b/i.test(message)
     || /\bvideo\s+(about|for|of|showing|that)\b/i.test(message);

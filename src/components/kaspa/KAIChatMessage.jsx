@@ -166,6 +166,39 @@ export default function KAIChatMessage({ msg, index, typingIndex, typingText, se
     );
   }
 
+  // Imposter image ready — embed image directly
+  if (msg.imposterImage?.image_url) {
+    return (
+      <div className="flex justify-start">
+        <div
+          className="max-w-[90%] rounded-2xl overflow-hidden"
+          style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(6,182,212,0.3)" }}
+        >
+          <img
+            src={msg.imposterImage.image_url}
+            alt={msg.imposterImage.prompt || "generated image"}
+            className="w-full block"
+            style={{ maxHeight: 420, objectFit: "contain", background: "#000" }}
+          />
+          <div className="flex items-center justify-between px-3 py-2 text-[11px] gap-2">
+            <span className="text-cyan-400/80 font-semibold truncate">
+              🖼️ {msg.imposterImage.prompt ? msg.imposterImage.prompt.slice(0, 60) : "image ready"}
+            </span>
+            <a
+              href={msg.imposterImage.image_url}
+              download
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white/60 hover:text-white transition-colors flex-shrink-0"
+            >
+              download
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Imposter video ready — embed video directly
   if (msg.imposterVideo?.video_url) {
     return (
