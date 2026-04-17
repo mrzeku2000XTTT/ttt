@@ -433,6 +433,11 @@ export default function KaspaAvatarChat() {
             return;
           }
 
+          if (pollData?.status === "stuck") {
+            updateProgress({ status: "error", progress: pollData.reply || "⚠️ render stuck. try again." });
+            return;
+          }
+
           // Still processing — update progress text if Kai sent an update
           if (pollData?.progress) {
             updateProgress({ status: "rendering", progress: pollData.progress });

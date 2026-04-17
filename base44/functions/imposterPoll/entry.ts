@@ -9,30 +9,42 @@ function findVideoUrl(text) {
   return m ? m[0] : null;
 }
 
-// Look up the most recent completed VideoRender on the Superagent app.
-// VideoRender records don't carry conversation_id, so we match by: status=="done"
-// + created_date newer than `sinceIso` (the time we started this conversation).
+// Look up the most recent VideoRender on the Superagent app.
+// Returns { video_url, stuck } — stuck=true if latest render has been pending >5min.
 async function findRenderedVideo(apiKey, sinceIso) {
   try {
     const url = `${SUPERAGENT_BASE}/entities/VideoRender?limit=10&sort=-created_date`;
     const res = await fetch(url, {
       headers: { "api_key": apiKey, "Content-Type": "application/json" },
     });
-    if (!res.ok) return null;
+    if (!res.ok) return { video_url: null, stuck: false };
     const list = await res.json();
-    if (!Array.isArray(list)) return null;
+    if (!Array.isArray(list)) return { video_url: null, stuck: false };
 
     const since = sinceIso ? new Date(sinceIso).getTime() : 0;
+
+    // Find a completed one matching the conversation timeframe
     const done = list.find(r => {
       if (r.status !== "done" || !r.video_url) return false;
       if (!since) return true;
       const created = new Date(r.created_date).getTime();
-      return created >= since - 60_000; // 60s grace window
+      return created >= since - 60_000;
     });
-    return done?.video_url || null;
+    if (done?.video_url) return { video_url: done.video_url, stuck: false };
+
+    // Detect stuck: newest record is pending AND created >5min ago
+    const newest = list[0];
+    if (newest && newest.status === "pending") {
+      const ageMs = Date.now() - new Date(newest.created_date).getTime();
+      if (ageMs > 5 * 60 * 1000) {
+        return { video_url: null, stuck: true };
+      }
+    }
+
+    return { video_url: null, stuck: false };
   } catch (err) {
     console.error("VideoRender lookup failed:", err?.message || err);
-    return null;
+    return { video_url: null, stuck: false };
   }
 }
 
@@ -97,14 +109,14 @@ Deno.serve(async (req) => {
     }
 
     // 3. Fallback: query VideoRender entity for a recent completed render.
-    // Only do this if Kai signaled completion OR if there's text about rendering
-    // (to avoid returning a stale unrelated render).
     const looksComplete = /render\s+complete|video\s+complete|✅/i.test(combined);
     const looksRendering = /render(ing|ed)?|mp4|video|scene/i.test(combined);
+    let stuck = false;
     if (!videoUrl && (looksComplete || looksRendering)) {
-      // Use the conversation's first message time as the "since" floor
       const firstMsgTime = messages[0]?.created_date || messages[0]?.timestamp || null;
-      videoUrl = await findRenderedVideo(SUPERAGENT_KEY, firstMsgTime);
+      const found = await findRenderedVideo(SUPERAGENT_KEY, firstMsgTime);
+      videoUrl = found.video_url;
+      stuck = found.stuck;
     }
 
     if (videoUrl) {
@@ -112,6 +124,14 @@ Deno.serve(async (req) => {
         status: "ready",
         reply: combined.replace(videoUrl, "").trim() || "🎬 video ready:",
         video_url: videoUrl,
+      });
+    }
+
+    // Detected a stuck render
+    if (stuck) {
+      return Response.json({
+        status: "stuck",
+        reply: "⚠️ render got stuck on Superagent's side (pending >5 min). try again.",
       });
     }
 
