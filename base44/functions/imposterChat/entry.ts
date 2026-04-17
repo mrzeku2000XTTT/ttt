@@ -64,6 +64,7 @@ async function sendKaiMessage(conversation_id, content, file_urls = []) {
 }
 
 Deno.serve(async (req) => {
+  try {
   const base44 = createClientFromRequest(req);
   const { message, identity, conversation_state, image_urls } = await req.json();
   const attachedImages = Array.isArray(image_urls) ? image_urls.filter(u => typeof u === "string" && u.startsWith("http")) : [];
@@ -214,4 +215,8 @@ Deno.serve(async (req) => {
   });
 
   return Response.json({ reply: typeof reply === "string" ? reply : "..." });
+  } catch (err) {
+    console.error("imposterChat error:", err?.message || err);
+    return Response.json({ reply: "something broke in the void. try again." }, { status: 200 });
+  }
 });
