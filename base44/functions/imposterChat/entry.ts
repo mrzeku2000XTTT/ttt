@@ -68,7 +68,7 @@ Reply ONLY as JSON with these fields:
       else if (/\blight\b/i.test(message)) style = "light";
 
       // Step 1: create render job
-      const createRes = await fetch(`${RENDER_BASE}/functions/kaiHyperFrames`, {
+      const createRes = await fetch(`${RENDER_BASE}/api/apps/69e00a3b3c4957544571e863/functions/kaiHyperFrames`, {
         method: "POST",
         headers: renderHeaders,
         body: JSON.stringify({
@@ -97,7 +97,7 @@ Reply ONLY as JSON with these fields:
       let errored = false;
       for (let i = 0; i < 18; i++) {
         await new Promise((r) => setTimeout(r, 5000));
-        const pollRes = await fetch(`${RENDER_BASE}/functions/kaiHyperFrames?record_id=${recordId}`, {
+        const pollRes = await fetch(`${RENDER_BASE}/api/apps/69e00a3b3c4957544571e863/functions/kaiHyperFrames?record_id=${recordId}`, {
           headers: renderHeaders,
         });
         if (!pollRes.ok) continue;
