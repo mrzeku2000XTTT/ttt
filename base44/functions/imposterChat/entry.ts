@@ -27,13 +27,19 @@ async function createKaiConversation() {
   return data.id || data.conversation_id;
 }
 
-async function sendKaiMessage(conversation_id, content) {
+async function sendKaiMessage(conversation_id, content, file_urls = []) {
+  const body = { role: "user", content };
+  if (file_urls && file_urls.length > 0) body.file_urls = file_urls;
+
   const res = await fetch(`${KAI_BASE_URL}/conversations/${conversation_id}/messages`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'api_key': KAI_API_KEY },
-    body: JSON.stringify({ content }),
+    body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`Failed to send message: ${res.status}`);
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`Failed to send message: ${res.status} ${errText.slice(0, 300)}`);
+  }
   return await res.json();
 }
 
@@ -71,32 +77,16 @@ Deno.serve(async (req) => {
 
       const convId = await createKaiConversation();
 
-      const imagesParam = attachedImages.length > 0
-        ? ` --images ${JSON.stringify(attachedImages)}`
-        : '';
-
-      await sendKaiMessage(convId, `Make a video: ${message} --title "${title}" --duration 15 --style dark${imagesParam}`);
-
-      await new Promise(r => setTimeout(r, 3000));
-
-      const records = await base44.asServiceRole.entities.VideoRender.filter(
-        { status: 'pending' },
-        '-created_date',
-        1
-      );
-
-      const recordId = records?.[0]?.id;
-
-      if (!recordId) {
-        return Response.json({
-          reply: "🎬 video is queuing up… check back in a moment.",
-          action: { type: "video_processing", conversation_id: convId },
-        });
-      }
+      // Fire-and-forget: don't await Kai's full render response (it blocks for minutes)
+      sendKaiMessage(
+        convId,
+        `Make a video: ${message} --title "${title}" --duration 15 --style dark`,
+        attachedImages
+      ).catch(err => console.error("sendKaiMessage bg error:", err?.message || err));
 
       return Response.json({
         reply: "🎬 rendering your video… hang tight, this takes a minute or two.",
-        action: { type: "video_processing", record_id: recordId, conversation_id: convId },
+        action: { type: "video_processing", conversation_id: convId, record_id: convId },
       });
 
     } catch (err) {
