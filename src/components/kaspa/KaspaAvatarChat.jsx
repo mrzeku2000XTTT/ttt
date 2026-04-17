@@ -318,6 +318,55 @@ export default function KaspaAvatarChat() {
       return;
     }
 
+    // Handle async video render — poll imposterPoll until ready
+    if (data?.action?.type === "video_processing" && data.action.conversation_id) {
+      const convId = data.action.conversation_id;
+      if (data.reply) addAssistantMessage(data.reply);
+
+      const maxAttempts = 60; // 60 × 5s = 5 minutes max
+      let attempt = 0;
+
+      const poll = async () => {
+        attempt++;
+        try {
+          const pollRes = await base44.functions.invoke('imposterPoll', { conversation_id: convId });
+          const pollData = pollRes.data;
+
+          if (pollData?.status === "ready") {
+            if (pollData.video_url) {
+              setMessages(prev => [...prev, {
+                role: "assistant",
+                content: null,
+                imposterVideo: { video_url: pollData.video_url },
+              }]);
+            } else if (pollData.reply) {
+              addAssistantMessage(pollData.reply);
+            }
+            return; // stop polling
+          }
+
+          if (pollData?.status === "error") {
+            addAssistantMessage(`render failed: ${pollData.error || "unknown"}`);
+            return;
+          }
+
+          if (attempt >= maxAttempts) {
+            addAssistantMessage("render timed out after 5 minutes. try again.");
+            return;
+          }
+
+          setTimeout(poll, 5000);
+        } catch (err) {
+          console.error("poll error:", err);
+          if (attempt < maxAttempts) setTimeout(poll, 5000);
+          else addAssistantMessage("lost connection to render. try again.");
+        }
+      };
+
+      setTimeout(poll, 5000); // first poll after 5s
+      return;
+    }
+
     // Handle send transaction action
     if (data?.action?.type === "send_kas") {
       const { to_address, amount_kas, balance } = data.action;

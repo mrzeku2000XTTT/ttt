@@ -79,31 +79,18 @@ Reply ONLY as JSON with these fields:
         return Response.json({ reply: "superagent didn't return a conversation id." });
       }
 
-      // Step 2 — send message
-      const msgRes = await fetch(`${API_BASE}/conversations/${convId}/messages`, {
+      // Step 2 — fire message WITHOUT awaiting (fire & forget)
+      fetch(`${API_BASE}/conversations/${convId}/messages`, {
         method: "POST",
         headers,
         body: JSON.stringify({ role: "user", content: message }),
+      }).catch((e) => console.error("fire-and-forget msg send failed:", e?.message || e));
+
+      // Step 3 — return immediately so frontend can start polling
+      return Response.json({
+        reply: "🎬 rendering your video… hang tight, this takes a minute or two.",
+        action: { type: "video_processing", conversation_id: convId },
       });
-
-      if (!msgRes.ok) {
-        const errText = await msgRes.text().catch(() => "");
-        console.error("superagent addMessage failed:", msgRes.status, errText);
-        return Response.json({ reply: `superagent rejected message (${msgRes.status}): ${errText.slice(0, 200)}` });
-      }
-
-      const msgData = await msgRes.json();
-      const replyText = msgData.content || msgData.response || msgData.reply || "";
-      const mp4Match = replyText.match(/https?:\/\/\S+\.mp4/i);
-
-      if (mp4Match) {
-        return Response.json({
-          reply: replyText.replace(mp4Match[0], "").trim() || "🎬 here's your video:",
-          action: { type: "video_ready", video_url: mp4Match[0] },
-        });
-      }
-
-      return Response.json({ reply: replyText || "render came back empty." });
     } catch (err) {
       console.error("video render error:", err?.message || err);
       return Response.json({ reply: `render broke: ${err?.message || "unknown error"}. try again.` });
