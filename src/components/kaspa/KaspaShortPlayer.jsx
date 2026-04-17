@@ -52,11 +52,11 @@ export default function KaspaShortPlayer() {
           className="text-center mb-12"
         >
           <div className="inline-flex items-center gap-2 bg-cyan-100 text-cyan-700 px-4 py-1.5 rounded-full text-[11px] font-bold tracking-wide uppercase mb-4">
-            <Globe className="w-3.5 h-3.5" /> Kaspa Around the World
+            <Globe className="w-3.5 h-3.5" /> Kaspa Proof of Work
           </div>
-          <h2 className="text-4xl sm:text-5xl font-[950] tracking-tighter mb-4">Sent across 7 countries for $0.0001.</h2>
+          <h2 className="text-4xl sm:text-5xl font-[950] tracking-tighter mb-4">Sent across 7 countries for 0.0115 KAS.</h2>
           <p className="text-zinc-500 text-base max-w-xl mx-auto">
-            Watch real Kaspa transactions zip around the globe — instant, near-free, and unstoppable.
+            Watch real Kaspa proof-of-work transactions zip around the globe — instant, near-free, and unstoppable.
           </p>
         </motion.div>
 
