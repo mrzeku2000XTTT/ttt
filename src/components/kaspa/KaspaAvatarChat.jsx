@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Loader2, Minus, Settings, ImagePlus } from "lucide-react";
+import { X, Send, Loader2, Minus, Settings, ImagePlus, Sparkles } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -184,6 +184,21 @@ export default function KaspaAvatarChat() {
   };
 
   const removePendingImage = (idx) => setPendingImages(prev => prev.filter((_, i) => i !== idx));
+
+  const [enhancing, setEnhancing] = useState(false);
+  const enhancePrompt = async () => {
+    if (!input.trim() || enhancing) return;
+    setEnhancing(true);
+    try {
+      const enhanced = await base44.integrations.Core.InvokeLLM({
+        prompt: `Rewrite this user prompt into a richer, more vivid, more detailed version. Keep the original intent exact — don't add unrelated topics or change what they're asking for. Add sensory detail, specificity, and clarity. Output ONLY the rewritten prompt, no preamble, no quotes, no explanation.\n\nOriginal: ${input.trim()}`,
+      });
+      const clean = typeof enhanced === "string" ? enhanced.trim().replace(/^["']|["']$/g, "") : "";
+      if (clean) setInput(clean);
+    } catch {}
+    setEnhancing(false);
+    inputRef.current?.focus();
+  };
 
   const sendMessage = async () => {
     if ((!input.trim() && pendingImages.length === 0) || isLoading) return;
@@ -726,6 +741,12 @@ export default function KaspaAvatarChat() {
                   onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
                   placeholder={pendingImages.length > 0 ? "Ask about the image…" : kaiMode === "classic" ? "Search or ask Kai..." : kaiMode === "imposter" ? "say something… if you dare" : "Search or ask KAI..."}
                   className="flex-1 bg-transparent text-white/90 outline-none placeholder-white/30" style={{ fontSize: '16px' }} />
+                <button onClick={enhancePrompt} disabled={!input.trim() || enhancing || isLoading}
+                  className="w-7 h-7 rounded-full flex items-center justify-center transition-all flex-shrink-0 hover:bg-white/10 disabled:opacity-30"
+                  style={{ color: input.trim() && !enhancing ? "rgba(168,85,247,0.9)" : "rgba(255,255,255,0.4)" }}
+                  title="Enhance prompt">
+                  {enhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                </button>
                 <button onClick={sendMessage} disabled={(!input.trim() && pendingImages.length === 0) || isLoading}
                   className="w-7 h-7 rounded-full flex items-center justify-center transition-all disabled:opacity-30"
                   style={{ background: (input.trim() || pendingImages.length > 0) && !isLoading ? "rgba(6,182,212,0.4)" : "transparent" }}>
