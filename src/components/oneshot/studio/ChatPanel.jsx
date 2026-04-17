@@ -1,5 +1,63 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Sparkles, Loader2, FileCode } from "lucide-react";
+import { Send, Sparkles, Loader2, FileCode, Brain, FileSearch, Wand2, CheckCircle2 } from "lucide-react";
+
+const STAGES = [
+  { at: 0,    icon: FileSearch, label: "Reading project files", detail: "Scanning file tree and current code" },
+  { at: 3,    icon: Brain,      label: "Thinking", detail: "Understanding your request" },
+  { at: 8,    icon: Wand2,      label: "Planning edits", detail: "Deciding which files to change" },
+  { at: 15,   icon: FileCode,   label: "Writing code", detail: "Generating new file contents" },
+  { at: 35,   icon: FileCode,   label: "Still writing", detail: "Larger edits take a bit longer…" },
+  { at: 60,   icon: CheckCircle2, label: "Finalizing", detail: "Almost done — packaging changes" },
+  { at: 90,   icon: Loader2,    label: "Taking longer than usual", detail: "Complex edits or heavy prompt — still working" },
+];
+
+function LiveProgress() {
+  const [elapsed, setElapsed] = useState(0);
+  const startRef = useRef(Date.now());
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startRef.current) / 1000));
+    }, 250);
+    return () => clearInterval(t);
+  }, []);
+
+  // Pick the current stage
+  let current = STAGES[0];
+  for (let i = 0; i < STAGES.length; i++) {
+    if (elapsed >= STAGES[i].at) current = STAGES[i];
+  }
+  const Icon = current.icon;
+
+  return (
+    <div className="flex justify-start">
+      <div className="bg-white/[0.04] border border-violet-500/20 rounded-xl px-3 py-2.5 min-w-[260px]">
+        <div className="flex items-center gap-2 mb-1.5">
+          <div className="relative flex-shrink-0">
+            <Icon className="w-3.5 h-3.5 text-violet-400 animate-pulse" />
+          </div>
+          <span className="text-white/90 text-[12.5px] font-semibold">{current.label}</span>
+          <span className="ml-auto text-[10px] text-white/40 font-mono tabular-nums">{elapsed}s</span>
+        </div>
+        <p className="text-white/40 text-[11px] pl-5.5 ml-[2px] leading-relaxed">{current.detail}</p>
+        <div className="mt-2 flex gap-0.5">
+          {STAGES.slice(0, 6).map((s, i) => {
+            const isPast = elapsed >= s.at;
+            const isActive = current.at === s.at;
+            return (
+              <div
+                key={i}
+                className={`h-0.5 flex-1 rounded-full transition-all ${
+                  isActive ? "bg-violet-400 animate-pulse" : isPast ? "bg-violet-500/60" : "bg-white/10"
+                }`}
+              />
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function ChatPanel({ history, onSend, sending }) {
   const [input, setInput] = useState("");
@@ -55,14 +113,7 @@ export default function ChatPanel({ history, onSend, sending }) {
           </div>
         ))}
 
-        {sending && (
-          <div className="flex justify-start">
-            <div className="bg-white/[0.04] border border-white/[0.07] rounded-xl px-3 py-2 flex items-center gap-2">
-              <Loader2 className="w-3.5 h-3.5 text-violet-400 animate-spin" />
-              <span className="text-white/50 text-[12px]">Claude is editing…</span>
-            </div>
-          </div>
-        )}
+        {sending && <LiveProgress />}
       </div>
 
       <div className="p-3 border-t border-white/[0.05]">
