@@ -23,19 +23,20 @@ Deno.serve(async (req) => {
           const data = await statusRes.json();
           const status = (data.status || "").toLowerCase();
 
-          if (status === "done" && data.video_url) {
-            console.log("kaiHyperFrames returned video_url:", data.video_url);
+          const videoUrl = data.video_url || data.url || data.mp4_url;
+          if ((status === "done" || status === "ready" || status === "completed") && videoUrl) {
+            console.log("kaiHyperFrames returned video_url:", videoUrl);
             return Response.json({
               status: "ready",
-              video_url: data.video_url,
+              video_url: videoUrl,
               reply: "🎬 video ready",
             });
           }
 
-          if (status === "error") {
+          if (status === "error" || status === "failed") {
             return Response.json({
               status: "error",
-              error: data.error || "render failed",
+              error: data.error || data.message || "render failed",
             });
           }
 

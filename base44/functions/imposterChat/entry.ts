@@ -6,11 +6,11 @@ const KAI_API_KEY = '7d4e7751d1ac406dae4df07533c5e566';
 const KAI_BASE_URL = `https://app.base44.com/api/agents/${KAI_AGENT_ID}`;
 const KAI_HYPERFRAMES_URL = `https://kais-backend-brain-superagent-for-4571e863.base44.app/functions/kaiHyperFrames`;
 
-async function triggerHyperFramesRender({ prompt, conversation_id, duration = 15, style = "kaspa", resolution = "1920x1080" }) {
+async function triggerHyperFramesRender({ prompt, conversation_id, title = "Kai Video", duration = 15, style = "kaspa" }) {
   const res = await fetch(KAI_HYPERFRAMES_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, conversation_id, duration, style, resolution }),
+    body: JSON.stringify({ prompt, title, duration, style, conversation_id }),
   });
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
@@ -90,25 +90,24 @@ Deno.serve(async (req) => {
       // Create a Kai conversation so the finished video posts back automatically
       const convId = await createKaiConversation();
 
-      // Hit kaiHyperFrames directly — no polling needed, video posts back to conversation
+      // Hit kaiHyperFrames — it posts a RENDER_JOB into the conversation, Kai wakes up, renders, and posts the finished video URL back to the conversation.
       const renderRes = await triggerHyperFramesRender({
         prompt: message,
         conversation_id: convId,
+        title: "Kai Video",
         duration: 15,
         style: "kaspa",
-        resolution: "1920x1080",
       });
 
-      if (!renderRes?.success || !renderRes.record_id) {
-        return Response.json({ reply: `render didn't start: ${renderRes?.message || "unknown"}. try again.` });
-      }
+      // Accept any of the common id field names (optional — conversation_id is sufficient for polling)
+      const recordId = renderRes?.record_id || renderRes?.id || renderRes?.job_id || renderRes?.data?.record_id || renderRes?.data?.id || null;
 
       return Response.json({
         reply: "🎬 rendering your video… hang tight, this takes about a minute.",
         action: {
           type: "video_processing",
           conversation_id: convId,
-          record_id: renderRes.record_id,
+          record_id: recordId,
         },
       });
 
