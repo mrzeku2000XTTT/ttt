@@ -107,6 +107,7 @@ const APPS = [
 
   // ── New ──
   { name: "Krust", path: "Krust", cat: "Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/f58b46dd1_image.png", desc: "Web weaver" },
+  { name: "OneShot", path: "UICloner", cat: "Dev Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ee7187675_generated_image.png", desc: "Clone & vibe-code any UI", admin: true },
 ];
 
 function AppIcon({ app }) {
