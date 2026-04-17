@@ -1,6 +1,16 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Volume2, VolumeX, Play, ExternalLink, Sparkles } from "lucide-react";
+import { Volume2, VolumeX, Play, ExternalLink, Sparkles, Globe } from "lucide-react";
+
+const COUNTRIES = [
+  { name: "Brazil", flag: "🇧🇷" },
+  { name: "Malaysia", flag: "🇲🇾" },
+  { name: "Nigeria", flag: "🇳🇬" },
+  { name: "Ireland", flag: "🇮🇪" },
+  { name: "Australia", flag: "🇦🇺" },
+  { name: "USA", flag: "🇺🇸" },
+  { name: "Romania", flag: "🇷🇴" },
+];
 
 const VIDEO_ID = "IJ0EgjKzZvo";
 
@@ -42,11 +52,11 @@ export default function KaspaShortPlayer() {
           className="text-center mb-12"
         >
           <div className="inline-flex items-center gap-2 bg-cyan-100 text-cyan-700 px-4 py-1.5 rounded-full text-[11px] font-bold tracking-wide uppercase mb-4">
-            <Sparkles className="w-3.5 h-3.5" /> Watch & Learn
+            <Globe className="w-3.5 h-3.5" /> Kaspa Around the World
           </div>
-          <h2 className="text-4xl sm:text-5xl font-[950] tracking-tighter mb-4">Kaspa in 60 seconds.</h2>
+          <h2 className="text-4xl sm:text-5xl font-[950] tracking-tighter mb-4">Sent across 7 countries for $0.0001.</h2>
           <p className="text-zinc-500 text-base max-w-xl mx-auto">
-            A quick visual primer on why Kaspa is rewriting the rules of proof-of-work.
+            Watch real Kaspa transactions zip around the globe — instant, near-free, and unstoppable.
           </p>
         </motion.div>
 
@@ -134,27 +144,39 @@ export default function KaspaShortPlayer() {
           >
             <p className="text-[11px] font-bold text-cyan-600 tracking-widest uppercase mb-3">About this video</p>
             <h3 className="text-2xl sm:text-3xl font-[900] tracking-tight mb-5 text-zinc-900">
-              The fastest, fairest crypto you've never heard of.
+              KASPA AROUND THE WORLD FOR 0.0115 KAS
             </h3>
             <p className="text-zinc-600 text-[15px] leading-relaxed mb-6">
-              This 60-second short breaks down the core idea behind Kaspa: a proof-of-work cryptocurrency that processes
-              <span className="font-bold text-zinc-900"> thousands of transactions per second </span>
-              using a revolutionary <span className="font-bold text-zinc-900">blockDAG architecture</span>. No premine, no ICO,
-              no VC funding — just pure decentralized math doing what Bitcoin promised, but at internet speed.
+              Watch real Kaspa transactions sent from <span className="font-bold text-zinc-900">7 different countries</span> across the globe — total network fee?
+              Just <span className="font-bold text-zinc-900">0.0115 KAS</span> (a fraction of a cent). This is what borderless, near-instant money actually looks like.
+              <span className="block mt-2 text-zinc-400 text-[13px]">#bitcoin #crypto</span>
             </p>
+
+            {/* Countries */}
+            <div className="mb-6">
+              <p className="text-[10px] font-bold text-zinc-400 tracking-widest uppercase mb-3">Sent from</p>
+              <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
+                {COUNTRIES.map((c) => (
+                  <div key={c.name} className="flex items-center gap-1.5 bg-white rounded-full px-3 py-1.5 ring-1 ring-zinc-200/60 text-[12px] font-semibold text-zinc-700">
+                    <span className="text-base leading-none">{c.flag}</span>
+                    {c.name}
+                  </div>
+                ))}
+              </div>
+            </div>
 
             <div className="grid grid-cols-3 gap-3 max-w-md mx-auto lg:mx-0">
               <div className="bg-white rounded-xl p-3 ring-1 ring-zinc-200/60 text-center">
-                <div className="text-lg font-[900] text-cyan-600">10K+</div>
-                <div className="text-[10px] text-zinc-500 uppercase tracking-wide">TPS</div>
+                <div className="text-lg font-[900] text-cyan-600">7</div>
+                <div className="text-[10px] text-zinc-500 uppercase tracking-wide">Countries</div>
               </div>
               <div className="bg-white rounded-xl p-3 ring-1 ring-zinc-200/60 text-center">
-                <div className="text-lg font-[900] text-violet-600">1s</div>
-                <div className="text-[10px] text-zinc-500 uppercase tracking-wide">Blocks</div>
+                <div className="text-lg font-[900] text-violet-600">0.0115</div>
+                <div className="text-[10px] text-zinc-500 uppercase tracking-wide">Total KAS</div>
               </div>
               <div className="bg-white rounded-xl p-3 ring-1 ring-zinc-200/60 text-center">
-                <div className="text-lg font-[900] text-emerald-600">0%</div>
-                <div className="text-[10px] text-zinc-500 uppercase tracking-wide">Premine</div>
+                <div className="text-lg font-[900] text-emerald-600">~1s</div>
+                <div className="text-[10px] text-zinc-500 uppercase tracking-wide">Per TX</div>
               </div>
             </div>
           </motion.div>
