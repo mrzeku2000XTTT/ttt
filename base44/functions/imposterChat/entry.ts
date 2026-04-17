@@ -92,39 +92,10 @@ Reply ONLY as JSON with these fields:
         return Response.json({ reply: "no record_id came back. render failed." });
       }
 
-      // Step 2: poll for completion (up to ~90s)
-      let videoUrl = null;
-      let errored = false;
-      for (let i = 0; i < 18; i++) {
-        await new Promise((r) => setTimeout(r, 5000));
-        const pollRes = await fetch(`${RENDER_BASE}/api/apps/69e00a3b3c4957544571e863/functions/kaiHyperFrames?record_id=${recordId}`, {
-          headers: renderHeaders,
-        });
-        if (!pollRes.ok) continue;
-        const pollData = await pollRes.json();
-        if (pollData.status === "done" && pollData.video_url) {
-          videoUrl = pollData.video_url;
-          break;
-        }
-        if (pollData.status === "error") {
-          errored = true;
-          break;
-        }
-      }
-
-      if (errored) {
-        return Response.json({ reply: "render failed on the backend. give it another shot." });
-      }
-      if (!videoUrl) {
-        return Response.json({
-          reply: `🎬 still rendering. check back in a minute — job id: ${recordId}`,
-          action: { type: "video_pending", record_id: recordId },
-        });
-      }
-
+      // Return immediately — frontend polls via imposterRenderStatus
       return Response.json({
-        reply: `🎬 your video is ready: ${videoUrl}`,
-        action: { type: "video_ready", video_url: videoUrl, record_id: recordId },
+        reply: `🎬 rendering your ${duration}s video... this takes a few minutes. i'll show it here when it's ready.`,
+        action: { type: "video_pending", record_id: recordId },
       });
     } catch (err) {
       console.error("video render error:", err);
