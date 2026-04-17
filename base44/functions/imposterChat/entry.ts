@@ -93,7 +93,8 @@ Deno.serve(async (req) => {
     || /\bvideo\s+(about|for|of|showing|that|based\s+on)\b/i.test(message);
 
   if (hasVideoKeywords) {
-    // Create a FRESH conversation for each render so the poll only sees THIS job's output.
+    // Flow: create a Kai conversation → send the video request AS A MESSAGE → Kai agent
+    // internally calls kaiHyperFrames and posts the result back. We poll the conversation.
     let convId;
     try {
       convId = await createKaiConversation();
@@ -102,13 +103,12 @@ Deno.serve(async (req) => {
       return Response.json({ reply: "couldn't kick off the render. try again." });
     }
 
-    const neutralPrompt = `${message}\n\n[STYLE DIRECTIVE: Do NOT apply any Kaspa, crypto, blockchain, or brand-specific styling to scenes unless the user explicitly asks for it. Render scenes exactly as described in the user's prompt with no brand theming.]`;
-    triggerHyperFramesRender({
-      prompt: neutralPrompt,
-      conversation_id: convId,
-      title: (message || "Video").slice(0, 60),
-      image_urls: attachedImages,
-    }).catch(err => console.error("hyperframes trigger error:", err?.message || err));
+    const videoRequest = `Please render a video for me with kaiHyperFrames. Prompt: "${message}". Do NOT apply any Kaspa, crypto, or brand-specific styling unless the prompt explicitly asks for it. Once the video is ready, reply with the .mp4 URL.`;
+
+    // Send the request to Kai — fire-and-forget, frontend will poll the conversation for the video URL
+    sendKaiMessage(convId, videoRequest, attachedImages).catch(err =>
+      console.error("send kai message error:", err?.message || err)
+    );
 
     return Response.json({
       reply: "🎬 rendering your video… hang tight, this takes about a minute.",
