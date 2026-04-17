@@ -197,12 +197,29 @@ window.addEventListener('error', function(e) {
           return inside.split(',').map(function(n) { n = n.trim(); if (!n) return ''; return 'module.exports.' + n + ' = ' + n + ';'; }).join('\\n');
         });
 
-        // Reserve: if no default export was set but the file defines a top-level function/const named like the path, expose it
-        var fullSrc = 'with (__scope) { ' + prelude + src + '\\n; if (!module.exports.default && typeof ClonedUI !== "undefined") module.exports.default = ClonedUI; if (!module.exports.default && typeof App !== "undefined") module.exports.default = App; }';
+        // Build explicit var declarations for every referenced capitalized identifier (icons, components)
+        // This replaces the old "with (__scope)" approach which is banned in strict mode.
+        var RESERVED = { React:1, ReactDOM:1, Fragment:1, Math:1, Date:1, Object:1, Array:1, String:1, Number:1, Boolean:1, JSON:1, Promise:1, Map:1, Set:1, Error:1, RegExp:1, Symbol:1, Proxy:1, Reflect:1, ClonedUI:1, App:1, Component:1, NaN:1, Infinity:1 };
+        var refs = src.match(/\\b[A-Z][a-zA-Z0-9_]*\\b/g) || [];
+        var uniqueRefs = {};
+        for (var r = 0; r < refs.length; r++) {
+          var n = refs[r];
+          if (!RESERVED[n] && n.length > 1) uniqueRefs[n] = true;
+        }
+        var iconAssigns = Object.keys(uniqueRefs).map(function(n) {
+          return 'var ' + n + ' = (__LucideIcons[' + JSON.stringify(n) + '] || __FallbackIcon);';
+        }).join('\\n');
+
+        var fullSrc =
+          'var React = __globals.React, useState = __globals.useState, useEffect = __globals.useEffect, useRef = __globals.useRef, useMemo = __globals.useMemo, useCallback = __globals.useCallback, useReducer = __globals.useReducer, useContext = __globals.useContext, Fragment = __globals.Fragment;\\n' +
+          iconAssigns + '\\n' +
+          prelude + '\\n' +
+          src + '\\n' +
+          '; if (!module.exports.default && typeof ClonedUI !== "undefined") module.exports.default = ClonedUI; if (!module.exports.default && typeof App !== "undefined") module.exports.default = App;';
 
         var transpiled = window.Babel.transform(fullSrc, { presets: ['react'] }).code;
 
-        var scope = {
+        var globals = {
           React: React,
           useState: React.useState,
           useEffect: React.useEffect,
@@ -213,26 +230,9 @@ window.addEventListener('error', function(e) {
           useContext: React.useContext,
           Fragment: React.Fragment,
         };
-        // Add all lucide icons to scope
-        Object.keys(LucideIcons).forEach(function(k) { scope[k] = LucideIcons[k]; });
-        // Proxy fallback for any capitalized name (unknown icons)
-        var scopeProxy = new Proxy(scope, {
-          has: function(target, prop) {
-            // Only claim ownership of capitalized names (components/icons) we can provide.
-            // This prevents "with" from swallowing every identifier and returning undefined for things like window globals.
-            if (prop in target) return true;
-            if (typeof prop === 'string' && /^[A-Z]/.test(prop)) return true;
-            return false;
-          },
-          get: function(target, prop) {
-            if (prop in target) return target[prop];
-            if (typeof prop === 'string' && /^[A-Z]/.test(prop)) return FallbackIcon;
-            return undefined;
-          }
-        });
 
-        var fn = new Function('module', '__require', '__scope', transpiled);
-        fn(module, compileAndLoad, scopeProxy);
+        var fn = new Function('module', '__require', '__globals', '__LucideIcons', '__FallbackIcon', transpiled);
+        fn(module, compileAndLoad, globals, LucideIcons, FallbackIcon);
         return module.exports;
       }
 
