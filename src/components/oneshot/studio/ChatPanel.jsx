@@ -1,71 +1,122 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Sparkles, Loader2, FileCode, Brain, FileSearch, Wand2, CheckCircle2 } from "lucide-react";
+import { Send, Sparkles, Loader2, FileCode, Brain, FileSearch, Wand2, CheckCircle2, FilePlus, FileX, Edit3, AlertCircle, ListTree, Zap } from "lucide-react";
 
-const STAGES = [
-  { at: 0,    icon: FileSearch, label: "Reading project files", detail: "Scanning file tree and current code" },
-  { at: 3,    icon: Brain,      label: "Thinking", detail: "Understanding your request" },
-  { at: 8,    icon: Wand2,      label: "Planning edits", detail: "Deciding which files to change" },
-  { at: 15,   icon: FileCode,   label: "Writing code", detail: "Generating new file contents" },
-  { at: 35,   icon: FileCode,   label: "Still writing", detail: "Larger edits take a bit longer…" },
-  { at: 60,   icon: CheckCircle2, label: "Finalizing", detail: "Almost done — packaging changes" },
-  { at: 90,   icon: Loader2,    label: "Taking longer than usual", detail: "Complex edits or heavy prompt — still working" },
-];
+const EVENT_META = {
+  iteration:    { icon: Zap,         color: "text-white/30",       label: "Step" },
+  thought:      { icon: Brain,       color: "text-violet-400",     label: "Thinking" },
+  tool_call:    { icon: Wand2,       color: "text-cyan-400",       label: "Tool" },
+  tool_result:  { icon: CheckCircle2,color: "text-emerald-400/80", label: "Result" },
+  file_change:  { icon: FileCode,    color: "text-emerald-400",    label: "File" },
+  error:        { icon: AlertCircle, color: "text-red-400",        label: "Error" },
+  done:         { icon: CheckCircle2,color: "text-emerald-400",    label: "Done" },
+};
 
-function LiveProgress() {
-  const [elapsed, setElapsed] = useState(0);
-  const startRef = useRef(Date.now());
+const TOOL_ICONS = {
+  list_files: ListTree,
+  read_file: FileSearch,
+  write_file: FilePlus,
+  find_replace: Edit3,
+  delete_file: FileX,
+  finish: CheckCircle2,
+};
 
-  useEffect(() => {
-    const t = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - startRef.current) / 1000));
-    }, 250);
-    return () => clearInterval(t);
-  }, []);
+function AgentEventRow({ event }) {
+  const meta = EVENT_META[event.type] || { icon: Zap, color: "text-white/40", label: event.type };
+  let Icon = meta.icon;
+  let text = "";
 
-  // Pick the current stage
-  let current = STAGES[0];
-  for (let i = 0; i < STAGES.length; i++) {
-    if (elapsed >= STAGES[i].at) current = STAGES[i];
+  switch (event.type) {
+    case "iteration":
+      text = `Step ${event.n}`;
+      break;
+    case "thought":
+      text = event.text;
+      break;
+    case "tool_call":
+      Icon = TOOL_ICONS[event.name] || Wand2;
+      if (event.name === "list_files") text = "Listing files…";
+      else if (event.name === "read_file") text = `Reading ${event.input?.path}`;
+      else if (event.name === "write_file") text = `Writing ${event.input?.path} (${event.input?.size} chars)`;
+      else if (event.name === "find_replace") text = `Editing ${event.input?.path} — "${event.input?.find_preview}…"`;
+      else if (event.name === "delete_file") text = `Deleting ${event.input?.path}`;
+      else if (event.name === "finish") text = `Finishing: ${event.input?.summary}`;
+      else text = event.name;
+      break;
+    case "tool_result":
+      text = event.summary;
+      break;
+    case "file_change":
+      text = `${event.action === "create" ? "Created" : event.action === "delete" ? "Deleted" : "Updated"} ${event.path}`;
+      break;
+    case "error":
+      text = event.message;
+      break;
+    case "done":
+      text = `Completed in ${event.iterations} step${event.iterations === 1 ? "" : "s"}`;
+      break;
+    default:
+      text = JSON.stringify(event);
   }
-  const Icon = current.icon;
+
+  if (event.type === "iteration") {
+    return (
+      <div className="flex items-center gap-2 py-1.5 text-[10px] uppercase tracking-widest text-white/25 font-bold">
+        <div className="h-px flex-1 bg-white/5" />
+        <span>{text}</span>
+        <div className="h-px flex-1 bg-white/5" />
+      </div>
+    );
+  }
 
   return (
-    <div className="flex justify-start">
-      <div className="bg-white/[0.04] border border-violet-500/20 rounded-xl px-3 py-2.5 min-w-[260px]">
-        <div className="flex items-center gap-2 mb-1.5">
-          <div className="relative flex-shrink-0">
-            <Icon className="w-3.5 h-3.5 text-violet-400 animate-pulse" />
-          </div>
-          <span className="text-white/90 text-[12.5px] font-semibold">{current.label}</span>
-          <span className="ml-auto text-[10px] text-white/40 font-mono tabular-nums">{elapsed}s</span>
+    <div className="flex items-start gap-2 py-1">
+      <Icon className={`w-3 h-3 mt-0.5 flex-shrink-0 ${meta.color}`} />
+      <div className="flex-1 min-w-0">
+        {event.type === "thought" ? (
+          <p className="text-[11.5px] text-white/65 leading-relaxed whitespace-pre-wrap">{text}</p>
+        ) : (
+          <p className="text-[11px] font-mono text-white/60 leading-relaxed break-words">{text}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AgentLiveView({ events }) {
+  const bottomRef = useRef(null);
+  useEffect(() => {
+    if (bottomRef.current) bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [events.length]);
+
+  return (
+    <div className="flex justify-start w-full">
+      <div className="bg-white/[0.03] border border-violet-500/20 rounded-xl px-3 py-2.5 w-full max-w-full">
+        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/5">
+          <Loader2 className="w-3.5 h-3.5 text-violet-400 animate-spin" />
+          <span className="text-white/80 text-[11.5px] font-bold uppercase tracking-widest">Agent working</span>
+          <span className="ml-auto text-[10px] text-white/30 font-mono">{events.length} events</span>
         </div>
-        <p className="text-white/40 text-[11px] pl-5.5 ml-[2px] leading-relaxed">{current.detail}</p>
-        <div className="mt-2 flex gap-0.5">
-          {STAGES.slice(0, 6).map((s, i) => {
-            const isPast = elapsed >= s.at;
-            const isActive = current.at === s.at;
-            return (
-              <div
-                key={i}
-                className={`h-0.5 flex-1 rounded-full transition-all ${
-                  isActive ? "bg-violet-400 animate-pulse" : isPast ? "bg-violet-500/60" : "bg-white/10"
-                }`}
-              />
-            );
-          })}
+        <div className="max-h-60 overflow-y-auto pr-1 space-y-0.5">
+          {events.length === 0 && (
+            <p className="text-white/30 text-[11px] italic py-2">Waking up Claude…</p>
+          )}
+          {events.map((ev, i) => (
+            <AgentEventRow key={i} event={ev} />
+          ))}
+          <div ref={bottomRef} />
         </div>
       </div>
     </div>
   );
 }
 
-export default function ChatPanel({ history, onSend, sending }) {
+export default function ChatPanel({ history, onSend, sending, agentEvents = [] }) {
   const [input, setInput] = useState("");
   const scrollRef = useRef(null);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [history, sending]);
+  }, [history, sending, agentEvents.length]);
 
   const submit = () => {
     const msg = input.trim();
@@ -79,11 +130,11 @@ export default function ChatPanel({ history, onSend, sending }) {
       <div className="flex items-center gap-2 px-4 py-2 border-b border-white/[0.05]">
         <Sparkles className="w-3.5 h-3.5 text-violet-400" />
         <span className="text-[11px] font-bold uppercase tracking-widest text-white/60">AI Chat</span>
-        <span className="text-[10px] text-white/30 ml-auto">Claude Sonnet 4.6</span>
+        <span className="text-[10px] text-white/30 ml-auto">Claude Sonnet 4.5 · Agentic</span>
       </div>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
-        {history.length === 0 && (
+        {history.length === 0 && !sending && (
           <div className="text-center py-8">
             <Sparkles className="w-8 h-8 text-violet-400/50 mx-auto mb-3" />
             <p className="text-white/40 text-sm mb-1">Chat with Claude to edit your project</p>
@@ -113,7 +164,7 @@ export default function ChatPanel({ history, onSend, sending }) {
           </div>
         ))}
 
-        {sending && <LiveProgress />}
+        {sending && <AgentLiveView events={agentEvents} />}
       </div>
 
       <div className="p-3 border-t border-white/[0.05]">

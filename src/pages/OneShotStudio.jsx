@@ -16,6 +16,7 @@ export default function OneShotStudio() {
   const [editedContent, setEditedContent] = useState({}); // { path: content } — local unsaved edits
   const [saving, setSaving] = useState(false);
   const [chatSending, setChatSending] = useState(false);
+  const [agentEvents, setAgentEvents] = useState([]); // live stream of agent activity
   const [error, setError] = useState(null);
 
   // Load project by ?id= or ?bootstrap= (JSON payload from cloner)
@@ -160,6 +161,7 @@ export default function OneShotStudio() {
   const sendChat = async (message) => {
     if (!project || chatSending) return;
     setChatSending(true);
+    setAgentEvents([]);
 
     // Optimistically append user message
     const optimisticHistory = [
@@ -169,23 +171,62 @@ export default function OneShotStudio() {
     setProject((prev) => ({ ...prev, chat_history: optimisticHistory }));
 
     try {
-      const res = await base44.functions.invoke("oneshotEdit", {
-        projectId: project.id,
-        userMessage: message,
+      // Stream the agent function via base44.functions.fetch (auth handled automatically)
+      const resp = await base44.functions.fetch("oneshotAgent", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ projectId: project.id, userMessage: message }),
       });
-      if (res.data?.error) throw new Error(res.data.error);
-      setProject(res.data.project);
-      // Clear local edits for files that were changed
-      if (res.data.files_changed?.length) {
-        setEditedContent((prev) => {
-          const copy = { ...prev };
-          for (const p of res.data.files_changed) delete copy[p];
-          return copy;
-        });
+
+      if (!resp.ok || !resp.body) {
+        const errText = await resp.text().catch(() => "");
+        throw new Error(errText || `HTTP ${resp.status}`);
+      }
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let finalProject = null;
+      let finalFilesChanged = [];
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let idx;
+        while ((idx = buffer.indexOf("\n\n")) !== -1) {
+          const chunk = buffer.slice(0, idx);
+          buffer = buffer.slice(idx + 2);
+          const line = chunk.split("\n").find((l) => l.startsWith("data: "));
+          if (!line) continue;
+          let ev;
+          try { ev = JSON.parse(line.slice(6)); } catch { continue; }
+
+          setAgentEvents((prev) => [...prev, ev]);
+
+          if (ev.type === "done") {
+            finalProject = ev.project;
+            finalFilesChanged = ev.files_changed || [];
+          } else if (ev.type === "error") {
+            throw new Error(ev.message || "Agent error");
+          }
+        }
+      }
+
+      if (finalProject) {
+        setProject(finalProject);
+        if (finalFilesChanged.length) {
+          setEditedContent((prev) => {
+            const copy = { ...prev };
+            for (const p of finalFilesChanged) delete copy[p];
+            return copy;
+          });
+        }
       }
     } catch (e) {
-      alert("AI edit failed: " + e.message);
-      // Revert optimistic update
+      setAgentEvents((prev) => [...prev, { type: "error", message: e.message }]);
+      // Revert optimistic user message
       setProject((prev) => ({ ...prev, chat_history: project.chat_history }));
     }
     setChatSending(false);
@@ -308,6 +349,7 @@ export default function OneShotStudio() {
               history={project.chat_history || []}
               onSend={sendChat}
               sending={chatSending}
+              agentEvents={agentEvents}
             />
           </div>
         </div>
