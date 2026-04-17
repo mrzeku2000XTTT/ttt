@@ -34,6 +34,14 @@ export default function KaspaAvatarChat() {
   const [isOpen, setIsOpen] = useState(false);
   const [videoUrl, setVideoUrl] = useState(() => localStorage.getItem(STORAGE_KEY) || DEFAULT_VIDEO_URL);
   const [messages, setMessages] = useState(() => {
+    // Restore persisted messages so remounts (route changes) don't wipe the chat
+    try {
+      const saved = localStorage.getItem("kai_messages");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
     let mode = "kai";
     let storedIdentity = null;
     try { mode = localStorage.getItem("kai_mode") || "kai"; } catch {}
@@ -122,6 +130,14 @@ export default function KaspaAvatarChat() {
   useEffect(() => { try { localStorage.setItem("kai_show_bubble", String(showBubble)); } catch {} }, [showBubble]);
   useEffect(() => { try { localStorage.setItem("kai_mode", kaiMode); } catch {} }, [kaiMode]);
   useEffect(() => { try { localStorage.setItem("kai_speed", responseSpeed); } catch {} }, [responseSpeed]);
+  // Persist messages so route changes / remounts don't wipe chat history
+  useEffect(() => {
+    try {
+      // Keep last 50 to avoid unbounded growth
+      const toSave = messages.slice(-50);
+      localStorage.setItem("kai_messages", JSON.stringify(toSave));
+    } catch {}
+  }, [messages]);
 
   // Rotate bubble facts
   useEffect(() => {
@@ -450,6 +466,7 @@ export default function KaspaAvatarChat() {
   const resetChat = () => {
     setIsOpen(false); setShowSettings(false); setIsLoading(false);
     setTypingIndex(-1); setTypingText(""); setBrowserUrl(null); setShowBrowser(false); setViewingPost(null);
+    try { localStorage.removeItem("kai_messages"); } catch {}
     const welcomes = {
       kai: "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem.",
       classic: "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything.",
