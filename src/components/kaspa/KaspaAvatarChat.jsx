@@ -151,10 +151,13 @@ export default function KaspaAvatarChat() {
   }, [typingIndex, typingText, messages]);
 
   const handleImageUpload = async (e) => {
+    const MAX_IMAGES = 10;
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
+    const remaining = MAX_IMAGES - pendingImages.length;
+    const toUpload = files.slice(0, remaining);
     setUploadingImage(true);
-    for (const file of files) {
+    for (const file of toUpload) {
       try {
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
         setPendingImages(prev => [...prev, { url: file_url, name: file.name }]);
@@ -718,15 +721,18 @@ export default function KaspaAvatarChat() {
             {/* Input */}
             <div className="px-3 pb-3 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.08)", display: (showBrowser && (browserUrl || viewingPost)) || (kaiMode === "imposter" && !imposterIdentity) ? "none" : undefined }}>
               {pendingImages.length > 0 && (
-                <div className="flex items-center gap-1.5 px-2 pb-2 overflow-x-auto scrollbar-hide">
-                  {pendingImages.map((img, idx) => (
-                    <div key={idx} className="relative flex-shrink-0">
-                      <img src={img.url} alt={img.name} className="w-12 h-12 rounded-lg object-cover ring-1 ring-cyan-500/40" />
-                      <button onClick={() => removePendingImage(idx)} className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-                        <X className="w-2.5 h-2.5 text-white" />
-                      </button>
-                    </div>
-                  ))}
+                <div className="px-2 pb-2">
+                  <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+                    {pendingImages.map((img, idx) => (
+                      <div key={idx} className="relative flex-shrink-0">
+                        <img src={img.url} alt={img.name} className="w-12 h-12 rounded-lg object-cover ring-1 ring-cyan-500/40" />
+                        <button onClick={() => removePendingImage(idx)} className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                          <X className="w-2.5 h-2.5 text-white" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-[9px] text-white/40 mt-1 px-1">{pendingImages.length}/10 images attached</div>
                 </div>
               )}
               <div className="flex items-center gap-2 px-3 py-2 rounded-2xl" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
