@@ -1,0 +1,114 @@
+{
+  "name": "OneShotProject",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Project name"
+    },
+    "source_url": {
+      "type": "string",
+      "description": "Original cloned URL"
+    },
+    "screenshot_url": {
+      "type": "string",
+      "description": "Original site screenshot"
+    },
+    "design_spec": {
+      "type": "object",
+      "description": "Design spec from the cloner",
+      "additionalProperties": true
+    },
+    "files": {
+      "type": "array",
+      "description": "Virtual file system for this project",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "File path, e.g. /Home.jsx"
+          },
+          "content": {
+            "type": "string",
+            "description": "File contents"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "jsx",
+              "js",
+              "css",
+              "md",
+              "json"
+            ],
+            "default": "jsx"
+          }
+        },
+        "required": [
+          "path",
+          "content"
+        ]
+      },
+      "default": []
+    },
+    "entry_file": {
+      "type": "string",
+      "default": "/Home.jsx",
+      "description": "Default file to preview"
+    },
+    "chat_history": {
+      "type": "array",
+      "description": "AI chat history for this project",
+      "items": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ]
+          },
+          "content": {
+            "type": "string"
+          },
+          "files_changed": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Paths of files modified by this message"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "role",
+          "content"
+        ]
+      },
+      "default": []
+    }
+  },
+  "required": [
+    "name",
+    "files"
+  ],
+  "rls": {
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}
