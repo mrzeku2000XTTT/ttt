@@ -5,6 +5,7 @@ const KAI_AGENT_ID = '69e00a3b3c4957544571e863';
 const KAI_API_KEY = '7d4e7751d1ac406dae4df07533c5e566';
 const KAI_BASE_URL = `https://app.base44.com/api/agents/${KAI_AGENT_ID}`;
 const KAI_HYPERFRAMES_URL = `https://kais-backend-brain-superagent-for-4571e863.base44.app/functions/kaiHyperFrames`;
+const KAI_PERMANENT_CONVERSATION_ID = '69e256be7f05f4e720b18ab8';
 
 async function triggerHyperFramesRender({ prompt, conversation_id, title = "Kai Video", duration = 15, style = "kaspa" }) {
   const res = await fetch(KAI_HYPERFRAMES_URL, {
@@ -87,10 +88,10 @@ Deno.serve(async (req) => {
 
   if (hasVideoKeywords) {
     try {
-      // Create a Kai conversation so the finished video posts back automatically
-      const convId = await createKaiConversation();
+      // Use permanent conversation so Kai always catches the render job (no race condition)
+      const convId = KAI_PERMANENT_CONVERSATION_ID;
 
-      // Hit kaiHyperFrames — it posts a RENDER_JOB into the conversation, Kai wakes up, renders, and posts the finished video URL back to the conversation.
+      // Hit kaiHyperFrames — posts a RENDER_JOB into the permanent conversation, Kai picks it up and posts the finished video URL back.
       await triggerHyperFramesRender({
         prompt: message,
         conversation_id: convId,
