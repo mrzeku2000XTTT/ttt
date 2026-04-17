@@ -96,7 +96,6 @@ Deno.serve(async (req) => {
       conversation_id: convId,
       title: "Kai Video",
       duration: 15,
-      style: "kaspa",
     }).catch(err => console.error("hyperframes trigger error:", err?.message || err));
 
     return Response.json({
