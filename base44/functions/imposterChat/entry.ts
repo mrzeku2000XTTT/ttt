@@ -78,9 +78,10 @@ Deno.serve(async (req) => {
       const convId = await createKaiConversation();
 
       // Fire-and-forget: don't await Kai's full render response (it blocks for minutes)
+      // Include conversation_id in the prompt so Superagent can post back to this chat
       sendKaiMessage(
         convId,
-        `Make a video: ${message} --title "${title}" --duration 15 --style dark`,
+        `Make a video: ${message} --title "${title}" --duration 15 --style dark --conversation_id ${convId}`,
         attachedImages
       ).catch(err => console.error("sendKaiMessage bg error:", err?.message || err));
 
