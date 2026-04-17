@@ -78,12 +78,21 @@ Deno.serve(async (req) => {
       const convId = await createKaiConversation();
 
       // Fire-and-forget: don't await Kai's full render response (it blocks for minutes)
-      // Include conversation_id in the prompt so Superagent can post back to this chat
-      sendKaiMessage(
-        convId,
-        `Make a video: ${message} --title "${title}" --duration 15 --style dark --conversation_id ${convId}`,
-        attachedImages
-      ).catch(err => console.error("sendKaiMessage bg error:", err?.message || err));
+      // Embed conversation_id explicitly so Superagent saves it on the VideoRender record
+      // and can auto-post the finished video back to THIS chat.
+      const renderPrompt = [
+        `Make a video: ${message}`,
+        ``,
+        `--- RENDER METADATA (save these on the VideoRender record) ---`,
+        `conversation_id: ${convId}`,
+        `title: ${title}`,
+        `duration: 15`,
+        `style: dark`,
+        `callback: post video URL back to conversation_id ${convId} when done`,
+      ].join("\n");
+
+      sendKaiMessage(convId, renderPrompt, attachedImages)
+        .catch(err => console.error("sendKaiMessage bg error:", err?.message || err));
 
       return Response.json({
         reply: "🎬 rendering your video… hang tight, this takes a minute or two.",
