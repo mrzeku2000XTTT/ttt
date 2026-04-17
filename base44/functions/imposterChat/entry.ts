@@ -87,31 +87,25 @@ Deno.serve(async (req) => {
     || /\bvideo\s+(about|for|of|showing|that)\b/i.test(message);
 
   if (hasVideoKeywords) {
-    try {
-      // Use permanent conversation so Kai always catches the render job (no race condition)
-      const convId = KAI_PERMANENT_CONVERSATION_ID;
+    // Use permanent conversation so Kai always catches the render job (no race condition)
+    const convId = KAI_PERMANENT_CONVERSATION_ID;
 
-      // Hit kaiHyperFrames — posts a RENDER_JOB into the permanent conversation, Kai picks it up and posts the finished video URL back.
-      await triggerHyperFramesRender({
-        prompt: message,
+    // Fire kaiHyperFrames in background — don't await, or frontend times out before it can start polling.
+    triggerHyperFramesRender({
+      prompt: message,
+      conversation_id: convId,
+      title: "Kai Video",
+      duration: 15,
+      style: "kaspa",
+    }).catch(err => console.error("hyperframes trigger error:", err?.message || err));
+
+    return Response.json({
+      reply: "🎬 rendering your video… hang tight, this takes about a minute.",
+      action: {
+        type: "video_processing",
         conversation_id: convId,
-        title: "Kai Video",
-        duration: 15,
-        style: "kaspa",
-      });
-
-      return Response.json({
-        reply: "🎬 rendering your video… hang tight, this takes about a minute.",
-        action: {
-          type: "video_processing",
-          conversation_id: convId,
-        },
-      });
-
-    } catch (err) {
-      console.error("video render error:", err?.message || err);
-      return Response.json({ reply: `render broke: ${err?.message || "unknown error"}. try again.` });
-    }
+      },
+    });
   }
 
   // Detect learn/train intent
