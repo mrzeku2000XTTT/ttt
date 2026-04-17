@@ -303,6 +303,7 @@ export default function KaspaAvatarChat() {
       message: userMsg,
       identity: identity ? { imposter_id: identity.imposter_id, subagent_name: identity.subagent_name, kaspa_address: identity.kaspa_address } : null,
       conversation_state: lastAction,
+      image_urls: imageUrls || [],
     });
 
     const data = res.data;

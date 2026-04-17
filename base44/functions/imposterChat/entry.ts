@@ -15,7 +15,8 @@ async function getBalance(address) {
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
-  const { message, identity, conversation_state } = await req.json();
+  const { message, identity, conversation_state, image_urls } = await req.json();
+  const attachedImages = Array.isArray(image_urls) ? image_urls.filter(u => typeof u === "string" && u.startsWith("http")) : [];
 
   const name = identity?.subagent_name || "IMPOSTER";
   const wallet = identity?.kaspa_address || null;
@@ -68,7 +69,7 @@ Reply ONLY as JSON with these fields:
           title,
           duration: 15,
           style: "dark",
-          images: [],
+          images: attachedImages,
         }),
       });
 
