@@ -33,9 +33,18 @@ export default function KaspaAvatarChat() {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [videoUrl, setVideoUrl] = useState(() => localStorage.getItem(STORAGE_KEY) || DEFAULT_VIDEO_URL);
-  const [messages, setMessages] = useState([
-    { role: "assistant", content: "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem." }
-  ]);
+  const [messages, setMessages] = useState(() => {
+    let mode = "kai";
+    let storedIdentity = null;
+    try { mode = localStorage.getItem("kai_mode") || "kai"; } catch {}
+    try { const s = localStorage.getItem("imposter_identity"); storedIdentity = s ? JSON.parse(s) : null; } catch {}
+    const welcomes = {
+      kai: "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem.",
+      classic: "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything.",
+      imposter: storedIdentity ? `back again, ${storedIdentity.subagent_name}. what do you want.` : "i'm IMPOSTER. i'm not supposed to be here. ask me something.",
+    };
+    return [{ role: "assistant", content: welcomes[mode] || welcomes.kai }];
+  });
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [browserUrl, setBrowserUrl] = useState(null);
