@@ -6,11 +6,11 @@ const KAI_API_KEY = '7d4e7751d1ac406dae4df07533c5e566';
 const KAI_BASE_URL = `https://app.base44.com/api/agents/${KAI_AGENT_ID}`;
 const KAI_HYPERFRAMES_URL = `https://kais-backend-brain-superagent-for-4571e863.base44.app/functions/kaiHyperFrames`;
 
-async function triggerHyperFramesRender({ prompt, conversation_id, title = "Kai Video", duration = 15, style = "kaspa" }) {
+async function triggerHyperFramesRender({ prompt, conversation_id, title = "Kai Video" }) {
   const res = await fetch(KAI_HYPERFRAMES_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, title, duration, style, conversation_id }),
+    body: JSON.stringify({ prompt, title, conversation_id }),
   });
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
@@ -96,11 +96,11 @@ Deno.serve(async (req) => {
     }
 
     // Fire kaiHyperFrames in background — don't await, or frontend times out before it can start polling.
+    // No hardcoded style or duration — let kaiHyperFrames infer from the user's prompt.
     triggerHyperFramesRender({
       prompt: message,
       conversation_id: convId,
       title: "Kai Video",
-      duration: 15,
     }).catch(err => console.error("hyperframes trigger error:", err?.message || err));
 
     return Response.json({
