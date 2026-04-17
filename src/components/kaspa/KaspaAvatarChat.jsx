@@ -298,6 +298,17 @@ export default function KaspaAvatarChat() {
 
     const data = res.data;
 
+    // Handle video render pending — show text reply + polling card
+    if (data?.action?.type === "video_pending" && data.action.record_id) {
+      if (data.reply) addAssistantMessage(data.reply);
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: null,
+        imposterRender: { record_id: data.action.record_id },
+      }]);
+      return;
+    }
+
     // Handle send transaction action
     if (data?.action?.type === "send_kas") {
       const { to_address, amount_kas, balance } = data.action;

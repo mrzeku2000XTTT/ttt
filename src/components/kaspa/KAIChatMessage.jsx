@@ -7,6 +7,7 @@ import { KAIBlocksAnimation } from "./KAIAnimations";
 import { setKaSshiGlobal, markKaSshiInlineVisited } from "@/components/KaSshiPlayer";
 import KAINewsCard from "./KAINewsCard";
 import KAIVideoCard from "./KAIVideoCard";
+import ImposterVideoRender from "./ImposterVideoRender";
 import { base44 } from "@/api/base44Client";
 
 export default function KAIChatMessage({ msg, index, typingIndex, typingText, setIsOpen, setBrowserUrl, setShowBrowser, setViewingPost, onWatchVideo }) {
@@ -148,6 +149,15 @@ export default function KAIChatMessage({ msg, index, typingIndex, typingText, se
         <div className="text-[11px] px-1" style={{ color: "rgba(255,255,255,0.4)" }}>
           Everything is pre-filled — just click to open your email client and send.
         </div>
+      </div>
+    );
+  }
+
+  // Imposter video render card — polls status & embeds video when ready
+  if (msg.imposterRender?.record_id) {
+    return (
+      <div className="flex justify-start">
+        <ImposterVideoRender recordId={msg.imposterRender.record_id} />
       </div>
     );
   }
