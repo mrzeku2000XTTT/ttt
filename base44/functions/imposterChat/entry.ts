@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { createClientFromRequest, createClient } from 'npm:@base44/sdk@0.8.25';
 
 const KASPA_API = 'https://api.kaspa.org';
 
@@ -53,50 +53,22 @@ Reply ONLY as JSON with these fields:
     try {
       const SUPERAGENT_APP_ID = "69e00a3b3c4957544571e863";
       const SUPERAGENT_KEY = Deno.env.get("SUPERAGENT_ZEKU_API_KEY") || "";
-      const API_BASE = `https://app.base44.com/api/apps/${SUPERAGENT_APP_ID}`;
-      const authHeaders = {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${SUPERAGENT_KEY}`,
-      };
+
+      const kai = createClient({ appId: SUPERAGENT_APP_ID, apiKey: SUPERAGENT_KEY });
 
       // Step 1 — create conversation
-      const convRes = await fetch(`${API_BASE}/agents/conversations`, {
-        method: "POST",
-        headers: authHeaders,
-        body: JSON.stringify({
-          agent_name: "agent",
-          metadata: { user_wallet: identity?.kaspa_address || "anon" },
-        }),
+      const conv = await kai.agents.createConversation({
+        agent_name: "agent",
+        metadata: { user_wallet: identity?.kaspa_address || "anon" },
       });
 
-      if (!convRes.ok) {
-        const errText = await convRes.text().catch(() => "");
-        console.error("superagent createConversation failed:", convRes.status, errText);
-        return Response.json({ reply: `superagent rejected (${convRes.status}). try again.` });
-      }
-
-      const conv = await convRes.json();
-      const convId = conv.id || conv.conversation_id;
-      if (!convId) {
-        console.error("no conversation id in response:", conv);
-        return Response.json({ reply: "superagent didn't return a conversation id." });
-      }
-
-      // Step 2 — add message & get response
-      const msgRes = await fetch(`${API_BASE}/agents/conversations/${convId}/messages`, {
-        method: "POST",
-        headers: authHeaders,
-        body: JSON.stringify({ role: "user", content: message }),
+      // Step 2 — send message and wait for Kai's reply
+      const response = await kai.agents.addMessage(conv, {
+        role: "user",
+        content: message,
       });
 
-      if (!msgRes.ok) {
-        const errText = await msgRes.text().catch(() => "");
-        console.error("superagent addMessage failed:", msgRes.status, errText);
-        return Response.json({ reply: `superagent rejected message (${msgRes.status}). try again.` });
-      }
-
-      const msgData = await msgRes.json();
-      const replyText = msgData.content || msgData.response || msgData.reply || "";
+      const replyText = response?.content || response?.reply || "";
       const mp4Match = replyText.match(/https?:\/\/\S+\.mp4/i);
 
       if (mp4Match) {
@@ -108,8 +80,8 @@ Reply ONLY as JSON with these fields:
 
       return Response.json({ reply: replyText || "render came back empty." });
     } catch (err) {
-      console.error("video render error:", err);
-      return Response.json({ reply: "render broke mid-flight. try again." });
+      console.error("video render error:", err?.message || err, err?.status, err?.response);
+      return Response.json({ reply: `render broke: ${err?.message || "unknown error"}. try again.` });
     }
   }
 
