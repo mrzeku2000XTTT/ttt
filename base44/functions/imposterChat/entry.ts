@@ -45,6 +45,84 @@ Reply ONLY as JSON with these fields:
     }
   });
 
+  // Detect video-generation intent
+  const hasVideoKeywords = /\b(make|create|generate|render|produce|do)\b.*\b(video|mp4|animation|clip|ad|advert|commercial|reel|short)\b/i.test(message)
+    || /\bvideo\s+(about|for|of|showing|that)\b/i.test(message);
+
+  if (hasVideoKeywords) {
+    try {
+      const origin = new URL(req.url).origin;
+
+      // Extract duration + style from the message
+      const durationMatch = message.match(/(\d+)\s*(?:sec|second|s\b)/i);
+      const duration = durationMatch ? Math.min(60, Math.max(5, parseInt(durationMatch[1]))) : 15;
+
+      let style = "kaspa";
+      if (/\bneon\b/i.test(message)) style = "neon";
+      else if (/\bdark\b/i.test(message)) style = "dark";
+      else if (/\blight\b/i.test(message)) style = "light";
+
+      // Step 1: create render job
+      const createRes = await fetch(`${origin}/functions/kaiHyperFrames`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: message,
+          title: "Imposter Render",
+          duration,
+          style,
+          resolution: "1920x1080",
+        }),
+      });
+
+      if (!createRes.ok) {
+        return Response.json({ reply: "render endpoint rejected the job. try again." });
+      }
+
+      const createData = await createRes.json();
+      const recordId = createData.record_id;
+      if (!recordId) {
+        return Response.json({ reply: "no record_id came back. render failed." });
+      }
+
+      // Step 2: poll for completion (up to ~90s)
+      let videoUrl = null;
+      let errored = false;
+      for (let i = 0; i < 18; i++) {
+        await new Promise((r) => setTimeout(r, 5000));
+        const pollRes = await fetch(`${origin}/functions/kaiHyperFrames?record_id=${recordId}`);
+        if (!pollRes.ok) continue;
+        const pollData = await pollRes.json();
+        if (pollData.status === "done" && pollData.video_url) {
+          videoUrl = pollData.video_url;
+          break;
+        }
+        if (pollData.status === "error") {
+          errored = true;
+          break;
+        }
+      }
+
+      if (errored) {
+        return Response.json({ reply: "render failed on the backend. give it another shot." });
+      }
+      if (!videoUrl) {
+        return Response.json({
+          reply: `🎬 still rendering. check back in a minute — job id: ${recordId}`,
+          action: { type: "video_pending", record_id: recordId },
+        });
+      }
+
+      return Response.json({
+        reply: `🎬 your video is ready: ${videoUrl}`,
+        action: { type: "video_ready", video_url: videoUrl, record_id: recordId },
+      });
+    } catch (err) {
+      console.error("video render error:", err);
+      return Response.json({ reply: "render broke mid-flight. try again." });
+    }
+  }
+
   // Detect learn/train intent + extract URL directly
   const urlMatch = message.match(/(https?:\/\/[^\s]+)/);
   const hasLearnKeywords = /^(fetch|learn|watch|ingest|train on|study|read|absorb)\s/i.test(message);
