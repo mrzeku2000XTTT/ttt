@@ -212,7 +212,7 @@ export default function TTTV2Page() {
         </button>
         <div className="hidden sm:flex items-center gap-6 text-[13px] font-medium text-zinc-500">
           <Link to="/Explore" className="hover:text-zinc-900 transition-colors">Explore</Link>
-          <a href="#products" className="hover:text-zinc-900 transition-colors">Products</a>
+          <Link to="/AppStoreV2" className="hover:text-zinc-900 transition-colors">Products</Link>
           <Link to="/WhatIsKaspa" className="hover:text-zinc-900 transition-colors">Kaspa</Link>
           <a href="#tttv" className="hover:text-zinc-900 transition-colors">TTTV</a>
           <a href="#community" className="hover:text-zinc-900 transition-colors">Community</a>
@@ -402,22 +402,22 @@ export default function TTTV2Page() {
       </motion.section>
 
       {/* ── TTTV Mini Player ── */}
-      <motion.div initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.7, delay: 0.1 }}>
+      <motion.div id="tttv" initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.7, delay: 0.1 }} style={{ scrollMarginTop: '60px' }}>
         <TTTVMini />
       </motion.div>
 
       {/* ── Community Videos ── */}
-      <motion.div initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.7, delay: 0.1 }}>
+      <motion.div id="community" initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.7, delay: 0.1 }} style={{ scrollMarginTop: '60px' }}>
         <CommunityVideos />
       </motion.div>
 
       {/* ── What's New (updates + posts + coming soon) ── */}
-      <motion.div initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.7, delay: 0.1 }}>
+      <motion.div id="news" initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.7, delay: 0.1 }} style={{ scrollMarginTop: '60px' }}>
         <WhatsNew kaspaUpdates={kaspaUpdates} posts={posts} />
       </motion.div>
 
       {/* ── Roadmap ── */}
-      <section id="roadmap" className="py-20 sm:py-28 px-5">
+      <section id="roadmap" className="py-20 sm:py-28 px-5" style={{ scrollMarginTop: '60px' }}>
         <div className="max-w-5xl mx-auto">
           <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-14">
             <p className="text-[13px] font-semibold text-zinc-400 tracking-wide uppercase mb-2">Progress</p>
