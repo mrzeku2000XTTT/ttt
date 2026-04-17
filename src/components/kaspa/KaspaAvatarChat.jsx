@@ -673,6 +673,15 @@ export default function KaspaAvatarChat() {
               {messages.map((msg, i) => (
                 <KAIChatMessage key={i} msg={msg} index={i} typingIndex={typingIndex} typingText={typingText}
                   setIsOpen={setIsOpen} setBrowserUrl={setBrowserUrl} setShowBrowser={setShowBrowser} setViewingPost={setViewingPost}
+                  onUseImageAsVideoRef={async (imageUrl, imagePrompt) => {
+                    const videoPrompt = imagePrompt ? `Make a video based on this image: ${imagePrompt}` : "Make a video based on this image";
+                    setMessages(prev => [...prev, { role: "user", content: videoPrompt, images: [imageUrl] }]);
+                    setIsLoading(true);
+                    try {
+                      await handleImposterMessage(videoPrompt, [imageUrl]);
+                    } catch { addAssistantMessage("render failed to kick off. try again."); }
+                    setIsLoading(false);
+                  }}
                   onWatchVideo={async (video, idx) => {
                     // Programmatically trigger "watch the Nth" ingestion
                     const ordinal = ['first', 'second', 'third', 'fourth', 'fifth'][idx] || 'first';

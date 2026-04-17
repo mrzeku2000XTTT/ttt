@@ -10,7 +10,7 @@ import KAIVideoCard from "./KAIVideoCard";
 import ImposterRenderLoader from "./ImposterRenderLoader";
 import { base44 } from "@/api/base44Client";
 
-export default function KAIChatMessage({ msg, index, typingIndex, typingText, setIsOpen, setBrowserUrl, setShowBrowser, setViewingPost, onWatchVideo }) {
+export default function KAIChatMessage({ msg, index, typingIndex, typingText, setIsOpen, setBrowserUrl, setShowBrowser, setViewingPost, onWatchVideo, onUseImageAsVideoRef }) {
   const [txState, setTxState] = useState("idle"); // idle | sending | done | error
   const [txResult, setTxResult] = useState(null);
   const navigate = useNavigate();
@@ -184,15 +184,27 @@ export default function KAIChatMessage({ msg, index, typingIndex, typingText, se
             <span className="text-cyan-400/80 font-semibold truncate">
               🖼️ {msg.imposterImage.prompt ? msg.imposterImage.prompt.slice(0, 60) : "image ready"}
             </span>
-            <a
-              href={msg.imposterImage.image_url}
-              download
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-white/60 hover:text-white transition-colors flex-shrink-0"
-            >
-              download
-            </a>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {onUseImageAsVideoRef && (
+                <button
+                  onClick={() => onUseImageAsVideoRef(msg.imposterImage.image_url, msg.imposterImage.prompt)}
+                  className="px-2 py-1 rounded-full text-[10px] font-bold transition-all hover:scale-105"
+                  style={{ background: "rgba(168,85,247,0.25)", border: "1px solid rgba(168,85,247,0.45)", color: "rgba(192,132,252,1)" }}
+                  title="Use this image as reference for a video render"
+                >
+                  🎬 Make video
+                </button>
+              )}
+              <a
+                href={msg.imposterImage.image_url}
+                download
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/60 hover:text-white transition-colors"
+              >
+                download
+              </a>
+            </div>
           </div>
         </div>
       </div>
