@@ -361,7 +361,7 @@ export default function KaspaAvatarChat() {
           const pollData = pollRes.data;
 
           if (pollData?.status === "ready" && pollData.video_url) {
-            // Replace progress card with final video
+            // Replace progress card with final video — done, no follow-up polling
             setMessages(prev => {
               const copy = [...prev];
               copy[progressIdx] = {
@@ -372,63 +372,6 @@ export default function KaspaAvatarChat() {
               return copy;
             });
             if (pollData.reply) addAssistantMessage(pollData.reply);
-
-            // Keep polling for follow-up renders — Kai may start another one
-            // Add a new "thinking" loader below the video to show ongoing activity
-            progressIdx = -1;
-            const followUpStart = Date.now();
-            const followUpPoll = async () => {
-              if (Date.now() - followUpStart > 45000) return; // stop after 45s of idle
-              try {
-                const fRes = await base44.functions.invoke('imposterPoll', { record_id: recordId });
-                const fData = fRes.data;
-                if (fData?.status === "ready" && fData.video_url) {
-                  // Another video came in — embed it
-                  setMessages(prev => [...prev, {
-                    role: "assistant",
-                    content: null,
-                    imposterVideo: { video_url: fData.video_url },
-                  }]);
-                  if (fData.reply) addAssistantMessage(fData.reply);
-                  setTimeout(followUpPoll, 4000);
-                } else if (fData?.status === "processing" && fData.progress) {
-                  // Kai is still talking / building — show a loader if we don't have one
-                  setMessages(prev => {
-                    // If last message is already a loader, update it
-                    const lastIdx = prev.length - 1;
-                    if (prev[lastIdx]?.imposterRender) {
-                      const copy = [...prev];
-                      copy[lastIdx] = {
-                        ...copy[lastIdx],
-                        imposterRender: {
-                          ...copy[lastIdx].imposterRender,
-                          status: "rendering",
-                          progress: fData.progress,
-                          elapsed: Math.floor((Date.now() - followUpStart) / 1000),
-                        },
-                      };
-                      return copy;
-                    }
-                    // Only add a new loader if Kai's text suggests another render
-                    const looksRendering = /\b(build|render|scene|making|creating|let me|generating)\b/i.test(fData.progress);
-                    if (looksRendering) {
-                      return [...prev, {
-                        role: "assistant",
-                        content: null,
-                        imposterRender: { status: "rendering", progress: fData.progress, elapsed: 0 },
-                      }];
-                    }
-                    return prev;
-                  });
-                  setTimeout(followUpPoll, 4000);
-                } else {
-                  setTimeout(followUpPoll, 4000);
-                }
-              } catch {
-                setTimeout(followUpPoll, 5000);
-              }
-            };
-            setTimeout(followUpPoll, 4000);
             return;
           }
 
