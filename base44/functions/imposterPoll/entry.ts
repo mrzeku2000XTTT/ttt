@@ -1,16 +1,56 @@
 const KAI_AGENT_ID = '69e00a3b3c4957544571e863';
 const KAI_API_KEY = '7d4e7751d1ac406dae4df07533c5e566';
 const KAI_BASE_URL = `https://app.base44.com/api/agents/${KAI_AGENT_ID}`;
+const KAI_HYPERFRAMES_URL = `https://kais-backend-brain-superagent-for-4571e863.base44.app/functions/kaiHyperFrames`;
 
 Deno.serve(async (req) => {
   try {
     const { record_id, conversation_id } = await req.json();
     const convId = conversation_id || record_id;
-    if (!convId) {
-      return Response.json({ error: "conversation_id required" }, { status: 400 });
+    if (!record_id && !convId) {
+      return Response.json({ error: "record_id or conversation_id required" }, { status: 400 });
     }
 
-    // Fetch the conversation — messages are embedded in the response
+    // Primary: direct status check against kaiHyperFrames
+    if (record_id) {
+      try {
+        const statusRes = await fetch(`${KAI_HYPERFRAMES_URL}?record_id=${encodeURIComponent(record_id)}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        if (statusRes.ok) {
+          const data = await statusRes.json();
+          const status = (data.status || "").toLowerCase();
+
+          if (status === "done" && data.video_url) {
+            return Response.json({
+              status: "ready",
+              video_url: data.video_url,
+              reply: "🎬 video ready",
+            });
+          }
+
+          if (status === "error") {
+            return Response.json({
+              status: "error",
+              error: data.error || "render failed",
+            });
+          }
+
+          // pending | rendering → fall through to conversation scan for progress text
+        }
+      } catch (err) {
+        console.error("hyperFrames status check failed:", err?.message || err);
+        // fall through to conversation scan
+      }
+    }
+
+    // Fallback: scan the Kai conversation for a posted video or progress updates
+    if (!convId) {
+      return Response.json({ status: "processing" });
+    }
+
     let res = await fetch(`${KAI_BASE_URL}/conversations/${convId}`, {
       method: "GET",
       headers: { "Content-Type": "application/json", "api_key": KAI_API_KEY },
@@ -24,19 +64,15 @@ Deno.serve(async (req) => {
     }
 
     if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      console.error("imposterPoll fetch failed:", res.status, errText);
-      return Response.json({ status: "error", error: `${res.status}: ${errText.slice(0, 200)}` });
+      return Response.json({ status: "processing" });
     }
 
     const data = await res.json();
     const messages = Array.isArray(data) ? data : (data.messages || data.items || []);
-
     const assistantMsgs = messages.filter(m => m.role === "assistant" || m.role === "agent");
     const latest = assistantMsgs[assistantMsgs.length - 1];
     const latestContent = latest?.content || "";
 
-    // Scan ALL assistant messages for an mp4 URL (most recent wins)
     let videoUrl = null;
     for (let i = assistantMsgs.length - 1; i >= 0; i--) {
       const content = assistantMsgs[i]?.content || "";

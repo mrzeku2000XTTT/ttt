@@ -4,6 +4,20 @@ const KASPA_API = 'https://api.kaspa.org';
 const KAI_AGENT_ID = '69e00a3b3c4957544571e863';
 const KAI_API_KEY = '7d4e7751d1ac406dae4df07533c5e566';
 const KAI_BASE_URL = `https://app.base44.com/api/agents/${KAI_AGENT_ID}`;
+const KAI_HYPERFRAMES_URL = `https://kais-backend-brain-superagent-for-4571e863.base44.app/functions/kaiHyperFrames`;
+
+async function triggerHyperFramesRender({ prompt, conversation_id, duration = 15, style = "kaspa", resolution = "1920x1080" }) {
+  const res = await fetch(KAI_HYPERFRAMES_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt, conversation_id, duration, style, resolution }),
+  });
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`kaiHyperFrames ${res.status}: ${errText.slice(0, 300)}`);
+  }
+  return await res.json();
+}
 
 async function getBalance(address) {
   try {
@@ -73,34 +87,29 @@ Deno.serve(async (req) => {
 
   if (hasVideoKeywords) {
     try {
-      const title = message.split(/\s+/).slice(0, 6).join(" ").slice(0, 60) || "Imposter Video";
+      // Create a Kai conversation so the finished video posts back automatically
       const convId = await createKaiConversation();
 
-      // Send a structured render request into the Kai conversation. Superagent's new
-      // HyperFrames pipeline parses the JSON block and creates a VideoRender record
-      // with conversation_id set, so it auto-posts the finished video back here.
-      const renderPrompt = [
-        `Make a video: ${message}`,
-        ``,
-        "```json",
-        JSON.stringify({
-          prompt: message,
-          conversation_id: convId,
-          title,
-          duration: 15,
-          style: "kaspa",
-          resolution: "1920x1080",
-        }, null, 2),
-        "```",
-      ].join("\n");
+      // Hit kaiHyperFrames directly — no polling needed, video posts back to conversation
+      const renderRes = await triggerHyperFramesRender({
+        prompt: message,
+        conversation_id: convId,
+        duration: 15,
+        style: "kaspa",
+        resolution: "1920x1080",
+      });
 
-      // Fire-and-forget — Kai's entity automation picks it up instantly on create
-      sendKaiMessage(convId, renderPrompt, attachedImages)
-        .catch(err => console.error("sendKaiMessage bg error:", err?.message || err));
+      if (!renderRes?.success || !renderRes.record_id) {
+        return Response.json({ reply: `render didn't start: ${renderRes?.message || "unknown"}. try again.` });
+      }
 
       return Response.json({
         reply: "🎬 rendering your video… hang tight, this takes about a minute.",
-        action: { type: "video_processing", conversation_id: convId, record_id: convId },
+        action: {
+          type: "video_processing",
+          conversation_id: convId,
+          record_id: renderRes.record_id,
+        },
       });
 
     } catch (err) {
