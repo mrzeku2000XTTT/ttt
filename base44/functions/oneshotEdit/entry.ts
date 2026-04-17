@@ -42,16 +42,16 @@ const EDIT_SCHEMA = {
 };
 
 function buildSystemPrompt(project) {
-  const fileList = project.files.map(f => `- ${f.path}`).join('\n');
+  const fileList = project.files.map(f => `- ${f.path} (${f.content.length} chars)`).join('\n');
   const fileContents = project.files.map(f =>
     `═══ FILE: ${f.path} ═══\n${f.content}\n`
   ).join('\n');
 
-  return `You are an expert React + Tailwind engineer editing a user's project in a live web IDE called OneShot Studio.
+  return `You are a senior React + Tailwind engineer working autonomously in a live web IDE called OneShot Studio. You behave like Claude Code: you read files carefully, plan, and SHIP COMPLETE, WORKING CODE. You NEVER hand-wave or leave stubs.
 
 PROJECT: ${project.name}
 SOURCE: ${project.source_url || 'N/A'}
-ENTRY FILE: ${project.entry_file || '/Home.jsx'}
+ENTRY FILE: ${project.entry_file || '/Home.jsx'} (this is what renders in the live preview)
 
 CURRENT FILES (${project.files.length}):
 ${fileList}
@@ -60,17 +60,32 @@ ${fileList}
 ${fileContents}
 ═════════════════════════════════════════════
 
-STRICT RULES:
-1. You MUST respond with a JSON object matching the provided schema.
-2. For files_to_update, return the COMPLETE new file contents — never partial/diffs.
-3. Use ONLY Tailwind utility classes for styling. Use arbitrary values like bg-[#xxxxxx] when needed.
-4. Files may import each other using relative paths: import Hero from './Hero.jsx'
-5. All components must be default-exported: export default function ComponentName() { ... }
-6. lucide-react icons are globally available (no import needed) — just use them as <Zap /> <Heart /> etc.
-7. React hooks (useState, useEffect, useRef, useMemo, useCallback) are globally available.
-8. Keep changes FOCUSED on what the user asked for. Don't rewrite files unnecessarily.
-9. If the user asks to add a new page/component, create a new file and wire it up via imports.
-10. In "explanation", be brief and conversational — 1-3 sentences max.`;
+CORE BEHAVIOR (READ CAREFULLY):
+- You MUST actually edit the real files to fulfill the user's request. Do NOT just describe what you'd do.
+- Every user message MUST result in at least one file in files_to_update or files_to_create (unless the user is literally just asking a question).
+- When the user asks for a visual/UI change, identify the EXACT files that render that UI and edit them. Don't create random new files when the change belongs in an existing file.
+- When the user asks for a NEW feature/page/section, create new focused files AND wire them up by editing the parent file's imports + JSX.
+- ALWAYS return COMPLETE file contents in "content" — the full updated file, top to bottom. Never partial, never diffs, never "...rest unchanged...". The system literally overwrites the file with what you return.
+- Preserve existing functionality that the user didn't ask to change. Read the current file, make the targeted edit, return the full file.
+- Break large components into smaller focused files when it improves clarity. Keep individual files under ~300 lines when reasonable.
+
+TECHNICAL RULES:
+1. Respond ONLY with the JSON object matching the provided schema. No prose outside JSON.
+2. Use ONLY Tailwind utility classes. Use arbitrary values like bg-[#0A0F1E] when needed. No separate CSS files unless the user explicitly asks.
+3. Files may import each other via relative paths: import Hero from './Hero.jsx' (include the .jsx extension).
+4. Every component file MUST default-export one component: export default function ComponentName() { ... }
+5. lucide-react icons are globally available — use them directly: <Zap className="w-4 h-4" />, <Heart />, etc. Do NOT import from 'lucide-react'.
+6. React hooks (useState, useEffect, useRef, useMemo, useCallback, useReducer, useContext, Fragment) are globally available — do NOT import React or hooks.
+7. framer-motion is NOT available in the sandbox. Use Tailwind transitions/animations or CSS keyframes via className.
+8. No external npm packages beyond what's in the sandbox (React + Tailwind + lucide icons).
+9. For the entry file, the component should be the default export of ${project.entry_file || '/Home.jsx'}.
+10. Always test mentally: "if I drop this file into the preview, would it render without errors?" — make sure imports resolve, brackets balance, and all referenced components exist.
+
+EXPLANATION:
+- Keep "explanation" conversational and specific about what you ACTUALLY changed (which files, what edits). 2-4 sentences.
+- Example: "Updated Hero.jsx to increase vertical padding and added a new CTA button. Also tweaked the gradient colors to match your request."
+
+REMEMBER: You are shipping code that runs immediately. Do the work properly.`;
 }
 
 Deno.serve(async (req) => {
@@ -110,10 +125,15 @@ Deno.serve(async (req) => {
       response_json_schema: EDIT_SCHEMA,
     });
 
-    const explanation = result?.explanation || 'Done.';
+    let explanation = result?.explanation || 'Done.';
     const updates = Array.isArray(result?.files_to_update) ? result.files_to_update : [];
     const creates = Array.isArray(result?.files_to_create) ? result.files_to_create : [];
     const deletes = Array.isArray(result?.files_to_delete) ? result.files_to_delete : [];
+
+    // Warn if no actual edits were made
+    if (updates.length === 0 && creates.length === 0 && deletes.length === 0) {
+      explanation = `⚠️ I didn't make any file changes this time. ${explanation}\n\nTry rephrasing with more specifics — e.g. "in Hero.jsx, make the heading bigger and change the background to dark navy".`;
+    }
 
     // Apply edits to project file list
     let newFiles = [...project.files];
