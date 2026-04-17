@@ -319,8 +319,8 @@ export default function KaspaAvatarChat() {
     }
 
     // Handle async video render — poll imposterPoll until ready
-    if (data?.action?.type === "video_processing" && data.action.conversation_id) {
-      const convId = data.action.conversation_id;
+    if (data?.action?.type === "video_processing" && (data.action.record_id || data.action.conversation_id)) {
+      const recordId = data.action.record_id || data.action.conversation_id;
 
       // Add a single progress message we'll update in-place while polling
       let progressIdx;
@@ -353,7 +353,7 @@ export default function KaspaAvatarChat() {
       const poll = async () => {
         attempt++;
         try {
-          const pollRes = await base44.functions.invoke('imposterPoll', { conversation_id: convId });
+          const pollRes = await base44.functions.invoke('imposterPoll', { record_id: recordId });
           const pollData = pollRes.data;
 
           if (pollData?.status === "ready" && pollData.video_url) {
@@ -376,7 +376,7 @@ export default function KaspaAvatarChat() {
             const followUpPoll = async () => {
               if (Date.now() - followUpStart > 45000) return; // stop after 45s of idle
               try {
-                const fRes = await base44.functions.invoke('imposterPoll', { conversation_id: convId });
+                const fRes = await base44.functions.invoke('imposterPoll', { record_id: recordId });
                 const fData = fRes.data;
                 if (fData?.status === "ready" && fData.video_url) {
                   // Another video came in — embed it

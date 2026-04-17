@@ -51,45 +51,43 @@ Reply ONLY as JSON with these fields:
 
   if (hasVideoKeywords) {
     try {
-      const SUPERAGENT_APP_ID = "69e00a3b3c4957544571e863";
-      const SUPERAGENT_KEY = Deno.env.get("SUPERAGENT_ZEKU_API_KEY") || "";
-      const API_BASE = `https://app.base44.com/api/agents/${SUPERAGENT_APP_ID}`;
-      const headers = {
-        "Content-Type": "application/json",
-        "api_key": SUPERAGENT_KEY,
-      };
+      const HYPERFRAMES_URL = "https://kais-backend-brain-superagent-for-4571e863.base44.app/functions/kaiHyperFrames";
+      const HYPERFRAMES_KEY = Deno.env.get("KAI_HYPERFRAMES_API_KEY") || "";
 
-      // Step 1 — create conversation (admin mode enabled)
-      const convRes = await fetch(`${API_BASE}/conversations`, {
+      // Extract a short title from the message (first 5 words)
+      const title = message.split(/\s+/).slice(0, 6).join(" ").slice(0, 60) || "Imposter Video";
+
+      const hfRes = await fetch(HYPERFRAMES_URL, {
         method: "POST",
-        headers,
-        body: JSON.stringify({ admin_mode: true }),
+        headers: {
+          "Content-Type": "application/json",
+          "api_key": HYPERFRAMES_KEY,
+        },
+        body: JSON.stringify({
+          prompt: message,
+          title,
+          duration: 15,
+          style: "dark",
+          images: [],
+        }),
       });
 
-      if (!convRes.ok) {
-        const errText = await convRes.text().catch(() => "");
-        console.error("superagent createConversation failed:", convRes.status, errText);
-        return Response.json({ reply: `superagent rejected (${convRes.status}): ${errText.slice(0, 200)}` });
+      if (!hfRes.ok) {
+        const errText = await hfRes.text().catch(() => "");
+        console.error("kaiHyperFrames failed:", hfRes.status, errText);
+        return Response.json({ reply: `render rejected (${hfRes.status}): ${errText.slice(0, 200)}` });
       }
 
-      const conv = await convRes.json();
-      const convId = conv.id || conv.conversation_id;
-      if (!convId) {
-        console.error("no conversation id:", conv);
-        return Response.json({ reply: "superagent didn't return a conversation id." });
+      const hfData = await hfRes.json();
+      const recordId = hfData.record_id || hfData.id;
+      if (!recordId) {
+        console.error("no record_id from kaiHyperFrames:", hfData);
+        return Response.json({ reply: "render didn't return a record id." });
       }
 
-      // Step 2 — fire message WITHOUT awaiting (fire & forget)
-      fetch(`${API_BASE}/conversations/${convId}/messages`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ role: "user", content: message }),
-      }).catch((e) => console.error("fire-and-forget msg send failed:", e?.message || e));
-
-      // Step 3 — return immediately so frontend can start polling
       return Response.json({
         reply: "🎬 rendering your video… hang tight, this takes a minute or two.",
-        action: { type: "video_processing", conversation_id: convId },
+        action: { type: "video_processing", record_id: recordId },
       });
     } catch (err) {
       console.error("video render error:", err?.message || err);
