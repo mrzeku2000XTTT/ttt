@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
       const convId = await createKaiConversation();
 
       // Hit kaiHyperFrames — it posts a RENDER_JOB into the conversation, Kai wakes up, renders, and posts the finished video URL back to the conversation.
-      const renderRes = await triggerHyperFramesRender({
+      await triggerHyperFramesRender({
         prompt: message,
         conversation_id: convId,
         title: "Kai Video",
@@ -99,15 +99,11 @@ Deno.serve(async (req) => {
         style: "kaspa",
       });
 
-      // Accept any of the common id field names (optional — conversation_id is sufficient for polling)
-      const recordId = renderRes?.record_id || renderRes?.id || renderRes?.job_id || renderRes?.data?.record_id || renderRes?.data?.id || null;
-
       return Response.json({
         reply: "🎬 rendering your video… hang tight, this takes about a minute.",
         action: {
           type: "video_processing",
           conversation_id: convId,
-          record_id: recordId,
         },
       });
 

@@ -1,56 +1,13 @@
 const KAI_AGENT_ID = '69e00a3b3c4957544571e863';
 const KAI_API_KEY = '7d4e7751d1ac406dae4df07533c5e566';
 const KAI_BASE_URL = `https://app.base44.com/api/agents/${KAI_AGENT_ID}`;
-const KAI_HYPERFRAMES_URL = `https://kais-backend-brain-superagent-for-4571e863.base44.app/functions/kaiHyperFrames`;
 
 Deno.serve(async (req) => {
   try {
-    const { record_id, conversation_id } = await req.json();
+    const { conversation_id, record_id } = await req.json();
     const convId = conversation_id || record_id;
-    if (!record_id && !convId) {
-      return Response.json({ error: "record_id or conversation_id required" }, { status: 400 });
-    }
-
-    // Primary: direct status check against kaiHyperFrames
-    if (record_id) {
-      try {
-        const statusRes = await fetch(`${KAI_HYPERFRAMES_URL}?record_id=${encodeURIComponent(record_id)}`, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        });
-
-        if (statusRes.ok) {
-          const data = await statusRes.json();
-          const status = (data.status || "").toLowerCase();
-
-          const videoUrl = data.video_url || data.url || data.mp4_url;
-          if ((status === "done" || status === "ready" || status === "completed") && videoUrl) {
-            console.log("kaiHyperFrames returned video_url:", videoUrl);
-            return Response.json({
-              status: "ready",
-              video_url: videoUrl,
-              reply: "🎬 video ready",
-            });
-          }
-
-          if (status === "error" || status === "failed") {
-            return Response.json({
-              status: "error",
-              error: data.error || data.message || "render failed",
-            });
-          }
-
-          // pending | rendering → fall through to conversation scan for progress text
-        }
-      } catch (err) {
-        console.error("hyperFrames status check failed:", err?.message || err);
-        // fall through to conversation scan
-      }
-    }
-
-    // Fallback: scan the Kai conversation for a posted video or progress updates
     if (!convId) {
-      return Response.json({ status: "processing" });
+      return Response.json({ error: "conversation_id required" }, { status: 400 });
     }
 
     let res = await fetch(`${KAI_BASE_URL}/conversations/${convId}`, {
@@ -75,11 +32,14 @@ Deno.serve(async (req) => {
     const latest = assistantMsgs[assistantMsgs.length - 1];
     const latestContent = latest?.content || "";
 
+    // Scan all assistant messages for a video URL (.mp4 or media.base44.com)
     let videoUrl = null;
     for (let i = assistantMsgs.length - 1; i >= 0; i--) {
       const content = assistantMsgs[i]?.content || "";
-      const match = content.match(/https?:\/\/[^\s)'"]+\.mp4(?:\?[^\s)'"]*)?/i);
-      if (match) { videoUrl = match[0]; break; }
+      const mp4Match = content.match(/https?:\/\/[^\s)'"]+\.mp4(?:\?[^\s)'"]*)?/i);
+      const mediaMatch = content.match(/https?:\/\/media\.base44\.com\/[^\s)'"]+/i);
+      if (mp4Match) { videoUrl = mp4Match[0]; break; }
+      if (mediaMatch) { videoUrl = mediaMatch[0]; break; }
     }
 
     if (videoUrl) {
