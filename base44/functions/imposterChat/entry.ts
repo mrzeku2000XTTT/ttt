@@ -51,13 +51,11 @@ Reply ONLY as JSON with these fields:
 
   if (hasVideoKeywords) {
     try {
-      const RENDER_BASE = "https://kais-backend-brain-superagent-for-c001c060.base44.app";
-      const RENDER_APP_ID = "69e1ae8c5d39205bc001c060";
-      const RENDER_API_KEY = "7d4e7751d1ac406dae4df07533c5e566";
+      const RENDER_BASE = "https://kaspa-69e00a3b3c4957544571e863.base44.app";
+      const RENDER_API_KEY = Deno.env.get("KAI_HYPERFRAMES_API_KEY") || "";
       const renderHeaders = {
         "Content-Type": "application/json",
         "api_key": RENDER_API_KEY,
-        "app_id": RENDER_APP_ID,
       };
 
       // Extract duration + style from the message
@@ -70,7 +68,7 @@ Reply ONLY as JSON with these fields:
       else if (/\blight\b/i.test(message)) style = "light";
 
       // Step 1: create render job
-      const createRes = await fetch(`${RENDER_BASE}/api/functions/kaiHyperFrames`, {
+      const createRes = await fetch(`${RENDER_BASE}/functions/kaiHyperFrames`, {
         method: "POST",
         headers: renderHeaders,
         body: JSON.stringify({
@@ -99,7 +97,7 @@ Reply ONLY as JSON with these fields:
       let errored = false;
       for (let i = 0; i < 18; i++) {
         await new Promise((r) => setTimeout(r, 5000));
-        const pollRes = await fetch(`${RENDER_BASE}/api/functions/kaiHyperFrames?record_id=${recordId}`, {
+        const pollRes = await fetch(`${RENDER_BASE}/functions/kaiHyperFrames?record_id=${recordId}`, {
           headers: renderHeaders,
         });
         if (!pollRes.ok) continue;
