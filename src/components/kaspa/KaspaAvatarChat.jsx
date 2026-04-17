@@ -688,15 +688,17 @@ export default function KaspaAvatarChat() {
               {messages.map((msg, i) => (
                 <KAIChatMessage key={i} msg={msg} index={i} typingIndex={typingIndex} typingText={typingText}
                   setIsOpen={setIsOpen} setBrowserUrl={setBrowserUrl} setShowBrowser={setShowBrowser} setViewingPost={setViewingPost}
-                  onUseImageAsVideoRef={async (imageUrl, imagePrompt) => {
-                    // Use "video" as first word so intent detection never confuses it with image gen
-                    const videoPrompt = imagePrompt ? `Make a video animating this scene: ${imagePrompt}` : "Make a video animating this scene";
-                    setMessages(prev => [...prev, { role: "user", content: videoPrompt, images: [imageUrl] }]);
-                    setIsLoading(true);
-                    try {
-                      await handleImposterMessage(videoPrompt, [imageUrl]);
-                    } catch { addAssistantMessage("render failed to kick off. try again."); }
-                    setIsLoading(false);
+                  onUseImageAsVideoRef={(imageUrl, imagePrompt) => {
+                    // Pre-fill input + attach image so user can edit the prompt before sending
+                    const starter = imagePrompt ? `Make a video animating this scene: ${imagePrompt}` : "Make a video animating this scene: ";
+                    setInput(starter);
+                    setPendingImages(prev => [...prev, { url: imageUrl, name: "reference.png" }]);
+                    setTimeout(() => {
+                      inputRef.current?.focus();
+                      // Move cursor to end so user can keep typing
+                      const el = inputRef.current;
+                      if (el) el.setSelectionRange(starter.length, starter.length);
+                    }, 100);
                   }}
                   onWatchVideo={async (video, idx) => {
                     // Programmatically trigger "watch the Nth" ingestion
