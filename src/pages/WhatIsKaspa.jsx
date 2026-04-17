@@ -9,12 +9,12 @@ import {
 import KaspaAvatarChat from "@/components/kaspa/KaspaAvatarChat";
 
 const FEATURES = [
-  { icon: Zap, title: "10,000+ TPS", desc: "Kaspa processes thousands of transactions per second using its blockDAG architecture — faster than any other PoW chain.", color: "from-cyan-500 to-blue-500", colorStart: "#06b6d4", colorEnd: "#3b82f6" },
-  { icon: Shield, title: "Proof of Work", desc: "Secured by kHeavyHash — GPU-mineable, fair, and fully decentralized consensus. No staking, no validators, no trust assumptions.", color: "from-emerald-500 to-green-500", colorStart: "#10b981", colorEnd: "#22c55e" },
-  { icon: Layers, title: "blockDAG", desc: "Unlike a blockchain, Kaspa's DAG allows multiple blocks created simultaneously. No orphan blocks, no wasted work — pure parallel processing.", color: "from-violet-500 to-purple-500", colorStart: "#8b5cf6", colorEnd: "#a855f7" },
-  { icon: Globe, title: "Fair Launch", desc: "No premine, no ICO, no VC funding. 100% community-driven from day one. The most fairly distributed cryptocurrency since Bitcoin.", color: "from-amber-500 to-orange-500", colorStart: "#f59e0b", colorEnd: "#f97316" },
-  { icon: Clock, title: "1-Second Blocks", desc: "Kaspa achieves 1-second block times with instant visual confirmation. Transactions settle in seconds, not minutes or hours.", color: "from-pink-500 to-rose-500", colorStart: "#ec4899", colorEnd: "#f43f5e" },
-  { icon: Cpu, title: "GHOSTDAG Protocol", desc: "The PHANTOM GHOSTDAG protocol orders all blocks — even those created simultaneously — into a consistent, tamper-proof ledger.", color: "from-blue-500 to-indigo-500", colorStart: "#3b82f6", colorEnd: "#6366f1" },
+  { logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/63c5467a0_generated_image.png", title: "10,000+ TPS", desc: "Kaspa processes thousands of transactions per second using its blockDAG architecture — faster than any other PoW chain.", color: "from-cyan-500 to-blue-500", colorStart: "#06b6d4", colorEnd: "#3b82f6" },
+  { logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/12a220cc3_generated_image.png", title: "Proof of Work", desc: "Secured by kHeavyHash — GPU-mineable, fair, and fully decentralized consensus. No staking, no validators, no trust assumptions.", color: "from-emerald-500 to-green-500", colorStart: "#10b981", colorEnd: "#22c55e" },
+  { logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/67fc0fffc_generated_image.png", title: "blockDAG", desc: "Unlike a blockchain, Kaspa's DAG allows multiple blocks created simultaneously. No orphan blocks, no wasted work — pure parallel processing.", color: "from-violet-500 to-purple-500", colorStart: "#8b5cf6", colorEnd: "#a855f7" },
+  { logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/36b2a46f3_generated_image.png", title: "Fair Launch", desc: "No premine, no ICO, no VC funding. 100% community-driven from day one. The most fairly distributed cryptocurrency since Bitcoin.", color: "from-amber-500 to-orange-500", colorStart: "#f59e0b", colorEnd: "#f97316" },
+  { logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ce8986d74_generated_image.png", title: "1-Second Blocks", desc: "Kaspa achieves 1-second block times with instant visual confirmation. Transactions settle in seconds, not minutes or hours.", color: "from-pink-500 to-rose-500", colorStart: "#ec4899", colorEnd: "#f43f5e" },
+  { logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/c6e6dc5ff_generated_image.png", title: "GHOSTDAG Protocol", desc: "The PHANTOM GHOSTDAG protocol orders all blocks — even those created simultaneously — into a consistent, tamper-proof ledger.", color: "from-blue-500 to-indigo-500", colorStart: "#3b82f6", colorEnd: "#6366f1" },
 ];
 
 const TIMELINE = [
@@ -204,7 +204,6 @@ export default function WhatIsKaspaPage() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {FEATURES.map((f, i) => {
-              const Icon = f.icon;
               return (
                 <motion.div 
                   key={i} 
@@ -224,9 +223,9 @@ export default function WhatIsKaspaPage() {
                     {/* Top accent bar */}
                     <div className={`absolute top-0 inset-x-0 h-1 bg-gradient-to-r ${f.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                     
-                    {/* Icon */}
-                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${f.color} flex items-center justify-center mb-5 shadow-lg group-hover:shadow-xl transition-all duration-500 transform group-hover:scale-110`}>
-                      <Icon className="w-6 h-6 text-white" strokeWidth={1.5} />
+                    {/* Logo */}
+                    <div className="w-16 h-16 rounded-2xl overflow-hidden mb-5 shadow-lg group-hover:shadow-xl transition-all duration-500 transform group-hover:scale-110 ring-1 ring-black/5">
+                      <img src={f.logo} alt={f.title} className="w-full h-full object-cover" />
                     </div>
                     
                     {/* Content */}
