@@ -7,6 +7,7 @@ import {
   TrendingUp, Clock, Users, Cpu, ChevronRight, Loader2, FlaskConical
 } from "lucide-react";
 import KaspaAvatarChat from "@/components/kaspa/KaspaAvatarChat";
+import KaspaShortPlayer from "@/components/kaspa/KaspaShortPlayer";
 
 const FEATURES = [
   { logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/63c5467a0_generated_image.png", title: "10,000+ TPS", desc: "Kaspa processes thousands of transactions per second using its blockDAG architecture — faster than any other PoW chain.", color: "from-cyan-500 to-blue-500", colorStart: "#06b6d4", colorEnd: "#3b82f6" },
@@ -192,6 +193,9 @@ export default function WhatIsKaspaPage() {
           )}
         </motion.div>
       </section>
+
+      {/* YouTube Short Player */}
+      <KaspaShortPlayer />
 
       {/* Features Grid */}
       <section className="py-24 sm:py-36 px-5 bg-gradient-to-b from-white via-blue-50/30 to-white">
