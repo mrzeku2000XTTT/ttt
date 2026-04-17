@@ -344,7 +344,7 @@ export default function OneShotStudio() {
           </div>
 
           {/* Chat */}
-          <div className="h-64 flex-shrink-0">
+          <div className="h-80 flex-shrink-0 min-h-0 flex flex-col">
             <ChatPanel
               history={project.chat_history || []}
               onSend={sendChat}
