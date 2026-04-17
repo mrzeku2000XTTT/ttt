@@ -2,8 +2,6 @@ const KAI_AGENT_ID = '69e00a3b3c4957544571e863';
 const KAI_API_KEY = '7d4e7751d1ac406dae4df07533c5e566';
 const KAI_BASE_URL = `https://app.base44.com/api/agents/${KAI_AGENT_ID}`;
 
-// Track last-seen message count per conversation in memory (per-isolate)
-// Frontend handles its own progression via repeat polls.
 Deno.serve(async (req) => {
   try {
     const { record_id, conversation_id } = await req.json();
