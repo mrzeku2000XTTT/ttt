@@ -74,28 +74,32 @@ Deno.serve(async (req) => {
   if (hasVideoKeywords) {
     try {
       const title = message.split(/\s+/).slice(0, 6).join(" ").slice(0, 60) || "Imposter Video";
-
       const convId = await createKaiConversation();
 
-      // Fire-and-forget: don't await Kai's full render response (it blocks for minutes)
-      // Embed conversation_id explicitly so Superagent saves it on the VideoRender record
-      // and can auto-post the finished video back to THIS chat.
+      // Send a structured render request into the Kai conversation. Superagent's new
+      // HyperFrames pipeline parses the JSON block and creates a VideoRender record
+      // with conversation_id set, so it auto-posts the finished video back here.
       const renderPrompt = [
         `Make a video: ${message}`,
         ``,
-        `--- RENDER METADATA (save these on the VideoRender record) ---`,
-        `conversation_id: ${convId}`,
-        `title: ${title}`,
-        `duration: 15`,
-        `style: dark`,
-        `callback: post video URL back to conversation_id ${convId} when done`,
+        "```json",
+        JSON.stringify({
+          prompt: message,
+          conversation_id: convId,
+          title,
+          duration: 15,
+          style: "kaspa",
+          resolution: "1920x1080",
+        }, null, 2),
+        "```",
       ].join("\n");
 
+      // Fire-and-forget — Kai's entity automation picks it up instantly on create
       sendKaiMessage(convId, renderPrompt, attachedImages)
         .catch(err => console.error("sendKaiMessage bg error:", err?.message || err));
 
       return Response.json({
-        reply: "🎬 rendering your video… hang tight, this takes a minute or two.",
+        reply: "🎬 rendering your video… hang tight, this takes about a minute.",
         action: { type: "video_processing", conversation_id: convId, record_id: convId },
       });
 

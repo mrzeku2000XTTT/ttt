@@ -10,13 +10,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: "conversation_id required" }, { status: 400 });
     }
 
-    // Try GET /conversations/{id} first (messages often embedded in conversation object)
+    // Fetch the conversation — messages are embedded in the response
     let res = await fetch(`${KAI_BASE_URL}/conversations/${convId}`, {
       method: "GET",
       headers: { "Content-Type": "application/json", "api_key": KAI_API_KEY },
     });
 
-    // Fallback to /messages subpath
     if (!res.ok && res.status === 404) {
       res = await fetch(`${KAI_BASE_URL}/conversations/${convId}/messages`, {
         method: "GET",
@@ -33,7 +32,6 @@ Deno.serve(async (req) => {
     const data = await res.json();
     const messages = Array.isArray(data) ? data : (data.messages || data.items || []);
 
-    // Find the most recent assistant message
     const assistantMsgs = messages.filter(m => m.role === "assistant" || m.role === "agent");
     const latest = assistantMsgs[assistantMsgs.length - 1];
     const latestContent = latest?.content || "";
@@ -47,7 +45,6 @@ Deno.serve(async (req) => {
     }
 
     if (videoUrl) {
-      // Strip the URL from the reply text for cleaner display
       const replyText = latestContent.replace(videoUrl, "").trim();
       return Response.json({
         status: "ready",
@@ -56,7 +53,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check for error/failure signals in Kai's message
     if (/\b(error|failed|couldn't|could not|can't render|unable to)\b/i.test(latestContent) &&
         /\b(video|render|generat)/i.test(latestContent)) {
       return Response.json({
@@ -65,7 +61,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Still processing — surface Kai's latest text as progress
     return Response.json({
       status: "processing",
       progress: latestContent ? latestContent.slice(0, 200) : null,
