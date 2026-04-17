@@ -132,12 +132,13 @@ Deno.serve(async (req) => {
     }
 
     // Fire kaiHyperFrames in background — don't await, or frontend times out before it can start polling.
-    // No hardcoded style or duration — let kaiHyperFrames infer from the user's prompt.
+    // Strip any "kaspa" bias: don't prepend/title with Kaspa keywords. Let the user's prompt drive style 100%.
     // If the user attached images, pass them through as reference images for the render.
+    const neutralPrompt = `${message}\n\n[STYLE DIRECTIVE: Do NOT apply any Kaspa, crypto, blockchain, or brand-specific styling to scenes unless the user explicitly asks for it. Render scenes exactly as described in the user's prompt with no brand theming.]`;
     triggerHyperFramesRender({
-      prompt: message,
+      prompt: neutralPrompt,
       conversation_id: convId,
-      title: "Kai Video",
+      title: (message || "Video").slice(0, 60),
       image_urls: attachedImages,
     }).catch(err => console.error("hyperframes trigger error:", err?.message || err));
 
