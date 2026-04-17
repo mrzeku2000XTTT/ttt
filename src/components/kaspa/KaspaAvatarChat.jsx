@@ -298,13 +298,13 @@ export default function KaspaAvatarChat() {
 
     const data = res.data;
 
-    // Handle video render pending — show text reply + polling card
-    if (data?.action?.type === "video_pending" && data.action.record_id) {
+    // Handle video ready — show text reply + embedded video
+    if (data?.action?.type === "video_ready" && data.action.video_url) {
       if (data.reply) addAssistantMessage(data.reply);
       setMessages(prev => [...prev, {
         role: "assistant",
         content: null,
-        imposterRender: { record_id: data.action.record_id },
+        imposterVideo: { video_url: data.action.video_url },
       }]);
       return;
     }

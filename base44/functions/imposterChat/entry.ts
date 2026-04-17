@@ -51,52 +51,40 @@ Reply ONLY as JSON with these fields:
 
   if (hasVideoKeywords) {
     try {
-      const RENDER_BASE = "https://kaspa-69e00a3b3c4957544571e863.base44.app";
-      const RENDER_API_KEY = Deno.env.get("KAI_HYPERFRAMES_API_KEY") || "";
-      const renderHeaders = {
-        "Content-Type": "application/json",
-        "api_key": RENDER_API_KEY,
-      };
+      const SUPERAGENT_URL = "https://kaspa-69e00a3b3c4957544571e863.base44.app/api/chat";
+      const SUPERAGENT_KEY = Deno.env.get("SUPERAGENT_ZEKU_API_KEY") || "";
 
-      // Extract duration + style from the message
-      const durationMatch = message.match(/(\d+)\s*(?:sec|second|s\b)/i);
-      const duration = durationMatch ? Math.min(60, Math.max(5, parseInt(durationMatch[1]))) : 15;
-
-      let style = "kaspa";
-      if (/\bneon\b/i.test(message)) style = "neon";
-      else if (/\bdark\b/i.test(message)) style = "dark";
-      else if (/\blight\b/i.test(message)) style = "light";
-
-      // Step 1: create render job
-      const createRes = await fetch(`${RENDER_BASE}/api/apps/69e00a3b3c4957544571e863/functions/kaiHyperFrames`, {
+      const res = await fetch(SUPERAGENT_URL, {
         method: "POST",
-        headers: renderHeaders,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPERAGENT_KEY}`,
+        },
         body: JSON.stringify({
-          prompt: message,
-          title: "Imposter Render",
-          duration,
-          style,
-          resolution: "1920x1080",
+          message,
+          conversation_id: identity?.imposter_id || undefined,
         }),
       });
 
-      if (!createRes.ok) {
-        const errText = await createRes.text().catch(() => "");
-        console.error("render create failed:", createRes.status, errText);
-        return Response.json({ reply: `render endpoint rejected the job (${createRes.status}). try again.` });
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        console.error("superagent failed:", res.status, errText);
+        return Response.json({ reply: `superagent rejected the job (${res.status}). try again.` });
       }
 
-      const createData = await createRes.json();
-      const recordId = createData.record_id || createData.id;
-      if (!recordId) {
-        return Response.json({ reply: "no record_id came back. render failed." });
+      const data = await res.json();
+      const replyText = data.response || data.reply || "";
+      const mp4Match = replyText.match(/https?:\/\/\S+\.mp4/i);
+
+      if (mp4Match) {
+        return Response.json({
+          reply: replyText.replace(mp4Match[0], "").trim() || "🎬 here's your video:",
+          action: { type: "video_ready", video_url: mp4Match[0] },
+        });
       }
 
-      // Return immediately — frontend polls via imposterRenderStatus
-      return Response.json({
-        reply: `🎬 rendering your ${duration}s video... this takes a few minutes. i'll show it here when it's ready.`,
-        action: { type: "video_pending", record_id: recordId },
-      });
+      // No video URL in response — just pass text through
+      return Response.json({ reply: replyText || "render came back empty." });
     } catch (err) {
       console.error("video render error:", err);
       return Response.json({ reply: "render broke mid-flight. try again." });

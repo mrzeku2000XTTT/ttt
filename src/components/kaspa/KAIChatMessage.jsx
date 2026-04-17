@@ -7,7 +7,6 @@ import { KAIBlocksAnimation } from "./KAIAnimations";
 import { setKaSshiGlobal, markKaSshiInlineVisited } from "@/components/KaSshiPlayer";
 import KAINewsCard from "./KAINewsCard";
 import KAIVideoCard from "./KAIVideoCard";
-import ImposterVideoRender from "./ImposterVideoRender";
 import { base44 } from "@/api/base44Client";
 
 export default function KAIChatMessage({ msg, index, typingIndex, typingText, setIsOpen, setBrowserUrl, setShowBrowser, setViewingPost, onWatchVideo }) {
@@ -153,11 +152,35 @@ export default function KAIChatMessage({ msg, index, typingIndex, typingText, se
     );
   }
 
-  // Imposter video render card — polls status & embeds video when ready
-  if (msg.imposterRender?.record_id) {
+  // Imposter video ready — embed video directly
+  if (msg.imposterVideo?.video_url) {
     return (
       <div className="flex justify-start">
-        <ImposterVideoRender recordId={msg.imposterRender.record_id} />
+        <div
+          className="max-w-[90%] rounded-2xl overflow-hidden"
+          style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(6,182,212,0.3)" }}
+        >
+          <video
+            src={msg.imposterVideo.video_url}
+            controls
+            autoPlay
+            playsInline
+            className="w-full block"
+            style={{ maxHeight: 360 }}
+          />
+          <div className="flex items-center justify-between px-3 py-2 text-[11px]">
+            <span className="text-cyan-400/80 font-semibold">🎬 render complete</span>
+            <a
+              href={msg.imposterVideo.video_url}
+              download
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white/60 hover:text-white transition-colors"
+            >
+              download
+            </a>
+          </div>
+        </div>
       </div>
     );
   }
