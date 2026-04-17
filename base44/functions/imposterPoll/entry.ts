@@ -24,6 +24,7 @@ Deno.serve(async (req) => {
           const status = (data.status || "").toLowerCase();
 
           if (status === "done" && data.video_url) {
+            console.log("kaiHyperFrames returned video_url:", data.video_url);
             return Response.json({
               status: "ready",
               video_url: data.video_url,
