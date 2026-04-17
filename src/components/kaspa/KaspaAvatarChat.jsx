@@ -689,7 +689,8 @@ export default function KaspaAvatarChat() {
                 <KAIChatMessage key={i} msg={msg} index={i} typingIndex={typingIndex} typingText={typingText}
                   setIsOpen={setIsOpen} setBrowserUrl={setBrowserUrl} setShowBrowser={setShowBrowser} setViewingPost={setViewingPost}
                   onUseImageAsVideoRef={async (imageUrl, imagePrompt) => {
-                    const videoPrompt = imagePrompt ? `Make a video based on this image: ${imagePrompt}` : "Make a video based on this image";
+                    // Use "video" as first word so intent detection never confuses it with image gen
+                    const videoPrompt = imagePrompt ? `Make a video animating this scene: ${imagePrompt}` : "Make a video animating this scene";
                     setMessages(prev => [...prev, { role: "user", content: videoPrompt, images: [imageUrl] }]);
                     setIsLoading(true);
                     try {

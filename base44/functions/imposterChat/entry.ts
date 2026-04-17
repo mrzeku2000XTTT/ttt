@@ -88,7 +88,38 @@ Deno.serve(async (req) => {
     }
   });
 
-  // Detect image-generation intent (check BEFORE video so "image" doesn't match video keywords)
+  // Detect video-generation intent FIRST (video is more specific than image)
+  const hasVideoKeywords = /\b(make|create|generate|render|produce|do)\b.*\b(video|mp4|animation|clip|ad|advert|commercial|reel|short)\b/i.test(message)
+    || /\bvideo\s+(about|for|of|showing|that|based\s+on)\b/i.test(message);
+
+  if (hasVideoKeywords) {
+    // Create a FRESH conversation for each render so the poll only sees THIS job's output.
+    let convId;
+    try {
+      convId = await createKaiConversation();
+    } catch (err) {
+      console.error("create conversation error:", err?.message || err);
+      return Response.json({ reply: "couldn't kick off the render. try again." });
+    }
+
+    const neutralPrompt = `${message}\n\n[STYLE DIRECTIVE: Do NOT apply any Kaspa, crypto, blockchain, or brand-specific styling to scenes unless the user explicitly asks for it. Render scenes exactly as described in the user's prompt with no brand theming.]`;
+    triggerHyperFramesRender({
+      prompt: neutralPrompt,
+      conversation_id: convId,
+      title: (message || "Video").slice(0, 60),
+      image_urls: attachedImages,
+    }).catch(err => console.error("hyperframes trigger error:", err?.message || err));
+
+    return Response.json({
+      reply: "🎬 rendering your video… hang tight, this takes about a minute.",
+      action: {
+        type: "video_processing",
+        conversation_id: convId,
+      },
+    });
+  }
+
+  // Detect image-generation intent
   const hasImageKeywords = /\b(make|create|generate|render|produce|draw|design|give me|show me)\b.*\b(image|picture|pic|photo|art|artwork|drawing|illustration|poster|meme|logo|wallpaper|portrait|scene)\b/i.test(message)
     || /\b(image|picture|pic|photo|art|artwork|drawing|illustration|poster|meme|logo|wallpaper)\s+(of|about|for|showing|that|with)\b/i.test(message);
 
@@ -115,40 +146,6 @@ Deno.serve(async (req) => {
       console.error("image gen error:", err?.message || err);
       return Response.json({ reply: "image generator choked. try again." });
     }
-  }
-
-  // Detect video-generation intent
-  const hasVideoKeywords = /\b(make|create|generate|render|produce|do)\b.*\b(video|mp4|animation|clip|ad|advert|commercial|reel|short)\b/i.test(message)
-    || /\bvideo\s+(about|for|of|showing|that)\b/i.test(message);
-
-  if (hasVideoKeywords) {
-    // Create a FRESH conversation for each render so the poll only sees THIS job's output.
-    let convId;
-    try {
-      convId = await createKaiConversation();
-    } catch (err) {
-      console.error("create conversation error:", err?.message || err);
-      return Response.json({ reply: "couldn't kick off the render. try again." });
-    }
-
-    // Fire kaiHyperFrames in background — don't await, or frontend times out before it can start polling.
-    // Strip any "kaspa" bias: don't prepend/title with Kaspa keywords. Let the user's prompt drive style 100%.
-    // If the user attached images, pass them through as reference images for the render.
-    const neutralPrompt = `${message}\n\n[STYLE DIRECTIVE: Do NOT apply any Kaspa, crypto, blockchain, or brand-specific styling to scenes unless the user explicitly asks for it. Render scenes exactly as described in the user's prompt with no brand theming.]`;
-    triggerHyperFramesRender({
-      prompt: neutralPrompt,
-      conversation_id: convId,
-      title: (message || "Video").slice(0, 60),
-      image_urls: attachedImages,
-    }).catch(err => console.error("hyperframes trigger error:", err?.message || err));
-
-    return Response.json({
-      reply: "🎬 rendering your video… hang tight, this takes about a minute.",
-      action: {
-        type: "video_processing",
-        conversation_id: convId,
-      },
-    });
   }
 
   // Detect learn/train intent
