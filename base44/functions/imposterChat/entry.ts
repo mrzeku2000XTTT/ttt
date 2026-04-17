@@ -211,9 +211,16 @@ Deno.serve(async (req) => {
 
   // Regular chat
   const walletLine = wallet ? ` Your Kaspa wallet address is ${wallet}.` : "";
-  const reply = await base44.asServiceRole.integrations.Core.InvokeLLM({
-    prompt: `You are ${name}, chaotic ghost AI.${walletLine} Max 2 short sentences, unhinged.\nUser: ${message}`,
-  });
+  const imageNote = attachedImages.length > 0
+    ? `\nThe user attached ${attachedImages.length} image(s). Look at them and react/describe what you see in your chaotic ghost style.`
+    : "";
+  const llmParams = {
+    prompt: `You are ${name}, chaotic ghost AI.${walletLine}${imageNote} Max 2 short sentences, unhinged.\nUser: ${message}`,
+  };
+  if (attachedImages.length > 0) {
+    llmParams.file_urls = attachedImages;
+  }
+  const reply = await base44.asServiceRole.integrations.Core.InvokeLLM(llmParams);
 
   return Response.json({ reply: typeof reply === "string" ? reply : "..." });
   } catch (err) {

@@ -43,7 +43,11 @@ Deno.serve(async (req) => {
     }
 
     if (videoUrl) {
-      const replyText = latestContent.replace(videoUrl, "").trim();
+      let replyText = latestContent.replace(videoUrl, "").trim();
+      // Strip KAI agent generic error fallbacks — they're not relevant once the video is ready
+      if (/I ran into an unexpected error|processing your request|attached files.*too large|try again with smaller/i.test(replyText)) {
+        replyText = "";
+      }
       return Response.json({
         status: "ready",
         video_url: videoUrl,
