@@ -47,13 +47,12 @@ Deno.serve(async (req) => {
     const combined = assistantAfter.map(m => m.content || m.text || "").join("\n");
     const mp4Match = combined.match(/https?:\/\/\S+\.mp4/i);
 
-    // No video URL yet — Kai might still be rendering. Keep polling unless we have final text-only reply.
+    // No video URL yet — Kai is giving progress updates. Return the latest progress text and keep polling.
     if (!mp4Match) {
-      // If Kai gave a substantive text reply (>20 chars) without a video, treat as done
-      if (combined.trim().length > 20) {
-        return Response.json({ status: "ready", reply: combined.trim(), video_url: null });
-      }
-      return Response.json({ status: "processing" });
+      return Response.json({
+        status: "processing",
+        progress: combined.trim() || null,
+      });
     }
 
     return Response.json({

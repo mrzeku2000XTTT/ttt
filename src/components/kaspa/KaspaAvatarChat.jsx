@@ -321,10 +321,34 @@ export default function KaspaAvatarChat() {
     // Handle async video render — poll imposterPoll until ready
     if (data?.action?.type === "video_processing" && data.action.conversation_id) {
       const convId = data.action.conversation_id;
-      if (data.reply) addAssistantMessage(data.reply);
 
-      const maxAttempts = 60; // 60 × 5s = 5 minutes max
+      // Add a single progress message we'll update in-place while polling
+      let progressIdx;
+      setMessages(prev => {
+        progressIdx = prev.length;
+        return [...prev, {
+          role: "assistant",
+          content: null,
+          imposterRender: { status: "queued", progress: data.reply || "🎬 queued…", elapsed: 0 },
+        }];
+      });
+
+      const startTime = Date.now();
+      const maxAttempts = 90; // 90 × 5s = 7.5 minutes max
       let attempt = 0;
+
+      const updateProgress = (update) => {
+        setMessages(prev => {
+          const copy = [...prev];
+          if (copy[progressIdx]?.imposterRender) {
+            copy[progressIdx] = {
+              ...copy[progressIdx],
+              imposterRender: { ...copy[progressIdx].imposterRender, ...update, elapsed: Math.floor((Date.now() - startTime) / 1000) },
+            };
+          }
+          return copy;
+        });
+      };
 
       const poll = async () => {
         attempt++;
@@ -332,26 +356,35 @@ export default function KaspaAvatarChat() {
           const pollRes = await base44.functions.invoke('imposterPoll', { conversation_id: convId });
           const pollData = pollRes.data;
 
-          if (pollData?.status === "ready") {
-            if (pollData.video_url) {
-              setMessages(prev => [...prev, {
+          if (pollData?.status === "ready" && pollData.video_url) {
+            // Replace progress card with final video
+            setMessages(prev => {
+              const copy = [...prev];
+              copy[progressIdx] = {
                 role: "assistant",
                 content: null,
                 imposterVideo: { video_url: pollData.video_url },
-              }]);
-            } else if (pollData.reply) {
-              addAssistantMessage(pollData.reply);
-            }
-            return; // stop polling
-          }
-
-          if (pollData?.status === "error") {
-            addAssistantMessage(`render failed: ${pollData.error || "unknown"}`);
+              };
+              return copy;
+            });
+            if (pollData.reply) addAssistantMessage(pollData.reply);
             return;
           }
 
+          if (pollData?.status === "error") {
+            updateProgress({ status: "error", progress: `render failed: ${pollData.error || "unknown"}` });
+            return;
+          }
+
+          // Still processing — update progress text if Kai sent an update
+          if (pollData?.progress) {
+            updateProgress({ status: "rendering", progress: pollData.progress });
+          } else {
+            updateProgress({ status: "rendering" });
+          }
+
           if (attempt >= maxAttempts) {
-            addAssistantMessage("render timed out after 5 minutes. try again.");
+            updateProgress({ status: "error", progress: "render timed out. try again." });
             return;
           }
 
@@ -359,11 +392,11 @@ export default function KaspaAvatarChat() {
         } catch (err) {
           console.error("poll error:", err);
           if (attempt < maxAttempts) setTimeout(poll, 5000);
-          else addAssistantMessage("lost connection to render. try again.");
+          else updateProgress({ status: "error", progress: "lost connection to render." });
         }
       };
 
-      setTimeout(poll, 5000); // first poll after 5s
+      setTimeout(poll, 3000); // first poll after 3s
       return;
     }
 
