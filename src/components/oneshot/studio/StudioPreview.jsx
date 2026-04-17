@@ -70,20 +70,26 @@ window.addEventListener('error', function(e) {
       var LucideIcons = {};
       if (window.lucide && window.lucide.icons) {
         var toPascal = function(kebab) { return kebab.split('-').map(function(s) { return s.charAt(0).toUpperCase() + s.slice(1); }).join(''); };
-        Object.keys(window.lucide.icons).forEach(function(key) {
-          var iconData = window.lucide.icons[key];
-          var name = toPascal(key);
-          LucideIcons[name] = function LucideIcon(props) {
+        var makeIcon = function(iconData) {
+          return function LucideIcon(props) {
             props = props || {};
             var size = props.size || 24;
             var strokeWidth = props.strokeWidth || 2;
             var className = props.className || '';
             var rest = {};
-            for (var k in props) { if (k !== 'size' && k !== 'strokeWidth' && k !== 'className') rest[k] = props[k]; }
-            var children = iconData[2] || [];
-            var childElements = children.map(function(child, i) { return React.createElement(child[0], Object.assign({ key: i }, child[1])); });
+            for (var k in props) { if (k !== 'size' && k !== 'strokeWidth' && k !== 'className' && k !== 'children') rest[k] = props[k]; }
+            var children = (iconData && iconData[2]) || [];
+            var childElements = [];
+            for (var i = 0; i < children.length; i++) {
+              var child = children[i];
+              if (!child || !child[0] || typeof child[0] !== 'string') continue;
+              childElements.push(React.createElement(child[0], Object.assign({ key: i }, child[1] || {})));
+            }
             return React.createElement('svg', Object.assign({ xmlns: 'http://www.w3.org/2000/svg', width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: strokeWidth, strokeLinecap: 'round', strokeLinejoin: 'round', className: className }, rest), childElements);
           };
+        };
+        Object.keys(window.lucide.icons).forEach(function(key) {
+          LucideIcons[toPascal(key)] = makeIcon(window.lucide.icons[key]);
         });
       }
       var FallbackIcon = function(props) {
@@ -211,7 +217,13 @@ window.addEventListener('error', function(e) {
         Object.keys(LucideIcons).forEach(function(k) { scope[k] = LucideIcons[k]; });
         // Proxy fallback for any capitalized name (unknown icons)
         var scopeProxy = new Proxy(scope, {
-          has: function() { return true; },
+          has: function(target, prop) {
+            // Only claim ownership of capitalized names (components/icons) we can provide.
+            // This prevents "with" from swallowing every identifier and returning undefined for things like window globals.
+            if (prop in target) return true;
+            if (typeof prop === 'string' && /^[A-Z]/.test(prop)) return true;
+            return false;
+          },
           get: function(target, prop) {
             if (prop in target) return target[prop];
             if (typeof prop === 'string' && /^[A-Z]/.test(prop)) return FallbackIcon;
