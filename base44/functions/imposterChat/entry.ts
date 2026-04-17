@@ -5,7 +5,6 @@ const KAI_AGENT_ID = '69e00a3b3c4957544571e863';
 const KAI_API_KEY = '7d4e7751d1ac406dae4df07533c5e566';
 const KAI_BASE_URL = `https://app.base44.com/api/agents/${KAI_AGENT_ID}`;
 const KAI_HYPERFRAMES_URL = `https://kais-backend-brain-superagent-for-4571e863.base44.app/functions/kaiHyperFrames`;
-const KAI_PERMANENT_CONVERSATION_ID = '69e256be7f05f4e720b18ab8';
 
 async function triggerHyperFramesRender({ prompt, conversation_id, title = "Kai Video", duration = 15, style = "kaspa" }) {
   const res = await fetch(KAI_HYPERFRAMES_URL, {
@@ -87,8 +86,14 @@ Deno.serve(async (req) => {
     || /\bvideo\s+(about|for|of|showing|that)\b/i.test(message);
 
   if (hasVideoKeywords) {
-    // Use permanent conversation so Kai always catches the render job (no race condition)
-    const convId = KAI_PERMANENT_CONVERSATION_ID;
+    // Create a FRESH conversation for each render so the poll only sees THIS job's output.
+    let convId;
+    try {
+      convId = await createKaiConversation();
+    } catch (err) {
+      console.error("create conversation error:", err?.message || err);
+      return Response.json({ reply: "couldn't kick off the render. try again." });
+    }
 
     // Fire kaiHyperFrames in background — don't await, or frontend times out before it can start polling.
     triggerHyperFramesRender({
