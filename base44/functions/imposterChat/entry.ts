@@ -51,29 +51,52 @@ Reply ONLY as JSON with these fields:
 
   if (hasVideoKeywords) {
     try {
-      const SUPERAGENT_URL = "https://kaspa-69e00a3b3c4957544571e863.base44.app/api/chat";
+      const SUPERAGENT_APP_ID = "69e00a3b3c4957544571e863";
       const SUPERAGENT_KEY = Deno.env.get("SUPERAGENT_ZEKU_API_KEY") || "";
+      const API_BASE = `https://app.base44.com/api/apps/${SUPERAGENT_APP_ID}`;
+      const authHeaders = {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${SUPERAGENT_KEY}`,
+      };
 
-      const res = await fetch(SUPERAGENT_URL, {
+      // Step 1 — create conversation
+      const convRes = await fetch(`${API_BASE}/agents/conversations`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${SUPERAGENT_KEY}`,
-        },
+        headers: authHeaders,
         body: JSON.stringify({
-          message,
-          conversation_id: identity?.imposter_id || undefined,
+          agent_name: "agent",
+          metadata: { user_wallet: identity?.kaspa_address || "anon" },
         }),
       });
 
-      if (!res.ok) {
-        const errText = await res.text().catch(() => "");
-        console.error("superagent failed:", res.status, errText);
-        return Response.json({ reply: `superagent rejected the job (${res.status}). try again.` });
+      if (!convRes.ok) {
+        const errText = await convRes.text().catch(() => "");
+        console.error("superagent createConversation failed:", convRes.status, errText);
+        return Response.json({ reply: `superagent rejected (${convRes.status}). try again.` });
       }
 
-      const data = await res.json();
-      const replyText = data.response || data.reply || "";
+      const conv = await convRes.json();
+      const convId = conv.id || conv.conversation_id;
+      if (!convId) {
+        console.error("no conversation id in response:", conv);
+        return Response.json({ reply: "superagent didn't return a conversation id." });
+      }
+
+      // Step 2 — add message & get response
+      const msgRes = await fetch(`${API_BASE}/agents/conversations/${convId}/messages`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({ role: "user", content: message }),
+      });
+
+      if (!msgRes.ok) {
+        const errText = await msgRes.text().catch(() => "");
+        console.error("superagent addMessage failed:", msgRes.status, errText);
+        return Response.json({ reply: `superagent rejected message (${msgRes.status}). try again.` });
+      }
+
+      const msgData = await msgRes.json();
+      const replyText = msgData.content || msgData.response || msgData.reply || "";
       const mp4Match = replyText.match(/https?:\/\/\S+\.mp4/i);
 
       if (mp4Match) {
@@ -83,7 +106,6 @@ Reply ONLY as JSON with these fields:
         });
       }
 
-      // No video URL in response — just pass text through
       return Response.json({ reply: replyText || "render came back empty." });
     } catch (err) {
       console.error("video render error:", err);
