@@ -357,7 +357,7 @@ export default function KaspaAvatarChat() {
       const poll = async () => {
         attempt++;
         try {
-          const pollRes = await base44.functions.invoke('imposterPoll', { record_id: recordId });
+          const pollRes = await base44.functions.invoke('imposterPoll', { conversation_id: recordId });
           const pollData = pollRes.data;
 
           if (pollData?.status === "ready" && pollData.video_url) {
