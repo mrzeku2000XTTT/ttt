@@ -6,11 +6,17 @@ const KAI_API_KEY = '7d4e7751d1ac406dae4df07533c5e566';
 const KAI_BASE_URL = `https://app.base44.com/api/agents/${KAI_AGENT_ID}`;
 const KAI_HYPERFRAMES_URL = `https://kais-backend-brain-superagent-for-4571e863.base44.app/functions/kaiHyperFrames`;
 
-async function triggerHyperFramesRender({ prompt, conversation_id, title = "Kai Video" }) {
+async function triggerHyperFramesRender({ prompt, conversation_id, title = "Kai Video", image_urls = [] }) {
+  const body = { prompt, title, conversation_id };
+  // Attach reference images if provided — kaiHyperFrames uses them as visual input for the render
+  if (Array.isArray(image_urls) && image_urls.length > 0) {
+    body.image_urls = image_urls;
+    body.reference_images = image_urls; // in case the downstream uses a different key
+  }
   const res = await fetch(KAI_HYPERFRAMES_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, title, conversation_id }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
@@ -126,10 +132,12 @@ Deno.serve(async (req) => {
 
     // Fire kaiHyperFrames in background — don't await, or frontend times out before it can start polling.
     // No hardcoded style or duration — let kaiHyperFrames infer from the user's prompt.
+    // If the user attached images, pass them through as reference images for the render.
     triggerHyperFramesRender({
       prompt: message,
       conversation_id: convId,
       title: "Kai Video",
+      image_urls: attachedImages,
     }).catch(err => console.error("hyperframes trigger error:", err?.message || err));
 
     return Response.json({
