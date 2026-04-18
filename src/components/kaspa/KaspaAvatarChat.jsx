@@ -188,7 +188,7 @@ export default function KaspaAvatarChat() {
 
   // Poll imposterPoll for any message with imposterRender.status === "rendering".
   // Superagent posts the final .mp4 into its conversation; imposterPoll scans for it.
-  // Single active interval at a time, 3s tick, max 90 attempts (~4.5 min).
+  // Single active interval at a time, 8s tick, max 120 attempts (~16 min) — some renders take a while.
   const pollRef = useRef(null);
   useEffect(() => {
     const renderingMsg = messages.find(m => m?.imposterRender?.status === "rendering" && m?.imposterRender?.recordId);
@@ -217,22 +217,24 @@ export default function KaspaAvatarChat() {
           ));
           return;
         }
-        if (data.status === "error" || attempts >= 90) {
+        if (attempts >= 120) {
           clearInterval(pollRef.current); pollRef.current = null;
           setMessages(prev => prev.map(m =>
             m?.imposterRender?.recordId === recordId
-              ? { ...m, imposterRender: { ...m.imposterRender, status: "error", progress: data.error || "render timed out — try again" } }
+              ? { ...m, imposterRender: { ...m.imposterRender, status: "error", progress: "still rendering — check back soon" } }
               : m
           ));
         }
+        // Note: ignore data.status === "error" — Superagent sometimes posts transient
+        // error-looking messages mid-render. Just keep polling until the mp4 shows up.
       } catch (err) {
         // network blip — just keep trying until max attempts
-        if (attempts >= 90) {
+        if (attempts >= 120) {
           clearInterval(pollRef.current); pollRef.current = null;
         }
       }
     };
-    const id = setInterval(tick, 3000);
+    const id = setInterval(tick, 8000);
     id.recordId = recordId;
     pollRef.current = id;
     tick(); // fire first check immediately
