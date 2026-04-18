@@ -186,9 +186,59 @@ export default function KaspaAvatarChat() {
 
   const removePendingImage = (idx) => setPendingImages(prev => prev.filter((_, i) => i !== idx));
 
-  // Note: No polling needed — Superagent's slideComplete posts the video URL
-  // directly into the conversation when rendering is done. TTT just renders the
-  // "still cooking" card and waits for the final video message to arrive.
+  // Poll imposterPoll for any message with imposterRender.status === "rendering".
+  // Superagent posts the final .mp4 into its conversation; imposterPoll scans for it.
+  // Single active interval at a time, 3s tick, max 90 attempts (~4.5 min).
+  const pollRef = useRef(null);
+  useEffect(() => {
+    const renderingMsg = messages.find(m => m?.imposterRender?.status === "rendering" && m?.imposterRender?.recordId);
+    if (!renderingMsg) {
+      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+      return;
+    }
+    // Already polling for this same recordId — don't restart
+    if (pollRef.current && pollRef.current.recordId === renderingMsg.imposterRender.recordId) return;
+    // Different job → clear old interval
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+
+    const recordId = renderingMsg.imposterRender.recordId;
+    let attempts = 0;
+    const tick = async () => {
+      attempts++;
+      try {
+        const res = await base44.functions.invoke('imposterPoll', { conversation_id: recordId });
+        const data = res.data || {};
+        if (data.status === "ready" && data.video_url) {
+          clearInterval(pollRef.current); pollRef.current = null;
+          setMessages(prev => prev.map(m =>
+            m?.imposterRender?.recordId === recordId
+              ? { role: "assistant", content: null, imposterVideo: { video_url: data.video_url } }
+              : m
+          ));
+          return;
+        }
+        if (data.status === "error" || attempts >= 90) {
+          clearInterval(pollRef.current); pollRef.current = null;
+          setMessages(prev => prev.map(m =>
+            m?.imposterRender?.recordId === recordId
+              ? { ...m, imposterRender: { ...m.imposterRender, status: "error", progress: data.error || "render timed out — try again" } }
+              : m
+          ));
+        }
+      } catch (err) {
+        // network blip — just keep trying until max attempts
+        if (attempts >= 90) {
+          clearInterval(pollRef.current); pollRef.current = null;
+        }
+      }
+    };
+    const id = setInterval(tick, 3000);
+    id.recordId = recordId;
+    pollRef.current = id;
+    tick(); // fire first check immediately
+
+    return () => { if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; } };
+  }, [messages]);
 
   const [renderMode, setRenderMode] = useState("auto"); // auto | video | deck
   const [enhancing, setEnhancing] = useState(false);
