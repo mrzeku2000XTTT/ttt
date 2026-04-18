@@ -186,106 +186,9 @@ export default function KaspaAvatarChat() {
 
   const removePendingImage = (idx) => setPendingImages(prev => prev.filter((_, i) => i !== idx));
 
-  // Track which recordIds are actively being polled to avoid duplicate loops
-  const activePollersRef = useRef(new Set());
-
-  // Resume-safe polling — finds the card by recordId (index may shift across remounts) and
-  // uses startedAt from the card so elapsed is accurate even after reload
-  const startRenderPoll = (recordId, startedAt) => {
-    if (!recordId || activePollersRef.current.has(recordId)) return;
-    activePollersRef.current.add(recordId);
-
-    const maxDurationMs = 20 * 60 * 1000; // 20 minutes cap from startedAt (decks can take a while)
-
-    const updateCard = (update) => {
-      setMessages(prev => {
-        const copy = [...prev];
-        const idx = copy.findIndex(m => m.imposterRender?.recordId === recordId);
-        if (idx >= 0) {
-          copy[idx] = {
-            ...copy[idx],
-            imposterRender: {
-              ...copy[idx].imposterRender,
-              ...update,
-              elapsed: Math.floor((Date.now() - startedAt) / 1000),
-            },
-          };
-        }
-        return copy;
-      });
-    };
-
-    const replaceWithVideo = (videoUrl) => {
-      setMessages(prev => {
-        const copy = [...prev];
-        const idx = copy.findIndex(m => m.imposterRender?.recordId === recordId);
-        if (idx >= 0) {
-          copy[idx] = { role: "assistant", content: null, imposterVideo: { video_url: videoUrl } };
-        }
-        return copy;
-      });
-    };
-
-    const poll = async () => {
-      try {
-        const pollRes = await base44.functions.invoke('imposterPoll', { conversation_id: recordId });
-        const pollData = pollRes.data;
-
-        if (pollData?.status === "ready" && pollData.video_url) {
-          replaceWithVideo(pollData.video_url);
-          if (pollData.reply) addAssistantMessage(pollData.reply);
-          activePollersRef.current.delete(recordId);
-          return;
-        }
-        if (pollData?.status === "error") {
-          updateCard({ status: "error", progress: `render failed: ${pollData.error || "unknown"}` });
-          activePollersRef.current.delete(recordId);
-          return;
-        }
-        if (pollData?.status === "stuck") {
-          updateCard({ status: "error", progress: pollData.reply || "⚠️ render stuck. try again." });
-          activePollersRef.current.delete(recordId);
-          return;
-        }
-
-        updateCard(pollData?.progress
-          ? { status: "rendering", progress: pollData.progress }
-          : { status: "rendering" });
-
-        if (Date.now() - startedAt >= maxDurationMs) {
-          updateCard({ status: "slow", progress: "⏳ still rendering… this one's taking longer than usual. check back in a bit — it'll show up when ready." });
-          activePollersRef.current.delete(recordId);
-          return;
-        }
-        setTimeout(poll, 5000);
-      } catch (err) {
-        console.error("poll error:", err);
-        if (Date.now() - startedAt < maxDurationMs) {
-          setTimeout(poll, 5000);
-        } else {
-          updateCard({ status: "slow", progress: "⏳ connection hiccup — render is still running in the background." });
-          activePollersRef.current.delete(recordId);
-        }
-      }
-    };
-
-    setTimeout(poll, 3000);
-  };
-
-  // On mount: scan restored messages for in-progress renders and resume polling
-  useEffect(() => {
-    const inProgress = messages.filter(m =>
-      m.imposterRender &&
-      m.imposterRender.recordId &&
-      m.imposterRender.status !== "error" &&
-      m.imposterRender.status !== "slow" &&
-      !m.imposterVideo
-    );
-    inProgress.forEach(m => {
-      startRenderPoll(m.imposterRender.recordId, m.imposterRender.startedAt || Date.now());
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Note: No polling needed — Superagent's slideComplete posts the video URL
+  // directly into the conversation when rendering is done. TTT just renders the
+  // "still cooking" card and waits for the final video message to arrive.
 
   const [renderMode, setRenderMode] = useState("auto"); // auto | video | deck
   const [enhancing, setEnhancing] = useState(false);
@@ -517,26 +420,20 @@ Original prompt: ${input.trim()}`,
       return;
     }
 
-    // Handle async video render — poll imposterPoll until ready
+    // Async video render — Superagent will post the video URL directly to the conversation
+    // via slideComplete when done. No polling needed — we just show a friendly waiting card.
     if (data?.action?.type === "video_processing" && (data.action.record_id || data.action.conversation_id)) {
       const recordId = data.action.record_id || data.action.conversation_id;
-
-      // Add a single progress message we'll update in-place while polling
-      // Tag it with recordId + startedAt so we can resume polling across remounts
-      const startedAt = Date.now();
       setMessages(prev => [...prev, {
         role: "assistant",
         content: null,
         imposterRender: {
-          status: "queued",
-          progress: data.reply || "🎬 queued…",
-          elapsed: 0,
+          status: "rendering",
+          progress: data.reply || "🎬 Building your video now — dropping the link in about 2 minutes.",
           recordId,
-          startedAt,
+          startedAt: Date.now(),
         },
       }]);
-
-      startRenderPoll(recordId, startedAt);
       return;
     }
 
