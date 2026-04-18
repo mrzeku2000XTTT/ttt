@@ -493,6 +493,17 @@ Original prompt: ${input.trim()}`,
       return;
     }
 
+    // Handle deck_ready — link to SlideDeckBuilder
+    if (data?.action?.type === "deck_ready") {
+      addAssistantMessage(data.reply || "🎬 deck built. review it in the builder.");
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: null,
+        links: [{ label: `📽️ Open "${data.action.deck_title}" in Builder`, path: "SlideDeckBuilder" }],
+      }]);
+      return;
+    }
+
     // Handle send transaction action
     if (data?.action?.type === "send_kas") {
       const { to_address, amount_kas, balance } = data.action;

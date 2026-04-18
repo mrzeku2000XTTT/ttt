@@ -88,7 +88,79 @@ Deno.serve(async (req) => {
     }
   });
 
-  // Detect video-generation intent FIRST (video is more specific than image)
+  // Detect slide-deck intent FIRST (most specific — "X-slide deck" / "slideshow" / "presentation")
+  const hasDeckKeywords = /\b(\d+)?\s*-?\s*slide\b/i.test(message)
+    || /\b(deck|slideshow|slide\s*deck|presentation|slides)\b/i.test(message);
+
+  if (hasDeckKeywords) {
+    try {
+      const deckSpec = await base44.asServiceRole.integrations.Core.InvokeLLM({
+        prompt: `User request: "${message}"\n\nGenerate a slide deck video plan. Extract the topic, pick a fitting style, and create 3-8 slides with vivid visual prompts and concise voiceover narration.\n\nRules:\n- title: short and punchy (max 60 chars)\n- description: one-sentence summary\n- style: pick ONE that fits the topic (kaspa for crypto, fire for intense, neon for tech/cyber, luxury for premium, minimal for clean, ocean for calm, dark for moody, auto if unsure)\n- slides: 3-8 slides (match any explicit count in the request, otherwise pick a sensible number)\n- Each slide.prompt: a cinematic visual description (2-3 sentences, describe what you SEE)\n- Each slide.voiceover: narrator text (1-2 sentences, spoken aloud, natural flow)\n- Each slide.duration: 4-8 seconds\n- Slides should flow as a story: hook → build → payoff`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            title: { type: "string" },
+            description: { type: "string" },
+            style: { type: "string", enum: ["kaspa", "fire", "neon", "luxury", "minimal", "ocean", "dark", "auto"] },
+            slides: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  prompt: { type: "string" },
+                  voiceover: { type: "string" },
+                  duration: { type: "number" },
+                },
+                required: ["prompt", "voiceover", "duration"],
+              },
+            },
+          },
+          required: ["title", "description", "style", "slides"],
+        },
+      });
+
+      if (!deckSpec?.slides?.length) {
+        return Response.json({ reply: "couldn't figure out what the deck should be. try: 'make me a 5-slide deck about kaspa staking'" });
+      }
+
+      // Create deck + slides as drafts (user reviews before rendering)
+      const deck = await base44.entities.SlideDeck.create({
+        title: deckSpec.title,
+        description: deckSpec.description,
+        style: deckSpec.style || "auto",
+        status: "draft",
+        total_slides: deckSpec.slides.length,
+        total_duration: deckSpec.slides.reduce((sum, s) => sum + (s.duration || 5), 0),
+      });
+
+      await Promise.all(deckSpec.slides.map((s, idx) =>
+        base44.entities.Slide.create({
+          deck_id: deck.id,
+          order: idx,
+          prompt: s.prompt,
+          voiceover: s.voiceover,
+          duration: s.duration || 5,
+          style: deckSpec.style || "auto",
+          status: "pending",
+        })
+      ));
+
+      return Response.json({
+        reply: `🎬 built your deck — **${deckSpec.title}** (${deckSpec.slides.length} slides, ~${deckSpec.slides.reduce((s, x) => s + (x.duration || 5), 0)}s). review and edit, then hit render.`,
+        action: {
+          type: "deck_ready",
+          deck_id: deck.id,
+          deck_title: deckSpec.title,
+          slide_count: deckSpec.slides.length,
+        },
+      });
+    } catch (err) {
+      console.error("deck gen error:", err?.message || err);
+      return Response.json({ reply: "something broke building the deck. try again with a clearer topic." });
+    }
+  }
+
+  // Detect video-generation intent (video is more specific than image)
   const hasVideoKeywords = /\b(make|create|generate|render|produce|do)\b.*\b(video|mp4|animation|clip|ad|advert|commercial|reel|short)\b/i.test(message)
     || /\bvideo\s+(about|for|of|showing|that|based\s+on)\b/i.test(message);
 
