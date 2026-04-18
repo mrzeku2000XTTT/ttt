@@ -149,6 +149,8 @@ Deno.serve(async (req) => {
       ));
 
       // Trigger Superagent render — create conversation + POST SLIDE_RENDER_JOB payload
+      // Superagent will post the finished video back into this same conversation (no polling on our side beyond the existing imposterPoll)
+      let renderConvId;
       try {
         const convRes = await fetch(`${KAI_BASE_URL}/conversations`, {
           method: 'POST',
@@ -157,7 +159,7 @@ Deno.serve(async (req) => {
         });
         if (!convRes.ok) throw new Error(`conv create ${convRes.status}`);
         const convData = await convRes.json();
-        const renderConvId = convData.id || convData.conversation_id;
+        renderConvId = convData.id || convData.conversation_id;
 
         const sortedSlides = [...createdSlides].sort((a, b) => (a.order || 0) - (b.order || 0));
         const payload = {
@@ -176,7 +178,7 @@ Deno.serve(async (req) => {
         };
         const renderContent = `SLIDE_RENDER_JOB: ${JSON.stringify(payload)}`;
 
-        // Fire-and-forget POST to Superagent
+        // Fire-and-forget POST to Superagent — it will callback into renderConvId when done
         fetch(`${KAI_BASE_URL}/conversations/${renderConvId}/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'api_key': KAI_API_KEY },
@@ -190,16 +192,17 @@ Deno.serve(async (req) => {
         });
       } catch (renderErr) {
         console.error("deck render trigger error:", renderErr?.message || renderErr);
-        // Deck stays as draft — user can manually render from builder
+        return Response.json({ reply: "built the deck but couldn't kick off the render. open /SlideDeckBuilder and hit render manually." });
       }
 
+      // Return video_processing so the frontend uses the SAME polling path as single-video renders (Path A)
+      // imposterPoll scans the conversation for the .mp4 Superagent posts back — no separate protocol needed
       return Response.json({
         reply: `🎬 Building your **${deckSpec.title}** — ${deckSpec.slides.length} slides, ~${totalDuration}s video. Rendering now, I'll drop the link right here when it's ready.`,
         action: {
-          type: "deck_ready",
+          type: "video_processing",
+          conversation_id: renderConvId,
           deck_id: deck.id,
-          deck_title: deckSpec.title,
-          slide_count: deckSpec.slides.length,
         },
       });
     } catch (err) {
