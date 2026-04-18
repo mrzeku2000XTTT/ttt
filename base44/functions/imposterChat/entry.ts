@@ -135,6 +135,20 @@ Deno.serve(async (req) => {
         total_duration: totalDuration,
       });
 
+      // Generate one image per slide BEFORE handing off to Superagent — gives the renderer real visuals to composite
+      const slideImages = await Promise.all(deckSpec.slides.map(async (s) => {
+        try {
+          const styleHint = deckSpec.style && deckSpec.style !== "auto" ? ` Style: ${deckSpec.style}, cinematic, high detail, 16:9.` : " Cinematic, high detail, 16:9.";
+          const img = await base44.asServiceRole.integrations.Core.GenerateImage({
+            prompt: `${s.prompt}${styleHint}`,
+          });
+          return img?.url || null;
+        } catch (e) {
+          console.error("slide image gen error:", e?.message || e);
+          return null;
+        }
+      }));
+
       // Create Slide records (order starts at 1, matching Superagent payload spec)
       const createdSlides = await Promise.all(deckSpec.slides.map((s, idx) =>
         base44.entities.Slide.create({
@@ -145,6 +159,7 @@ Deno.serve(async (req) => {
           duration: s.duration || 5,
           style: deckSpec.style || "auto",
           status: "pending",
+          image_url: slideImages[idx] || undefined,
         })
       ));
 
@@ -174,7 +189,9 @@ Deno.serve(async (req) => {
             voiceover: s.voiceover,
             duration: s.duration || 5,
             style: s.style || deck.style,
+            image_url: s.image_url || null,
           })),
+          reference_image_urls: attachedImages,
         };
         const renderContent = `SLIDE_RENDER_JOB: ${JSON.stringify(payload)}`;
 
