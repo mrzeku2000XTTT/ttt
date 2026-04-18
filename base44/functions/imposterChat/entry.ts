@@ -4,19 +4,17 @@ const KASPA_API = 'https://api.kaspa.org';
 const KAI_AGENT_ID = '69e00a3b3c4957544571e863';
 const KAI_API_KEY = '7d4e7751d1ac406dae4df07533c5e566';
 const KAI_BASE_URL = `https://app.base44.com/api/agents/${KAI_AGENT_ID}`;
-const KAI_HYPERFRAMES_URL = `https://kais-backend-brain-superagent-for-4571e863.base44.app/functions/kaiHyperFrames`;
+const KAI_HYPERFRAMES_URL = `https://app.base44.com/api/apps/${KAI_AGENT_ID}/functions/kaiHyperFrames`;
 
-async function triggerHyperFramesRender({ prompt, conversation_id, title = "Kai Video", image_urls = [] }) {
-  // conversation_id is the linking key — kaiHyperFrames creates its own record
-  // and the entity automation fires on create, posting the mp4 back into the same conversation.
-  const body = { prompt, title, conversation_id };
-  if (Array.isArray(image_urls) && image_urls.length > 0) {
-    body.image_urls = image_urls;
-    body.reference_images = image_urls;
-  }
+async function triggerHyperFramesRender({ prompt, conversation_id, title = "Kai Video", image_urls = [], duration = 15, style = "kaspa" }) {
+  // Spec payload: { prompt, title, duration, style, conversation_id, image_urls }
+  // conversation_id is the linking key — imposterPoll reads the finished mp4 from this conversation.
+  const body = { prompt, title, duration, style, conversation_id, image_urls: Array.isArray(image_urls) ? image_urls : [] };
+  // reference_images kept as fallback key for older kaiHyperFrames builds
+  if (body.image_urls.length > 0) body.reference_images = body.image_urls;
   const res = await fetch(KAI_HYPERFRAMES_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'api_key': KAI_API_KEY },
     body: JSON.stringify(body),
   });
   if (!res.ok) {
@@ -252,6 +250,8 @@ Deno.serve(async (req) => {
         prompt: message,
         conversation_id: convId,
         title: message.slice(0, 60).trim() || "Imposter Video",
+        duration: 15,
+        style: "kaspa",
         image_urls: attachedImages,
       });
       console.log(`[imposterChat] ✅ kaiHyperFrames accepted conv=${convId}:`, JSON.stringify(hfResult).slice(0, 400));
