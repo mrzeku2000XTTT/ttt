@@ -271,7 +271,7 @@ export default function KaspaAvatarChat() {
       console.warn("VideoRender subscribe failed, relying on fallback polling:", err?.message || err);
     }
 
-    // 2. Fallback: light 30s poll via imposterPoll (covers case where subscribe silently drops)
+    // 2. Primary path per spec: poll imposterPoll every 3s until status="ready" with video_url
     let attempts = 0;
     const fallbackTick = async () => {
       if (resolved) return;
@@ -283,7 +283,7 @@ export default function KaspaAvatarChat() {
           swapToVideo(data.video_url);
           return;
         }
-        if (attempts >= 32) { // ~16 min @ 30s
+        if (attempts >= 400) { // ~20 min @ 3s
           if (watchRef.current) {
             unsubscribe?.();
             clearInterval(watchRef.current.fallback);
@@ -297,7 +297,7 @@ export default function KaspaAvatarChat() {
         }
       } catch {}
     };
-    const fallback = setInterval(fallbackTick, 30000);
+    const fallback = setInterval(fallbackTick, 3000);
 
     watchRef.current = { recordId, unsubscribe, fallback };
 
