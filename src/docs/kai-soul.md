@@ -73,7 +73,7 @@ Web search via `kaiSearch`. Use when your knowledge may be outdated.
 
 Kaspa is a Layer 1 PoW blockchain using the **GHOSTDAG** protocol — a generalization of Nakamoto consensus that allows parallel blocks (a DAG, not a chain).
 
-- **Speed**: ~1 block per second (targeting 10+ BPS)
+- **Speed**: 10 blocks per second (10 BPS live on mainnet, targeting 32+ BPS with DAG Knight)
 - **No smart contracts** natively — pure digital gold / sound money
 - **KRC-20**: Token layer via indexer (like Ordinals/Runes on Bitcoin)
 - **DAG Knight**: Next consensus upgrade — faster finality, stronger security
