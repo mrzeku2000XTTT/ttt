@@ -322,12 +322,13 @@ Original prompt: ${input.trim()}`,
   const sendMessage = async () => {
     if ((!input.trim() && pendingImages.length === 0) || isLoading) return;
     let userMsg = input.trim() || (pendingImages.length > 0 ? "Analyze this image" : "");
-    // In imposter mode, apply render-mode prefix so imposterChat routes correctly
+    // In imposter mode, apply render-mode prefix so imposterChat routes correctly.
+    // When user has EXPLICITLY selected Video or Deck tab, always prefix — their intent is clear.
+    // This guarantees backend regex matches even after prompt-enhance rewrites the text.
     if (kaiMode === "imposter" && userMsg) {
-      const lower = userMsg.toLowerCase();
-      if (renderMode === "deck" && !/\b(deck|slide|slideshow|presentation)\b/.test(lower)) {
+      if (renderMode === "deck" && !/^make (a|an) slide deck video:/i.test(userMsg)) {
         userMsg = `Make a slide deck video: ${userMsg}`;
-      } else if (renderMode === "video" && !/\b(video|mp4|animation|clip|reel)\b/.test(lower)) {
+      } else if (renderMode === "video" && !/^make (a|an) video:/i.test(userMsg)) {
         userMsg = `Make a video: ${userMsg}`;
       }
     }
