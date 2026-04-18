@@ -7,14 +7,9 @@ const KAI_BASE_URL = `https://app.base44.com/api/agents/${KAI_AGENT_ID}`;
 const KAI_HYPERFRAMES_URL = `https://kais-backend-brain-superagent-for-4571e863.base44.app/functions/kaiHyperFrames`;
 
 async function triggerHyperFramesRender({ prompt, conversation_id, title = "Kai Video", image_urls = [] }) {
-  // Superagent's kaiHyperFrames expects `record_id` as the job key.
-  // We send both record_id and conversation_id pointing to the same ID so either naming works.
-  const body = {
-    prompt,
-    title,
-    record_id: conversation_id,
-    conversation_id,
-  };
+  // conversation_id is the linking key — kaiHyperFrames creates its own record
+  // and the entity automation fires on create, posting the mp4 back into the same conversation.
+  const body = { prompt, title, conversation_id };
   if (Array.isArray(image_urls) && image_urls.length > 0) {
     body.image_urls = image_urls;
     body.reference_images = image_urls;
