@@ -251,7 +251,7 @@ Deno.serve(async (req) => {
       const hfResult = await triggerHyperFramesRender({
         prompt: message,
         conversation_id: convId,
-        title: "Imposter Video",
+        title: message.slice(0, 60).trim() || "Imposter Video",
         image_urls: attachedImages,
       });
       console.log(`[imposterChat] ✅ kaiHyperFrames accepted conv=${convId}:`, JSON.stringify(hfResult).slice(0, 400));
