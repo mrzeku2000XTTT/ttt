@@ -28,6 +28,7 @@ import { KAIThinkingBubble } from "./KAIAnimations";
 import KAIChatMessage from "./KAIChatMessage";
 import ImposterGate from "./ImposterGate";
 import ImposterSettings from "./ImposterSettings";
+import ImposterImageLoader from "./ImposterImageLoader";
 
 export default function KaspaAvatarChat() {
   const navigate = useNavigate();
@@ -353,6 +354,18 @@ Original prompt: ${input.trim()}`,
     // Build conversation state from last assistant action (for multi-turn send flow)
     const lastAction = [...messages].reverse().find(m => m.imposterAction)?.imposterAction || null;
 
+    // Quickly detect image intent client-side to show loader right away
+    const isImageIntent = /\b(make|create|generate|render|produce|draw|design|give me|show me)\b.*\b(image|picture|pic|photo|art|artwork|drawing|illustration|poster|meme|logo|wallpaper|portrait|scene)\b/i.test(userMsg)
+      || /\b(image|picture|pic|photo|art|artwork|drawing|illustration|poster|meme|logo|wallpaper)\s+(of|about|for|showing|that|with)\b/i.test(userMsg);
+
+    let loaderIdx = -1;
+    if (isImageIntent) {
+      setMessages(prev => {
+        loaderIdx = prev.length;
+        return [...prev, { role: "assistant", content: null, imposterImageLoading: true }];
+      });
+    }
+
     const res = await base44.functions.invoke('imposterChat', {
       message: userMsg,
       identity: identity ? { imposter_id: identity.imposter_id, subagent_name: identity.subagent_name, kaspa_address: identity.kaspa_address } : null,
@@ -362,15 +375,24 @@ Original prompt: ${input.trim()}`,
 
     const data = res.data;
 
-    // Handle image ready — show text reply + embedded image
+    // Handle image ready — replace loader (if shown) with the final image
     if (data?.action?.type === "image_ready" && data.action.image_url) {
-      if (data.reply) addAssistantMessage(data.reply);
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: null,
-        imposterImage: { image_url: data.action.image_url, prompt: data.action.prompt },
-      }]);
+      setMessages(prev => {
+        const copy = prev.filter(m => !m.imposterImageLoading);
+        if (data.reply) copy.push({ role: "assistant", content: data.reply });
+        copy.push({
+          role: "assistant",
+          content: null,
+          imposterImage: { image_url: data.action.image_url, prompt: data.action.prompt },
+        });
+        return copy;
+      });
       return;
+    }
+
+    // If we showed a loader but the response isn't an image (error path), clear it
+    if (isImageIntent) {
+      setMessages(prev => prev.filter(m => !m.imposterImageLoading));
     }
 
     // Handle video ready — show text reply + embedded video

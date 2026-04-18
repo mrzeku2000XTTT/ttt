@@ -8,6 +8,7 @@ import { setKaSshiGlobal, markKaSshiInlineVisited } from "@/components/KaSshiPla
 import KAINewsCard from "./KAINewsCard";
 import KAIVideoCard from "./KAIVideoCard";
 import ImposterRenderLoader from "./ImposterRenderLoader";
+import ImposterImageLoader from "./ImposterImageLoader";
 import { base44 } from "@/api/base44Client";
 
 export default function KAIChatMessage({ msg, index, typingIndex, typingText, setIsOpen, setBrowserUrl, setShowBrowser, setViewingPost, onWatchVideo, onUseImageAsVideoRef }) {
@@ -164,6 +165,11 @@ export default function KAIChatMessage({ msg, index, typingIndex, typingText, se
         />
       </div>
     );
+  }
+
+  // Imposter image generating — show loader
+  if (msg.imposterImageLoading) {
+    return <ImposterImageLoader />;
   }
 
   // Imposter image ready — embed image directly
