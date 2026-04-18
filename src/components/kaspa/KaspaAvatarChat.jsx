@@ -545,7 +545,7 @@ Original prompt: ${input.trim()}`,
                 </div>
                 <div>
                   <div className="text-white font-bold text-sm tracking-wide">Kai</div>
-                  <div className="text-white/40 text-[10px]">{kaiMode === "classic" ? "Classic • TTT Assistant" : kaiMode === "imposter" ? "Unknown Origin • Unfiltered" : "Kaspa AI Assistant"}</div>
+                  <div className="text-white/40 text-[10px]">{kaiMode === "classic" ? "TTT Kai • Kaspa Avatar Intelligence" : kaiMode === "imposter" ? "Imposter Kai • Unfiltered" : "Kaspa Kai • Kaspa Avatar Intelligence"}</div>
                 </div>
               </div>
               <div className="flex items-center gap-1">
@@ -565,7 +565,7 @@ Original prompt: ${input.trim()}`,
                   className="h-6 px-2.5 rounded-full flex items-center gap-1.5 text-[10px] font-semibold transition-all hover:bg-white/10"
                   style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)" }}>
                   <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: kaiMode === "imposter" ? "#ff4444" : kaiMode === "classic" ? "#a855f7" : "#06b6d4" }} />
-                  {kaiMode === "classic" ? "Classic" : kaiMode === "imposter" ? "Imposter" : "KAI"}
+                  {kaiMode === "classic" ? "TTT Kai" : kaiMode === "imposter" ? "Imposter Kai" : "Kaspa Kai"}
                 </button>
                 <button onClick={() => setShowSettings(!showSettings)}
                   className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors hover:bg-white/10 ${showSettings ? 'text-cyan-400' : 'text-white/40 hover:text-white/80'}`}>
