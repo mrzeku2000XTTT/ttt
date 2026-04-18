@@ -731,13 +731,13 @@ Original prompt: ${input.trim()}`,
                 <KAIChatMessage key={i} msg={msg} index={i} typingIndex={typingIndex} typingText={typingText}
                   setIsOpen={setIsOpen} setBrowserUrl={setBrowserUrl} setShowBrowser={setShowBrowser} setViewingPost={setViewingPost}
                   onUseImageAsVideoRef={(imageUrl, imagePrompt) => {
-                    // Pre-fill input + attach image so user can edit the prompt before sending
-                    const starter = imagePrompt ? `Make a video animating this scene: ${imagePrompt}` : "Make a video animating this scene: ";
+                    // Pre-fill with "Make a video:" trigger at the front, followed by editable description
+                    const starter = imagePrompt ? `Make a video: ${imagePrompt}` : "Make a video: ";
                     setInput(starter);
                     setPendingImages(prev => [...prev, { url: imageUrl, name: "reference.png" }]);
                     setTimeout(() => {
                       inputRef.current?.focus();
-                      // Move cursor to end so user can keep typing
+                      // Move cursor to end so user can keep editing
                       const el = inputRef.current;
                       if (el) el.setSelectionRange(starter.length, starter.length);
                     }, 100);
