@@ -234,8 +234,8 @@ Deno.serve(async (req) => {
     || /\bvideo\s+(about|for|of|showing|that|based\s+on)\b/i.test(message);
 
   if (hasVideoKeywords) {
-    // Flow: create a Kai conversation → send the video request AS A MESSAGE → Kai agent
-    // internally calls kaiHyperFrames and posts the result back. We poll the conversation.
+    // Flow: create a Kai conversation → fire-and-forget directly to kaiHyperFrames with that
+    // conversation_id. Superagent renders the mp4 and posts it back into the same conversation.
     let convId;
     try {
       convId = await createKaiConversation();
@@ -244,12 +244,13 @@ Deno.serve(async (req) => {
       return Response.json({ reply: "couldn't kick off the render. try again." });
     }
 
-    const videoRequest = `Please render a video for me with kaiHyperFrames. Prompt: "${message}". Do NOT apply any Kaspa, crypto, or brand-specific styling unless the prompt explicitly asks for it. Once the video is ready, reply with the .mp4 URL.`;
-
-    // Send the request to Kai — fire-and-forget, frontend will poll the conversation for the video URL
-    sendKaiMessage(convId, videoRequest, attachedImages).catch(err =>
-      console.error("send kai message error:", err?.message || err)
-    );
+    // Direct fire-and-forget to kaiHyperFrames — no agent middleman
+    triggerHyperFramesRender({
+      prompt: message,
+      conversation_id: convId,
+      title: "Imposter Video",
+      image_urls: attachedImages,
+    }).catch(err => console.error("kaiHyperFrames trigger error:", err?.message || err));
 
     return Response.json({
       reply: "🎬 rendering your video… hang tight, this takes about a minute.",
