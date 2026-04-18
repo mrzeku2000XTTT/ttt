@@ -244,13 +244,20 @@ Deno.serve(async (req) => {
       return Response.json({ reply: "couldn't kick off the render. try again." });
     }
 
-    // Direct fire-and-forget to kaiHyperFrames — no agent middleman
-    triggerHyperFramesRender({
-      prompt: message,
-      conversation_id: convId,
-      title: "Imposter Video",
-      image_urls: attachedImages,
-    }).catch(err => console.error("kaiHyperFrames trigger error:", err?.message || err));
+    // Trigger kaiHyperFrames AWAITED — we must know it was accepted before returning
+    console.log(`[imposterChat] firing kaiHyperFrames conv=${convId} prompt="${message.slice(0, 80)}" images=${attachedImages.length}`);
+    try {
+      const hfResult = await triggerHyperFramesRender({
+        prompt: message,
+        conversation_id: convId,
+        title: "Imposter Video",
+        image_urls: attachedImages,
+      });
+      console.log(`[imposterChat] ✅ kaiHyperFrames accepted conv=${convId}:`, JSON.stringify(hfResult).slice(0, 400));
+    } catch (hfErr) {
+      console.error(`[imposterChat] ❌ kaiHyperFrames failed conv=${convId}:`, hfErr?.message || hfErr);
+      return Response.json({ reply: `render service didn't respond (${hfErr?.message || "unknown"}). try again.` });
+    }
 
     return Response.json({
       reply: "🎬 rendering your video… hang tight, this takes about a minute.",
