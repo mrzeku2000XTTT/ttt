@@ -191,7 +191,27 @@ export default function KaspaAvatarChat() {
     setEnhancing(true);
     try {
       const enhanced = await base44.integrations.Core.InvokeLLM({
-        prompt: `Rewrite this user prompt into a richer, more vivid, more detailed version. Keep the original intent exact — don't add unrelated topics or change what they're asking for. Add sensory detail, specificity, and clarity. Output ONLY the rewritten prompt, no preamble, no quotes, no explanation.\n\nOriginal: ${input.trim()}`,
+        prompt: `You are an expert Motion Design Art Director and GSAP Animation Master. Rewrite the user's prompt into a massive, Hollywood-style motion-design brief structured as a multi-phase timeline: **Intro Sequence**, **Main Stage**, and **Outro**. Keep the original subject and intent EXACT — do not change the topic, only expand it into a cinematic choreography brief.
+
+MANDATORY TECH SPECS — you MUST forcefully include ALL of the following throughout the brief:
+- Exact GSAP easing curves such as: expo.inOut, expo.out, power4.inOut, elastic.out(1, 0.3), back.out(1.7), circ.inOut, steps(12)
+- Timeline overlap operators like '-=0.5', '+=0.2', '<0.1', '>-0.3' to show stagger and overlap between tweens
+- Split-text typography with per-character / per-word <span> animations (y, opacity, rotationX, skewX staggers)
+- 3D transforms: rotationX, rotationY, skewX, perspective, transformOrigin
+- clip-path sweeps (inset, polygon wipes) for reveals and masks
+- Optical blur depth (filter: blur(Xpx)) tweened in/out for focus pulls and depth of field
+- Parallax layers, staggered entrances, camera-like push-ins, and exit choreography
+
+FORMAT:
+- 400–600 words of highly descriptive, cinematic, Hollywood-style breakdown
+- Section headers: "INTRO SEQUENCE", "MAIN STAGE", "OUTRO"
+- Reference specific timings (e.g. "at 0.8s", "over 1.2s"), eases, and overlap operators inline
+- Describe lighting, color grade, texture, typography weight, and pacing like a motion director briefing an animator
+
+Output ONLY the rewritten motion-design brief. No preamble, no quotes, no explanation.
+
+Original prompt: ${input.trim()}`,
+        model: "gemini_3_flash",
       });
       const clean = typeof enhanced === "string" ? enhanced.trim().replace(/^["']|["']$/g, "") : "";
       if (clean) setInput(clean);
@@ -733,25 +753,27 @@ export default function KaspaAvatarChat() {
                   <div className="text-[9px] text-white/40 mt-1 px-1">{pendingImages.length}/10 images attached</div>
                 </div>
               )}
-              <div className="flex items-center gap-2 px-3 py-2 rounded-2xl" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <div className="flex items-start gap-2 px-3 py-2 rounded-2xl" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
                 <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
                 <button onClick={() => fileInputRef.current?.click()} disabled={uploadingImage}
-                  className="w-7 h-7 rounded-full flex items-center justify-center transition-all flex-shrink-0 hover:bg-white/10"
+                  className="w-7 h-7 rounded-full flex items-center justify-center transition-all flex-shrink-0 hover:bg-white/10 mt-1"
                   style={{ color: pendingImages.length > 0 ? "rgba(6,182,212,0.9)" : "rgba(255,255,255,0.4)" }} title="Upload image">
                   {uploadingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImagePlus className="w-3.5 h-3.5" />}
                 </button>
-                <input ref={inputRef} type="text" value={input} onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
+                <textarea ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+                  rows={3}
                   placeholder={pendingImages.length > 0 ? "Ask about the image…" : kaiMode === "classic" ? "Search or ask Kai..." : kaiMode === "imposter" ? "say something… if you dare" : "Search or ask KAI..."}
-                  className="flex-1 bg-transparent text-white/90 outline-none placeholder-white/30" style={{ fontSize: '16px' }} />
+                  className="flex-1 bg-transparent text-white/90 outline-none placeholder-white/30 resize-y scrollbar-hide"
+                  style={{ fontSize: '16px', minHeight: '72px', maxHeight: '240px', lineHeight: '1.4', fontFamily: 'inherit' }} />
                 <button onClick={enhancePrompt} disabled={!input.trim() || enhancing || isLoading}
-                  className="w-7 h-7 rounded-full flex items-center justify-center transition-all flex-shrink-0 hover:bg-white/10 disabled:opacity-30"
+                  className="w-7 h-7 rounded-full flex items-center justify-center transition-all flex-shrink-0 hover:bg-white/10 disabled:opacity-30 mt-1"
                   style={{ color: input.trim() && !enhancing ? "rgba(168,85,247,0.9)" : "rgba(255,255,255,0.4)" }}
                   title="Enhance prompt">
                   {enhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
                 </button>
                 <button onClick={sendMessage} disabled={(!input.trim() && pendingImages.length === 0) || isLoading}
-                  className="w-7 h-7 rounded-full flex items-center justify-center transition-all disabled:opacity-30"
+                  className="w-7 h-7 rounded-full flex items-center justify-center transition-all disabled:opacity-30 mt-1"
                   style={{ background: (input.trim() || pendingImages.length > 0) && !isLoading ? "rgba(6,182,212,0.4)" : "transparent" }}>
                   <Send className="w-3.5 h-3.5 text-white" />
                 </button>
