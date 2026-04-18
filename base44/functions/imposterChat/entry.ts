@@ -123,20 +123,23 @@ Deno.serve(async (req) => {
         return Response.json({ reply: "couldn't figure out what the deck should be. try: 'make me a 5-slide deck about kaspa staking'" });
       }
 
-      // Create deck + slides as drafts (user reviews before rendering)
+      const totalDuration = deckSpec.slides.reduce((sum, s) => sum + (s.duration || 5), 0);
+
+      // Create SlideDeck record (draft initially — will flip to rendering after Superagent trigger)
       const deck = await base44.entities.SlideDeck.create({
         title: deckSpec.title,
         description: deckSpec.description,
         style: deckSpec.style || "auto",
         status: "draft",
         total_slides: deckSpec.slides.length,
-        total_duration: deckSpec.slides.reduce((sum, s) => sum + (s.duration || 5), 0),
+        total_duration: totalDuration,
       });
 
-      await Promise.all(deckSpec.slides.map((s, idx) =>
+      // Create Slide records (order starts at 1, matching Superagent payload spec)
+      const createdSlides = await Promise.all(deckSpec.slides.map((s, idx) =>
         base44.entities.Slide.create({
           deck_id: deck.id,
-          order: idx,
+          order: idx + 1,
           prompt: s.prompt,
           voiceover: s.voiceover,
           duration: s.duration || 5,
@@ -145,8 +148,53 @@ Deno.serve(async (req) => {
         })
       ));
 
+      // Trigger Superagent render — create conversation + POST SLIDE_RENDER_JOB payload
+      try {
+        const convRes = await fetch(`${KAI_BASE_URL}/conversations`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'api_key': KAI_API_KEY },
+          body: JSON.stringify({ title: `Deck: ${deckSpec.title}` }),
+        });
+        if (!convRes.ok) throw new Error(`conv create ${convRes.status}`);
+        const convData = await convRes.json();
+        const renderConvId = convData.id || convData.conversation_id;
+
+        const sortedSlides = [...createdSlides].sort((a, b) => (a.order || 0) - (b.order || 0));
+        const payload = {
+          deck_id: deck.id,
+          deck_title: deck.title,
+          style: deck.style,
+          conversation_id: renderConvId,
+          slides: sortedSlides.map(s => ({
+            id: s.id,
+            order: s.order,
+            prompt: s.prompt,
+            voiceover: s.voiceover,
+            duration: s.duration || 5,
+            style: s.style || deck.style,
+          })),
+        };
+        const renderContent = `SLIDE_RENDER_JOB: ${JSON.stringify(payload)}`;
+
+        // Fire-and-forget POST to Superagent
+        fetch(`${KAI_BASE_URL}/conversations/${renderConvId}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'api_key': KAI_API_KEY },
+          body: JSON.stringify({ role: "user", content: renderContent }),
+        }).catch(err => console.error('slide render send error:', err?.message || err));
+
+        // Flip deck to rendering
+        await base44.entities.SlideDeck.update(deck.id, {
+          status: "rendering",
+          render_log: "🎬 Render queued — Superagent processing...",
+        });
+      } catch (renderErr) {
+        console.error("deck render trigger error:", renderErr?.message || renderErr);
+        // Deck stays as draft — user can manually render from builder
+      }
+
       return Response.json({
-        reply: `🎬 built your deck — **${deckSpec.title}** (${deckSpec.slides.length} slides, ~${deckSpec.slides.reduce((s, x) => s + (x.duration || 5), 0)}s). review and edit, then hit render.`,
+        reply: `🎬 Building your **${deckSpec.title}** — ${deckSpec.slides.length} slides, ~${totalDuration}s video. Rendering now, I'll drop the link right here when it's ready.`,
         action: {
           type: "deck_ready",
           deck_id: deck.id,
