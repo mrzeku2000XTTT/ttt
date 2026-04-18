@@ -186,6 +186,7 @@ export default function KaspaAvatarChat() {
 
   const removePendingImage = (idx) => setPendingImages(prev => prev.filter((_, i) => i !== idx));
 
+  const [renderMode, setRenderMode] = useState("auto"); // auto | video | deck
   const [enhancing, setEnhancing] = useState(false);
   const enhancePrompt = async () => {
     if (!input.trim() || enhancing) return;
@@ -223,7 +224,16 @@ Original prompt: ${input.trim()}`,
 
   const sendMessage = async () => {
     if ((!input.trim() && pendingImages.length === 0) || isLoading) return;
-    const userMsg = input.trim() || (pendingImages.length > 0 ? "Analyze this image" : "");
+    let userMsg = input.trim() || (pendingImages.length > 0 ? "Analyze this image" : "");
+    // In imposter mode, apply render-mode prefix so imposterChat routes correctly
+    if (kaiMode === "imposter" && userMsg) {
+      const lower = userMsg.toLowerCase();
+      if (renderMode === "deck" && !/\b(deck|slide|slideshow|presentation)\b/.test(lower)) {
+        userMsg = `Make a slide deck video: ${userMsg}`;
+      } else if (renderMode === "video" && !/\b(video|mp4|animation|clip|reel)\b/.test(lower)) {
+        userMsg = `Make a video: ${userMsg}`;
+      }
+    }
     const imageUrls = pendingImages.map(img => img.url);
     const imageNames = pendingImages.map(img => img.name);
     setInput("");
@@ -771,6 +781,31 @@ Original prompt: ${input.trim()}`,
 
             {/* Input */}
             <div className="px-3 pb-3 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.08)", display: (showBrowser && (browserUrl || viewingPost)) || (kaiMode === "imposter" && !imposterIdentity) ? "none" : undefined }}>
+              {/* Render mode chips — only in imposter mode */}
+              {kaiMode === "imposter" && imposterIdentity && (
+                <div className="flex items-center gap-1.5 px-1 pb-2">
+                  <span className="text-[9px] font-bold text-white/35 uppercase tracking-wider mr-1">Render:</span>
+                  {[
+                    { key: "auto", label: "Auto", emoji: "✨", color: "rgba(255,255,255,0.5)" },
+                    { key: "video", label: "Video", emoji: "🎬", color: "rgba(6,182,212,1)" },
+                    { key: "deck", label: "Deck", emoji: "📽️", color: "rgba(168,85,247,1)" },
+                  ].map(opt => (
+                    <button
+                      key={opt.key}
+                      onClick={() => setRenderMode(opt.key)}
+                      className="px-2 py-0.5 rounded-full text-[10px] font-bold transition-all"
+                      style={{
+                        background: renderMode === opt.key ? `${opt.color === "rgba(255,255,255,0.5)" ? "rgba(255,255,255,0.15)" : opt.color.replace("1)", "0.18)")}` : "rgba(255,255,255,0.04)",
+                        color: renderMode === opt.key ? opt.color : "rgba(255,255,255,0.4)",
+                        border: `1px solid ${renderMode === opt.key ? opt.color.replace("1)", "0.4)") : "rgba(255,255,255,0.08)"}`,
+                      }}
+                      title={opt.key === "auto" ? "Let Kai detect" : opt.key === "video" ? "Path A — single fast video" : "Path B — multi-slide deck video"}
+                    >
+                      {opt.emoji} {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
               {pendingImages.length > 0 && (
                 <div className="px-2 pb-2">
                   <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
