@@ -195,7 +195,7 @@ export default function KaspaAvatarChat() {
     if (!recordId || activePollersRef.current.has(recordId)) return;
     activePollersRef.current.add(recordId);
 
-    const maxDurationMs = 7.5 * 60 * 1000; // 7.5 minutes cap from startedAt
+    const maxDurationMs = 20 * 60 * 1000; // 20 minutes cap from startedAt (decks can take a while)
 
     const updateCard = (update) => {
       setMessages(prev => {
@@ -253,7 +253,7 @@ export default function KaspaAvatarChat() {
           : { status: "rendering" });
 
         if (Date.now() - startedAt >= maxDurationMs) {
-          updateCard({ status: "error", progress: "render timed out. try again." });
+          updateCard({ status: "slow", progress: "⏳ still rendering… this one's taking longer than usual. check back in a bit — it'll show up when ready." });
           activePollersRef.current.delete(recordId);
           return;
         }
@@ -263,7 +263,7 @@ export default function KaspaAvatarChat() {
         if (Date.now() - startedAt < maxDurationMs) {
           setTimeout(poll, 5000);
         } else {
-          updateCard({ status: "error", progress: "lost connection to render." });
+          updateCard({ status: "slow", progress: "⏳ connection hiccup — render is still running in the background." });
           activePollersRef.current.delete(recordId);
         }
       }
@@ -278,6 +278,7 @@ export default function KaspaAvatarChat() {
       m.imposterRender &&
       m.imposterRender.recordId &&
       m.imposterRender.status !== "error" &&
+      m.imposterRender.status !== "slow" &&
       !m.imposterVideo
     );
     inProgress.forEach(m => {

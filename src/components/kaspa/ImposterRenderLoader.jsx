@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 
 export default function ImposterRenderLoader({ status, progress, elapsed }) {
   const isError = status === "error";
+  const isSlow = status === "slow";
   const mins = Math.floor((elapsed || 0) / 60);
   const secs = (elapsed || 0) % 60;
   const timeStr = `${mins}:${String(secs).padStart(2, "0")}`;
@@ -10,11 +11,14 @@ export default function ImposterRenderLoader({ status, progress, elapsed }) {
   const statusLabel = {
     queued: "Queued",
     rendering: "Rendering",
+    slow: "Still cooking",
     error: "Failed",
   }[status] || "Working";
 
   const statusColor = isError
     ? { bg: "rgba(255,50,50,0.08)", border: "rgba(255,50,50,0.3)", text: "rgba(255,120,120,1)", dot: "#ef4444" }
+    : isSlow
+    ? { bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.3)", text: "rgba(251,191,36,1)", dot: "#f59e0b" }
     : { bg: "rgba(6,182,212,0.08)", border: "rgba(6,182,212,0.3)", text: "rgba(6,182,212,1)", dot: "#06b6d4" };
 
   return (
