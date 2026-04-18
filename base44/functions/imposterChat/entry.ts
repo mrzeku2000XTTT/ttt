@@ -4,7 +4,8 @@ const KASPA_API = 'https://api.kaspa.org';
 const KAI_AGENT_ID = '69e00a3b3c4957544571e863';
 const KAI_API_KEY = '7d4e7751d1ac406dae4df07533c5e566';
 const KAI_BASE_URL = `https://app.base44.com/api/agents/${KAI_AGENT_ID}`;
-const KAI_HYPERFRAMES_URL = `https://app.base44.com/api/apps/${KAI_AGENT_ID}/functions/kaiHyperFrames`;
+// Must use the app's subdomain, NOT app.base44.com (platform domain rejects backend function calls)
+const KAI_HYPERFRAMES_URL = `https://superagent.base44.app/api/apps/${KAI_AGENT_ID}/functions/kaiHyperFrames`;
 
 async function triggerHyperFramesRender({ prompt, conversation_id, title = "Kai Video", image_urls = [], duration = 15, style = "kaspa" }) {
   // Spec payload: { prompt, title, duration, style, conversation_id, image_urls }
@@ -179,33 +180,47 @@ Deno.serve(async (req) => {
           ));
 
           const sortedSlides = [...createdSlides].sort((a, b) => (a.order || 0) - (b.order || 0));
-          const payload = {
-            deck_id: deck.id,
-            deck_title: deck.title,
-            style: deck.style,
+
+          // v3.0 — slide decks go through kaiHyperFrames (NOT SLIDE_RENDER_JOB message)
+          const deckPayload = {
+            title: deck.title,
+            style: deck.style || "kaspa",
             conversation_id: renderConvId,
+            deck_id: deck.id,
             slides: sortedSlides.map(s => ({
-              id: s.id,
               order: s.order,
               prompt: s.prompt,
               voiceover: s.voiceover,
               duration: s.duration || 5,
-              style: s.style || deck.style,
               image_url: s.image_url || null,
             })),
             image_urls: attachedImages,
           };
-          const renderContent = `SLIDE_RENDER_JOB: ${JSON.stringify(payload)}`;
 
-          fetch(`${KAI_BASE_URL}/conversations/${renderConvId}/messages`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'api_key': KAI_API_KEY },
-            body: JSON.stringify({ role: "user", content: renderContent }),
-          }).catch(err => console.error('slide render send error:', err?.message || err));
+          console.log(`[imposterChat] firing kaiHyperFrames DECK conv=${renderConvId} slides=${sortedSlides.length}`);
+          try {
+            const hfRes = await fetch(KAI_HYPERFRAMES_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'api_key': KAI_API_KEY },
+              body: JSON.stringify(deckPayload),
+            });
+            if (!hfRes.ok) {
+              const errText = await hfRes.text().catch(() => "");
+              console.error(`[imposterChat] ❌ deck kaiHyperFrames ${hfRes.status}:`, errText.slice(0, 300));
+              await base44.entities.SlideDeck.update(deck.id, { status: "error", render_log: `kaiHyperFrames ${hfRes.status}: ${errText.slice(0, 200)}` });
+              return;
+            }
+            const hfJson = await hfRes.json().catch(() => ({}));
+            console.log(`[imposterChat] ✅ deck kaiHyperFrames accepted conv=${renderConvId}:`, JSON.stringify(hfJson).slice(0, 300));
+          } catch (hfErr) {
+            console.error('deck kaiHyperFrames call error:', hfErr?.message || hfErr);
+            await base44.entities.SlideDeck.update(deck.id, { status: "error", render_log: `kaiHyperFrames error: ${hfErr?.message || "unknown"}` });
+            return;
+          }
 
           await base44.entities.SlideDeck.update(deck.id, {
             status: "rendering",
-            render_log: "🎬 Render queued — Superagent processing...",
+            render_log: "🎬 Render queued via kaiHyperFrames — Superagent processing...",
           });
         } catch (bgErr) {
           console.error("deck render bg error:", bgErr?.message || bgErr);
