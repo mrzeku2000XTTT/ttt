@@ -34,6 +34,8 @@ import ImposterImageLoader from "./ImposterImageLoader";
 export default function KaspaAvatarChat() {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [videoUrl, setVideoUrl] = useState(() => localStorage.getItem(STORAGE_KEY) || DEFAULT_VIDEO_URL);
   const [messages, setMessages] = useState(() => {
     // Restore persisted messages so remounts (route changes) don't wipe the chat
@@ -103,6 +105,31 @@ export default function KaspaAvatarChat() {
 
   // Shared handler context object
   const ctx = { setMessages, addAssistantMessage, setIsLoading, isFast, speedInstruction, kaiMode };
+
+  // Load current user & enforce admin-only imposter mode
+  useEffect(() => {
+    (async () => {
+      try {
+        const u = await base44.auth.me();
+        setCurrentUser(u);
+        const admin = u?.role === 'admin';
+        setIsAdmin(admin);
+        // If a non-admin somehow has imposter mode active, kick them back to kai
+        if (!admin && kaiMode === "imposter") {
+          setKaiMode("kai");
+          try { localStorage.setItem("kai_mode", "kai"); } catch {}
+          setMessages([{ role: "assistant", content: "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem." }]);
+        }
+      } catch {
+        setCurrentUser(null);
+        setIsAdmin(false);
+        if (kaiMode === "imposter") {
+          setKaiMode("kai");
+          try { localStorage.setItem("kai_mode", "kai"); } catch {}
+        }
+      }
+    })();
+  }, []);
 
   // Fetch global KAI video URL
   useEffect(() => {
@@ -644,7 +671,10 @@ Original prompt: ${input.trim()}`,
               </div>
               <div className="flex items-center gap-1">
                 <button onClick={() => {
-                  const cycle = { kai: "classic", classic: "imposter", imposter: "kai" };
+                  // Admin-only cycle includes imposter; non-admins only toggle kai ↔ classic
+                  const cycle = isAdmin
+                    ? { kai: "classic", classic: "imposter", imposter: "kai" }
+                    : { kai: "classic", classic: "kai", imposter: "kai" };
                   const next = cycle[kaiMode] || "kai";
                   setKaiMode(next); setIsLoading(false); setTypingIndex(-1); setTypingText("");
                   const storedIdentity = next === "imposter" ? (() => { try { const s = localStorage.getItem("imposter_identity"); return s ? JSON.parse(s) : null; } catch { return null; } })() : null;
