@@ -135,36 +135,7 @@ Deno.serve(async (req) => {
         total_duration: totalDuration,
       });
 
-      // Generate one image per slide BEFORE handing off to Superagent — gives the renderer real visuals to composite
-      const slideImages = await Promise.all(deckSpec.slides.map(async (s) => {
-        try {
-          const styleHint = deckSpec.style && deckSpec.style !== "auto" ? ` Style: ${deckSpec.style}, cinematic, high detail, 16:9.` : " Cinematic, high detail, 16:9.";
-          const img = await base44.asServiceRole.integrations.Core.GenerateImage({
-            prompt: `${s.prompt}${styleHint}`,
-          });
-          return img?.url || null;
-        } catch (e) {
-          console.error("slide image gen error:", e?.message || e);
-          return null;
-        }
-      }));
-
-      // Create Slide records (order starts at 1, matching Superagent payload spec)
-      const createdSlides = await Promise.all(deckSpec.slides.map((s, idx) =>
-        base44.entities.Slide.create({
-          deck_id: deck.id,
-          order: idx + 1,
-          prompt: s.prompt,
-          voiceover: s.voiceover,
-          duration: s.duration || 5,
-          style: deckSpec.style || "auto",
-          status: "pending",
-          image_url: slideImages[idx] || undefined,
-        })
-      ));
-
-      // Trigger Superagent render — create conversation + POST SLIDE_RENDER_JOB payload
-      // Superagent will post the finished video back into this same conversation (no polling on our side beyond the existing imposterPoll)
+      // Create Superagent conversation up front so we can return the conversation_id immediately
       let renderConvId;
       try {
         const convRes = await fetch(`${KAI_BASE_URL}/conversations`, {
@@ -175,42 +146,72 @@ Deno.serve(async (req) => {
         if (!convRes.ok) throw new Error(`conv create ${convRes.status}`);
         const convData = await convRes.json();
         renderConvId = convData.id || convData.conversation_id;
-
-        const sortedSlides = [...createdSlides].sort((a, b) => (a.order || 0) - (b.order || 0));
-        const payload = {
-          deck_id: deck.id,
-          deck_title: deck.title,
-          style: deck.style,
-          conversation_id: renderConvId,
-          slides: sortedSlides.map(s => ({
-            id: s.id,
-            order: s.order,
-            prompt: s.prompt,
-            voiceover: s.voiceover,
-            duration: s.duration || 5,
-            style: s.style || deck.style,
-            image_url: s.image_url || null,
-          })),
-          image_urls: attachedImages,
-        };
-        const renderContent = `SLIDE_RENDER_JOB: ${JSON.stringify(payload)}`;
-
-        // Fire-and-forget POST to Superagent — it will callback into renderConvId when done
-        fetch(`${KAI_BASE_URL}/conversations/${renderConvId}/messages`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'api_key': KAI_API_KEY },
-          body: JSON.stringify({ role: "user", content: renderContent }),
-        }).catch(err => console.error('slide render send error:', err?.message || err));
-
-        // Flip deck to rendering
-        await base44.entities.SlideDeck.update(deck.id, {
-          status: "rendering",
-          render_log: "🎬 Render queued — Superagent processing...",
-        });
       } catch (renderErr) {
-        console.error("deck render trigger error:", renderErr?.message || renderErr);
+        console.error("deck conv create error:", renderErr?.message || renderErr);
         return Response.json({ reply: "built the deck but couldn't kick off the render. open /SlideDeckBuilder and hit render manually." });
       }
+
+      // Fire-and-forget: generate slide images, create slide records, then POST SLIDE_RENDER_JOB.
+      // Superagent's slideComplete patches the AIConversation with the final mp4 URL — no polling needed.
+      (async () => {
+        try {
+          const styleHint = deckSpec.style && deckSpec.style !== "auto" ? ` Style: ${deckSpec.style}, cinematic, high detail, 16:9.` : " Cinematic, high detail, 16:9.";
+          const slideImages = await Promise.all(deckSpec.slides.map(async (s) => {
+            try {
+              const img = await base44.asServiceRole.integrations.Core.GenerateImage({ prompt: `${s.prompt}${styleHint}` });
+              return img?.url || null;
+            } catch (e) {
+              console.error("slide image gen error:", e?.message || e);
+              return null;
+            }
+          }));
+
+          const createdSlides = await Promise.all(deckSpec.slides.map((s, idx) =>
+            base44.entities.Slide.create({
+              deck_id: deck.id,
+              order: idx + 1,
+              prompt: s.prompt,
+              voiceover: s.voiceover,
+              duration: s.duration || 5,
+              style: deckSpec.style || "auto",
+              status: "pending",
+              image_url: slideImages[idx] || undefined,
+            })
+          ));
+
+          const sortedSlides = [...createdSlides].sort((a, b) => (a.order || 0) - (b.order || 0));
+          const payload = {
+            deck_id: deck.id,
+            deck_title: deck.title,
+            style: deck.style,
+            conversation_id: renderConvId,
+            slides: sortedSlides.map(s => ({
+              id: s.id,
+              order: s.order,
+              prompt: s.prompt,
+              voiceover: s.voiceover,
+              duration: s.duration || 5,
+              style: s.style || deck.style,
+              image_url: s.image_url || null,
+            })),
+            image_urls: attachedImages,
+          };
+          const renderContent = `SLIDE_RENDER_JOB: ${JSON.stringify(payload)}`;
+
+          fetch(`${KAI_BASE_URL}/conversations/${renderConvId}/messages`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'api_key': KAI_API_KEY },
+            body: JSON.stringify({ role: "user", content: renderContent }),
+          }).catch(err => console.error('slide render send error:', err?.message || err));
+
+          await base44.entities.SlideDeck.update(deck.id, {
+            status: "rendering",
+            render_log: "🎬 Render queued — Superagent processing...",
+          });
+        } catch (bgErr) {
+          console.error("deck render bg error:", bgErr?.message || bgErr);
+        }
+      })();
 
       // Return video_processing so the frontend uses the SAME polling path as single-video renders (Path A)
       // imposterPoll scans the conversation for the .mp4 Superagent posts back — no separate protocol needed
