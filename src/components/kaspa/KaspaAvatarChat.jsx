@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, Loader2, Minus, Settings, ImagePlus, Sparkles } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { superagentClient } from "@/api/superagentClient";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import AgentBrowserPanel from "@/components/feed/AgentBrowserPanel";
@@ -186,60 +187,100 @@ export default function KaspaAvatarChat() {
 
   const removePendingImage = (idx) => setPendingImages(prev => prev.filter((_, i) => i !== idx));
 
-  // Poll imposterPoll for any message with imposterRender.status === "rendering".
-  // Superagent posts the final .mp4 into its conversation; imposterPoll scans for it.
-  // Single active interval at a time, 8s tick, max 120 attempts (~16 min) — some renders take a while.
-  const pollRef = useRef(null);
+  // PUSH-BASED render watcher (replaces polling).
+  // Subscribes to Superagent's VideoRender entity via cross-app SDK client.
+  // When status flips to "done" with a video_url, swap the card instantly.
+  // Fallback polling at 30s intervals in case cross-app subscribe doesn't fire.
+  const watchRef = useRef(null);
   useEffect(() => {
     const renderingMsg = messages.find(m => m?.imposterRender?.status === "rendering" && m?.imposterRender?.recordId);
     if (!renderingMsg) {
-      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+      if (watchRef.current) {
+        watchRef.current.unsubscribe?.();
+        clearInterval(watchRef.current.fallback);
+        watchRef.current = null;
+      }
       return;
     }
-    // Already polling for this same recordId — don't restart
-    if (pollRef.current && pollRef.current.recordId === renderingMsg.imposterRender.recordId) return;
-    // Different job → clear old interval
-    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+    // Already watching this same recordId — don't restart
+    if (watchRef.current && watchRef.current.recordId === renderingMsg.imposterRender.recordId) return;
+    // Different job → clean up previous
+    if (watchRef.current) {
+      watchRef.current.unsubscribe?.();
+      clearInterval(watchRef.current.fallback);
+      watchRef.current = null;
+    }
 
     const recordId = renderingMsg.imposterRender.recordId;
+    let resolved = false;
+
+    const swapToVideo = (videoUrl) => {
+      if (resolved) return;
+      resolved = true;
+      setMessages(prev => prev.map(m =>
+        m?.imposterRender?.recordId === recordId
+          ? { role: "assistant", content: null, imposterVideo: { video_url: videoUrl } }
+          : m
+      ));
+      if (watchRef.current) {
+        watchRef.current.unsubscribe?.();
+        clearInterval(watchRef.current.fallback);
+        watchRef.current = null;
+      }
+    };
+
+    // 1. Subscribe to Superagent's VideoRender entity for this conversation_id
+    let unsubscribe = null;
+    try {
+      unsubscribe = superagentClient.entities.VideoRender.subscribe((event) => {
+        const record = event?.data;
+        if (!record) return;
+        if (record.conversation_id !== recordId) return;
+        if (record.status === "done" && record.video_url) {
+          swapToVideo(record.video_url);
+        }
+      });
+    } catch (err) {
+      console.warn("VideoRender subscribe failed, relying on fallback polling:", err?.message || err);
+    }
+
+    // 2. Fallback: light 30s poll via imposterPoll (covers case where subscribe silently drops)
     let attempts = 0;
-    const tick = async () => {
+    const fallbackTick = async () => {
+      if (resolved) return;
       attempts++;
       try {
         const res = await base44.functions.invoke('imposterPoll', { conversation_id: recordId });
         const data = res.data || {};
         if (data.status === "ready" && data.video_url) {
-          clearInterval(pollRef.current); pollRef.current = null;
-          setMessages(prev => prev.map(m =>
-            m?.imposterRender?.recordId === recordId
-              ? { role: "assistant", content: null, imposterVideo: { video_url: data.video_url } }
-              : m
-          ));
+          swapToVideo(data.video_url);
           return;
         }
-        if (attempts >= 120) {
-          clearInterval(pollRef.current); pollRef.current = null;
+        if (attempts >= 32) { // ~16 min @ 30s
+          if (watchRef.current) {
+            unsubscribe?.();
+            clearInterval(watchRef.current.fallback);
+            watchRef.current = null;
+          }
           setMessages(prev => prev.map(m =>
             m?.imposterRender?.recordId === recordId
               ? { ...m, imposterRender: { ...m.imposterRender, status: "error", progress: "still rendering — check back soon" } }
               : m
           ));
         }
-        // Note: ignore data.status === "error" — Superagent sometimes posts transient
-        // error-looking messages mid-render. Just keep polling until the mp4 shows up.
-      } catch (err) {
-        // network blip — just keep trying until max attempts
-        if (attempts >= 120) {
-          clearInterval(pollRef.current); pollRef.current = null;
-        }
+      } catch {}
+    };
+    const fallback = setInterval(fallbackTick, 30000);
+
+    watchRef.current = { recordId, unsubscribe, fallback };
+
+    return () => {
+      if (watchRef.current) {
+        watchRef.current.unsubscribe?.();
+        clearInterval(watchRef.current.fallback);
+        watchRef.current = null;
       }
     };
-    const id = setInterval(tick, 8000);
-    id.recordId = recordId;
-    pollRef.current = id;
-    tick(); // fire first check immediately
-
-    return () => { if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; } };
   }, [messages]);
 
   const [renderMode, setRenderMode] = useState("auto"); // auto | video | deck
