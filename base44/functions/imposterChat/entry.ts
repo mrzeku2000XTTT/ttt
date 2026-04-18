@@ -191,7 +191,7 @@ Deno.serve(async (req) => {
             style: s.style || deck.style,
             image_url: s.image_url || null,
           })),
-          reference_image_urls: attachedImages,
+          image_urls: attachedImages,
         };
         const renderContent = `SLIDE_RENDER_JOB: ${JSON.stringify(payload)}`;
 
