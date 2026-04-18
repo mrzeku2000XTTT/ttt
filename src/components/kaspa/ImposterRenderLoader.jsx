@@ -1,12 +1,27 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
-export default function ImposterRenderLoader({ status, progress, elapsed }) {
+export default function ImposterRenderLoader({ status, progress, elapsed, startedAt }) {
   const isError = status === "error";
   const isSlow = status === "slow";
-  const mins = Math.floor((elapsed || 0) / 60);
-  const secs = (elapsed || 0) % 60;
+
+  // Live-tick elapsed every second from startedAt (fallback to prop)
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (isError) return;
+    const id = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [isError]);
+
+  const computedElapsed = startedAt
+    ? Math.floor((Date.now() - startedAt) / 1000)
+    : (elapsed || 0);
+  const safeElapsed = Math.max(0, computedElapsed);
+  const mins = Math.floor(safeElapsed / 60);
+  const secs = safeElapsed % 60;
   const timeStr = `${mins}:${String(secs).padStart(2, "0")}`;
+  // reference tick so React re-renders each second
+  void tick;
 
   const statusLabel = {
     queued: "Queued",

@@ -162,6 +162,7 @@ export default function KAIChatMessage({ msg, index, typingIndex, typingText, se
           status={msg.imposterRender.status}
           progress={msg.imposterRender.progress}
           elapsed={msg.imposterRender.elapsed}
+          startedAt={msg.imposterRender.startedAt}
         />
       </div>
     );
