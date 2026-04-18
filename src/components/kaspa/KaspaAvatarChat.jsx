@@ -186,6 +186,106 @@ export default function KaspaAvatarChat() {
 
   const removePendingImage = (idx) => setPendingImages(prev => prev.filter((_, i) => i !== idx));
 
+  // Track which recordIds are actively being polled to avoid duplicate loops
+  const activePollersRef = useRef(new Set());
+
+  // Resume-safe polling — finds the card by recordId (index may shift across remounts) and
+  // uses startedAt from the card so elapsed is accurate even after reload
+  const startRenderPoll = (recordId, startedAt) => {
+    if (!recordId || activePollersRef.current.has(recordId)) return;
+    activePollersRef.current.add(recordId);
+
+    const maxDurationMs = 7.5 * 60 * 1000; // 7.5 minutes cap from startedAt
+
+    const updateCard = (update) => {
+      setMessages(prev => {
+        const copy = [...prev];
+        const idx = copy.findIndex(m => m.imposterRender?.recordId === recordId);
+        if (idx >= 0) {
+          copy[idx] = {
+            ...copy[idx],
+            imposterRender: {
+              ...copy[idx].imposterRender,
+              ...update,
+              elapsed: Math.floor((Date.now() - startedAt) / 1000),
+            },
+          };
+        }
+        return copy;
+      });
+    };
+
+    const replaceWithVideo = (videoUrl) => {
+      setMessages(prev => {
+        const copy = [...prev];
+        const idx = copy.findIndex(m => m.imposterRender?.recordId === recordId);
+        if (idx >= 0) {
+          copy[idx] = { role: "assistant", content: null, imposterVideo: { video_url: videoUrl } };
+        }
+        return copy;
+      });
+    };
+
+    const poll = async () => {
+      try {
+        const pollRes = await base44.functions.invoke('imposterPoll', { conversation_id: recordId });
+        const pollData = pollRes.data;
+
+        if (pollData?.status === "ready" && pollData.video_url) {
+          replaceWithVideo(pollData.video_url);
+          if (pollData.reply) addAssistantMessage(pollData.reply);
+          activePollersRef.current.delete(recordId);
+          return;
+        }
+        if (pollData?.status === "error") {
+          updateCard({ status: "error", progress: `render failed: ${pollData.error || "unknown"}` });
+          activePollersRef.current.delete(recordId);
+          return;
+        }
+        if (pollData?.status === "stuck") {
+          updateCard({ status: "error", progress: pollData.reply || "⚠️ render stuck. try again." });
+          activePollersRef.current.delete(recordId);
+          return;
+        }
+
+        updateCard(pollData?.progress
+          ? { status: "rendering", progress: pollData.progress }
+          : { status: "rendering" });
+
+        if (Date.now() - startedAt >= maxDurationMs) {
+          updateCard({ status: "error", progress: "render timed out. try again." });
+          activePollersRef.current.delete(recordId);
+          return;
+        }
+        setTimeout(poll, 5000);
+      } catch (err) {
+        console.error("poll error:", err);
+        if (Date.now() - startedAt < maxDurationMs) {
+          setTimeout(poll, 5000);
+        } else {
+          updateCard({ status: "error", progress: "lost connection to render." });
+          activePollersRef.current.delete(recordId);
+        }
+      }
+    };
+
+    setTimeout(poll, 3000);
+  };
+
+  // On mount: scan restored messages for in-progress renders and resume polling
+  useEffect(() => {
+    const inProgress = messages.filter(m =>
+      m.imposterRender &&
+      m.imposterRender.recordId &&
+      m.imposterRender.status !== "error" &&
+      !m.imposterVideo
+    );
+    inProgress.forEach(m => {
+      startRenderPoll(m.imposterRender.recordId, m.imposterRender.startedAt || Date.now());
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [renderMode, setRenderMode] = useState("auto"); // auto | video | deck
   const [enhancing, setEnhancing] = useState(false);
   const enhancePrompt = async () => {
@@ -421,85 +521,21 @@ Original prompt: ${input.trim()}`,
       const recordId = data.action.record_id || data.action.conversation_id;
 
       // Add a single progress message we'll update in-place while polling
-      let progressIdx;
-      setMessages(prev => {
-        progressIdx = prev.length;
-        return [...prev, {
-          role: "assistant",
-          content: null,
-          imposterRender: { status: "queued", progress: data.reply || "🎬 queued…", elapsed: 0 },
-        }];
-      });
+      // Tag it with recordId + startedAt so we can resume polling across remounts
+      const startedAt = Date.now();
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: null,
+        imposterRender: {
+          status: "queued",
+          progress: data.reply || "🎬 queued…",
+          elapsed: 0,
+          recordId,
+          startedAt,
+        },
+      }]);
 
-      const startTime = Date.now();
-      const maxAttempts = 90; // 90 × 5s = 7.5 minutes max
-      let attempt = 0;
-
-      const updateProgress = (update) => {
-        setMessages(prev => {
-          const copy = [...prev];
-          if (copy[progressIdx]?.imposterRender) {
-            copy[progressIdx] = {
-              ...copy[progressIdx],
-              imposterRender: { ...copy[progressIdx].imposterRender, ...update, elapsed: Math.floor((Date.now() - startTime) / 1000) },
-            };
-          }
-          return copy;
-        });
-      };
-
-      const poll = async () => {
-        attempt++;
-        try {
-          const pollRes = await base44.functions.invoke('imposterPoll', { conversation_id: recordId });
-          const pollData = pollRes.data;
-
-          if (pollData?.status === "ready" && pollData.video_url) {
-            // Replace progress card with final video — done, no follow-up polling
-            setMessages(prev => {
-              const copy = [...prev];
-              copy[progressIdx] = {
-                role: "assistant",
-                content: null,
-                imposterVideo: { video_url: pollData.video_url },
-              };
-              return copy;
-            });
-            if (pollData.reply) addAssistantMessage(pollData.reply);
-            return;
-          }
-
-          if (pollData?.status === "error") {
-            updateProgress({ status: "error", progress: `render failed: ${pollData.error || "unknown"}` });
-            return;
-          }
-
-          if (pollData?.status === "stuck") {
-            updateProgress({ status: "error", progress: pollData.reply || "⚠️ render stuck. try again." });
-            return;
-          }
-
-          // Still processing — update progress text if Kai sent an update
-          if (pollData?.progress) {
-            updateProgress({ status: "rendering", progress: pollData.progress });
-          } else {
-            updateProgress({ status: "rendering" });
-          }
-
-          if (attempt >= maxAttempts) {
-            updateProgress({ status: "error", progress: "render timed out. try again." });
-            return;
-          }
-
-          setTimeout(poll, 5000);
-        } catch (err) {
-          console.error("poll error:", err);
-          if (attempt < maxAttempts) setTimeout(poll, 5000);
-          else updateProgress({ status: "error", progress: "lost connection to render." });
-        }
-      };
-
-      setTimeout(poll, 3000); // first poll after 3s
+      startRenderPoll(recordId, startedAt);
       return;
     }
 
