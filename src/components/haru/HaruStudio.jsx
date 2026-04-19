@@ -345,10 +345,7 @@ Return a JSON object with a "variants" array.`,
           </button>
           <div className="flex items-center gap-2">
             <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ade3b1795_generated_image.png" alt="Haru" className="w-7 h-7 rounded-lg" />
-            <div>
-              <div className="font-[900] text-zinc-900 text-sm">Haru Studio</div>
-              <div className="text-[9px] text-zinc-400 font-mono">{kaspaAddress?.slice(0, 14)}…{kaspaAddress?.slice(-6)}</div>
-            </div>
+            <div className="font-[900] text-zinc-900 text-sm">Haru Studio</div>
           </div>
         </div>
         <button onClick={downloadCanvas} className="h-9 px-4 rounded-full bg-zinc-900 text-white text-[12px] font-semibold hover:bg-zinc-700 transition-colors flex items-center gap-1.5">
