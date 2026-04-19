@@ -31,6 +31,7 @@ import ExplorePage from './pages/Explore';
 import AppStoreV2Page from './pages/AppStoreV2';
 import UIClonerPage from './pages/UICloner';
 import KrustPage from './pages/Krust';
+import HaruPage from './pages/Haru';
 import OneShotStudioPage from './pages/OneShotStudio';
 import SlideDeckBuilderPage from './pages/SlideDeckBuilder';
 import KaSshiPlayer from './components/KaSshiPlayer';
@@ -110,6 +111,7 @@ const AuthenticatedApp = () => {
       <Route path="/OneShotStudio" element={<OneShotStudioPage />} />
       <Route path="/SlideDeckBuilder" element={<SlideDeckBuilderPage />} />
       <Route path="/Krust" element={<KrustPage />} />
+      <Route path="/Haru" element={<HaruPage />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
