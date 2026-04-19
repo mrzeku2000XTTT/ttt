@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft, Settings, X, RotateCcw, Play, ChevronRight, Timer, Target, Zap, Brain } from "lucide-react";
+import { ArrowLeft, Settings, X, RotateCcw, Play, ChevronRight, Timer, Target, Zap, Brain, Image as ImageIcon } from "lucide-react";
+import RoomStudio from "@/components/valorant/RoomStudio";
 
 // ─── Clean scenario set — only modes that actually work ───────────────────
 // Tracking mode removed (hold-scoring was unreliable).
@@ -97,8 +98,27 @@ export default function ValorantArena() {
   const [sessionTime, setSessionTime] = useState(0);
   const [routineKey, setRoutineKey] = useState(null);
   const [routinePhase, setRoutinePhase] = useState(0);
+  const [showRoomStudio, setShowRoomStudio] = useState(false);
+  const [customRoomUrl, setCustomRoomUrl] = useState(() => {
+    try { return localStorage.getItem("valorant_custom_room") || null; } catch { return null; }
+  });
+  const customRoomUrlRef = useRef(customRoomUrl);
 
   useEffect(() => { settingsRef.current = settings; }, [settings]);
+  useEffect(() => { customRoomUrlRef.current = customRoomUrl; }, [customRoomUrl]);
+
+  const handleSelectRoom = useCallback((url) => {
+    setCustomRoomUrl(url);
+    try {
+      if (url) localStorage.setItem("valorant_custom_room", url);
+      else localStorage.removeItem("valorant_custom_room");
+    } catch {}
+    // Apply immediately if scene is live
+    const scene = sceneRef.current;
+    if (scene && scene.userData.applyRoom) {
+      scene.userData.applyRoom(url);
+    }
+  }, []);
 
   // ── Helpers ─────────────────────────────────────────────────────────────
   const clearTargets = useCallback(() => {
@@ -245,11 +265,68 @@ export default function ValorantArena() {
     grid.position.y = 0.01;
     scene.add(grid);
 
-    // Back wall
-    const wallMat = new THREE.MeshStandardMaterial({ color: 0x111122, roughness: 0.85 });
+    // Back wall + side walls (will receive custom room texture if set)
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0x111122, roughness: 0.85, side: THREE.DoubleSide });
     const backWall = new THREE.Mesh(new THREE.PlaneGeometry(60, 24), wallMat);
     backWall.position.set(0, 12, -22);
     scene.add(backWall);
+
+    const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(44, 24), wallMat.clone());
+    leftWall.position.set(-30, 12, 0);
+    leftWall.rotation.y = Math.PI / 2;
+    scene.add(leftWall);
+
+    const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(44, 24), wallMat.clone());
+    rightWall.position.set(30, 12, 0);
+    rightWall.rotation.y = -Math.PI / 2;
+    scene.add(rightWall);
+
+    // Skybox sphere for panoramic custom rooms (inverted, so we see inside)
+    const skyGeo = new THREE.SphereGeometry(80, 32, 16);
+    const skyMat = new THREE.MeshBasicMaterial({ side: THREE.BackSide, color: 0x08080f });
+    const skySphere = new THREE.Mesh(skyGeo, skyMat);
+    skySphere.visible = false;
+    scene.add(skySphere);
+
+    // Helper to apply a room texture (from preset / upload / AI)
+    const loader = new THREE.TextureLoader();
+    loader.crossOrigin = "anonymous";
+    const applyRoom = (url) => {
+      if (!url) {
+        skySphere.visible = false;
+        [backWall, leftWall, rightWall].forEach((w) => {
+          w.material.map = null;
+          w.material.color.setHex(0x111122);
+          w.material.needsUpdate = true;
+        });
+        scene.background = new THREE.Color(0x08080f);
+        return;
+      }
+      loader.load(
+        url,
+        (tex) => {
+          tex.wrapS = THREE.ClampToEdgeWrapping;
+          tex.wrapT = THREE.ClampToEdgeWrapping;
+          tex.colorSpace = THREE.SRGBColorSpace;
+          // Skybox panoramic
+          skyMat.map = tex;
+          skyMat.color.setHex(0xffffff);
+          skyMat.needsUpdate = true;
+          skySphere.visible = true;
+          // Walls get a dimmed version for depth
+          [backWall, leftWall, rightWall].forEach((w) => {
+            w.material.map = tex;
+            w.material.color.setHex(0x888888);
+            w.material.needsUpdate = true;
+          });
+          scene.background = new THREE.Color(0x000000);
+        },
+        undefined,
+        () => { /* texture load failed — leave default */ }
+      );
+    };
+    scene.userData.applyRoom = applyRoom;
+    applyRoom(customRoomUrlRef.current);
 
     // Spawn initial targets
     spawnTargets(scenarioKeyRef.current);
@@ -454,11 +531,24 @@ export default function ValorantArena() {
             <button onClick={() => setScreen("landing")} className="w-9 h-9 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg flex items-center justify-center text-white/60">
               <ArrowLeft className="w-4 h-4" />
             </button>
-            <div>
+            <div className="flex-1">
               <h2 className="text-white font-black text-2xl">SELECT MODE</h2>
               <p className="text-white/40 text-xs">Pick a routine or individual scenario</p>
             </div>
+            <button onClick={() => setShowRoomStudio(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 hover:text-white text-xs font-bold transition-all">
+              <ImageIcon className="w-3.5 h-3.5" />
+              {customRoomUrl ? "Custom Room ✓" : "Custom Room"}
+            </button>
           </div>
+
+          {showRoomStudio && (
+            <RoomStudio
+              currentRoomUrl={customRoomUrl}
+              onSelect={handleSelectRoom}
+              onClose={() => setShowRoomStudio(false)}
+            />
+          )}
 
           {/* Routines */}
           <div className="mb-6">
@@ -612,6 +702,11 @@ export default function ValorantArena() {
           className="w-9 h-9 bg-black/60 hover:bg-black/80 border border-white/10 rounded-lg flex items-center justify-center text-white/50 hover:text-white transition-all">
           <Settings className="w-4 h-4" />
         </button>
+        <button onClick={() => { setShowRoomStudio(true); if (document.pointerLockElement) document.exitPointerLock(); }}
+          className="h-9 px-3 bg-black/60 hover:bg-black/80 border border-white/10 rounded-lg flex items-center gap-1.5 text-white/50 hover:text-white transition-all text-xs font-bold">
+          <ImageIcon className="w-3.5 h-3.5" />
+          Room
+        </button>
       </div>
 
       {/* Scenario quick-switch (only when not in routine) */}
@@ -661,6 +756,14 @@ export default function ValorantArena() {
           </div>
           <button onClick={() => setSettings(DEFAULT_SETTINGS)} className="w-full py-1.5 bg-white/5 border border-white/10 rounded-lg text-white/40 text-xs">Reset</button>
         </div>
+      )}
+
+      {showRoomStudio && (
+        <RoomStudio
+          currentRoomUrl={customRoomUrl}
+          onSelect={handleSelectRoom}
+          onClose={() => setShowRoomStudio(false)}
+        />
       )}
     </div>
   );
