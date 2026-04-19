@@ -232,22 +232,74 @@ export default function TTTV2Page() {
       {/* ── original hero ── */}
       <section className="relative py-24 sm:py-36 px-5 text-center overflow-hidden">
         <div className="absolute inset-0">
-          <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/20b6a8247_generated_image.png" alt="" className="w-full h-full object-contain sm:object-cover opacity-70" />
+          {/* Deep base — rich indigo→black */}
+          <div className="absolute inset-0" style={{
+            background: 'linear-gradient(180deg, #0a0f1f 0%, #0b0720 50%, #000 100%)'
+          }} />
+
+          {/* Animated aurora shader blobs */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute -top-1/4 -left-1/4 w-[70%] h-[70%] rounded-full opacity-60 animate-pulse" style={{
+              background: 'radial-gradient(circle, #06b6d4 0%, transparent 60%)',
+              filter: 'blur(80px)',
+              animation: 'auroraShift1 14s ease-in-out infinite'
+            }} />
+            <div className="absolute top-0 -right-1/4 w-[60%] h-[80%] rounded-full opacity-50" style={{
+              background: 'radial-gradient(circle, #8b5cf6 0%, transparent 60%)',
+              filter: 'blur(90px)',
+              animation: 'auroraShift2 18s ease-in-out infinite'
+            }} />
+            <div className="absolute -bottom-1/4 left-1/4 w-[60%] h-[70%] rounded-full opacity-40" style={{
+              background: 'radial-gradient(circle, #10b981 0%, transparent 60%)',
+              filter: 'blur(100px)',
+              animation: 'auroraShift3 16s ease-in-out infinite'
+            }} />
+            <div className="absolute top-1/3 left-1/3 w-[40%] h-[40%] rounded-full opacity-35" style={{
+              background: 'radial-gradient(circle, #f472b6 0%, transparent 60%)',
+              filter: 'blur(70px)',
+              animation: 'auroraShift4 20s ease-in-out infinite'
+            }} />
+          </div>
+
+          <style>{`
+            @keyframes auroraShift1 {
+              0%, 100% { transform: translate(0, 0) scale(1); }
+              50% { transform: translate(15%, 10%) scale(1.15); }
+            }
+            @keyframes auroraShift2 {
+              0%, 100% { transform: translate(0, 0) scale(1); }
+              50% { transform: translate(-12%, 15%) scale(1.2); }
+            }
+            @keyframes auroraShift3 {
+              0%, 100% { transform: translate(0, 0) scale(1); }
+              50% { transform: translate(20%, -15%) scale(1.1); }
+            }
+            @keyframes auroraShift4 {
+              0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.35; }
+              50% { transform: translate(-20%, 20%) scale(1.3); opacity: 0.5; }
+            }
+          `}</style>
+
+          <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/20b6a8247_generated_image.png" alt="" className="relative w-full h-full object-contain sm:object-cover opacity-40 mix-blend-screen" />
           {heroVideoUrl && (
             <>
               <video
                 ref={heroVideoRef}
                 src={heroVideoUrl}
                 autoPlay loop playsInline muted
-                className="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-lighten"
+                className="absolute inset-0 w-full h-full object-cover opacity-25 mix-blend-lighten"
               />
               {/* Edge fade masks so video blends seamlessly */}
               <div className="absolute inset-0 pointer-events-none" style={{
-                background: 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 70%, rgba(0,0,0,1) 100%)'
+                background: 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.6) 75%, rgba(0,0,0,0.95) 100%)'
               }} />
             </>
           )}
-          <div className="absolute inset-0 bg-black/45" />
+          {/* Subtle grain texture */}
+          <div className="absolute inset-0 opacity-[0.04] pointer-events-none mix-blend-overlay" style={{
+            backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")'
+          }} />
+          <div className="absolute inset-0 bg-black/25" />
         </div>
 
         {/* Admin video controls */}
