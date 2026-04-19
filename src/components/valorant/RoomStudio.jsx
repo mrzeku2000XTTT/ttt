@@ -2,9 +2,10 @@ import React, { useState, useRef } from "react";
 import { X, Upload, Sparkles, Loader2, Check, Image as ImageIcon } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
-// Preset rooms (curated high-res environment images)
+// Preset rooms — proper 360° equirectangular panoramas (2:1 aspect) for skybox use
 const PRESET_ROOMS = [
   { id: "default", label: "Default Arena", thumb: null, url: null },
+  { id: "cyber-range", label: "Cyber Range 360°", url: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e1f00117b_generated_image.png" },
   { id: "dust", label: "Desert Ruins", url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1600&q=80" },
   { id: "tokyo", label: "Neon Tokyo", url: "https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=1600&q=80" },
   { id: "warehouse", label: "Warehouse", url: "https://images.unsplash.com/photo-1565043589221-1a6fd9ae45c7?w=1600&q=80" },
@@ -39,7 +40,7 @@ export default function RoomStudio({ currentRoomUrl, onSelect, onClose }) {
     setGenerating(true);
     try {
       const { url } = await base44.integrations.Core.GenerateImage({
-        prompt: `First-person 3D shooting range environment: ${prompt}. Wide panoramic interior view, dramatic lighting, detailed textures, game-ready environment art, Valorant/CS-style shooting range, empty room with walls visible, cinematic, 16:9 wide angle.`,
+        prompt: `360-degree equirectangular panoramic photo, 2:1 aspect ratio, seamless spherical panorama for skybox/VR use. ${prompt}. Wide wrap-around view, clean horizon line, evenly lit for seamless edges, no visible seams at left/right edges, high detail, cinematic, professional 360 HDRI environment map style, game-ready skybox.`,
       });
       setSelectedUrl(url);
     } catch (err) {

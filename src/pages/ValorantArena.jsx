@@ -294,8 +294,9 @@ export default function ValorantArena() {
     rightWall.rotation.y = -Math.PI / 2;
     scene.add(rightWall);
 
-    // Skybox sphere for panoramic custom rooms (inverted, so we see inside)
-    const skyGeo = new THREE.SphereGeometry(80, 32, 16);
+    // Skybox sphere for panoramic custom rooms (inverted, so we see inside).
+    // Radius 40 keeps the image bright & readable while staying behind all targets.
+    const skyGeo = new THREE.SphereGeometry(40, 48, 24);
     const skyMat = new THREE.MeshBasicMaterial({ side: THREE.BackSide, color: 0x08080f });
     const skySphere = new THREE.Mesh(skyGeo, skyMat);
     skySphere.visible = false;
