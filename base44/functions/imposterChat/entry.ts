@@ -53,9 +53,13 @@ Reply ONLY as JSON with these fields:
     try {
       const RENDER_BASE = "https://kais-backend-brain-superagent-for-c001c060.base44.app";
       const RENDER_APP_ID = "69e1ae8c5d39205bc001c060";
-      const RENDER_API_KEY = "7d4e7751d1ac406dae4df07533c5e566";
+      const RENDER_API_KEY = Deno.env.get("KAI_HYPERFRAMES_API_KEY");
+      if (!RENDER_API_KEY) {
+        return Response.json({ reply: "video render is not configured (missing KAI_HYPERFRAMES_API_KEY)." });
+      }
       const renderHeaders = {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${RENDER_API_KEY}`,
         "api_key": RENDER_API_KEY,
         "app_id": RENDER_APP_ID,
       };
