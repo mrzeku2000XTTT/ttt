@@ -4,7 +4,8 @@ const KASPA_API = 'https://api.kaspa.org';
 const KAI_APP_ID = '69e00a3b3c4957544571e863';
 const KAI_API_KEY = '7d4e7751d1ac406dae4df07533c5e566';
 const KAI_AGENTS_BASE = `https://app.base44.com/api/agents/${KAI_APP_ID}`;
-const KAI_HYPERFRAMES_URL = `https://app.base44.com/api/apps/${KAI_APP_ID}/functions/kaiHyperFrames`;
+// Backend functions MUST be called via the app's subdomain, not the platform domain
+const KAI_HYPERFRAMES_URL = `https://kais-backend-brain-superagent-for-4571e863.base44.app/functions/kaiHyperFrames`;
 
 const ALLOWED_STYLES = new Set(["kaspa", "fire", "neon", "luxury", "ocean", "minimal"]);
 

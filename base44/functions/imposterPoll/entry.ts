@@ -2,8 +2,8 @@
 // Spec: GET https://app.base44.com/api/apps/<APP_ID>/functions/kaiHyperFrames?record_id=...
 // Returns: { status: "done" | "rendering" | "error", video_url?: string }
 
-const KAI_APP_ID = '69e00a3b3c4957544571e863';
-const KAI_HYPERFRAMES_URL = `https://app.base44.com/api/apps/${KAI_APP_ID}/functions/kaiHyperFrames`;
+// Backend functions MUST be called via the app's subdomain, not the platform domain
+const KAI_HYPERFRAMES_URL = `https://kais-backend-brain-superagent-for-4571e863.base44.app/functions/kaiHyperFrames`;
 
 Deno.serve(async (req) => {
   try {
