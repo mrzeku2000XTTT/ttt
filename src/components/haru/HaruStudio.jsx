@@ -50,13 +50,18 @@ export default function HaruStudio({ onClose, kaspaAddress }) {
   const [prompt, setPrompt] = useState("");
   const [variants, setVariants] = useState([]);
   const [detectedText, setDetectedText] = useState(null);
+  // Custom image-derived styles
+  const [customStyles, setCustomStyles] = useState([]);
+  // Use the uploaded image as a texture/fill for the text
+  const [useImageFill, setUseImageFill] = useState(false);
+  const imgElementRef = useRef(null);
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
 
   // Keep canvas rendered live
   useEffect(() => {
     renderCanvas();
-  }, [text, fontStyle, gradient, background, fontSize, letterSpacing]);
+  }, [text, fontStyle, gradient, background, fontSize, letterSpacing, useImageFill, uploadedImg]);
 
   const renderCanvas = () => {
     const canvas = canvasRef.current;
@@ -69,16 +74,29 @@ export default function HaruStudio({ onClose, kaspaAddress }) {
     ctx.fillStyle = background.value;
     ctx.fillRect(0, 0, W, H);
 
-    // Text with gradient fill
-    const grad = ctx.createLinearGradient(0, 0, W, H);
-    const parseGradient = gradient.value.match(/#[0-9a-f]+/gi) || ["#ec4899", "#f59e0b"];
-    grad.addColorStop(0, parseGradient[0]);
-    grad.addColorStop(1, parseGradient[1] || parseGradient[0]);
-    ctx.fillStyle = grad;
-
     ctx.font = `${fontStyle.italic ? "italic " : ""}${fontStyle.weight} ${fontSize}px ${fontStyle.family}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
+
+    // Build fill: image texture OR gradient
+    let fill;
+    if (useImageFill && imgElementRef.current && imgElementRef.current.complete) {
+      const pattern = ctx.createPattern(imgElementRef.current, "no-repeat");
+      // Scale pattern to canvas using matrix
+      if (pattern && pattern.setTransform) {
+        const img = imgElementRef.current;
+        const scale = Math.max(W / img.naturalWidth, H / img.naturalHeight);
+        pattern.setTransform(new DOMMatrix().scale(scale, scale));
+      }
+      fill = pattern || background.value;
+    } else {
+      const grad = ctx.createLinearGradient(0, 0, W, H);
+      const parseGradient = gradient.value.match(/#[0-9a-f]+/gi) || ["#ec4899", "#f59e0b"];
+      grad.addColorStop(0, parseGradient[0]);
+      grad.addColorStop(1, parseGradient[1] || parseGradient[0]);
+      fill = grad;
+    }
+    ctx.fillStyle = fill;
 
     // Letter spacing manual
     if (letterSpacing !== 0 && text.length > 1) {
@@ -93,6 +111,36 @@ export default function HaruStudio({ onClose, kaspaAddress }) {
     } else {
       ctx.fillText(text, W / 2, H / 2);
     }
+  };
+
+  // Extract dominant colors directly from the image pixels (K-means-lite / bucket quantize)
+  const extractImagePalette = (imgEl) => {
+    return new Promise((resolve) => {
+      const c = document.createElement("canvas");
+      const size = 80;
+      c.width = size; c.height = size;
+      const cx = c.getContext("2d");
+      cx.drawImage(imgEl, 0, 0, size, size);
+      const data = cx.getImageData(0, 0, size, size).data;
+      const buckets = {};
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i] >> 5, g = data[i + 1] >> 5, b = data[i + 2] >> 5;
+        const key = `${r}-${g}-${b}`;
+        if (!buckets[key]) buckets[key] = { r: 0, g: 0, b: 0, n: 0 };
+        buckets[key].r += data[i];
+        buckets[key].g += data[i + 1];
+        buckets[key].b += data[i + 2];
+        buckets[key].n += 1;
+      }
+      const sorted = Object.values(buckets).sort((a, b) => b.n - a.n).slice(0, 5);
+      const colors = sorted.map((b) => {
+        const r = Math.round(b.r / b.n);
+        const g = Math.round(b.g / b.n);
+        const bl = Math.round(b.b / b.n);
+        return `#${[r, g, bl].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+      });
+      resolve(colors);
+    });
   };
 
   const downloadCanvas = () => {
@@ -162,32 +210,82 @@ Return a JSON object with a "variants" array.`,
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       setUploadedImg(file_url);
 
-      // Use LLM vision to detect text + suggest font style
+      // Load image into an HTMLImageElement so we can (a) use as fill pattern
+      // (b) extract real pixel colors for the new custom font style
+      const imgEl = new Image();
+      imgEl.crossOrigin = "anonymous";
+      imgEl.src = file_url;
+      await new Promise((res) => { imgEl.onload = res; imgEl.onerror = res; });
+      imgElementRef.current = imgEl;
+
+      const palette = await extractImagePalette(imgEl);
+
+      // Ask AI vision to classify the mood/style of the image → font recipe
       const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `Analyze this image. Extract any prominent text/wordmark you see. Then classify the typography style into one of these categories: serif-elegant, serif-modern, sans-bold, sans-condensed, mono-retro, display-italic, script-flowy, modern-light. Also pick a matching gradient from: sakura, sunset, ocean, mono, gold, rose, emerald, violet. If no text is found, return empty text and make a creative font recommendation based on the image mood.`,
+        prompt: `You are analyzing this image to create a NEW font style inspired by the image itself.
+1. Read any prominent text/wordmark (return empty if none).
+2. Classify the best matching base font family from: serif-elegant, serif-modern, sans-bold, sans-condensed, mono-retro, display-italic, script-flowy, modern-light.
+3. Describe the visual mood in 5-8 words (e.g. "soft, romantic, floral, editorial, warm").
+4. Suggest a short custom style name (2-3 words, e.g. "Sakura Editorial", "Neon Dusk").
+5. Recommend italic (true/false), letter_spacing (-5 to 15), and weight (200-900).`,
         file_urls: [file_url],
         response_json_schema: {
           type: "object",
           properties: {
             detected_text: { type: "string" },
             font_style: { type: "string" },
-            gradient: { type: "string" },
-            confidence: { type: "number" },
-            description: { type: "string" },
+            mood: { type: "string" },
+            style_name: { type: "string" },
+            italic: { type: "boolean" },
+            letter_spacing: { type: "number" },
+            weight: { type: "number" },
           },
         },
       });
 
-      setDetectedText(res);
+      setDetectedText({ ...res, palette });
+
       if (res.detected_text) setText(res.detected_text.slice(0, 40));
-      if (res.font_style) {
-        const fs = FONT_STYLES.find((f) => f.id === res.font_style);
-        if (fs) setFontStyle(fs);
-      }
-      if (res.gradient) {
-        const g = GRADIENTS.find((x) => x.id === res.gradient);
-        if (g) setGradient(g);
-      }
+
+      // Build a NEW custom font style from the image itself
+      const baseFont = FONT_STYLES.find((f) => f.id === res.font_style) || FONT_STYLES[0];
+      const newStyle = {
+        id: `custom-${Date.now()}`,
+        label: res.style_name || "From Image",
+        family: baseFont.family,
+        weight: res.weight || baseFont.weight,
+        italic: typeof res.italic === "boolean" ? res.italic : baseFont.italic,
+        isCustom: true,
+        imageUrl: file_url,
+        mood: res.mood,
+      };
+
+      // Build a gradient derived from the image's actual palette
+      const c1 = palette[0] || "#ec4899";
+      const c2 = palette[1] || palette[0] || "#f59e0b";
+      const newGradient = {
+        id: `custom-grad-${Date.now()}`,
+        label: res.style_name || "Image Palette",
+        value: `linear-gradient(135deg, ${c1}, ${c2})`,
+        isCustom: true,
+      };
+      // Background from the darkest/lightest palette color
+      const bgColor = palette[palette.length - 1] || "#faf7f5";
+      const newBackground = {
+        id: `custom-bg-${Date.now()}`,
+        label: "Image BG",
+        value: bgColor,
+        isCustom: true,
+      };
+
+      setCustomStyles((prev) => [{ style: newStyle, gradient: newGradient, background: newBackground, letterSpacing: res.letter_spacing || 0 }, ...prev].slice(0, 6));
+
+      // Auto-apply the new image-derived style to the canvas
+      setFontStyle(newStyle);
+      setGradient(newGradient);
+      setBackground(newBackground);
+      if (typeof res.letter_spacing === "number") setLetterSpacing(res.letter_spacing);
+      setUseImageFill(false);
     } catch (err) {
       console.error(err);
     }
@@ -296,12 +394,89 @@ Return a JSON object with a "variants" array.`,
               </button>
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
               {detectedText && (
-                <div className="mt-2 p-2.5 rounded-lg bg-pink-50 ring-1 ring-pink-200/60 text-[10px]">
-                  <div className="font-bold text-pink-700 mb-0.5">Detected</div>
-                  <div className="text-zinc-600">{detectedText.description}</div>
+                <div className="mt-2 p-2.5 rounded-lg bg-pink-50 ring-1 ring-pink-200/60 text-[10px] space-y-1.5">
+                  <div className="font-bold text-pink-700">{detectedText.style_name || "Detected"}</div>
+                  {detectedText.mood && <div className="text-zinc-600 italic">"{detectedText.mood}"</div>}
+                  {detectedText.palette && (
+                    <div className="flex gap-1 pt-1">
+                      {detectedText.palette.map((c, i) => (
+                        <div key={i} className="flex-1 h-4 rounded" style={{ background: c }} title={c} />
+                      ))}
+                    </div>
+                  )}
+                  {uploadedImg && (
+                    <button
+                      onClick={() => setUseImageFill(!useImageFill)}
+                      className={`w-full mt-1 h-7 rounded-md text-[10px] font-bold transition-all ${
+                        useImageFill
+                          ? "bg-pink-600 text-white"
+                          : "bg-white text-pink-700 ring-1 ring-pink-300 hover:bg-pink-100"
+                      }`}
+                    >
+                      {useImageFill ? "✓ Image fills letters" : "Use image as letter fill"}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
+
+            {/* Custom Image-Derived Styles */}
+            {customStyles.length > 0 && (
+              <div>
+                <label className="text-[10px] font-bold tracking-wider text-zinc-400 uppercase mb-2 block flex items-center gap-1.5">
+                  <Sparkles className="w-3 h-3 text-pink-500" /> From Your Images
+                </label>
+                <div className="space-y-1.5">
+                  {customStyles.map((c, i) => (
+                    <button
+                      key={c.style.id}
+                      onClick={() => {
+                        setFontStyle(c.style);
+                        setGradient(c.gradient);
+                        setBackground(c.background);
+                        setLetterSpacing(c.letterSpacing);
+                        // Re-attach image ref so image-fill works for this style
+                        if (c.style.imageUrl) {
+                          const imgEl = new Image();
+                          imgEl.crossOrigin = "anonymous";
+                          imgEl.src = c.style.imageUrl;
+                          imgEl.onload = () => {
+                            imgElementRef.current = imgEl;
+                            setUploadedImg(c.style.imageUrl);
+                            renderCanvas();
+                          };
+                        }
+                      }}
+                      className={`w-full p-2 rounded-lg flex items-center gap-2 transition-all ${
+                        fontStyle.id === c.style.id
+                          ? "bg-zinc-900 text-white"
+                          : "bg-zinc-50 ring-1 ring-zinc-200 hover:ring-pink-300"
+                      }`}
+                    >
+                      <img src={c.style.imageUrl} alt="" className="w-8 h-8 rounded object-cover flex-shrink-0" />
+                      <div className="flex-1 text-left min-w-0">
+                        <div
+                          className="text-[13px] font-[900] truncate"
+                          style={{
+                            fontFamily: c.style.family,
+                            fontStyle: c.style.italic ? "italic" : "normal",
+                            fontWeight: c.style.weight,
+                            background: c.gradient.value,
+                            WebkitBackgroundClip: "text",
+                            WebkitTextFillColor: "transparent",
+                          }}
+                        >
+                          {text || c.style.label}
+                        </div>
+                        <div className={`text-[9px] truncate ${fontStyle.id === c.style.id ? "text-zinc-400" : "text-zinc-500"}`}>
+                          {c.style.label}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Font picker */}
             <div>
