@@ -90,8 +90,8 @@ function ScrollingRow({ apps, direction = "left", speed = 30 }) {
   return (
     <div className="relative overflow-hidden w-full">
       {/* Edge fades */}
-      <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-r from-[#F5F5F7] to-transparent z-10 pointer-events-none" />
-      <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-l from-[#F5F5F7] to-transparent z-10 pointer-events-none" />
+      <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-r from-[#EDEBE6] to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-l from-[#EDEBE6] to-transparent z-10 pointer-events-none" />
       <motion.div
         className="flex items-end gap-5 sm:gap-6 w-max"
         animate={{ x: direction === "left" ? ["0%", "-33.333%"] : ["-33.333%", "0%"] }}

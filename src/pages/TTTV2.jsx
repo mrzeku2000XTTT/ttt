@@ -202,10 +202,10 @@ export default function TTTV2Page() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] text-zinc-900 selection:bg-cyan-200/60 overflow-x-hidden">
+    <div className="min-h-screen bg-[#EDEBE6] text-zinc-900 selection:bg-cyan-200/60 overflow-x-hidden">
 
       {/* ── nav ── */}
-      <nav className="fixed top-0 inset-x-0 z-50 h-12 flex items-center justify-between px-5 bg-[#F5F5F7]/70 backdrop-blur-2xl backdrop-saturate-150 border-b border-zinc-200/50">
+      <nav className="fixed top-0 inset-x-0 z-50 h-12 flex items-center justify-between px-5 bg-[#EDEBE6]/75 backdrop-blur-2xl backdrop-saturate-150 border-b border-zinc-300/40">
         <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="flex items-center gap-1.5 group">
           <span className="text-[15px] font-[900] tracking-tight text-zinc-900 group-hover:text-cyan-600 transition-colors">TTT</span>
           <span className="text-[9px] font-bold bg-black text-white px-1.5 py-[1px] rounded">2.0</span>
