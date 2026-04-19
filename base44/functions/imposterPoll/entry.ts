@@ -1,74 +1,40 @@
-const KAI_AGENT_ID = '69e00a3b3c4957544571e863';
-const KAI_API_KEY = '7d4e7751d1ac406dae4df07533c5e566';
-const KAI_BASE_URL = `https://app.base44.com/api/agents/${KAI_AGENT_ID}`;
+// Proxy to kaiHyperFrames superagent backend to check render status.
+// Frontend polls this every 5s until status is "ready" or "error".
+
+const RENDER_BASE = "https://kais-backend-brain-superagent-for-4571e863.base44.app";
 
 Deno.serve(async (req) => {
   try {
-    const { conversation_id, record_id } = await req.json();
-    const convId = conversation_id || record_id;
-    if (!convId) {
-      return Response.json({ error: "conversation_id required" }, { status: 400 });
+    const { record_id } = await req.json();
+    if (!record_id) {
+      return Response.json({ status: "error", error: "missing record_id" }, { status: 400 });
     }
 
-    let res = await fetch(`${KAI_BASE_URL}/conversations/${convId}`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json", "api_key": KAI_API_KEY },
+    const apiKey = Deno.env.get("KAI_HYPERFRAMES_API_KEY");
+    if (!apiKey) {
+      return Response.json({ status: "error", error: "missing api key" }, { status: 500 });
+    }
+
+    const res = await fetch(`${RENDER_BASE}/functions/imposterPoll`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api_key": apiKey,
+      },
+      body: JSON.stringify({ record_id }),
     });
 
-    if (!res.ok && res.status === 404) {
-      res = await fetch(`${KAI_BASE_URL}/conversations/${convId}/messages`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json", "api_key": KAI_API_KEY },
-      });
+    const text = await res.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      return Response.json({ status: "error", error: `bad response: ${text.slice(0, 200)}` }, { status: 502 });
     }
 
-    if (!res.ok) {
-      return Response.json({ status: "processing" });
-    }
-
-    const data = await res.json();
-    const messages = Array.isArray(data) ? data : (data.messages || data.items || []);
-    const assistantMsgs = messages.filter(m => m.role === "assistant" || m.role === "agent");
-    const latest = assistantMsgs[assistantMsgs.length - 1];
-    const latestContent = latest?.content || "";
-
-    // Scan all assistant messages for a video URL (.mp4 or media.base44.com)
-    let videoUrl = null;
-    for (let i = assistantMsgs.length - 1; i >= 0; i--) {
-      const content = assistantMsgs[i]?.content || "";
-      const mp4Match = content.match(/https?:\/\/[^\s)'"]+\.mp4(?:\?[^\s)'"]*)?/i);
-      const mediaMatch = content.match(/https?:\/\/media\.base44\.com\/[^\s)'"]+/i);
-      if (mp4Match) { videoUrl = mp4Match[0]; break; }
-      if (mediaMatch) { videoUrl = mediaMatch[0]; break; }
-    }
-
-    if (videoUrl) {
-      let replyText = latestContent.replace(videoUrl, "").trim();
-      // Strip KAI agent generic error fallbacks — they're not relevant once the video is ready
-      if (/I ran into an unexpected error|processing your request|attached files.*too large|try again with smaller/i.test(replyText)) {
-        replyText = "";
-      }
-      return Response.json({
-        status: "ready",
-        video_url: videoUrl,
-        reply: replyText || "🎬 video ready",
-      });
-    }
-
-    if (/\b(error|failed|couldn't|could not|can't render|unable to)\b/i.test(latestContent) &&
-        /\b(video|render|generat)/i.test(latestContent)) {
-      return Response.json({
-        status: "error",
-        error: latestContent.slice(0, 300),
-      });
-    }
-
-    return Response.json({
-      status: "processing",
-      progress: latestContent ? latestContent.slice(0, 200) : null,
-    });
+    return Response.json(data);
   } catch (err) {
-    console.error("imposterPoll error:", err?.message || err);
-    return Response.json({ status: "error", error: err?.message || "unknown" });
+    console.error("imposterPoll error:", err);
+    return Response.json({ status: "error", error: err.message }, { status: 500 });
   }
 });

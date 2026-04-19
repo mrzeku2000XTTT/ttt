@@ -4,18 +4,22 @@ const KASPA_API = 'https://api.kaspa.org';
 const KAI_AGENT_ID = '69e00a3b3c4957544571e863';
 const KAI_API_KEY = '7d4e7751d1ac406dae4df07533c5e566';
 const KAI_BASE_URL = `https://app.base44.com/api/agents/${KAI_AGENT_ID}`;
-const KAI_HYPERFRAMES_URL = `https://kais-backend-brain-superagent-for-4571e863.base44.app/functions/kaiHyperFrames`;
+const KAI_HYPERFRAMES_BASE = `https://kais-backend-brain-superagent-for-4571e863.base44.app`;
+const KAI_HYPERFRAMES_URL = `${KAI_HYPERFRAMES_BASE}/functions/kaiHyperFrames`;
 
-async function triggerHyperFramesRender({ prompt, conversation_id, title = "Kai Video", image_urls = [] }) {
-  const body = { prompt, title, conversation_id };
-  // Attach reference images if provided — kaiHyperFrames uses them as visual input for the render
+async function triggerHyperFramesRender({ prompt, conversation_id, title = "Kai Video", duration = 15, style = "kaspa", image_urls = [] }) {
+  const apiKey = Deno.env.get("KAI_HYPERFRAMES_API_KEY");
+  const body = { prompt, title, duration, style, conversation_id };
   if (Array.isArray(image_urls) && image_urls.length > 0) {
     body.image_urls = image_urls;
-    body.reference_images = image_urls; // in case the downstream uses a different key
+    body.reference_images = image_urls;
   }
   const res = await fetch(KAI_HYPERFRAMES_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(apiKey ? { 'api_key': apiKey } : {}),
+    },
     body: JSON.stringify(body),
   });
   if (!res.ok) {
@@ -234,29 +238,50 @@ Deno.serve(async (req) => {
     || /\bvideo\s+(about|for|of|showing|that|based\s+on)\b/i.test(message);
 
   if (hasVideoKeywords) {
-    // Flow: create a Kai conversation → fire-and-forget directly to kaiHyperFrames with that
-    // conversation_id. Superagent renders the mp4 and posts it back into the same conversation.
-    let convId;
-    try {
-      convId = await createKaiConversation();
-    } catch (err) {
-      console.error("create conversation error:", err?.message || err);
-      return Response.json({ reply: "couldn't kick off the render. try again." });
+    // Extract duration + style hints from the message
+    const durationMatch = message.match(/(\d+)\s*(?:sec|second|s\b)/i);
+    const duration = durationMatch ? Math.min(60, Math.max(5, parseInt(durationMatch[1]))) : 15;
+    let style = "kaspa";
+    if (/\bneon\b/i.test(message)) style = "neon";
+    else if (/\bdark\b/i.test(message)) style = "dark";
+    else if (/\blight\b/i.test(message)) style = "light";
+    const title = message.split(/\s+/).slice(0, 6).join(" ").slice(0, 60) || "Imposter Video";
+
+    // Use Kai conversation id (fallback to identity) — passed through to kaiHyperFrames
+    let convId = conversation_state?.conversation_id || identity?.imposter_id || null;
+    if (!convId) {
+      try { convId = await createKaiConversation(); } catch (err) {
+        console.error("create conversation error:", err?.message || err);
+        return Response.json({ reply: "couldn't kick off the render. try again." });
+      }
     }
 
-    // Direct fire-and-forget to kaiHyperFrames — no agent middleman
-    triggerHyperFramesRender({
-      prompt: message,
-      conversation_id: convId,
-      title: "Imposter Video",
-      image_urls: attachedImages,
-    }).catch(err => console.error("kaiHyperFrames trigger error:", err?.message || err));
+    // Call kaiHyperFrames synchronously to get record_id back
+    let renderData;
+    try {
+      renderData = await triggerHyperFramesRender({
+        prompt: message,
+        conversation_id: convId,
+        title,
+        duration,
+        style,
+        image_urls: attachedImages,
+      });
+    } catch (err) {
+      console.error("kaiHyperFrames trigger error:", err?.message || err);
+      return Response.json({ reply: "render endpoint didn't respond. try again." });
+    }
+
+    if (!renderData?.success || !renderData?.record_id) {
+      return Response.json({ reply: "render job didn't start. try again." });
+    }
 
     return Response.json({
-      reply: "🎬 rendering your video… hang tight, this takes about a minute.",
+      reply: "🎬 rendering your video… hang tight, about 60 seconds",
       action: {
-        type: "video_processing",
-        conversation_id: convId,
+        type: "video_rendering",
+        record_id: renderData.record_id,
+        conversation_id: renderData.conversation_id || convId,
       },
     });
   }
