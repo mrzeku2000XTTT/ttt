@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
-import { Crown } from "lucide-react";
+import { Crown, ExternalLink } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 
 const APPS = [
   // ── Featured / Core ──
@@ -128,8 +129,30 @@ function AppIcon({ app }) {
   );
 }
 
-export default function AppStoreGrid({ search, category, isAdmin }) {
-  const filtered = APPS.filter((app) => {
+export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0 }) {
+  const [communityApps, setCommunityApps] = useState([]);
+
+  useEffect(() => {
+    base44.entities.AppProposal.filter({ status: "approved" }, "-created_date", 200)
+      .then((list) => {
+        setCommunityApps(
+          list.map((p) => ({
+            name: p.app_name,
+            path: null,
+            externalUrl: p.app_link,
+            cat: p.category || "Tools",
+            logo: p.icon_url,
+            desc: p.description?.slice(0, 60) || "Community app",
+            community: true,
+          }))
+        );
+      })
+      .catch(() => setCommunityApps([]));
+  }, [refreshKey]);
+
+  const allApps = [...APPS, ...communityApps];
+
+  const filtered = allApps.filter((app) => {
     if (app.admin && !isAdmin) return false;
     if (category !== "All" && app.cat !== category) return false;
     if (search) {
@@ -153,8 +176,8 @@ export default function AppStoreGrid({ search, category, isAdmin }) {
         <h2 className="text-lg font-[800] mb-4">All Apps</h2>
       )}
       <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-x-3 gap-y-5">
-        {filtered.map((app, i) => (
-          <Link key={app.name + app.path} to={createPageUrl(app.path)}>
+        {filtered.map((app, i) => {
+          const inner = (
             <motion.div
               initial={{ opacity: 0, scale: 0.92 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -170,14 +193,32 @@ export default function AppStoreGrid({ search, category, isAdmin }) {
                     <Crown className="w-2.5 h-2.5 text-yellow-900" />
                   </div>
                 )}
+                {app.community && (
+                  <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-cyan-500 rounded-full flex items-center justify-center shadow-sm" title="Community submission">
+                    <ExternalLink className="w-2.5 h-2.5 text-white" />
+                  </div>
+                )}
               </div>
               <div className="text-center max-w-[72px]">
                 <p className="text-[11px] font-semibold text-zinc-800 truncate leading-tight">{app.name}</p>
                 <p className="text-[9px] text-zinc-400 truncate">{app.desc}</p>
               </div>
             </motion.div>
-          </Link>
-        ))}
+          );
+
+          if (app.externalUrl) {
+            return (
+              <a key={app.name + (app.path || app.externalUrl) + i} href={app.externalUrl} target="_blank" rel="noopener noreferrer">
+                {inner}
+              </a>
+            );
+          }
+          return (
+            <Link key={app.name + app.path + i} to={createPageUrl(app.path)}>
+              {inner}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

@@ -7,6 +7,8 @@ import { base44 } from "@/api/base44Client";
 
 import AppStoreGrid from "@/components/appstore2/AppStoreGrid";
 import AppStoreFeatured from "@/components/appstore2/AppStoreFeatured";
+import ListAppButton from "@/components/appstore2/ListAppButton";
+import AdminProposalsPanel from "@/components/appstore2/AdminProposalsPanel";
 
 const CATEGORIES = [
   { id: "All", label: "All", icon: Sparkles },
@@ -29,6 +31,7 @@ export default function AppStoreV2Page() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [user, setUser] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -52,10 +55,16 @@ export default function AppStoreV2Page() {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-20">
         {/* Header */}
-        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
-          <h1 className="text-3xl sm:text-4xl font-[900] tracking-tight mb-1">Discover</h1>
-          <p className="text-zinc-400 text-sm">80+ apps built on the Kaspa ecosystem</p>
+        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-[900] tracking-tight mb-1">Discover</h1>
+            <p className="text-zinc-400 text-sm">80+ apps built on the Kaspa ecosystem</p>
+          </div>
+          <ListAppButton user={user} />
         </motion.div>
+
+        {/* Admin proposals panel */}
+        {isAdmin && <AdminProposalsPanel onChange={() => setRefreshKey(k => k + 1)} />}
 
         {/* Search */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="mb-6">
@@ -96,7 +105,7 @@ export default function AppStoreV2Page() {
         {!search && category === "All" && <AppStoreFeatured />}
 
         {/* Grid */}
-        <AppStoreGrid search={search} category={category} isAdmin={isAdmin} />
+        <AppStoreGrid search={search} category={category} isAdmin={isAdmin} refreshKey={refreshKey} />
       </div>
     </div>
   );
