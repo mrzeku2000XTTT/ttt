@@ -7,10 +7,9 @@ import { KAIBlocksAnimation } from "./KAIAnimations";
 import { setKaSshiGlobal, markKaSshiInlineVisited } from "@/components/KaSshiPlayer";
 import KAINewsCard from "./KAINewsCard";
 import KAIVideoCard from "./KAIVideoCard";
-import ImposterRenderLoader from "./ImposterRenderLoader";
 import { base44 } from "@/api/base44Client";
 
-export default function KAIChatMessage({ msg, index, typingIndex, typingText, setIsOpen, setBrowserUrl, setShowBrowser, setViewingPost, onWatchVideo, onUseImageAsVideoRef }) {
+export default function KAIChatMessage({ msg, index, typingIndex, typingText, setIsOpen, setBrowserUrl, setShowBrowser, setViewingPost, onWatchVideo }) {
   const [txState, setTxState] = useState("idle"); // idle | sending | done | error
   const [txResult, setTxResult] = useState(null);
   const navigate = useNavigate();
@@ -148,97 +147,6 @@ export default function KAIChatMessage({ msg, index, typingIndex, typingText, se
         )}
         <div className="text-[11px] px-1" style={{ color: "rgba(255,255,255,0.4)" }}>
           Everything is pre-filled — just click to open your email client and send.
-        </div>
-      </div>
-    );
-  }
-
-  // Imposter video rendering — progress card
-  if (msg.imposterRender) {
-    return (
-      <div className="flex justify-start">
-        <ImposterRenderLoader
-          status={msg.imposterRender.status}
-          progress={msg.imposterRender.progress}
-          elapsed={msg.imposterRender.elapsed}
-        />
-      </div>
-    );
-  }
-
-  // Imposter image ready — embed image directly
-  if (msg.imposterImage?.image_url) {
-    return (
-      <div className="flex justify-start">
-        <div
-          className="max-w-[90%] rounded-2xl overflow-hidden"
-          style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(6,182,212,0.3)" }}
-        >
-          <img
-            src={msg.imposterImage.image_url}
-            alt={msg.imposterImage.prompt || "generated image"}
-            className="w-full block"
-            style={{ maxHeight: 420, objectFit: "contain", background: "#000" }}
-          />
-          <div className="flex items-center justify-between px-3 py-2 text-[11px] gap-2">
-            <span className="text-cyan-400/80 font-semibold truncate">
-              🖼️ {msg.imposterImage.prompt ? msg.imposterImage.prompt.slice(0, 60) : "image ready"}
-            </span>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {onUseImageAsVideoRef && (
-                <button
-                  onClick={() => onUseImageAsVideoRef(msg.imposterImage.image_url, msg.imposterImage.prompt)}
-                  className="px-2 py-1 rounded-full text-[10px] font-bold transition-all hover:scale-105"
-                  style={{ background: "rgba(168,85,247,0.25)", border: "1px solid rgba(168,85,247,0.45)", color: "rgba(192,132,252,1)" }}
-                  title="Use this image as reference for a video render"
-                >
-                  🎬 Make video
-                </button>
-              )}
-              <a
-                href={msg.imposterImage.image_url}
-                download
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-white/60 hover:text-white transition-colors"
-              >
-                download
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Imposter video ready — embed video directly
-  if (msg.imposterVideo?.video_url) {
-    return (
-      <div className="flex justify-start">
-        <div
-          className="max-w-[90%] rounded-2xl overflow-hidden"
-          style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(6,182,212,0.3)" }}
-        >
-          <video
-            src={msg.imposterVideo.video_url}
-            controls
-            autoPlay
-            playsInline
-            className="w-full block"
-            style={{ maxHeight: 360 }}
-          />
-          <div className="flex items-center justify-between px-3 py-2 text-[11px]">
-            <span className="text-cyan-400/80 font-semibold">🎬 render complete</span>
-            <a
-              href={msg.imposterVideo.video_url}
-              download
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-white/60 hover:text-white transition-colors"
-            >
-              download
-            </a>
-          </div>
         </div>
       </div>
     );

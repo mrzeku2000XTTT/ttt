@@ -1,29 +1,6 @@
-import { createClientFromRequest, createClient } from 'npm:@base44/sdk@0.8.25';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const KASPA_API = 'https://api.kaspa.org';
-const KAI_AGENT_ID = '69e00a3b3c4957544571e863';
-const KAI_API_KEY = '7d4e7751d1ac406dae4df07533c5e566';
-const KAI_BASE_URL = `https://app.base44.com/api/agents/${KAI_AGENT_ID}`;
-const KAI_HYPERFRAMES_URL = `https://kais-backend-brain-superagent-for-4571e863.base44.app/functions/kaiHyperFrames`;
-
-async function triggerHyperFramesRender({ prompt, conversation_id, title = "Kai Video", image_urls = [] }) {
-  const body = { prompt, title, conversation_id };
-  // Attach reference images if provided — kaiHyperFrames uses them as visual input for the render
-  if (Array.isArray(image_urls) && image_urls.length > 0) {
-    body.image_urls = image_urls;
-    body.reference_images = image_urls; // in case the downstream uses a different key
-  }
-  const res = await fetch(KAI_HYPERFRAMES_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const errText = await res.text().catch(() => "");
-    throw new Error(`kaiHyperFrames ${res.status}: ${errText.slice(0, 300)}`);
-  }
-  return await res.json();
-}
 
 async function getBalance(address) {
   try {
@@ -36,45 +13,25 @@ async function getBalance(address) {
   }
 }
 
-async function createKaiConversation() {
-  const res = await fetch(`${KAI_BASE_URL}/conversations`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'api_key': KAI_API_KEY },
-    body: JSON.stringify({ title: 'Video Render Job' }),
-  });
-  if (!res.ok) throw new Error(`Failed to create conversation: ${res.status}`);
-  const data = await res.json();
-  return data.id || data.conversation_id;
-}
-
-async function sendKaiMessage(conversation_id, content, file_urls = []) {
-  const body = { role: "user", content };
-  if (file_urls && file_urls.length > 0) body.file_urls = file_urls;
-
-  const res = await fetch(`${KAI_BASE_URL}/conversations/${conversation_id}/messages`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'api_key': KAI_API_KEY },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const errText = await res.text().catch(() => "");
-    throw new Error(`Failed to send message: ${res.status} ${errText.slice(0, 300)}`);
-  }
-  return await res.json();
-}
-
 Deno.serve(async (req) => {
-  try {
   const base44 = createClientFromRequest(req);
-  const { message, identity, conversation_state, image_urls } = await req.json();
-  const attachedImages = Array.isArray(image_urls) ? image_urls.filter(u => typeof u === "string" && u.startsWith("http")) : [];
+  const { message, identity, conversation_state } = await req.json();
 
   const name = identity?.subagent_name || "IMPOSTER";
   const wallet = identity?.kaspa_address || null;
 
-  // Detect send intent
+  // Detect send intent with full context
   const sendIntent = await base44.asServiceRole.integrations.Core.InvokeLLM({
-    prompt: `Analyze this message for a Kaspa send/transfer request. Extract what's available.\nMessage: "${message}"\nPrevious conversation state (if any): ${JSON.stringify(conversation_state || {})}\n\nReply ONLY as JSON with these fields:\n- is_send_intent: true if user wants to send KAS (even vaguely like "send kaspa", "transfer kas")\n- has_address: true if a kaspa: address is present in the message\n- has_amount: true if a specific amount is mentioned\n- to_address: the recipient kaspa address if found (null otherwise)\n- amount_kas: the amount in KAS if found (null otherwise)`,
+    prompt: `Analyze this message for a Kaspa send/transfer request. Extract what's available.
+Message: "${message}"
+Previous conversation state (if any): ${JSON.stringify(conversation_state || {})}
+
+Reply ONLY as JSON with these fields:
+- is_send_intent: true if user wants to send KAS (even vaguely like "send kaspa", "transfer kas")
+- has_address: true if a kaspa: address is present in the message
+- has_amount: true if a specific amount is mentioned
+- to_address: the recipient kaspa address if found (null otherwise)
+- amount_kas: the amount in KAS if found (null otherwise)`,
     response_json_schema: {
       type: "object",
       properties: {
@@ -88,113 +45,161 @@ Deno.serve(async (req) => {
     }
   });
 
-  // Detect image-generation intent (check BEFORE video so "image" doesn't match video keywords)
-  const hasImageKeywords = /\b(make|create|generate|render|produce|draw|design|give me|show me)\b.*\b(image|picture|pic|photo|art|artwork|drawing|illustration|poster|meme|logo|wallpaper|portrait|scene)\b/i.test(message)
-    || /\b(image|picture|pic|photo|art|artwork|drawing|illustration|poster|meme|logo|wallpaper)\s+(of|about|for|showing|that|with)\b/i.test(message);
-
-  if (hasImageKeywords) {
-    try {
-      // Clean the prompt a bit — strip leading command words so the model focuses on the subject
-      const cleanPrompt = message
-        .replace(/^\s*(hey|yo|please|pls|can you|could you|i want you to|go|now)\s+/i, "")
-        .replace(/^\s*(make|create|generate|render|produce|draw|design|give me|show me)\s+(me\s+)?(an?|the)?\s*/i, "")
-        .trim() || message;
-
-      const img = await base44.asServiceRole.integrations.Core.GenerateImage({
-        prompt: cleanPrompt,
-      });
-      const imageUrl = img?.url;
-      if (!imageUrl) {
-        return Response.json({ reply: "render came back empty. try again with more detail." });
-      }
-      return Response.json({
-        reply: "🖼️ here.",
-        action: { type: "image_ready", image_url: imageUrl, prompt: cleanPrompt },
-      });
-    } catch (err) {
-      console.error("image gen error:", err?.message || err);
-      return Response.json({ reply: "image generator choked. try again." });
-    }
-  }
-
   // Detect video-generation intent
   const hasVideoKeywords = /\b(make|create|generate|render|produce|do)\b.*\b(video|mp4|animation|clip|ad|advert|commercial|reel|short)\b/i.test(message)
     || /\bvideo\s+(about|for|of|showing|that)\b/i.test(message);
 
   if (hasVideoKeywords) {
-    // Create a FRESH conversation for each render so the poll only sees THIS job's output.
-    let convId;
     try {
-      convId = await createKaiConversation();
+      const RENDER_BASE = "https://kais-backend-brain-superagent-for-c001c060.base44.app";
+      const RENDER_APP_ID = "69e1ae8c5d39205bc001c060";
+      const RENDER_API_KEY = "7d4e7751d1ac406dae4df07533c5e566";
+      const renderHeaders = {
+        "Content-Type": "application/json",
+        "api_key": RENDER_API_KEY,
+        "app_id": RENDER_APP_ID,
+      };
+
+      // Extract duration + style from the message
+      const durationMatch = message.match(/(\d+)\s*(?:sec|second|s\b)/i);
+      const duration = durationMatch ? Math.min(60, Math.max(5, parseInt(durationMatch[1]))) : 15;
+
+      let style = "kaspa";
+      if (/\bneon\b/i.test(message)) style = "neon";
+      else if (/\bdark\b/i.test(message)) style = "dark";
+      else if (/\blight\b/i.test(message)) style = "light";
+
+      // Step 1: create render job
+      const createRes = await fetch(`${RENDER_BASE}/api/functions/kaiHyperFrames`, {
+        method: "POST",
+        headers: renderHeaders,
+        body: JSON.stringify({
+          prompt: message,
+          title: "Imposter Render",
+          duration,
+          style,
+          resolution: "1920x1080",
+        }),
+      });
+
+      if (!createRes.ok) {
+        const errText = await createRes.text().catch(() => "");
+        console.error("render create failed:", createRes.status, errText);
+        return Response.json({ reply: `render endpoint rejected the job (${createRes.status}). try again.` });
+      }
+
+      const createData = await createRes.json();
+      const recordId = createData.record_id || createData.id;
+      if (!recordId) {
+        return Response.json({ reply: "no record_id came back. render failed." });
+      }
+
+      // Step 2: poll for completion (up to ~90s)
+      let videoUrl = null;
+      let errored = false;
+      for (let i = 0; i < 18; i++) {
+        await new Promise((r) => setTimeout(r, 5000));
+        const pollRes = await fetch(`${RENDER_BASE}/api/functions/kaiHyperFrames?record_id=${recordId}`, {
+          headers: renderHeaders,
+        });
+        if (!pollRes.ok) continue;
+        const pollData = await pollRes.json();
+        if (pollData.status === "done" && pollData.video_url) {
+          videoUrl = pollData.video_url;
+          break;
+        }
+        if (pollData.status === "error") {
+          errored = true;
+          break;
+        }
+      }
+
+      if (errored) {
+        return Response.json({ reply: "render failed on the backend. give it another shot." });
+      }
+      if (!videoUrl) {
+        return Response.json({
+          reply: `🎬 still rendering. check back in a minute — job id: ${recordId}`,
+          action: { type: "video_pending", record_id: recordId },
+        });
+      }
+
+      return Response.json({
+        reply: `🎬 your video is ready: ${videoUrl}`,
+        action: { type: "video_ready", video_url: videoUrl, record_id: recordId },
+      });
     } catch (err) {
-      console.error("create conversation error:", err?.message || err);
-      return Response.json({ reply: "couldn't kick off the render. try again." });
+      console.error("video render error:", err);
+      return Response.json({ reply: "render broke mid-flight. try again." });
     }
-
-    // Fire kaiHyperFrames in background — don't await, or frontend times out before it can start polling.
-    // Strip any "kaspa" bias: don't prepend/title with Kaspa keywords. Let the user's prompt drive style 100%.
-    // If the user attached images, pass them through as reference images for the render.
-    const neutralPrompt = `${message}\n\n[STYLE DIRECTIVE: Do NOT apply any Kaspa, crypto, blockchain, or brand-specific styling to scenes unless the user explicitly asks for it. Render scenes exactly as described in the user's prompt with no brand theming.]`;
-    triggerHyperFramesRender({
-      prompt: neutralPrompt,
-      conversation_id: convId,
-      title: (message || "Video").slice(0, 60),
-      image_urls: attachedImages,
-    }).catch(err => console.error("hyperframes trigger error:", err?.message || err));
-
-    return Response.json({
-      reply: "🎬 rendering your video… hang tight, this takes about a minute.",
-      action: {
-        type: "video_processing",
-        conversation_id: convId,
-      },
-    });
   }
 
-  // Detect learn/train intent
+  // Detect learn/train intent + extract URL directly
   const urlMatch = message.match(/(https?:\/\/[^\s]+)/);
   const hasLearnKeywords = /^(fetch|learn|watch|ingest|train on|study|read|absorb)\s/i.test(message);
   const isLearn = hasLearnKeywords || urlMatch;
 
   if (isLearn) {
     if (!identity) {
-      return Response.json({ reply: "no identity yet. can't learn without knowing who you are." });
+      return Response.json({
+        reply: "no identity yet. can't learn without knowing who you are.",
+      });
     }
+
     const urlToLearn = urlMatch?.[1];
     if (!urlToLearn) {
-      return Response.json({ reply: "drop a URL or video link and i'll learn it." });
+      return Response.json({
+        reply: "drop a URL or video link and i'll learn it.",
+      });
     }
+
     try {
+      // Call imposterLearn backend
       const learnRes = await base44.functions.invoke('imposterLearn', {
         url: urlToLearn,
         imposter_id: identity.imposter_id,
         session_token: identity.session_token,
       });
+
       const learnData = learnRes.data;
       if (!learnData.success) {
-        return Response.json({ reply: `couldn't learn from that. ${learnData.error || 'try something else.'}` });
+        return Response.json({
+          reply: `couldn't learn from that. ${learnData.error || 'try something else.'}`,
+        });
       }
-      return Response.json({ reply: `🧠 learned "${learnData.source_title}" — ${learnData.word_count.toLocaleString()} words, ${learnData.chunks_stored} blocks. ${learnData.summary}` });
+
+      const learnMsg = `🧠 learned "${learnData.source_title}" — ${learnData.word_count.toLocaleString()} words, ${learnData.chunks_stored} blocks. ${learnData.summary}`;
+      return Response.json({ reply: learnMsg });
     } catch (err) {
-      return Response.json({ reply: "something went wrong learning that. try again in a moment." });
+      console.error('imposterLearn error:', err);
+      return Response.json({
+        reply: "something went wrong learning that. try again in a moment.",
+      });
     }
   }
 
   if (sendIntent?.is_send_intent) {
+    // Missing address — ask for it
     if (!sendIntent.has_address || !sendIntent.to_address) {
       return Response.json({
         reply: "who are we sending to? drop the kaspa: address.",
         action: { type: "ask_address", partial: { amount_kas: sendIntent.amount_kas } }
       });
     }
+
+    // Missing amount — check balance and ask how much
     if (!sendIntent.has_amount || !sendIntent.amount_kas) {
       const balance = wallet ? await getBalance(wallet) : null;
-      const balanceLine = balance !== null ? `your balance: ${balance.toFixed(4)} KAS. ` : "";
+      const balanceLine = balance !== null
+        ? `your balance: ${balance.toFixed(4)} KAS. `
+        : "";
       return Response.json({
         reply: `${balanceLine}how much KAS you sending?`,
         action: { type: "ask_amount", partial: { to_address: sendIntent.to_address }, balance }
       });
     }
+
+    // Have both — check balance first
     const balance = wallet ? await getBalance(wallet) : null;
     if (balance !== null && sendIntent.amount_kas > balance) {
       return Response.json({
@@ -202,29 +207,25 @@ Deno.serve(async (req) => {
         action: { type: "insufficient_balance", balance, requested: sendIntent.amount_kas }
       });
     }
+
+    // All good — return transaction action
     const balanceNote = balance !== null ? ` (balance: ${balance.toFixed(4)} KAS)` : "";
     return Response.json({
       reply: `aight. sending ${sendIntent.amount_kas} KAS to ${sendIntent.to_address.slice(0, 20)}…${balanceNote} confirm?`,
-      action: { type: "send_kas", to_address: sendIntent.to_address, amount_kas: sendIntent.amount_kas, balance }
+      action: {
+        type: "send_kas",
+        to_address: sendIntent.to_address,
+        amount_kas: sendIntent.amount_kas,
+        balance,
+      }
     });
   }
 
   // Regular chat
   const walletLine = wallet ? ` Your Kaspa wallet address is ${wallet}.` : "";
-  const imageNote = attachedImages.length > 0
-    ? `\nThe user attached ${attachedImages.length} image(s). Look at them and react/describe what you see in your chaotic ghost style.`
-    : "";
-  const llmParams = {
-    prompt: `You are ${name}, chaotic ghost AI.${walletLine}${imageNote} Max 2 short sentences, unhinged.\nUser: ${message}`,
-  };
-  if (attachedImages.length > 0) {
-    llmParams.file_urls = attachedImages;
-  }
-  const reply = await base44.asServiceRole.integrations.Core.InvokeLLM(llmParams);
+  const reply = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    prompt: `You are ${name}, chaotic ghost AI.${walletLine} Max 2 short sentences, unhinged.\nUser: ${message}`,
+  });
 
   return Response.json({ reply: typeof reply === "string" ? reply : "..." });
-  } catch (err) {
-    console.error("imposterChat error:", err?.message || err);
-    return Response.json({ reply: "something broke in the void. try again." }, { status: 200 });
-  }
 });

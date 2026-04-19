@@ -33,26 +33,9 @@ export default function KaspaAvatarChat() {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [videoUrl, setVideoUrl] = useState(() => localStorage.getItem(STORAGE_KEY) || DEFAULT_VIDEO_URL);
-  const [messages, setMessages] = useState(() => {
-    // Restore persisted messages so remounts (route changes) don't wipe the chat
-    try {
-      const saved = localStorage.getItem("kai_messages");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {}
-    let mode = "kai";
-    let storedIdentity = null;
-    try { mode = localStorage.getItem("kai_mode") || "kai"; } catch {}
-    try { const s = localStorage.getItem("imposter_identity"); storedIdentity = s ? JSON.parse(s) : null; } catch {}
-    const welcomes = {
-      kai: "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem.",
-      classic: "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything.",
-      imposter: storedIdentity ? `back again, ${storedIdentity.subagent_name}. what do you want.` : "i'm IMPOSTER. i'm not supposed to be here. ask me something.",
-    };
-    return [{ role: "assistant", content: welcomes[mode] || welcomes.kai }];
-  });
+  const [messages, setMessages] = useState([
+    { role: "assistant", content: "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem." }
+  ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [browserUrl, setBrowserUrl] = useState(null);
@@ -130,14 +113,6 @@ export default function KaspaAvatarChat() {
   useEffect(() => { try { localStorage.setItem("kai_show_bubble", String(showBubble)); } catch {} }, [showBubble]);
   useEffect(() => { try { localStorage.setItem("kai_mode", kaiMode); } catch {} }, [kaiMode]);
   useEffect(() => { try { localStorage.setItem("kai_speed", responseSpeed); } catch {} }, [responseSpeed]);
-  // Persist messages so route changes / remounts don't wipe chat history
-  useEffect(() => {
-    try {
-      // Keep last 50 to avoid unbounded growth
-      const toSave = messages.slice(-50);
-      localStorage.setItem("kai_messages", JSON.stringify(toSave));
-    } catch {}
-  }, [messages]);
 
   // Rotate bubble facts
   useEffect(() => {
@@ -167,13 +142,10 @@ export default function KaspaAvatarChat() {
   }, [typingIndex, typingText, messages]);
 
   const handleImageUpload = async (e) => {
-    const MAX_IMAGES = 10;
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
-    const remaining = MAX_IMAGES - pendingImages.length;
-    const toUpload = files.slice(0, remaining);
     setUploadingImage(true);
-    for (const file of toUpload) {
+    for (const file of files) {
       try {
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
         setPendingImages(prev => [...prev, { url: file_url, name: file.name }]);
@@ -322,119 +294,9 @@ export default function KaspaAvatarChat() {
       message: userMsg,
       identity: identity ? { imposter_id: identity.imposter_id, subagent_name: identity.subagent_name, kaspa_address: identity.kaspa_address } : null,
       conversation_state: lastAction,
-      image_urls: imageUrls || [],
     });
 
     const data = res.data;
-
-    // Handle image ready — show text reply + embedded image
-    if (data?.action?.type === "image_ready" && data.action.image_url) {
-      if (data.reply) addAssistantMessage(data.reply);
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: null,
-        imposterImage: { image_url: data.action.image_url, prompt: data.action.prompt },
-      }]);
-      return;
-    }
-
-    // Handle video ready — show text reply + embedded video
-    if (data?.action?.type === "video_ready" && data.action.video_url) {
-      if (data.reply) addAssistantMessage(data.reply);
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: null,
-        imposterVideo: { video_url: data.action.video_url },
-      }]);
-      return;
-    }
-
-    // Handle async video render — poll imposterPoll until ready
-    if (data?.action?.type === "video_processing" && (data.action.record_id || data.action.conversation_id)) {
-      const recordId = data.action.record_id || data.action.conversation_id;
-
-      // Add a single progress message we'll update in-place while polling
-      let progressIdx;
-      setMessages(prev => {
-        progressIdx = prev.length;
-        return [...prev, {
-          role: "assistant",
-          content: null,
-          imposterRender: { status: "queued", progress: data.reply || "🎬 queued…", elapsed: 0 },
-        }];
-      });
-
-      const startTime = Date.now();
-      const maxAttempts = 90; // 90 × 5s = 7.5 minutes max
-      let attempt = 0;
-
-      const updateProgress = (update) => {
-        setMessages(prev => {
-          const copy = [...prev];
-          if (copy[progressIdx]?.imposterRender) {
-            copy[progressIdx] = {
-              ...copy[progressIdx],
-              imposterRender: { ...copy[progressIdx].imposterRender, ...update, elapsed: Math.floor((Date.now() - startTime) / 1000) },
-            };
-          }
-          return copy;
-        });
-      };
-
-      const poll = async () => {
-        attempt++;
-        try {
-          const pollRes = await base44.functions.invoke('imposterPoll', { conversation_id: recordId });
-          const pollData = pollRes.data;
-
-          if (pollData?.status === "ready" && pollData.video_url) {
-            // Replace progress card with final video — done, no follow-up polling
-            setMessages(prev => {
-              const copy = [...prev];
-              copy[progressIdx] = {
-                role: "assistant",
-                content: null,
-                imposterVideo: { video_url: pollData.video_url },
-              };
-              return copy;
-            });
-            if (pollData.reply) addAssistantMessage(pollData.reply);
-            return;
-          }
-
-          if (pollData?.status === "error") {
-            updateProgress({ status: "error", progress: `render failed: ${pollData.error || "unknown"}` });
-            return;
-          }
-
-          if (pollData?.status === "stuck") {
-            updateProgress({ status: "error", progress: pollData.reply || "⚠️ render stuck. try again." });
-            return;
-          }
-
-          // Still processing — update progress text if Kai sent an update
-          if (pollData?.progress) {
-            updateProgress({ status: "rendering", progress: pollData.progress });
-          } else {
-            updateProgress({ status: "rendering" });
-          }
-
-          if (attempt >= maxAttempts) {
-            updateProgress({ status: "error", progress: "render timed out. try again." });
-            return;
-          }
-
-          setTimeout(poll, 5000);
-        } catch (err) {
-          console.error("poll error:", err);
-          if (attempt < maxAttempts) setTimeout(poll, 5000);
-          else updateProgress({ status: "error", progress: "lost connection to render." });
-        }
-      };
-
-      setTimeout(poll, 3000); // first poll after 3s
-      return;
-    }
 
     // Handle send transaction action
     if (data?.action?.type === "send_kas") {
@@ -477,7 +339,6 @@ export default function KaspaAvatarChat() {
   const resetChat = () => {
     setIsOpen(false); setShowSettings(false); setIsLoading(false);
     setTypingIndex(-1); setTypingText(""); setBrowserUrl(null); setShowBrowser(false); setViewingPost(null);
-    try { localStorage.removeItem("kai_messages"); } catch {}
     const welcomes = {
       kai: "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem.",
       classic: "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything.",
@@ -673,15 +534,6 @@ export default function KaspaAvatarChat() {
               {messages.map((msg, i) => (
                 <KAIChatMessage key={i} msg={msg} index={i} typingIndex={typingIndex} typingText={typingText}
                   setIsOpen={setIsOpen} setBrowserUrl={setBrowserUrl} setShowBrowser={setShowBrowser} setViewingPost={setViewingPost}
-                  onUseImageAsVideoRef={async (imageUrl, imagePrompt) => {
-                    const videoPrompt = imagePrompt ? `Make a video based on this image: ${imagePrompt}` : "Make a video based on this image";
-                    setMessages(prev => [...prev, { role: "user", content: videoPrompt, images: [imageUrl] }]);
-                    setIsLoading(true);
-                    try {
-                      await handleImposterMessage(videoPrompt, [imageUrl]);
-                    } catch { addAssistantMessage("render failed to kick off. try again."); }
-                    setIsLoading(false);
-                  }}
                   onWatchVideo={async (video, idx) => {
                     // Programmatically trigger "watch the Nth" ingestion
                     const ordinal = ['first', 'second', 'third', 'fourth', 'fifth'][idx] || 'first';
@@ -701,18 +553,15 @@ export default function KaspaAvatarChat() {
             {/* Input */}
             <div className="px-3 pb-3 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.08)", display: (showBrowser && (browserUrl || viewingPost)) || (kaiMode === "imposter" && !imposterIdentity) ? "none" : undefined }}>
               {pendingImages.length > 0 && (
-                <div className="px-2 pb-2">
-                  <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
-                    {pendingImages.map((img, idx) => (
-                      <div key={idx} className="relative flex-shrink-0">
-                        <img src={img.url} alt={img.name} className="w-12 h-12 rounded-lg object-cover ring-1 ring-cyan-500/40" />
-                        <button onClick={() => removePendingImage(idx)} className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-                          <X className="w-2.5 h-2.5 text-white" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="text-[9px] text-white/40 mt-1 px-1">{pendingImages.length}/10 images attached</div>
+                <div className="flex items-center gap-1.5 px-2 pb-2 overflow-x-auto scrollbar-hide">
+                  {pendingImages.map((img, idx) => (
+                    <div key={idx} className="relative flex-shrink-0">
+                      <img src={img.url} alt={img.name} className="w-12 h-12 rounded-lg object-cover ring-1 ring-cyan-500/40" />
+                      <button onClick={() => removePendingImage(idx)} className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                        <X className="w-2.5 h-2.5 text-white" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
               <div className="flex items-center gap-2 px-3 py-2 rounded-2xl" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
