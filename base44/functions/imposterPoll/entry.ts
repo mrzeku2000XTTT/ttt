@@ -12,16 +12,8 @@ Deno.serve(async (req) => {
       return Response.json({ status: "error", error: "missing record_id" }, { status: 400 });
     }
 
-    const apiKey = Deno.env.get("KAI_HYPERFRAMES_API_KEY");
-    if (!apiKey) {
-      return Response.json({ status: "error", error: "missing api key" }, { status: 500 });
-    }
-
     const url = `${KAI_HYPERFRAMES_URL}?record_id=${encodeURIComponent(record_id)}`;
-    const res = await fetch(url, {
-      method: "GET",
-      headers: { "api_key": apiKey },
-    });
+    const res = await fetch(url, { method: "GET" });
 
     const text = await res.text();
     let data;

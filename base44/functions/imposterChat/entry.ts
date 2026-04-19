@@ -10,14 +10,11 @@ const KAI_HYPERFRAMES_URL = `https://kais-backend-brain-superagent-for-4571e863.
 const ALLOWED_STYLES = new Set(["kaspa", "fire", "neon", "luxury", "ocean", "minimal"]);
 
 // Fire a render job to kaiHyperFrames per spec. Returns { record_id, ... }.
+// kaiHyperFrames is a public function on the KAI app — no api_key required.
 async function triggerHyperFramesRender(body) {
-  const apiKey = Deno.env.get("KAI_HYPERFRAMES_API_KEY");
   const res = await fetch(KAI_HYPERFRAMES_URL, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(apiKey ? { 'api_key': apiKey } : {}),
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
   if (!res.ok) {
