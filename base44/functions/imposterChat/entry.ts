@@ -45,7 +45,10 @@ Deno.serve(async (req) => {
       || /\bvideo\s+(about|for|of|showing|that|based\s+on)\b/i.test(message);
 
     if (hasVideoOrDeckKeywords) {
-      return Response.json({ reply: "video and deck rendering is offline. try an image instead." });
+      return Response.json({
+        reply: "🎬 opening HyperFrames Studio — render your video/deck there.",
+        action: { type: "open_browser", url: "https://tt-ts.vercel.app", label: "HyperFrames Studio" },
+      });
     }
 
     // Image intent

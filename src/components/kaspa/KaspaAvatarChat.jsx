@@ -395,6 +395,14 @@ Original prompt: ${input.trim()}`,
       setMessages(prev => prev.filter(m => !m.imposterImageLoading));
     }
 
+    // Handle open_browser — pop the url into the embedded browser panel
+    if (data?.action?.type === "open_browser" && data.action.url) {
+      addAssistantMessage(data.reply || `🌐 opening ${data.action.label || "site"}…`);
+      setBrowserUrl(data.action.url);
+      setShowBrowser(true);
+      return;
+    }
+
     // Handle send transaction action
     if (data?.action?.type === "send_kas") {
       const { to_address, amount_kas, balance } = data.action;
