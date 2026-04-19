@@ -46,8 +46,8 @@ Deno.serve(async (req) => {
 
     if (hasVideoOrDeckKeywords) {
       return Response.json({
-        reply: "🎬 video/deck rendering lives in AI Studio. tap below to open it.",
-        action: { type: "open_external", url: "https://ai.studio/apps/8ee01fa0-a21b-4ac2-90d5-3a4bdf39a241", label: "Open HyperFrames Studio" },
+        reply: "🎬 opening HyperFrames Studio in the browser panel…",
+        action: { type: "open_browser", url: "https://ai.studio/apps/8ee01fa0-a21b-4ac2-90d5-3a4bdf39a241", label: "HyperFrames Studio" },
       });
     }
 
