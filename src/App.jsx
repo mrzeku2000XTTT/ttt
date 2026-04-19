@@ -32,6 +32,7 @@ import AppStoreV2Page from './pages/AppStoreV2';
 import UIClonerPage from './pages/UICloner';
 import KrustPage from './pages/Krust';
 import OneShotStudioPage from './pages/OneShotStudio';
+import SlideDeckBuilderPage from './pages/SlideDeckBuilder';
 import KaSshiPlayer from './components/KaSshiPlayer';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -107,6 +108,7 @@ const AuthenticatedApp = () => {
       <Route path="/ValorantArena" element={<ValorantArenaPage />} />
       <Route path="/UICloner" element={<UIClonerPage />} />
       <Route path="/OneShotStudio" element={<OneShotStudioPage />} />
+      <Route path="/SlideDeckBuilder" element={<SlideDeckBuilderPage />} />
       <Route path="/Krust" element={<KrustPage />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>

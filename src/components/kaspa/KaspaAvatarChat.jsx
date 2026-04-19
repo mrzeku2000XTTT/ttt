@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Loader2, Minus, Settings, ImagePlus } from "lucide-react";
+import { X, Send, Loader2, Minus, Settings, ImagePlus, Sparkles } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { superagentClient } from "@/api/superagentClient";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import AgentBrowserPanel from "@/components/feed/AgentBrowserPanel";
@@ -28,14 +29,32 @@ import { KAIThinkingBubble } from "./KAIAnimations";
 import KAIChatMessage from "./KAIChatMessage";
 import ImposterGate from "./ImposterGate";
 import ImposterSettings from "./ImposterSettings";
+import ImposterImageLoader from "./ImposterImageLoader";
 
 export default function KaspaAvatarChat() {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [videoUrl, setVideoUrl] = useState(() => localStorage.getItem(STORAGE_KEY) || DEFAULT_VIDEO_URL);
-  const [messages, setMessages] = useState([
-    { role: "assistant", content: "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem." }
-  ]);
+  const [messages, setMessages] = useState(() => {
+    // Restore persisted messages so remounts (route changes) don't wipe the chat
+    try {
+      const saved = localStorage.getItem("kai_messages");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    let mode = "kai";
+    let storedIdentity = null;
+    try { mode = localStorage.getItem("kai_mode") || "kai"; } catch {}
+    try { const s = localStorage.getItem("imposter_identity"); storedIdentity = s ? JSON.parse(s) : null; } catch {}
+    const welcomes = {
+      kai: "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem.",
+      classic: "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything.",
+      imposter: storedIdentity ? `back again, ${storedIdentity.subagent_name}. what do you want.` : "i'm IMPOSTER. i'm not supposed to be here. ask me something.",
+    };
+    return [{ role: "assistant", content: welcomes[mode] || welcomes.kai }];
+  });
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [browserUrl, setBrowserUrl] = useState(null);
@@ -113,6 +132,14 @@ export default function KaspaAvatarChat() {
   useEffect(() => { try { localStorage.setItem("kai_show_bubble", String(showBubble)); } catch {} }, [showBubble]);
   useEffect(() => { try { localStorage.setItem("kai_mode", kaiMode); } catch {} }, [kaiMode]);
   useEffect(() => { try { localStorage.setItem("kai_speed", responseSpeed); } catch {} }, [responseSpeed]);
+  // Persist messages so route changes / remounts don't wipe chat history
+  useEffect(() => {
+    try {
+      // Keep last 50 to avoid unbounded growth
+      const toSave = messages.slice(-50);
+      localStorage.setItem("kai_messages", JSON.stringify(toSave));
+    } catch {}
+  }, [messages]);
 
   // Rotate bubble facts
   useEffect(() => {
@@ -142,10 +169,13 @@ export default function KaspaAvatarChat() {
   }, [typingIndex, typingText, messages]);
 
   const handleImageUpload = async (e) => {
+    const MAX_IMAGES = 10;
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
+    const remaining = MAX_IMAGES - pendingImages.length;
+    const toUpload = files.slice(0, remaining);
     setUploadingImage(true);
-    for (const file of files) {
+    for (const file of toUpload) {
       try {
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
         setPendingImages(prev => [...prev, { url: file_url, name: file.name }]);
@@ -157,9 +187,150 @@ export default function KaspaAvatarChat() {
 
   const removePendingImage = (idx) => setPendingImages(prev => prev.filter((_, i) => i !== idx));
 
+  // PUSH-BASED render watcher (replaces polling).
+  // Subscribes to Superagent's VideoRender entity via cross-app SDK client.
+  // When status flips to "done" with a video_url, swap the card instantly.
+  // Fallback polling at 30s intervals in case cross-app subscribe doesn't fire.
+  const watchRef = useRef(null);
+  useEffect(() => {
+    const renderingMsg = messages.find(m => m?.imposterRender?.status === "rendering" && m?.imposterRender?.recordId);
+    if (!renderingMsg) {
+      if (watchRef.current) {
+        watchRef.current.unsubscribe?.();
+        clearInterval(watchRef.current.fallback);
+        watchRef.current = null;
+      }
+      return;
+    }
+    // Already watching this same recordId — don't restart
+    if (watchRef.current && watchRef.current.recordId === renderingMsg.imposterRender.recordId) return;
+    // Different job → clean up previous
+    if (watchRef.current) {
+      watchRef.current.unsubscribe?.();
+      clearInterval(watchRef.current.fallback);
+      watchRef.current = null;
+    }
+
+    const recordId = renderingMsg.imposterRender.recordId;
+    let resolved = false;
+
+    const swapToVideo = (videoUrl) => {
+      if (resolved) return;
+      resolved = true;
+      setMessages(prev => prev.map(m =>
+        m?.imposterRender?.recordId === recordId
+          ? { role: "assistant", content: null, imposterVideo: { video_url: videoUrl } }
+          : m
+      ));
+      if (watchRef.current) {
+        watchRef.current.unsubscribe?.();
+        clearInterval(watchRef.current.fallback);
+        watchRef.current = null;
+      }
+    };
+
+    // 1. Subscribe to Superagent's VideoRender entity for this conversation_id
+    let unsubscribe = null;
+    try {
+      unsubscribe = superagentClient.entities.VideoRender.subscribe((event) => {
+        const record = event?.data;
+        if (!record) return;
+        if (record.conversation_id !== recordId) return;
+        if (record.status === "done" && record.video_url) {
+          swapToVideo(record.video_url);
+        }
+      });
+    } catch (err) {
+      console.warn("VideoRender subscribe failed, relying on fallback polling:", err?.message || err);
+    }
+
+    // 2. Fallback: light 30s poll via imposterPoll (covers case where subscribe silently drops)
+    let attempts = 0;
+    const fallbackTick = async () => {
+      if (resolved) return;
+      attempts++;
+      try {
+        const res = await base44.functions.invoke('imposterPoll', { conversation_id: recordId });
+        const data = res.data || {};
+        if (data.status === "ready" && data.video_url) {
+          swapToVideo(data.video_url);
+          return;
+        }
+        if (attempts >= 32) { // ~16 min @ 30s
+          if (watchRef.current) {
+            unsubscribe?.();
+            clearInterval(watchRef.current.fallback);
+            watchRef.current = null;
+          }
+          setMessages(prev => prev.map(m =>
+            m?.imposterRender?.recordId === recordId
+              ? { ...m, imposterRender: { ...m.imposterRender, status: "error", progress: "still rendering — check back soon" } }
+              : m
+          ));
+        }
+      } catch {}
+    };
+    const fallback = setInterval(fallbackTick, 30000);
+
+    watchRef.current = { recordId, unsubscribe, fallback };
+
+    return () => {
+      if (watchRef.current) {
+        watchRef.current.unsubscribe?.();
+        clearInterval(watchRef.current.fallback);
+        watchRef.current = null;
+      }
+    };
+  }, [messages]);
+
+  const [renderMode, setRenderMode] = useState("auto"); // auto | video | deck
+  const [enhancing, setEnhancing] = useState(false);
+  const enhancePrompt = async () => {
+    if (!input.trim() || enhancing) return;
+    setEnhancing(true);
+    try {
+      const enhanced = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are an expert Motion Design Art Director and GSAP Animation Master. Rewrite the user's prompt into a massive, Hollywood-style motion-design brief structured as a multi-phase timeline: **Intro Sequence**, **Main Stage**, and **Outro**. Keep the original subject and intent EXACT — do not change the topic, only expand it into a cinematic choreography brief.
+
+MANDATORY TECH SPECS — you MUST forcefully include ALL of the following throughout the brief:
+- Exact GSAP easing curves such as: expo.inOut, expo.out, power4.inOut, elastic.out(1, 0.3), back.out(1.7), circ.inOut, steps(12)
+- Timeline overlap operators like '-=0.5', '+=0.2', '<0.1', '>-0.3' to show stagger and overlap between tweens
+- Split-text typography with per-character / per-word <span> animations (y, opacity, rotationX, skewX staggers)
+- 3D transforms: rotationX, rotationY, skewX, perspective, transformOrigin
+- clip-path sweeps (inset, polygon wipes) for reveals and masks
+- Optical blur depth (filter: blur(Xpx)) tweened in/out for focus pulls and depth of field
+- Parallax layers, staggered entrances, camera-like push-ins, and exit choreography
+
+FORMAT:
+- 400–600 words of highly descriptive, cinematic, Hollywood-style breakdown
+- Section headers: "INTRO SEQUENCE", "MAIN STAGE", "OUTRO"
+- Reference specific timings (e.g. "at 0.8s", "over 1.2s"), eases, and overlap operators inline
+- Describe lighting, color grade, texture, typography weight, and pacing like a motion director briefing an animator
+
+Output ONLY the rewritten motion-design brief. No preamble, no quotes, no explanation.
+
+Original prompt: ${input.trim()}`,
+        model: "gemini_3_flash",
+      });
+      const clean = typeof enhanced === "string" ? enhanced.trim().replace(/^["']|["']$/g, "") : "";
+      if (clean) setInput(clean);
+    } catch {}
+    setEnhancing(false);
+    inputRef.current?.focus();
+  };
+
   const sendMessage = async () => {
     if ((!input.trim() && pendingImages.length === 0) || isLoading) return;
-    const userMsg = input.trim() || (pendingImages.length > 0 ? "Analyze this image" : "");
+    let userMsg = input.trim() || (pendingImages.length > 0 ? "Analyze this image" : "");
+    // In imposter mode, apply render-mode prefix so imposterChat routes correctly
+    if (kaiMode === "imposter" && userMsg) {
+      const lower = userMsg.toLowerCase();
+      if (renderMode === "deck" && !/\b(deck|slide|slideshow|presentation)\b/.test(lower)) {
+        userMsg = `Make a slide deck video: ${userMsg}`;
+      } else if (renderMode === "video" && !/\b(video|mp4|animation|clip|reel)\b/.test(lower)) {
+        userMsg = `Make a video: ${userMsg}`;
+      }
+    }
     const imageUrls = pendingImages.map(img => img.url);
     const imageNames = pendingImages.map(img => img.name);
     setInput("");
@@ -290,13 +461,85 @@ export default function KaspaAvatarChat() {
     // Build conversation state from last assistant action (for multi-turn send flow)
     const lastAction = [...messages].reverse().find(m => m.imposterAction)?.imposterAction || null;
 
+    // Quickly detect image intent client-side to show loader right away
+    const isImageIntent = /\b(make|create|generate|render|produce|draw|design|give me|show me)\b.*\b(image|picture|pic|photo|art|artwork|drawing|illustration|poster|meme|logo|wallpaper|portrait|scene)\b/i.test(userMsg)
+      || /\b(image|picture|pic|photo|art|artwork|drawing|illustration|poster|meme|logo|wallpaper)\s+(of|about|for|showing|that|with)\b/i.test(userMsg);
+
+    let loaderIdx = -1;
+    if (isImageIntent) {
+      setMessages(prev => {
+        loaderIdx = prev.length;
+        return [...prev, { role: "assistant", content: null, imposterImageLoading: true }];
+      });
+    }
+
     const res = await base44.functions.invoke('imposterChat', {
       message: userMsg,
       identity: identity ? { imposter_id: identity.imposter_id, subagent_name: identity.subagent_name, kaspa_address: identity.kaspa_address } : null,
       conversation_state: lastAction,
+      image_urls: imageUrls || [],
     });
 
     const data = res.data;
+
+    // Handle image ready — replace loader (if shown) with the final image
+    if (data?.action?.type === "image_ready" && data.action.image_url) {
+      setMessages(prev => {
+        const copy = prev.filter(m => !m.imposterImageLoading);
+        if (data.reply) copy.push({ role: "assistant", content: data.reply });
+        copy.push({
+          role: "assistant",
+          content: null,
+          imposterImage: { image_url: data.action.image_url, prompt: data.action.prompt },
+        });
+        return copy;
+      });
+      return;
+    }
+
+    // If we showed a loader but the response isn't an image (error path), clear it
+    if (isImageIntent) {
+      setMessages(prev => prev.filter(m => !m.imposterImageLoading));
+    }
+
+    // Handle video ready — show text reply + embedded video
+    if (data?.action?.type === "video_ready" && data.action.video_url) {
+      if (data.reply) addAssistantMessage(data.reply);
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: null,
+        imposterVideo: { video_url: data.action.video_url },
+      }]);
+      return;
+    }
+
+    // Async video render — Superagent will post the video URL directly to the conversation
+    // via slideComplete when done. No polling needed — we just show a friendly waiting card.
+    if (data?.action?.type === "video_processing" && (data.action.record_id || data.action.conversation_id)) {
+      const recordId = data.action.record_id || data.action.conversation_id;
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: null,
+        imposterRender: {
+          status: "rendering",
+          progress: data.reply || "🎬 Building your video now — dropping the link in about 2 minutes.",
+          recordId,
+          startedAt: Date.now(),
+        },
+      }]);
+      return;
+    }
+
+    // Handle deck_ready — link to SlideDeckBuilder
+    if (data?.action?.type === "deck_ready") {
+      addAssistantMessage(data.reply || "🎬 deck built. review it in the builder.");
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: null,
+        links: [{ label: `📽️ Open "${data.action.deck_title}" in Builder`, path: "SlideDeckBuilder" }],
+      }]);
+      return;
+    }
 
     // Handle send transaction action
     if (data?.action?.type === "send_kas") {
@@ -339,6 +582,7 @@ export default function KaspaAvatarChat() {
   const resetChat = () => {
     setIsOpen(false); setShowSettings(false); setIsLoading(false);
     setTypingIndex(-1); setTypingText(""); setBrowserUrl(null); setShowBrowser(false); setViewingPost(null);
+    try { localStorage.removeItem("kai_messages"); } catch {}
     const welcomes = {
       kai: "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem.",
       classic: "Hey, I'm Kai 👋 Ask me anything about TTT, Kaspa, or literally anything.",
@@ -394,7 +638,7 @@ export default function KaspaAvatarChat() {
                 </div>
                 <div>
                   <div className="text-white font-bold text-sm tracking-wide">Kai</div>
-                  <div className="text-white/40 text-[10px]">{kaiMode === "classic" ? "Classic • TTT Assistant" : kaiMode === "imposter" ? "Unknown Origin • Unfiltered" : "Kaspa AI Assistant"}</div>
+                  <div className="text-white/40 text-[10px]">{kaiMode === "classic" ? "TTT Kai • Kaspa Avatar Intelligence" : kaiMode === "imposter" ? "Imposter Kai • Unfiltered" : "Kaspa Kai • Kaspa Avatar Intelligence"}</div>
                 </div>
               </div>
               <div className="flex items-center gap-1">
@@ -414,7 +658,7 @@ export default function KaspaAvatarChat() {
                   className="h-6 px-2.5 rounded-full flex items-center gap-1.5 text-[10px] font-semibold transition-all hover:bg-white/10"
                   style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)" }}>
                   <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: kaiMode === "imposter" ? "#ff4444" : kaiMode === "classic" ? "#a855f7" : "#06b6d4" }} />
-                  {kaiMode === "classic" ? "Classic" : kaiMode === "imposter" ? "Imposter" : "KAI"}
+                  {kaiMode === "classic" ? "TTT Kai" : kaiMode === "imposter" ? "Imposter Kai" : "Kaspa Kai"}
                 </button>
                 <button onClick={() => setShowSettings(!showSettings)}
                   className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors hover:bg-white/10 ${showSettings ? 'text-cyan-400' : 'text-white/40 hover:text-white/80'}`}>
@@ -534,6 +778,18 @@ export default function KaspaAvatarChat() {
               {messages.map((msg, i) => (
                 <KAIChatMessage key={i} msg={msg} index={i} typingIndex={typingIndex} typingText={typingText}
                   setIsOpen={setIsOpen} setBrowserUrl={setBrowserUrl} setShowBrowser={setShowBrowser} setViewingPost={setViewingPost}
+                  onUseImageAsVideoRef={(imageUrl, imagePrompt) => {
+                    // Pre-fill with "Make a video:" trigger at the front, followed by editable description
+                    const starter = imagePrompt ? `Make a video: ${imagePrompt}` : "Make a video: ";
+                    setInput(starter);
+                    setPendingImages(prev => [...prev, { url: imageUrl, name: "reference.png" }]);
+                    setTimeout(() => {
+                      inputRef.current?.focus();
+                      // Move cursor to end so user can keep editing
+                      const el = inputRef.current;
+                      if (el) el.setSelectionRange(starter.length, starter.length);
+                    }, 100);
+                  }}
                   onWatchVideo={async (video, idx) => {
                     // Programmatically trigger "watch the Nth" ingestion
                     const ordinal = ['first', 'second', 'third', 'fourth', 'fifth'][idx] || 'first';
@@ -552,31 +808,67 @@ export default function KaspaAvatarChat() {
 
             {/* Input */}
             <div className="px-3 pb-3 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.08)", display: (showBrowser && (browserUrl || viewingPost)) || (kaiMode === "imposter" && !imposterIdentity) ? "none" : undefined }}>
-              {pendingImages.length > 0 && (
-                <div className="flex items-center gap-1.5 px-2 pb-2 overflow-x-auto scrollbar-hide">
-                  {pendingImages.map((img, idx) => (
-                    <div key={idx} className="relative flex-shrink-0">
-                      <img src={img.url} alt={img.name} className="w-12 h-12 rounded-lg object-cover ring-1 ring-cyan-500/40" />
-                      <button onClick={() => removePendingImage(idx)} className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-                        <X className="w-2.5 h-2.5 text-white" />
-                      </button>
-                    </div>
+              {/* Render mode chips — only in imposter mode */}
+              {kaiMode === "imposter" && imposterIdentity && (
+                <div className="flex items-center gap-1.5 px-1 pb-2">
+                  <span className="text-[9px] font-bold text-white/35 uppercase tracking-wider mr-1">Render:</span>
+                  {[
+                    { key: "auto", label: "Auto", emoji: "✨", color: "rgba(255,255,255,0.5)" },
+                    { key: "video", label: "Video", emoji: "🎬", color: "rgba(6,182,212,1)" },
+                    { key: "deck", label: "Deck", emoji: "📽️", color: "rgba(168,85,247,1)" },
+                  ].map(opt => (
+                    <button
+                      key={opt.key}
+                      onClick={() => setRenderMode(opt.key)}
+                      className="px-2 py-0.5 rounded-full text-[10px] font-bold transition-all"
+                      style={{
+                        background: renderMode === opt.key ? `${opt.color === "rgba(255,255,255,0.5)" ? "rgba(255,255,255,0.15)" : opt.color.replace("1)", "0.18)")}` : "rgba(255,255,255,0.04)",
+                        color: renderMode === opt.key ? opt.color : "rgba(255,255,255,0.4)",
+                        border: `1px solid ${renderMode === opt.key ? opt.color.replace("1)", "0.4)") : "rgba(255,255,255,0.08)"}`,
+                      }}
+                      title={opt.key === "auto" ? "Let Kai detect" : opt.key === "video" ? "Path A — single fast video" : "Path B — multi-slide deck video"}
+                    >
+                      {opt.emoji} {opt.label}
+                    </button>
                   ))}
                 </div>
               )}
-              <div className="flex items-center gap-2 px-3 py-2 rounded-2xl" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              {pendingImages.length > 0 && (
+                <div className="px-2 pb-2">
+                  <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+                    {pendingImages.map((img, idx) => (
+                      <div key={idx} className="relative flex-shrink-0">
+                        <img src={img.url} alt={img.name} className="w-12 h-12 rounded-lg object-cover ring-1 ring-cyan-500/40" />
+                        <button onClick={() => removePendingImage(idx)} className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                          <X className="w-2.5 h-2.5 text-white" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-[9px] text-white/40 mt-1 px-1">{pendingImages.length}/10 images attached</div>
+                </div>
+              )}
+              <div className="flex items-start gap-2 px-3 py-2 rounded-2xl" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
                 <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
                 <button onClick={() => fileInputRef.current?.click()} disabled={uploadingImage}
-                  className="w-7 h-7 rounded-full flex items-center justify-center transition-all flex-shrink-0 hover:bg-white/10"
+                  className="w-7 h-7 rounded-full flex items-center justify-center transition-all flex-shrink-0 hover:bg-white/10 mt-1"
                   style={{ color: pendingImages.length > 0 ? "rgba(6,182,212,0.9)" : "rgba(255,255,255,0.4)" }} title="Upload image">
                   {uploadingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImagePlus className="w-3.5 h-3.5" />}
                 </button>
-                <input ref={inputRef} type="text" value={input} onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
+                <textarea ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+                  rows={3}
                   placeholder={pendingImages.length > 0 ? "Ask about the image…" : kaiMode === "classic" ? "Search or ask Kai..." : kaiMode === "imposter" ? "say something… if you dare" : "Search or ask KAI..."}
-                  className="flex-1 bg-transparent text-white/90 outline-none placeholder-white/30" style={{ fontSize: '16px' }} />
+                  className="flex-1 bg-transparent text-white/90 outline-none placeholder-white/30 resize-y scrollbar-hide"
+                  style={{ fontSize: '16px', minHeight: '72px', maxHeight: '240px', lineHeight: '1.4', fontFamily: 'inherit' }} />
+                <button onClick={enhancePrompt} disabled={!input.trim() || enhancing || isLoading}
+                  className="w-7 h-7 rounded-full flex items-center justify-center transition-all flex-shrink-0 hover:bg-white/10 disabled:opacity-30 mt-1"
+                  style={{ color: input.trim() && !enhancing ? "rgba(168,85,247,0.9)" : "rgba(255,255,255,0.4)" }}
+                  title="Enhance prompt">
+                  {enhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                </button>
                 <button onClick={sendMessage} disabled={(!input.trim() && pendingImages.length === 0) || isLoading}
-                  className="w-7 h-7 rounded-full flex items-center justify-center transition-all disabled:opacity-30"
+                  className="w-7 h-7 rounded-full flex items-center justify-center transition-all disabled:opacity-30 mt-1"
                   style={{ background: (input.trim() || pendingImages.length > 0) && !isLoading ? "rgba(6,182,212,0.4)" : "transparent" }}>
                   <Send className="w-3.5 h-3.5 text-white" />
                 </button>
