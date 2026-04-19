@@ -81,6 +81,7 @@ export default function HaruPage() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     document.body.style.background = "#faf7f5";
     // Check if user is admin — if so, skip gate
     base44.auth.me()
