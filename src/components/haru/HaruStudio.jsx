@@ -151,7 +151,7 @@ export default function HaruStudio({ onClose, kaspaAddress }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const link = document.createElement("a");
-    link.download = `haru-${text.toLowerCase().replace(/\s+/g, "-")}.png`;
+    link.download = `hiro-${text.toLowerCase().replace(/\s+/g, "-")}.png`;
     link.href = canvas.toDataURL("image/png");
     link.click();
   };
@@ -303,7 +303,16 @@ Return a JSON object with a "variants" array.`,
       const { url } = await base44.integrations.Core.GenerateImage({
         prompt: `Premium typography poster featuring the word "${text}". ${prompt}. Editorial design, magazine quality, beautiful lettering, ${fontStyle.label} style, cinematic lighting, high-end brand aesthetic.`,
       });
+      // Load the generated image into the canvas pattern ref AND enable image-fill
+      // so the result is immediately visible on the canvas (was previously
+      // only stored — never rendered).
+      const imgEl = new Image();
+      imgEl.crossOrigin = "anonymous";
+      imgEl.src = url;
+      await new Promise((res) => { imgEl.onload = res; imgEl.onerror = res; });
+      imgElementRef.current = imgEl;
       setUploadedImg(url);
+      setUseImageFill(true);
     } catch (err) {
       console.error(err);
     }
@@ -656,7 +665,7 @@ Return a JSON object with a "variants" array.`,
                 </div>
                 <a
                   href={renderedLetterform}
-                  download={`haru-letterform-${text}.png`}
+                  download={`hiro-letterform-${text}.png`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="absolute top-3 right-3 h-8 px-3 rounded-full bg-white/95 backdrop-blur text-zinc-900 text-[10px] font-bold flex items-center gap-1 shadow-lg hover:bg-white"
