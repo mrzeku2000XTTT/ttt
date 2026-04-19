@@ -1,92 +1,93 @@
-import React, { useState, useRef } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft, RefreshCw, Maximize2, ExternalLink, Loader2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, Play, Film, Tv, Zap } from "lucide-react";
 
 const NEPU_URL = "https://nepu.to/";
+const LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/5f2c1cefa_generated_image.png";
+
+const FEATURES = [
+  { icon: Film, label: "Movies", desc: "Huge library of films" },
+  { icon: Tv, label: "TV Shows", desc: "Full series, all seasons" },
+  { icon: Zap, label: "No Signup", desc: "Stream instantly, free" },
+];
 
 export default function NEPUPage() {
-  const [loading, setLoading] = useState(true);
-  const [key, setKey] = useState(0);
-  const iframeRef = useRef(null);
-
-  const reload = () => {
-    setLoading(true);
-    setKey((k) => k + 1);
-  };
-
-  const goFullscreen = () => {
-    const el = iframeRef.current;
-    if (!el) return;
-    if (el.requestFullscreen) el.requestFullscreen();
-    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-  };
-
   return (
-    <div className="fixed inset-0 bg-black flex flex-col">
-      {/* Top bar */}
-      <div className="flex items-center gap-2 px-3 py-2 bg-black/95 border-b border-white/10 z-10">
-        <Link to={createPageUrl("AppStoreV2")} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/80 text-xs font-bold transition-all">
-          <ArrowLeft className="w-3.5 h-3.5" /> Back
-        </Link>
+    <div className="fixed inset-0 bg-black overflow-y-auto">
+      {/* Background */}
+      <div
+        className="absolute inset-0 opacity-20"
+        style={{
+          backgroundImage:
+            "url(https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=2000&q=80)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-red-950/20 to-black/90" />
 
-        <div className="flex items-center gap-2 flex-1">
+      {/* Back button */}
+      <Link
+        to={createPageUrl("AppStoreV2")}
+        className="absolute top-4 left-4 z-20 flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white text-sm transition-all"
+      >
+        <ArrowLeft className="w-4 h-4" /> Back
+      </Link>
+
+      {/* Content */}
+      <div className="relative z-10 min-h-full flex flex-col items-center justify-center px-6 py-16">
+        <div className="max-w-lg w-full text-center">
+          {/* Logo */}
           <img
-            src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/5f2c1cefa_generated_image.png"
+            src={LOGO}
             alt="NEPU"
-            className="w-7 h-7 rounded-lg"
+            className="w-24 h-24 mx-auto mb-6 rounded-3xl shadow-2xl shadow-red-500/30"
           />
-          <div>
-            <div className="text-white font-black text-sm leading-none">NEPU</div>
-            <div className="text-white/40 text-[10px]">Free TV shows & movies</div>
+
+          <h1 className="text-5xl sm:text-6xl font-black text-white mb-2 tracking-widest">
+            NEPU
+          </h1>
+          <p className="text-red-400 font-bold mb-2 tracking-widest uppercase text-xs">
+            Free TV Shows & Movies
+          </p>
+          <p className="text-white/50 text-sm mb-10 px-4">
+            Stream thousands of movies and TV series for free. No account, no
+            ads walls — just hit play.
+          </p>
+
+          {/* Features */}
+          <div className="grid grid-cols-3 gap-3 mb-10">
+            {FEATURES.map((f) => {
+              const Icon = f.icon;
+              return (
+                <div
+                  key={f.label}
+                  className="flex flex-col items-center gap-1 p-3 bg-white/5 border border-white/10 rounded-xl"
+                >
+                  <Icon className="w-5 h-5 text-red-400" />
+                  <div className="text-white text-xs font-bold">{f.label}</div>
+                  <div className="text-white/40 text-[10px]">{f.desc}</div>
+                </div>
+              );
+            })}
           </div>
+
+          {/* CTA */}
+          <a
+            href={NEPU_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-black text-lg rounded-xl shadow-lg shadow-red-500/30 transition-all active:scale-95 tracking-widest"
+          >
+            <Play className="w-5 h-5 fill-white" />
+            OPEN NEPU
+            <ExternalLink className="w-4 h-4 opacity-70" />
+          </a>
+          <p className="text-white/30 text-[10px] mt-3">
+            Opens nepu.to in a new tab
+          </p>
         </div>
-
-        <button
-          onClick={reload}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/80 text-xs font-bold transition-all"
-          title="Reload"
-        >
-          <RefreshCw className="w-3.5 h-3.5" /> Reload
-        </button>
-        <button
-          onClick={goFullscreen}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/80 text-xs font-bold transition-all"
-          title="Fullscreen"
-        >
-          <Maximize2 className="w-3.5 h-3.5" />
-        </button>
-        <a
-          href={NEPU_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs font-bold transition-all"
-          title="Open in new tab"
-        >
-          <ExternalLink className="w-3.5 h-3.5" /> Open
-        </a>
-      </div>
-
-      {/* Iframe container */}
-      <div className="flex-1 relative bg-black">
-        {loading && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black z-10 pointer-events-none">
-            <Loader2 className="w-8 h-8 text-red-500 animate-spin mb-3" />
-            <div className="text-white/60 text-sm">Loading NEPU…</div>
-          </div>
-        )}
-        <iframe
-          key={key}
-          ref={iframeRef}
-          src={NEPU_URL}
-          title="NEPU"
-          className="w-full h-full border-0"
-          onLoad={() => setLoading(false)}
-          allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-          allowFullScreen
-          referrerPolicy="no-referrer"
-          sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-presentation"
-        />
       </div>
     </div>
   );
