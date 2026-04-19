@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useDragControls } from "framer-motion";
-import { X, Newspaper, ChevronRight, Sparkles, GripHorizontal, Minus } from "lucide-react";
+import { X, Newspaper, ChevronRight, Sparkles, GripHorizontal, Minus, Rocket } from "lucide-react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { getLatestUpdates } from "./tttUpdates";
 
 const FALLBACK_ITEMS = [
   { id: 1, title: "TTT Feed Now Live", summary: "Share posts, tip creators with KAS, and interact with the @zk AI bot.", tag: "TTT" },
@@ -10,6 +11,9 @@ const FALLBACK_ITEMS = [
   { id: 3, title: "KRC-20 Tipping", summary: "Send PACMAN and other KRC-20 tokens as tips on posts and comments.", tag: "Tipping" },
   { id: 4, title: "StakeDAG Markets", summary: "Place KAS bets on prediction games and earn from correct outcomes.", tag: "StakeDAG" },
 ];
+
+// Always-fresh TTT platform updates (prepended to every rotation)
+const PLATFORM_UPDATES = getLatestUpdates(3);
 
 export default function NewsToast() {
   const [visible, setVisible] = useState(false);
@@ -27,7 +31,8 @@ export default function NewsToast() {
 
   useEffect(() => {
     if (!visible || dismissed || minimized) return;
-    const items = liveNews.length > 0 ? liveNews : FALLBACK_ITEMS;
+    const kaspaItems = liveNews.length > 0 ? liveNews : FALLBACK_ITEMS;
+    const items = [...PLATFORM_UPDATES, ...kaspaItems];
     if (items.length <= 1) return;
     const interval = setInterval(() => {
       setCurrentNews((prev) => (prev + 1) % items.length);
@@ -84,7 +89,8 @@ export default function NewsToast() {
     sessionStorage.setItem("news_toast_dismissed", "true");
   };
 
-  const items = liveNews.length > 0 ? liveNews : FALLBACK_ITEMS;
+  const kaspaItems = liveNews.length > 0 ? liveNews : FALLBACK_ITEMS;
+  const items = [...PLATFORM_UPDATES, ...kaspaItems];
   const news = items[currentNews] || items[0];
 
   if (dismissed || !visible || !news) return null;
@@ -204,7 +210,12 @@ function ExpandedToast({ news, items, currentNews, setCurrentNews, onMinimize, o
             transition={{ duration: 0.3 }}
           >
             <div className="flex items-start gap-2 mb-1.5">
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-cyan-500/15 text-cyan-400 border border-cyan-500/20 whitespace-nowrap">
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap flex items-center gap-1 ${
+                news.isPlatformUpdate
+                  ? "bg-gradient-to-r from-pink-500/20 to-purple-500/20 text-pink-300 border border-pink-500/30"
+                  : "bg-cyan-500/15 text-cyan-400 border border-cyan-500/20"
+              }`}>
+                {news.isPlatformUpdate && <Rocket className="w-2.5 h-2.5" />}
                 {news.tag}
               </span>
             </div>
@@ -233,11 +244,13 @@ function ExpandedToast({ news, items, currentNews, setCurrentNews, onMinimize, o
             ))}
           </div>
           <Link
-            to="/"
-            className="flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 font-medium transition-colors group"
+            to={news.link || "/"}
+            className={`flex items-center gap-1.5 text-xs font-medium transition-colors group ${
+              news.isPlatformUpdate ? "text-pink-400 hover:text-pink-300" : "text-cyan-400 hover:text-cyan-300"
+            }`}
           >
             <Sparkles className="w-3 h-3" />
-            More
+            {news.isPlatformUpdate ? "Open" : "More"}
             <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </div>
