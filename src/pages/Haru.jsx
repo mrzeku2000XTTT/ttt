@@ -6,6 +6,9 @@ import {
   FolderOpen, Download, ChevronRight, Check, Star, Palette,
   Play, X, Loader2
 } from "lucide-react";
+import { base44 } from "@/api/base44Client";
+import HaruAccessGate from "@/components/haru/HaruAccessGate";
+import HaruStudio from "@/components/haru/HaruStudio";
 
 const HARU_ICON = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ade3b1795_generated_image.png";
 const HARU_HERO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/221388459_generated_image.png";
@@ -72,33 +75,41 @@ const PROBLEMS = [
 ];
 
 export default function HaruPage() {
-  const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const [showDemo, setShowDemo] = useState(false);
-  const [prompt, setPrompt] = useState("");
-  const [generating, setGenerating] = useState(false);
-  const [generatedSample, setGeneratedSample] = useState(null);
+  const [showGate, setShowGate] = useState(false);
+  const [showStudio, setShowStudio] = useState(false);
+  const [kaspaAddress, setKaspaAddress] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     document.body.style.background = "#faf7f5";
+    // Check if user is admin — if so, skip gate
+    base44.auth.me()
+      .then((u) => {
+        if (u?.role === "admin") {
+          setIsAdmin(true);
+          setKaspaAddress(u.email || "admin");
+        }
+      })
+      .catch(() => {});
+    // Restore previous access
+    const saved = localStorage.getItem("haru_access_address");
+    if (saved) setKaspaAddress(saved);
+
     return () => { document.body.style.background = ""; };
   }, []);
 
-  const handleWaitlist = (e) => {
-    e.preventDefault();
-    if (!email.trim()) return;
-    setSubmitted(true);
-    setEmail("");
+  const requestAccess = () => {
+    if (isAdmin || kaspaAddress) {
+      setShowStudio(true);
+    } else {
+      setShowGate(true);
+    }
   };
 
-  const runDemo = async () => {
-    if (!prompt.trim()) return;
-    setGenerating(true);
-    // Simulated generation — just show a pretty sample with the prompt styled
-    setTimeout(() => {
-      setGeneratedSample(prompt);
-      setGenerating(false);
-    }, 1400);
+  const handleGranted = (addr) => {
+    setKaspaAddress(addr);
+    setShowGate(false);
+    setShowStudio(true);
   };
 
   return (
@@ -114,9 +125,9 @@ export default function HaruPage() {
             <img src={HARU_ICON} alt="Haru" className="w-7 h-7 rounded-lg" />
             <span className="text-[16px] font-[900] tracking-tight">Haru</span>
           </div>
-          <a href="#waitlist" className="text-[13px] font-semibold text-white bg-zinc-900 hover:bg-zinc-700 px-4 py-1.5 rounded-full transition-colors">
-            Get Access
-          </a>
+          <button onClick={requestAccess} className="text-[13px] font-semibold text-white bg-zinc-900 hover:bg-zinc-700 px-4 py-1.5 rounded-full transition-colors">
+            {isAdmin || kaspaAddress ? "Enter Studio" : "Get Access"}
+          </button>
         </div>
       </nav>
 
@@ -148,18 +159,20 @@ export default function HaruPage() {
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-3">
-              <a href="#waitlist">
-                <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                  className="h-12 px-7 bg-zinc-900 text-white text-[14px] font-semibold rounded-full shadow-xl shadow-pink-500/10 flex items-center gap-2">
-                  Get Access <ArrowRight className="w-4 h-4" />
-                </motion.button>
-              </a>
-              <button onClick={() => setShowDemo(true)}>
-                <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                  className="h-12 px-7 bg-white text-zinc-900 text-[14px] font-semibold rounded-full ring-1 ring-zinc-200 hover:ring-zinc-300 flex items-center gap-2">
-                  <Play className="w-3.5 h-3.5" /> Try the Workflow
-                </motion.div>
-              </button>
+              <motion.button
+                onClick={requestAccess}
+                whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+                className="h-12 px-7 bg-zinc-900 text-white text-[14px] font-semibold rounded-full shadow-xl shadow-pink-500/10 flex items-center gap-2"
+              >
+                {isAdmin || kaspaAddress ? "Enter Studio" : "Get Access"} <ArrowRight className="w-4 h-4" />
+              </motion.button>
+              <motion.button
+                onClick={requestAccess}
+                whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+                className="h-12 px-7 bg-white text-zinc-900 text-[14px] font-semibold rounded-full ring-1 ring-zinc-200 hover:ring-zinc-300 flex items-center gap-2"
+              >
+                <Play className="w-3.5 h-3.5" /> Open Canvas Studio
+              </motion.button>
             </div>
           </motion.div>
 
@@ -350,51 +363,26 @@ export default function HaruPage() {
         </div>
       </section>
 
-      {/* ─── Waitlist ─── */}
-      <section id="waitlist" className="py-24 px-5 bg-white">
+      {/* ─── Access CTA ─── */}
+      <section id="access" className="py-24 px-5 bg-white">
         <div className="max-w-xl mx-auto text-center">
           <p className="text-[12px] font-bold tracking-widest text-pink-500 uppercase mb-3">Get Access</p>
           <h2 className="text-3xl sm:text-5xl font-[900] tracking-tight leading-[1.05] mb-4">
-            Be first when Haru opens up.
+            {isAdmin ? "Welcome back, admin." : kaspaAddress ? "Your studio awaits." : "Unlock the Studio."}
           </h2>
           <p className="text-[14px] text-zinc-500 mb-8 leading-relaxed">
-            Join the waitlist. Shape the platform. Get early access to beautiful, brand-aware typography AI.
+            {isAdmin || kaspaAddress
+              ? "Jump back into the live canvas. Generate, detect, refine — your type system is ready."
+              : "Enter your Kaspa address to unlock Haru Studio. Full canvas, AI generation, image→font detection, live rendering."}
           </p>
-
-          <AnimatePresence mode="wait">
-            {submitted ? (
-              <motion.div
-                key="thanks"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-gradient-to-br from-pink-50 to-rose-50 ring-1 ring-pink-200/60 rounded-2xl p-6"
-              >
-                <Check className="w-10 h-10 text-pink-500 mx-auto mb-3" />
-                <h3 className="text-lg font-[800] text-zinc-900 mb-1">You're on the list.</h3>
-                <p className="text-[13px] text-zinc-500">We'll reach out when Haru opens the door.</p>
-              </motion.div>
-            ) : (
-              <motion.form
-                key="form"
-                onSubmit={handleWaitlist}
-                initial={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex flex-col sm:flex-row gap-2 max-w-md mx-auto"
-              >
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your@email.com"
-                  required
-                  className="flex-1 h-12 px-5 rounded-full bg-[#faf7f5] ring-1 ring-pink-200/60 text-[14px] outline-none focus:ring-pink-400 placeholder-zinc-400"
-                />
-                <button type="submit" className="h-12 px-6 rounded-full bg-zinc-900 text-white text-[14px] font-semibold hover:bg-zinc-700 transition-colors flex items-center justify-center gap-2">
-                  Get Access <ArrowRight className="w-4 h-4" />
-                </button>
-              </motion.form>
-            )}
-          </AnimatePresence>
+          <motion.button
+            onClick={requestAccess}
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.97 }}
+            className="h-12 px-7 bg-zinc-900 text-white text-[14px] font-semibold rounded-full shadow-xl shadow-pink-500/10 inline-flex items-center gap-2"
+          >
+            {isAdmin || kaspaAddress ? "Enter Studio" : "Get Access"} <ArrowRight className="w-4 h-4" />
+          </motion.button>
         </div>
       </section>
 
@@ -411,12 +399,13 @@ export default function HaruPage() {
             <p className="text-white/90 max-w-lg mx-auto text-[14px] leading-relaxed mb-8">
               Build typography that remembers your brand. Get early access to Haru.
             </p>
-            <a href="#waitlist">
-              <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                className="h-12 px-8 bg-white text-zinc-900 text-[14px] font-semibold rounded-full shadow-xl flex items-center gap-2 mx-auto">
-                Get Access <ArrowRight className="w-4 h-4" />
-              </motion.button>
-            </a>
+            <motion.button
+              onClick={requestAccess}
+              whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+              className="h-12 px-8 bg-white text-zinc-900 text-[14px] font-semibold rounded-full shadow-xl flex items-center gap-2 mx-auto"
+            >
+              {isAdmin || kaspaAddress ? "Enter Studio" : "Get Access"} <ArrowRight className="w-4 h-4" />
+            </motion.button>
           </div>
         </div>
       </section>
@@ -432,69 +421,11 @@ export default function HaruPage() {
         </div>
       </footer>
 
-      {/* ─── Demo Modal ─── */}
-      <AnimatePresence>
-        {showDemo && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowDemo(false)}
-            className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.95, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl"
-            >
-              <div className="p-5 flex items-center justify-between border-b border-zinc-100">
-                <div className="flex items-center gap-2">
-                  <img src={HARU_ICON} alt="Haru" className="w-7 h-7 rounded-lg" />
-                  <span className="font-[800] text-zinc-900">Haru Studio · Preview</span>
-                </div>
-                <button onClick={() => setShowDemo(false)} className="w-8 h-8 rounded-full hover:bg-zinc-100 flex items-center justify-center">
-                  <X className="w-4 h-4 text-zinc-500" />
-                </button>
-              </div>
-              <div className="p-6 space-y-4">
-                <label className="block">
-                  <span className="text-[11px] font-bold tracking-wider text-zinc-400 uppercase mb-2 block">Describe your wordmark</span>
-                  <textarea
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="e.g. 'Haru' — elegant serif, warm, editorial, feminine but confident, with a subtle sakura accent"
-                    rows={3}
-                    className="w-full p-4 rounded-2xl bg-[#faf7f5] ring-1 ring-pink-200/40 outline-none focus:ring-pink-400 text-[14px] resize-none"
-                  />
-                </label>
-                <button
-                  onClick={runDemo}
-                  disabled={!prompt.trim() || generating}
-                  className="w-full h-11 rounded-full bg-zinc-900 text-white text-[13px] font-semibold flex items-center justify-center gap-2 disabled:opacity-40 hover:bg-zinc-700 transition-colors"
-                >
-                  {generating ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</> : <><Wand2 className="w-4 h-4" /> Generate Sample</>}
-                </button>
+      {/* ─── Access Gate ─── */}
+      {showGate && <HaruAccessGate onClose={() => setShowGate(false)} onGranted={handleGranted} />}
 
-                {generatedSample && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mt-4 p-8 rounded-2xl bg-gradient-to-br from-pink-50 via-rose-50 to-amber-50 ring-1 ring-pink-200/40 text-center"
-                  >
-                    <div className="text-[10px] font-bold tracking-widest text-pink-500 uppercase mb-3">Generated Wordmark</div>
-                    <div className="text-5xl font-[900]" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", background: "linear-gradient(135deg, #ec4899, #f59e0b)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                      {generatedSample.split(" ")[0] || "Haru"}
-                    </div>
-                    <p className="text-[11px] text-zinc-500 mt-4 italic">This is a preview. Full generation is available once you get access.</p>
-                  </motion.div>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* ─── Studio ─── */}
+      {showStudio && <HaruStudio onClose={() => setShowStudio(false)} kaspaAddress={kaspaAddress} />}
     </div>
   );
 }
