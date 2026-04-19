@@ -77,7 +77,7 @@ function MarqueeIcon({ app }) {
         >
           <img src={app.logo} alt={app.name} className="w-full h-full object-cover" draggable={false} />
         </div>
-        <span className="text-[11px] font-medium text-zinc-500 group-hover:text-white transition-colors truncate max-w-[80px] text-center">
+        <span className="text-[11px] font-medium text-zinc-500 group-hover:text-zinc-900 transition-colors truncate max-w-[80px] text-center">
           {app.name}
         </span>
       </div>
@@ -90,8 +90,8 @@ function ScrollingRow({ apps, direction = "left", speed = 30 }) {
   return (
     <div className="relative overflow-hidden w-full">
       {/* Edge fades */}
-      <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-r from-[#1A1A1C] to-transparent z-10 pointer-events-none" />
-      <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-l from-[#1A1A1C] to-transparent z-10 pointer-events-none" />
+      <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-r from-[#F5F5F7] to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-l from-[#F5F5F7] to-transparent z-10 pointer-events-none" />
       <motion.div
         className="flex items-end gap-5 sm:gap-6 w-max"
         animate={{ x: direction === "left" ? ["0%", "-33.333%"] : ["-33.333%", "0%"] }}
@@ -121,7 +121,7 @@ export default function HeroHeader() {
           transition={{ duration: 0.5 }}
           className="mb-3"
         >
-          <span className="text-[13px] font-[800] tracking-widest uppercase text-zinc-500">TapToTip</span>
+          <span className="text-[13px] font-[800] tracking-widest uppercase text-zinc-400">TapToTip</span>
         </motion.div>
 
         {/* Badge */}
@@ -129,10 +129,10 @@ export default function HeroHeader() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.05 }}
-          className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 ring-1 ring-white/10 mb-6"
+          className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-100 ring-1 ring-zinc-200/60 mb-6"
         >
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-[11px] font-semibold text-zinc-400 tracking-wide uppercase">Version 2.0</span>
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-[11px] font-semibold text-zinc-500 tracking-wide uppercase">Version 2.0</span>
         </motion.div>
 
         {/* Title */}
@@ -140,11 +140,11 @@ export default function HeroHeader() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.1 }}
-          className="text-[clamp(2rem,6vw,4rem)] font-[900] leading-[1] tracking-tight text-white mb-3"
+          className="text-[clamp(2rem,6vw,4rem)] font-[900] leading-[1] tracking-tight text-zinc-900 mb-3"
         >
           The Kaspa
           <br />
-          <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-cyan-500 to-blue-500 bg-clip-text text-transparent">
             App Store.
           </span>
         </motion.h1>
@@ -154,7 +154,7 @@ export default function HeroHeader() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-[15px] text-zinc-500 max-w-md mx-auto leading-relaxed mb-10"
+          className="text-[15px] text-zinc-400 max-w-md mx-auto leading-relaxed mb-10"
         >
           80+ apps. One ecosystem. Built on the fastest blockDAG.
         </motion.p>
@@ -181,7 +181,7 @@ export default function HeroHeader() {
             <motion.button
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
-              className="h-11 px-7 bg-white text-zinc-900 text-[14px] font-semibold rounded-full shadow-lg shadow-black/30 flex items-center gap-2 hover:bg-zinc-100 transition-colors"
+              className="h-11 px-7 bg-zinc-900 text-white text-[14px] font-semibold rounded-full shadow-lg shadow-zinc-900/15 flex items-center gap-2 hover:bg-zinc-800 transition-colors"
             >
               Get Started <ArrowUpRight className="w-4 h-4" />
             </motion.button>
@@ -190,7 +190,7 @@ export default function HeroHeader() {
             <motion.button
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
-              className="h-11 px-7 text-zinc-300 text-[14px] font-semibold rounded-full ring-1 ring-white/15 hover:ring-white/25 hover:bg-white/5 transition-all flex items-center gap-2"
+              className="h-11 px-7 text-zinc-600 text-[14px] font-semibold rounded-full ring-1 ring-zinc-200 hover:ring-zinc-300 hover:bg-zinc-50 transition-all flex items-center gap-2"
             >
               Browse All Apps
             </motion.button>
