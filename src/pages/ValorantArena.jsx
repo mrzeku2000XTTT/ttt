@@ -299,16 +299,23 @@ export default function ValorantArena() {
     const skyGeo = new THREE.SphereGeometry(40, 48, 24);
     const skyMat = new THREE.MeshBasicMaterial({ side: THREE.BackSide, color: 0x08080f });
     const skySphere = new THREE.Mesh(skyGeo, skyMat);
+    // Rotate so the equirectangular seam sits behind the player (not in their face)
+    skySphere.rotation.y = Math.PI;
     skySphere.visible = false;
     scene.add(skySphere);
 
-    // Helper to apply a room texture (from preset / upload / AI)
+    // Helper to apply a room texture (from preset / upload / AI).
+    // For a proper 360° effect we ONLY put the image on the sky sphere,
+    // then hide the floor/grid/walls so the panorama isn't occluded.
     const loader = new THREE.TextureLoader();
     loader.crossOrigin = "anonymous";
     const applyRoom = (url) => {
       if (!url) {
         skySphere.visible = false;
+        floor.visible = true;
+        grid.visible = true;
         [backWall, leftWall, rightWall].forEach((w) => {
+          w.visible = true;
           w.material.map = null;
           w.material.color.setHex(0x111122);
         });
@@ -318,17 +325,28 @@ export default function ValorantArena() {
       loader.load(
         url,
         (tex) => {
-          tex.wrapS = THREE.ClampToEdgeWrapping;
+          // CRITICAL for equirectangular 360°: U must wrap seamlessly around the sphere.
+          // Using ClampToEdge was causing a smeared seam at the back.
+          tex.wrapS = THREE.RepeatWrapping;
           tex.wrapT = THREE.ClampToEdgeWrapping;
           tex.colorSpace = THREE.SRGBColorSpace;
-          tex.minFilter = THREE.LinearFilter; // no mipmaps → fewer GPU alloc/regen costs
-          tex.generateMipmaps = false;
+          tex.generateMipmaps = true;
+          tex.minFilter = THREE.LinearMipmapLinearFilter;
+          tex.magFilter = THREE.LinearFilter;
+          tex.anisotropy = renderer.capabilities.getMaxAnisotropy?.() || 1;
+          tex.needsUpdate = true;
+
           skyMat.map = tex;
           skyMat.color.setHex(0xffffff);
           skySphere.visible = true;
+
+          // Hide everything that would occlude the 360° panorama.
+          // The sphere itself becomes the whole environment.
+          floor.visible = false;
+          grid.visible = false;
           [backWall, leftWall, rightWall].forEach((w) => {
-            w.material.map = tex;
-            w.material.color.setHex(0x888888);
+            w.visible = false;
+            w.material.map = null;
           });
           scene.background = new THREE.Color(0x000000);
         },
