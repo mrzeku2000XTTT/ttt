@@ -6,6 +6,9 @@ import { Crown, ExternalLink } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const APPS = [
+  // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "Haru", path: "Haru", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ade3b1795_generated_image.png", desc: "AI typography studio" },
+
   // ── Featured / Core ──
   { name: "Feed", path: "Feed", cat: "Community", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/759d6a05a_generated_image.png", desc: "Social feed + KAS tips" },
   { name: "Agent ZK", path: "AgentZK", cat: "AI", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/3e49e39c2_image.png", desc: "Crypto identity", premium: true },
@@ -109,7 +112,6 @@ const APPS = [
   // ── New ──
   { name: "Krust", path: "Krust", cat: "Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/f58b46dd1_image.png", desc: "Web weaver" },
   { name: "OneShot", path: "UICloner", cat: "Dev Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ee7187675_generated_image.png", desc: "Clone & vibe-code any UI", admin: true },
-  { name: "Haru", path: "Haru", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ade3b1795_generated_image.png", desc: "AI typography studio" },
 ];
 
 function AppIcon({ app }) {
