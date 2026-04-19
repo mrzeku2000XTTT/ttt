@@ -15,6 +15,16 @@ async function getBalance(address) {
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
+
+  // Admin-only: KAI Imposter is restricted to admin users
+  const user = await base44.auth.me().catch(() => null);
+  if (!user) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  if (user.role !== 'admin') {
+    return Response.json({ error: 'Forbidden: KAI Imposter is admin-only' }, { status: 403 });
+  }
+
   const { message, identity, conversation_state } = await req.json();
 
   const name = identity?.subagent_name || "IMPOSTER";
