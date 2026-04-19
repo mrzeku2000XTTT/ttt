@@ -2,8 +2,11 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft, Settings, X, RotateCcw, Play, ChevronRight, Timer, Target, Zap, Brain, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Settings, X, RotateCcw, Play, ChevronRight, Timer, Target, Zap, Brain, Image as ImageIcon, Crosshair } from "lucide-react";
 import RoomStudio from "@/components/valorant/RoomStudio";
+import AICoachPanel from "@/components/valorant/AICoachPanel";
+import SensFinderPanel from "@/components/valorant/SensFinderPanel";
+import { SAMPLE_DURATION_SEC } from "@/components/valorant/sensFinder";
 
 // ─── Clean scenario set — only modes that actually work ───────────────────
 // Tracking mode removed (hold-scoring was unreliable).
@@ -105,6 +108,12 @@ export default function ValorantArena() {
   const [routineKey, setRoutineKey] = useState(null);
   const [routinePhase, setRoutinePhase] = useState(0);
   const [showRoomStudio, setShowRoomStudio] = useState(false);
+  const [showCoach, setShowCoach] = useState(false);
+  const [showSensFinder, setShowSensFinder] = useState(false);
+  // Sens Finder sample tracking (per-sample aggregates)
+  const sampleActiveRef = useRef(false);
+  const sampleDataRef = useRef({ hits: 0, shots: 0, hitTimes: [], overshoots: [], sampleStart: 0, lastShotTs: 0, onDone: null });
+  const [sampleCountdown, setSampleCountdown] = useState(0);
   const [customRoomUrl, setCustomRoomUrl] = useState(() => {
     try { return localStorage.getItem("valorant_custom_room") || null; } catch { return null; }
   });
@@ -215,6 +224,41 @@ export default function ValorantArena() {
     resetStats();
     spawnTargets(key);
   }, [spawnTargets, resetStats]);
+
+  // Sens Finder: run one timed sample with a given sens, then report back
+  const startSample = useCallback((sensValue, onDone) => {
+    // Ensure we're on target-switching for consistent measurement
+    scenarioKeyRef.current = "switching";
+    setActiveScenario("switching");
+    spawnTargets("switching");
+    setSettings((s) => ({ ...s, sensitivity: sensValue }));
+
+    sampleDataRef.current = {
+      hits: 0, shots: 0, hitTimes: [], overshoots: [],
+      sampleStart: performance.now(), lastShotTs: performance.now(), onDone,
+    };
+    sampleActiveRef.current = true;
+    setShowSensFinder(false); // hide panel so user can aim
+    setSampleCountdown(SAMPLE_DURATION_SEC);
+
+    const endAt = performance.now() + SAMPLE_DURATION_SEC * 1000;
+    const tick = () => {
+      const left = Math.max(0, Math.ceil((endAt - performance.now()) / 1000));
+      setSampleCountdown(left);
+      if (performance.now() >= endAt) {
+        sampleActiveRef.current = false;
+        const d = sampleDataRef.current;
+        const avgTimeToHit = d.hitTimes.length ? d.hitTimes.reduce((a, b) => a + b, 0) / d.hitTimes.length : 2;
+        const avgOvershoot = d.overshoots.length ? d.overshoots.reduce((a, b) => a + b, 0) / d.overshoots.length : 0;
+        setShowSensFinder(true);
+        if (document.pointerLockElement) document.exitPointerLock();
+        onDone({ hits: d.hits, shots: d.shots, avgTimeToHit, avgOvershoot });
+        return;
+      }
+      setTimeout(tick, 250);
+    };
+    tick();
+  }, [spawnTargets]);
 
   const startArena = useCallback((scenarioKey, routine = null) => {
     scenarioKeyRef.current = scenarioKey;
@@ -409,7 +453,8 @@ export default function ValorantArena() {
       // Use cached mesh list (refreshed on spawn/respawn) — avoids per-click allocation
       const hits = rc.intersectObjects(meshListRef.current, false);
 
-      if (hits.length > 0) {
+      const isHit = hits.length > 0;
+      if (isHit) {
         statsRef.current.hits++;
         const hitUuid = hits[0].object.uuid;
         setHitFlash(true);
@@ -419,6 +464,27 @@ export default function ValorantArena() {
         statsRef.current.misses++;
       }
       setStats({ ...statsRef.current });
+
+      // Feed Sens Finder sample data
+      if (sampleActiveRef.current) {
+        const d = sampleDataRef.current;
+        d.shots++;
+        const now = performance.now();
+        if (isHit) {
+          d.hits++;
+          const timeToHit = (now - d.lastShotTs) / 1000;
+          if (timeToHit < 5) d.hitTimes.push(timeToHit);
+          d.lastShotTs = now;
+        } else {
+          // Overshoot estimate: distance from ray to nearest target center (world units)
+          let closest = Infinity;
+          meshListRef.current.forEach((mesh) => {
+            const dist = rc.ray.distanceToPoint(mesh.position);
+            if (dist < closest) closest = dist;
+          });
+          if (closest !== Infinity) d.overshoots.push(closest);
+        }
+      }
     };
 
     const onMouseDown = (e) => {
@@ -797,7 +863,25 @@ export default function ValorantArena() {
           <ImageIcon className="w-3.5 h-3.5" />
           Room
         </button>
+        <button onClick={() => { setShowSensFinder(true); if (document.pointerLockElement) document.exitPointerLock(); }}
+          className="h-9 px-3 bg-black/85 hover:bg-cyan-600 border border-cyan-500/40 rounded-lg flex items-center gap-1.5 text-cyan-300 hover:text-white transition-all text-xs font-bold shadow-lg">
+          <Crosshair className="w-3.5 h-3.5" />
+          Sens Finder
+        </button>
+        <button onClick={() => { setShowCoach(true); if (document.pointerLockElement) document.exitPointerLock(); }}
+          className="h-9 px-3 bg-black/85 hover:bg-red-600 border border-red-500/40 rounded-lg flex items-center gap-1.5 text-red-300 hover:text-white transition-all text-xs font-bold shadow-lg">
+          <Brain className="w-3.5 h-3.5" />
+          AI Coach
+        </button>
       </div>
+
+      {/* Sens Finder countdown overlay */}
+      {sampleCountdown > 0 && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-30 px-5 py-2 bg-cyan-500/20 backdrop-blur-md border-2 border-cyan-400 rounded-xl">
+          <div className="text-cyan-300 text-[10px] uppercase tracking-widest font-bold text-center">Sens Test</div>
+          <div className="text-white font-black text-2xl text-center">{sampleCountdown}s</div>
+        </div>
+      )}
 
       {/* Scenario quick-switch (only when not in routine) */}
       {!currentRoutine && (
@@ -853,6 +937,24 @@ export default function ValorantArena() {
           currentRoomUrl={customRoomUrl}
           onSelect={handleSelectRoom}
           onClose={() => setShowRoomStudio(false)}
+        />
+      )}
+
+      {showCoach && (
+        <AICoachPanel
+          stats={stats}
+          scenarioLabel={scenarioCfg.label}
+          sessionTimeSec={sessionTime}
+          onClose={() => setShowCoach(false)}
+        />
+      )}
+
+      {showSensFinder && (
+        <SensFinderPanel
+          onClose={() => setShowSensFinder(false)}
+          onApplySens={(v) => setSettings((s) => ({ ...s, sensitivity: v }))}
+          requestStartSample={startSample}
+          currentSens={settings.sensitivity}
         />
       )}
     </div>
