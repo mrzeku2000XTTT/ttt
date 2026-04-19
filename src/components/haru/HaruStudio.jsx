@@ -344,8 +344,8 @@ Return a JSON object with a "variants" array.`,
             <X className="w-4 h-4 text-zinc-600" />
           </button>
           <div className="flex items-center gap-2">
-            <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ade3b1795_generated_image.png" alt="Haru" className="w-7 h-7 rounded-lg" />
-            <div className="font-[900] text-zinc-900 text-sm">Haru Studio</div>
+            <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1a11decfa_generated_image.png" alt="Hiro" className="w-7 h-7 rounded-lg" />
+            <div className="font-[900] text-zinc-900 text-sm">Hiro Studio</div>
           </div>
         </div>
         <button onClick={downloadCanvas} className="h-9 px-4 rounded-full bg-zinc-900 text-white text-[12px] font-semibold hover:bg-zinc-700 transition-colors flex items-center gap-1.5">
