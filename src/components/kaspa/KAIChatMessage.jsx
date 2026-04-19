@@ -418,6 +418,17 @@ export default function KAIChatMessage({ msg, index, typingIndex, typingText, se
             <style>{`@keyframes kasshi-eq-chat { 0% { transform: scaleY(0.3); } 100% { transform: scaleY(1); } }`}</style>
           </div>
         )}
+        {msg.externalLink && (
+          <a
+            href={msg.externalLink.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all hover:scale-105"
+            style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.3), rgba(6,182,212,0.3))", border: "1px solid rgba(168,85,247,0.45)", color: "rgba(216,180,254,1)" }}
+          >
+            🎬 {msg.externalLink.label}
+          </a>
+        )}
         {msg.browserLink && (
           <button
             onClick={() => { setBrowserUrl(msg.browserLink); setShowBrowser(true); }}

@@ -403,6 +403,16 @@ Original prompt: ${input.trim()}`,
       return;
     }
 
+    // Handle open_external — render a button that opens the url in a new tab (iframe-blocked sites)
+    if (data?.action?.type === "open_external" && data.action.url) {
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: data.reply || "🔗 opening in a new tab…",
+        externalLink: { url: data.action.url, label: data.action.label || "Open link" },
+      }]);
+      return;
+    }
+
     // Handle send transaction action
     if (data?.action?.type === "send_kas") {
       const { to_address, amount_kas, balance } = data.action;
