@@ -247,8 +247,9 @@ Deno.serve(async (req) => {
     else if (/\blight\b/i.test(message)) style = "light";
     const title = message.split(/\s+/).slice(0, 6).join(" ").slice(0, 60) || "Imposter Video";
 
-    // Use Kai conversation id (fallback to identity) — passed through to kaiHyperFrames
-    let convId = conversation_state?.conversation_id || identity?.imposter_id || null;
+    // Always create a fresh Superagent conversation — never pass identity.imposter_id
+    // (that's a local session ID, not a real Superagent conversation, and it poisons record lookup)
+    let convId = conversation_state?.conversation_id || null;
     if (!convId) {
       try { convId = await createKaiConversation(); } catch (err) {
         console.error("create conversation error:", err?.message || err);
