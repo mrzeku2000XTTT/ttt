@@ -715,13 +715,13 @@ export default function ValorantArena() {
       )}
 
       {!locked && (
-        <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-30 pointer-events-none">
-          <div className="text-center">
-            <div className="w-16 h-16 rounded-2xl border-2 flex items-center justify-center mx-auto mb-3 animate-pulse" style={{ borderColor: scenarioCfg.color }}>
+        <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-30 pointer-events-none">
+          <div className="text-center px-6 py-5 bg-black/80 backdrop-blur-md rounded-2xl border-2 shadow-2xl" style={{ borderColor: scenarioCfg.color, boxShadow: `0 0 40px ${scenarioCfg.color}60` }}>
+            <div className="w-16 h-16 rounded-2xl border-2 flex items-center justify-center mx-auto mb-3 animate-pulse" style={{ borderColor: scenarioCfg.color, backgroundColor: scenarioCfg.color + '22' }}>
               <Play className="w-7 h-7" style={{ color: scenarioCfg.color }} />
             </div>
-            <p className="text-white font-bold text-lg">Click to Start</p>
-            <p className="text-white/40 text-xs mt-1">Left-click to lock cursor · ESC to release</p>
+            <p className="text-white font-black text-xl tracking-wide">CLICK TO START</p>
+            <p className="text-white/80 text-xs mt-1 font-semibold">Left-click to lock cursor · ESC to release</p>
           </div>
         </div>
       )}
@@ -782,18 +782,18 @@ export default function ValorantArena() {
         </div>
       )}
 
-      {/* Top-left controls */}
-      <div className="absolute top-4 left-4 z-20 flex gap-2">
+      {/* Top-left controls — always high-contrast so they're readable when paused */}
+      <div className="absolute top-4 left-4 z-40 flex gap-2">
         <button onClick={() => { setScreen("select"); if (document.pointerLockElement) document.exitPointerLock(); }}
-          className="w-9 h-9 bg-black/60 hover:bg-black/80 border border-white/10 rounded-lg flex items-center justify-center text-white/50 hover:text-white transition-all">
+          className="w-9 h-9 bg-black/85 hover:bg-red-600 border border-white/30 rounded-lg flex items-center justify-center text-white hover:text-white transition-all shadow-lg">
           <ArrowLeft className="w-4 h-4" />
         </button>
         <button onClick={() => setShowSettings(!showSettings)}
-          className="w-9 h-9 bg-black/60 hover:bg-black/80 border border-white/10 rounded-lg flex items-center justify-center text-white/50 hover:text-white transition-all">
+          className="w-9 h-9 bg-black/85 hover:bg-red-600 border border-white/30 rounded-lg flex items-center justify-center text-white transition-all shadow-lg">
           <Settings className="w-4 h-4" />
         </button>
         <button onClick={() => { setShowRoomStudio(true); if (document.pointerLockElement) document.exitPointerLock(); }}
-          className="h-9 px-3 bg-black/60 hover:bg-black/80 border border-white/10 rounded-lg flex items-center gap-1.5 text-white/50 hover:text-white transition-all text-xs font-bold">
+          className="h-9 px-3 bg-black/85 hover:bg-red-600 border border-white/30 rounded-lg flex items-center gap-1.5 text-white transition-all text-xs font-bold shadow-lg">
           <ImageIcon className="w-3.5 h-3.5" />
           Room
         </button>
