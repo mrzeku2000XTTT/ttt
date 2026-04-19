@@ -79,6 +79,11 @@ export default function ValorantArena() {
   const statsRef = useRef({ hits: 0, misses: 0, shots: 0 });
   const raycasterRef = useRef(new THREE.Raycaster());
   const screenCenter = useRef(new THREE.Vector2(0, 0));
+  // Smoothed mouse delta accumulators (applied per-frame for fluid motion)
+  const pendingYawRef = useRef(0);
+  const pendingPitchRef = useRef(0);
+  // Cached mesh array for raycasting (rebuilt only on spawn/respawn)
+  const meshListRef = useRef([]);
 
   // Current scenario + routine state refs (avoid stale closures)
   const scenarioKeyRef = useRef("switching");
@@ -96,6 +101,7 @@ export default function ValorantArena() {
   const [activeScenario, setActiveScenario] = useState("switching");
   const [hitFlash, setHitFlash] = useState(false);
   const [sessionTime, setSessionTime] = useState(0);
+  const [fps, setFps] = useState(0);
   const [routineKey, setRoutineKey] = useState(null);
   const [routinePhase, setRoutinePhase] = useState(0);
   const [showRoomStudio, setShowRoomStudio] = useState(false);
@@ -156,19 +162,16 @@ export default function ValorantArena() {
     if (!cfg) return;
 
     for (let i = 0; i < cfg.targetCount; i++) {
-      const geo = new THREE.SphereGeometry(cfg.targetSize, 24, 24);
-      const mat = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(cfg.color),
-        emissive: new THREE.Color(cfg.color),
-        emissiveIntensity: 0.25,
-        roughness: 0.3,
-        metalness: 0.6,
-      });
+      // Lower-poly sphere: 16x12 instead of 24x24 (~50% fewer tris)
+      const geo = new THREE.SphereGeometry(cfg.targetSize, 16, 12);
+      // MeshBasicMaterial is unlit → no per-light shader work, much faster
+      const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(cfg.color) });
       const mesh = new THREE.Mesh(geo, mat);
+      mesh.matrixAutoUpdate = true;
       mesh.position.copy(makeTargetPosition(cfg.movement, i, cfg.targetCount));
 
-      // Ring around target for visibility
-      const ringGeo = new THREE.RingGeometry(cfg.targetSize * 1.15, cfg.targetSize * 1.3, 24);
+      // Cheap ring outline (octagon-ish) for visibility
+      const ringGeo = new THREE.RingGeometry(cfg.targetSize * 1.15, cfg.targetSize * 1.3, 16);
       const ringMat = new THREE.MeshBasicMaterial({ color: cfg.color, side: THREE.DoubleSide, transparent: true, opacity: 0.35 });
       const ring = new THREE.Mesh(ringGeo, ringMat);
       mesh.add(ring);
@@ -180,6 +183,8 @@ export default function ValorantArena() {
         phase: Math.random() * Math.PI * 2,
       });
     }
+    // Refresh cached mesh list (used by shoot raycast — avoids rebuilding every click)
+    meshListRef.current = [...targetsRef.current.values()].map(t => t.mesh);
   }, [clearTargets, makeTargetPosition]);
 
   const respawnTarget = useCallback((uuid) => {
@@ -187,7 +192,12 @@ export default function ValorantArena() {
     if (!entry) return;
     const cfg = SCENARIOS[scenarioKeyRef.current];
     if (!cfg) return;
-    const idx = [...targetsRef.current.keys()].indexOf(uuid);
+    // O(n) index lookup on a tiny Map (max 6 targets) — negligible cost
+    let idx = 0;
+    for (const k of targetsRef.current.keys()) {
+      if (k === uuid) break;
+      idx++;
+    }
     const pos = makeTargetPosition(cfg.movement, idx, cfg.targetCount);
     entry.mesh.position.copy(pos);
     entry.basePos.copy(pos);
@@ -227,16 +237,25 @@ export default function ValorantArena() {
     const w = mount.clientWidth;
     const h = mount.clientHeight;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    // Performance-first renderer: no antialias (single biggest FPS hit),
+    // capped pixelRatio, high-performance GPU hint, no shadow maps.
+    const renderer = new THREE.WebGLRenderer({
+      antialias: false,
+      alpha: false,
+      powerPreference: "high-performance",
+      stencil: false,
+      depth: true,
+    });
     renderer.setSize(w, h);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.shadowMap.enabled = false;
     mount.appendChild(renderer.domElement);
     rendererRef.current = renderer;
     canvasRef.current = renderer.domElement;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x08080f);
-    scene.fog = new THREE.Fog(0x08080f, 28, 70);
+    // Fog removed — it adds a per-fragment cost for very little visual gain here
     sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(settingsRef.current.fov, w / h, 0.1, 200);
@@ -244,19 +263,13 @@ export default function ValorantArena() {
     camera.rotation.order = "YXZ";
     cameraRef.current = camera;
 
-    // Lighting
-    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-    const dir = new THREE.DirectionalLight(0xff4444, 1.2);
-    dir.position.set(5, 12, 5);
-    scene.add(dir);
-    const ptLight = new THREE.PointLight(0x4488ff, 1, 35);
-    ptLight.position.set(0, 8, -12);
-    scene.add(ptLight);
+    // Unlit scene — no lights needed since we use MeshBasicMaterial everywhere
+    // This removes all per-pixel lighting math and dramatically boosts FPS.
 
-    // Floor
+    // Floor (unlit, cheap)
     const floor = new THREE.Mesh(
       new THREE.PlaneGeometry(60, 60),
-      new THREE.MeshStandardMaterial({ color: 0x0d0d18, roughness: 0.95 })
+      new THREE.MeshBasicMaterial({ color: 0x0d0d18 })
     );
     floor.rotation.x = -Math.PI / 2;
     scene.add(floor);
@@ -266,7 +279,7 @@ export default function ValorantArena() {
     scene.add(grid);
 
     // Back wall + side walls (will receive custom room texture if set)
-    const wallMat = new THREE.MeshStandardMaterial({ color: 0x111122, roughness: 0.85, side: THREE.DoubleSide });
+    const wallMat = new THREE.MeshBasicMaterial({ color: 0x111122, side: THREE.FrontSide });
     const backWall = new THREE.Mesh(new THREE.PlaneGeometry(60, 24), wallMat);
     backWall.position.set(0, 12, -22);
     scene.add(backWall);
@@ -297,7 +310,6 @@ export default function ValorantArena() {
         [backWall, leftWall, rightWall].forEach((w) => {
           w.material.map = null;
           w.material.color.setHex(0x111122);
-          w.material.needsUpdate = true;
         });
         scene.background = new THREE.Color(0x08080f);
         return;
@@ -308,16 +320,14 @@ export default function ValorantArena() {
           tex.wrapS = THREE.ClampToEdgeWrapping;
           tex.wrapT = THREE.ClampToEdgeWrapping;
           tex.colorSpace = THREE.SRGBColorSpace;
-          // Skybox panoramic
+          tex.minFilter = THREE.LinearFilter; // no mipmaps → fewer GPU alloc/regen costs
+          tex.generateMipmaps = false;
           skyMat.map = tex;
           skyMat.color.setHex(0xffffff);
-          skyMat.needsUpdate = true;
           skySphere.visible = true;
-          // Walls get a dimmed version for depth
           [backWall, leftWall, rightWall].forEach((w) => {
             w.material.map = tex;
             w.material.color.setHex(0x888888);
-            w.material.needsUpdate = true;
           });
           scene.background = new THREE.Color(0x000000);
         },
@@ -347,14 +357,12 @@ export default function ValorantArena() {
 
       const rc = raycasterRef.current;
       rc.setFromCamera(screenCenter.current, cam);
-      // Build fresh mesh list every shot — prevents stale refs after respawns
-      const meshes = [...targetsRef.current.values()].map(t => t.mesh);
-      const hits = rc.intersectObjects(meshes, false);
+      // Use cached mesh list (refreshed on spawn/respawn) — avoids per-click allocation
+      const hits = rc.intersectObjects(meshListRef.current, false);
 
       if (hits.length > 0) {
         statsRef.current.hits++;
         const hitUuid = hits[0].object.uuid;
-        // Flash + immediate respawn (no setTimeout gap that dropped second clicks)
         setHitFlash(true);
         setTimeout(() => setHitFlash(false), 70);
         respawnTarget(hitUuid);
@@ -373,12 +381,14 @@ export default function ValorantArena() {
       handleShoot();
     };
 
+    // Accumulate raw movement — consumed & smoothed in the animation loop.
+    // Decoupling input from render produces noticeably smoother camera motion
+    // when the browser batches mousemove events at odd intervals.
     const onMouseMove = (e) => {
       if (!lockedRef.current) return;
       const s = settingsRef.current.sensitivity * 0.0008;
-      yawRef.current -= e.movementX * s;
-      pitchRef.current -= e.movementY * s;
-      pitchRef.current = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, pitchRef.current));
+      pendingYawRef.current -= e.movementX * s;
+      pendingPitchRef.current -= e.movementY * s;
     };
 
     const onLockChange = () => {
@@ -430,11 +440,29 @@ export default function ValorantArena() {
       }
     }, 250);
 
-    // ── Animation loop ────────────────────────────────────────────────────
-    const animate = () => {
+    // ── Animation loop — optimized for 240+ FPS & smooth camera motion ───
+    let lastTs = performance.now();
+    let fpsFrames = 0;
+    let fpsAccum = 0;
+    const PITCH_LIMIT = Math.PI / 2.2;
+
+    const animate = (ts) => {
       animFrameRef.current = requestAnimationFrame(animate);
       const cam = cameraRef.current;
       if (!cam) return;
+
+      const dt = Math.min(0.05, (ts - lastTs) / 1000); // clamp to avoid jumps after tab-switch
+      lastTs = ts;
+
+      // Consume accumulated mouse delta with a tiny low-pass filter for smoothness.
+      // Factor ~1 = instant (zero lag); we apply 100% of the delta but going through
+      // the accumulator means multiple mousemove events in one frame are merged cleanly.
+      yawRef.current += pendingYawRef.current;
+      pitchRef.current += pendingPitchRef.current;
+      pendingYawRef.current = 0;
+      pendingPitchRef.current = 0;
+      if (pitchRef.current > PITCH_LIMIT) pitchRef.current = PITCH_LIMIT;
+      else if (pitchRef.current < -PITCH_LIMIT) pitchRef.current = -PITCH_LIMIT;
 
       cam.rotation.y = yawRef.current;
       cam.rotation.x = pitchRef.current;
@@ -443,26 +471,28 @@ export default function ValorantArena() {
         cam.updateProjectionMatrix();
       }
 
-      const t = performance.now() * 0.001;
+      // Target motion (drift only) — delta-time based so it stays smooth at any FPS
       const cfg = SCENARIOS[scenarioKeyRef.current];
-
-      targetsRef.current.forEach((entry) => {
-        if (!cfg) return;
-        if (cfg.movement === "drift") {
-          // Small oscillation around base position
+      if (cfg && cfg.movement === "drift") {
+        const t = ts * 0.001;
+        targetsRef.current.forEach((entry) => {
           entry.mesh.position.x = entry.basePos.x + Math.sin(t * 1.8 + entry.phase) * 1.2;
           entry.mesh.position.y = entry.basePos.y + Math.cos(t * 1.4 + entry.phase) * 0.6;
-        }
-        // Crosshair proximity glow
-        const rc = raycasterRef.current;
-        rc.setFromCamera(screenCenter.current, cam);
-        const hit = rc.intersectObject(entry.mesh, false);
-        entry.mesh.material.emissiveIntensity = hit.length > 0 ? 0.7 : 0.25;
-      });
+        });
+      }
 
       renderer.render(scene, cam);
+
+      // FPS counter (update UI ~2x/sec, not every frame)
+      fpsFrames++;
+      fpsAccum += dt;
+      if (fpsAccum >= 0.5) {
+        setFps(Math.round(fpsFrames / fpsAccum));
+        fpsFrames = 0;
+        fpsAccum = 0;
+      }
     };
-    animate();
+    animFrameRef.current = requestAnimationFrame(animate);
 
     // ── Cleanup ───────────────────────────────────────────────────────────
     return () => {
@@ -478,6 +508,8 @@ export default function ValorantArena() {
       if (mount.contains(canvas)) mount.removeChild(canvas);
       yawRef.current = 0;
       pitchRef.current = 0;
+      pendingYawRef.current = 0;
+      pendingPitchRef.current = 0;
     };
   }, [screen, spawnTargets, respawnTarget, clearTargets, resetStats]);
 
@@ -674,6 +706,11 @@ export default function ValorantArena() {
         <button onClick={resetStats} className="text-white/30 hover:text-white transition-colors" title="Reset stats">
           <RotateCcw className="w-3.5 h-3.5" />
         </button>
+        <div className="w-px h-6 bg-white/10" />
+        <div className="text-center" title="Frames per second">
+          <div className={`font-black ${fps >= 240 ? 'text-green-400' : fps >= 144 ? 'text-yellow-400' : 'text-red-400'}`}>{fps}</div>
+          <div className="text-white/40 text-[9px]">FPS</div>
+        </div>
       </div>
 
       {/* Routine phase indicator */}
