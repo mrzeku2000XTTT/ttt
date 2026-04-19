@@ -305,28 +305,50 @@ export default function ValorantArena() {
     scene.add(skySphere);
 
     // Helper to apply a room texture (from preset / upload / AI).
-    // For a proper 360° effect we ONLY put the image on the sky sphere,
-    // then hide the floor/grid/walls so the panorama isn't occluded.
+    // Uses a load-token to prevent race conditions when switching quickly,
+    // and disposes the previous texture to avoid GPU memory leaks.
     const loader = new THREE.TextureLoader();
     loader.crossOrigin = "anonymous";
+    let roomLoadToken = 0;
+
+    const showDefaultRoom = () => {
+      skySphere.visible = false;
+      floor.visible = true;
+      grid.visible = true;
+      [backWall, leftWall, rightWall].forEach((w) => {
+        w.visible = true;
+        w.material.map = null;
+        w.material.color.setHex(0x111122);
+      });
+      scene.background = new THREE.Color(0x08080f);
+    };
+
+    const disposeSkyTexture = () => {
+      if (skyMat.map) {
+        skyMat.map.dispose();
+        skyMat.map = null;
+      }
+    };
+
     const applyRoom = (url) => {
+      // Invalidate any in-flight load — its callback will become a no-op
+      const myToken = ++roomLoadToken;
+
       if (!url) {
-        skySphere.visible = false;
-        floor.visible = true;
-        grid.visible = true;
-        [backWall, leftWall, rightWall].forEach((w) => {
-          w.visible = true;
-          w.material.map = null;
-          w.material.color.setHex(0x111122);
-        });
-        scene.background = new THREE.Color(0x08080f);
+        disposeSkyTexture();
+        showDefaultRoom();
         return;
       }
+
       loader.load(
         url,
         (tex) => {
+          // Ignore if a newer applyRoom call has superseded this one
+          if (myToken !== roomLoadToken) {
+            tex.dispose();
+            return;
+          }
           // CRITICAL for equirectangular 360°: U must wrap seamlessly around the sphere.
-          // Using ClampToEdge was causing a smeared seam at the back.
           tex.wrapS = THREE.RepeatWrapping;
           tex.wrapT = THREE.ClampToEdgeWrapping;
           tex.colorSpace = THREE.SRGBColorSpace;
@@ -336,12 +358,14 @@ export default function ValorantArena() {
           tex.anisotropy = renderer.capabilities.getMaxAnisotropy?.() || 1;
           tex.needsUpdate = true;
 
+          // Dispose previous texture BEFORE swapping
+          disposeSkyTexture();
           skyMat.map = tex;
           skyMat.color.setHex(0xffffff);
+          skyMat.needsUpdate = true;
           skySphere.visible = true;
 
           // Hide everything that would occlude the 360° panorama.
-          // The sphere itself becomes the whole environment.
           floor.visible = false;
           grid.visible = false;
           [backWall, leftWall, rightWall].forEach((w) => {
@@ -351,7 +375,13 @@ export default function ValorantArena() {
           scene.background = new THREE.Color(0x000000);
         },
         undefined,
-        () => { /* texture load failed — leave default */ }
+        () => {
+          // Load failed — only fall back if this request is still current
+          if (myToken === roomLoadToken) {
+            disposeSkyTexture();
+            showDefaultRoom();
+          }
+        }
       );
     };
     scene.userData.applyRoom = applyRoom;
@@ -523,6 +553,10 @@ export default function ValorantArena() {
       window.removeEventListener("resize", onResize);
       if (document.pointerLockElement === canvas) document.exitPointerLock();
       clearTargets();
+      // Dispose sky texture + geometries to release GPU memory
+      if (skyMat.map) skyMat.map.dispose();
+      skyMat.dispose();
+      skyGeo.dispose();
       renderer.dispose();
       if (mount.contains(canvas)) mount.removeChild(canvas);
       yawRef.current = 0;
