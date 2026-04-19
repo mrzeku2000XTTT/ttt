@@ -38,7 +38,7 @@ const BACKGROUNDS = [
 ];
 
 export default function HaruStudio({ onClose, kaspaAddress }) {
-  const [text, setText] = useState("Haru");
+  const [text, setText] = useState("Hiro");
   const [fontStyle, setFontStyle] = useState(FONT_STYLES[0]);
   const [gradient, setGradient] = useState(GRADIENTS[0]);
   const [background, setBackground] = useState(BACKGROUNDS[0]);
