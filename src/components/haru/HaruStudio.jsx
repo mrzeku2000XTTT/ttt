@@ -404,7 +404,7 @@ Return a JSON object with a "variants" array.`,
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 maxLength={40}
-                className="w-full h-11 px-4 rounded-xl bg-zinc-50 ring-1 ring-zinc-200 text-[14px] font-semibold outline-none focus:ring-pink-400"
+                className="w-full h-11 px-4 rounded-xl bg-zinc-50 ring-1 ring-zinc-200 text-zinc-900 placeholder:text-zinc-400 text-[14px] font-semibold outline-none focus:ring-pink-400"
               />
             </div>
 
@@ -416,7 +416,7 @@ Return a JSON object with a "variants" array.`,
                 onChange={(e) => setPrompt(e.target.value)}
                 rows={2}
                 placeholder="e.g. 'luxurious, feminine, with serif elegance'"
-                className="w-full p-3 rounded-xl bg-zinc-50 ring-1 ring-zinc-200 text-[12px] outline-none focus:ring-pink-400 resize-none"
+                className="w-full p-3 rounded-xl bg-zinc-50 ring-1 ring-zinc-200 text-zinc-900 placeholder:text-zinc-400 text-[12px] outline-none focus:ring-pink-400 resize-none"
               />
               <div className="flex gap-2 mt-2">
                 <button
