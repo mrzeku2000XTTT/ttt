@@ -2,79 +2,58 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft, Settings, X, RotateCcw, Play, ChevronRight, Timer, Target, Zap, Activity, Brain } from "lucide-react";
+import { ArrowLeft, Settings, X, RotateCcw, Play, ChevronRight, Timer, Target, Zap, Brain } from "lucide-react";
 
-// ─── Aimer7-inspired scenario definitions ───────────────────────────────────
+// ─── Clean scenario set — only modes that actually work ───────────────────
+// Tracking mode removed (hold-scoring was unreliable).
+// All 3 remaining modes use click-to-hit mechanics which are deterministic.
 const SCENARIOS = {
-  tracking: {
-    label: "Tracking",
-    color: "#38bdf8",
-    desc: "Smoothly follow moving targets. Trains wrist/arm synchronization.",
-    aimer7: "Inspired by: Midrange Long Strafes Invincible, Air Far Long Strafes",
-    targetCount: 1,
-    targetSize: 7,
-    targetSpeed: 6,
-    movementType: "strafe", // smooth horizontal strafe
-    shootMode: "hold",       // hold to track, score by time on target
-  },
   flicking: {
     label: "Flicking",
     color: "#f97316",
-    desc: "Rapid large flicks to distant targets. Trains arm movement and speed.",
-    aimer7: "Inspired by: Bounce 180, Close Long Strafes Invincible",
+    desc: "Wide-angle flicks to distant targets. Trains arm speed & snap accuracy.",
+    icon: Zap,
     targetCount: 1,
-    targetSize: 5,
-    targetSpeed: 0,
-    movementType: "teleport_far", // spawns far away
-    shootMode: "click",
+    targetSize: 0.35,
+    movement: "teleport_wide",
   },
   switching: {
     label: "Target Switching",
     color: "#a855f7",
-    desc: "Click through multiple targets as fast as possible. Trains switching speed.",
-    aimer7: "Inspired by: 1wall6targets TE, 1wall9000targets",
+    desc: "Six static targets. Click through all of them as fast as possible.",
+    icon: Target,
     targetCount: 6,
-    targetSize: 4,
-    targetSpeed: 0,
-    movementType: "static_spread",
-    shootMode: "click",
+    targetSize: 0.28,
+    movement: "grid",
   },
   microadj: {
     label: "Micro-Adjustment",
     color: "#22c55e",
-    desc: "Tiny clustered targets requiring precise micro corrections.",
-    aimer7: "Inspired by: Close Fast Strafes Invincible, Smoothbot",
+    desc: "Small drifting targets. Trains tiny, precise corrections.",
+    icon: Brain,
     targetCount: 1,
-    targetSize: 3,
-    targetSpeed: 2,
-    movementType: "micro", // small jitter
-    shootMode: "click",
+    targetSize: 0.22,
+    movement: "drift",
   },
-  // Aimer7 Routine modes
-  routine_beginner: null,
-  routine_intermediate: null,
 };
 
 const ROUTINES = {
   beginner: {
     label: "Beginner Routine",
-    color: "#22c55e",
-    desc: "Based on Aimer7's complete beginner workout. 3 phases × 5 min.",
+    desc: "3 phases × 60s. Covers the fundamentals.",
     phases: [
-      { scenario: "tracking",  label: "Tracking — Smooth Strafe",       duration: 300 },
-      { scenario: "flicking",  label: "Click Timing — Wide Flicks",      duration: 300 },
-      { scenario: "switching", label: "Target Switching — 6 Targets",    duration: 300 },
+      { scenario: "switching", duration: 60 },
+      { scenario: "flicking",  duration: 60 },
+      { scenario: "microadj",  duration: 60 },
     ],
   },
   intermediate: {
     label: "Intermediate Routine",
-    color: "#f97316",
-    desc: "Based on Aimer7's intermediate workout. 4 phases × 5 min.",
+    desc: "3 phases × 120s. Extended practice.",
     phases: [
-      { scenario: "tracking",  label: "Tracking — Long Strafes",         duration: 300 },
-      { scenario: "microadj",  label: "Micro-Adjustment — Tight Targets", duration: 300 },
-      { scenario: "flicking",  label: "Click Timing — Extreme Flicks",    duration: 300 },
-      { scenario: "switching", label: "Target Switching — Speed",         duration: 300 },
+      { scenario: "flicking",  duration: 120 },
+      { scenario: "microadj",  duration: 120 },
+      { scenario: "switching", duration: 120 },
     ],
   },
 };
@@ -82,217 +61,247 @@ const ROUTINES = {
 const DEFAULT_SETTINGS = { sensitivity: 5, fov: 90, showCrosshair: true };
 
 export default function ValorantArena() {
+  // ── Three.js refs ───────────────────────────────────────────────────────
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
   const rendererRef = useRef(null);
   const cameraRef = useRef(null);
-  const targetsRef = useRef([]);
-  const animFrameRef = useRef(null);
+  const canvasRef = useRef(null);
+  const targetsRef = useRef(new Map()); // Map<uuid, {mesh, phase, basePos, vel}>
+  const animFrameRef = useRef(0);
+
+  // ── Input / state refs ──────────────────────────────────────────────────
   const lockedRef = useRef(false);
   const yawRef = useRef(0);
   const pitchRef = useRef(0);
   const settingsRef = useRef(DEFAULT_SETTINGS);
-  const statsRef = useRef({ hits: 0, misses: 0, shots: 0, trackTime: 0 });
-  const clockRef = useRef(new THREE.Clock());
+  const statsRef = useRef({ hits: 0, misses: 0, shots: 0 });
   const raycasterRef = useRef(new THREE.Raycaster());
-  const currentScenarioRef = useRef(null);
-  const onTargetRef = useRef(false);
-  const sessionTimerRef = useRef(null);
+  const screenCenter = useRef(new THREE.Vector2(0, 0));
 
+  // Current scenario + routine state refs (avoid stale closures)
+  const scenarioKeyRef = useRef("switching");
+  const routineRef = useRef(null);
+  const routinePhaseRef = useRef(0);
+  const sessionStartRef = useRef(0);
+  const phaseTimerRef = useRef(null);
+
+  // ── UI state ────────────────────────────────────────────────────────────
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [showSettings, setShowSettings] = useState(false);
-  const [stats, setStats] = useState({ hits: 0, misses: 0, shots: 0, trackTime: 0 });
+  const [stats, setStats] = useState({ hits: 0, misses: 0, shots: 0 });
   const [locked, setLocked] = useState(false);
   const [screen, setScreen] = useState("landing"); // landing | select | arena
-  const [activeScenario, setActiveScenario] = useState("tracking");
+  const [activeScenario, setActiveScenario] = useState("switching");
   const [hitFlash, setHitFlash] = useState(false);
   const [sessionTime, setSessionTime] = useState(0);
-  const [maxTime, setMaxTime] = useState(0);
-
-  // Routine state
   const [routineKey, setRoutineKey] = useState(null);
   const [routinePhase, setRoutinePhase] = useState(0);
-  const [routinePhaseTime, setRoutinePhaseTime] = useState(0);
-  const routineRef = useRef(null);
 
   useEffect(() => { settingsRef.current = settings; }, [settings]);
 
-  // Build three.js scene
-  const buildScene = useCallback(() => {
+  // ── Helpers ─────────────────────────────────────────────────────────────
+  const clearTargets = useCallback(() => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+    targetsRef.current.forEach(({ mesh }) => {
+      scene.remove(mesh);
+      mesh.geometry.dispose();
+      mesh.material.dispose();
+    });
+    targetsRef.current.clear();
+  }, []);
+
+  const makeTargetPosition = useCallback((movement, index = 0, total = 1) => {
+    if (movement === "grid") {
+      const cols = 3, rows = 2;
+      const col = index % cols;
+      const row = Math.floor(index / cols);
+      return new THREE.Vector3(-4 + col * 4, 1.8 + row * 2.4, -10);
+    }
+    if (movement === "drift") {
+      return new THREE.Vector3(0, 2.2, -8);
+    }
+    // teleport_wide: random wide position
+    const angle = (Math.random() - 0.5) * 1.8; // ~±100°
+    const dist = 9 + Math.random() * 4;
+    return new THREE.Vector3(Math.sin(angle) * dist, 1.6 + Math.random() * 2.5, -Math.cos(Math.abs(angle)) * dist);
+  }, []);
+
+  const spawnTargets = useCallback((scenarioKey) => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+    clearTargets();
+    const cfg = SCENARIOS[scenarioKey];
+    if (!cfg) return;
+
+    for (let i = 0; i < cfg.targetCount; i++) {
+      const geo = new THREE.SphereGeometry(cfg.targetSize, 24, 24);
+      const mat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(cfg.color),
+        emissive: new THREE.Color(cfg.color),
+        emissiveIntensity: 0.25,
+        roughness: 0.3,
+        metalness: 0.6,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.copy(makeTargetPosition(cfg.movement, i, cfg.targetCount));
+
+      // Ring around target for visibility
+      const ringGeo = new THREE.RingGeometry(cfg.targetSize * 1.15, cfg.targetSize * 1.3, 24);
+      const ringMat = new THREE.MeshBasicMaterial({ color: cfg.color, side: THREE.DoubleSide, transparent: true, opacity: 0.35 });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      mesh.add(ring);
+
+      scene.add(mesh);
+      targetsRef.current.set(mesh.uuid, {
+        mesh,
+        basePos: mesh.position.clone(),
+        phase: Math.random() * Math.PI * 2,
+      });
+    }
+  }, [clearTargets, makeTargetPosition]);
+
+  const respawnTarget = useCallback((uuid) => {
+    const entry = targetsRef.current.get(uuid);
+    if (!entry) return;
+    const cfg = SCENARIOS[scenarioKeyRef.current];
+    if (!cfg) return;
+    const idx = [...targetsRef.current.keys()].indexOf(uuid);
+    const pos = makeTargetPosition(cfg.movement, idx, cfg.targetCount);
+    entry.mesh.position.copy(pos);
+    entry.basePos.copy(pos);
+    entry.phase = Math.random() * Math.PI * 2;
+  }, [makeTargetPosition]);
+
+  const resetStats = useCallback(() => {
+    statsRef.current = { hits: 0, misses: 0, shots: 0 };
+    setStats({ hits: 0, misses: 0, shots: 0 });
+  }, []);
+
+  const switchScenario = useCallback((key) => {
+    scenarioKeyRef.current = key;
+    setActiveScenario(key);
+    resetStats();
+    spawnTargets(key);
+  }, [spawnTargets, resetStats]);
+
+  const startArena = useCallback((scenarioKey, routine = null) => {
+    scenarioKeyRef.current = scenarioKey;
+    routineRef.current = routine;
+    routinePhaseRef.current = 0;
+    setActiveScenario(scenarioKey);
+    setRoutinePhase(0);
+    resetStats();
+    sessionStartRef.current = Date.now();
+    setSessionTime(0);
+    setScreen("arena");
+  }, [resetStats]);
+
+  // ── Build scene once when entering arena ────────────────────────────────
+  useEffect(() => {
+    if (screen !== "arena") return;
+
     const mount = mountRef.current;
     if (!mount) return;
-    const w = mount.clientWidth, h = mount.clientHeight;
+    const w = mount.clientWidth;
+    const h = mount.clientHeight;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.setSize(w, h);
-    renderer.shadowMap.enabled = true;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     mount.appendChild(renderer.domElement);
     rendererRef.current = renderer;
+    canvasRef.current = renderer.domElement;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x08080f);
-    scene.fog = new THREE.Fog(0x08080f, 25, 70);
+    scene.fog = new THREE.Fog(0x08080f, 28, 70);
     sceneRef.current = scene;
 
-    const camera = new THREE.PerspectiveCamera(settings.fov, w / h, 0.1, 200);
+    const camera = new THREE.PerspectiveCamera(settingsRef.current.fov, w / h, 0.1, 200);
     camera.position.set(0, 1.7, 4);
+    camera.rotation.order = "YXZ";
     cameraRef.current = camera;
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.35));
-    const dir = new THREE.DirectionalLight(0xff3333, 1.4);
-    dir.position.set(4, 10, 5);
-    dir.castShadow = true;
+    // Lighting
+    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+    const dir = new THREE.DirectionalLight(0xff4444, 1.2);
+    dir.position.set(5, 12, 5);
     scene.add(dir);
     const ptLight = new THREE.PointLight(0x4488ff, 1, 35);
     ptLight.position.set(0, 8, -12);
     scene.add(ptLight);
 
     // Floor
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(50, 50),
-      new THREE.MeshStandardMaterial({ color: 0x0d0d18, roughness: 0.95 }));
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(60, 60),
+      new THREE.MeshStandardMaterial({ color: 0x0d0d18, roughness: 0.95 })
+    );
     floor.rotation.x = -Math.PI / 2;
-    floor.receiveShadow = true;
     scene.add(floor);
-    const grid = new THREE.GridHelper(50, 50, 0xff2244, 0x1a1a2e);
+
+    const grid = new THREE.GridHelper(60, 30, 0xff2244, 0x1a1a2e);
     grid.position.y = 0.01;
     scene.add(grid);
 
-    // Walls
+    // Back wall
     const wallMat = new THREE.MeshStandardMaterial({ color: 0x111122, roughness: 0.85 });
-    [
-      { pos: [0, 10, -22], rot: [0, 0, 0] },
-      { pos: [-22, 10, 0], rot: [0, Math.PI / 2, 0] },
-      { pos: [22, 10, 0], rot: [0, -Math.PI / 2, 0] },
-    ].forEach(({ pos, rot }) => {
-      const w = new THREE.Mesh(new THREE.PlaneGeometry(50, 22), wallMat);
-      w.position.set(...pos);
-      w.rotation.set(...rot);
-      scene.add(w);
-    });
+    const backWall = new THREE.Mesh(new THREE.PlaneGeometry(60, 24), wallMat);
+    backWall.position.set(0, 12, -22);
+    scene.add(backWall);
 
-    // Scenario name label on back wall (subtle)
-    return renderer.domElement;
-  }, []);
+    // Spawn initial targets
+    spawnTargets(scenarioKeyRef.current);
 
-  const spawnTargets = useCallback((scenario) => {
-    const scene = sceneRef.current;
-    if (!scene) return;
-    targetsRef.current.forEach(t => scene.remove(t.mesh));
-    targetsRef.current = [];
+    // ── Input handlers ────────────────────────────────────────────────────
+    const canvas = renderer.domElement;
 
-    const cfg = SCENARIOS[scenario];
-    if (!cfg) return;
-    const r = cfg.targetSize * 0.045;
-    const geo = new THREE.SphereGeometry(r, 20, 20);
-
-    for (let i = 0; i < cfg.targetCount; i++) {
-      const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(cfg.color), roughness: 0.2, metalness: 0.7, emissive: new THREE.Color(cfg.color), emissiveIntensity: 0.15 });
-      const mesh = new THREE.Mesh(geo, mat);
-
-      if (cfg.movementType === "static_spread") {
-        // 6 targets spread on back wall
-        const cols = 3, rows = 2;
-        const col = i % cols, row = Math.floor(i / cols);
-        mesh.position.set(-4 + col * 4, 1.5 + row * 2.5, -10);
-      } else if (cfg.movementType === "micro") {
-        mesh.position.set(0, 2, -8);
-      } else {
-        mesh.position.set((Math.random() - 0.5) * 16, 1.5 + Math.random() * 4, -9 - Math.random() * 8);
+    const tryLock = () => {
+      if (document.pointerLockElement !== canvas) {
+        canvas.requestPointerLock?.();
       }
+    };
 
-      scene.add(mesh);
-      targetsRef.current.push({
-        mesh,
-        vel: new THREE.Vector3(
-          (Math.random() - 0.5) * cfg.targetSpeed * 0.04,
-          (Math.random() - 0.5) * cfg.targetSpeed * 0.015,
-          0
-        ),
-        basePos: mesh.position.clone(),
-        phase: Math.random() * Math.PI * 2,
-        lastFlick: 0,
-      });
-    }
-  }, []);
-
-  const respawnTarget = useCallback((t, scenario) => {
-    const cfg = SCENARIOS[scenario];
-    if (!cfg) return;
-    if (cfg.movementType === "teleport_far") {
-      // spawn far from center — wide angle flick required
-      const angle = Math.random() * Math.PI * 2;
-      const dist = 6 + Math.random() * 8;
-      t.mesh.position.set(Math.cos(angle) * dist, 1.5 + Math.random() * 3, -9 - Math.random() * 6);
-    } else if (cfg.movementType === "strafe") {
-      t.mesh.position.set((Math.random() - 0.5) * 14, 1.5 + Math.random() * 3, -8 - Math.random() * 6);
-      t.vel.x = (Math.random() > 0.5 ? 1 : -1) * cfg.targetSpeed * 0.04;
-    } else {
-      t.mesh.position.set((Math.random() - 0.5) * 14, 1.5 + Math.random() * 3, -8 - Math.random() * 6);
-    }
-    t.basePos = t.mesh.position.clone();
-  }, []);
-
-  const startArena = useCallback((scenarioKey, routine = null, routinePhaseIdx = 0) => {
-    currentScenarioRef.current = scenarioKey;
-    routineRef.current = routine;
-    statsRef.current = { hits: 0, misses: 0, shots: 0, trackTime: 0 };
-    setStats({ hits: 0, misses: 0, shots: 0, trackTime: 0 });
-    setScreen("arena");
-
-    const timeLimit = routine ? routine.phases[routinePhaseIdx].duration : 0;
-    setMaxTime(timeLimit);
-    setSessionTime(0);
-  }, []);
-
-  // Main 3D effect — mounts when screen === "arena"
-  useEffect(() => {
-    if (screen !== "arena") return;
-
-    const canvas = buildScene();
-    if (!canvas) return;
-    const scene = sceneRef.current;
-    const camera = cameraRef.current;
-    const renderer = rendererRef.current;
-
-    spawnTargets(currentScenarioRef.current);
-
-    // Controls
-    const onMouseDown = (e) => {
-      if (!lockedRef.current) { try { canvas.requestPointerLock(); } catch(e) {} return; }
-      const cfg = SCENARIOS[currentScenarioRef.current];
-      if (!cfg || cfg.shootMode === "hold") return;
+    const handleShoot = () => {
+      const cam = cameraRef.current;
+      if (!cam) return;
       statsRef.current.shots++;
+
       const rc = raycasterRef.current;
-      rc.setFromCamera(new THREE.Vector2(0, 0), camera);
-      const hits = rc.intersectObjects(targetsRef.current.map(t => t.mesh));
+      rc.setFromCamera(screenCenter.current, cam);
+      // Build fresh mesh list every shot — prevents stale refs after respawns
+      const meshes = [...targetsRef.current.values()].map(t => t.mesh);
+      const hits = rc.intersectObjects(meshes, false);
+
       if (hits.length > 0) {
         statsRef.current.hits++;
-        const hitMesh = hits[0].object;
-        const hitTarget = targetsRef.current.find(t => t.mesh === hitMesh);
-        hitMesh.material.emissiveIntensity = 1.2;
-        hitMesh.material.color.set(0xffffff);
+        const hitUuid = hits[0].object.uuid;
+        // Flash + immediate respawn (no setTimeout gap that dropped second clicks)
         setHitFlash(true);
-        setTimeout(() => setHitFlash(false), 80);
-        setTimeout(() => {
-          if (hitTarget) {
-            respawnTarget(hitTarget, currentScenarioRef.current);
-            const cfg2 = SCENARIOS[currentScenarioRef.current];
-            hitMesh.material.color.set(new THREE.Color(cfg2.color));
-            hitMesh.material.emissiveIntensity = 0.15;
-          }
-        }, 120);
+        setTimeout(() => setHitFlash(false), 70);
+        respawnTarget(hitUuid);
       } else {
         statsRef.current.misses++;
       }
       setStats({ ...statsRef.current });
     };
 
+    const onMouseDown = (e) => {
+      if (e.button !== 0) return;
+      if (!lockedRef.current) {
+        tryLock();
+        return;
+      }
+      handleShoot();
+    };
+
     const onMouseMove = (e) => {
       if (!lockedRef.current) return;
-      const s = settingsRef.current.sensitivity * 0.0006;
+      const s = settingsRef.current.sensitivity * 0.0008;
       yawRef.current -= e.movementX * s;
-      pitchRef.current = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, pitchRef.current - e.movementY * s));
+      pitchRef.current -= e.movementY * s;
+      pitchRef.current = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, pitchRef.current));
     };
 
     const onLockChange = () => {
@@ -300,118 +309,109 @@ export default function ValorantArena() {
       setLocked(lockedRef.current);
     };
 
+    const onResize = () => {
+      const mw = mountRef.current?.clientWidth;
+      const mh = mountRef.current?.clientHeight;
+      if (!mw || !mh) return;
+      camera.aspect = mw / mh;
+      camera.updateProjectionMatrix();
+      renderer.setSize(mw, mh);
+    };
+
     canvas.addEventListener("mousedown", onMouseDown);
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("pointerlockchange", onLockChange);
+    window.addEventListener("resize", onResize);
 
-    // Session timer
-    const startTs = Date.now();
-    sessionTimerRef.current = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - startTs) / 1000);
+    // ── Session + phase timer ─────────────────────────────────────────────
+    sessionStartRef.current = Date.now();
+    phaseTimerRef.current = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - sessionStartRef.current) / 1000);
       setSessionTime(elapsed);
-      if (routineRef.current) {
-        const phaseIdx = routinePhase;
-        const phaseDur = routineRef.current.phases[phaseIdx]?.duration || 0;
-        if (elapsed >= phaseDur) {
-          const nextPhase = phaseIdx + 1;
-          if (nextPhase < routineRef.current.phases.length) {
-            setRoutinePhase(nextPhase);
-            currentScenarioRef.current = routineRef.current.phases[nextPhase].scenario;
-            spawnTargets(currentScenarioRef.current);
-            statsRef.current = { hits: 0, misses: 0, shots: 0, trackTime: 0 };
-            setStats({ ...statsRef.current });
+
+      const routine = routineRef.current;
+      if (routine) {
+        const phaseIdx = routinePhaseRef.current;
+        const phase = routine.phases[phaseIdx];
+        if (phase && elapsed >= phase.duration) {
+          const next = phaseIdx + 1;
+          if (next < routine.phases.length) {
+            routinePhaseRef.current = next;
+            setRoutinePhase(next);
+            scenarioKeyRef.current = routine.phases[next].scenario;
+            setActiveScenario(routine.phases[next].scenario);
+            sessionStartRef.current = Date.now();
+            resetStats();
+            spawnTargets(routine.phases[next].scenario);
           } else {
-            clearInterval(sessionTimerRef.current);
+            // Finished routine — return to select
+            clearInterval(phaseTimerRef.current);
+            setScreen("select");
+            if (document.pointerLockElement) document.exitPointerLock();
           }
         }
       }
-    }, 1000);
+    }, 250);
 
-    // Tracking score
-    let trackInterval;
-    const doTrackCheck = () => {
-      const cfg = SCENARIOS[currentScenarioRef.current];
-      if (cfg?.shootMode === "hold" && lockedRef.current) {
-        const rc = raycasterRef.current;
-        rc.setFromCamera(new THREE.Vector2(0, 0), camera);
-        const hits = rc.intersectObjects(targetsRef.current.map(t => t.mesh));
-        if (hits.length > 0) {
-          statsRef.current.trackTime = (statsRef.current.trackTime || 0) + 0.1;
-          statsRef.current.shots = Math.max(1, statsRef.current.shots);
-          setStats({ ...statsRef.current });
-        }
-      }
-    };
-    trackInterval = setInterval(doTrackCheck, 100);
-
-    // Animate
+    // ── Animation loop ────────────────────────────────────────────────────
     const animate = () => {
       animFrameRef.current = requestAnimationFrame(animate);
-      const cfg = SCENARIOS[currentScenarioRef.current];
-      if (!cfg) return;
+      const cam = cameraRef.current;
+      if (!cam) return;
 
-      camera.rotation.order = "YXZ";
-      camera.rotation.y = yawRef.current;
-      camera.rotation.x = pitchRef.current;
-      camera.fov = settingsRef.current.fov;
-      camera.updateProjectionMatrix();
+      cam.rotation.y = yawRef.current;
+      cam.rotation.x = pitchRef.current;
+      if (cam.fov !== settingsRef.current.fov) {
+        cam.fov = settingsRef.current.fov;
+        cam.updateProjectionMatrix();
+      }
 
-      const t = Date.now() * 0.001;
-      targetsRef.current.forEach((tgt) => {
-        if (cfg.movementType === "strafe") {
-          tgt.mesh.position.x += tgt.vel.x;
-          if (Math.abs(tgt.mesh.position.x) > 12) tgt.vel.x *= -1;
-        } else if (cfg.movementType === "micro") {
-          // tiny oscillation
-          tgt.mesh.position.x = tgt.basePos.x + Math.sin(t * 3 + tgt.phase) * 0.8;
-          tgt.mesh.position.y = tgt.basePos.y + Math.cos(t * 2.5 + tgt.phase) * 0.5;
+      const t = performance.now() * 0.001;
+      const cfg = SCENARIOS[scenarioKeyRef.current];
+
+      targetsRef.current.forEach((entry) => {
+        if (!cfg) return;
+        if (cfg.movement === "drift") {
+          // Small oscillation around base position
+          entry.mesh.position.x = entry.basePos.x + Math.sin(t * 1.8 + entry.phase) * 1.2;
+          entry.mesh.position.y = entry.basePos.y + Math.cos(t * 1.4 + entry.phase) * 0.6;
         }
-        // pulse emissive when crosshair is near
+        // Crosshair proximity glow
         const rc = raycasterRef.current;
-        rc.setFromCamera(new THREE.Vector2(0, 0), camera);
-        const intersects = rc.intersectObject(tgt.mesh);
-        tgt.mesh.material.emissiveIntensity = intersects.length > 0 ? 0.6 : 0.15;
+        rc.setFromCamera(screenCenter.current, cam);
+        const hit = rc.intersectObject(entry.mesh, false);
+        entry.mesh.material.emissiveIntensity = hit.length > 0 ? 0.7 : 0.25;
       });
 
-      renderer.render(scene, camera);
+      renderer.render(scene, cam);
     };
     animate();
 
-    const onResize = () => {
-      const w = mountRef.current?.clientWidth, h = mountRef.current?.clientHeight;
-      if (!w || !h) return;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
-    };
-    window.addEventListener("resize", onResize);
-
+    // ── Cleanup ───────────────────────────────────────────────────────────
     return () => {
       cancelAnimationFrame(animFrameRef.current);
-      clearInterval(sessionTimerRef.current);
-      clearInterval(trackInterval);
+      clearInterval(phaseTimerRef.current);
       canvas.removeEventListener("mousedown", onMouseDown);
       document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("pointerlockchange", onLockChange);
       window.removeEventListener("resize", onResize);
       if (document.pointerLockElement === canvas) document.exitPointerLock();
+      clearTargets();
       renderer.dispose();
-      if (mountRef.current?.contains(canvas)) mountRef.current.removeChild(canvas);
+      if (mount.contains(canvas)) mount.removeChild(canvas);
+      yawRef.current = 0;
+      pitchRef.current = 0;
     };
-  }, [screen]);
+  }, [screen, spawnTargets, respawnTarget, clearTargets, resetStats]);
 
-  const resetStats = () => {
-    statsRef.current = { hits: 0, misses: 0, shots: 0, trackTime: 0 };
-    setStats({ ...statsRef.current });
-  };
-
+  // ── Derived UI values ───────────────────────────────────────────────────
   const accuracy = stats.shots > 0 ? Math.round((stats.hits / stats.shots) * 100) : 0;
-  const trackPct = maxTime > 0 ? Math.min(100, Math.round((stats.trackTime / maxTime) * 100)) : 0;
-  const cfg = SCENARIOS[activeScenario];
   const currentRoutine = routineKey ? ROUTINES[routineKey] : null;
-  const currentPhaseLabel = currentRoutine?.phases[routinePhase]?.label;
+  const currentPhaseCfg = currentRoutine?.phases[routinePhase];
+  const currentPhaseMax = currentPhaseCfg?.duration || 0;
+  const scenarioCfg = SCENARIOS[activeScenario] || SCENARIOS.switching;
 
-  // ── LANDING ──────────────────────────────────────────────────────────────
+  // ── LANDING ─────────────────────────────────────────────────────────────
   if (screen === "landing") {
     return (
       <div className="fixed inset-0 bg-black flex flex-col items-center justify-center overflow-hidden">
@@ -423,23 +423,18 @@ export default function ValorantArena() {
         <div className="relative z-10 text-center max-w-lg px-6">
           <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/0aeac6876_image.png" alt="Valorant" className="w-16 h-16 mx-auto mb-5" />
           <h1 className="text-5xl font-black text-white mb-1 tracking-widest">AIM ARENA</h1>
-          <p className="text-red-400 font-bold mb-1 tracking-widest uppercase text-xs">Aimer7 Method · 3D Trainer</p>
-          <p className="text-white/40 text-xs mb-8">Based on Aimer7's KovaaK's workout routines — Click Timing · Target Switching · Tracking</p>
-          <div className="grid grid-cols-2 gap-3 mb-8">
-            {[
-              { icon: Activity, label: "Tracking", desc: "Smooth pursuit", color: "text-sky-400" },
-              { icon: Zap, label: "Flicking", desc: "Wide arm flicks", color: "text-orange-400" },
-              { icon: Target, label: "Switching", desc: "Multi-target clicks", color: "text-purple-400" },
-              { icon: Brain, label: "Micro-adj.", desc: "Precise corrections", color: "text-green-400" },
-            ].map(({ icon: Icon, label, desc, color }) => (
-              <div key={label} className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-xl text-left">
-                <Icon className={`w-5 h-5 flex-shrink-0 ${color}`} />
-                <div>
-                  <div className="text-white text-sm font-bold">{label}</div>
-                  <div className="text-white/40 text-[11px]">{desc}</div>
+          <p className="text-red-400 font-bold mb-1 tracking-widest uppercase text-xs">Precision 3D Aim Trainer</p>
+          <p className="text-white/40 text-xs mb-8">Click-based training: Flicking · Switching · Micro-adjustment</p>
+          <div className="grid grid-cols-3 gap-3 mb-8">
+            {Object.entries(SCENARIOS).map(([key, sc]) => {
+              const Icon = sc.icon;
+              return (
+                <div key={key} className="flex flex-col items-center gap-1 p-3 bg-white/5 border border-white/10 rounded-xl">
+                  <Icon className="w-5 h-5" style={{ color: sc.color }} />
+                  <div className="text-white text-xs font-bold">{sc.label}</div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <button onClick={() => setScreen("select")}
             className="w-full py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-black text-lg rounded-xl shadow-lg shadow-red-500/30 transition-all active:scale-95 tracking-widest">
@@ -450,7 +445,7 @@ export default function ValorantArena() {
     );
   }
 
-  // ── SCENARIO SELECT ───────────────────────────────────────────────────────
+  // ── SELECT ──────────────────────────────────────────────────────────────
   if (screen === "select") {
     return (
       <div className="fixed inset-0 bg-[#08080f] overflow-y-auto">
@@ -460,19 +455,19 @@ export default function ValorantArena() {
               <ArrowLeft className="w-4 h-4" />
             </button>
             <div>
-              <h2 className="text-white font-black text-2xl">SELECT SCENARIO</h2>
-              <p className="text-white/40 text-xs">Aimer7's training categories</p>
+              <h2 className="text-white font-black text-2xl">SELECT MODE</h2>
+              <p className="text-white/40 text-xs">Pick a routine or individual scenario</p>
             </div>
           </div>
 
           {/* Routines */}
           <div className="mb-6">
             <h3 className="text-white/50 text-xs uppercase tracking-widest mb-3 flex items-center gap-2">
-              <Timer className="w-3 h-3" /> Structured Routines (Aimer7 Method)
+              <Timer className="w-3 h-3" /> Structured Routines
             </h3>
             <div className="space-y-3">
               {Object.entries(ROUTINES).map(([key, r]) => (
-                <button key={key} onClick={() => { setRoutineKey(key); setRoutinePhase(0); setActiveScenario(r.phases[0].scenario); startArena(r.phases[0].scenario, r, 0); }}
+                <button key={key} onClick={() => { setRoutineKey(key); startArena(r.phases[0].scenario, r); }}
                   className="w-full p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-2xl text-left transition-all group">
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-bold text-white">{r.label}</span>
@@ -499,39 +494,39 @@ export default function ValorantArena() {
             <Target className="w-3 h-3" /> Individual Scenarios
           </h3>
           <div className="space-y-3">
-            {Object.entries(SCENARIOS).filter(([, v]) => v !== null).map(([key, sc]) => (
-              <button key={key} onClick={() => { setActiveScenario(key); setRoutineKey(null); setRoutinePhase(0); startArena(key, null, 0); }}
-                className="w-full p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-2xl text-left transition-all group">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: sc.color }} />
-                      <span className="font-bold text-white">{sc.label}</span>
+            {Object.entries(SCENARIOS).map(([key, sc]) => {
+              const Icon = sc.icon;
+              return (
+                <button key={key} onClick={() => { setRoutineKey(null); startArena(key, null); }}
+                  className="w-full p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-2xl text-left transition-all group">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: sc.color + '22', border: `1px solid ${sc.color}44` }}>
+                        <Icon className="w-5 h-5" style={{ color: sc.color }} />
+                      </div>
+                      <div>
+                        <div className="font-bold text-white">{sc.label}</div>
+                        <p className="text-white/50 text-xs">{sc.desc}</p>
+                      </div>
                     </div>
-                    <p className="text-white/50 text-xs">{sc.desc}</p>
-                    <p className="text-white/25 text-[10px] mt-1 italic">{sc.aimer7}</p>
+                    <ChevronRight className="w-4 h-4 text-white/30 group-hover:text-white/60 flex-shrink-0 ml-3" />
                   </div>
-                  <ChevronRight className="w-4 h-4 text-white/30 group-hover:text-white/60 flex-shrink-0 ml-3" />
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
     );
   }
 
-  // ── ARENA ─────────────────────────────────────────────────────────────────
-  const scenarioCfg = SCENARIOS[activeScenario] || SCENARIOS["tracking"];
-
+  // ── ARENA ───────────────────────────────────────────────────────────────
   return (
     <div className="fixed inset-0 bg-black overflow-hidden">
       <div ref={mountRef} className="absolute inset-0" />
 
-      {/* Hit flash */}
       {hitFlash && <div className="absolute inset-0 pointer-events-none z-10" style={{ backgroundColor: scenarioCfg.color + '30' }} />}
 
-      {/* Crosshair */}
       {settings.showCrosshair && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
           <div className="relative w-5 h-5">
@@ -544,24 +539,22 @@ export default function ValorantArena() {
         </div>
       )}
 
-      {/* Click to lock */}
       {!locked && (
-        <div className="absolute inset-0 bg-black/65 flex items-center justify-center z-30 pointer-events-none">
+        <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-30 pointer-events-none">
           <div className="text-center">
             <div className="w-16 h-16 rounded-2xl border-2 flex items-center justify-center mx-auto mb-3 animate-pulse" style={{ borderColor: scenarioCfg.color }}>
               <Play className="w-7 h-7" style={{ color: scenarioCfg.color }} />
             </div>
             <p className="text-white font-bold text-lg">Click to Start</p>
-            <p className="text-white/40 text-xs mt-1">Left-click to lock cursor & shoot</p>
+            <p className="text-white/40 text-xs mt-1">Left-click to lock cursor · ESC to release</p>
           </div>
         </div>
       )}
 
-      {/* HUD top */}
+      {/* HUD */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3 bg-black/70 backdrop-blur-sm border border-white/10 rounded-xl px-5 py-2">
-        {/* Scenario badge */}
         <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ color: scenarioCfg.color, backgroundColor: scenarioCfg.color + '22', border: `1px solid ${scenarioCfg.color}44` }}>
-          {currentPhaseLabel || scenarioCfg.label}
+          {scenarioCfg.label}
         </span>
         <div className="w-px h-6 bg-white/10" />
         <div className="text-center">
@@ -578,31 +571,22 @@ export default function ValorantArena() {
           <div className={`font-black ${accuracy >= 60 ? 'text-green-400' : accuracy >= 40 ? 'text-yellow-400' : 'text-red-400'}`}>{accuracy}%</div>
           <div className="text-white/40 text-[9px]">ACC</div>
         </div>
-        {scenarioCfg.shootMode === "hold" && (
+        {currentPhaseMax > 0 && (
           <>
             <div className="w-px h-6 bg-white/10" />
             <div className="text-center">
-              <div className="text-sky-400 font-black">{stats.trackTime?.toFixed(1)}s</div>
-              <div className="text-white/40 text-[9px]">ON-TARGET</div>
-            </div>
-          </>
-        )}
-        {maxTime > 0 && (
-          <>
-            <div className="w-px h-6 bg-white/10" />
-            <div className="text-center">
-              <div className="text-white font-black">{Math.max(0, maxTime - sessionTime)}s</div>
+              <div className="text-white font-black">{Math.max(0, currentPhaseMax - sessionTime)}s</div>
               <div className="text-white/40 text-[9px]">LEFT</div>
             </div>
           </>
         )}
         <div className="w-px h-6 bg-white/10" />
-        <button onClick={resetStats} className="text-white/30 hover:text-white transition-colors">
+        <button onClick={resetStats} className="text-white/30 hover:text-white transition-colors" title="Reset stats">
           <RotateCcw className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      {/* Routine phase bar */}
+      {/* Routine phase indicator */}
       {currentRoutine && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-black/60 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-2">
           {currentRoutine.phases.map((p, i) => {
@@ -618,7 +602,7 @@ export default function ValorantArena() {
         </div>
       )}
 
-      {/* Controls top-left */}
+      {/* Top-left controls */}
       <div className="absolute top-4 left-4 z-20 flex gap-2">
         <button onClick={() => { setScreen("select"); if (document.pointerLockElement) document.exitPointerLock(); }}
           className="w-9 h-9 bg-black/60 hover:bg-black/80 border border-white/10 rounded-lg flex items-center justify-center text-white/50 hover:text-white transition-all">
@@ -630,7 +614,24 @@ export default function ValorantArena() {
         </button>
       </div>
 
-      {/* Settings panel */}
+      {/* Scenario quick-switch (only when not in routine) */}
+      {!currentRoutine && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2 bg-black/60 backdrop-blur-sm border border-white/10 rounded-xl p-1.5">
+          {Object.entries(SCENARIOS).map(([key, sc]) => {
+            const Icon = sc.icon;
+            const active = activeScenario === key;
+            return (
+              <button key={key} onClick={() => switchScenario(key)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${active ? '' : 'opacity-50 hover:opacity-80'}`}
+                style={active ? { backgroundColor: sc.color + '22', color: sc.color, border: `1px solid ${sc.color}44` } : { color: 'white' }}>
+                <Icon className="w-3.5 h-3.5" />
+                {sc.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {showSettings && (
         <div className="absolute top-16 left-4 z-30 w-64 bg-black/95 backdrop-blur-xl border border-white/20 rounded-2xl p-5 space-y-4">
           <div className="flex items-center justify-between">
