@@ -1,7 +1,9 @@
-// Proxy to kaiHyperFrames superagent backend to check render status.
-// Frontend polls this every 5s until status is "ready" or "error".
+// Poll kaiHyperFrames for render status.
+// Spec: GET https://app.base44.com/api/apps/<APP_ID>/functions/kaiHyperFrames?record_id=...
+// Returns: { status: "done" | "rendering" | "error", video_url?: string }
 
-const RENDER_BASE = "https://kais-backend-brain-superagent-for-4571e863.base44.app";
+const KAI_APP_ID = '69e00a3b3c4957544571e863';
+const KAI_HYPERFRAMES_URL = `https://app.base44.com/api/apps/${KAI_APP_ID}/functions/kaiHyperFrames`;
 
 Deno.serve(async (req) => {
   try {
@@ -15,13 +17,10 @@ Deno.serve(async (req) => {
       return Response.json({ status: "error", error: "missing api key" }, { status: 500 });
     }
 
-    const res = await fetch(`${RENDER_BASE}/functions/imposterPoll`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "api_key": apiKey,
-      },
-      body: JSON.stringify({ record_id }),
+    const url = `${KAI_HYPERFRAMES_URL}?record_id=${encodeURIComponent(record_id)}`;
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { "api_key": apiKey },
     });
 
     const text = await res.text();

@@ -252,7 +252,7 @@ export default function KaspaAvatarChat() {
       try {
         const res = await base44.functions.invoke('imposterPoll', { record_id: recordId });
         const data = res.data || {};
-        if (data.status === "ready" && data.video_url) {
+        if (data.status === "done" && data.video_url) {
           swapToVideo(data.video_url);
           return;
         }
@@ -513,17 +513,15 @@ Original prompt: ${input.trim()}`,
       return;
     }
 
-    // Async video render — Superagent will post the video URL directly to the conversation
-    // via slideComplete when done. No polling needed — we just show a friendly waiting card.
-    if (data?.action?.type === "video_processing" && (data.action.record_id || data.action.conversation_id)) {
-      const recordId = data.action.record_id || data.action.conversation_id;
+    // Async video render — poll kaiHyperFrames by record_id (spec Case 3) until video_url arrives.
+    if (data?.action?.type === "video_rendering" && data.action.record_id) {
       setMessages(prev => [...prev, {
         role: "assistant",
         content: null,
         imposterRender: {
           status: "rendering",
-          progress: data.reply || "🎬 Building your video now — dropping the link in about 2 minutes.",
-          recordId,
+          progress: data.reply || "🎬 Rendering your video…",
+          recordId: data.action.record_id,
           startedAt: Date.now(),
         },
       }]);
