@@ -7,9 +7,7 @@ import ReactMarkdown from "react-markdown";
 const QUICK_LINKS = [
   { label: "Kaspa News", url: "https://kaspa-app-9cc9fe40.base44.app" },
   { label: "TTTz", url: "https://tttz.xyz" },
-  { label: "Kaspa.org", url: "https://kaspa.org" },
   { label: "Explorer", url: "https://explorer.kaspa.org" },
-  { label: "$KAS", url: "https://www.coingecko.com/en/coins/kaspa" },
 ];
 
 const DEFAULT_HOME = "https://kaspa-app-9cc9fe40.base44.app";
