@@ -54,6 +54,9 @@ export default function HaruStudio({ onClose, kaspaAddress }) {
   const [customStyles, setCustomStyles] = useState([]);
   // Use the uploaded image as a texture/fill for the text
   const [useImageFill, setUseImageFill] = useState(false);
+  // AI-rendered lettering (the word drawn AS custom letters by image gen)
+  const [renderedLetterform, setRenderedLetterform] = useState(null);
+  const [renderingLetters, setRenderingLetters] = useState(false);
   const imgElementRef = useRef(null);
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -306,6 +309,31 @@ Return a JSON object with a "variants" array.`,
     setGenerating(false);
   };
 
+  // Render the WORD ITSELF as custom lettering using image-gen.
+  // This is the "Lovart-style" transformation — not a font swap, but a
+  // fully re-drawn wordmark where each letter is custom-shaped.
+  const renderLetterformFromImage = async () => {
+    if (!text.trim()) return;
+    setRenderingLetters(true);
+    try {
+      const moodDesc = detectedText?.mood || prompt || fontStyle.label;
+      const paletteDesc = detectedText?.palette
+        ? `using exactly these colors: ${detectedText.palette.slice(0, 3).join(", ")}`
+        : "";
+      const styleName = detectedText?.style_name || fontStyle.label;
+
+      const refs = uploadedImg ? [uploadedImg] : [];
+      const { url } = await base44.integrations.Core.GenerateImage({
+        prompt: `A single custom wordmark that reads exactly "${text}" — nothing else, no other text, no extra words. The letters themselves are reshaped, redrawn, and stylized as ORIGINAL LETTERFORMS (not a system font). Style: ${styleName}. Mood: ${moodDesc}. ${paletteDesc}. ${refs.length ? "Match the visual style, texture, and feeling of the reference image. Let the reference image dictate the letter construction, strokes, ornaments, and overall aesthetic." : ""} Clean flat background (solid or minimal), the word is the hero, centered, perfectly legible, spelled correctly, high resolution, editorial quality, professional custom lettering / hand-drawn display type. The letterforms should feel invented and specific — unique ligatures, bespoke terminals, custom proportions — as if crafted by a type designer for this exact word.`,
+        existing_image_urls: refs,
+      });
+      setRenderedLetterform(url);
+    } catch (err) {
+      console.error(err);
+    }
+    setRenderingLetters(false);
+  };
+
   return (
     <div className="fixed inset-0 z-[90] bg-[#faf7f5] flex flex-col">
       {/* Header */}
@@ -417,6 +445,30 @@ Return a JSON object with a "variants" array.`,
                     </button>
                   )}
                 </div>
+              )}
+
+              {/* DRAW MY LETTERS — the real Lovart-style letterform generation */}
+              <button
+                onClick={renderLetterformFromImage}
+                disabled={renderingLetters || !text.trim()}
+                className="w-full mt-2 h-11 rounded-xl bg-gradient-to-r from-fuchsia-500 via-pink-500 to-amber-400 text-white text-[12px] font-[900] tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-pink-500/30 hover:shadow-pink-500/50 transition-all disabled:opacity-50"
+              >
+                {renderingLetters ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Drawing letterforms…</>
+                ) : (
+                  <><Type className="w-4 h-4" /> Redraw "{text}" as custom letters</>
+                )}
+              </button>
+              <p className="text-[9px] text-zinc-400 mt-1 leading-tight">
+                Each letter is re-drawn from scratch by AI — bespoke shapes, custom strokes, inspired by your image.
+              </p>
+              {renderedLetterform && (
+                <button
+                  onClick={() => setRenderedLetterform(null)}
+                  className="w-full mt-1 h-6 rounded-md bg-zinc-100 text-zinc-600 text-[9px] font-bold hover:bg-zinc-200"
+                >
+                  ← Back to canvas mode
+                </button>
               )}
             </div>
 
@@ -564,19 +616,49 @@ Return a JSON object with a "variants" array.`,
         {/* Canvas */}
         <main className="flex-1 flex flex-col items-center justify-center p-6 bg-gradient-to-br from-pink-50/40 via-[#faf7f5] to-amber-50/30 overflow-auto">
           <div className="relative max-w-full">
-            <canvas
-              ref={canvasRef}
-              width={1200}
-              height={800}
-              className="max-w-full h-auto rounded-2xl shadow-2xl shadow-pink-400/20 ring-1 ring-pink-200/40"
-              style={{ maxHeight: "70vh" }}
-            />
-            {uploadedImg && (
+            {renderedLetterform ? (
+              <div className="relative">
+                <img
+                  src={renderedLetterform}
+                  alt={text}
+                  className="max-w-full h-auto rounded-2xl shadow-2xl shadow-pink-400/30 ring-1 ring-pink-200/40"
+                  style={{ maxHeight: "70vh" }}
+                />
+                <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur text-white text-[10px] font-bold tracking-wider uppercase flex items-center gap-1.5">
+                  <Sparkles className="w-2.5 h-2.5" /> AI Letterform
+                </div>
+                <a
+                  href={renderedLetterform}
+                  download={`haru-letterform-${text}.png`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute top-3 right-3 h-8 px-3 rounded-full bg-white/95 backdrop-blur text-zinc-900 text-[10px] font-bold flex items-center gap-1 shadow-lg hover:bg-white"
+                >
+                  <Download className="w-3 h-3" /> PNG
+                </a>
+              </div>
+            ) : (
+              <canvas
+                ref={canvasRef}
+                width={1200}
+                height={800}
+                className="max-w-full h-auto rounded-2xl shadow-2xl shadow-pink-400/20 ring-1 ring-pink-200/40"
+                style={{ maxHeight: "70vh" }}
+              />
+            )}
+            {uploadedImg && !renderedLetterform && (
               <div className="absolute top-4 right-4 w-24 h-24 rounded-xl overflow-hidden ring-2 ring-white shadow-lg">
                 <img src={uploadedImg} alt="Reference" className="w-full h-full object-cover" />
               </div>
             )}
           </div>
+
+          {renderingLetters && (
+            <div className="mt-4 flex items-center gap-2 text-pink-600 text-[11px] font-semibold">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              AI is crafting original letterforms for "{text}"…
+            </div>
+          )}
 
           {/* AI Variants */}
           {variants.length > 0 && (
