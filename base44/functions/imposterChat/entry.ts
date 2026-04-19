@@ -1,40 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const KASPA_API = 'https://api.kaspa.org';
-const KAI_APP_ID = '69e00a3b3c4957544571e863';
-const KAI_API_KEY = '7d4e7751d1ac406dae4df07533c5e566';
-const KAI_AGENTS_BASE = `https://app.base44.com/api/agents/${KAI_APP_ID}`;
-// Backend functions MUST be called via the app's subdomain, not the platform domain
-const KAI_HYPERFRAMES_URL = `https://kais-backend-brain-superagent-for-4571e863.base44.app/functions/kaiHyperFrames`;
-
-const ALLOWED_STYLES = new Set(["kaspa", "fire", "neon", "luxury", "ocean", "minimal"]);
-
-// Fire a render job to kaiHyperFrames per spec. Returns { record_id, ... }.
-// kaiHyperFrames is a public function on the KAI app — no api_key required.
-async function triggerHyperFramesRender(body) {
-  const res = await fetch(KAI_HYPERFRAMES_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const errText = await res.text().catch(() => "");
-    throw new Error(`kaiHyperFrames ${res.status}: ${errText.slice(0, 300)}`);
-  }
-  return await res.json();
-}
-
-// Create a real Superagent conversation — required by kaiHyperFrames spec.
-async function createKaiConversation(title = 'Video Render Job') {
-  const res = await fetch(`${KAI_AGENTS_BASE}/conversations`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'api_key': KAI_API_KEY },
-    body: JSON.stringify({ title }),
-  });
-  if (!res.ok) throw new Error(`Failed to create conversation: ${res.status}`);
-  const data = await res.json();
-  return data.id || data.conversation_id;
-}
 
 async function getBalance(address) {
   try {
@@ -72,135 +38,14 @@ Deno.serve(async (req) => {
       }
     });
 
-    // Slide-deck intent (most specific)
-    const hasDeckKeywords = /\b(\d+)?\s*-?\s*slide\b/i.test(message)
-      || /\b(deck|slideshow|slide\s*deck|presentation|slides)\b/i.test(message);
-
-    if (hasDeckKeywords) {
-      try {
-        const deckSpec = await base44.asServiceRole.integrations.Core.InvokeLLM({
-          prompt: `User request: "${message}"\n\nGenerate a slide deck plan. Create 3-8 slides with vivid visual prompts.\n\nRules:\n- title: short punchy (max 60 chars)\n- description: one-sentence summary\n- style: pick ONE from [kaspa, fire, neon, luxury, ocean, minimal]\n- slides: 3-8 slides (match any explicit count in the request)\n- Each slide.prompt: cinematic visual description (2-3 sentences)\n- Each slide.duration: 4-8 seconds\n- Slides flow as a story: hook → build → payoff`,
-          response_json_schema: {
-            type: "object",
-            properties: {
-              title: { type: "string" },
-              description: { type: "string" },
-              style: { type: "string", enum: ["kaspa", "fire", "neon", "luxury", "ocean", "minimal"] },
-              slides: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    prompt: { type: "string" },
-                    duration: { type: "number" },
-                  },
-                  required: ["prompt", "duration"],
-                },
-              },
-            },
-            required: ["title", "style", "slides"],
-          },
-        });
-
-        if (!deckSpec?.slides?.length) {
-          return Response.json({ reply: "couldn't figure out what the deck should be. try: 'make me a 5-slide deck about kaspa staking'" });
-        }
-
-        const style = ALLOWED_STYLES.has(deckSpec.style) ? deckSpec.style : "kaspa";
-
-        // Real Superagent conversation required by spec
-        let convId;
-        try { convId = await createKaiConversation(`Deck: ${deckSpec.title}`); } catch (err) {
-          console.error("deck conv create error:", err?.message || err);
-          return Response.json({ reply: "couldn't kick off the deck render. try again." });
-        }
-
-        // Single POST per spec — deck mode with slides[]
-        let renderData;
-        try {
-          renderData = await triggerHyperFramesRender({
-            title: deckSpec.title,
-            style,
-            conversation_id: convId,
-            prompt: deckSpec.description || deckSpec.title,
-            slides: deckSpec.slides.map((s, idx) => ({
-              order: idx + 1,
-              prompt: s.prompt,
-              duration: Math.min(8, Math.max(4, s.duration || 5)),
-              style,
-            })),
-          });
-        } catch (err) {
-          console.error("kaiHyperFrames deck trigger error:", err?.message || err);
-          return Response.json({ reply: "render endpoint didn't respond. try again." });
-        }
-
-        if (!renderData?.record_id) {
-          return Response.json({ reply: "deck render didn't queue. try again." });
-        }
-
-        const totalDuration = deckSpec.slides.reduce((sum, s) => sum + (s.duration || 5), 0);
-        return Response.json({
-          reply: `🎬 Building **${deckSpec.title}** — ${deckSpec.slides.length} slides, ~${totalDuration}s. Dropping the link here when it's done.`,
-          action: {
-            type: "video_rendering",
-            record_id: renderData.record_id,
-            conversation_id: renderData.conversation_id || convId,
-          },
-        });
-      } catch (err) {
-        console.error("deck gen error:", err?.message || err);
-        return Response.json({ reply: "something broke building the deck. try again with a clearer topic." });
-      }
-    }
-
-    // Single video intent
-    const hasVideoKeywords = /\b(make|create|generate|render|produce|do)\b.*\b(video|mp4|animation|clip|ad|advert|commercial|reel|short)\b/i.test(message)
+    // Video / deck intent — disabled (Superagent rendering removed)
+    const hasVideoOrDeckKeywords = /\b(\d+)?\s*-?\s*slide\b/i.test(message)
+      || /\b(deck|slideshow|slide\s*deck|presentation|slides)\b/i.test(message)
+      || /\b(make|create|generate|render|produce|do)\b.*\b(video|mp4|animation|clip|ad|advert|commercial|reel|short)\b/i.test(message)
       || /\bvideo\s+(about|for|of|showing|that|based\s+on)\b/i.test(message);
 
-    if (hasVideoKeywords) {
-      const durationMatch = message.match(/(\d+)\s*(?:sec|second|s\b)/i);
-      const duration = durationMatch ? Math.min(60, Math.max(5, parseInt(durationMatch[1]))) : 15;
-      let style = "kaspa";
-      if (/\bneon\b/i.test(message)) style = "neon";
-      else if (/\bfire\b/i.test(message)) style = "fire";
-      else if (/\bluxury\b/i.test(message)) style = "luxury";
-      else if (/\bocean\b/i.test(message)) style = "ocean";
-      else if (/\bminimal\b/i.test(message)) style = "minimal";
-      const title = message.split(/\s+/).slice(0, 6).join(" ").slice(0, 60) || "Imposter Video";
-
-      // Real Superagent conversation required by spec
-      let convId = conversation_state?.conversation_id || null;
-      if (!convId) {
-        try { convId = await createKaiConversation(); } catch (err) {
-          console.error("create conversation error:", err?.message || err);
-          return Response.json({ reply: "couldn't kick off the render. try again." });
-        }
-      }
-
-      const body = { prompt: message, title, duration, style, conversation_id: convId };
-      if (attachedImages.length > 0) body.image_urls = attachedImages;
-
-      let renderData;
-      try {
-        renderData = await triggerHyperFramesRender(body);
-      } catch (err) {
-        console.error("kaiHyperFrames trigger error:", err?.message || err);
-        return Response.json({ reply: "render endpoint didn't respond. try again." });
-      }
-
-      if (!renderData?.record_id) {
-        return Response.json({ reply: "render job didn't start. try again." });
-      }
-
-      return Response.json({
-        reply: "🎬 rendering your video… hang tight, about 60 seconds",
-        action: {
-          type: "video_rendering",
-          record_id: renderData.record_id,
-          conversation_id: renderData.conversation_id || convId,
-        },
-      });
+    if (hasVideoOrDeckKeywords) {
+      return Response.json({ reply: "video and deck rendering is offline. try an image instead." });
     }
 
     // Image intent

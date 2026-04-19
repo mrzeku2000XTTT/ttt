@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, Loader2, Minus, Settings, ImagePlus, Sparkles } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { superagentClient } from "@/api/superagentClient";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import AgentBrowserPanel from "@/components/feed/AgentBrowserPanel";
@@ -187,103 +186,6 @@ export default function KaspaAvatarChat() {
 
   const removePendingImage = (idx) => setPendingImages(prev => prev.filter((_, i) => i !== idx));
 
-  // PUSH-BASED render watcher (replaces polling).
-  // Subscribes to Superagent's VideoRender entity via cross-app SDK client.
-  // When status flips to "done" with a video_url, swap the card instantly.
-  // Fallback polling at 30s intervals in case cross-app subscribe doesn't fire.
-  const watchRef = useRef(null);
-  useEffect(() => {
-    const renderingMsg = messages.find(m => m?.imposterRender?.status === "rendering" && m?.imposterRender?.recordId);
-    if (!renderingMsg) {
-      if (watchRef.current) {
-        watchRef.current.unsubscribe?.();
-        clearInterval(watchRef.current.fallback);
-        watchRef.current = null;
-      }
-      return;
-    }
-    // Already watching this same recordId — don't restart
-    if (watchRef.current && watchRef.current.recordId === renderingMsg.imposterRender.recordId) return;
-    // Different job → clean up previous
-    if (watchRef.current) {
-      watchRef.current.unsubscribe?.();
-      clearInterval(watchRef.current.fallback);
-      watchRef.current = null;
-    }
-
-    const recordId = renderingMsg.imposterRender.recordId;
-    let resolved = false;
-
-    const swapToVideo = (videoUrl) => {
-      if (resolved) return;
-      resolved = true;
-      setMessages(prev => prev.map(m =>
-        m?.imposterRender?.recordId === recordId
-          ? { role: "assistant", content: null, imposterVideo: { video_url: videoUrl } }
-          : m
-      ));
-      if (watchRef.current) {
-        watchRef.current.unsubscribe?.();
-        clearInterval(watchRef.current.fallback);
-        watchRef.current = null;
-      }
-    };
-
-    // 1. Subscribe to Superagent's VideoRender entity for this conversation_id
-    let unsubscribe = null;
-    try {
-      unsubscribe = superagentClient.entities.VideoRender.subscribe((event) => {
-        const record = event?.data;
-        if (!record) return;
-        if (record.conversation_id !== recordId) return;
-        if (record.status === "done" && record.video_url) {
-          swapToVideo(record.video_url);
-        }
-      });
-    } catch (err) {
-      console.warn("VideoRender subscribe failed, relying on fallback polling:", err?.message || err);
-    }
-
-    // 2. Fallback: light 30s poll via imposterPoll (covers case where subscribe silently drops)
-    let attempts = 0;
-    const fallbackTick = async () => {
-      if (resolved) return;
-      attempts++;
-      try {
-        const res = await base44.functions.invoke('imposterPoll', { record_id: recordId });
-        const data = res.data || {};
-        if (data.status === "done" && data.video_url) {
-          swapToVideo(data.video_url);
-          return;
-        }
-        if (attempts >= 32) { // ~16 min @ 30s
-          if (watchRef.current) {
-            unsubscribe?.();
-            clearInterval(watchRef.current.fallback);
-            watchRef.current = null;
-          }
-          setMessages(prev => prev.map(m =>
-            m?.imposterRender?.recordId === recordId
-              ? { ...m, imposterRender: { ...m.imposterRender, status: "error", progress: "still rendering — check back soon" } }
-              : m
-          ));
-        }
-      } catch {}
-    };
-    const fallback = setInterval(fallbackTick, 30000);
-
-    watchRef.current = { recordId, unsubscribe, fallback };
-
-    return () => {
-      if (watchRef.current) {
-        watchRef.current.unsubscribe?.();
-        clearInterval(watchRef.current.fallback);
-        watchRef.current = null;
-      }
-    };
-  }, [messages]);
-
-  const [renderMode, setRenderMode] = useState("auto"); // auto | video | deck
   const [enhancing, setEnhancing] = useState(false);
   const enhancePrompt = async () => {
     if (!input.trim() || enhancing) return;
@@ -321,16 +223,7 @@ Original prompt: ${input.trim()}`,
 
   const sendMessage = async () => {
     if ((!input.trim() && pendingImages.length === 0) || isLoading) return;
-    let userMsg = input.trim() || (pendingImages.length > 0 ? "Analyze this image" : "");
-    // In imposter mode, apply render-mode prefix so imposterChat routes correctly
-    if (kaiMode === "imposter" && userMsg) {
-      const lower = userMsg.toLowerCase();
-      if (renderMode === "deck" && !/\b(deck|slide|slideshow|presentation)\b/.test(lower)) {
-        userMsg = `Make a slide deck video: ${userMsg}`;
-      } else if (renderMode === "video" && !/\b(video|mp4|animation|clip|reel)\b/.test(lower)) {
-        userMsg = `Make a video: ${userMsg}`;
-      }
-    }
+    const userMsg = input.trim() || (pendingImages.length > 0 ? "Analyze this image" : "");
     const imageUrls = pendingImages.map(img => img.url);
     const imageNames = pendingImages.map(img => img.name);
     setInput("");
@@ -500,43 +393,6 @@ Original prompt: ${input.trim()}`,
     // If we showed a loader but the response isn't an image (error path), clear it
     if (isImageIntent) {
       setMessages(prev => prev.filter(m => !m.imposterImageLoading));
-    }
-
-    // Handle video ready — show text reply + embedded video
-    if (data?.action?.type === "video_ready" && data.action.video_url) {
-      if (data.reply) addAssistantMessage(data.reply);
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: null,
-        imposterVideo: { video_url: data.action.video_url },
-      }]);
-      return;
-    }
-
-    // Async video render — poll kaiHyperFrames by record_id (spec Case 3) until video_url arrives.
-    if (data?.action?.type === "video_rendering" && data.action.record_id) {
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: null,
-        imposterRender: {
-          status: "rendering",
-          progress: data.reply || "🎬 Rendering your video…",
-          recordId: data.action.record_id,
-          startedAt: Date.now(),
-        },
-      }]);
-      return;
-    }
-
-    // Handle deck_ready — link to SlideDeckBuilder
-    if (data?.action?.type === "deck_ready") {
-      addAssistantMessage(data.reply || "🎬 deck built. review it in the builder.");
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: null,
-        links: [{ label: `📽️ Open "${data.action.deck_title}" in Builder`, path: "SlideDeckBuilder" }],
-      }]);
-      return;
     }
 
     // Handle send transaction action
@@ -806,31 +662,6 @@ Original prompt: ${input.trim()}`,
 
             {/* Input */}
             <div className="px-3 pb-3 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.08)", display: (showBrowser && (browserUrl || viewingPost)) || (kaiMode === "imposter" && !imposterIdentity) ? "none" : undefined }}>
-              {/* Render mode chips — only in imposter mode */}
-              {kaiMode === "imposter" && imposterIdentity && (
-                <div className="flex items-center gap-1.5 px-1 pb-2">
-                  <span className="text-[9px] font-bold text-white/35 uppercase tracking-wider mr-1">Render:</span>
-                  {[
-                    { key: "auto", label: "Auto", emoji: "✨", color: "rgba(255,255,255,0.5)" },
-                    { key: "video", label: "Video", emoji: "🎬", color: "rgba(6,182,212,1)" },
-                    { key: "deck", label: "Deck", emoji: "📽️", color: "rgba(168,85,247,1)" },
-                  ].map(opt => (
-                    <button
-                      key={opt.key}
-                      onClick={() => setRenderMode(opt.key)}
-                      className="px-2 py-0.5 rounded-full text-[10px] font-bold transition-all"
-                      style={{
-                        background: renderMode === opt.key ? `${opt.color === "rgba(255,255,255,0.5)" ? "rgba(255,255,255,0.15)" : opt.color.replace("1)", "0.18)")}` : "rgba(255,255,255,0.04)",
-                        color: renderMode === opt.key ? opt.color : "rgba(255,255,255,0.4)",
-                        border: `1px solid ${renderMode === opt.key ? opt.color.replace("1)", "0.4)") : "rgba(255,255,255,0.08)"}`,
-                      }}
-                      title={opt.key === "auto" ? "Let Kai detect" : opt.key === "video" ? "Path A — single fast video" : "Path B — multi-slide deck video"}
-                    >
-                      {opt.emoji} {opt.label}
-                    </button>
-                  ))}
-                </div>
-              )}
               {pendingImages.length > 0 && (
                 <div className="px-2 pb-2">
                   <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
