@@ -10,12 +10,17 @@ const QUICK_LINKS = [
   { label: "Explorer", url: "https://explorer.kaspa.org" },
 ];
 
+const IMPOSTER_QUICK_LINKS = [
+  { label: "AI Studio", url: "https://ai.studio/apps/8ee01fa0-a21b-4ac2-90d5-3a4bdf39a241" },
+];
+
 const DEFAULT_HOME = "https://kaspa-app-9cc9fe40.base44.app";
 
 
 
 
-export default function AgentBrowserPanel({ url: initialUrl, onAskKai }) {
+export default function AgentBrowserPanel({ url: initialUrl, onAskKai, mode }) {
+  const quickLinks = mode === "imposter" ? [...QUICK_LINKS, ...IMPOSTER_QUICK_LINKS] : QUICK_LINKS;
   const [currentUrl, setCurrentUrl] = useState(initialUrl || DEFAULT_HOME);
   const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState([initialUrl || DEFAULT_HOME]);
@@ -52,7 +57,7 @@ export default function AgentBrowserPanel({ url: initialUrl, onAskKai }) {
   }, [initialUrl]);
 
   const isHttps = currentUrl?.startsWith("https");
-  const activeQuickLink = QUICK_LINKS.find(q => {
+  const activeQuickLink = quickLinks.find(q => {
     try { return currentUrl?.includes(new URL(q.url).hostname); } catch { return false; }
   });
 
@@ -226,7 +231,7 @@ export default function AgentBrowserPanel({ url: initialUrl, onAskKai }) {
 
       {/* Quick links */}
       <div className="flex items-center gap-1 flex-wrap">
-        {QUICK_LINKS.map((link) => {
+        {quickLinks.map((link) => {
           const isActive = activeQuickLink?.url === link.url;
           return (
             <button

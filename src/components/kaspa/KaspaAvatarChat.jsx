@@ -634,7 +634,7 @@ Original prompt: ${input.trim()}`,
 
             {/* Browser panel */}
             <div className="flex-1 overflow-hidden" style={{ display: showBrowser && browserUrl && !viewingPost ? "flex" : "none", flexDirection: "column" }}>
-              <AgentBrowserPanel url={browserUrl} key="persistent-browser" onAskKai={(q) => { setShowBrowser(false); setInput(q); setTimeout(() => inputRef.current?.focus(), 100); }} />
+              <AgentBrowserPanel url={browserUrl} mode={kaiMode} key="persistent-browser" onAskKai={(q) => { setShowBrowser(false); setInput(q); setTimeout(() => inputRef.current?.focus(), 100); }} />
             </div>
 
             {/* Imposter Gate — show when imposter mode but no identity yet */}
