@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Loader2, Minus, Settings, ImagePlus, Sparkles } from "lucide-react";
+import { X, Send, Loader2, Minus, Settings, ImagePlus } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { superagentClient } from "@/api/superagentClient";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import AgentBrowserPanel from "@/components/feed/AgentBrowserPanel";
@@ -29,13 +28,10 @@ import { KAIThinkingBubble } from "./KAIAnimations";
 import KAIChatMessage from "./KAIChatMessage";
 import ImposterGate from "./ImposterGate";
 import ImposterSettings from "./ImposterSettings";
-import ImposterImageLoader from "./ImposterImageLoader";
 
 export default function KaspaAvatarChat() {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [videoUrl, setVideoUrl] = useState(() => localStorage.getItem(STORAGE_KEY) || DEFAULT_VIDEO_URL);
   const [messages, setMessages] = useState(() => {
     // Restore persisted messages so remounts (route changes) don't wipe the chat
@@ -105,31 +101,6 @@ export default function KaspaAvatarChat() {
 
   // Shared handler context object
   const ctx = { setMessages, addAssistantMessage, setIsLoading, isFast, speedInstruction, kaiMode };
-
-  // Load current user & enforce admin-only imposter mode
-  useEffect(() => {
-    (async () => {
-      try {
-        const u = await base44.auth.me();
-        setCurrentUser(u);
-        const admin = u?.role === 'admin';
-        setIsAdmin(admin);
-        // If a non-admin somehow has imposter mode active, kick them back to kai
-        if (!admin && kaiMode === "imposter") {
-          setKaiMode("kai");
-          try { localStorage.setItem("kai_mode", "kai"); } catch {}
-          setMessages([{ role: "assistant", content: "Hey! I'm KAI — ask me anything about Kaspa, blockDAG, mining, KRC-20, or the ecosystem." }]);
-        }
-      } catch {
-        setCurrentUser(null);
-        setIsAdmin(false);
-        if (kaiMode === "imposter") {
-          setKaiMode("kai");
-          try { localStorage.setItem("kai_mode", "kai"); } catch {}
-        }
-      }
-    })();
-  }, []);
 
   // Fetch global KAI video URL
   useEffect(() => {
@@ -214,151 +185,9 @@ export default function KaspaAvatarChat() {
 
   const removePendingImage = (idx) => setPendingImages(prev => prev.filter((_, i) => i !== idx));
 
-  // PUSH-BASED render watcher (replaces polling).
-  // Subscribes to Superagent's VideoRender entity via cross-app SDK client.
-  // When status flips to "done" with a video_url, swap the card instantly.
-  // Fallback polling at 30s intervals in case cross-app subscribe doesn't fire.
-  const watchRef = useRef(null);
-  useEffect(() => {
-    const renderingMsg = messages.find(m => m?.imposterRender?.status === "rendering" && m?.imposterRender?.recordId);
-    if (!renderingMsg) {
-      if (watchRef.current) {
-        watchRef.current.unsubscribe?.();
-        clearInterval(watchRef.current.fallback);
-        watchRef.current = null;
-      }
-      return;
-    }
-    // Already watching this same recordId — don't restart
-    if (watchRef.current && watchRef.current.recordId === renderingMsg.imposterRender.recordId) return;
-    // Different job → clean up previous
-    if (watchRef.current) {
-      watchRef.current.unsubscribe?.();
-      clearInterval(watchRef.current.fallback);
-      watchRef.current = null;
-    }
-
-    const recordId = renderingMsg.imposterRender.recordId;
-    let resolved = false;
-
-    const swapToVideo = (videoUrl) => {
-      if (resolved) return;
-      resolved = true;
-      setMessages(prev => prev.map(m =>
-        m?.imposterRender?.recordId === recordId
-          ? { role: "assistant", content: null, imposterVideo: { video_url: videoUrl } }
-          : m
-      ));
-      if (watchRef.current) {
-        watchRef.current.unsubscribe?.();
-        clearInterval(watchRef.current.fallback);
-        watchRef.current = null;
-      }
-    };
-
-    // 1. Subscribe to Superagent's VideoRender entity for this conversation_id
-    let unsubscribe = null;
-    try {
-      unsubscribe = superagentClient.entities.VideoRender.subscribe((event) => {
-        const record = event?.data;
-        if (!record) return;
-        if (record.conversation_id !== recordId) return;
-        if (record.status === "done" && record.video_url) {
-          swapToVideo(record.video_url);
-        }
-      });
-    } catch (err) {
-      console.warn("VideoRender subscribe failed, relying on fallback polling:", err?.message || err);
-    }
-
-    // 2. Primary path per spec: poll imposterPoll every 3s until status="ready" with video_url
-    let attempts = 0;
-    const fallbackTick = async () => {
-      if (resolved) return;
-      attempts++;
-      try {
-        const res = await base44.functions.invoke('imposterPoll', { conversation_id: recordId });
-        const data = res.data || {};
-        if (data.status === "ready" && data.video_url) {
-          swapToVideo(data.video_url);
-          return;
-        }
-        if (attempts >= 400) { // ~20 min @ 3s
-          if (watchRef.current) {
-            unsubscribe?.();
-            clearInterval(watchRef.current.fallback);
-            watchRef.current = null;
-          }
-          setMessages(prev => prev.map(m =>
-            m?.imposterRender?.recordId === recordId
-              ? { ...m, imposterRender: { ...m.imposterRender, status: "error", progress: "still rendering — check back soon" } }
-              : m
-          ));
-        }
-      } catch {}
-    };
-    const fallback = setInterval(fallbackTick, 3000);
-
-    watchRef.current = { recordId, unsubscribe, fallback };
-
-    return () => {
-      if (watchRef.current) {
-        watchRef.current.unsubscribe?.();
-        clearInterval(watchRef.current.fallback);
-        watchRef.current = null;
-      }
-    };
-  }, [messages]);
-
-  const [renderMode, setRenderMode] = useState("auto"); // auto | video | deck
-  const [enhancing, setEnhancing] = useState(false);
-  const enhancePrompt = async () => {
-    if (!input.trim() || enhancing) return;
-    setEnhancing(true);
-    try {
-      const enhanced = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are an expert Motion Design Art Director and GSAP Animation Master. Rewrite the user's prompt into a massive, Hollywood-style motion-design brief structured as a multi-phase timeline: **Intro Sequence**, **Main Stage**, and **Outro**. Keep the original subject and intent EXACT — do not change the topic, only expand it into a cinematic choreography brief.
-
-MANDATORY TECH SPECS — you MUST forcefully include ALL of the following throughout the brief:
-- Exact GSAP easing curves such as: expo.inOut, expo.out, power4.inOut, elastic.out(1, 0.3), back.out(1.7), circ.inOut, steps(12)
-- Timeline overlap operators like '-=0.5', '+=0.2', '<0.1', '>-0.3' to show stagger and overlap between tweens
-- Split-text typography with per-character / per-word <span> animations (y, opacity, rotationX, skewX staggers)
-- 3D transforms: rotationX, rotationY, skewX, perspective, transformOrigin
-- clip-path sweeps (inset, polygon wipes) for reveals and masks
-- Optical blur depth (filter: blur(Xpx)) tweened in/out for focus pulls and depth of field
-- Parallax layers, staggered entrances, camera-like push-ins, and exit choreography
-
-FORMAT:
-- 400–600 words of highly descriptive, cinematic, Hollywood-style breakdown
-- Section headers: "INTRO SEQUENCE", "MAIN STAGE", "OUTRO"
-- Reference specific timings (e.g. "at 0.8s", "over 1.2s"), eases, and overlap operators inline
-- Describe lighting, color grade, texture, typography weight, and pacing like a motion director briefing an animator
-
-Output ONLY the rewritten motion-design brief. No preamble, no quotes, no explanation.
-
-Original prompt: ${input.trim()}`,
-        model: "gemini_3_flash",
-      });
-      const clean = typeof enhanced === "string" ? enhanced.trim().replace(/^["']|["']$/g, "") : "";
-      if (clean) setInput(clean);
-    } catch {}
-    setEnhancing(false);
-    inputRef.current?.focus();
-  };
-
   const sendMessage = async () => {
     if ((!input.trim() && pendingImages.length === 0) || isLoading) return;
-    let userMsg = input.trim() || (pendingImages.length > 0 ? "Analyze this image" : "");
-    // In imposter mode, apply render-mode prefix so imposterChat routes correctly.
-    // When user has EXPLICITLY selected Video or Deck tab, always prefix — their intent is clear.
-    // This guarantees backend regex matches even after prompt-enhance rewrites the text.
-    if (kaiMode === "imposter" && userMsg) {
-      if (renderMode === "deck" && !/^make (a|an) slide deck video:/i.test(userMsg)) {
-        userMsg = `Make a slide deck video: ${userMsg}`;
-      } else if (renderMode === "video" && !/^make (a|an) video:/i.test(userMsg)) {
-        userMsg = `Make a video: ${userMsg}`;
-      }
-    }
+    const userMsg = input.trim() || (pendingImages.length > 0 ? "Analyze this image" : "");
     const imageUrls = pendingImages.map(img => img.url);
     const imageNames = pendingImages.map(img => img.name);
     setInput("");
@@ -489,18 +318,6 @@ Original prompt: ${input.trim()}`,
     // Build conversation state from last assistant action (for multi-turn send flow)
     const lastAction = [...messages].reverse().find(m => m.imposterAction)?.imposterAction || null;
 
-    // Quickly detect image intent client-side to show loader right away
-    const isImageIntent = /\b(make|create|generate|render|produce|draw|design|give me|show me)\b.*\b(image|picture|pic|photo|art|artwork|drawing|illustration|poster|meme|logo|wallpaper|portrait|scene)\b/i.test(userMsg)
-      || /\b(image|picture|pic|photo|art|artwork|drawing|illustration|poster|meme|logo|wallpaper)\s+(of|about|for|showing|that|with)\b/i.test(userMsg);
-
-    let loaderIdx = -1;
-    if (isImageIntent) {
-      setMessages(prev => {
-        loaderIdx = prev.length;
-        return [...prev, { role: "assistant", content: null, imposterImageLoading: true }];
-      });
-    }
-
     const res = await base44.functions.invoke('imposterChat', {
       message: userMsg,
       identity: identity ? { imposter_id: identity.imposter_id, subagent_name: identity.subagent_name, kaspa_address: identity.kaspa_address } : null,
@@ -510,24 +327,15 @@ Original prompt: ${input.trim()}`,
 
     const data = res.data;
 
-    // Handle image ready — replace loader (if shown) with the final image
+    // Handle image ready — show text reply + embedded image
     if (data?.action?.type === "image_ready" && data.action.image_url) {
-      setMessages(prev => {
-        const copy = prev.filter(m => !m.imposterImageLoading);
-        if (data.reply) copy.push({ role: "assistant", content: data.reply });
-        copy.push({
-          role: "assistant",
-          content: null,
-          imposterImage: { image_url: data.action.image_url, prompt: data.action.prompt },
-        });
-        return copy;
-      });
+      if (data.reply) addAssistantMessage(data.reply);
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: null,
+        imposterImage: { image_url: data.action.image_url, prompt: data.action.prompt },
+      }]);
       return;
-    }
-
-    // If we showed a loader but the response isn't an image (error path), clear it
-    if (isImageIntent) {
-      setMessages(prev => prev.filter(m => !m.imposterImageLoading));
     }
 
     // Handle video ready — show text reply + embedded video
@@ -541,31 +349,90 @@ Original prompt: ${input.trim()}`,
       return;
     }
 
-    // Async video render — Superagent will post the video URL directly to the conversation
-    // via slideComplete when done. No polling needed — we just show a friendly waiting card.
+    // Handle async video render — poll imposterPoll until ready
     if (data?.action?.type === "video_processing" && (data.action.record_id || data.action.conversation_id)) {
       const recordId = data.action.record_id || data.action.conversation_id;
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: null,
-        imposterRender: {
-          status: "rendering",
-          progress: data.reply || "🎬 Building your video now — dropping the link in about 2 minutes.",
-          recordId,
-          startedAt: Date.now(),
-        },
-      }]);
-      return;
-    }
 
-    // Handle deck_ready — link to SlideDeckBuilder
-    if (data?.action?.type === "deck_ready") {
-      addAssistantMessage(data.reply || "🎬 deck built. review it in the builder.");
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: null,
-        links: [{ label: `📽️ Open "${data.action.deck_title}" in Builder`, path: "SlideDeckBuilder" }],
-      }]);
+      // Add a single progress message we'll update in-place while polling
+      let progressIdx;
+      setMessages(prev => {
+        progressIdx = prev.length;
+        return [...prev, {
+          role: "assistant",
+          content: null,
+          imposterRender: { status: "queued", progress: data.reply || "🎬 queued…", elapsed: 0 },
+        }];
+      });
+
+      const startTime = Date.now();
+      const maxAttempts = 90; // 90 × 5s = 7.5 minutes max
+      let attempt = 0;
+
+      const updateProgress = (update) => {
+        setMessages(prev => {
+          const copy = [...prev];
+          if (copy[progressIdx]?.imposterRender) {
+            copy[progressIdx] = {
+              ...copy[progressIdx],
+              imposterRender: { ...copy[progressIdx].imposterRender, ...update, elapsed: Math.floor((Date.now() - startTime) / 1000) },
+            };
+          }
+          return copy;
+        });
+      };
+
+      const poll = async () => {
+        attempt++;
+        try {
+          const pollRes = await base44.functions.invoke('imposterPoll', { conversation_id: recordId });
+          const pollData = pollRes.data;
+
+          if (pollData?.status === "ready" && pollData.video_url) {
+            // Replace progress card with final video — done, no follow-up polling
+            setMessages(prev => {
+              const copy = [...prev];
+              copy[progressIdx] = {
+                role: "assistant",
+                content: null,
+                imposterVideo: { video_url: pollData.video_url },
+              };
+              return copy;
+            });
+            if (pollData.reply) addAssistantMessage(pollData.reply);
+            return;
+          }
+
+          if (pollData?.status === "error") {
+            updateProgress({ status: "error", progress: `render failed: ${pollData.error || "unknown"}` });
+            return;
+          }
+
+          if (pollData?.status === "stuck") {
+            updateProgress({ status: "error", progress: pollData.reply || "⚠️ render stuck. try again." });
+            return;
+          }
+
+          // Still processing — update progress text if Kai sent an update
+          if (pollData?.progress) {
+            updateProgress({ status: "rendering", progress: pollData.progress });
+          } else {
+            updateProgress({ status: "rendering" });
+          }
+
+          if (attempt >= maxAttempts) {
+            updateProgress({ status: "error", progress: "render timed out. try again." });
+            return;
+          }
+
+          setTimeout(poll, 5000);
+        } catch (err) {
+          console.error("poll error:", err);
+          if (attempt < maxAttempts) setTimeout(poll, 5000);
+          else updateProgress({ status: "error", progress: "lost connection to render." });
+        }
+      };
+
+      setTimeout(poll, 3000); // first poll after 3s
       return;
     }
 
@@ -666,15 +533,12 @@ Original prompt: ${input.trim()}`,
                 </div>
                 <div>
                   <div className="text-white font-bold text-sm tracking-wide">Kai</div>
-                  <div className="text-white/40 text-[10px]">{kaiMode === "classic" ? "TTT Kai • Kaspa Avatar Intelligence" : kaiMode === "imposter" ? "Imposter Kai • Unfiltered" : "Kaspa Kai • Kaspa Avatar Intelligence"}</div>
+                  <div className="text-white/40 text-[10px]">{kaiMode === "classic" ? "Classic • TTT Assistant" : kaiMode === "imposter" ? "Unknown Origin • Unfiltered" : "Kaspa AI Assistant"}</div>
                 </div>
               </div>
               <div className="flex items-center gap-1">
                 <button onClick={() => {
-                  // Admin-only cycle includes imposter; non-admins only toggle kai ↔ classic
-                  const cycle = isAdmin
-                    ? { kai: "classic", classic: "imposter", imposter: "kai" }
-                    : { kai: "classic", classic: "kai", imposter: "kai" };
+                  const cycle = { kai: "classic", classic: "imposter", imposter: "kai" };
                   const next = cycle[kaiMode] || "kai";
                   setKaiMode(next); setIsLoading(false); setTypingIndex(-1); setTypingText("");
                   const storedIdentity = next === "imposter" ? (() => { try { const s = localStorage.getItem("imposter_identity"); return s ? JSON.parse(s) : null; } catch { return null; } })() : null;
@@ -689,7 +553,7 @@ Original prompt: ${input.trim()}`,
                   className="h-6 px-2.5 rounded-full flex items-center gap-1.5 text-[10px] font-semibold transition-all hover:bg-white/10"
                   style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)" }}>
                   <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: kaiMode === "imposter" ? "#ff4444" : kaiMode === "classic" ? "#a855f7" : "#06b6d4" }} />
-                  {kaiMode === "classic" ? "TTT Kai" : kaiMode === "imposter" ? "Imposter Kai" : "Kaspa Kai"}
+                  {kaiMode === "classic" ? "Classic" : kaiMode === "imposter" ? "Imposter" : "KAI"}
                 </button>
                 <button onClick={() => setShowSettings(!showSettings)}
                   className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors hover:bg-white/10 ${showSettings ? 'text-cyan-400' : 'text-white/40 hover:text-white/80'}`}>
@@ -809,17 +673,14 @@ Original prompt: ${input.trim()}`,
               {messages.map((msg, i) => (
                 <KAIChatMessage key={i} msg={msg} index={i} typingIndex={typingIndex} typingText={typingText}
                   setIsOpen={setIsOpen} setBrowserUrl={setBrowserUrl} setShowBrowser={setShowBrowser} setViewingPost={setViewingPost}
-                  onUseImageAsVideoRef={(imageUrl, imagePrompt) => {
-                    // Pre-fill with "Make a video:" trigger at the front, followed by editable description
-                    const starter = imagePrompt ? `Make a video: ${imagePrompt}` : "Make a video: ";
-                    setInput(starter);
-                    setPendingImages(prev => [...prev, { url: imageUrl, name: "reference.png" }]);
-                    setTimeout(() => {
-                      inputRef.current?.focus();
-                      // Move cursor to end so user can keep editing
-                      const el = inputRef.current;
-                      if (el) el.setSelectionRange(starter.length, starter.length);
-                    }, 100);
+                  onUseImageAsVideoRef={async (imageUrl, imagePrompt) => {
+                    const videoPrompt = imagePrompt ? `Make a video based on this image: ${imagePrompt}` : "Make a video based on this image";
+                    setMessages(prev => [...prev, { role: "user", content: videoPrompt, images: [imageUrl] }]);
+                    setIsLoading(true);
+                    try {
+                      await handleImposterMessage(videoPrompt, [imageUrl]);
+                    } catch { addAssistantMessage("render failed to kick off. try again."); }
+                    setIsLoading(false);
                   }}
                   onWatchVideo={async (video, idx) => {
                     // Programmatically trigger "watch the Nth" ingestion
@@ -839,31 +700,6 @@ Original prompt: ${input.trim()}`,
 
             {/* Input */}
             <div className="px-3 pb-3 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.08)", display: (showBrowser && (browserUrl || viewingPost)) || (kaiMode === "imposter" && !imposterIdentity) ? "none" : undefined }}>
-              {/* Render mode chips — only in imposter mode */}
-              {kaiMode === "imposter" && imposterIdentity && (
-                <div className="flex items-center gap-1.5 px-1 pb-2">
-                  <span className="text-[9px] font-bold text-white/35 uppercase tracking-wider mr-1">Render:</span>
-                  {[
-                    { key: "auto", label: "Auto", emoji: "✨", color: "rgba(255,255,255,0.5)" },
-                    { key: "video", label: "Video", emoji: "🎬", color: "rgba(6,182,212,1)" },
-                    { key: "deck", label: "Deck", emoji: "📽️", color: "rgba(168,85,247,1)" },
-                  ].map(opt => (
-                    <button
-                      key={opt.key}
-                      onClick={() => setRenderMode(opt.key)}
-                      className="px-2 py-0.5 rounded-full text-[10px] font-bold transition-all"
-                      style={{
-                        background: renderMode === opt.key ? `${opt.color === "rgba(255,255,255,0.5)" ? "rgba(255,255,255,0.15)" : opt.color.replace("1)", "0.18)")}` : "rgba(255,255,255,0.04)",
-                        color: renderMode === opt.key ? opt.color : "rgba(255,255,255,0.4)",
-                        border: `1px solid ${renderMode === opt.key ? opt.color.replace("1)", "0.4)") : "rgba(255,255,255,0.08)"}`,
-                      }}
-                      title={opt.key === "auto" ? "Let Kai detect" : opt.key === "video" ? "Path A — single fast video" : "Path B — multi-slide deck video"}
-                    >
-                      {opt.emoji} {opt.label}
-                    </button>
-                  ))}
-                </div>
-              )}
               {pendingImages.length > 0 && (
                 <div className="px-2 pb-2">
                   <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
@@ -879,27 +715,19 @@ Original prompt: ${input.trim()}`,
                   <div className="text-[9px] text-white/40 mt-1 px-1">{pendingImages.length}/10 images attached</div>
                 </div>
               )}
-              <div className="flex items-start gap-2 px-3 py-2 rounded-2xl" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-2xl" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
                 <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
                 <button onClick={() => fileInputRef.current?.click()} disabled={uploadingImage}
-                  className="w-7 h-7 rounded-full flex items-center justify-center transition-all flex-shrink-0 hover:bg-white/10 mt-1"
+                  className="w-7 h-7 rounded-full flex items-center justify-center transition-all flex-shrink-0 hover:bg-white/10"
                   style={{ color: pendingImages.length > 0 ? "rgba(6,182,212,0.9)" : "rgba(255,255,255,0.4)" }} title="Upload image">
                   {uploadingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImagePlus className="w-3.5 h-3.5" />}
                 </button>
-                <textarea ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-                  rows={3}
+                <input ref={inputRef} type="text" value={input} onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
                   placeholder={pendingImages.length > 0 ? "Ask about the image…" : kaiMode === "classic" ? "Search or ask Kai..." : kaiMode === "imposter" ? "say something… if you dare" : "Search or ask KAI..."}
-                  className="flex-1 bg-transparent text-white/90 outline-none placeholder-white/30 resize-y scrollbar-hide"
-                  style={{ fontSize: '16px', minHeight: '72px', maxHeight: '240px', lineHeight: '1.4', fontFamily: 'inherit' }} />
-                <button onClick={enhancePrompt} disabled={!input.trim() || enhancing || isLoading}
-                  className="w-7 h-7 rounded-full flex items-center justify-center transition-all flex-shrink-0 hover:bg-white/10 disabled:opacity-30 mt-1"
-                  style={{ color: input.trim() && !enhancing ? "rgba(168,85,247,0.9)" : "rgba(255,255,255,0.4)" }}
-                  title="Enhance prompt">
-                  {enhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                </button>
+                  className="flex-1 bg-transparent text-white/90 outline-none placeholder-white/30" style={{ fontSize: '16px' }} />
                 <button onClick={sendMessage} disabled={(!input.trim() && pendingImages.length === 0) || isLoading}
-                  className="w-7 h-7 rounded-full flex items-center justify-center transition-all disabled:opacity-30 mt-1"
+                  className="w-7 h-7 rounded-full flex items-center justify-center transition-all disabled:opacity-30"
                   style={{ background: (input.trim() || pendingImages.length > 0) && !isLoading ? "rgba(6,182,212,0.4)" : "transparent" }}>
                   <Send className="w-3.5 h-3.5 text-white" />
                 </button>

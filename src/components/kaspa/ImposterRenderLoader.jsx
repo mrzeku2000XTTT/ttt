@@ -1,39 +1,20 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { motion } from "framer-motion";
 
-export default function ImposterRenderLoader({ status, progress, elapsed, startedAt }) {
+export default function ImposterRenderLoader({ status, progress, elapsed }) {
   const isError = status === "error";
-  const isSlow = status === "slow";
-
-  // Live-tick elapsed every second from startedAt (fallback to prop)
-  const [tick, setTick] = useState(0);
-  useEffect(() => {
-    if (isError) return;
-    const id = setInterval(() => setTick(t => t + 1), 1000);
-    return () => clearInterval(id);
-  }, [isError]);
-
-  const computedElapsed = startedAt
-    ? Math.floor((Date.now() - startedAt) / 1000)
-    : (elapsed || 0);
-  const safeElapsed = Math.max(0, computedElapsed);
-  const mins = Math.floor(safeElapsed / 60);
-  const secs = safeElapsed % 60;
+  const mins = Math.floor((elapsed || 0) / 60);
+  const secs = (elapsed || 0) % 60;
   const timeStr = `${mins}:${String(secs).padStart(2, "0")}`;
-  // reference tick so React re-renders each second
-  void tick;
 
   const statusLabel = {
     queued: "Queued",
     rendering: "Rendering",
-    slow: "Still cooking",
     error: "Failed",
   }[status] || "Working";
 
   const statusColor = isError
     ? { bg: "rgba(255,50,50,0.08)", border: "rgba(255,50,50,0.3)", text: "rgba(255,120,120,1)", dot: "#ef4444" }
-    : isSlow
-    ? { bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.3)", text: "rgba(251,191,36,1)", dot: "#f59e0b" }
     : { bg: "rgba(6,182,212,0.08)", border: "rgba(6,182,212,0.3)", text: "rgba(6,182,212,1)", dot: "#06b6d4" };
 
   return (
