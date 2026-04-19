@@ -6,8 +6,8 @@ import {
   FolderOpen, Palette, Play, Loader2
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import HaruAccessGate from "@/components/haru/HaruAccessGate";
-import HaruStudio from "@/components/haru/HaruStudio";
+import HiroAccessGate from "@/components/hiro/HiroAccessGate";
+import HiroStudio from "@/components/hiro/HiroStudio";
 
 const HIRO_ICON = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1a11decfa_generated_image.png";
 const HIRO_HERO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/221388459_generated_image.png";
@@ -51,7 +51,7 @@ export default function HiroPage() {
         }
       })
       .catch(() => {});
-    const saved = localStorage.getItem("haru_access_address");
+    const saved = localStorage.getItem("hiro_access_address") || localStorage.getItem("haru_access_address");
     if (saved) setKaspaAddress(saved);
     return () => { document.body.style.background = ""; };
   }, []);
@@ -321,8 +321,8 @@ export default function HiroPage() {
         </div>
       </footer>
 
-      {showGate && <HaruAccessGate onClose={() => setShowGate(false)} onGranted={handleGranted} />}
-      {showStudio && <HaruStudio onClose={() => setShowStudio(false)} kaspaAddress={kaspaAddress} />}
+      {showGate && <HiroAccessGate onClose={() => setShowGate(false)} onGranted={handleGranted} />}
+      {showStudio && <HiroStudio onClose={() => setShowStudio(false)} kaspaAddress={kaspaAddress} />}
     </div>
   );
 }
