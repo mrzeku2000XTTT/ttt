@@ -250,7 +250,7 @@ export default function KaspaAvatarChat() {
       if (resolved) return;
       attempts++;
       try {
-        const res = await base44.functions.invoke('imposterPoll', { conversation_id: recordId });
+        const res = await base44.functions.invoke('imposterPoll', { record_id: recordId });
         const data = res.data || {};
         if (data.status === "ready" && data.video_url) {
           swapToVideo(data.video_url);
