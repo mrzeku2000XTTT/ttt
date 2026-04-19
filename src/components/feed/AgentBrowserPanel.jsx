@@ -10,9 +10,7 @@ const QUICK_LINKS = [
   { label: "Explorer", url: "https://explorer.kaspa.org" },
 ];
 
-const IMPOSTER_QUICK_LINKS = [
-  { label: "AI Studio", url: "https://ai.studio/apps/8ee01fa0-a21b-4ac2-90d5-3a4bdf39a241" },
-];
+const IMPOSTER_QUICK_LINKS = [];
 
 const DEFAULT_HOME = "https://kaspa-app-9cc9fe40.base44.app";
 
