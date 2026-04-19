@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X, Wand2, Type, Image as ImageIcon, Download, Sparkles, Loader2,
-  Upload, Palette, Settings2, RefreshCw, Search, Eye
+  Upload, Palette, Settings2, RefreshCw, Search, Eye, SlidersHorizontal, ChevronDown
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
@@ -57,6 +57,7 @@ export default function HaruStudio({ onClose, kaspaAddress }) {
   // AI-rendered lettering (the word drawn AS custom letters by image gen)
   const [renderedLetterform, setRenderedLetterform] = useState(null);
   const [renderingLetters, setRenderingLetters] = useState(false);
+  const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
   const imgElementRef = useRef(null);
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -356,9 +357,38 @@ Return a JSON object with a "variants" array.`,
       </header>
 
       {/* Main */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left panel: controls */}
-        <aside className="w-80 flex-shrink-0 border-r border-pink-200/40 bg-white overflow-y-auto">
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Mobile backdrop */}
+        {mobilePanelOpen && (
+          <div
+            onClick={() => setMobilePanelOpen(false)}
+            className="md:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-30"
+          />
+        )}
+
+        {/* Left panel: controls — sidebar on desktop, bottom sheet on mobile */}
+        <aside className={`
+          md:w-80 md:flex-shrink-0 md:static md:translate-y-0 md:h-auto md:max-h-none md:rounded-none md:border-r md:border-t-0
+          fixed bottom-0 left-0 right-0 z-40 max-h-[85vh] h-[85vh] rounded-t-3xl border-t
+          border-pink-200/40 bg-white overflow-y-auto shadow-2xl md:shadow-none
+          transition-transform duration-300 ease-out
+          ${mobilePanelOpen ? "translate-y-0" : "translate-y-full"} md:translate-y-0
+        `}>
+          {/* Mobile drag handle + close */}
+          <div className="md:hidden sticky top-0 z-10 bg-white border-b border-pink-200/40 px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-1 bg-zinc-300 rounded-full absolute left-1/2 -translate-x-1/2 top-1.5" />
+              <SlidersHorizontal className="w-4 h-4 text-pink-500" />
+              <span className="text-[13px] font-[900] text-zinc-900">Controls</span>
+            </div>
+            <button
+              onClick={() => setMobilePanelOpen(false)}
+              className="w-8 h-8 rounded-full hover:bg-zinc-100 flex items-center justify-center"
+            >
+              <ChevronDown className="w-4 h-4 text-zinc-500" />
+            </button>
+          </div>
+
           <div className="p-5 space-y-5">
             {/* Text input */}
             <div>
@@ -614,7 +644,7 @@ Return a JSON object with a "variants" array.`,
         </aside>
 
         {/* Canvas */}
-        <main className="flex-1 flex flex-col items-center justify-center p-6 bg-gradient-to-br from-pink-50/40 via-[#faf7f5] to-amber-50/30 overflow-auto">
+        <main className="flex-1 flex flex-col items-center justify-center p-3 sm:p-6 bg-gradient-to-br from-pink-50/40 via-[#faf7f5] to-amber-50/30 overflow-auto pb-24 md:pb-6">
           <div className="relative max-w-full">
             {renderedLetterform ? (
               <div className="relative">
@@ -698,6 +728,16 @@ Return a JSON object with a "variants" array.`,
             </div>
           )}
         </main>
+
+        {/* Mobile floating "Controls" button */}
+        {!mobilePanelOpen && (
+          <button
+            onClick={() => setMobilePanelOpen(true)}
+            className="md:hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-30 h-12 px-6 rounded-full bg-zinc-900 text-white text-[12px] font-[900] flex items-center gap-2 shadow-2xl shadow-pink-500/30"
+          >
+            <SlidersHorizontal className="w-4 h-4" /> Controls
+          </button>
+        )}
       </div>
     </div>
   );
