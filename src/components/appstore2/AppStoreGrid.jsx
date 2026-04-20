@@ -218,7 +218,11 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
             );
           }
           return (
-            <Link key={app.name + app.path + i} to={createPageUrl(app.path)}>
+            <Link
+              key={app.name + app.path + i}
+              to={createPageUrl(app.path)}
+              onClick={() => { try { localStorage.setItem('came_from_categories', 'true'); } catch {} }}
+            >
               {inner}
             </Link>
           );
