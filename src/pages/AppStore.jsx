@@ -151,7 +151,7 @@ export default function AppStorePage() {
     { name: "Hikaru", icon: "Link2", path: "Hikaru", category: "Creative", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/36834c19a_generated_image.png" },
     { name: "OneShot", icon: "Link2", path: "UICloner", category: "Dev Tools", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ee7187675_generated_image.png" },
     { name: "Krust", icon: "Link2", path: "Krust", category: "Tools", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/f58b46dd1_image.png" },
-    { name: "Haru", icon: "Link2", path: "Haru", category: "Creative", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ade3b1795_generated_image.png" },
+    { name: "Hiro", icon: "Link2", path: "Hiro", category: "Creative", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1a11decfa_generated_image.png" },
       ];
 
   const getIconComponent = (iconName) => {
