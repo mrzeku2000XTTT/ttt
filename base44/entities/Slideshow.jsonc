@@ -1,0 +1,63 @@
+{
+  "name": "Slideshow",
+  "type": "object",
+  "properties": {
+    "niche": {
+      "type": "string",
+      "description": "Niche/topic for the slideshow (e.g. finance, beauty, fitness)"
+    },
+    "voice": {
+      "type": "string",
+      "description": "Voice/tone direction (e.g. 'bold, witty, Gen-Z')"
+    },
+    "hook": {
+      "type": "string",
+      "description": "Slide 1 hook text"
+    },
+    "body_slides": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Body slide captions in order"
+    },
+    "cta": {
+      "type": "string",
+      "description": "Final CTA slide text"
+    },
+    "caption": {
+      "type": "string",
+      "description": "TikTok caption with hashtags"
+    },
+    "slides": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "image_url": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Rendered slide images + overlay text"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "ready",
+        "exported"
+      ],
+      "default": "draft"
+    }
+  },
+  "required": [
+    "niche"
+  ]
+}
