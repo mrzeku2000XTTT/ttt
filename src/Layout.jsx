@@ -75,7 +75,7 @@ export default function Layout({ children, currentPageName }) {
 
   const checkIfFromCategories = () => {
     const cameFromCategories = localStorage.getItem('came_from_categories');
-    if (cameFromCategories === 'true' && currentPageName !== 'AppStoreV2' && currentPageName !== 'Categories') {
+    if (cameFromCategories === 'true' && currentPageName !== 'Categories') {
       setShowBackButton(true);
     } else {
       setShowBackButton(false);
@@ -84,7 +84,7 @@ export default function Layout({ children, currentPageName }) {
 
   const handleBackToCategories = () => {
     localStorage.removeItem('came_from_categories');
-    navigate(createPageUrl('AppStoreV2'));
+    navigate(createPageUrl('Categories'));
   };
 
   const toggleSidebar = () => {

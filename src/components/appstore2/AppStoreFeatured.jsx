@@ -46,7 +46,7 @@ export default function AppStoreFeatured() {
       <h2 className="text-lg font-[800] mb-4">Featured</h2>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {FEATURED.map((app, i) => (
-          <Link key={app.name} to={app.path} onClick={() => { try { localStorage.setItem('came_from_categories', 'true'); } catch {} }}>
+          <Link key={app.name} to={app.path}>
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
