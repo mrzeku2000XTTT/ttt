@@ -1,0 +1,102 @@
+{
+  "name": "AgentConfig",
+  "type": "object",
+  "properties": {
+    "agent_name": {
+      "type": "string",
+      "description": "Name of the AI agent"
+    },
+    "persona": {
+      "type": "string",
+      "description": "Personality and behavior description"
+    },
+    "avatar_url": {
+      "type": "string",
+      "description": "Agent avatar image URL"
+    },
+    "voice_tone": {
+      "type": "string",
+      "enum": [
+        "professional",
+        "casual",
+        "creative",
+        "technical",
+        "friendly"
+      ],
+      "default": "professional",
+      "description": "Communication style"
+    },
+    "temperature": {
+      "type": "number",
+      "default": 0.7,
+      "description": "Creativity level (0-1)"
+    },
+    "enabled_tools": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Available tools for agent"
+    },
+    "image_generation_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Can generate images"
+    },
+    "image_style": {
+      "type": "string",
+      "description": "Preferred image generation style"
+    },
+    "knowledge_base": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Uploaded knowledge files"
+    },
+    "auto_post_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Auto-generate posts"
+    },
+    "post_frequency": {
+      "type": "string",
+      "enum": [
+        "hourly",
+        "daily",
+        "weekly"
+      ],
+      "default": "daily",
+      "description": "Auto-posting frequency"
+    },
+    "context_memory": {
+      "type": "number",
+      "default": 10,
+      "description": "Number of messages to remember"
+    },
+    "max_tokens": {
+      "type": "number",
+      "default": 500,
+      "description": "Max response length"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Agent active status"
+    },
+    "analytics": {
+      "type": "object",
+      "description": "Performance metrics"
+    }
+  },
+  "required": [
+    "agent_name",
+    "persona"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
+  }
+}

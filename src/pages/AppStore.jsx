@@ -152,6 +152,7 @@ export default function AppStorePage() {
     { name: "OneShot", icon: "Link2", path: "UICloner", category: "Dev Tools", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ee7187675_generated_image.png" },
     { name: "Krust", icon: "Link2", path: "Krust", category: "Tools", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/f58b46dd1_image.png" },
     { name: "Hiro", icon: "Link2", path: "Hiro", category: "Creative", defaultIcon: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1a11decfa_generated_image.png" },
+    { name: "Kleer", icon: "Link2", path: "Kleer", category: "Tools", defaultIcon: "https://api.iconify.design/mdi/eraser-variant.svg?color=%2306b6d4&width=128&height=128" },
       ];
 
   const getIconComponent = (iconName) => {

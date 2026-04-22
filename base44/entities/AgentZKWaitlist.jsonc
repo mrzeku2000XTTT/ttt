@@ -1,0 +1,68 @@
+{
+  "name": "AgentZKWaitlist",
+  "type": "object",
+  "properties": {
+    "kaspa_address": {
+      "type": "string",
+      "description": "User's Kaspa address"
+    },
+    "email": {
+      "type": "string",
+      "description": "User's email"
+    },
+    "username": {
+      "type": "string",
+      "description": "Desired username"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending",
+      "description": "Waitlist status"
+    },
+    "position": {
+      "type": "number",
+      "description": "Position in waitlist queue"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes from user"
+    },
+    "approved_by": {
+      "type": "string",
+      "description": "Admin who approved"
+    },
+    "approved_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When approved"
+    }
+  },
+  "required": [
+    "kaspa_address",
+    "email"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "$or": [
+        {
+          "email": "{{user.email}}"
+        },
+        {
+          "user.role": "admin"
+        }
+      ]
+    },
+    "update": {
+      "user.role": "admin"
+    },
+    "delete": {
+      "user.role": "admin"
+    }
+  }
+}

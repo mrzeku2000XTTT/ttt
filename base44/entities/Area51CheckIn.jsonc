@@ -1,0 +1,47 @@
+{
+  "name": "Area51CheckIn",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email of user checking in"
+    },
+    "username": {
+      "type": "string",
+      "description": "Username"
+    },
+    "wallet_address": {
+      "type": "string",
+      "description": "Kasware wallet address"
+    },
+    "signature": {
+      "type": "string",
+      "description": "Kasware signature or biometric proof"
+    },
+    "check_in_message": {
+      "type": "string",
+      "description": "Message that was signed"
+    },
+    "device_type": {
+      "type": "string",
+      "enum": [
+        "kasware",
+        "ios_faceid",
+        "android"
+      ],
+      "description": "Type of authentication used"
+    }
+  },
+  "required": [
+    "user_email",
+    "username"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": false,
+    "delete": {
+      "user.role": "admin"
+    }
+  }
+}

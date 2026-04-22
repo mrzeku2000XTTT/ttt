@@ -1,0 +1,70 @@
+{
+  "name": "UserProgress",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "User's email"
+    },
+    "topic": {
+      "type": "string",
+      "description": "Learning topic"
+    },
+    "answered_questions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs of questions already answered"
+    },
+    "current_score": {
+      "type": "number",
+      "default": 0,
+      "description": "Current score for this topic"
+    },
+    "total_answered": {
+      "type": "number",
+      "default": 0,
+      "description": "Total questions answered"
+    },
+    "current_streak": {
+      "type": "number",
+      "default": 0,
+      "description": "Current streak"
+    },
+    "best_streak": {
+      "type": "number",
+      "default": 0,
+      "description": "Best streak achieved"
+    },
+    "difficulty_level": {
+      "type": "string",
+      "enum": [
+        "5+",
+        "10+",
+        "15+",
+        "20+"
+      ],
+      "default": "10+",
+      "description": "User's preferred difficulty"
+    }
+  },
+  "required": [
+    "user_email",
+    "topic"
+  ],
+  "rls": {
+    "create": {
+      "user_email": "{{user.email}}"
+    },
+    "read": {
+      "user_email": "{{user.email}}"
+    },
+    "update": {
+      "user_email": "{{user.email}}"
+    },
+    "delete": {
+      "user_email": "{{user.email}}"
+    }
+  }
+}

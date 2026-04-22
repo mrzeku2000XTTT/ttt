@@ -1,0 +1,42 @@
+{
+  "name": "ZelcoreTransaction",
+  "type": "object",
+  "properties": {
+    "tx_hash": {
+      "type": "string",
+      "description": "Transaction hash from Zelcore API"
+    },
+    "from_address": {
+      "type": "string",
+      "description": "Sender address"
+    },
+    "to_address": {
+      "type": "string",
+      "description": "Recipient address"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Amount in KAS"
+    },
+    "block_time": {
+      "type": "number",
+      "description": "Block timestamp"
+    },
+    "confirmations": {
+      "type": "number",
+      "description": "Number of confirmations"
+    },
+    "is_accepted": {
+      "type": "boolean",
+      "description": "Transaction accepted status"
+    },
+    "raw_data": {
+      "type": "object",
+      "description": "Raw response from Zelcore API"
+    }
+  },
+  "required": [
+    "tx_hash",
+    "amount"
+  ]
+}

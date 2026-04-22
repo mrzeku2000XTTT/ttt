@@ -1,0 +1,88 @@
+{
+  "name": "DropshippingProduct",
+  "type": "object",
+  "properties": {
+    "creator_email": {
+      "type": "string",
+      "description": "Creator who added this product"
+    },
+    "product_name": {
+      "type": "string",
+      "description": "Product name"
+    },
+    "product_description": {
+      "type": "string",
+      "description": "Product description"
+    },
+    "product_image": {
+      "type": "string",
+      "description": "Product image URL"
+    },
+    "supplier_url": {
+      "type": "string",
+      "description": "Aliexpress/supplier product URL"
+    },
+    "cost_price": {
+      "type": "number",
+      "description": "Cost from supplier in USD"
+    },
+    "selling_price": {
+      "type": "number",
+      "description": "Your selling price in USD"
+    },
+    "profit_margin": {
+      "type": "number",
+      "description": "Profit per sale in USD"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "electronics",
+        "fashion",
+        "home",
+        "beauty",
+        "sports",
+        "toys",
+        "other"
+      ],
+      "default": "other",
+      "description": "Product category"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "paused",
+        "sold_out"
+      ],
+      "default": "active",
+      "description": "Product status"
+    },
+    "orders_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of orders"
+    },
+    "total_revenue": {
+      "type": "number",
+      "default": 0,
+      "description": "Total revenue generated"
+    }
+  },
+  "required": [
+    "creator_email",
+    "product_name",
+    "cost_price",
+    "selling_price"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": {
+      "creator_email": "{{user.email}}"
+    },
+    "delete": {
+      "creator_email": "{{user.email}}"
+    }
+  }
+}

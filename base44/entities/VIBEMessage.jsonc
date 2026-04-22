@@ -1,0 +1,48 @@
+{
+  "name": "VIBEMessage",
+  "type": "object",
+  "properties": {
+    "connection_id": {
+      "type": "string",
+      "description": "Connection ID for this chat"
+    },
+    "sender_wallet": {
+      "type": "string",
+      "description": "Sender's wallet address"
+    },
+    "receiver_wallet": {
+      "type": "string",
+      "description": "Receiver's wallet address"
+    },
+    "encrypted_content": {
+      "type": "string",
+      "description": "Encrypted message content"
+    },
+    "message_type": {
+      "type": "string",
+      "enum": [
+        "text",
+        "image",
+        "file"
+      ],
+      "default": "text",
+      "description": "Type of message"
+    },
+    "is_read": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether message has been read"
+    }
+  },
+  "required": [
+    "connection_id",
+    "sender_wallet",
+    "encrypted_content"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
+  }
+}

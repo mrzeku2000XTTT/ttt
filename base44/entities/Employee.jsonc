@@ -1,0 +1,110 @@
+{
+  "name": "Employee",
+  "type": "object",
+  "properties": {
+    "company_id": {
+      "type": "string",
+      "description": "Reference to company"
+    },
+    "email": {
+      "type": "string",
+      "description": "Employee email"
+    },
+    "first_name": {
+      "type": "string",
+      "description": "First name"
+    },
+    "last_name": {
+      "type": "string",
+      "description": "Last name"
+    },
+    "department": {
+      "type": "string",
+      "description": "Department name"
+    },
+    "referral_code": {
+      "type": "string",
+      "description": "Unique referral code"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "payroll",
+        "paypal",
+        "kaspa"
+      ],
+      "default": "payroll",
+      "description": "Preferred payment method"
+    },
+    "paypal_email": {
+      "type": "string",
+      "description": "PayPal email if selected"
+    },
+    "kaspa_address": {
+      "type": "string",
+      "description": "Kaspa wallet address"
+    },
+    "kaspa_recovery_phrase": {
+      "type": "string",
+      "description": "Encrypted recovery phrase"
+    },
+    "total_referrals": {
+      "type": "number",
+      "default": 0,
+      "description": "Total referrals made"
+    },
+    "successful_hires": {
+      "type": "number",
+      "default": 0,
+      "description": "Total successful hires"
+    },
+    "total_earned": {
+      "type": "number",
+      "default": 0,
+      "description": "Total bonuses earned"
+    },
+    "pending_earnings": {
+      "type": "number",
+      "default": 0,
+      "description": "Pending bonus payments"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "invited",
+        "active",
+        "inactive"
+      ],
+      "default": "invited",
+      "description": "Employee status"
+    },
+    "invited_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When invited"
+    },
+    "joined_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When joined"
+    }
+  },
+  "required": [
+    "company_id",
+    "email",
+    "first_name",
+    "last_name",
+    "department",
+    "referral_code"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

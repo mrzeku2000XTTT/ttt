@@ -1,0 +1,74 @@
+{
+  "name": "UserPreference",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "User identifier"
+    },
+    "interests": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "User's topics of interest (KAS, DeFi, NFTs, etc.)"
+    },
+    "liked_content": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "content_id": {
+            "type": "string"
+          },
+          "content_type": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Content user has liked"
+    },
+    "conversation_history_summary": {
+      "type": "string",
+      "description": "AI-generated summary of user's conversation patterns"
+    },
+    "preferred_topics": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Topics user engages with most"
+    },
+    "ai_personality_preference": {
+      "type": "string",
+      "enum": [
+        "professional",
+        "casual",
+        "technical",
+        "matrix"
+      ],
+      "default": "professional",
+      "description": "User's preferred AI interaction style"
+    }
+  },
+  "required": [
+    "user_email"
+  ],
+  "rls": {
+    "create": {
+      "user_email": "{{user.email}}"
+    },
+    "read": {
+      "user_email": "{{user.email}}"
+    },
+    "update": {
+      "user_email": "{{user.email}}"
+    },
+    "delete": {
+      "user_email": "{{user.email}}"
+    }
+  }
+}

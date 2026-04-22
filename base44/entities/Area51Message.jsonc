@@ -1,0 +1,66 @@
+{
+  "name": "Area51Message",
+  "type": "object",
+  "properties": {
+    "message": {
+      "type": "string",
+      "description": "The chat message content"
+    },
+    "sender_username": {
+      "type": "string",
+      "description": "Display name of the sender"
+    },
+    "sender_email": {
+      "type": "string",
+      "description": "Email of the sender"
+    },
+    "sender_wallet": {
+      "type": "string",
+      "description": "Wallet address of the sender"
+    },
+    "message_type": {
+      "type": "string",
+      "enum": [
+        "text",
+        "system",
+        "ai"
+      ],
+      "default": "text"
+    },
+    "is_ai": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this is an AI agent message"
+    },
+    "is_public": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this message is visible to all users"
+    },
+    "made_public_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the message was made public"
+    },
+    "self_pay_tx_hash": {
+      "type": "string",
+      "description": "Transaction hash for self-payment verification"
+    },
+    "parent_message_id": {
+      "type": "string",
+      "description": "ID of the parent message if this is an AI response"
+    }
+  },
+  "required": [
+    "message",
+    "sender_username"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": {
+      "user.role": "admin"
+    }
+  }
+}

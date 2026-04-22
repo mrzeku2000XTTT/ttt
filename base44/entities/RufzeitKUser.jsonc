@@ -1,0 +1,42 @@
+{
+  "name": "RufzeitKUser",
+  "type": "object",
+  "properties": {
+    "email": {
+      "type": "string",
+      "description": "User email"
+    },
+    "full_name": {
+      "type": "string",
+      "description": "Display name"
+    },
+    "kaspa_address": {
+      "type": "string",
+      "description": "User's Kaspa wallet address"
+    },
+    "is_online": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether user is currently online in RufzeitK"
+    },
+    "last_seen": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last time user was active"
+    },
+    "call_credits": {
+      "type": "number",
+      "default": 0,
+      "description": "Minutes of call credit purchased (1 KAS = 1 minute)"
+    }
+  },
+  "required": [
+    "email"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
+  }
+}

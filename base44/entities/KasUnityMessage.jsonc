@@ -1,0 +1,42 @@
+{
+  "name": "KasUnityMessage",
+  "type": "object",
+  "properties": {
+    "message": {
+      "type": "string",
+      "description": "The chat message content"
+    },
+    "sender_username": {
+      "type": "string",
+      "description": "Display name of the sender"
+    },
+    "sender_email": {
+      "type": "string",
+      "description": "Email of the sender"
+    },
+    "sender_wallet": {
+      "type": "string",
+      "description": "Wallet address of the sender"
+    },
+    "message_type": {
+      "type": "string",
+      "enum": [
+        "text",
+        "system"
+      ],
+      "default": "text"
+    }
+  },
+  "required": [
+    "message",
+    "sender_username"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": false,
+    "delete": {
+      "user.role": "admin"
+    }
+  }
+}
