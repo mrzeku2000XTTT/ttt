@@ -222,7 +222,7 @@ function ExpandedToast({ news, items, currentNews, setCurrentNews, onMinimize, o
             <h4 className="text-white text-sm font-semibold leading-snug mb-1">
               {news.title}
             </h4>
-            <p className="text-white/45 text-xs leading-relaxed line-clamp-2">
+            <p className="text-white/80 text-xs leading-relaxed line-clamp-2">
               {news.summary}
             </p>
           </motion.div>

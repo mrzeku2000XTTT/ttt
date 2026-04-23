@@ -5,7 +5,7 @@ import { base44 } from "@/api/base44Client";
 
 const KASPA_ADDRESS_REGEX = /^kaspa:[a-z0-9]{60,}$/i;
 
-export default function HaruAccessGate({ onClose, onGranted }) {
+export default function HiroAccessGate({ onClose, onGranted }) {
   const [address, setAddress] = useState("");
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
@@ -24,17 +24,17 @@ export default function HaruAccessGate({ onClose, onGranted }) {
     setLoading(true);
     try {
       // Persist locally so user isn't re-prompted
-      localStorage.setItem("haru_access_address", address.trim());
-      if (email.trim()) localStorage.setItem("haru_access_email", email.trim());
+      localStorage.setItem("hiro_access_address", address.trim());
+      if (email.trim()) localStorage.setItem("hiro_access_email", email.trim());
 
       // Try to record a waitlist entry (best-effort; don't block UX)
       try {
         await base44.entities.AppProposal.create({
-          app_name: "Haru Access Request",
+          app_name: "Hiro Access Request",
           app_link: `kaspa-address:${address.trim()}`,
           description: `Kaspa address: ${address.trim()}${email ? ` · Email: ${email}` : ""}`,
           category: "Creative",
-          submitter_email: email.trim() || "anonymous@haru.app",
+          submitter_email: email.trim() || "anonymous@hiro.app",
           submitter_name: address.trim().slice(0, 20),
           status: "pending",
         });
@@ -68,18 +68,18 @@ export default function HaruAccessGate({ onClose, onGranted }) {
           onClick={(e) => e.stopPropagation()}
           className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl"
         >
-          <div className="relative p-8 text-center bg-gradient-to-br from-pink-50 via-rose-50 to-amber-50 border-b border-pink-200/40">
+          <div className="relative p-8 text-center bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-50 border-b border-cyan-200/40">
             <button
               onClick={onClose}
               className="absolute top-4 right-4 w-8 h-8 rounded-full hover:bg-white/60 flex items-center justify-center"
             >
               <X className="w-4 h-4 text-zinc-500" />
             </button>
-            <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center shadow-lg shadow-pink-500/25">
+            <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center shadow-lg shadow-cyan-500/25">
               <Wallet className="w-7 h-7 text-white" />
             </div>
             <h2 className="text-2xl font-[900] tracking-tight text-zinc-900 mb-1">
-              Get Access to Haru
+              Get Access to Hiro
             </h2>
             <p className="text-[13px] text-zinc-500">
               Enter your Kaspa address to unlock the Studio
@@ -99,7 +99,7 @@ export default function HaruAccessGate({ onClose, onGranted }) {
                     <Check className="w-6 h-6 text-green-600" />
                   </div>
                   <h3 className="text-lg font-[800] text-zinc-900 mb-1">Access Granted</h3>
-                  <p className="text-[13px] text-zinc-500">Opening Haru Studio…</p>
+                  <p className="text-[13px] text-zinc-500">Opening Hiro Studio…</p>
                 </motion.div>
               ) : (
                 <motion.form
@@ -111,7 +111,7 @@ export default function HaruAccessGate({ onClose, onGranted }) {
                 >
                   <div>
                     <label className="block text-[11px] font-bold tracking-wider text-zinc-500 uppercase mb-2">
-                      Kaspa Address <span className="text-pink-500">*</span>
+                      Kaspa Address <span className="text-cyan-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -119,7 +119,7 @@ export default function HaruAccessGate({ onClose, onGranted }) {
                       onChange={(e) => setAddress(e.target.value)}
                       placeholder="kaspa:qz..."
                       required
-                      className="w-full h-11 px-4 rounded-xl bg-zinc-50 ring-1 ring-zinc-200 text-[13px] font-mono outline-none focus:ring-pink-400 transition-all"
+                      className="w-full h-11 px-4 rounded-xl bg-zinc-50 ring-1 ring-zinc-200 text-[13px] font-mono outline-none focus:ring-cyan-400 transition-all"
                     />
                     <p className="text-[10px] text-zinc-400 mt-1.5">
                       Used to verify your access. Never stored on-chain.
@@ -135,7 +135,7 @@ export default function HaruAccessGate({ onClose, onGranted }) {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@brand.com"
-                      className="w-full h-11 px-4 rounded-xl bg-zinc-50 ring-1 ring-zinc-200 text-[13px] outline-none focus:ring-pink-400 transition-all"
+                      className="w-full h-11 px-4 rounded-xl bg-zinc-50 ring-1 ring-zinc-200 text-[13px] outline-none focus:ring-cyan-400 transition-all"
                     />
                   </div>
 
@@ -179,7 +179,7 @@ export default function HaruAccessGate({ onClose, onGranted }) {
                     disabled={loading}
                     onClick={() => {
                       const guestId = `guest-${Date.now()}`;
-                      localStorage.setItem("haru_access_address", guestId);
+                      localStorage.setItem("hiro_access_address", guestId);
                       setSuccess(true);
                       setTimeout(() => onGranted(guestId), 600);
                     }}
