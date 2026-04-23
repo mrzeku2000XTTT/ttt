@@ -34,6 +34,7 @@ import KrustPage from './pages/Krust';
 import HaruPage from './pages/Haru';
 import HiroPage from './pages/Hiro';
 import NEPUPage from './pages/NEPU';
+import TELEPage from './pages/TELE';
 import OneShotStudioPage from './pages/OneShotStudio';
 import SlideDeckBuilderPage from './pages/SlideDeckBuilder';
 import KaSshiPlayer from './components/KaSshiPlayer';
@@ -116,6 +117,7 @@ const AuthenticatedApp = () => {
       <Route path="/Haru" element={<HaruPage />} />
       <Route path="/Hiro" element={<HiroPage />} />
       <Route path="/NEPU" element={<NEPUPage />} />
+      <Route path="/TELE" element={<TELEPage />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
