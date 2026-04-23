@@ -1,0 +1,67 @@
+{
+  "name": "TeleTool",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Tool name (shown as /command in Telegram)"
+    },
+    "command": {
+      "type": "string",
+      "description": "Slash command trigger (e.g. 'price', 'news') without the /"
+    },
+    "description": {
+      "type": "string",
+      "description": "Short description of what the tool does"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "info",
+        "action",
+        "ai",
+        "wallet",
+        "custom"
+      ],
+      "default": "info",
+      "description": "Tool category"
+    },
+    "prompt_template": {
+      "type": "string",
+      "description": "AI prompt template. Use {{input}} for user's arguments."
+    },
+    "icon": {
+      "type": "string",
+      "default": "\ud83d\udd27",
+      "description": "Emoji icon"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this tool is enabled in the bot"
+    },
+    "usage_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Times this tool was invoked"
+    }
+  },
+  "required": [
+    "name",
+    "command",
+    "description",
+    "prompt_template"
+  ],
+  "rls": {
+    "read": true,
+    "create": {
+      "user.role": "admin"
+    },
+    "update": {
+      "user.role": "admin"
+    },
+    "delete": {
+      "user.role": "admin"
+    }
+  }
+}
