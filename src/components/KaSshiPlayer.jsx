@@ -243,7 +243,10 @@ export default function KaSshiPlayer() {
               src="https://kasshi.io"
               title="KaSshi.io"
               className="w-full flex-1 border-0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen; microphone; camera"
+              allowFullScreen
+              referrerPolicy="no-referrer-when-downgrade"
+              sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-presentation allow-popups-to-escape-sandbox allow-downloads"
             />
           </div>
         </div>
