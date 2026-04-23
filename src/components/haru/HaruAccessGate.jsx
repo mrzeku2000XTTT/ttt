@@ -165,31 +165,9 @@ export default function HaruAccessGate({ onClose, onGranted }) {
                     )}
                   </button>
 
-                  <div className="relative my-1">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-zinc-200" />
-                    </div>
-                    <div className="relative flex justify-center">
-                      <span className="px-3 bg-white text-[10px] text-zinc-400 uppercase tracking-wider font-semibold">or</span>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() => {
-                      const guestId = `guest-${Date.now()}`;
-                      localStorage.setItem("haru_access_address", guestId);
-                      setSuccess(true);
-                      setTimeout(() => onGranted(guestId), 600);
-                    }}
-                    className="w-full h-11 rounded-full bg-zinc-50 ring-1 ring-zinc-200 text-zinc-700 text-[13px] font-semibold hover:bg-zinc-100 transition-colors disabled:opacity-50"
-                  >
-                    Skip — I don't have a Kaspa wallet
-                  </button>
-
                   <p className="text-[10px] text-zinc-400 text-center leading-relaxed">
-                    By continuing, you agree to use Hiro for legitimate creative work.
+                    By continuing, you agree to use Haru for legitimate creative work.
+                    Admins bypass this step automatically.
                   </p>
                 </motion.form>
               )}

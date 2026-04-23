@@ -32,7 +32,6 @@ import AppStoreV2Page from './pages/AppStoreV2';
 import UIClonerPage from './pages/UICloner';
 import KrustPage from './pages/Krust';
 import HaruPage from './pages/Haru';
-import HiroPage from './pages/Hiro';
 import NEPUPage from './pages/NEPU';
 import OneShotStudioPage from './pages/OneShotStudio';
 import SlideDeckBuilderPage from './pages/SlideDeckBuilder';
@@ -114,7 +113,6 @@ const AuthenticatedApp = () => {
       <Route path="/SlideDeckBuilder" element={<SlideDeckBuilderPage />} />
       <Route path="/Krust" element={<KrustPage />} />
       <Route path="/Haru" element={<HaruPage />} />
-      <Route path="/Hiro" element={<HiroPage />} />
       <Route path="/NEPU" element={<NEPUPage />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>

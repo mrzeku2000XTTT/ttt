@@ -38,7 +38,7 @@ const BACKGROUNDS = [
 ];
 
 export default function HaruStudio({ onClose, kaspaAddress }) {
-  const [text, setText] = useState("Hiro");
+  const [text, setText] = useState("Haru");
   const [fontStyle, setFontStyle] = useState(FONT_STYLES[0]);
   const [gradient, setGradient] = useState(GRADIENTS[0]);
   const [background, setBackground] = useState(BACKGROUNDS[0]);
@@ -151,7 +151,7 @@ export default function HaruStudio({ onClose, kaspaAddress }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const link = document.createElement("a");
-    link.download = `hiro-${text.toLowerCase().replace(/\s+/g, "-")}.png`;
+    link.download = `haru-${text.toLowerCase().replace(/\s+/g, "-")}.png`;
     link.href = canvas.toDataURL("image/png");
     link.click();
   };
@@ -303,16 +303,7 @@ Return a JSON object with a "variants" array.`,
       const { url } = await base44.integrations.Core.GenerateImage({
         prompt: `Premium typography poster featuring the word "${text}". ${prompt}. Editorial design, magazine quality, beautiful lettering, ${fontStyle.label} style, cinematic lighting, high-end brand aesthetic.`,
       });
-      // Load the generated image into the canvas pattern ref AND enable image-fill
-      // so the result is immediately visible on the canvas (was previously
-      // only stored — never rendered).
-      const imgEl = new Image();
-      imgEl.crossOrigin = "anonymous";
-      imgEl.src = url;
-      await new Promise((res) => { imgEl.onload = res; imgEl.onerror = res; });
-      imgElementRef.current = imgEl;
       setUploadedImg(url);
-      setUseImageFill(true);
     } catch (err) {
       console.error(err);
     }
@@ -353,8 +344,8 @@ Return a JSON object with a "variants" array.`,
             <X className="w-4 h-4 text-zinc-600" />
           </button>
           <div className="flex items-center gap-2">
-            <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1a11decfa_generated_image.png" alt="Hiro" className="w-7 h-7 rounded-lg" />
-            <div className="font-[900] text-zinc-900 text-sm">Hiro Studio</div>
+            <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ade3b1795_generated_image.png" alt="Haru" className="w-7 h-7 rounded-lg" />
+            <div className="font-[900] text-zinc-900 text-sm">Haru Studio</div>
           </div>
         </div>
         <button onClick={downloadCanvas} className="h-9 px-4 rounded-full bg-zinc-900 text-white text-[12px] font-semibold hover:bg-zinc-700 transition-colors flex items-center gap-1.5">
@@ -404,7 +395,7 @@ Return a JSON object with a "variants" array.`,
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 maxLength={40}
-                className="w-full h-11 px-4 rounded-xl bg-zinc-50 ring-1 ring-zinc-200 text-zinc-900 placeholder:text-zinc-400 text-[14px] font-semibold outline-none focus:ring-pink-400"
+                className="w-full h-11 px-4 rounded-xl bg-zinc-50 ring-1 ring-zinc-200 text-[14px] font-semibold outline-none focus:ring-pink-400"
               />
             </div>
 
@@ -416,7 +407,7 @@ Return a JSON object with a "variants" array.`,
                 onChange={(e) => setPrompt(e.target.value)}
                 rows={2}
                 placeholder="e.g. 'luxurious, feminine, with serif elegance'"
-                className="w-full p-3 rounded-xl bg-zinc-50 ring-1 ring-zinc-200 text-zinc-900 placeholder:text-zinc-400 text-[12px] outline-none focus:ring-pink-400 resize-none"
+                className="w-full p-3 rounded-xl bg-zinc-50 ring-1 ring-zinc-200 text-[12px] outline-none focus:ring-pink-400 resize-none"
               />
               <div className="flex gap-2 mt-2">
                 <button
@@ -665,7 +656,7 @@ Return a JSON object with a "variants" array.`,
                 </div>
                 <a
                   href={renderedLetterform}
-                  download={`hiro-letterform-${text}.png`}
+                  download={`haru-letterform-${text}.png`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="absolute top-3 right-3 h-8 px-3 rounded-full bg-white/95 backdrop-blur text-zinc-900 text-[10px] font-bold flex items-center gap-1 shadow-lg hover:bg-white"

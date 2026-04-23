@@ -11,12 +11,12 @@
 
 export const TTT_UPDATES = [
   {
-    id: "hiro-launch",
-    title: "Hiro — AI Typography Studio",
+    id: "haru-launch",
+    title: "Haru — AI Typography Studio",
     summary: "Design on-brand fonts, wordmarks, and type systems. Build your Type Kit once, generate letterforms that actually belong to your brand.",
     tag: "New App",
     date: "2026-04-19",
-    link: "/Hiro",
+    link: "/Haru",
   },
   {
     id: "listing-apps",

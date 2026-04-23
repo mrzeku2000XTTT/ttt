@@ -42,26 +42,15 @@ export default function AppStoreV2Page() {
   return (
     <div className="min-h-screen bg-[#F5F5F7] text-zinc-900">
       {/* Nav */}
-      <nav
-        className="sticky top-0 z-50 flex items-center justify-between px-3 sm:px-5 bg-[#F5F5F7]/80 backdrop-blur-2xl border-b border-zinc-200/50"
-        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
-      >
-        <div className="flex items-center justify-between w-full h-14">
-          <Link
-            to="/TTTV2"
-            className="flex items-center gap-1.5 text-zinc-700 hover:text-zinc-900 transition-colors h-11 px-3 -ml-1 rounded-lg active:bg-zinc-200/60"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="text-[14px] font-medium">Back</span>
-          </Link>
-          <span className="text-[15px] font-[800] tracking-tight">App Store</span>
-          <Link
-            to="/Home"
-            className="flex items-center text-[13px] font-semibold text-white bg-black hover:bg-zinc-800 h-10 px-4 rounded-full transition-colors"
-          >
-            Open TTT
-          </Link>
-        </div>
+      <nav className="sticky top-0 z-50 h-12 flex items-center justify-between px-5 bg-[#F5F5F7]/80 backdrop-blur-2xl border-b border-zinc-200/50">
+        <Link to="/TTTV2" className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 transition-colors">
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-[13px] font-medium">Back</span>
+        </Link>
+        <span className="text-[15px] font-[800] tracking-tight">App Store</span>
+        <Link to="/Home" className="text-[13px] font-semibold text-white bg-black hover:bg-zinc-800 px-4 py-1.5 rounded-full transition-colors">
+          Open TTT
+        </Link>
       </nav>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-20">
