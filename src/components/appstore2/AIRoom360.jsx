@@ -7,11 +7,17 @@ export default function AIRoom360({ agent, onClose }) {
   const mountRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [autoRotate, setAutoRotate] = useState(true);
+  const [pinkRoom, setPinkRoom] = useState(false);
   const autoRotateRef = useRef(true);
+  const pinkRoomRef = useRef(false);
   const joystickRef = useRef({ active: false, x: 0, y: 0, startX: 0, startY: 0 });
   const [joyVisual, setJoyVisual] = useState({ x: 0, y: 0, active: false });
 
   useEffect(() => { autoRotateRef.current = autoRotate; }, [autoRotate]);
+  useEffect(() => { pinkRoomRef.current = pinkRoom; }, [pinkRoom]);
+
+  // Only the Sealed Wallet Analyzer has the secret pink lock portal
+  const hasPinkLock = agent?.name === "Sealed Wallet Analyzer";
 
   useEffect(() => {
     if (!agent || !mountRef.current) return;
@@ -90,6 +96,85 @@ export default function AIRoom360({ agent, onClose }) {
     });
     const glowMesh = new THREE.Mesh(glowGeo, glowMaterial);
     scene.add(glowMesh);
+
+    // ---------- PINK LOCK PORTAL (Sealed Wallet Analyzer only) ----------
+    let pinkLock = null;
+    let pinkLockHalo = null;
+    if (hasPinkLock) {
+      // Glowing pink orb with a lock symbol — floats in front of the user
+      const lockCanvas = document.createElement("canvas");
+      lockCanvas.width = 256;
+      lockCanvas.height = 256;
+      const lctx = lockCanvas.getContext("2d");
+      // Radial pink glow
+      const lgrad = lctx.createRadialGradient(128, 128, 10, 128, 128, 128);
+      lgrad.addColorStop(0, "rgba(255, 105, 180, 1)");
+      lgrad.addColorStop(0.5, "rgba(236, 72, 153, 0.8)");
+      lgrad.addColorStop(1, "rgba(190, 24, 93, 0)");
+      lctx.fillStyle = lgrad;
+      lctx.fillRect(0, 0, 256, 256);
+      // Lock icon
+      lctx.fillStyle = "#fff";
+      lctx.strokeStyle = "#fff";
+      lctx.lineWidth = 8;
+      // Shackle
+      lctx.beginPath();
+      lctx.arc(128, 105, 28, Math.PI, 0, false);
+      lctx.stroke();
+      // Body
+      lctx.fillRect(94, 105, 68, 60);
+      // Keyhole
+      lctx.fillStyle = "#be185d";
+      lctx.beginPath();
+      lctx.arc(128, 130, 7, 0, Math.PI * 2);
+      lctx.fill();
+      lctx.fillRect(125, 130, 6, 18);
+
+      const lockTex = new THREE.CanvasTexture(lockCanvas);
+      const lockMat = new THREE.SpriteMaterial({
+        map: lockTex,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+      pinkLock = new THREE.Sprite(lockMat);
+      pinkLock.scale.set(14, 14, 1);
+      pinkLock.position.set(0, 4, -35); // floats in front
+      pinkLock.userData.isPinkLock = true;
+      pinkLock.userData.basePos = pinkLock.position.clone();
+      scene.add(pinkLock);
+
+      // Halo behind the lock
+      const haloMat = new THREE.SpriteMaterial({
+        map: lockTex,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        opacity: 0.5,
+        depthWrite: false,
+      });
+      pinkLockHalo = new THREE.Sprite(haloMat);
+      pinkLockHalo.scale.set(28, 28, 1);
+      pinkLockHalo.position.copy(pinkLock.position);
+      scene.add(pinkLockHalo);
+    }
+
+    // Raycaster for clicking the lock
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    const onClickScene = (e) => {
+      if (!pinkLock || pinkRoomRef.current) return;
+      const rect = renderer.domElement.getBoundingClientRect();
+      const cx = (e.clientX !== undefined ? e.clientX : e.changedTouches?.[0]?.clientX) - rect.left;
+      const cy = (e.clientY !== undefined ? e.clientY : e.changedTouches?.[0]?.clientY) - rect.top;
+      pointer.x = (cx / rect.width) * 2 - 1;
+      pointer.y = -(cy / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+      const hits = raycaster.intersectObject(pinkLock);
+      if (hits.length > 0) {
+        setPinkRoom(true);
+      }
+    };
+    renderer.domElement.addEventListener("click", onClickScene);
 
     // ---------- FLOATING FLYERS / BILLBOARDS ----------
     const flyerTextures = [];
@@ -368,12 +453,34 @@ export default function AIRoom360({ agent, onClose }) {
         skyMesh.rotation.y = Math.sin(t * 0.08) * 0.02;
       }
       // Light-blue haze: slow counter-rotation + pulsing for atmospheric breathing
+      // When pink room active, shift haze to pink
       if (shimmerMesh && shimmerMaterial) {
         shimmerMesh.rotation.y = -t * 0.015;
         shimmerMaterial.opacity = 0.12 + Math.sin(t * 0.5) * 0.08;
+        const targetColor = pinkRoomRef.current ? 0xff6bcf : 0x7dd3fc;
+        shimmerMaterial.color.setHex(targetColor);
       }
-      // Inner glow breathes slowly
-      glowMaterial.opacity = 0.12 + Math.sin(t * 0.4) * 0.05;
+      // Inner glow breathes slowly — pink when in pink room
+      glowMaterial.opacity = pinkRoomRef.current
+        ? 0.28 + Math.sin(t * 0.6) * 0.08
+        : 0.12 + Math.sin(t * 0.4) * 0.05;
+      glowMaterial.color.setHex(pinkRoomRef.current ? 0xec4899 : 0x1e3a5f);
+
+      // Pink lock floats and pulses
+      if (pinkLock) {
+        pinkLock.position.y = pinkLock.userData.basePos.y + Math.sin(t * 1.5) * 0.8;
+        const pulse = 1 + Math.sin(t * 2) * 0.08;
+        pinkLock.scale.set(14 * pulse, 14 * pulse, 1);
+        if (pinkLockHalo) {
+          pinkLockHalo.position.copy(pinkLock.position);
+          pinkLockHalo.material.opacity = 0.4 + Math.sin(t * 2) * 0.2;
+          const haloPulse = 1 + Math.sin(t * 1.2) * 0.15;
+          pinkLockHalo.scale.set(28 * haloPulse, 28 * haloPulse, 1);
+        }
+        // Hide lock once pink room entered
+        pinkLock.visible = !pinkRoomRef.current;
+        if (pinkLockHalo) pinkLockHalo.visible = !pinkRoomRef.current;
+      }
 
       particles.rotation.y += 0.0005;
       particles.position.y = Math.sin(t * 0.3) * 2;
@@ -394,6 +501,14 @@ export default function AIRoom360({ agent, onClose }) {
       canvas.removeEventListener("touchstart", onDown);
       canvas.removeEventListener("touchmove", onMove);
       canvas.removeEventListener("touchend", onUp);
+      renderer.domElement.removeEventListener("click", onClickScene);
+      if (pinkLock) {
+        pinkLock.material.map?.dispose();
+        pinkLock.material.dispose();
+      }
+      if (pinkLockHalo) {
+        pinkLockHalo.material.dispose();
+      }
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
       geometry.dispose();
       particlesGeo.dispose();
@@ -472,11 +587,15 @@ export default function AIRoom360({ agent, onClose }) {
         >
           <div className="pointer-events-auto">
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
-              <span className="text-cyan-300 text-[10px] font-bold tracking-[0.2em] uppercase">Live · 360°</span>
+              <div className={`w-2 h-2 rounded-full animate-pulse ${pinkRoom ? "bg-pink-400" : "bg-cyan-400"}`} />
+              <span className={`text-[10px] font-bold tracking-[0.2em] uppercase ${pinkRoom ? "text-pink-300" : "text-cyan-300"}`}>
+                {pinkRoom ? "Pink Room · 360°" : "Live · 360°"}
+              </span>
             </div>
             <h2 className="text-white text-2xl sm:text-3xl font-[900] tracking-tight drop-shadow-2xl">{agent.name}</h2>
-            <p className="text-white/70 text-xs sm:text-sm drop-shadow-lg">{agent.tagline}</p>
+            <p className="text-white/70 text-xs sm:text-sm drop-shadow-lg">
+              {pinkRoom ? "You unlocked the pink chamber" : agent.tagline}
+            </p>
           </div>
 
           <div className="flex items-center gap-2 pointer-events-auto">
@@ -522,6 +641,37 @@ export default function AIRoom360({ agent, onClose }) {
             </div>
           </div>
         </motion.div>
+
+        {/* Pink lock hint (Sealed Wallet Analyzer only, before unlock) */}
+        {hasPinkLock && !pinkRoom && !loading && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.2 }}
+            className="absolute top-24 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
+          >
+            <div className="px-3 py-1.5 rounded-full bg-pink-500/20 backdrop-blur ring-1 ring-pink-400/40 flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-pink-400 animate-pulse" />
+              <span className="text-pink-200 text-[10px] font-bold tracking-wider uppercase">
+                Tap the pink lock to enter the secret room
+              </span>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Pink room exit hint */}
+        {pinkRoom && (
+          <motion.button
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            onClick={() => setPinkRoom(false)}
+            className="absolute top-24 left-1/2 -translate-x-1/2 z-20 px-3 py-1.5 rounded-full bg-pink-500/30 backdrop-blur ring-1 ring-pink-400/60 hover:bg-pink-500/40"
+          >
+            <span className="text-pink-100 text-[10px] font-bold tracking-wider uppercase">
+              ← Exit Pink Room
+            </span>
+          </motion.button>
+        )}
 
         {/* Mobile Joystick */}
         <div
