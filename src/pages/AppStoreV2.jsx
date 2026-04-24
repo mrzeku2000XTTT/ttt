@@ -117,6 +117,13 @@ export default function AppStoreV2Page() {
 
         {/* Grid */}
         <AppStoreGrid search={search} category={category} isAdmin={isAdmin} refreshKey={refreshKey} />
+
+        {/* Footer */}
+        <div className="mt-16 pt-8 border-t border-zinc-200/60 text-center">
+          <p className="text-[11px] text-zinc-400 font-medium tracking-wide">
+            TTT · Since November 7, 2025
+          </p>
+        </div>
       </div>
     </div>
   );
