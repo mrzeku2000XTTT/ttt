@@ -20,8 +20,9 @@ export default function AIRoom360({ agent, onClose }) {
     const width = mount.clientWidth;
     const height = mount.clientHeight;
 
-    // Scene
+    // Scene with cool blue atmospheric fog for depth
     const scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x0a1828, 40, 220);
 
     // Camera at center, looking outward
     const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1100);
@@ -47,7 +48,11 @@ export default function AIRoom360({ agent, onClose }) {
       (texture) => {
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
-        skyMaterial = new THREE.MeshBasicMaterial({ map: texture });
+        // Dark cinematic tint — multiply with deep navy for shadowed realism
+        skyMaterial = new THREE.MeshBasicMaterial({
+          map: texture,
+          color: 0x4a6580, // dark blue-grey tint multiplied with texture
+        });
         skyMesh = new THREE.Mesh(geometry, skyMaterial);
         scene.add(skyMesh);
         setLoading(false);
@@ -56,7 +61,7 @@ export default function AIRoom360({ agent, onClose }) {
       () => setLoading(false)
     );
 
-    // Second translucent sphere with same image — offset for parallax shimmer
+    // Light-blue atmospheric haze layer — soft glow over the dark base
     let shimmerMesh = null;
     let shimmerMaterial = null;
     loader.load(
@@ -68,14 +73,27 @@ export default function AIRoom360({ agent, onClose }) {
         shimmerGeo.scale(-1, 1, 1);
         shimmerMaterial = new THREE.MeshBasicMaterial({
           map: texture,
+          color: 0x7dd3fc, // light blue atmospheric tint
           transparent: true,
-          opacity: 0.25,
+          opacity: 0.18,
           blending: THREE.AdditiveBlending,
         });
         shimmerMesh = new THREE.Mesh(shimmerGeo, shimmerMaterial);
         scene.add(shimmerMesh);
       }
     );
+
+    // Inner volumetric blue glow sphere — atmospheric depth
+    const glowGeo = new THREE.SphereGeometry(450, 32, 16);
+    glowGeo.scale(-1, 1, 1);
+    const glowMaterial = new THREE.MeshBasicMaterial({
+      color: 0x1e3a5f,
+      transparent: true,
+      opacity: 0.15,
+      blending: THREE.AdditiveBlending,
+    });
+    const glowMesh = new THREE.Mesh(glowGeo, glowMaterial);
+    scene.add(glowMesh);
 
     // ---------- FLOATING FLYERS / BILLBOARDS ----------
     const flyerTextures = [];
@@ -202,10 +220,11 @@ export default function AIRoom360({ agent, onClose }) {
     }
     particlesGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     const particlesMat = new THREE.PointsMaterial({
-      color: 0x22d3ee,
-      size: 0.5,
+      color: 0x93c5fd, // ice blue
+      size: 0.6,
       transparent: true,
-      opacity: 0.6,
+      opacity: 0.7,
+      fog: true,
     });
     const particles = new THREE.Points(particlesGeo, particlesMat);
     scene.add(particles);
@@ -352,11 +371,13 @@ export default function AIRoom360({ agent, onClose }) {
       if (skyMesh) {
         skyMesh.rotation.y = Math.sin(t * 0.08) * 0.02;
       }
-      // Shimmer layer: slow counter-rotation + pulsing opacity (parallax depth)
+      // Light-blue haze: slow counter-rotation + pulsing for atmospheric breathing
       if (shimmerMesh && shimmerMaterial) {
         shimmerMesh.rotation.y = -t * 0.015;
-        shimmerMaterial.opacity = 0.15 + Math.sin(t * 0.7) * 0.1;
+        shimmerMaterial.opacity = 0.12 + Math.sin(t * 0.5) * 0.08;
       }
+      // Inner glow breathes slowly
+      glowMaterial.opacity = 0.12 + Math.sin(t * 0.4) * 0.05;
 
       particles.rotation.y += 0.0005;
       particles.position.y = Math.sin(t * 0.3) * 2;
@@ -386,6 +407,8 @@ export default function AIRoom360({ agent, onClose }) {
       if (skyMaterial) { skyMaterial.map?.dispose(); skyMaterial.dispose(); }
       if (shimmerMesh) { shimmerMesh.geometry.dispose(); }
       if (shimmerMaterial) { shimmerMaterial.map?.dispose(); shimmerMaterial.dispose(); }
+      glowGeo.dispose();
+      glowMaterial.dispose();
       renderer.dispose();
     };
   }, [agent]);
