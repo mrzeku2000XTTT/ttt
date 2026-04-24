@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, RotateCw, Sparkles, MessageCircle } from "lucide-react";
 import AgentChatPanel from "./AgentChatPanel";
 import FlyerDetailCard from "./FlyerDetailCard";
+import ImaginePortalPrompt from "./ImaginePortalPrompt";
+import { base44 } from "@/api/base44Client";
 
 export default function AIRoom360({ agent, onClose }) {
   const mountRef = useRef(null);
@@ -12,6 +14,11 @@ export default function AIRoom360({ agent, onClose }) {
   const [pinkRoom, setPinkRoom] = useState(false);
   const [activeFlyer, setActiveFlyer] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
+  const [imagineOpen, setImagineOpen] = useState(false);
+  const [imagineLoading, setImagineLoading] = useState(false);
+  const [hasCustomSky, setHasCustomSky] = useState(false);
+  const [portalRemaining, setPortalRemaining] = useState(3);
+  const sceneRefs = useRef({ scene: null, originalImage: null, skyMesh: null, geometry: null });
   const autoRotateRef = useRef(true);
   const pinkRoomRef = useRef(false);
   const joystickRef = useRef({ active: false, x: 0, y: 0, startX: 0, startY: 0 });
@@ -162,6 +169,72 @@ export default function AIRoom360({ agent, onClose }) {
       scene.add(pinkLockHalo);
     }
 
+    // ---------- IMAGINE PORTAL BOX (every room) ----------
+    // Glowing purple box with sparkle — click to reshape the room
+    const imagineCanvas = document.createElement("canvas");
+    imagineCanvas.width = 256;
+    imagineCanvas.height = 256;
+    const ictx = imagineCanvas.getContext("2d");
+    const igrad = ictx.createRadialGradient(128, 128, 10, 128, 128, 128);
+    igrad.addColorStop(0, "rgba(216, 180, 254, 1)");
+    igrad.addColorStop(0.5, "rgba(168, 85, 247, 0.85)");
+    igrad.addColorStop(1, "rgba(88, 28, 135, 0)");
+    ictx.fillStyle = igrad;
+    ictx.fillRect(0, 0, 256, 256);
+    // Frame box
+    ictx.strokeStyle = "#fff";
+    ictx.lineWidth = 6;
+    ictx.strokeRect(78, 78, 100, 100);
+    // Sparkle dot
+    ictx.fillStyle = "#fff";
+    ictx.beginPath();
+    ictx.arc(128, 128, 8, 0, Math.PI * 2);
+    ictx.fill();
+    // Sparkle rays
+    ictx.lineWidth = 4;
+    [[128,100],[128,156],[100,128],[156,128]].forEach(([x,y]) => {
+      ictx.beginPath();
+      ictx.moveTo(128, 128);
+      ictx.lineTo(x, y);
+      ictx.stroke();
+    });
+
+    const imagineTex = new THREE.CanvasTexture(imagineCanvas);
+    const imagineMat = new THREE.SpriteMaterial({
+      map: imagineTex,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const imagineBox = new THREE.Sprite(imagineMat);
+    imagineBox.scale.set(11, 11, 1);
+    imagineBox.position.set(-25, 3, -30);
+    imagineBox.userData.basePos = imagineBox.position.clone();
+    imagineBox.userData.isImagine = true;
+    scene.add(imagineBox);
+
+    const imagineHaloMat = new THREE.SpriteMaterial({
+      map: imagineTex,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      opacity: 0.4,
+      depthWrite: false,
+    });
+    const imagineHalo = new THREE.Sprite(imagineHaloMat);
+    imagineHalo.scale.set(22, 22, 1);
+    imagineHalo.position.copy(imagineBox.position);
+    scene.add(imagineHalo);
+
+    // Expose scene/sphere refs so portal generation can swap textures
+    sceneRefs.current.scene = scene;
+    sceneRefs.current.geometry = geometry;
+    sceneRefs.current.getSkyMesh = () => skyMesh;
+    sceneRefs.current.setSkyMesh = (m) => { skyMesh = m; };
+    sceneRefs.current.getSkyMaterial = () => skyMaterial;
+    sceneRefs.current.setSkyMaterial = (m) => { skyMaterial = m; };
+    sceneRefs.current.originalImage = agent.image;
+    sceneRefs.current.loader = loader;
+
     // Raycaster for clicking the lock and flyers
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
@@ -195,6 +268,12 @@ export default function AIRoom360({ agent, onClose }) {
           setPinkRoom(true);
           return;
         }
+      }
+      // Check imagine portal box
+      const imagineHits = raycaster.intersectObject(imagineBox);
+      if (imagineHits.length > 0) {
+        setImagineOpen(true);
+        return;
       }
       // Check flyers
       const flyerHits = raycaster.intersectObjects(flyerMeshes);
@@ -543,6 +622,15 @@ export default function AIRoom360({ agent, onClose }) {
       particles.rotation.y += 0.0005;
       particles.position.y = Math.sin(t * 0.3) * 2;
 
+      // Imagine box float + pulse
+      imagineBox.position.y = imagineBox.userData.basePos.y + Math.sin(t * 1.2 + 1) * 0.6;
+      const ipulse = 1 + Math.sin(t * 1.8) * 0.07;
+      imagineBox.scale.set(11 * ipulse, 11 * ipulse, 1);
+      imagineHalo.position.copy(imagineBox.position);
+      imagineHalo.material.opacity = 0.3 + Math.sin(t * 1.5) * 0.15;
+      const ihaloPulse = 1 + Math.sin(t * 1) * 0.12;
+      imagineHalo.scale.set(22 * ihaloPulse, 22 * ihaloPulse, 1);
+
       renderer.render(scene, camera);
     };
     animate();
@@ -571,6 +659,9 @@ export default function AIRoom360({ agent, onClose }) {
       if (pinkLockHalo) {
         pinkLockHalo.material.dispose();
       }
+      imagineTex.dispose();
+      imagineMat.dispose();
+      imagineHaloMat.dispose();
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
       geometry.dispose();
       particlesGeo.dispose();
@@ -613,6 +704,106 @@ export default function AIRoom360({ agent, onClose }) {
     joystickRef.current.x = 0;
     joystickRef.current.y = 0;
     setJoyVisual({ x: 0, y: 0, active: false });
+  };
+
+  // Frame-by-frame world swap: generate image, then reveal as 24 vertical strips
+  const handleGenerateWorld = async (userPrompt) => {
+    if (imagineLoading || portalRemaining <= 0) return;
+    setImagineLoading(true);
+    try {
+      const fullPrompt = `Equirectangular 360-degree panorama, seamless wrap, immersive: ${userPrompt}. Cinematic lighting, ultra wide horizon, no people facing camera.`;
+      const res = await base44.integrations.Core.GenerateImage({ prompt: fullPrompt });
+      const imgUrl = res?.url;
+      if (!imgUrl) throw new Error("No image");
+
+      await swapSkyFrameByFrame(imgUrl);
+      setHasCustomSky(true);
+      setPortalRemaining((n) => Math.max(0, n - 1));
+      setImagineOpen(false);
+    } catch (e) {
+      // silent fail — UI just stops loading
+    }
+    setImagineLoading(false);
+  };
+
+  const handleRestoreOriginal = async () => {
+    if (imagineLoading) return;
+    setImagineLoading(true);
+    try {
+      await swapSkyFrameByFrame(sceneRefs.current.originalImage);
+      setHasCustomSky(false);
+      setImagineOpen(false);
+    } catch (e) {}
+    setImagineLoading(false);
+  };
+
+  // Reveal new sky as 24 vertical strips fading in around the sphere
+  const swapSkyFrameByFrame = (imageUrl) => {
+    return new Promise((resolve) => {
+      const refs = sceneRefs.current;
+      if (!refs.scene || !refs.loader) { resolve(); return; }
+      refs.loader.load(imageUrl, (texture) => {
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+
+        const STRIPS = 24;
+        const stripMeshes = [];
+        for (let i = 0; i < STRIPS; i++) {
+          const phiStart = (i / STRIPS) * Math.PI * 2;
+          const phiLength = (Math.PI * 2) / STRIPS;
+          const stripGeo = new THREE.SphereGeometry(499, 8, 32, phiStart, phiLength);
+          stripGeo.scale(-1, 1, 1);
+          const stripMat = new THREE.MeshBasicMaterial({
+            map: texture,
+            transparent: true,
+            opacity: 0,
+          });
+          const stripMesh = new THREE.Mesh(stripGeo, stripMat);
+          refs.scene.add(stripMesh);
+          stripMeshes.push({ mesh: stripMesh, mat: stripMat, geo: stripGeo });
+        }
+
+        // Fade strips in sequentially
+        const REVEAL_MS = 1800;
+        const start = performance.now();
+        const tick = () => {
+          const elapsed = performance.now() - start;
+          const progress = Math.min(1, elapsed / REVEAL_MS);
+          stripMeshes.forEach((s, i) => {
+            const stripDelay = i / STRIPS;
+            const stripProgress = Math.max(0, Math.min(1, (progress - stripDelay * 0.6) / 0.4));
+            s.mat.opacity = stripProgress;
+          });
+          if (progress < 1) {
+            requestAnimationFrame(tick);
+          } else {
+            // Replace base sphere texture, then remove strips
+            const skyMaterial = refs.getSkyMaterial();
+            const skyMesh = refs.getSkyMesh();
+            if (skyMaterial) {
+              const oldMap = skyMaterial.map;
+              skyMaterial.map = texture.clone();
+              skyMaterial.map.wrapS = THREE.RepeatWrapping;
+              skyMaterial.map.wrapT = THREE.RepeatWrapping;
+              skyMaterial.map.needsUpdate = true;
+              skyMaterial.needsUpdate = true;
+              if (oldMap) oldMap.dispose();
+            } else if (skyMesh) {
+              skyMesh.material.map = texture;
+              skyMesh.material.needsUpdate = true;
+            }
+            // Cleanup strips
+            stripMeshes.forEach((s) => {
+              refs.scene.remove(s.mesh);
+              s.geo.dispose();
+              s.mat.dispose();
+            });
+            resolve();
+          }
+        };
+        requestAnimationFrame(tick);
+      }, undefined, () => resolve());
+    });
   };
 
   if (!agent) return null;
@@ -761,6 +952,46 @@ export default function AIRoom360({ agent, onClose }) {
 
         {/* Chat panel */}
         <AgentChatPanel agent={agent} open={chatOpen} onClose={() => setChatOpen(false)} />
+
+        {/* Imagine Portal prompt */}
+        <ImaginePortalPrompt
+          open={imagineOpen}
+          onClose={() => setImagineOpen(false)}
+          onGenerate={handleGenerateWorld}
+          onRestore={handleRestoreOriginal}
+          loading={imagineLoading}
+          hasCustom={hasCustomSky}
+          remaining={portalRemaining}
+        />
+
+        {/* Frame-by-frame loading overlay */}
+        {imagineLoading && !imagineOpen && (
+          <div className="absolute inset-0 z-25 pointer-events-none flex items-center justify-center">
+            <div className="px-4 py-2 rounded-full bg-purple-500/20 backdrop-blur ring-1 ring-purple-400/40 flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+              <span className="text-purple-200 text-[10px] font-bold tracking-wider uppercase">
+                Reshaping reality, frame by frame...
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Imagine portal hint */}
+        {!imagineOpen && !imagineLoading && !loading && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.4 }}
+            className="absolute top-36 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
+          >
+            <div className="px-3 py-1.5 rounded-full bg-purple-500/20 backdrop-blur ring-1 ring-purple-400/40 flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+              <span className="text-purple-200 text-[10px] font-bold tracking-wider uppercase">
+                Tap the purple sparkle box to reshape this room
+              </span>
+            </div>
+          </motion.div>
+        )}
 
         {/* Mobile Joystick */}
         <div
