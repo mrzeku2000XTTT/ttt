@@ -777,25 +777,25 @@ export default function AIRoom360({ agent, onClose }) {
           if (progress < 1) {
             requestAnimationFrame(tick);
           } else {
-            // Replace base sphere texture, then remove strips
+            // Swap the base sphere's texture to the new one, then remove strips
             const skyMaterial = refs.getSkyMaterial();
             const skyMesh = refs.getSkyMesh();
             if (skyMaterial) {
               const oldMap = skyMaterial.map;
-              skyMaterial.map = texture.clone();
-              skyMaterial.map.wrapS = THREE.RepeatWrapping;
-              skyMaterial.map.wrapT = THREE.RepeatWrapping;
-              skyMaterial.map.needsUpdate = true;
+              skyMaterial.map = texture;
               skyMaterial.needsUpdate = true;
-              if (oldMap) oldMap.dispose();
-            } else if (skyMesh) {
+              if (oldMap && oldMap !== texture) oldMap.dispose();
+            } else if (skyMesh && skyMesh.material) {
+              const oldMap = skyMesh.material.map;
               skyMesh.material.map = texture;
               skyMesh.material.needsUpdate = true;
+              if (oldMap && oldMap !== texture) oldMap.dispose();
             }
-            // Cleanup strips
+            // Cleanup strips (do NOT dispose the shared texture)
             stripMeshes.forEach((s) => {
               refs.scene.remove(s.mesh);
               s.geo.dispose();
+              s.mat.map = null;
               s.mat.dispose();
             });
             resolve();
