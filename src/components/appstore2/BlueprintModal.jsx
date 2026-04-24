@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Shield, Vote, Link2, Layers, ArrowRight, Sparkles } from "lucide-react";
 import AIRosterShowcase from "./AIRosterShowcase";
+import GlitchChinese from "./GlitchChinese";
+import { base44 } from "@/api/base44Client";
 
 const ARCHITECTURE_IMG = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e37f03a1f_generated_image.png";
 const PHASE1_IMG = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/216a28e88_generated_image.png";
@@ -60,6 +62,15 @@ const PHASES = [
 ];
 
 export default function BlueprintModal({ open, onClose }) {
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    base44.auth.me()
+      .then(u => setIsAdmin(u?.role === "admin"))
+      .catch(() => setIsAdmin(false));
+  }, [open]);
+
   return (
     <AnimatePresence>
       {open && (
@@ -91,42 +102,47 @@ export default function BlueprintModal({ open, onClose }) {
               <div className="relative h-56 sm:h-72">
                 <img src={ARCHITECTURE_IMG} alt="Architecture blueprint" className="absolute inset-0 w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/60 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/20 border border-cyan-500/40 mb-3">
+                <GlitchChinese />
+                <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8 z-10">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/20 border border-cyan-500/40 mb-3 backdrop-blur">
                     <Sparkles className="w-3 h-3 text-cyan-300" />
                     <span className="text-cyan-200 text-[10px] font-bold tracking-[0.2em] uppercase">Blueprint</span>
                   </div>
-                  <h2 className="text-2xl sm:text-4xl font-[900] text-white tracking-tight leading-tight">
+                  <h2 className="text-2xl sm:text-4xl font-[900] text-white tracking-tight leading-tight drop-shadow-2xl">
                     The Decentralized App Store
                   </h2>
-                  <p className="text-white/60 text-xs sm:text-sm mt-1.5">
-                    A 3-phase plan to make TTT's app store cryptographically verifiable, community-curated, and on-chain.
+                  <p className="text-white/60 text-xs sm:text-sm mt-1.5 drop-shadow-lg">
+                    A vision for a cryptographically verifiable, community-curated, on-chain app store.
                   </p>
                 </div>
               </div>
 
-              {/* Architecture Section */}
-              <div className="px-6 sm:px-8 py-6 border-b border-white/10">
-                <div className="flex items-center gap-2 mb-3">
-                  <Layers className="w-4 h-4 text-cyan-400" />
-                  <h3 className="text-white font-bold text-sm uppercase tracking-wider">System Architecture</h3>
+              {/* Architecture Section — ADMIN ONLY */}
+              {isAdmin && (
+                <div className="px-6 sm:px-8 py-6 border-b border-white/10">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Layers className="w-4 h-4 text-cyan-400" />
+                    <h3 className="text-white font-bold text-sm uppercase tracking-wider">System Architecture</h3>
+                    <span className="text-[9px] text-yellow-400/70 font-bold tracking-wider uppercase ml-auto">Admin</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                    {[
+                      { label: "User Layer", sub: "Frontend UI" },
+                      { label: "Identity", sub: "Kasware · TTT ID" },
+                      { label: "Curation", sub: "Votes · Stakes" },
+                      { label: "Data", sub: "IPFS · Kaspa" },
+                    ].map((l, i) => (
+                      <div key={i} className="p-3 bg-white/5 rounded-xl ring-1 ring-white/10">
+                        <div className="text-white text-xs font-bold">{l.label}</div>
+                        <div className="text-white/40 text-[10px] mt-0.5">{l.sub}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-                  {[
-                    { label: "User Layer", sub: "Frontend UI" },
-                    { label: "Identity", sub: "Kasware · TTT ID" },
-                    { label: "Curation", sub: "Votes · Stakes" },
-                    { label: "Data", sub: "IPFS · Kaspa" },
-                  ].map((l, i) => (
-                    <div key={i} className="p-3 bg-white/5 rounded-xl ring-1 ring-white/10">
-                      <div className="text-white text-xs font-bold">{l.label}</div>
-                      <div className="text-white/40 text-[10px] mt-0.5">{l.sub}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              )}
 
-              {/* Phases */}
+              {/* Phases — ADMIN ONLY (technical roadmap) */}
+              {isAdmin && (
               <div className="p-6 sm:p-8 space-y-6">
                 {PHASES.map((phase) => {
                   const Icon = phase.icon;
@@ -169,6 +185,7 @@ export default function BlueprintModal({ open, onClose }) {
                   );
                 })}
               </div>
+              )}
 
               {/* AI Roster */}
               <AIRosterShowcase />
