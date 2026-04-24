@@ -18,7 +18,7 @@ export default function ImaginePortalPrompt({ open, onClose, onGenerate, loading
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 w-[90%] max-w-md"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[400] w-[90%] max-w-md"
         >
           <div
             className="rounded-3xl bg-black/85 backdrop-blur-2xl ring-2 ring-purple-400/60 p-6 shadow-2xl"

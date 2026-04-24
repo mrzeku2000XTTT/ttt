@@ -709,19 +709,22 @@ export default function AIRoom360({ agent, onClose }) {
   // Frame-by-frame world swap: generate image, then reveal as 24 vertical strips
   const handleGenerateWorld = async (userPrompt) => {
     if (imagineLoading || portalRemaining <= 0) return;
+    console.log("[ImaginePortal] generating with prompt:", userPrompt);
     setImagineLoading(true);
     try {
       const fullPrompt = `Equirectangular 360-degree panorama, seamless wrap, immersive: ${userPrompt}. Cinematic lighting, ultra wide horizon, no people facing camera.`;
       const res = await base44.integrations.Core.GenerateImage({ prompt: fullPrompt });
+      console.log("[ImaginePortal] GenerateImage response:", res);
       const imgUrl = res?.url;
-      if (!imgUrl) throw new Error("No image");
+      if (!imgUrl) throw new Error("No image URL returned");
 
       await swapSkyFrameByFrame(imgUrl);
       setHasCustomSky(true);
       setPortalRemaining((n) => Math.max(0, n - 1));
       setImagineOpen(false);
     } catch (e) {
-      // silent fail — UI just stops loading
+      console.error("[ImaginePortal] generation failed:", e);
+      alert("Imagine Portal failed: " + (e?.message || "unknown error"));
     }
     setImagineLoading(false);
   };
@@ -742,7 +745,9 @@ export default function AIRoom360({ agent, onClose }) {
     return new Promise((resolve) => {
       const refs = sceneRefs.current;
       if (!refs.scene || !refs.loader) { resolve(); return; }
+      refs.loader.setCrossOrigin("anonymous");
       refs.loader.load(imageUrl, (texture) => {
+        console.log("[ImaginePortal] texture loaded for", imageUrl);
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
 
@@ -802,7 +807,10 @@ export default function AIRoom360({ agent, onClose }) {
           }
         };
         requestAnimationFrame(tick);
-      }, undefined, () => resolve());
+      }, undefined, (err) => {
+        console.error("[ImaginePortal] texture load failed:", err);
+        resolve();
+      });
     });
   };
 
