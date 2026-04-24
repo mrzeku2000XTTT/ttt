@@ -9,6 +9,7 @@ import AppStoreGrid from "@/components/appstore2/AppStoreGrid";
 import AppStoreFeatured from "@/components/appstore2/AppStoreFeatured";
 import ListAppButton from "@/components/appstore2/ListAppButton";
 import AdminProposalsPanel from "@/components/appstore2/AdminProposalsPanel";
+import BlueprintModal from "@/components/appstore2/BlueprintModal";
 
 const CATEGORIES = [
   { id: "All", label: "All", icon: Sparkles },
@@ -32,6 +33,7 @@ export default function AppStoreV2Page() {
   const [category, setCategory] = useState("All");
   const [user, setUser] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [blueprintOpen, setBlueprintOpen] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -81,14 +83,21 @@ export default function AppStoreV2Page() {
           <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-7">
             <div className="text-[10px] font-bold tracking-[0.2em] text-cyan-300 mb-2 uppercase">Welcome to TTT</div>
-            <h2 className="text-2xl sm:text-4xl md:text-5xl font-[900] text-white tracking-tight leading-tight drop-shadow-lg">
-              The Decentralized App Store
-            </h2>
-            <p className="text-white/70 text-xs sm:text-sm mt-1.5 max-w-md">
-              Built on Kaspa · Powered by the community
-            </p>
+            <button
+              onClick={() => setBlueprintOpen(true)}
+              className="group text-left"
+            >
+              <h2 className="text-2xl sm:text-4xl md:text-5xl font-[900] text-white tracking-tight leading-tight drop-shadow-lg group-hover:text-cyan-200 transition-colors">
+                The Decentralized App Store
+              </h2>
+              <p className="text-white/70 text-xs sm:text-sm mt-1.5 max-w-md group-hover:text-white/90 transition-colors">
+                Built on Kaspa · Powered by the community · <span className="underline">View Blueprint</span>
+              </p>
+            </button>
           </div>
         </motion.div>
+
+        <BlueprintModal open={blueprintOpen} onClose={() => setBlueprintOpen(false)} />
 
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="mb-6 flex items-start justify-between gap-4">
