@@ -1,13 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, RotateCw, Sparkles } from "lucide-react";
+import { X, RotateCw, Sparkles, MessageCircle } from "lucide-react";
+import AgentChatPanel from "./AgentChatPanel";
+import FlyerDetailCard from "./FlyerDetailCard";
 
 export default function AIRoom360({ agent, onClose }) {
   const mountRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [autoRotate, setAutoRotate] = useState(true);
   const [pinkRoom, setPinkRoom] = useState(false);
+  const [activeFlyer, setActiveFlyer] = useState(null);
+  const [chatOpen, setChatOpen] = useState(false);
   const autoRotateRef = useRef(true);
   const pinkRoomRef = useRef(false);
   const joystickRef = useRef({ active: false, x: 0, y: 0, startX: 0, startY: 0 });
@@ -158,23 +162,52 @@ export default function AIRoom360({ agent, onClose }) {
       scene.add(pinkLockHalo);
     }
 
-    // Raycaster for clicking the lock
+    // Raycaster for clicking the lock and flyers
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
+    let dragMoved = false;
+    let dragStartX = 0, dragStartY = 0;
+    const onPointerDownTrack = (e) => {
+      const cx = e.clientX !== undefined ? e.clientX : e.changedTouches?.[0]?.clientX;
+      const cy = e.clientY !== undefined ? e.clientY : e.changedTouches?.[0]?.clientY;
+      dragStartX = cx; dragStartY = cy; dragMoved = false;
+    };
+    const onPointerMoveTrack = (e) => {
+      const cx = e.clientX !== undefined ? e.clientX : e.touches?.[0]?.clientX;
+      const cy = e.clientY !== undefined ? e.clientY : e.touches?.[0]?.clientY;
+      if (cx === undefined) return;
+      if (Math.abs(cx - dragStartX) > 5 || Math.abs(cy - dragStartY) > 5) dragMoved = true;
+    };
+
     const onClickScene = (e) => {
-      if (!pinkLock || pinkRoomRef.current) return;
+      if (dragMoved) return; // ignore drag-look gestures
       const rect = renderer.domElement.getBoundingClientRect();
       const cx = (e.clientX !== undefined ? e.clientX : e.changedTouches?.[0]?.clientX) - rect.left;
       const cy = (e.clientY !== undefined ? e.clientY : e.changedTouches?.[0]?.clientY) - rect.top;
       pointer.x = (cx / rect.width) * 2 - 1;
       pointer.y = -(cy / rect.height) * 2 + 1;
       raycaster.setFromCamera(pointer, camera);
-      const hits = raycaster.intersectObject(pinkLock);
-      if (hits.length > 0) {
-        setPinkRoom(true);
+
+      // Check pink lock first
+      if (pinkLock && !pinkRoomRef.current) {
+        const lockHits = raycaster.intersectObject(pinkLock);
+        if (lockHits.length > 0) {
+          setPinkRoom(true);
+          return;
+        }
+      }
+      // Check flyers
+      const flyerHits = raycaster.intersectObjects(flyerMeshes);
+      if (flyerHits.length > 0) {
+        const data = flyerHits[0].object.userData.flyerData;
+        if (data) setActiveFlyer(data);
       }
     };
     renderer.domElement.addEventListener("click", onClickScene);
+    renderer.domElement.addEventListener("mousedown", onPointerDownTrack);
+    renderer.domElement.addEventListener("mousemove", onPointerMoveTrack);
+    renderer.domElement.addEventListener("touchstart", onPointerDownTrack, { passive: true });
+    renderer.domElement.addEventListener("touchmove", onPointerMoveTrack, { passive: true });
 
     // ---------- FLOATING FLYERS / BILLBOARDS ----------
     const flyerTextures = [];
@@ -257,21 +290,45 @@ export default function AIRoom360({ agent, onClose }) {
         tex: makeFlyerTexture(agent.name, agent.tagline || "AI Agent", "#22d3ee"),
         position: [30, 5, -80],
         rotation: [0, 0.3, 0],
+        data: {
+          label: "Identity",
+          title: agent.name,
+          body: agent.tagline || "An AI agent in the TTT ecosystem.",
+          accent: "#22d3ee",
+        },
       },
       {
         tex: makeFlyerTexture("ABOUT", agent.description || "Part of the TTT ecosystem", "#a855f7"),
         position: [-60, 0, -50],
         rotation: [0, -0.5, 0],
+        data: {
+          label: "About",
+          title: `What ${agent.name} does`,
+          body: agent.description || "Part of the TTT ecosystem.",
+          accent: "#a855f7",
+        },
       },
       {
         tex: makeFlyerTexture("STATUS", agent.badge || "ONLINE", "#10b981"),
         position: [-20, 10, 60],
         rotation: [0, Math.PI + 0.3, 0],
+        data: {
+          label: "Status",
+          title: agent.badge || "Online",
+          body: `${agent.name} is currently ${(agent.badge || "online").toLowerCase()} and ready to chat. Tap below to start a conversation.`,
+          accent: "#10b981",
+        },
       },
       {
         tex: makeFlyerTexture("CATEGORY", agent.category || "AI AGENT", "#ec4899"),
         position: [70, -5, 40],
         rotation: [0, -Math.PI / 2 - 0.3, 0],
+        data: {
+          label: "Category",
+          title: agent.category || "AI Agent",
+          body: `${agent.name} belongs to the ${agent.category || "AI Agent"} category — ${agent.tagline}.`,
+          accent: "#ec4899",
+        },
       },
     ];
 
@@ -288,6 +345,7 @@ export default function AIRoom360({ agent, onClose }) {
       flyerMesh.rotation.set(...f.rotation);
       flyerMesh.userData.basePos = flyerMesh.position.clone();
       flyerMesh.userData.floatOffset = Math.random() * Math.PI * 2;
+      flyerMesh.userData.flyerData = f.data;
       scene.add(flyerMesh);
       flyerMeshes.push(flyerMesh);
     });
@@ -502,6 +560,10 @@ export default function AIRoom360({ agent, onClose }) {
       canvas.removeEventListener("touchmove", onMove);
       canvas.removeEventListener("touchend", onUp);
       renderer.domElement.removeEventListener("click", onClickScene);
+      renderer.domElement.removeEventListener("mousedown", onPointerDownTrack);
+      renderer.domElement.removeEventListener("mousemove", onPointerMoveTrack);
+      renderer.domElement.removeEventListener("touchstart", onPointerDownTrack);
+      renderer.domElement.removeEventListener("touchmove", onPointerMoveTrack);
       if (pinkLock) {
         pinkLock.material.map?.dispose();
         pinkLock.material.dispose();
@@ -672,6 +734,32 @@ export default function AIRoom360({ agent, onClose }) {
             </span>
           </motion.button>
         )}
+
+        {/* Talk to Agent floating button */}
+        {!chatOpen && !loading && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 1 }}
+            onClick={() => setChatOpen(true)}
+            className={`absolute right-4 sm:right-6 bottom-44 sm:bottom-32 z-30 flex items-center gap-2 px-4 py-3 rounded-full bg-gradient-to-r ${agent.color} text-white font-bold text-sm shadow-2xl hover:scale-105 transition-transform`}
+            style={{ boxShadow: "0 0 40px rgba(34,211,238,0.4)" }}
+          >
+            <MessageCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">Talk to {agent.name}</span>
+            <span className="sm:hidden">Chat</span>
+          </motion.button>
+        )}
+
+        {/* Flyer detail popup */}
+        <FlyerDetailCard
+          flyer={activeFlyer}
+          onClose={() => setActiveFlyer(null)}
+          onChat={() => { setActiveFlyer(null); setChatOpen(true); }}
+        />
+
+        {/* Chat panel */}
+        <AgentChatPanel agent={agent} open={chatOpen} onClose={() => setChatOpen(false)} />
 
         {/* Mobile Joystick */}
         <div
