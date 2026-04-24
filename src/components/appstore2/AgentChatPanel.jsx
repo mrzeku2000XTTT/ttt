@@ -1,25 +1,46 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Sparkles, Loader2, Minus, MessageCircle } from "lucide-react";
+import { X, Send, Sparkles, Loader2, Minus, MessageCircle, Shield } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+
+// Generate an ephemeral session wallet — never persisted, never linked to user
+const generateSessionWallet = () => {
+  const bytes = new Uint8Array(20);
+  crypto.getRandomValues(bytes);
+  const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
+  return `kaspa:zk_${hex}`;
+};
 
 export default function AgentChatPanel({ agent, open, onClose }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [minimized, setMinimized] = useState(false);
+  const [sessionWallet, setSessionWallet] = useState("");
   const scrollRef = useRef(null);
 
+  // Generate a fresh ephemeral wallet each time a new chat session opens
   useEffect(() => {
-    if (open && messages.length === 0 && agent) {
+    if (open && agent && !sessionWallet) {
+      setSessionWallet(generateSessionWallet());
+    }
+    if (!open) {
+      // wipe session on close so next open gets a brand-new identity
+      setSessionWallet("");
+      setMessages([]);
+    }
+  }, [open, agent]);
+
+  useEffect(() => {
+    if (open && messages.length === 0 && agent && sessionWallet) {
       setMessages([
         {
           role: "assistant",
-          content: `Hey, I'm ${agent.name} — ${agent.tagline}. ${agent.description} What would you like to know?`,
+          content: `Hey, I'm ${agent.name} — ${agent.tagline}. You're chatting under an ephemeral session wallet (${sessionWallet.slice(0, 14)}…) so nothing leaks. What would you like to know?`,
         },
       ]);
     }
-  }, [open, agent]);
+  }, [open, agent, sessionWallet]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -43,6 +64,8 @@ export default function AgentChatPanel({ agent, open, onClose }) {
       const prompt = `You are ${agent.name}, an AI agent on the TTT (Kaspa) platform.
 Your tagline: ${agent.tagline}
 Your role: ${agent.description}
+
+PRIVACY: The user is chatting under an ephemeral, anonymous session wallet (${sessionWallet}). You do NOT know their real identity, email, or persistent wallet. NEVER ask for or reference any personal info — treat them only as this session ID. Do not mention other users, prior chats, or anything outside this session.
 
 Stay in character. Be concise (2-4 sentences usually), helpful, and friendly. If asked about features outside your role, politely redirect to what you specialize in.
 
@@ -98,9 +121,11 @@ Reply as ${agent.name}:`;
               </div>
               <div className="min-w-0">
                 <div className="text-white text-xs font-bold truncate">{agent.name}</div>
-                <div className="flex items-center gap-1">
-                  <div className="w-1 h-1 rounded-full bg-green-400 animate-pulse" />
-                  <span className="text-green-300 text-[9px] font-mono uppercase tracking-wider">Online</span>
+                <div className="flex items-center gap-1" title={sessionWallet}>
+                  <Shield className="w-2.5 h-2.5 text-cyan-300" />
+                  <span className="text-cyan-300/80 text-[9px] font-mono truncate">
+                    {sessionWallet ? `${sessionWallet.slice(0, 14)}…` : "session"}
+                  </span>
                 </div>
               </div>
             </div>
