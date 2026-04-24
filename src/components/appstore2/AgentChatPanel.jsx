@@ -3,32 +3,40 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, Sparkles, Loader2, Minus, MessageCircle, Shield } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
-// Generate an ephemeral session wallet — never persisted, never linked to user
-const generateSessionWallet = () => {
-  const bytes = new Uint8Array(20);
-  crypto.getRandomValues(bytes);
-  const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
-  return `kaspa:zk_${hex}`;
-};
-
 export default function AgentChatPanel({ agent, open, onClose }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [sessionWallet, setSessionWallet] = useState("");
+  const [walletLoading, setWalletLoading] = useState(false);
   const scrollRef = useRef(null);
 
-  // Generate a fresh ephemeral wallet each time a new chat session opens
+  // Generate a fresh REAL Kaspa wallet for each chat session — same pipeline as the betting app
   useEffect(() => {
-    if (open && agent && !sessionWallet) {
-      setSessionWallet(generateSessionWallet());
-    }
+    let cancelled = false;
+    const init = async () => {
+      if (open && agent && !sessionWallet && !walletLoading) {
+        setWalletLoading(true);
+        try {
+          const res = await base44.functions.invoke("createKaspaWallet", { wordCount: 12 });
+          const addr = res?.data?.address;
+          if (!cancelled && addr) {
+            setSessionWallet(addr);
+          }
+        } catch (e) {
+          // wallet creation failed — leave blank, chat still works
+        }
+        if (!cancelled) setWalletLoading(false);
+      }
+    };
+    init();
     if (!open) {
       // wipe session on close so next open gets a brand-new identity
       setSessionWallet("");
       setMessages([]);
     }
+    return () => { cancelled = true; };
   }, [open, agent]);
 
   useEffect(() => {
@@ -36,7 +44,7 @@ export default function AgentChatPanel({ agent, open, onClose }) {
       setMessages([
         {
           role: "assistant",
-          content: `Hey, I'm ${agent.name} — ${agent.tagline}. You're chatting under an ephemeral session wallet (${sessionWallet.slice(0, 14)}…) so nothing leaks. What would you like to know?`,
+          content: `Hey, I'm ${agent.name} — ${agent.tagline}. You're chatting under a fresh ephemeral Kaspa session wallet (${sessionWallet.slice(0, 18)}…) generated just for this conversation, so nothing leaks. What would you like to know?`,
         },
       ]);
     }
@@ -121,10 +129,10 @@ Reply as ${agent.name}:`;
               </div>
               <div className="min-w-0">
                 <div className="text-white text-xs font-bold truncate">{agent.name}</div>
-                <div className="flex items-center gap-1" title={sessionWallet}>
+                <div className="flex items-center gap-1" title={sessionWallet || "Generating Kaspa session wallet…"}>
                   <Shield className="w-2.5 h-2.5 text-cyan-300" />
                   <span className="text-cyan-300/80 text-[9px] font-mono truncate">
-                    {sessionWallet ? `${sessionWallet.slice(0, 14)}…` : "session"}
+                    {walletLoading ? "generating…" : sessionWallet ? `${sessionWallet.slice(6, 18)}…` : "session"}
                   </span>
                 </div>
               </div>
