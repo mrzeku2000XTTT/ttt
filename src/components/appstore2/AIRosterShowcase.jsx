@@ -116,7 +116,10 @@ export default function AIRosterShowcase() {
         {AGENTS.map((agent, idx) => (
           <motion.button
             key={agent.name}
-            onClick={() => setActiveAgent(agent)}
+            onClick={() => {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+              setActiveAgent(agent);
+            }}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.04 }}
