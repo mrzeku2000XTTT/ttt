@@ -65,6 +65,31 @@ export default function AppStoreV2Page() {
       </nav>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-20">
+        {/* Cinematic Hero Banner */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.7 }}
+          className="relative w-full h-44 sm:h-64 md:h-80 mb-6 rounded-2xl overflow-hidden ring-1 ring-zinc-200/60 shadow-lg"
+        >
+          <img
+            src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/48e09cf00_generated_image.png"
+            alt="Cinematic AI app store"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-7">
+            <div className="text-[10px] font-bold tracking-[0.2em] text-cyan-300 mb-2 uppercase">Welcome to TTT</div>
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-[900] text-white tracking-tight leading-tight drop-shadow-lg">
+              The Decentralized App Store
+            </h2>
+            <p className="text-white/70 text-xs sm:text-sm mt-1.5 max-w-md">
+              Built on Kaspa · Powered by the community
+            </p>
+          </div>
+        </motion.div>
+
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="mb-6 flex items-start justify-between gap-4">
           <div>
