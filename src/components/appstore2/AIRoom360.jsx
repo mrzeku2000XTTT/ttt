@@ -20,9 +20,7 @@ export default function AIRoom360({ agent, onClose }) {
     const width = mount.clientWidth;
     const height = mount.clientHeight;
 
-    // Scene with cool blue atmospheric fog for depth
     const scene = new THREE.Scene();
-    scene.fog = new THREE.Fog(0x0a1828, 40, 220);
 
     // Camera at center, looking outward
     const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1100);
@@ -48,10 +46,8 @@ export default function AIRoom360({ agent, onClose }) {
       (texture) => {
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
-        // Dark cinematic tint — multiply with deep navy for shadowed realism
         skyMaterial = new THREE.MeshBasicMaterial({
           map: texture,
-          color: 0x4a6580, // dark blue-grey tint multiplied with texture
         });
         skyMesh = new THREE.Mesh(geometry, skyMaterial);
         scene.add(skyMesh);
