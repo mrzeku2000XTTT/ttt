@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Bot, Sparkles, Crown } from "lucide-react";
+import { Bot, Sparkles, Crown, Maximize2 } from "lucide-react";
+import AIRoom360 from "./AIRoom360";
 
 const AGENTS = [
   {
@@ -99,6 +100,8 @@ const AGENTS = [
 ];
 
 export default function AIRosterShowcase() {
+  const [activeAgent, setActiveAgent] = useState(null);
+
   return (
     <div className="px-6 sm:px-8 py-6 border-t border-white/10">
       <div className="flex items-center gap-2 mb-1">
@@ -106,17 +109,18 @@ export default function AIRosterShowcase() {
         <h3 className="text-white font-bold text-sm uppercase tracking-wider">The TTT AI Roster</h3>
       </div>
       <p className="text-white/40 text-xs mb-5">
-        {AGENTS.length} agents powering the TTT ecosystem — each with a unique role.
+        {AGENTS.length} agents powering the TTT ecosystem — tap any agent to enter their 360° room.
       </p>
 
       <div className="grid sm:grid-cols-2 gap-3">
         {AGENTS.map((agent, idx) => (
-          <motion.div
+          <motion.button
             key={agent.name}
+            onClick={() => setActiveAgent(agent)}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.04 }}
-            className="group relative overflow-hidden rounded-2xl ring-1 ring-white/10 bg-white/[0.03] hover:ring-cyan-500/40 transition-all"
+            className="group relative overflow-hidden rounded-2xl ring-1 ring-white/10 bg-white/[0.03] hover:ring-cyan-500/40 transition-all text-left cursor-pointer"
           >
             {/* Banner */}
             <div className="relative h-28 overflow-hidden">
@@ -137,6 +141,12 @@ export default function AIRosterShowcase() {
                 )}
                 <span className="text-white text-[9px] font-bold tracking-wider uppercase">{agent.badge}</span>
               </div>
+
+              {/* Enter Room hint */}
+              <div className="absolute bottom-2 left-2 flex items-center gap-1 px-2 py-1 rounded-full bg-cyan-500/80 backdrop-blur opacity-0 group-hover:opacity-100 transition-opacity">
+                <Maximize2 className="w-2.5 h-2.5 text-black" />
+                <span className="text-black text-[9px] font-bold tracking-wider uppercase">Enter 360° Room</span>
+              </div>
             </div>
 
             {/* Content */}
@@ -149,9 +159,11 @@ export default function AIRosterShowcase() {
               </div>
               <p className="text-white/60 text-[11px] leading-relaxed">{agent.description}</p>
             </div>
-          </motion.div>
+          </motion.button>
         ))}
       </div>
+
+      {activeAgent && <AIRoom360 agent={activeAgent} onClose={() => setActiveAgent(null)} />}
     </div>
   );
 }
