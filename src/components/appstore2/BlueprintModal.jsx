@@ -1,6 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Shield, Vote, Link2, Layers, ArrowRight, Sparkles } from "lucide-react";
+import AIRosterShowcase from "./AIRosterShowcase";
 
 const ARCHITECTURE_IMG = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e37f03a1f_generated_image.png";
 const PHASE1_IMG = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/216a28e88_generated_image.png";
@@ -168,6 +169,9 @@ export default function BlueprintModal({ open, onClose }) {
                   );
                 })}
               </div>
+
+              {/* AI Roster */}
+              <AIRosterShowcase />
 
               {/* Footer */}
               <div className="p-6 sm:p-8 border-t border-white/10 bg-white/[0.02] flex flex-col sm:flex-row items-center justify-between gap-3">
