@@ -8,6 +8,8 @@ export default function AIRoom360({ agent, onClose }) {
   const [loading, setLoading] = useState(true);
   const [autoRotate, setAutoRotate] = useState(true);
   const autoRotateRef = useRef(true);
+  const joystickRef = useRef({ active: false, x: 0, y: 0, startX: 0, startY: 0 });
+  const [joyVisual, setJoyVisual] = useState({ x: 0, y: 0, active: false });
 
   useEffect(() => { autoRotateRef.current = autoRotate; }, [autoRotate]);
 
@@ -188,21 +190,36 @@ export default function AIRoom360({ agent, onClose }) {
     let lon = 0, lat = 0;
     let downLon = 0, downLat = 0, downX = 0, downY = 0;
 
-    const getPt = (e) => ({
-      x: e.clientX ?? e.touches?.[0]?.clientX ?? 0,
-      y: e.clientY ?? e.touches?.[0]?.clientY ?? 0,
-    });
+    // Player position (walking)
+    const playerPos = new THREE.Vector3(0, 0, 0);
+    const MOVE_SPEED = 25; // units per second
+    const WALK_BOUND = 80; // stay well inside 500-radius sphere
+
+    const getPt = (e) => {
+      if (e.touches && e.touches.length > 0) {
+        // Ignore touches on the left half (joystick area) for look control
+        for (const t of e.touches) {
+          if (t.clientX > window.innerWidth * 0.35) {
+            return { x: t.clientX, y: t.clientY };
+          }
+        }
+        return null;
+      }
+      return { x: e.clientX, y: e.clientY };
+    };
 
     const onDown = (e) => {
+      const p = getPt(e);
+      if (!p) return;
       isDragging = true;
       setAutoRotate(false);
-      const p = getPt(e);
       downX = p.x; downY = p.y;
       downLon = lon; downLat = lat;
     };
     const onMove = (e) => {
       if (!isDragging) return;
       const p = getPt(e);
+      if (!p) return;
       lon = (downX - p.x) * 0.15 + downLon;
       lat = (p.y - downY) * 0.15 + downLat;
     };
@@ -213,9 +230,28 @@ export default function AIRoom360({ agent, onClose }) {
     canvas.addEventListener("mousemove", onMove);
     canvas.addEventListener("mouseup", onUp);
     canvas.addEventListener("mouseleave", onUp);
-    canvas.addEventListener("touchstart", onDown);
-    canvas.addEventListener("touchmove", onMove);
+    canvas.addEventListener("touchstart", onDown, { passive: true });
+    canvas.addEventListener("touchmove", onMove, { passive: true });
     canvas.addEventListener("touchend", onUp);
+
+    // Keyboard walking
+    const keys = { w: false, a: false, s: false, d: false };
+    const onKeyDown = (e) => {
+      const k = e.key.toLowerCase();
+      if (k === "w" || k === "arrowup") keys.w = true;
+      if (k === "s" || k === "arrowdown") keys.s = true;
+      if (k === "a" || k === "arrowleft") keys.a = true;
+      if (k === "d" || k === "arrowright") keys.d = true;
+    };
+    const onKeyUp = (e) => {
+      const k = e.key.toLowerCase();
+      if (k === "w" || k === "arrowup") keys.w = false;
+      if (k === "s" || k === "arrowdown") keys.s = false;
+      if (k === "a" || k === "arrowleft") keys.a = false;
+      if (k === "d" || k === "arrowright") keys.d = false;
+    };
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
 
     const handleResize = () => {
       const w = mount.clientWidth;
@@ -230,18 +266,51 @@ export default function AIRoom360({ agent, onClose }) {
     const clock = new THREE.Clock();
     const animate = () => {
       frameId = requestAnimationFrame(animate);
-      const t = clock.getElapsedTime();
+      const dt = Math.min(clock.getDelta(), 0.1);
+      const t = clock.elapsedTime;
 
-      if (autoRotateRef.current && !isDragging) lon += 0.05;
+      if (autoRotateRef.current && !isDragging) lon += 3 * dt;
 
       lat = Math.max(-85, Math.min(85, lat));
       const phi = THREE.MathUtils.degToRad(90 - lat);
       const theta = THREE.MathUtils.degToRad(lon);
 
+      // Look direction vector
+      const lookX = Math.sin(phi) * Math.cos(theta);
+      const lookZ = Math.sin(phi) * Math.sin(theta);
+
+      // Walking input
+      let forward = 0, strafe = 0;
+      if (keys.w) forward += 1;
+      if (keys.s) forward -= 1;
+      if (keys.d) strafe += 1;
+      if (keys.a) strafe -= 1;
+      if (joystickRef.current.active) {
+        forward -= joystickRef.current.y;
+        strafe += joystickRef.current.x;
+      }
+      const mag = Math.sqrt(forward * forward + strafe * strafe);
+      if (mag > 1) { forward /= mag; strafe /= mag; }
+
+      // Move along look direction (horizontal plane only)
+      const flatLen = Math.sqrt(lookX * lookX + lookZ * lookZ) || 1;
+      const fX = lookX / flatLen;
+      const fZ = lookZ / flatLen;
+      // Right vector (perpendicular on XZ)
+      const rX = -fZ;
+      const rZ = fX;
+
+      const dx = (fX * forward + rX * strafe) * MOVE_SPEED * dt;
+      const dz = (fZ * forward + rZ * strafe) * MOVE_SPEED * dt;
+
+      playerPos.x = Math.max(-WALK_BOUND, Math.min(WALK_BOUND, playerPos.x + dx));
+      playerPos.z = Math.max(-WALK_BOUND, Math.min(WALK_BOUND, playerPos.z + dz));
+
+      camera.position.copy(playerPos);
       camera.lookAt(
-        500 * Math.sin(phi) * Math.cos(theta),
-        500 * Math.cos(phi),
-        500 * Math.sin(phi) * Math.sin(theta)
+        playerPos.x + 500 * lookX,
+        playerPos.y + 500 * Math.cos(phi),
+        playerPos.z + 500 * lookZ
       );
 
       // Float & gently turn flyers toward camera
@@ -259,6 +328,8 @@ export default function AIRoom360({ agent, onClose }) {
     return () => {
       cancelAnimationFrame(frameId);
       window.removeEventListener("resize", handleResize);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
       canvas.removeEventListener("mousedown", onDown);
       canvas.removeEventListener("mousemove", onMove);
       canvas.removeEventListener("mouseup", onUp);
@@ -275,6 +346,35 @@ export default function AIRoom360({ agent, onClose }) {
       renderer.dispose();
     };
   }, [agent]);
+
+  // Joystick handlers
+  const onJoyStart = (e) => {
+    const t = e.touches ? e.touches[0] : e;
+    joystickRef.current.active = true;
+    joystickRef.current.startX = t.clientX;
+    joystickRef.current.startY = t.clientY;
+    joystickRef.current.x = 0;
+    joystickRef.current.y = 0;
+    setJoyVisual({ x: 0, y: 0, active: true });
+  };
+  const onJoyMove = (e) => {
+    if (!joystickRef.current.active) return;
+    const t = e.touches ? e.touches[0] : e;
+    const dx = t.clientX - joystickRef.current.startX;
+    const dy = t.clientY - joystickRef.current.startY;
+    const max = 45;
+    const cx = Math.max(-max, Math.min(max, dx)) / max;
+    const cy = Math.max(-max, Math.min(max, dy)) / max;
+    joystickRef.current.x = cx;
+    joystickRef.current.y = cy;
+    setJoyVisual({ x: cx * max, y: cy * max, active: true });
+  };
+  const onJoyEnd = () => {
+    joystickRef.current.active = false;
+    joystickRef.current.x = 0;
+    joystickRef.current.y = 0;
+    setJoyVisual({ x: 0, y: 0, active: false });
+  };
 
   if (!agent) return null;
 
@@ -350,13 +450,32 @@ export default function AIRoom360({ agent, onClose }) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-white/80 text-xs sm:text-sm leading-relaxed">{agent.description}</p>
-                <div className="mt-2 text-white/40 text-[10px] tracking-wider">
-                  Drag to look around · Floating flyers contain agent info
+                <div className="mt-2 text-white/40 text-[10px] tracking-wider hidden md:block">
+                  <kbd className="text-cyan-300">WASD</kbd> Walk · <kbd className="text-cyan-300">Drag</kbd> Look
+                </div>
+                <div className="mt-2 text-white/40 text-[10px] tracking-wider md:hidden">
+                  Left joystick to walk · Drag right side to look
                 </div>
               </div>
             </div>
           </div>
         </motion.div>
+
+        {/* Mobile Joystick */}
+        <div
+          className="md:hidden absolute bottom-32 left-6 z-30 w-28 h-28 touch-none"
+          onTouchStart={onJoyStart}
+          onTouchMove={onJoyMove}
+          onTouchEnd={onJoyEnd}
+        >
+          <div className="w-full h-full rounded-full bg-black/50 backdrop-blur-xl ring-1 ring-cyan-500/40 relative">
+            <div
+              className="absolute top-1/2 left-1/2 w-11 h-11 rounded-full bg-cyan-500/70 ring-2 ring-cyan-300 transition-transform"
+              style={{ transform: `translate(calc(-50% + ${joyVisual.x}px), calc(-50% + ${joyVisual.y}px))` }}
+            />
+          </div>
+          <div className="text-center text-[9px] text-cyan-300/70 font-mono mt-1 tracking-widest">WALK</div>
+        </div>
       </motion.div>
     </AnimatePresence>
   );
