@@ -75,7 +75,7 @@ export default function AppStoreV2Page() {
           className="relative w-full h-44 sm:h-64 md:h-80 mb-6 rounded-2xl overflow-hidden ring-1 ring-zinc-200/60 shadow-lg"
         >
           <img
-            src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/48e09cf00_generated_image.png"
+            src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/024106c05_generated_image.png"
             alt="Cinematic AI app store"
             className="absolute inset-0 w-full h-full object-cover"
           />
