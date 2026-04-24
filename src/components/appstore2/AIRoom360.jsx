@@ -40,16 +40,41 @@ export default function AIRoom360({ agent, onClose }) {
     const loader = new THREE.TextureLoader();
     loader.crossOrigin = "anonymous";
 
+    let skyMesh = null;
+    let skyMaterial = null;
     loader.load(
       agent.image,
       (texture) => {
-        const material = new THREE.MeshBasicMaterial({ map: texture });
-        const mesh = new THREE.Mesh(geometry, material);
-        scene.add(mesh);
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        skyMaterial = new THREE.MeshBasicMaterial({ map: texture });
+        skyMesh = new THREE.Mesh(geometry, skyMaterial);
+        scene.add(skyMesh);
         setLoading(false);
       },
       undefined,
       () => setLoading(false)
+    );
+
+    // Second translucent sphere with same image — offset for parallax shimmer
+    let shimmerMesh = null;
+    let shimmerMaterial = null;
+    loader.load(
+      agent.image,
+      (texture) => {
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        const shimmerGeo = new THREE.SphereGeometry(480, 48, 24);
+        shimmerGeo.scale(-1, 1, 1);
+        shimmerMaterial = new THREE.MeshBasicMaterial({
+          map: texture,
+          transparent: true,
+          opacity: 0.25,
+          blending: THREE.AdditiveBlending,
+        });
+        shimmerMesh = new THREE.Mesh(shimmerGeo, shimmerMaterial);
+        scene.add(shimmerMesh);
+      }
     );
 
     // ---------- FLOATING FLYERS / BILLBOARDS ----------
@@ -319,7 +344,22 @@ export default function AIRoom360({ agent, onClose }) {
         m.rotation.z = Math.sin(t * 0.5 + i) * 0.04;
       });
 
+      // HyperFrames-style motion: subtle texture UV pan + brightness pulse
+      if (skyMaterial && skyMaterial.map) {
+        skyMaterial.map.offset.x = Math.sin(t * 0.05) * 0.01;
+        skyMaterial.map.offset.y = Math.cos(t * 0.03) * 0.005;
+      }
+      if (skyMesh) {
+        skyMesh.rotation.y = Math.sin(t * 0.08) * 0.02;
+      }
+      // Shimmer layer: slow counter-rotation + pulsing opacity (parallax depth)
+      if (shimmerMesh && shimmerMaterial) {
+        shimmerMesh.rotation.y = -t * 0.015;
+        shimmerMaterial.opacity = 0.15 + Math.sin(t * 0.7) * 0.1;
+      }
+
       particles.rotation.y += 0.0005;
+      particles.position.y = Math.sin(t * 0.3) * 2;
 
       renderer.render(scene, camera);
     };
@@ -343,6 +383,9 @@ export default function AIRoom360({ agent, onClose }) {
       particlesMat.dispose();
       flyerTextures.forEach(t => t.dispose());
       flyerMeshes.forEach(m => { m.geometry.dispose(); m.material.dispose(); });
+      if (skyMaterial) { skyMaterial.map?.dispose(); skyMaterial.dispose(); }
+      if (shimmerMesh) { shimmerMesh.geometry.dispose(); }
+      if (shimmerMaterial) { shimmerMaterial.map?.dispose(); shimmerMaterial.dispose(); }
       renderer.dispose();
     };
   }, [agent]);
