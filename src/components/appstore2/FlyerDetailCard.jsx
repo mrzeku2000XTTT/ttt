@@ -2,7 +2,7 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MessageCircle } from "lucide-react";
 
-export default function FlyerDetailCard({ flyer, onClose, onChat }) {
+export default function FlyerDetailCard({ flyer, onClose, onChat, agentName }) {
   return (
     <AnimatePresence>
       {flyer && (
@@ -41,7 +41,7 @@ export default function FlyerDetailCard({ flyer, onClose, onChat }) {
               style={{ background: flyer.accent }}
             >
               <MessageCircle className="w-4 h-4" />
-              Talk to this Agent
+              Talk to {agentName || "this Agent"}
             </button>
           </div>
         </motion.div>

@@ -754,6 +754,7 @@ export default function AIRoom360({ agent, onClose }) {
         {/* Flyer detail popup */}
         <FlyerDetailCard
           flyer={activeFlyer}
+          agentName={agent.name}
           onClose={() => setActiveFlyer(null)}
           onChat={() => { setActiveFlyer(null); setChatOpen(true); }}
         />
