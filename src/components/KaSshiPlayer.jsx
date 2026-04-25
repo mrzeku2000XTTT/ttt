@@ -192,13 +192,14 @@ export default function KaSshiPlayer() {
           </div>
         </div>
 
-        {/* ── Expanded player shell ── always rendered, NEVER display:none (kills audio) */}
+        {/* ── Expanded player shell ── ALWAYS keeps full dimensions and stays mounted.
+            When minimized we just shove it off-screen — never collapse height/width or use
+            display:none/visibility:hidden, since those can pause iframe audio. */}
         <div
           className="group"
           style={{
             width: 350,
-            height: minimized ? 0 : 460,
-            overflow: minimized ? 'hidden' : 'visible',
+            height: 460,
             position: minimized ? 'absolute' : 'relative',
             left: minimized ? -9999 : 0,
             top: minimized ? -9999 : 0,
