@@ -5,6 +5,7 @@ import { X, RotateCw, Sparkles, MessageCircle } from "lucide-react";
 import AgentChatPanel from "./AgentChatPanel";
 import FlyerDetailCard from "./FlyerDetailCard";
 import ImaginePortalPrompt from "./ImaginePortalPrompt";
+import KaSshiFloatingWidget from "./KaSshiFloatingWidget";
 import { base44 } from "@/api/base44Client";
 
 export default function AIRoom360({ agent, onClose }) {
@@ -15,6 +16,7 @@ export default function AIRoom360({ agent, onClose }) {
   const [activeFlyer, setActiveFlyer] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [imagineOpen, setImagineOpen] = useState(false);
+  const [kasshiOpen, setKasshiOpen] = useState(false);
   const [imagineLoading, setImagineLoading] = useState(false);
   const [hasCustomSky, setHasCustomSky] = useState(false);
   const [portalRemaining, setPortalRemaining] = useState(3);
@@ -225,6 +227,67 @@ export default function AIRoom360({ agent, onClose }) {
     imagineHalo.position.copy(imagineBox.position);
     scene.add(imagineHalo);
 
+    // ---------- KASSHI LIVE VIDEO SPRITE (every room) ----------
+    // Red glowing TV/play icon — click to open the live KaSshi feed widget
+    const kasshiCanvas = document.createElement("canvas");
+    kasshiCanvas.width = 256;
+    kasshiCanvas.height = 256;
+    const kctx = kasshiCanvas.getContext("2d");
+    const kgrad = kctx.createRadialGradient(128, 128, 10, 128, 128, 128);
+    kgrad.addColorStop(0, "rgba(252, 165, 165, 1)");
+    kgrad.addColorStop(0.5, "rgba(239, 68, 68, 0.9)");
+    kgrad.addColorStop(1, "rgba(127, 29, 29, 0)");
+    kctx.fillStyle = kgrad;
+    kctx.fillRect(0, 0, 256, 256);
+    // TV frame
+    kctx.strokeStyle = "#fff";
+    kctx.lineWidth = 6;
+    kctx.strokeRect(70, 80, 116, 80);
+    // Play triangle
+    kctx.fillStyle = "#fff";
+    kctx.beginPath();
+    kctx.moveTo(115, 105);
+    kctx.lineTo(115, 135);
+    kctx.lineTo(145, 120);
+    kctx.closePath();
+    kctx.fill();
+    // TV legs
+    kctx.lineWidth = 4;
+    kctx.beginPath();
+    kctx.moveTo(100, 160); kctx.lineTo(90, 175);
+    kctx.moveTo(156, 160); kctx.lineTo(166, 175);
+    kctx.stroke();
+    // LIVE label
+    kctx.fillStyle = "#fff";
+    kctx.font = "bold 20px sans-serif";
+    kctx.fillText("LIVE", 102, 200);
+
+    const kasshiTex = new THREE.CanvasTexture(kasshiCanvas);
+    const kasshiMat = new THREE.SpriteMaterial({
+      map: kasshiTex,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const kasshiSprite = new THREE.Sprite(kasshiMat);
+    kasshiSprite.scale.set(11, 11, 1);
+    kasshiSprite.position.set(25, 3, -30);
+    kasshiSprite.userData.basePos = kasshiSprite.position.clone();
+    kasshiSprite.userData.isKasshi = true;
+    scene.add(kasshiSprite);
+
+    const kasshiHaloMat = new THREE.SpriteMaterial({
+      map: kasshiTex,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      opacity: 0.4,
+      depthWrite: false,
+    });
+    const kasshiHalo = new THREE.Sprite(kasshiHaloMat);
+    kasshiHalo.scale.set(22, 22, 1);
+    kasshiHalo.position.copy(kasshiSprite.position);
+    scene.add(kasshiHalo);
+
     // Expose scene/sphere refs so portal generation can swap textures
     sceneRefs.current.scene = scene;
     sceneRefs.current.geometry = geometry;
@@ -273,6 +336,12 @@ export default function AIRoom360({ agent, onClose }) {
       const imagineHits = raycaster.intersectObject(imagineBox);
       if (imagineHits.length > 0) {
         setImagineOpen(true);
+        return;
+      }
+      // Check KaSshi live sprite
+      const kasshiHits = raycaster.intersectObject(kasshiSprite);
+      if (kasshiHits.length > 0) {
+        setKasshiOpen(true);
         return;
       }
       // Check flyers
@@ -631,6 +700,15 @@ export default function AIRoom360({ agent, onClose }) {
       const ihaloPulse = 1 + Math.sin(t * 1) * 0.12;
       imagineHalo.scale.set(22 * ihaloPulse, 22 * ihaloPulse, 1);
 
+      // KaSshi sprite float + pulse
+      kasshiSprite.position.y = kasshiSprite.userData.basePos.y + Math.sin(t * 1.4 + 2) * 0.7;
+      const kpulse = 1 + Math.sin(t * 2.2) * 0.08;
+      kasshiSprite.scale.set(11 * kpulse, 11 * kpulse, 1);
+      kasshiHalo.position.copy(kasshiSprite.position);
+      kasshiHalo.material.opacity = 0.3 + Math.sin(t * 1.8) * 0.18;
+      const khaloPulse = 1 + Math.sin(t * 1.2) * 0.14;
+      kasshiHalo.scale.set(22 * khaloPulse, 22 * khaloPulse, 1);
+
       renderer.render(scene, camera);
     };
     animate();
@@ -662,6 +740,9 @@ export default function AIRoom360({ agent, onClose }) {
       imagineTex.dispose();
       imagineMat.dispose();
       imagineHaloMat.dispose();
+      kasshiTex.dispose();
+      kasshiMat.dispose();
+      kasshiHaloMat.dispose();
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
       geometry.dispose();
       particlesGeo.dispose();
@@ -960,6 +1041,9 @@ export default function AIRoom360({ agent, onClose }) {
 
         {/* Chat panel */}
         <AgentChatPanel agent={agent} open={chatOpen} onClose={() => setChatOpen(false)} />
+
+        {/* KaSshi floating live widget */}
+        <KaSshiFloatingWidget open={kasshiOpen} onClose={() => setKasshiOpen(false)} />
 
         {/* Imagine Portal prompt */}
         <ImaginePortalPrompt
