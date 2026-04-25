@@ -7,6 +7,7 @@ import FlyerDetailCard from "./FlyerDetailCard";
 import ImaginePortalPrompt from "./ImaginePortalPrompt";
 import KaSshiFloatingWidget from "./KaSshiFloatingWidget";
 import { base44 } from "@/api/base44Client";
+import { createImagineEmitter, createKasshiEmitter, distanceToVolume } from "./spatialAudio";
 
 export default function AIRoom360({ agent, onClose }) {
   const mountRef = useRef(null);
@@ -20,6 +21,8 @@ export default function AIRoom360({ agent, onClose }) {
   const [imagineLoading, setImagineLoading] = useState(false);
   const [hasCustomSky, setHasCustomSky] = useState(false);
   const [portalRemaining, setPortalRemaining] = useState(3);
+  const [audioEnabled, setAudioEnabled] = useState(false);
+  const audioRefs = useRef({ ctx: null, master: null, imagine: null, kasshi: null, started: false });
   const sceneRefs = useRef({ scene: null, originalImage: null, skyMesh: null, geometry: null });
   const autoRotateRef = useRef(true);
   const pinkRoomRef = useRef(false);
@@ -297,6 +300,9 @@ export default function AIRoom360({ agent, onClose }) {
     sceneRefs.current.setSkyMaterial = (m) => { skyMaterial = m; };
     sceneRefs.current.originalImage = agent.image;
     sceneRefs.current.loader = loader;
+    sceneRefs.current.imagineBoxPos = imagineBox.position;
+    sceneRefs.current.kasshiSpritePos = kasshiSprite.position;
+    sceneRefs.current.camera = camera;
 
     // Raycaster for clicking the lock and flyers
     const raycaster = new THREE.Raycaster();
@@ -709,6 +715,26 @@ export default function AIRoom360({ agent, onClose }) {
       const khaloPulse = 1 + Math.sin(t * 1.2) * 0.14;
       kasshiHalo.scale.set(22 * khaloPulse, 22 * khaloPulse, 1);
 
+      // ---------- SPATIAL AUDIO: proximity volume ----------
+      if (audioRefs.current.started && audioRefs.current.ctx) {
+        const ctx = audioRefs.current.ctx;
+        const camPos = camera.position;
+        const dxI = camPos.x - imagineBox.position.x;
+        const dyI = camPos.y - imagineBox.position.y;
+        const dzI = camPos.z - imagineBox.position.z;
+        const distImagine = Math.sqrt(dxI * dxI + dyI * dyI + dzI * dzI);
+        const dxK = camPos.x - kasshiSprite.position.x;
+        const dyK = camPos.y - kasshiSprite.position.y;
+        const dzK = camPos.z - kasshiSprite.position.z;
+        const distKasshi = Math.sqrt(dxK * dxK + dyK * dyK + dzK * dzK);
+        if (audioRefs.current.imagine) {
+          audioRefs.current.imagine.setVolume(distanceToVolume(distImagine), ctx.currentTime);
+        }
+        if (audioRefs.current.kasshi) {
+          audioRefs.current.kasshi.setVolume(distanceToVolume(distKasshi), ctx.currentTime);
+        }
+      }
+
       renderer.render(scene, camera);
     };
     animate();
@@ -786,6 +812,44 @@ export default function AIRoom360({ agent, onClose }) {
     joystickRef.current.y = 0;
     setJoyVisual({ x: 0, y: 0, active: false });
   };
+
+  // Initialize spatial audio on first user gesture (browser autoplay policy)
+  const enableSpatialAudio = async () => {
+    if (audioRefs.current.started) return;
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      if (ctx.state === "suspended") await ctx.resume();
+      const master = ctx.createGain();
+      master.gain.value = 0.7;
+      master.connect(ctx.destination);
+      const imagine = createImagineEmitter(ctx, master);
+      const kasshi = createKasshiEmitter(ctx, master);
+      audioRefs.current = { ctx, master, imagine, kasshi, started: true };
+      setAudioEnabled(true);
+    } catch (e) {
+      console.warn("[SpatialAudio] init failed:", e);
+    }
+  };
+
+  const disableSpatialAudio = () => {
+    const a = audioRefs.current;
+    if (!a.started) return;
+    try { a.imagine?.stop(); a.kasshi?.stop(); a.master?.disconnect(); a.ctx?.close(); } catch {}
+    audioRefs.current = { ctx: null, master: null, imagine: null, kasshi: null, started: false };
+    setAudioEnabled(false);
+  };
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      const a = audioRefs.current;
+      if (a.started) {
+        try { a.imagine?.stop(); a.kasshi?.stop(); a.master?.disconnect(); a.ctx?.close(); } catch {}
+      }
+    };
+  }, []);
 
   // Frame-by-frame world swap: generate image, then reveal as 24 vertical strips
   const handleGenerateWorld = async (userPrompt) => {
@@ -941,6 +1005,19 @@ export default function AIRoom360({ agent, onClose }) {
           </div>
 
           <div className="flex items-center gap-2 pointer-events-auto">
+            <button
+              onClick={() => audioEnabled ? disableSpatialAudio() : enableSpatialAudio()}
+              className={`w-10 h-10 rounded-full backdrop-blur ring-1 ring-white/20 flex items-center justify-center transition-colors ${
+                audioEnabled ? "bg-purple-500/30 text-purple-200" : "bg-black/60 text-white/80 hover:bg-black/80"
+              }`}
+              title={audioEnabled ? "Mute spatial audio" : "Enable spatial audio"}
+            >
+              {audioEnabled ? (
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 010 7.07"/><path d="M19.07 4.93a10 10 0 010 14.14"/></svg>
+              ) : (
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+              )}
+            </button>
             <button
               onClick={() => setAutoRotate(!autoRotate)}
               className={`w-10 h-10 rounded-full backdrop-blur ring-1 ring-white/20 flex items-center justify-center transition-colors ${
