@@ -5,7 +5,7 @@ import { base44 } from "@/api/base44Client";
 import {
   CheckCircle2, ExternalLink, ArrowUpRight,
   ChevronRight, ChevronDown, Monitor, Upload, X,
-  Volume2, VolumeX
+  Volume2, VolumeX, LogIn, LogOut
 } from "lucide-react";
 
 import HeroHeader from "@/components/tttv2/HeroHeader";
@@ -83,14 +83,28 @@ export default function TTTV2Page() {
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const heroVideoRef = React.useRef(null);
   const [navigating, setNavigating] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => { loadContent(); loadKasPrice(); loadDailyKaspaUpdates(); checkAdmin(); loadHeroVideo(); }, []);
 
   const checkAdmin = async () => {
     try {
       const user = await base44.auth.me();
+      setCurrentUser(user);
       setIsAdmin(user?.role === "admin");
-    } catch {}
+    } catch {
+      setCurrentUser(null);
+    }
+  };
+
+  const handleLogin = () => {
+    setNavigating(true);
+    base44.auth.redirectToLogin();
+  };
+
+  const handleLogout = async () => {
+    await base44.auth.logout();
+    setCurrentUser(null);
   };
 
   const HERO_VIDEO_FALLBACK = "https://base44.app/api/apps/6901295fa9bcfaa0f5ba2c2a/files/mp/public/6901295fa9bcfaa0f5ba2c2a/82dea996a_f12bdf5aa_grok-video.mp4";
@@ -220,13 +234,33 @@ export default function TTTV2Page() {
           <a href="#news" className="hover:text-zinc-900 transition-colors">What's New</a>
           <a href="#roadmap" className="hover:text-zinc-900 transition-colors">Roadmap</a>
         </div>
-        <Link
-          to="/Home"
-          onClick={() => setNavigating(true)}
-          className="text-[13px] font-semibold text-white bg-black hover:bg-zinc-800 px-4 py-1.5 rounded-full transition-colors"
-        >
-          Open TTT
-        </Link>
+        <div className="flex items-center gap-2">
+          {currentUser ? (
+            <button
+              onClick={handleLogout}
+              className="text-[13px] font-semibold text-zinc-700 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1.5"
+              title={currentUser.full_name || currentUser.email}
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Logout</span>
+            </button>
+          ) : (
+            <button
+              onClick={handleLogin}
+              className="text-[13px] font-semibold text-zinc-700 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1.5"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Login</span>
+            </button>
+          )}
+          <Link
+            to="/Home"
+            onClick={() => setNavigating(true)}
+            className="text-[13px] font-semibold text-white bg-black hover:bg-zinc-800 px-4 py-1.5 rounded-full transition-colors"
+          >
+            Open TTT
+          </Link>
+        </div>
       </nav>
 
       {/* Navigation loading overlay — prevents flash of unstyled content */}
