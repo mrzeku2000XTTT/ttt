@@ -500,8 +500,13 @@ export default function HomePage() {
             ) : (
               <button
                 onClick={() => {
-                  base44.auth.redirectToLogin();
                   setShowMenu(false);
+                  // Show instant black overlay to hide flash of unstyled content during redirect
+                  const overlay = document.createElement('div');
+                  overlay.style.cssText = 'position:fixed;inset:0;background:#000;z-index:999999;display:flex;align-items:center;justify-content:center;';
+                  overlay.innerHTML = '<div style="width:48px;height:48px;border:4px solid rgba(6,182,212,0.2);border-top-color:#22d3ee;border-radius:50%;animation:spin 1s linear infinite;"></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
+                  document.body.appendChild(overlay);
+                  base44.auth.redirectToLogin();
                 }}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-white/10 transition-all whitespace-nowrap"
               >
