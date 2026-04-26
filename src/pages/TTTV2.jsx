@@ -82,6 +82,7 @@ export default function TTTV2Page() {
   const [showVideoUpload, setShowVideoUpload] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const heroVideoRef = React.useRef(null);
+  const [navigating, setNavigating] = useState(false);
 
   useEffect(() => { loadContent(); loadKasPrice(); loadDailyKaspaUpdates(); checkAdmin(); loadHeroVideo(); }, []);
 
@@ -219,10 +220,21 @@ export default function TTTV2Page() {
           <a href="#news" className="hover:text-zinc-900 transition-colors">What's New</a>
           <a href="#roadmap" className="hover:text-zinc-900 transition-colors">Roadmap</a>
         </div>
-        <Link to="/Home" className="text-[13px] font-semibold text-white bg-black hover:bg-zinc-800 px-4 py-1.5 rounded-full transition-colors">
+        <Link
+          to="/Home"
+          onClick={() => setNavigating(true)}
+          className="text-[13px] font-semibold text-white bg-black hover:bg-zinc-800 px-4 py-1.5 rounded-full transition-colors"
+        >
           Open TTT
         </Link>
       </nav>
+
+      {/* Navigation loading overlay — prevents flash of unstyled content */}
+      {navigating && (
+        <div className="fixed inset-0 z-[99999] bg-black flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin" />
+        </div>
+      )}
 
       {/* ── new hero ── */}
       <div className="pt-12">

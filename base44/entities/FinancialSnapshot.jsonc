@@ -1,0 +1,44 @@
+{
+  "name": "FinancialSnapshot",
+  "type": "object",
+  "properties": {
+    "total_usd": {
+      "type": "number",
+      "description": "Total USD available"
+    },
+    "snapshot_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this snapshot was taken"
+    },
+    "kas_price_at_time": {
+      "type": "number",
+      "description": "KAS price in USD at snapshot time"
+    },
+    "equivalent_kas": {
+      "type": "number",
+      "description": "How much KAS the USD equals"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notes about this snapshot"
+    }
+  },
+  "required": [
+    "total_usd"
+  ],
+  "rls": {
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

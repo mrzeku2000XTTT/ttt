@@ -1,0 +1,71 @@
+{
+  "name": "WishlistInvitation",
+  "type": "object",
+  "properties": {
+    "cart_id": {
+      "type": "string",
+      "description": "Cart being shared"
+    },
+    "owner_email": {
+      "type": "string",
+      "description": "Who sent invitation"
+    },
+    "invitee_email": {
+      "type": "string",
+      "description": "Who was invited"
+    },
+    "permission": {
+      "type": "string",
+      "enum": [
+        "view",
+        "claim",
+        "contribute"
+      ],
+      "default": "view",
+      "description": "Permission level"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "accepted",
+        "declined"
+      ],
+      "default": "pending",
+      "description": "Invitation status"
+    },
+    "is_secret_santa": {
+      "type": "boolean",
+      "default": false,
+      "description": "Secret Santa mode"
+    }
+  },
+  "required": [
+    "cart_id",
+    "owner_email",
+    "invitee_email"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "$or": [
+        {
+          "owner_email": "{{user.email}}"
+        },
+        {
+          "invitee_email": "{{user.email}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "owner_email": "{{user.email}}"
+        },
+        {
+          "invitee_email": "{{user.email}}"
+        }
+      ]
+    }
+  }
+}

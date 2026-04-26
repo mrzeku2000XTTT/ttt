@@ -1,0 +1,39 @@
+{
+  "name": "CustomBullDate",
+  "type": "object",
+  "properties": {
+    "eclipse_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Custom eclipse date set by admin"
+    },
+    "eclipse_type": {
+      "type": "string",
+      "enum": [
+        "solar",
+        "lunar",
+        "custom"
+      ],
+      "default": "custom",
+      "description": "Type of eclipse"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional description"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this date is active"
+    }
+  },
+  "required": [
+    "eclipse_date"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
+  }
+}

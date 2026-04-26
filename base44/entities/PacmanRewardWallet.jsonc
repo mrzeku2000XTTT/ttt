@@ -1,0 +1,42 @@
+{
+  "name": "PacmanRewardWallet",
+  "type": "object",
+  "properties": {
+    "wallet_name": {
+      "type": "string",
+      "description": "Display name for this wallet"
+    },
+    "kaspa_address": {
+      "type": "string",
+      "description": "Public Kaspa address (visible to all)"
+    },
+    "encrypted_mnemonic": {
+      "type": "string",
+      "description": "Encrypted seed phrase (admin-only access)"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this is the active reward wallet"
+    }
+  },
+  "required": [
+    "wallet_name",
+    "kaspa_address",
+    "encrypted_mnemonic"
+  ],
+  "rls": {
+    "create": {
+      "user.role": "admin"
+    },
+    "read": {
+      "user.role": "admin"
+    },
+    "update": {
+      "user.role": "admin"
+    },
+    "delete": {
+      "user.role": "admin"
+    }
+  }
+}

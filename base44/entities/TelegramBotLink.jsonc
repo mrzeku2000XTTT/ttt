@@ -1,0 +1,94 @@
+{
+  "name": "TelegramBotLink",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Owner's email"
+    },
+    "kaspa_address": {
+      "type": "string",
+      "description": "Linked Kaspa wallet address"
+    },
+    "bot_token": {
+      "type": "string",
+      "description": "Telegram bot token from BotFather"
+    },
+    "bot_username": {
+      "type": "string",
+      "description": "Bot username e.g. @MyKaspaBot"
+    },
+    "bot_id": {
+      "type": "string",
+      "description": "Telegram bot numeric ID"
+    },
+    "webhook_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "active",
+        "failed"
+      ],
+      "default": "pending"
+    },
+    "agent_mode": {
+      "type": "string",
+      "enum": [
+        "ai_chat",
+        "tools_only",
+        "both"
+      ],
+      "default": "both",
+      "description": "How the bot responds: free AI chat, only TeleTool commands, or both"
+    },
+    "message_count": {
+      "type": "number",
+      "default": 0
+    },
+    "last_used": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "user_email",
+    "bot_token"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "$or": [
+        {
+          "user_email": "{{user.email}}"
+        },
+        {
+          "user.role": "admin"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_email": "{{user.email}}"
+        },
+        {
+          "user.role": "admin"
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_email": "{{user.email}}"
+        },
+        {
+          "user.role": "admin"
+        }
+      ]
+    }
+  }
+}

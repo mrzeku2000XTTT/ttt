@@ -1,0 +1,79 @@
+{
+  "name": "Community",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Community title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Community description"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Technology",
+        "Business",
+        "Marketing",
+        "Crypto",
+        "Health",
+        "Education",
+        "Design",
+        "Other"
+      ],
+      "default": "Other",
+      "description": "Community category"
+    },
+    "pricing_type": {
+      "type": "string",
+      "enum": [
+        "free",
+        "paid"
+      ],
+      "default": "free",
+      "description": "Pricing model"
+    },
+    "price": {
+      "type": "number",
+      "default": 0,
+      "description": "Price in USD if paid"
+    },
+    "member_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of members"
+    },
+    "cover_image": {
+      "type": "string",
+      "description": "Community cover image URL"
+    },
+    "is_trending": {
+      "type": "boolean",
+      "default": false,
+      "description": "Is this community trending"
+    },
+    "is_verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Is this community verified"
+    }
+  },
+  "required": [
+    "title",
+    "description",
+    "category"
+  ],
+  "rls": {
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "read": true,
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

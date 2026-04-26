@@ -1,0 +1,91 @@
+{
+  "name": "HerculesTool",
+  "type": "object",
+  "properties": {
+    "tool_name": {
+      "type": "string",
+      "description": "Name of the AI tool"
+    },
+    "description": {
+      "type": "string",
+      "description": "What this tool does"
+    },
+    "endpoint_url": {
+      "type": "string",
+      "description": "API endpoint URL"
+    },
+    "method": {
+      "type": "string",
+      "enum": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE"
+      ],
+      "default": "POST",
+      "description": "HTTP method"
+    },
+    "input_schema": {
+      "type": "object",
+      "description": "JSON schema for input validation"
+    },
+    "api_key": {
+      "type": "string",
+      "description": "API key if required (encrypted)"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "custom",
+        "image",
+        "text",
+        "audio",
+        "video",
+        "data",
+        "other"
+      ],
+      "default": "custom",
+      "description": "Tool category"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether tool is active"
+    },
+    "usage_count": {
+      "type": "number",
+      "default": 0,
+      "description": "How many times tool has been used"
+    },
+    "last_used": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When tool was last used"
+    }
+  },
+  "required": [
+    "tool_name",
+    "endpoint_url"
+  ],
+  "rls": {
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "is_active": true
+        }
+      ]
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

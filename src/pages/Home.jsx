@@ -28,6 +28,7 @@ export default function HomePage() {
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [walletBalance, setWalletBalance] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [navigating, setNavigating] = useState(false);
   const messagesEndRef = React.useRef(null);
 
   useEffect(() => {
@@ -385,6 +386,12 @@ export default function HomePage() {
 
   return (
     <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-black">
+      {/* Login redirect overlay — covers flash of base44 login page list */}
+      {navigating && (
+        <div className="fixed inset-0 z-[99999] bg-black flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin" />
+        </div>
+      )}
       {/* Water Background */}
       <div className="absolute inset-0">
         <img
@@ -472,7 +479,7 @@ export default function HomePage() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute top-16 right-4 md:top-20 md:right-6 z-50 bg-black/90 backdrop-blur-xl border border-white/20 rounded-xl p-2 min-w-[160px]"
+            className="absolute top-16 right-4 md:top-20 md:right-6 z-50 bg-black/90 backdrop-blur-xl border border-white/20 rounded-xl p-2 min-w-[200px]"
           >
             {!user && (
               <button
@@ -480,9 +487,9 @@ export default function HomePage() {
                   setShowWalletModal(true);
                   setShowMenu(false);
                 }}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-cyan-400 hover:bg-cyan-500/10 transition-all font-semibold border-b border-white/10 mb-2"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-cyan-400 hover:bg-cyan-500/10 transition-all font-semibold border-b border-white/10 mb-2 whitespace-nowrap"
               >
-                <Wallet className="w-4 h-4" />
+                <Wallet className="w-4 h-4 flex-shrink-0" />
                 <span className="text-sm">Connect Wallet</span>
               </button>
             )}
@@ -492,20 +499,28 @@ export default function HomePage() {
                   handleLogout();
                   setShowMenu(false);
                 }}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-white/10 transition-all"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-white/10 transition-all whitespace-nowrap"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-4 h-4 flex-shrink-0" />
                 <span className="text-sm">Logout</span>
               </button>
             ) : (
               <button
                 onClick={() => {
-                  base44.auth.redirectToLogin();
                   setShowMenu(false);
+                  // Inject a full-screen black overlay directly into <body>
+                  // so it survives React unmount and covers the unstyled
+                  // route-list flash during navigation to base44 login.
+                  const overlay = document.createElement('div');
+                  overlay.style.cssText = 'position:fixed;inset:0;background:#000;z-index:2147483647;display:flex;align-items:center;justify-content:center;';
+                  overlay.innerHTML = '<div style="width:48px;height:48px;border:4px solid rgba(34,211,238,0.2);border-top-color:#22d3ee;border-radius:50%;animation:sp 0.8s linear infinite"></div><style>@keyframes sp{to{transform:rotate(360deg)}}</style>';
+                  document.body.appendChild(overlay);
+                  document.documentElement.style.background = '#000';
+                  base44.auth.redirectToLogin();
                 }}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-white/10 transition-all"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-white/10 transition-all whitespace-nowrap"
               >
-                <LogIn className="w-4 h-4" />
+                <LogIn className="w-4 h-4 flex-shrink-0" />
                 <span className="text-sm">Login</span>
               </button>
             )}

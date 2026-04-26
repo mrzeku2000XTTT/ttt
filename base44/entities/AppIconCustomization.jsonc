@@ -1,0 +1,55 @@
+{
+  "name": "AppIconCustomization",
+  "type": "object",
+  "properties": {
+    "app_id": {
+      "type": "string",
+      "description": "App identifier (e.g., 'TapToTip', 'Feed')"
+    },
+    "app_name": {
+      "type": "string",
+      "description": "Display name of the app"
+    },
+    "icon_url": {
+      "type": "string",
+      "description": "Custom icon image URL"
+    },
+    "icon_type": {
+      "type": "string",
+      "enum": [
+        "uploaded",
+        "ai_generated"
+      ],
+      "default": "uploaded",
+      "description": "How the icon was created"
+    },
+    "generation_prompt": {
+      "type": "string",
+      "description": "AI prompt used if ai_generated"
+    }
+  },
+  "required": [
+    "app_id",
+    "icon_url"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user.role": "admin"
+        },
+        {
+          "created_by": "{{user.email}}",
+          "user.role": "admin"
+        }
+      ]
+    },
+    "read": true,
+    "update": {
+      "user.role": "admin"
+    },
+    "delete": {
+      "user.role": "admin"
+    }
+  }
+}

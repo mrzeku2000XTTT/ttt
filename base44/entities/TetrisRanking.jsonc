@@ -1,0 +1,68 @@
+{
+  "name": "TetrisRanking",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Player's email"
+    },
+    "username": {
+      "type": "string",
+      "description": "Player's username"
+    },
+    "rank": {
+      "type": "number",
+      "default": 1,
+      "description": "Current rank (1-50)"
+    },
+    "stars": {
+      "type": "number",
+      "default": 0,
+      "description": "Stars in current rank (0-4)"
+    },
+    "total_xp": {
+      "type": "number",
+      "default": 0,
+      "description": "Total experience points"
+    },
+    "wins": {
+      "type": "number",
+      "default": 0,
+      "description": "Total wins"
+    },
+    "losses": {
+      "type": "number",
+      "default": 0,
+      "description": "Total losses"
+    },
+    "highest_score": {
+      "type": "number",
+      "default": 0,
+      "description": "Highest score achieved"
+    },
+    "total_lines_cleared": {
+      "type": "number",
+      "default": 0,
+      "description": "Total lines cleared"
+    },
+    "total_games": {
+      "type": "number",
+      "default": 0,
+      "description": "Total games played"
+    }
+  },
+  "required": [
+    "user_email",
+    "username"
+  ],
+  "rls": {
+    "create": {
+      "user_email": "{{user.email}}"
+    },
+    "read": true,
+    "update": {
+      "user_email": "{{user.email}}"
+    },
+    "delete": false
+  }
+}

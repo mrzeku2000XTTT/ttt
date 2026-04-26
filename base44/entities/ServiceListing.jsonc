@@ -1,0 +1,116 @@
+{
+  "name": "ServiceListing",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Service provider email"
+    },
+    "agent_profile_id": {
+      "type": "string",
+      "description": "Linked Agent ZK profile"
+    },
+    "title": {
+      "type": "string",
+      "description": "Service title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed service description"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Graphics & Design",
+        "Programming & Tech",
+        "Digital Marketing",
+        "Video & Animation",
+        "Writing & Translation",
+        "Music & Audio",
+        "Business",
+        "AI Services"
+      ],
+      "description": "Service category"
+    },
+    "subcategory": {
+      "type": "string",
+      "description": "Service subcategory"
+    },
+    "price_from": {
+      "type": "number",
+      "description": "Starting price in USD"
+    },
+    "delivery_time": {
+      "type": "number",
+      "description": "Delivery time in days"
+    },
+    "cover_image": {
+      "type": "string",
+      "description": "Service cover image URL"
+    },
+    "portfolio_images": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Portfolio image URLs"
+    },
+    "resume_url": {
+      "type": "string",
+      "description": "Resume file URL"
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Skills and technologies"
+    },
+    "rating": {
+      "type": "number",
+      "default": 5.0,
+      "description": "Service rating"
+    },
+    "reviews_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of reviews"
+    },
+    "orders_completed": {
+      "type": "number",
+      "default": 0,
+      "description": "Completed orders"
+    },
+    "is_featured": {
+      "type": "boolean",
+      "default": false,
+      "description": "Featured listing"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Listing active status"
+    }
+  },
+  "required": [
+    "user_email",
+    "title",
+    "description",
+    "category",
+    "price_from"
+  ],
+  "rls": {
+    "create": {
+      "user_email": "{{user.email}}"
+    },
+    "read": {
+      "is_active": true
+    },
+    "update": {
+      "user_email": "{{user.email}}"
+    },
+    "delete": {
+      "user_email": "{{user.email}}"
+    }
+  }
+}

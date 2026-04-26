@@ -1,0 +1,60 @@
+{
+  "name": "PostComment",
+  "type": "object",
+  "properties": {
+    "post_id": {
+      "type": "string",
+      "description": "Reference to the post"
+    },
+    "parent_comment_id": {
+      "type": "string",
+      "description": "Reference to parent comment if this is a reply"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Commenter's display name"
+    },
+    "author_wallet_address": {
+      "type": "string",
+      "description": "Commenter's wallet address"
+    },
+    "comment_text": {
+      "type": "string",
+      "description": "Comment content"
+    },
+    "likes": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of likes on this comment"
+    },
+    "replies_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of replies to this comment"
+    },
+    "tips_received": {
+      "type": "number",
+      "default": 0,
+      "description": "Total KAS tips received"
+    },
+    "krc20_tips_received": {
+      "type": "object",
+      "description": "KRC-20 tips received by ticker (e.g., {'PACMAN': 1000, 'NACHO': 500})"
+    }
+  },
+  "required": [
+    "post_id",
+    "author_name",
+    "comment_text"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

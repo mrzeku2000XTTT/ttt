@@ -1,0 +1,51 @@
+{
+  "name": "PriceAlert",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "User who set the alert"
+    },
+    "wishlist_item_id": {
+      "type": "string",
+      "description": "Reference to wishlist item"
+    },
+    "target_price_usd": {
+      "type": "number",
+      "description": "Alert when price drops below this"
+    },
+    "current_price_usd": {
+      "type": "number",
+      "description": "Last checked price"
+    },
+    "is_triggered": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether alert has been triggered"
+    },
+    "last_checked": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last price check"
+    }
+  },
+  "required": [
+    "user_email",
+    "wishlist_item_id",
+    "target_price_usd"
+  ],
+  "rls": {
+    "create": {
+      "user_email": "{{user.email}}"
+    },
+    "read": {
+      "user_email": "{{user.email}}"
+    },
+    "update": {
+      "user_email": "{{user.email}}"
+    },
+    "delete": {
+      "user_email": "{{user.email}}"
+    }
+  }
+}

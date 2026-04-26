@@ -1,0 +1,76 @@
+{
+  "name": "SurvivalConversation",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "User having the conversation"
+    },
+    "messages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ]
+          },
+          "content": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Conversation history"
+    },
+    "user_location": {
+      "type": "string",
+      "description": "User location for personalized alerts"
+    },
+    "readiness_score": {
+      "type": "number",
+      "default": 0,
+      "description": "Overall readiness percentage"
+    },
+    "threat_profile": {
+      "type": "object",
+      "properties": {
+        "nuclear": {
+          "type": "number"
+        },
+        "economic": {
+          "type": "number"
+        },
+        "natural": {
+          "type": "number"
+        },
+        "prophetic": {
+          "type": "number"
+        }
+      },
+      "description": "Personalized threat assessment"
+    }
+  },
+  "required": [
+    "user_email"
+  ],
+  "rls": {
+    "create": {
+      "user_email": "{{user.email}}"
+    },
+    "read": {
+      "user_email": "{{user.email}}"
+    },
+    "update": {
+      "user_email": "{{user.email}}"
+    },
+    "delete": {
+      "user_email": "{{user.email}}"
+    }
+  }
+}

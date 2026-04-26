@@ -1,0 +1,55 @@
+{
+  "name": "UserTipStats",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "User email (if logged in)"
+    },
+    "wallet_address": {
+      "type": "string",
+      "description": "Primary wallet address"
+    },
+    "username": {
+      "type": "string",
+      "description": "Current username"
+    },
+    "feed_tips_sent": {
+      "type": "number",
+      "default": 0,
+      "description": "Total KAS tipped on Feed posts"
+    },
+    "feed_tips_received": {
+      "type": "number",
+      "default": 0,
+      "description": "Total KAS received on Feed posts"
+    },
+    "bull_tips_sent": {
+      "type": "number",
+      "default": 0,
+      "description": "Total KAS tipped on Bull Reels"
+    },
+    "bull_tips_received": {
+      "type": "number",
+      "default": 0,
+      "description": "Total KAS received on Bull Reels"
+    },
+    "comment_tips_sent": {
+      "type": "number",
+      "default": 0,
+      "description": "Total KAS tipped on comments"
+    },
+    "comment_tips_received": {
+      "type": "number",
+      "default": 0,
+      "description": "Total KAS received on comments"
+    }
+  },
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": false
+  },
+  "required": []
+}

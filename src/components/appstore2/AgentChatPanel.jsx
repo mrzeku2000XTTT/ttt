@@ -119,7 +119,7 @@ Reply as ${agent.name}:`;
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 300 }}
           transition={{ type: "spring", damping: 25, stiffness: 200 }}
-          className="absolute top-16 right-3 bottom-44 sm:bottom-28 w-[calc(100%-1.5rem)] sm:w-72 z-30 bg-black/85 backdrop-blur-2xl rounded-2xl ring-1 ring-white/10 flex flex-col shadow-2xl"
+          className="absolute top-28 right-3 bottom-44 sm:bottom-28 w-[calc(100%-1.5rem)] sm:w-72 z-30 bg-black/85 backdrop-blur-2xl rounded-2xl ring-1 ring-white/10 flex flex-col shadow-2xl"
         >
           {/* Header */}
           <div className="flex items-center justify-between p-2.5 border-b border-white/10">
