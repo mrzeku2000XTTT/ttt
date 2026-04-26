@@ -537,10 +537,14 @@ export default function HomePage() {
                       @keyframes __kp { 0%,100%{opacity:.4;transform:scale(.9)} 50%{opacity:.9;transform:scale(1.15)} }
                     </style>
                   `;
-                  // Double rAF guarantees the loader paints before navigation begins.
+                  // Skip tttz.xyz/login (base44 server-renders an unstyled page list there).
+                  // Go directly to base44's hosted login on app.base44.com — that domain
+                  // shows base44's branded login UI immediately, no page-list flash.
+                  // After login the user is sent back to from_url.
                   requestAnimationFrame(() => {
                     requestAnimationFrame(() => {
-                      base44.auth.redirectToLogin();
+                      var fromUrl = encodeURIComponent(window.location.origin + '/');
+                      window.location.replace('https://app.base44.com/login?from_url=' + fromUrl);
                     });
                   });
                 }}
