@@ -99,7 +99,10 @@ export default function TTTV2Page() {
 
   const handleLogin = () => {
     setNavigating(true);
-    base44.auth.redirectToLogin();
+    // Pass a protected page as next URL so base44 auth flow actually requires
+    // login (passing TTTV2 — a public page — causes base44 to bounce straight back).
+    const nextUrl = `${window.location.origin}/Feed`;
+    base44.auth.redirectToLogin(nextUrl);
   };
 
   const handleLogout = async () => {
