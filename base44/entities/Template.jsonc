@@ -1,0 +1,73 @@
+{
+  "name": "Template",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Template title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Template description"
+    },
+    "preview_image_url": {
+      "type": "string",
+      "description": "AI-generated preview image URL"
+    },
+    "html_content": {
+      "type": "string",
+      "description": "Full HTML template code"
+    },
+    "creator_wallet": {
+      "type": "string",
+      "description": "Creator's TTT wallet address"
+    },
+    "creator_email": {
+      "type": "string",
+      "description": "Creator's email"
+    },
+    "price_kas": {
+      "type": "number",
+      "description": "Price in KAS"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "landing",
+        "portfolio",
+        "ecommerce",
+        "blog",
+        "saas",
+        "other"
+      ],
+      "default": "landing",
+      "description": "Template category"
+    },
+    "views": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of views"
+    },
+    "purchases": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of purchases"
+    }
+  },
+  "required": [
+    "title",
+    "description",
+    "creator_wallet",
+    "price_kas"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": {
+      "creator_email": "{{user.email}}"
+    },
+    "delete": {
+      "creator_email": "{{user.email}}"
+    }
+  }
+}

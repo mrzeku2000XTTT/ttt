@@ -1,0 +1,61 @@
+{
+  "name": "NewsView",
+  "type": "object",
+  "properties": {
+    "news_id": {
+      "type": "string",
+      "description": "Reference to StampedNews ID"
+    },
+    "viewer_address": {
+      "type": "string",
+      "description": "Wallet address of viewer"
+    },
+    "viewer_email": {
+      "type": "string",
+      "description": "Email of viewer if logged in"
+    },
+    "view_duration": {
+      "type": "number",
+      "description": "How long they viewed (seconds)"
+    },
+    "device_type": {
+      "type": "string",
+      "enum": [
+        "desktop",
+        "mobile",
+        "tablet"
+      ],
+      "description": "Device used to view"
+    },
+    "location": {
+      "type": "string",
+      "description": "Approximate location"
+    },
+    "viewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When they viewed it"
+    }
+  },
+  "required": [
+    "news_id",
+    "viewed_at"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "$or": [
+        {
+          "viewer_email": "{{user.email}}"
+        },
+        {
+          "user.role": "admin"
+        }
+      ]
+    },
+    "update": false,
+    "delete": {
+      "user.role": "admin"
+    }
+  }
+}

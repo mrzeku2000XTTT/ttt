@@ -1,0 +1,28 @@
+{
+  "name": "CommentLike",
+  "type": "object",
+  "properties": {
+    "comment_id": {
+      "type": "string",
+      "description": "Reference to the comment"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "User who liked the comment"
+    },
+    "user_wallet": {
+      "type": "string",
+      "description": "User's wallet address"
+    }
+  },
+  "required": [
+    "comment_id",
+    "user_email"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
+  }
+}

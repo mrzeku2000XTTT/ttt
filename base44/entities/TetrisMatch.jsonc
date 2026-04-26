@@ -1,0 +1,91 @@
+{
+  "name": "TetrisMatch",
+  "type": "object",
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": [
+        "battle-2p",
+        "battle-6p",
+        "sprint",
+        "marathon"
+      ],
+      "description": "Game mode"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "waiting",
+        "in_progress",
+        "completed"
+      ],
+      "default": "waiting",
+      "description": "Match status"
+    },
+    "players": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "user_email": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "rank": {
+            "type": "number"
+          },
+          "score": {
+            "type": "number"
+          },
+          "lines_cleared": {
+            "type": "number"
+          },
+          "garbage_sent": {
+            "type": "number"
+          },
+          "finished": {
+            "type": "boolean"
+          }
+        }
+      },
+      "description": "Players in match"
+    },
+    "max_players": {
+      "type": "number",
+      "default": 2,
+      "description": "Maximum players for this match"
+    },
+    "start_time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When match started"
+    },
+    "end_time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When match ended"
+    },
+    "winner_email": {
+      "type": "string",
+      "description": "Winner's email"
+    },
+    "duration": {
+      "type": "number",
+      "description": "Match duration in seconds"
+    }
+  },
+  "required": [
+    "mode",
+    "status"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": {
+      "user.role": "admin"
+    }
+  }
+}

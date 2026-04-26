@@ -1,0 +1,121 @@
+{
+  "name": "HRJobListing",
+  "type": "object",
+  "properties": {
+    "posted_by_email": {
+      "type": "string",
+      "description": "Email of who posted"
+    },
+    "posted_by_username": {
+      "type": "string",
+      "description": "Agent ZK username"
+    },
+    "posted_by_wallet": {
+      "type": "string",
+      "description": "Kaspa wallet address"
+    },
+    "title": {
+      "type": "string",
+      "description": "Job title"
+    },
+    "department": {
+      "type": "string",
+      "description": "Department"
+    },
+    "location": {
+      "type": "string",
+      "description": "Job location"
+    },
+    "employment_type": {
+      "type": "string",
+      "enum": [
+        "full_time",
+        "part_time",
+        "contract",
+        "internship"
+      ],
+      "default": "full_time",
+      "description": "Employment type"
+    },
+    "salary_range_min": {
+      "type": "number",
+      "description": "Min salary in USD"
+    },
+    "salary_range_max": {
+      "type": "number",
+      "description": "Max salary in USD"
+    },
+    "description": {
+      "type": "string",
+      "description": "AI-generated job description"
+    },
+    "responsibilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Key responsibilities"
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Job requirements"
+    },
+    "benefits": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Benefits offered"
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Required skills"
+    },
+    "is_remote": {
+      "type": "boolean",
+      "default": false,
+      "description": "Remote position"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "closed",
+        "filled"
+      ],
+      "default": "active",
+      "description": "Job status"
+    },
+    "applications_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of applications"
+    },
+    "company_id": {
+      "type": "string",
+      "description": "Company owner email"
+    }
+  },
+  "required": [
+    "title",
+    "description",
+    "company_id"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": {
+      "company_id": "{{user.email}}"
+    },
+    "delete": {
+      "company_id": "{{user.email}}"
+    }
+  }
+}

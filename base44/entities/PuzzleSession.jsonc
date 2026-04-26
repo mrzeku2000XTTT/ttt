@@ -1,0 +1,45 @@
+{
+  "name": "PuzzleSession",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "User email"
+    },
+    "difficulty": {
+      "type": "number",
+      "description": "Grid size (3, 4, 5)"
+    },
+    "moves_count": {
+      "type": "number",
+      "description": "Total moves made"
+    },
+    "time_taken_seconds": {
+      "type": "number",
+      "description": "Time taken to solve"
+    },
+    "was_auto_solved": {
+      "type": "boolean",
+      "description": "Whether auto-solve was used"
+    },
+    "move_history": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "description": "Sequence of moves (tile indices)"
+    },
+    "initial_state": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "description": "Initial tile configuration"
+    }
+  },
+  "required": [
+    "user_email",
+    "difficulty",
+    "moves_count"
+  ]
+}

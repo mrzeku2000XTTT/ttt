@@ -1,0 +1,83 @@
+{
+  "name": "ThreatIntel",
+  "type": "object",
+  "properties": {
+    "threat_type": {
+      "type": "string",
+      "enum": [
+        "nuclear",
+        "economic",
+        "natural",
+        "prophetic",
+        "cyber",
+        "pandemic"
+      ],
+      "description": "Category of threat"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "description": "Threat level"
+    },
+    "title": {
+      "type": "string",
+      "description": "Threat title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed threat description"
+    },
+    "source": {
+      "type": "string",
+      "description": "Data source"
+    },
+    "confidence": {
+      "type": "number",
+      "description": "AI confidence score 0-100"
+    },
+    "verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Community verified"
+    },
+    "verification_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of user verifications"
+    },
+    "location": {
+      "type": "string",
+      "description": "Geographic location if applicable"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When threat expires"
+    },
+    "scripture_reference": {
+      "type": "string",
+      "description": "Biblical prophecy reference if applicable"
+    }
+  },
+  "required": [
+    "threat_type",
+    "severity",
+    "title",
+    "description"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": {
+      "user.role": "admin"
+    },
+    "delete": {
+      "user.role": "admin"
+    }
+  }
+}

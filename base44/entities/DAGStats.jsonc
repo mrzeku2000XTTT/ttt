@@ -1,0 +1,37 @@
+{
+  "name": "DAGStats",
+  "type": "object",
+  "properties": {
+    "total_cycling_fuel": {
+      "type": "number",
+      "default": 0,
+      "description": "Total KAS in cycling fuel pool"
+    },
+    "total_boost_fuel": {
+      "type": "number",
+      "default": 0,
+      "description": "Total KAS in active boost pool"
+    },
+    "total_transactions_sent": {
+      "type": "number",
+      "default": 0,
+      "description": "Lifetime transactions sent"
+    },
+    "current_artificial_tps": {
+      "type": "number",
+      "default": 0,
+      "description": "Current TPS from fuel system"
+    },
+    "total_fees_paid": {
+      "type": "number",
+      "default": 0,
+      "description": "Total fees paid to miners"
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last stats update"
+    }
+  },
+  "required": []
+}

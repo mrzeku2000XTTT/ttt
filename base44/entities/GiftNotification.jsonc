@@ -1,0 +1,60 @@
+{
+  "name": "GiftNotification",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Notification recipient"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "price_drop",
+        "price_alert",
+        "invitation",
+        "item_claimed",
+        "ai_suggestion"
+      ],
+      "description": "Notification type"
+    },
+    "title": {
+      "type": "string",
+      "description": "Notification title"
+    },
+    "message": {
+      "type": "string",
+      "description": "Notification message"
+    },
+    "item_id": {
+      "type": "string",
+      "description": "Related item"
+    },
+    "is_read": {
+      "type": "boolean",
+      "default": false,
+      "description": "Read status"
+    },
+    "action_url": {
+      "type": "string",
+      "description": "Link to relevant page"
+    }
+  },
+  "required": [
+    "user_email",
+    "type",
+    "title",
+    "message"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "user_email": "{{user.email}}"
+    },
+    "update": {
+      "user_email": "{{user.email}}"
+    },
+    "delete": {
+      "user_email": "{{user.email}}"
+    }
+  }
+}

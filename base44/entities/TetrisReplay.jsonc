@@ -1,0 +1,74 @@
+{
+  "name": "TetrisReplay",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Player's email"
+    },
+    "username": {
+      "type": "string",
+      "description": "Player's username"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "battle-2p",
+        "battle-6p",
+        "sprint",
+        "marathon"
+      ],
+      "description": "Game mode"
+    },
+    "score": {
+      "type": "number",
+      "description": "Final score"
+    },
+    "lines_cleared": {
+      "type": "number",
+      "description": "Total lines cleared"
+    },
+    "duration": {
+      "type": "number",
+      "description": "Game duration in seconds"
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "number"
+          },
+          "type": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object"
+          }
+        }
+      },
+      "description": "Recorded actions for replay"
+    },
+    "rank": {
+      "type": "number",
+      "description": "Player's rank when replay was created"
+    }
+  },
+  "required": [
+    "user_email",
+    "username",
+    "mode",
+    "score"
+  ],
+  "rls": {
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "read": true,
+    "update": false,
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

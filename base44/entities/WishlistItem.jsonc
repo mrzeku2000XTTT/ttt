@@ -1,0 +1,118 @@
+{
+  "name": "WishlistItem",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "User who added this wish"
+    },
+    "product_name": {
+      "type": "string",
+      "description": "Name of the product"
+    },
+    "product_url": {
+      "type": "string",
+      "description": "Direct link to product"
+    },
+    "product_image": {
+      "type": "string",
+      "description": "Product image URL"
+    },
+    "price_usd": {
+      "type": "number",
+      "description": "Price in USD"
+    },
+    "price_kas": {
+      "type": "number",
+      "description": "Converted price in KAS"
+    },
+    "store_name": {
+      "type": "string",
+      "description": "Store/website name"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Electronics",
+        "Fashion",
+        "Home",
+        "Books",
+        "Toys",
+        "Beauty",
+        "Sports",
+        "Other"
+      ],
+      "default": "Other",
+      "description": "Product category"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium",
+      "description": "Wishlist priority"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Personal notes about the item"
+    },
+    "is_purchased": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether item has been purchased"
+    },
+    "purchased_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When item was purchased"
+    },
+    "price_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "price_usd": {
+            "type": "number"
+          },
+          "date": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Price tracking history"
+    },
+    "is_claimed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether someone claimed this (hidden from owner)"
+    },
+    "claims_count": {
+      "type": "number",
+      "default": 0,
+      "description": "How many people claimed this"
+    }
+  },
+  "required": [
+    "user_email",
+    "product_name",
+    "product_url",
+    "price_usd"
+  ],
+  "rls": {
+    "create": {
+      "user_email": "{{user.email}}"
+    },
+    "read": {
+      "user_email": "{{user.email}}"
+    },
+    "update": {
+      "user_email": "{{user.email}}"
+    },
+    "delete": {
+      "user_email": "{{user.email}}"
+    }
+  }
+}

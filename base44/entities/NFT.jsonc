@@ -1,0 +1,171 @@
+{
+  "name": "NFT",
+  "type": "object",
+  "properties": {
+    "token_id": {
+      "type": "string",
+      "description": "Unique token ID for NFT"
+    },
+    "owner_email": {
+      "type": "string",
+      "description": "Email of NFT owner"
+    },
+    "owner_wallet": {
+      "type": "string",
+      "description": "Wallet address that owns this NFT"
+    },
+    "owner_agent_zk_id": {
+      "type": "string",
+      "description": "Agent ZK ID of the owner"
+    },
+    "owner_agent_name": {
+      "type": "string",
+      "description": "Agent ZK username of the owner"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "AI-generated photo card image URL"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "rarity": {
+          "type": "string"
+        },
+        "attributes": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "description": "NFT metadata (name, description, rarity, attributes)"
+    },
+    "rarity": {
+      "type": "string",
+      "enum": [
+        "common",
+        "uncommon",
+        "rare",
+        "epic",
+        "legendary"
+      ],
+      "default": "common",
+      "description": "NFT rarity level"
+    },
+    "unique_hash": {
+      "type": "string",
+      "description": "Unique hash generated from truncated address + timestamp"
+    },
+    "truncated_address": {
+      "type": "string",
+      "description": "Truncated wallet address linked to this NFT"
+    },
+    "mint_transaction": {
+      "type": "string",
+      "description": "Transaction hash of minting"
+    },
+    "sale_transaction": {
+      "type": "string",
+      "description": "Transaction hash when NFT was sold"
+    },
+    "previous_owner": {
+      "type": "string",
+      "description": "Email of previous owner (if NFT was sold)"
+    },
+    "sold_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When NFT was sold"
+    },
+    "in_nft_vault": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether NFT is stored in NFT Vault"
+    },
+    "vault_id": {
+      "type": "string",
+      "description": "Reference to NFT Vault storing this NFT"
+    },
+    "zeku_cost": {
+      "type": "number",
+      "description": "Cost in ZEKU tokens to mint"
+    },
+    "contract_address": {
+      "type": "string",
+      "description": "NFT contract address on Kasplex L2"
+    },
+    "minted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When NFT was minted"
+    },
+    "stamped_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When NFT was stamped/created on blockchain"
+    },
+    "is_verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this NFT is verified on blockchain"
+    },
+    "is_listed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether NFT is listed for sale"
+    },
+    "list_price": {
+      "type": "number",
+      "description": "Listing price in ZEKU if for sale"
+    },
+    "ai_prompt": {
+      "type": "string",
+      "description": "AI prompt used to generate the image"
+    },
+    "generation_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "generating",
+        "ready",
+        "minting",
+        "minted",
+        "failed"
+      ],
+      "default": "pending",
+      "description": "Current status of NFT generation/minting"
+    }
+  },
+  "required": [
+    "token_id",
+    "owner_email",
+    "owner_wallet",
+    "unique_hash",
+    "truncated_address"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": {
+      "$or": [
+        {
+          "owner_email": "{{user.email}}"
+        },
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user.role": "admin"
+        }
+      ]
+    }
+  }
+}

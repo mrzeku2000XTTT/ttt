@@ -1,0 +1,58 @@
+{
+  "name": "Stamp",
+  "type": "object",
+  "properties": {
+    "post_id": {
+      "type": "string",
+      "description": "ID of the stamped post"
+    },
+    "post_owner_address": {
+      "type": "string",
+      "description": "Kaspa address of the post owner"
+    },
+    "post_owner_name": {
+      "type": "string",
+      "description": "Display name of the post owner"
+    },
+    "post_content": {
+      "type": "string",
+      "description": "Content of the stamped post"
+    },
+    "stamper_address": {
+      "type": "string",
+      "description": "Kaspa address of the person who stamped"
+    },
+    "stamper_name": {
+      "type": "string",
+      "description": "Display name of the stamper"
+    },
+    "stamp_signature": {
+      "type": "string",
+      "description": "Signature proving the stamp"
+    },
+    "stamp_message": {
+      "type": "string",
+      "description": "Message that was signed"
+    },
+    "stamped_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the post was stamped"
+    }
+  },
+  "required": [
+    "post_id",
+    "post_owner_address",
+    "stamper_address",
+    "stamp_signature",
+    "stamped_date"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": false,
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

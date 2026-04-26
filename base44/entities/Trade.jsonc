@@ -1,0 +1,67 @@
+{
+  "name": "Trade",
+  "type": "object",
+  "properties": {
+    "listing_id": {
+      "type": "string",
+      "description": "Reference to listing"
+    },
+    "contract_trade_id": {
+      "type": "number",
+      "description": "Smart contract trade ID"
+    },
+    "seller_address": {
+      "type": "string",
+      "description": "Seller wallet address"
+    },
+    "buyer_address": {
+      "type": "string",
+      "description": "Buyer wallet address"
+    },
+    "kas_amount": {
+      "type": "number",
+      "description": "KAS amount"
+    },
+    "fiat_amount": {
+      "type": "number",
+      "description": "Fiat amount"
+    },
+    "payment_method": {
+      "type": "string",
+      "description": "Payment method"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "in_progress",
+        "payment_sent",
+        "completed",
+        "disputed",
+        "cancelled"
+      ],
+      "default": "open",
+      "description": "Trade status"
+    },
+    "buyer_confirmed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Buyer confirmed payment sent"
+    },
+    "seller_confirmed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Seller confirmed payment received"
+    },
+    "tx_hash": {
+      "type": "string",
+      "description": "Transaction hash"
+    }
+  },
+  "required": [
+    "listing_id",
+    "seller_address",
+    "kas_amount",
+    "fiat_amount"
+  ]
+}

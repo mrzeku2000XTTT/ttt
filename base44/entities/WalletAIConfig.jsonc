@@ -1,0 +1,28 @@
+{
+  "name": "WalletAIConfig",
+  "type": "object",
+  "properties": {
+    "wallet_address": {
+      "type": "string",
+      "description": "Wallet address this config belongs to"
+    },
+    "api_key_encrypted": {
+      "type": "string",
+      "description": "Encrypted OpenRouter API key"
+    },
+    "model_name": {
+      "type": "string",
+      "description": "OpenRouter model name"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this config is currently active"
+    }
+  },
+  "required": [
+    "wallet_address",
+    "api_key_encrypted",
+    "model_name"
+  ]
+}

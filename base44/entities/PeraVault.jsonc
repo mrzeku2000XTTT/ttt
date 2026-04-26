@@ -1,0 +1,78 @@
+{
+  "name": "PeraVault",
+  "type": "object",
+  "properties": {
+    "vault_id": {
+      "type": "string",
+      "description": "Unique vault identifier"
+    },
+    "task_id": {
+      "type": "string",
+      "description": "Associated task ID"
+    },
+    "encrypted_seed_phrase": {
+      "type": "string",
+      "description": "Triple-encrypted seed phrase"
+    },
+    "pera_secret_key": {
+      "type": "string",
+      "description": "Encrypted Pera Secret Key (Layer 1)"
+    },
+    "encryption_layers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "layer": {
+            "type": "number"
+          },
+          "algorithm": {
+            "type": "string"
+          },
+          "key_hint": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Encryption layer metadata"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "locked",
+        "unlocked",
+        "claimed"
+      ],
+      "default": "locked",
+      "description": "Vault status"
+    },
+    "unlock_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When vault was unlocked"
+    },
+    "claimed_by": {
+      "type": "string",
+      "description": "Worker who claimed the seed phrase"
+    }
+  },
+  "required": [
+    "vault_id",
+    "task_id",
+    "encrypted_seed_phrase"
+  ],
+  "rls": {
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}
