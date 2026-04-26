@@ -66,7 +66,8 @@ Deno.serve(async (req) => {
     }
 
     // 4. Upsert link in DB (one bot per user — replace if exists)
-    const db = base44.entities.TelegramBotLink;
+    // Use asServiceRole so the link always lands in production DB (where Telegram webhooks hit)
+    const db = base44.asServiceRole.entities.TelegramBotLink;
     const existing = await db.filter({ user_email: user.email });
     const payload = {
       user_email: user.email,
