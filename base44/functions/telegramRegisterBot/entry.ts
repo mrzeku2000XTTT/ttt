@@ -39,8 +39,16 @@ Deno.serve(async (req) => {
     const bot = meData.result;
 
     // 2. Build webhook URL pointing to telegramWebhook function
+    // Telegram needs a public URL. Use the request's own host to derive the correct base44.app domain.
     const appId = Deno.env.get('BASE44_APP_ID');
-    const webhookUrl = `https://app.base44.com/api/apps/${appId}/functions/telegramWebhook?token=${trimmed}`;
+    const reqUrl = new URL(req.url);
+    let host = reqUrl.host;
+    // If called from a custom domain (e.g. tttz.xyz), fall back to default base44.app domain pattern
+    if (!host.endsWith('.base44.app')) {
+      host = `app--6901295fa9bcfaa0f5ba2c2a.base44.app`;
+    }
+    const webhookUrl = `https://${host}/api/apps/${appId}/functions/telegramWebhook?token=${trimmed}`;
+    console.log('[telegramRegisterBot] Setting webhook URL:', webhookUrl);
 
     // 3. Register the webhook with Telegram
     const hookRes = await fetch(`https://api.telegram.org/bot${trimmed}/setWebhook`, {
