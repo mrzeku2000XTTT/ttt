@@ -1,0 +1,80 @@
+{
+  "name": "Listing",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "buy",
+        "sell"
+      ],
+      "default": "sell",
+      "description": "Whether user wants to buy or sell KAS"
+    },
+    "kas_amount": {
+      "type": "number",
+      "description": "Amount of KAS"
+    },
+    "fiat_amount": {
+      "type": "number",
+      "description": "Fiat price in USD"
+    },
+    "location": {
+      "type": "string",
+      "description": "City or area for in-person meeting"
+    },
+    "meeting_notes": {
+      "type": "string",
+      "description": "Preferred meeting times/places"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "in_progress",
+        "completed",
+        "cancelled"
+      ],
+      "default": "open",
+      "description": "Listing status"
+    },
+    "contract_trade_id": {
+      "type": "number",
+      "description": "Smart contract trade ID"
+    },
+    "seller_address": {
+      "type": "string",
+      "description": "Seller's wallet address"
+    },
+    "buyer_address": {
+      "type": "string",
+      "description": "Buyer's wallet address"
+    },
+    "tx_hash": {
+      "type": "string",
+      "description": "Transaction hash"
+    },
+    "contract_address": {
+      "type": "string",
+      "description": "Escrow contract address used"
+    }
+  },
+  "required": [
+    "type",
+    "kas_amount",
+    "fiat_amount",
+    "location"
+  ],
+  "rls": {
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "read": true,
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

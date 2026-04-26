@@ -1,0 +1,63 @@
+{
+  "name": "CreatorReferral",
+  "type": "object",
+  "properties": {
+    "creator_email": {
+      "type": "string",
+      "description": "Creator's email"
+    },
+    "creator_wallet": {
+      "type": "string",
+      "description": "Creator's wallet address"
+    },
+    "referral_code": {
+      "type": "string",
+      "description": "Unique referral code"
+    },
+    "clicked_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When link was clicked"
+    },
+    "converted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether click converted to signup/purchase"
+    },
+    "conversion_type": {
+      "type": "string",
+      "enum": [
+        "signup",
+        "purchase",
+        "none"
+      ],
+      "default": "none",
+      "description": "Type of conversion"
+    },
+    "earnings": {
+      "type": "number",
+      "default": 0,
+      "description": "Earnings from this referral in USD"
+    },
+    "ip_address": {
+      "type": "string",
+      "description": "Visitor IP (for fraud prevention)"
+    }
+  },
+  "required": [
+    "creator_email",
+    "referral_code"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "creator_email": "{{user.email}}"
+    },
+    "update": {
+      "creator_email": "{{user.email}}"
+    },
+    "delete": {
+      "creator_email": "{{user.email}}"
+    }
+  }
+}

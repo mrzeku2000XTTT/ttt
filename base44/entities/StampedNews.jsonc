@@ -1,0 +1,69 @@
+{
+  "name": "StampedNews",
+  "type": "object",
+  "properties": {
+    "news_title": {
+      "type": "string",
+      "description": "Original news title"
+    },
+    "news_summary": {
+      "type": "string",
+      "description": "Original news summary"
+    },
+    "news_category": {
+      "type": "string",
+      "description": "News category"
+    },
+    "news_location": {
+      "type": "string",
+      "description": "Location of the news"
+    },
+    "news_source": {
+      "type": "string",
+      "description": "Original news source"
+    },
+    "news_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Original news timestamp"
+    },
+    "blog_content": {
+      "type": "string",
+      "description": "AI-generated blog post content"
+    },
+    "stamper_address": {
+      "type": "string",
+      "description": "Kasware wallet address that stamped this"
+    },
+    "signature": {
+      "type": "string",
+      "description": "Kasware signature proving authenticity"
+    },
+    "stamped_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this news was stamped"
+    },
+    "views": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of views"
+    },
+    "likes": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of likes"
+    }
+  },
+  "required": [
+    "news_title",
+    "news_summary",
+    "stamper_address",
+    "signature"
+  ],
+  "rls": {
+    "create": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

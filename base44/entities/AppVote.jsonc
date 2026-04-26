@@ -1,0 +1,39 @@
+{
+  "name": "AppVote",
+  "type": "object",
+  "properties": {
+    "app_name": {
+      "type": "string",
+      "description": "Name of the app being voted for"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "User who voted"
+    },
+    "vote_type": {
+      "type": "string",
+      "enum": [
+        "upvote",
+        "downvote"
+      ],
+      "default": "upvote",
+      "description": "Type of vote"
+    }
+  },
+  "required": [
+    "app_name",
+    "user_email"
+  ],
+  "rls": {
+    "create": {
+      "user_email": "{{user.email}}"
+    },
+    "read": true,
+    "update": {
+      "user_email": "{{user.email}}"
+    },
+    "delete": {
+      "user_email": "{{user.email}}"
+    }
+  }
+}

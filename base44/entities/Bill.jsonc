@@ -1,0 +1,81 @@
+{
+  "name": "Bill",
+  "type": "object",
+  "properties": {
+    "bill_name": {
+      "type": "string",
+      "description": "Name of the bill"
+    },
+    "amount_usd": {
+      "type": "number",
+      "description": "Amount in USD"
+    },
+    "bill_type": {
+      "type": "string",
+      "enum": [
+        "digital",
+        "physical",
+        "subscription"
+      ],
+      "description": "Type of bill"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "When the bill is due"
+    },
+    "frequency": {
+      "type": "string",
+      "enum": [
+        "one-time",
+        "weekly",
+        "monthly",
+        "yearly"
+      ],
+      "default": "monthly",
+      "description": "How often the bill recurs"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "unpaid",
+        "paid",
+        "overdue"
+      ],
+      "default": "unpaid",
+      "description": "Payment status"
+    },
+    "category": {
+      "type": "string",
+      "description": "Bill category (utilities, subscriptions, etc.)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes"
+    },
+    "paid_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the bill was paid"
+    }
+  },
+  "required": [
+    "bill_name",
+    "amount_usd",
+    "bill_type"
+  ],
+  "rls": {
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

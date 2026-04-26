@@ -1,0 +1,72 @@
+{
+  "name": "PTOStamp",
+  "type": "object",
+  "properties": {
+    "employee_email": {
+      "type": "string",
+      "description": "Employee who stamped PTO"
+    },
+    "employee_name": {
+      "type": "string",
+      "description": "Employee name"
+    },
+    "employee_wallet": {
+      "type": "string",
+      "description": "Employee Kaspa wallet"
+    },
+    "pto_hours_converted": {
+      "type": "number",
+      "description": "PTO hours converted"
+    },
+    "kas_amount": {
+      "type": "number",
+      "description": "KAS amount locked"
+    },
+    "usd_value_at_stamp": {
+      "type": "number",
+      "description": "USD value when stamped"
+    },
+    "kas_price_at_stamp": {
+      "type": "number",
+      "description": "KAS price when stamped"
+    },
+    "kasware_signature": {
+      "type": "string",
+      "description": "Kasware wallet signature"
+    },
+    "stamp_message": {
+      "type": "string",
+      "description": "Message that was signed"
+    },
+    "is_claimed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether KAS was claimed"
+    },
+    "claimed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When claimed"
+    },
+    "company_id": {
+      "type": "string",
+      "description": "Company owner email"
+    }
+  },
+  "required": [
+    "employee_email",
+    "employee_name",
+    "employee_wallet",
+    "pto_hours_converted",
+    "kas_amount",
+    "usd_value_at_stamp",
+    "kas_price_at_stamp",
+    "kasware_signature",
+    "stamp_message",
+    "company_id"
+  ],
+  "rls": {
+    "create": true,
+    "read": true
+  }
+}

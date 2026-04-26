@@ -1,0 +1,93 @@
+{
+  "name": "BridgeTransaction",
+  "type": "object",
+  "properties": {
+    "from_network": {
+      "type": "string",
+      "enum": [
+        "L1",
+        "L2"
+      ],
+      "description": "Source network"
+    },
+    "to_network": {
+      "type": "string",
+      "enum": [
+        "L1",
+        "L2"
+      ],
+      "description": "Destination network"
+    },
+    "from_address": {
+      "type": "string",
+      "description": "Source wallet address"
+    },
+    "to_address": {
+      "type": "string",
+      "description": "Destination wallet address"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Amount being transferred"
+    },
+    "token_type": {
+      "type": "string",
+      "enum": [
+        "KAS",
+        "ERC20"
+      ],
+      "default": "KAS",
+      "description": "Token type"
+    },
+    "token_address": {
+      "type": "string",
+      "description": "ERC-20 token contract address (if applicable)"
+    },
+    "token_symbol": {
+      "type": "string",
+      "description": "Token symbol (KAS, USDT, etc.)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "processing",
+        "completed",
+        "failed"
+      ],
+      "default": "pending",
+      "description": "Transaction status"
+    },
+    "tx_hash": {
+      "type": "string",
+      "description": "Transaction hash"
+    },
+    "estimated_time": {
+      "type": "number",
+      "description": "Estimated completion time in minutes"
+    },
+    "fee": {
+      "type": "number",
+      "description": "Transfer fee"
+    }
+  },
+  "required": [
+    "from_network",
+    "to_network",
+    "from_address",
+    "to_address",
+    "amount"
+  ],
+  "rls": {
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "read": true,
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

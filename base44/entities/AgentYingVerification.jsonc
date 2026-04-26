@@ -1,0 +1,117 @@
+{
+  "name": "AgentYingVerification",
+  "type": "object",
+  "properties": {
+    "verification_id": {
+      "type": "string",
+      "description": "Unique verification ID"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "User who submitted proof"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL to uploaded proof file"
+    },
+    "file_name": {
+      "type": "string",
+      "description": "Original file name"
+    },
+    "file_type": {
+      "type": "string",
+      "description": "File MIME type"
+    },
+    "user_explanation": {
+      "type": "string",
+      "description": "User's original explanation"
+    },
+    "enhanced_explanation": {
+      "type": "string",
+      "description": "AI-enhanced explanation"
+    },
+    "task_type": {
+      "type": "string",
+      "description": "Detected task type"
+    },
+    "verification_score": {
+      "type": "number",
+      "description": "Overall score (0-100)"
+    },
+    "quality_score": {
+      "type": "number",
+      "description": "Quality score (0-1)"
+    },
+    "complexity_score": {
+      "type": "number",
+      "description": "Complexity score (0-1)"
+    },
+    "pattern_match": {
+      "type": "object",
+      "properties": {
+        "found": {
+          "type": "boolean"
+        },
+        "confidence": {
+          "type": "number"
+        },
+        "pattern_id": {
+          "type": "string"
+        }
+      },
+      "description": "Pattern matching results"
+    },
+    "learned_new_pattern": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this verification created a new pattern"
+    },
+    "rewards": {
+      "type": "object",
+      "properties": {
+        "kaspa_tokens": {
+          "type": "number"
+        },
+        "trust_score": {
+          "type": "number"
+        },
+        "hive_contribution": {
+          "type": "number"
+        }
+      },
+      "description": "Rewards earned (not actual payments)"
+    },
+    "proof_of_work_hash": {
+      "type": "string",
+      "description": "PoW hash for verification"
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Verification timestamp"
+    }
+  },
+  "required": [
+    "verification_id",
+    "user_email",
+    "file_url",
+    "verification_score"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "$or": [
+        {
+          "user_email": "{{user.email}}"
+        },
+        {
+          "user.role": "admin"
+        }
+      ]
+    },
+    "update": false,
+    "delete": {
+      "user.role": "admin"
+    }
+  }
+}

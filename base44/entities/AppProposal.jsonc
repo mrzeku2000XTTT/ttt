@@ -1,0 +1,72 @@
+{
+  "name": "AppProposal",
+  "type": "object",
+  "properties": {
+    "app_name": {
+      "type": "string",
+      "description": "Name of the proposed app"
+    },
+    "app_link": {
+      "type": "string",
+      "description": "URL/link to the app"
+    },
+    "icon_url": {
+      "type": "string",
+      "description": "URL of the preferred icon image"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of the app"
+    },
+    "category": {
+      "type": "string",
+      "description": "App category (Tools, Games, etc.)"
+    },
+    "submitter_email": {
+      "type": "string",
+      "description": "Email of the user who submitted"
+    },
+    "submitter_name": {
+      "type": "string",
+      "description": "Name of the submitter"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending",
+      "description": "Proposal status"
+    },
+    "admin_notes": {
+      "type": "string",
+      "description": "Admin notes/feedback"
+    }
+  },
+  "required": [
+    "app_name",
+    "app_link",
+    "description"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "$or": [
+        {
+          "submitter_email": "{{user.email}}"
+        },
+        {
+          "user.role": "admin"
+        }
+      ]
+    },
+    "update": {
+      "user.role": "admin"
+    },
+    "delete": {
+      "user.role": "admin"
+    }
+  }
+}

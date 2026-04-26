@@ -1,0 +1,143 @@
+{
+  "name": "PeraTask",
+  "type": "object",
+  "properties": {
+    "task_name": {
+      "type": "string",
+      "description": "Name of the task"
+    },
+    "description": {
+      "type": "string",
+      "description": "Task description and requirements"
+    },
+    "tip_amount": {
+      "type": "number",
+      "description": "KAS amount to pay worker"
+    },
+    "burner_wallet_address": {
+      "type": "string",
+      "description": "Address of burner wallet holding funds"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "in_progress",
+        "awaiting_approval",
+        "completed",
+        "voided"
+      ],
+      "default": "active",
+      "description": "Current task status"
+    },
+    "employer_id": {
+      "type": "string",
+      "description": "User who created the task"
+    },
+    "worker_id": {
+      "type": "string",
+      "description": "User assigned to complete task"
+    },
+    "mzk_bot_id": {
+      "type": "string",
+      "description": "Unique MZK Bot ID for this task"
+    },
+    "pera_vault_id": {
+      "type": "string",
+      "description": "Vault holding encrypted seed phrase"
+    },
+    "last_balance_check": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last time MZK Bot checked balance"
+    },
+    "balance_verified": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether funds are still in wallet"
+    },
+    "proof_photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "URLs to proof photos"
+    },
+    "proof_links": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Links proving work completion"
+    },
+    "proof_description": {
+      "type": "string",
+      "description": "Worker's description of completed work"
+    },
+    "proof_score": {
+      "type": "number",
+      "description": "AI validation score (0-100)"
+    },
+    "mzkey": {
+      "type": "string",
+      "description": "One-time authorization key"
+    },
+    "mzkey_expires": {
+      "type": "string",
+      "format": "date-time",
+      "description": "MZKey expiration timestamp"
+    },
+    "pera_secret_key_granted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether worker received secret key"
+    },
+    "funds_claimed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether worker claimed funds"
+    },
+    "void_reason": {
+      "type": "string",
+      "description": "Reason if task was voided"
+    }
+  },
+  "required": [
+    "task_name",
+    "description",
+    "tip_amount",
+    "burner_wallet_address",
+    "employer_id"
+  ],
+  "rls": {
+    "create": {
+      "employer_id": "{{user.email}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "employer_id": "{{user.email}}"
+        },
+        {
+          "worker_id": "{{user.email}}"
+        },
+        {
+          "status": "active"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "employer_id": "{{user.email}}"
+        },
+        {
+          "worker_id": "{{user.email}}"
+        }
+      ]
+    },
+    "delete": {
+      "employer_id": "{{user.email}}"
+    }
+  }
+}

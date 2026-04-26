@@ -9,8 +9,7 @@ import {
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import TeleToolEditor from "@/components/tele/TeleToolEditor";
-
-const TELEGRAM_URL = base44.agents.getTelegramConnectURL("tele");
+import BotSetupGuide from "@/components/tele/BotSetupGuide";
 
 export default function TELEPage() {
   const [user, setUser] = useState(null);
@@ -95,16 +94,16 @@ export default function TELEPage() {
             </div>
             <h1 className="text-4xl font-black text-white mb-3">TELE Builder</h1>
             <p className="text-white/60 text-base mb-6">
-              TELE is the Telegram agent tool builder. Only admins can configure tools right now.
+              TELE is the Telegram agent tool builder. Only admins can configure tools and connect the bot.
             </p>
             <a
-              href={TELEGRAM_URL}
+              href="https://t.me/BotFather"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-5 py-3 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-xl"
             >
               <MessageCircle className="w-4 h-4" />
-              Connect on Telegram
+              Open @BotFather
             </a>
           </div>
         </div>
@@ -130,12 +129,12 @@ export default function TELEPage() {
             <ArrowLeft className="w-4 h-4" /> Back
           </Link>
           <a
-            href={TELEGRAM_URL}
+            href="https://t.me/BotFather"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-sm rounded-xl"
           >
-            <MessageCircle className="w-4 h-4" /> Open Bot
+            <MessageCircle className="w-4 h-4" /> @BotFather
             <ExternalLink className="w-3 h-3 opacity-60" />
           </a>
         </div>
@@ -156,6 +155,9 @@ export default function TELEPage() {
             <span className="text-cyan-300 text-[11px] font-bold tracking-widest uppercase">Admin Only</span>
           </div>
         </motion.div>
+
+        {/* Bot setup guide */}
+        <BotSetupGuide />
 
         {/* Stats + New button */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">

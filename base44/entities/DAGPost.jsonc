@@ -1,0 +1,122 @@
+{
+  "name": "DAGPost",
+  "type": "object",
+  "properties": {
+    "content": {
+      "type": "string",
+      "description": "Post content text"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Display name of author"
+    },
+    "author_wallet_address": {
+      "type": "string",
+      "description": "Author's wallet address"
+    },
+    "author_agent_zk_id": {
+      "type": "string",
+      "description": "Author's Agent ZK ID if they have one"
+    },
+    "author_role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "user"
+      ],
+      "default": "user",
+      "description": "Author's role"
+    },
+    "is_public": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether post is visible to all users"
+    },
+    "made_public_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When post was made public"
+    },
+    "parent_post_id": {
+      "type": "string",
+      "description": "ID of parent post if this is a reply"
+    },
+    "replies_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of replies"
+    },
+    "media_files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "size": {
+            "type": "number"
+          }
+        }
+      },
+      "description": "Uploaded media files"
+    },
+    "likes": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of likes"
+    },
+    "comments_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of comments"
+    },
+    "tips_received": {
+      "type": "number",
+      "default": 0,
+      "description": "Total KAS tips received"
+    },
+    "self_pay_tx_hash": {
+      "type": "string",
+      "description": "Transaction hash of 1 KAS self-payment"
+    },
+    "is_stamped": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether post is stamped with Kasware"
+    },
+    "stamp_signature": {
+      "type": "string",
+      "description": "Kasware signature if stamped"
+    },
+    "stamp_message": {
+      "type": "string",
+      "description": "Message that was signed"
+    },
+    "stamper_address": {
+      "type": "string",
+      "description": "Kasware address that stamped this"
+    },
+    "stamped_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When post was stamped"
+    }
+  },
+  "required": [
+    "content",
+    "author_name"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "name": "RemixAILearning",
+  "type": "object",
+  "properties": {
+    "wallet_address": {
+      "type": "string",
+      "description": "Wallet address of the user who generated this"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "Project ID for grouping related generations"
+    },
+    "user_prompt": {
+      "type": "string",
+      "description": "Original user prompt"
+    },
+    "detailed_prompt": {
+      "type": "string",
+      "description": "Enhanced AI prompt generated"
+    },
+    "reference_images": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "URLs of reference images used"
+    },
+    "result_image": {
+      "type": "string",
+      "description": "URL of generated image"
+    },
+    "user_rating": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "User rating of result (1-5 stars)"
+    },
+    "was_successful": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether generation succeeded"
+    },
+    "error_message": {
+      "type": "string",
+      "description": "Error message if failed"
+    },
+    "style_type": {
+      "type": "string",
+      "description": "Type of transformation (style, localized, new)"
+    },
+    "used_for_training": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this data was used to improve prompts"
+    }
+  },
+  "required": [
+    "user_prompt",
+    "detailed_prompt"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": {
+      "user.role": "admin"
+    }
+  }
+}
