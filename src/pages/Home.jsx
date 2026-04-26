@@ -508,15 +508,22 @@ export default function HomePage() {
               <button
                 onClick={() => {
                   setShowMenu(false);
-                  // Inject a full-screen black overlay directly into <body>
-                  // so it survives React unmount and covers the unstyled
-                  // route-list flash during navigation to base44 login.
-                  const overlay = document.createElement('div');
-                  overlay.style.cssText = 'position:fixed;inset:0;background:#000;z-index:2147483647;display:flex;align-items:center;justify-content:center;';
-                  overlay.innerHTML = '<div style="width:48px;height:48px;border:4px solid rgba(34,211,238,0.2);border-top-color:#22d3ee;border-radius:50%;animation:sp 0.8s linear infinite"></div><style>@keyframes sp{to{transform:rotate(360deg)}}</style>';
-                  document.body.appendChild(overlay);
+                  // Inject overlay into <html> (above everything, including React root)
+                  // and force-paint it before redirect so the unstyled login route-list never flashes.
                   document.documentElement.style.background = '#000';
-                  base44.auth.redirectToLogin();
+                  document.body.style.background = '#000';
+                  const overlay = document.createElement('div');
+                  overlay.id = '__login_redirect_overlay__';
+                  overlay.style.cssText = 'position:fixed;inset:0;background:#000;z-index:2147483647;display:flex;align-items:center;justify-content:center;pointer-events:auto;';
+                  overlay.innerHTML = '<div style="width:48px;height:48px;border:4px solid rgba(34,211,238,0.2);border-top-color:#22d3ee;border-radius:50%;animation:__sp 0.8s linear infinite"></div><style>@keyframes __sp{to{transform:rotate(360deg)}}</style>';
+                  document.documentElement.appendChild(overlay);
+                  // Force browser to paint the overlay before kicking off navigation.
+                  // Double rAF guarantees one full paint cycle on every browser.
+                  requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                      base44.auth.redirectToLogin();
+                    });
+                  });
                 }}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-white/10 transition-all whitespace-nowrap"
               >
