@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from '@/App.jsx'
 import '@/index.css'
 import { base44 } from '@/api/base44Client'
+import { appParams } from '@/lib/app-params'
 
 // Globally wrap redirectToLogin so any code that triggers it paints the
 // Kaspa loader full-screen BEFORE navigation. This hides the brief flash of
@@ -12,10 +13,10 @@ import { base44 } from '@/api/base44Client'
   if (!auth || typeof auth.redirectToLogin !== 'function') return;
   if (auth.__overlayPatched) return;
   const original = auth.redirectToLogin.bind(auth);
-  auth.redirectToLogin = function patchedRedirectToLogin(...args) {
+  auth.redirectToLogin = function patchedRedirectToLogin(nextUrl) {
     try {
-      // Replace document body with a fixed Kaspa-logo overlay so nothing else
-      // can paint on top while the browser navigates to base44's login UI.
+      // Paint the Kaspa loader full-screen IMMEDIATELY so the user sees branded
+      // loading instantly — covers any flash before navigation kicks in.
       document.documentElement.style.cssText = 'background:#000;';
       document.body.style.cssText = 'background:#000;margin:0;padding:0;overflow:hidden;color:#fff;';
       document.body.innerHTML = `
@@ -42,7 +43,20 @@ import { base44 } from '@/api/base44Client'
         </style>
       `;
     } catch {}
-    return original(...args);
+
+    // CRITICAL: Skip base44's `/login` server-rendered intermediate page
+    // (which flashes a raw page list on custom domains). Navigate DIRECTLY
+    // to base44's auth endpoint instead.
+    try {
+      const appId = appParams?.appId;
+      const next = nextUrl || window.location.href;
+      if (appId) {
+        const directUrl = `https://app.base44.com/login?app_id=${encodeURIComponent(appId)}&from_url=${encodeURIComponent(next)}`;
+        window.location.replace(directUrl);
+        return;
+      }
+    } catch {}
+    return original(nextUrl);
   };
   auth.__overlayPatched = true;
 })();
