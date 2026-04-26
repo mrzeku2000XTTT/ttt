@@ -36,17 +36,10 @@ function __paintKaspaLoader() {
   } catch {}
 }
 
-// Build the direct base44 auth URL, skipping the server-rendered /login flash.
-function __buildBase44LoginUrl(nextUrl) {
-  const appId = appParams?.appId;
-  if (!appId) return null;
-  const next = nextUrl || window.location.href;
-  return `https://app.base44.com/login?app_id=${encodeURIComponent(appId)}&from_url=${encodeURIComponent(next)}`;
-}
-
-// Intercept ANY navigation to a same-origin /login path and reroute it to
-// base44's auth URL directly — kills the flash regardless of which code path
-// triggered the redirect (SDK, framework, manual <a href>, etc.).
+// Intercept ANY navigation to a same-origin /login path and paint the Kaspa
+// loader BEFORE the browser navigates — this hides base44's server-rendered
+// page-list flash. The browser still navigates to /login, which then bounces
+// to the real auth flow; the loader masks the brief intermediate render.
 ;(function installLoginNavInterceptor() {
   if (typeof window === 'undefined') return;
   if (window.__loginNavInterceptorInstalled) return;
@@ -59,27 +52,19 @@ function __buildBase44LoginUrl(nextUrl) {
     } catch { return false; }
   };
 
-  // Patch window.location.assign / replace / href setter
   const origAssign = window.location.assign.bind(window.location);
   const origReplace = window.location.replace.bind(window.location);
   try {
     window.location.assign = function (url) {
-      if (isLoginPath(url)) {
-        const direct = __buildBase44LoginUrl();
-        if (direct) { __paintKaspaLoader(); return origReplace(direct); }
-      }
+      if (isLoginPath(url)) __paintKaspaLoader();
       return origAssign(url);
     };
     window.location.replace = function (url) {
-      if (isLoginPath(url)) {
-        const direct = __buildBase44LoginUrl();
-        if (direct) { __paintKaspaLoader(); return origReplace(direct); }
-      }
+      if (isLoginPath(url)) __paintKaspaLoader();
       return origReplace(url);
     };
   } catch {}
 
-  // Patch href setter
   try {
     const proto = Object.getPrototypeOf(window.location);
     const desc = Object.getOwnPropertyDescriptor(proto, 'href') ||
@@ -90,22 +75,12 @@ function __buildBase44LoginUrl(nextUrl) {
         configurable: true,
         get: desc.get ? desc.get.bind(window.location) : () => window.location.toString(),
         set(url) {
-          if (isLoginPath(url)) {
-            const direct = __buildBase44LoginUrl();
-            if (direct) { __paintKaspaLoader(); return origSet.call(window.location, direct); }
-          }
+          if (isLoginPath(url)) __paintKaspaLoader();
           return origSet.call(window.location, url);
         }
       });
     }
   } catch {}
-
-  // If the page itself loads at /login (e.g. from React Router navigation that
-  // already happened), bounce immediately.
-  if (/^\/login\/?$/i.test(window.location.pathname)) {
-    const direct = __buildBase44LoginUrl();
-    if (direct) { __paintKaspaLoader(); origReplace(direct); }
-  }
 })();
 
 // Globally wrap redirectToLogin so any code that triggers it paints the
@@ -117,11 +92,6 @@ function __buildBase44LoginUrl(nextUrl) {
   const original = auth.redirectToLogin.bind(auth);
   auth.redirectToLogin = function patchedRedirectToLogin(nextUrl) {
     __paintKaspaLoader();
-    const directUrl = __buildBase44LoginUrl(nextUrl);
-    if (directUrl) {
-      window.location.replace(directUrl);
-      return;
-    }
     return original(nextUrl);
   };
   auth.__overlayPatched = true;
