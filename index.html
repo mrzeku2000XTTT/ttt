@@ -78,7 +78,34 @@
       // base44's login UI paints. Hold the overlay longer there until a real
       // login form/button is visible.
       (function () {
-        var isLoginRoute = /\/login(\?|$|\/)/i.test(window.location.pathname + window.location.search);
+        var path = window.location.pathname;
+        // /login on custom domains (e.g. tttz.xyz/login) is base44's server-rendered
+        // login page that briefly shows a raw page list. Keep the boot overlay over it
+        // forever — the browser will navigate away to base44.com login UI shortly.
+        var isLoginRoute = /^\/login(\/|$)/i.test(path);
+        if (isLoginRoute) {
+          // Never hide the boot overlay on /login — let the redirect take over.
+          // Also nuke whatever is in <body> that's not the boot overlay so the
+          // page list doesn't bleed through behind it.
+          document.documentElement.style.background = '#000';
+          var observer = new MutationObserver(function () {
+            var boot = document.getElementById('ttt-boot');
+            if (boot && boot.parentNode) {
+              // Re-promote boot to top-most child every time DOM changes.
+              if (boot.parentNode.lastElementChild !== boot) {
+                boot.parentNode.appendChild(boot);
+              }
+            }
+          });
+          if (document.body) {
+            observer.observe(document.body, { childList: true, subtree: false });
+          } else {
+            document.addEventListener('DOMContentLoaded', function () {
+              observer.observe(document.body, { childList: true, subtree: false });
+            });
+          }
+          return; // never call hideBoot
+        }
 
         function hideBoot() {
           var b = document.getElementById('ttt-boot');
@@ -86,41 +113,20 @@
           b.classList.add('hide');
           setTimeout(function () { b.remove(); }, 350);
         }
-
-        function loginUIReady() {
-          // Login UI typically contains a form, an input, or a button with login-related text.
-          var root = document.getElementById('root');
-          if (!root) return false;
-          if (root.querySelector('form, input[type="email"], input[type="password"], button[type="submit"]')) return true;
-          var txt = (root.innerText || '').toLowerCase();
-          return /sign\s*in|log\s*in|continue with|email/.test(txt);
-        }
-
         function checkMounted() {
           var root = document.getElementById('root');
-          if (!root || root.children.length === 0) {
-            setTimeout(checkMounted, 50);
-            return;
-          }
-          if (isLoginRoute) {
-            // Wait for actual login UI to render, not just the unstyled page list.
-            if (loginUIReady()) {
-              requestAnimationFrame(function () { setTimeout(hideBoot, 150); });
-            } else {
-              setTimeout(checkMounted, 80);
-            }
-          } else {
+          if (root && root.children.length > 0) {
             requestAnimationFrame(function () { setTimeout(hideBoot, 100); });
+          } else {
+            setTimeout(checkMounted, 50);
           }
         }
-
         if (document.readyState === 'loading') {
           document.addEventListener('DOMContentLoaded', checkMounted);
         } else {
           checkMounted();
         }
-        // Safety: never show boot more than 8s on login, 6s elsewhere
-        setTimeout(hideBoot, isLoginRoute ? 8000 : 6000);
+        setTimeout(hideBoot, 6000);
       })();
     </script>
   </body>

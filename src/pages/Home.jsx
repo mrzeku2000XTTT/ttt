@@ -508,17 +508,14 @@ export default function HomePage() {
               <button
                 onClick={() => {
                   setShowMenu(false);
-                  // Inject overlay into <html> (above everything, including React root)
-                  // and force-paint it before redirect so the unstyled login route-list never flashes.
-                  document.documentElement.style.background = '#000';
-                  document.body.style.background = '#000';
-                  const overlay = document.createElement('div');
-                  overlay.id = '__login_redirect_overlay__';
-                  overlay.style.cssText = 'position:fixed;inset:0;background:#000;z-index:2147483647;display:flex;align-items:center;justify-content:center;pointer-events:auto;';
-                  overlay.innerHTML = '<div style="width:48px;height:48px;border:4px solid rgba(34,211,238,0.2);border-top-color:#22d3ee;border-radius:50%;animation:__sp 0.8s linear infinite"></div><style>@keyframes __sp{to{transform:rotate(360deg)}}</style>';
-                  document.documentElement.appendChild(overlay);
-                  // Force browser to paint the overlay before kicking off navigation.
-                  // Double rAF guarantees one full paint cycle on every browser.
+                  // CRITICAL: tttz.xyz/login is base44's server-served route on the custom domain.
+                  // Before browser loads it, the OLD page stays visible — so we replace the
+                  // entire document body with a black overlay first. That way during the
+                  // browser's same-origin navigation, the user only ever sees black.
+                  document.documentElement.style.cssText = 'background:#000 !important;';
+                  document.body.style.cssText = 'background:#000 !important;margin:0;padding:0;overflow:hidden;';
+                  document.body.innerHTML = '<div style="position:fixed;inset:0;background:#000;z-index:2147483647;display:flex;align-items:center;justify-content:center;"><div style="width:48px;height:48px;border:4px solid rgba(34,211,238,0.2);border-top-color:#22d3ee;border-radius:50%;animation:__sp 0.8s linear infinite"></div></div><style>@keyframes __sp{to{transform:rotate(360deg)}}</style>';
+                  // Double rAF to guarantee paint, then trigger redirect.
                   requestAnimationFrame(() => {
                     requestAnimationFrame(() => {
                       base44.auth.redirectToLogin();
