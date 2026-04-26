@@ -28,6 +28,7 @@ export default function HomePage() {
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [walletBalance, setWalletBalance] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [navigating, setNavigating] = useState(false);
   const messagesEndRef = React.useRef(null);
 
   useEffect(() => {
@@ -385,6 +386,12 @@ export default function HomePage() {
 
   return (
     <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-black">
+      {/* Login redirect overlay — covers flash of base44 login page list */}
+      {navigating && (
+        <div className="fixed inset-0 z-[99999] bg-black flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin" />
+        </div>
+      )}
       {/* Water Background */}
       <div className="absolute inset-0">
         <img
@@ -501,7 +508,8 @@ export default function HomePage() {
               <button
                 onClick={() => {
                   setShowMenu(false);
-                  base44.auth.redirectToLogin();
+                  setNavigating(true);
+                  setTimeout(() => base44.auth.redirectToLogin(), 50);
                 }}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-white/10 transition-all whitespace-nowrap"
               >
