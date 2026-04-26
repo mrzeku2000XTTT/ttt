@@ -9,20 +9,40 @@ Deno.serve(async (req) => {
     const { bot_token, kaspa_address, agent_mode } = await req.json();
     if (!bot_token) return Response.json({ error: 'bot_token required' }, { status: 400 });
 
+    const trimmed = String(bot_token).trim();
+
+    // Format check: Telegram tokens look like "123456789:AAH-xxxx..."
+    if (!/^\d{6,12}:[A-Za-z0-9_-]{30,}$/.test(trimmed)) {
+      return Response.json({
+        error: 'Token format looks wrong. It should look like "123456789:AAH-xxxxx..." — copy the FULL token from @BotFather (the line right after "Use this token to access the HTTP API"). Make sure you didn\'t copy the bot link or username by mistake.',
+      }, { status: 400 });
+    }
+
     // 1. Validate token via getMe
-    const meRes = await fetch(`https://api.telegram.org/bot${bot_token}/getMe`);
-    const meData = await meRes.json();
+    let meData;
+    try {
+      const meRes = await fetch(`https://api.telegram.org/bot${trimmed}/getMe`);
+      meData = await meRes.json();
+    } catch (e) {
+      return Response.json({ error: 'Could not reach Telegram: ' + e.message }, { status: 400 });
+    }
+
     if (!meData.ok) {
-      return Response.json({ error: 'Invalid bot token: ' + (meData.description || 'unknown') }, { status: 400 });
+      const desc = meData.description || 'unknown';
+      let hint = '';
+      if (desc.toLowerCase().includes('not found') || desc.toLowerCase().includes('unauthorized')) {
+        hint = ' This usually means the token was revoked, mistyped, or the bot was deleted. In @BotFather, send /mybots → pick your bot → API Token to get a fresh token.';
+      }
+      return Response.json({ error: `Telegram rejected the token: ${desc}.${hint}` }, { status: 400 });
     }
     const bot = meData.result;
 
     // 2. Build webhook URL pointing to telegramWebhook function
     const appId = Deno.env.get('BASE44_APP_ID');
-    const webhookUrl = `https://app.base44.com/api/apps/${appId}/functions/telegramWebhook?token=${bot_token}`;
+    const webhookUrl = `https://app.base44.com/api/apps/${appId}/functions/telegramWebhook?token=${trimmed}`;
 
     // 3. Register the webhook with Telegram
-    const hookRes = await fetch(`https://api.telegram.org/bot${bot_token}/setWebhook`, {
+    const hookRes = await fetch(`https://api.telegram.org/bot${trimmed}/setWebhook`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -41,7 +61,7 @@ Deno.serve(async (req) => {
     const payload = {
       user_email: user.email,
       kaspa_address: kaspa_address || user.created_wallet_address || '',
-      bot_token,
+      bot_token: trimmed,
       bot_username: bot.username,
       bot_id: String(bot.id),
       webhook_status: 'active',
