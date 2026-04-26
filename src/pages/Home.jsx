@@ -28,6 +28,7 @@ export default function HomePage() {
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [walletBalance, setWalletBalance] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [navigating, setNavigating] = useState(false);
   const messagesEndRef = React.useRef(null);
 
   useEffect(() => {
@@ -385,6 +386,12 @@ export default function HomePage() {
 
   return (
     <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-black">
+      {/* Login redirect loading overlay — prevents flash of unstyled content */}
+      {navigating && (
+        <div className="fixed inset-0 z-[99999] bg-black flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin" />
+        </div>
+      )}
       {/* Water Background */}
       <div className="absolute inset-0">
         <img
@@ -501,24 +508,9 @@ export default function HomePage() {
               <button
                 onClick={() => {
                   setShowMenu(false);
-                  // The flash is the base44 platform's login page rendering its raw sitemap
-                  // links before its own CSS loads. Since this is a CROSS-PAGE redirect,
-                  // our React overlay disappears the moment navigation happens. The only
-                  // thing that survives the redirect is the browser's own paint of the
-                  // PREVIOUS page. So we paint everything black BEFORE the redirect and
-                  // hold it there as long as possible — the browser keeps rendering the
-                  // last frame of this page until the new page paints.
-                  const black = document.createElement('div');
-                  black.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:#000;z-index:2147483647;';
-                  document.documentElement.appendChild(black);
-                  document.documentElement.style.background = '#000';
-                  document.body.style.background = '#000';
-                  // Two RAFs guarantee the black frame paints before navigation starts
-                  requestAnimationFrame(() => {
-                    requestAnimationFrame(() => {
-                      base44.auth.redirectToLogin();
-                    });
-                  });
+                  setNavigating(true);
+                  // Defer redirect so React paints the overlay first
+                  setTimeout(() => base44.auth.redirectToLogin(), 50);
                 }}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-white/10 transition-all whitespace-nowrap"
               >
