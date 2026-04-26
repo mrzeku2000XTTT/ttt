@@ -509,8 +509,9 @@ export default function HomePage() {
                 onClick={() => {
                   setShowMenu(false);
                   setNavigating(true);
-                  // Defer redirect so React paints the overlay first
-                  setTimeout(() => base44.auth.redirectToLogin(), 50);
+                  // Hold black overlay long enough for the base44 login page
+                  // CSS to load before browser navigates and shows it
+                  setTimeout(() => base44.auth.redirectToLogin(), 1500);
                 }}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-white/10 transition-all whitespace-nowrap"
               >
