@@ -8,33 +8,44 @@
     <title>Base44 APP</title>
     <style>
       /* Prevent flash of unstyled content on refresh */
-      html, body { background: #000; margin: 0; }
-      #root:empty::before {
-        content: "";
+      html, body { background: #000; margin: 0; color: #fff; }
+      #ttt-boot {
         position: fixed;
         inset: 0;
         background: #000;
-        z-index: 9999;
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.3s ease;
       }
-      #root:empty::after {
+      #ttt-boot.hide { opacity: 0; pointer-events: none; }
+      #ttt-boot::after {
         content: "";
-        position: fixed;
-        top: 50%;
-        left: 50%;
         width: 32px;
         height: 32px;
-        margin: -16px 0 0 -16px;
         border: 3px solid rgba(255,255,255,0.15);
         border-top-color: #06b6d4;
         border-radius: 50%;
         animation: ttt-spin 0.8s linear infinite;
-        z-index: 10000;
       }
       @keyframes ttt-spin { to { transform: rotate(360deg); } }
     </style>
   </head>
   <body>
+    <div id="ttt-boot"></div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      window.addEventListener('load', function () {
+        setTimeout(function () {
+          var b = document.getElementById('ttt-boot');
+          if (b) {
+            b.classList.add('hide');
+            setTimeout(function () { b.remove(); }, 350);
+          }
+        }, 200);
+      });
+    </script>
   </body>
 </html>
