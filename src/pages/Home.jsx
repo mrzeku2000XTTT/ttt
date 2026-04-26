@@ -501,12 +501,19 @@ export default function HomePage() {
               <button
                 onClick={() => {
                   setShowMenu(false);
-                  // Show instant black overlay to hide flash of unstyled content during redirect
+                  // Inject black overlay synchronously into <html> so it covers EVERYTHING
+                  // (including any base44 platform redirect page that renders before login UI loads)
                   const overlay = document.createElement('div');
-                  overlay.style.cssText = 'position:fixed;inset:0;background:#000;z-index:999999;display:flex;align-items:center;justify-content:center;';
-                  overlay.innerHTML = '<div style="width:48px;height:48px;border:4px solid rgba(6,182,212,0.2);border-top-color:#22d3ee;border-radius:50%;animation:spin 1s linear infinite;"></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
-                  document.body.appendChild(overlay);
-                  base44.auth.redirectToLogin();
+                  overlay.id = 'login-redirect-overlay';
+                  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;background:#000;z-index:2147483647;display:flex;align-items:center;justify-content:center;';
+                  overlay.innerHTML = '<div style="width:48px;height:48px;border:4px solid rgba(6,182,212,0.2);border-top-color:#22d3ee;border-radius:50%;animation:spin 1s linear infinite;"></div><style>@keyframes spin{to{transform:rotate(360deg)}}html,body{background:#000 !important;}</style>';
+                  document.documentElement.appendChild(overlay);
+                  // Force paint before redirect so the overlay is visible during navigation
+                  requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                      base44.auth.redirectToLogin();
+                    });
+                  });
                 }}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-white/10 transition-all whitespace-nowrap"
               >
