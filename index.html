@@ -87,29 +87,21 @@
         // forever — the browser will navigate away to base44.com login UI shortly.
         var isLoginRoute = /^\/login(\/|$)/i.test(path);
         if (isLoginRoute) {
-          // Never hide the boot overlay on /login — let the redirect take over.
-          // Also nuke whatever is in <body> that's not the boot overlay so the
-          // page list doesn't bleed through behind it.
+          // /login is the brief intermediate route base44 uses before redirecting to
+          // its actual login UI on app.base44.com. We must keep our Kaspa loader on
+          // screen the entire time and never let React's PageNotFound (or anything
+          // else) flash behind it.
           document.documentElement.style.background = '#000';
           var lbl = document.getElementById('ttt-boot-label');
           if (lbl) lbl.textContent = 'Connecting';
-          var observer = new MutationObserver(function () {
-            var boot = document.getElementById('ttt-boot');
-            if (boot && boot.parentNode) {
-              // Re-promote boot to top-most child every time DOM changes.
-              if (boot.parentNode.lastElementChild !== boot) {
-                boot.parentNode.appendChild(boot);
-              }
-            }
-          });
-          if (document.body) {
-            observer.observe(document.body, { childList: true, subtree: false });
-          } else {
-            document.addEventListener('DOMContentLoaded', function () {
-              observer.observe(document.body, { childList: true, subtree: false });
-            });
-          }
-          return; // never call hideBoot
+
+          // Inject a stylesheet that permanently hides #root and forces the boot
+          // overlay to stay on top with maximum z-index. Stylesheets win over
+          // inline styles React might add.
+          var style = document.createElement('style');
+          style.textContent = '#root{display:none !important;visibility:hidden !important;opacity:0 !important;}#ttt-boot{display:flex !important;opacity:1 !important;z-index:2147483647 !important;pointer-events:auto !important;}';
+          document.head.appendChild(style);
+          return; // never call hideBoot or checkMounted
         }
 
         function hideBoot() {
