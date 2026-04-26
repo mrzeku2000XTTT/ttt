@@ -508,12 +508,15 @@ export default function HomePage() {
               <button
                 onClick={() => {
                   setShowMenu(false);
-                  setNavigating(true);
-                  // Paint document black so the destination page's
-                  // unstyled flash is masked during navigation
+                  // Inject a full-screen black overlay directly into <body>
+                  // so it survives React unmount and covers the unstyled
+                  // route-list flash during navigation to base44 login.
+                  const overlay = document.createElement('div');
+                  overlay.style.cssText = 'position:fixed;inset:0;background:#000;z-index:2147483647;display:flex;align-items:center;justify-content:center;';
+                  overlay.innerHTML = '<div style="width:48px;height:48px;border:4px solid rgba(34,211,238,0.2);border-top-color:#22d3ee;border-radius:50%;animation:sp 0.8s linear infinite"></div><style>@keyframes sp{to{transform:rotate(360deg)}}</style>';
+                  document.body.appendChild(overlay);
                   document.documentElement.style.background = '#000';
-                  document.body.style.background = '#000';
-                  setTimeout(() => base44.auth.redirectToLogin(), 50);
+                  base44.auth.redirectToLogin();
                 }}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-white/10 transition-all whitespace-nowrap"
               >
