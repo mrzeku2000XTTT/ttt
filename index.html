@@ -37,15 +37,32 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
-      window.addEventListener('load', function () {
-        setTimeout(function () {
+      // Keep boot overlay visible until React actually mounts content into #root
+      (function () {
+        function hideBoot() {
           var b = document.getElementById('ttt-boot');
-          if (b) {
-            b.classList.add('hide');
-            setTimeout(function () { b.remove(); }, 350);
+          if (!b) return;
+          b.classList.add('hide');
+          setTimeout(function () { b.remove(); }, 350);
+        }
+        function checkMounted() {
+          var root = document.getElementById('root');
+          if (root && root.children.length > 0) {
+            // Wait one more frame so styles paint before fade
+            requestAnimationFrame(function () { setTimeout(hideBoot, 100); });
+          } else {
+            setTimeout(checkMounted, 50);
           }
-        }, 200);
-      });
+        }
+        // Start checking after DOM is ready
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', checkMounted);
+        } else {
+          checkMounted();
+        }
+        // Safety: never show boot more than 6s
+        setTimeout(hideBoot, 6000);
+      })();
     </script>
   </body>
 </html>
