@@ -509,6 +509,10 @@ export default function HomePage() {
                 onClick={() => {
                   setShowMenu(false);
                   setNavigating(true);
+                  // Paint document black so the destination page's
+                  // unstyled flash is masked during navigation
+                  document.documentElement.style.background = '#000';
+                  document.body.style.background = '#000';
                   setTimeout(() => base44.auth.redirectToLogin(), 50);
                 }}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-white/10 transition-all whitespace-nowrap"
