@@ -38,6 +38,7 @@ import TELEPage from './pages/TELE';
 import RMXPage from './pages/RMX';
 import OneShotStudioPage from './pages/OneShotStudio';
 import SlideDeckBuilderPage from './pages/SlideDeckBuilder';
+import AuthRedirect from './pages/AuthRedirect';
 import KaSshiPlayer from './components/KaSshiPlayer';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -120,6 +121,8 @@ const AuthenticatedApp = () => {
       <Route path="/NEPU" element={<NEPUPage />} />
       <Route path="/TELE" element={<TELEPage />} />
       <Route path="/RMX" element={<RMXPage />} />
+      <Route path="/login" element={<AuthRedirect />} />
+      <Route path="/Login" element={<AuthRedirect />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
