@@ -59,9 +59,7 @@
     "bot_token"
   ],
   "rls": {
-    "create": {
-      "user_email": "{{user.email}}"
-    },
+    "create": true,
     "read": {
       "$or": [
         {
