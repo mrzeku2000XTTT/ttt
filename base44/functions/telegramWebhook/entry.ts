@@ -38,12 +38,14 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
 
     // Find which user owns this bot
-    const links = await base44.asServiceRole.entities.TelegramBotLink.filter({ bot_token: token });
-    if (links.length === 0) {
+    const allLinks = await base44.asServiceRole.entities.TelegramBotLink.list();
+    console.log(`[telegramWebhook] Total links in DB: ${allLinks.length}, looking for token: ${token.slice(0,15)}...`);
+    const link = allLinks.find(l => l.bot_token === token);
+    if (!link) {
+      console.log(`[telegramWebhook] No match. Available tokens: ${allLinks.map(l => (l.bot_token||'').slice(0,15)).join(', ')}`);
       await sendTelegram(token, chatId, '❌ This bot is not linked to any TTT account.');
       return Response.json({ ok: true });
     }
-    const link = links[0];
 
     if (!link.is_active) {
       await sendTelegram(token, chatId, '⏸ This bot has been paused by its owner.');
