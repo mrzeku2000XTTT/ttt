@@ -73,31 +73,54 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
-      // Keep boot overlay visible until React actually mounts content into #root
+      // Keep boot overlay visible until React actually mounts content into #root.
+      // SPECIAL: on the /login route the unstyled page-list flashes briefly before
+      // base44's login UI paints. Hold the overlay longer there until a real
+      // login form/button is visible.
       (function () {
+        var isLoginRoute = /\/login(\?|$|\/)/i.test(window.location.pathname + window.location.search);
+
         function hideBoot() {
           var b = document.getElementById('ttt-boot');
           if (!b) return;
           b.classList.add('hide');
           setTimeout(function () { b.remove(); }, 350);
         }
+
+        function loginUIReady() {
+          // Login UI typically contains a form, an input, or a button with login-related text.
+          var root = document.getElementById('root');
+          if (!root) return false;
+          if (root.querySelector('form, input[type="email"], input[type="password"], button[type="submit"]')) return true;
+          var txt = (root.innerText || '').toLowerCase();
+          return /sign\s*in|log\s*in|continue with|email/.test(txt);
+        }
+
         function checkMounted() {
           var root = document.getElementById('root');
-          if (root && root.children.length > 0) {
-            // Wait one more frame so styles paint before fade
-            requestAnimationFrame(function () { setTimeout(hideBoot, 100); });
-          } else {
+          if (!root || root.children.length === 0) {
             setTimeout(checkMounted, 50);
+            return;
+          }
+          if (isLoginRoute) {
+            // Wait for actual login UI to render, not just the unstyled page list.
+            if (loginUIReady()) {
+              requestAnimationFrame(function () { setTimeout(hideBoot, 150); });
+            } else {
+              setTimeout(checkMounted, 80);
+            }
+          } else {
+            requestAnimationFrame(function () { setTimeout(hideBoot, 100); });
           }
         }
-        // Start checking after DOM is ready
+
         if (document.readyState === 'loading') {
           document.addEventListener('DOMContentLoaded', checkMounted);
         } else {
           checkMounted();
         }
-        // Safety: never show boot more than 6s
-        setTimeout(hideBoot, 6000);
+        // Safety: never show boot more than 8s on login, 6s elsewhere
+        setTimeout(hideBoot, isLoginRoute ? 8000 : 6000);
       })();
     </script>
   </body>
