@@ -5,6 +5,7 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    console.log('[telegramRegisterBot] user:', JSON.stringify({ email: user.email, id: user.id }));
 
     const { bot_token, kaspa_address, agent_mode } = await req.json();
     if (!bot_token) return Response.json({ error: 'bot_token required' }, { status: 400 });
@@ -57,7 +58,8 @@ Deno.serve(async (req) => {
     }
 
     // 4. Upsert link in DB (one bot per user — replace if exists)
-    const existing = await base44.entities.TelegramBotLink.filter({ user_email: user.email });
+    const db = base44.entities.TelegramBotLink;
+    const existing = await db.filter({ user_email: user.email });
     const payload = {
       user_email: user.email,
       kaspa_address: kaspa_address || user.created_wallet_address || '',
@@ -71,9 +73,9 @@ Deno.serve(async (req) => {
 
     let link;
     if (existing.length > 0) {
-      link = await base44.entities.TelegramBotLink.update(existing[0].id, payload);
+      link = await db.update(existing[0].id, payload);
     } else {
-      link = await base44.entities.TelegramBotLink.create(payload);
+      link = await db.create(payload);
     }
 
     // 5. Send a welcome message so user knows it works
