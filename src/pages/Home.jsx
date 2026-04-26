@@ -501,14 +501,19 @@ export default function HomePage() {
               <button
                 onClick={() => {
                   setShowMenu(false);
-                  // Inject black overlay synchronously into <html> so it covers EVERYTHING
-                  // (including any base44 platform redirect page that renders before login UI loads)
-                  const overlay = document.createElement('div');
-                  overlay.id = 'login-redirect-overlay';
-                  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;background:#000;z-index:2147483647;display:flex;align-items:center;justify-content:center;';
-                  overlay.innerHTML = '<div style="width:48px;height:48px;border:4px solid rgba(6,182,212,0.2);border-top-color:#22d3ee;border-radius:50%;animation:spin 1s linear infinite;"></div><style>@keyframes spin{to{transform:rotate(360deg)}}html,body{background:#000 !important;}</style>';
-                  document.documentElement.appendChild(overlay);
-                  // Force paint before redirect so the overlay is visible during navigation
+                  // The flash is the base44 platform's login page rendering its raw sitemap
+                  // links before its own CSS loads. Since this is a CROSS-PAGE redirect,
+                  // our React overlay disappears the moment navigation happens. The only
+                  // thing that survives the redirect is the browser's own paint of the
+                  // PREVIOUS page. So we paint everything black BEFORE the redirect and
+                  // hold it there as long as possible — the browser keeps rendering the
+                  // last frame of this page until the new page paints.
+                  const black = document.createElement('div');
+                  black.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:#000;z-index:2147483647;';
+                  document.documentElement.appendChild(black);
+                  document.documentElement.style.background = '#000';
+                  document.body.style.background = '#000';
+                  // Two RAFs guarantee the black frame paints before navigation starts
                   requestAnimationFrame(() => {
                     requestAnimationFrame(() => {
                       base44.auth.redirectToLogin();
