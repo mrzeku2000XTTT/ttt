@@ -10,7 +10,6 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import TeleToolEditor from "@/components/tele/TeleToolEditor";
 import BotSetupGuide from "@/components/tele/BotSetupGuide";
-import UserBotConnect from "@/components/tele/UserBotConnect";
 
 export default function TELEPage() {
   const [user, setUser] = useState(null);
@@ -81,33 +80,31 @@ export default function TELEPage() {
     );
   }
 
-  // Non-admin user view: connect their own bot
+  // Admin gate
   if (user?.role !== "admin") {
     return (
       <div className="fixed inset-0 bg-black overflow-y-auto">
-        <div className="relative z-10 max-w-2xl mx-auto px-4 sm:px-6 py-6 pb-24">
-          <Link to={createPageUrl("AppStoreV2")} className="flex items-center gap-2 text-white/60 hover:text-white text-sm mb-6">
-            <ArrowLeft className="w-4 h-4" /> Back
-          </Link>
-
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
-            <div className="flex items-center gap-4 mb-3">
-              <div className="w-14 h-14 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-2xl flex items-center justify-center shadow-xl shadow-cyan-500/20">
-                <Send className="w-7 h-7 text-white" strokeWidth={2.5} />
-              </div>
-              <div>
-                <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">TELE</h1>
-                <p className="text-white/50 text-sm">Connect your Kaspa agent to Telegram</p>
-              </div>
+        <Link to={createPageUrl("AppStoreV2")} className="absolute top-4 left-4 z-20 flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white text-sm">
+          <ArrowLeft className="w-4 h-4" /> Back
+        </Link>
+        <div className="min-h-full flex items-center justify-center px-6">
+          <div className="max-w-md text-center">
+            <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-3xl flex items-center justify-center shadow-2xl">
+              <Shield className="w-10 h-10 text-white" />
             </div>
-          </motion.div>
-
-          <UserBotConnect />
-
-          <div className="mt-6 p-4 bg-cyan-500/5 border border-cyan-500/20 rounded-2xl">
-            <div className="text-xs text-white/60 leading-relaxed">
-              <strong className="text-white">How it works:</strong> Create your own bot via @BotFather, paste the token, and your bot becomes a Telegram interface to your Kaspa agent — chat freely or use admin-defined slash commands.
-            </div>
+            <h1 className="text-4xl font-black text-white mb-3">TELE Builder</h1>
+            <p className="text-white/60 text-base mb-6">
+              TELE is the Telegram agent tool builder. Only admins can configure tools and connect the bot.
+            </p>
+            <a
+              href="https://t.me/BotFather"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-5 py-3 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-xl"
+            >
+              <MessageCircle className="w-4 h-4" />
+              Open @BotFather
+            </a>
           </div>
         </div>
       </div>
@@ -158,11 +155,6 @@ export default function TELEPage() {
             <span className="text-cyan-300 text-[11px] font-bold tracking-widest uppercase">Admin Only</span>
           </div>
         </motion.div>
-
-        {/* Admin's own bot connection */}
-        <div className="mb-6">
-          <UserBotConnect />
-        </div>
 
         {/* Bot setup guide */}
         <BotSetupGuide />
