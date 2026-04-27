@@ -1,0 +1,63 @@
+{
+  "name": "BrandMessage",
+  "type": "object",
+  "properties": {
+    "brand_id": {
+      "type": "string",
+      "description": "ID of the parent Brand"
+    },
+    "owner_email": {
+      "type": "string",
+      "description": "Email of the brand owner"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "user",
+        "assistant",
+        "system"
+      ],
+      "description": "Who sent the message"
+    },
+    "content": {
+      "type": "string",
+      "description": "Message text"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "text",
+        "palette",
+        "logo",
+        "names",
+        "voice",
+        "social",
+        "summary"
+      ],
+      "default": "text",
+      "description": "Special message type for inline rendering"
+    },
+    "data": {
+      "type": "object",
+      "description": "Structured payload for non-text messages (palette colors, logo url, name suggestions, etc.)"
+    }
+  },
+  "required": [
+    "brand_id",
+    "owner_email",
+    "role",
+    "content"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "owner_email": "{{user.email}}"
+    },
+    "update": {
+      "owner_email": "{{user.email}}"
+    },
+    "delete": {
+      "owner_email": "{{user.email}}"
+    }
+  }
+}

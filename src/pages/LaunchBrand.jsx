@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Sparkles, Rocket, Wand2, Zap, ArrowRight, Check } from "lucide-react";
 import LaunchBrandHero from "@/components/launchbrand/LaunchBrandHero";
+import BrandStudio from "@/components/launchbrand/BrandStudio";
 
 export default function LaunchBrandPage() {
   const [mounted, setMounted] = useState(false);
@@ -39,6 +40,9 @@ export default function LaunchBrandPage() {
       </nav>
 
       <LaunchBrandHero mounted={mounted} />
+
+      {/* Brand Studio — AI chat that builds your brand */}
+      <BrandStudio />
 
       {/* Features */}
       <section className="relative py-24 sm:py-32 px-5">

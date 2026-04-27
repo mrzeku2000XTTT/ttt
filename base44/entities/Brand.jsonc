@@ -1,0 +1,98 @@
+{
+  "name": "Brand",
+  "type": "object",
+  "properties": {
+    "owner_email": {
+      "type": "string",
+      "description": "Email of the user who owns this brand"
+    },
+    "name": {
+      "type": "string",
+      "description": "Brand name"
+    },
+    "tagline": {
+      "type": "string",
+      "description": "Short tagline"
+    },
+    "description": {
+      "type": "string",
+      "description": "Brand description / what it does"
+    },
+    "target_audience": {
+      "type": "string",
+      "description": "Who the brand is for"
+    },
+    "industry": {
+      "type": "string",
+      "description": "Industry / category"
+    },
+    "voice": {
+      "type": "string",
+      "description": "Brand voice and tone description"
+    },
+    "palette": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Hex color codes for the brand palette"
+    },
+    "logo_url": {
+      "type": "string",
+      "description": "Generated logo image URL"
+    },
+    "social_bios": {
+      "type": "object",
+      "properties": {
+        "twitter": {
+          "type": "string"
+        },
+        "instagram": {
+          "type": "string"
+        },
+        "linkedin": {
+          "type": "string"
+        }
+      },
+      "description": "Social media bios"
+    },
+    "hero_copy": {
+      "type": "string",
+      "description": "Landing page hero copy"
+    },
+    "stage": {
+      "type": "string",
+      "enum": [
+        "discovery",
+        "naming",
+        "identity",
+        "voice",
+        "logo",
+        "social",
+        "complete"
+      ],
+      "default": "discovery",
+      "description": "Current build stage"
+    },
+    "completion": {
+      "type": "number",
+      "default": 0,
+      "description": "Completion percentage 0-100"
+    }
+  },
+  "required": [
+    "owner_email"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "owner_email": "{{user.email}}"
+    },
+    "update": {
+      "owner_email": "{{user.email}}"
+    },
+    "delete": {
+      "owner_email": "{{user.email}}"
+    }
+  }
+}
