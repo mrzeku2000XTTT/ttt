@@ -36,6 +36,7 @@ import HiroPage from './pages/Hiro';
 import NEPUPage from './pages/NEPU';
 import TELEPage from './pages/TELE';
 import RMXPage from './pages/RMX';
+import ImageHistoryPage from './pages/ImageHistory';
 import OneShotStudioPage from './pages/OneShotStudio';
 import SlideDeckBuilderPage from './pages/SlideDeckBuilder';
 import AuthRedirect from './pages/AuthRedirect';
@@ -121,7 +122,8 @@ const AuthenticatedApp = () => {
       <Route path="/Hiro" element={<HiroPage />} />
       <Route path="/NEPU" element={<NEPUPage />} />
       <Route path="/TELE" element={<TELEPage />} />
-      <Route path="/RMX" element={<RMXPage />} />
+      <Route path="/RMX" element={<ImageHistoryPage />} />
+      <Route path="/RMXWorkflow" element={<RMXPage />} />
       <Route path="/Motion" element={<MotionPage />} />
       <Route path="/login" element={<AuthRedirect />} />
       <Route path="/Login" element={<AuthRedirect />} />
