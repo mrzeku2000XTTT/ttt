@@ -19,6 +19,7 @@ export default function NODAPage() {
   const [runLogs, setRunLogs] = useState([]);
   const [showRunPanel, setShowRunPanel] = useState(false);
   const [workflowName, setWorkflowName] = useState("Untitled NODA Workflow");
+  const [worldOpen, setWorldOpen] = useState(false);
 
   const addNode = (template) => {
     const id = `node_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -140,7 +141,7 @@ export default function NODAPage() {
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-zinc-950 via-cyan-950/20 to-zinc-950 overflow-hidden flex flex-col">
+    <div className={`fixed inset-0 bg-gradient-to-br from-zinc-950 via-cyan-950/20 to-zinc-950 overflow-hidden flex flex-col ${worldOpen ? "invisible" : ""}`}>
       {/* Background grid */}
       <div
         className="absolute inset-0 opacity-[0.05] pointer-events-none"
@@ -220,6 +221,7 @@ export default function NODAPage() {
                 onUpdate={(updates) => updateNode(selectedNode.id, updates)}
                 onClose={() => setSelectedNodeId(null)}
                 onDelete={() => deleteNode(selectedNode.id)}
+                onWorldToggle={setWorldOpen}
               />
             </motion.div>
           )}

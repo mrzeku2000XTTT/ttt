@@ -2,7 +2,7 @@ import React from "react";
 import { X, Trash2 } from "lucide-react";
 import NodeImageOutput from "@/components/rmx/NodeImageOutput";
 
-export default function RMXNodeConfig({ node, onUpdate, onClose, onDelete }) {
+export default function RMXNodeConfig({ node, onUpdate, onClose, onDelete, onWorldToggle }) {
   const setField = (key, val) => {
     onUpdate({ config: { ...node.config, [key]: val } });
   };
@@ -66,7 +66,7 @@ export default function RMXNodeConfig({ node, onUpdate, onClose, onDelete }) {
         <div className="mb-4">
           <label className="block text-white/70 text-xs font-bold mb-1.5">Last Output</label>
           {node.type === "ai_image" && typeof node.output === "string" && node.output ? (
-            <NodeImageOutput url={node.output} />
+            <NodeImageOutput url={node.output} onWorldToggle={onWorldToggle} />
           ) : (
             <div className="p-3 bg-green-500/5 border border-green-500/20 rounded-lg max-h-48 overflow-y-auto">
               <pre className="text-green-300 text-[11px] whitespace-pre-wrap break-words font-mono">
