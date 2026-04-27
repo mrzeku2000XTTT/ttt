@@ -182,7 +182,7 @@ export default function World360Viewer({ imageUrl, onClose }) {
         <div ref={mountRef} className="absolute inset-0 cursor-grab active:cursor-grabbing" />
 
         {/* HUD */}
-        <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
+        <div className={`absolute top-3 left-3 flex items-center justify-between pointer-events-none z-20 transition-all ${chatOpen ? "right-3 sm:right-[25rem]" : "right-3"}`}>
           <div className="pointer-events-auto flex items-center gap-2 px-3 py-1.5 bg-black/60 backdrop-blur-md border border-white/10 rounded-full">
             <Compass className="w-3.5 h-3.5 text-cyan-400" />
             <span className="text-white text-[11px] font-bold tracking-wider">360° WORLD</span>
@@ -203,15 +203,15 @@ export default function World360Viewer({ imageUrl, onClose }) {
           </div>
         </div>
 
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-black/60 backdrop-blur-md border border-white/10 rounded-full text-white/70 text-[10px] font-medium pointer-events-none flex items-center gap-2">
+        <div className={`absolute bottom-3 px-3 py-1.5 bg-black/60 backdrop-blur-md border border-white/10 rounded-full text-white/70 text-[10px] font-medium pointer-events-none flex items-center gap-2 z-20 transition-all ${chatOpen ? "left-1/2 -translate-x-1/2 sm:left-[calc(50%-12rem)]" : "left-1/2 -translate-x-1/2"}`}>
           <Maximize2 className="w-3 h-3" />
           Drag to look · WASD to walk · Scroll to zoom
         </div>
       </div>
 
-      {/* Chat */}
+      {/* Chat — bottom-half sheet on mobile, right rail on desktop */}
       {chatOpen && (
-        <div className="w-full sm:w-96 max-w-[100vw] sm:max-w-[24rem] border-l border-white/10 bg-black/80 backdrop-blur-xl flex flex-col">
+        <div className="absolute left-0 right-0 bottom-0 top-1/2 sm:top-0 sm:left-auto sm:w-96 sm:max-w-[24rem] border-t sm:border-t-0 sm:border-l border-white/10 bg-black/85 backdrop-blur-xl flex flex-col z-10">
           <div className="p-3 border-b border-white/10 flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
               <MessageCircle className="w-3.5 h-3.5 text-white" />
