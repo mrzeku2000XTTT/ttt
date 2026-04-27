@@ -207,22 +207,25 @@ export default function NODAPage() {
           onAdd={() => setShowLibrary(true)}
         />
 
-        {/* Right config panel */}
+        {/* Right config panel - split screen */}
         <AnimatePresence>
           {selectedNode && (
             <motion.div
-              initial={{ x: 320, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: 320, opacity: 0 }}
-              className="w-80 border-l border-white/10 bg-black/60 backdrop-blur-xl overflow-y-auto"
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: "auto", opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex-shrink-0 border-l border-white/10 bg-black/60 backdrop-blur-xl overflow-hidden"
             >
-              <RMXNodeConfig
-                node={selectedNode}
-                onUpdate={(updates) => updateNode(selectedNode.id, updates)}
-                onClose={() => setSelectedNodeId(null)}
-                onDelete={() => deleteNode(selectedNode.id)}
-                onWorldToggle={setWorldOpen}
-              />
+              <div className="w-80 sm:w-96 h-full overflow-y-auto">
+                <RMXNodeConfig
+                  node={selectedNode}
+                  onUpdate={(updates) => updateNode(selectedNode.id, updates)}
+                  onClose={() => setSelectedNodeId(null)}
+                  onDelete={() => deleteNode(selectedNode.id)}
+                  onWorldToggle={setWorldOpen}
+                />
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
