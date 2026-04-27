@@ -176,9 +176,9 @@ export default function World360Viewer({ imageUrl, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[200] bg-black flex">
-      {/* 3D viewport */}
-      <div className="relative flex-1">
+    <div className="fixed inset-0 z-[9999] bg-black">
+      {/* 3D viewport — fills the whole screen */}
+      <div className="absolute inset-0">
         <div ref={mountRef} className="absolute inset-0 cursor-grab active:cursor-grabbing" />
 
         {/* HUD */}
