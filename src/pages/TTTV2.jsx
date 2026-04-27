@@ -234,7 +234,7 @@ export default function TTTV2Page() {
           <a href="#roadmap" className="hover:text-zinc-900 transition-colors">Roadmap</a>
         </div>
         <div className="flex items-center gap-2">
-          {currentUser ? (
+          {currentUser && (
             <button
               onClick={handleLogout}
               className="text-[13px] font-semibold text-zinc-700 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1.5"
@@ -242,14 +242,6 @@ export default function TTTV2Page() {
             >
               <LogOut className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Logout</span>
-            </button>
-          ) : (
-            <button
-              onClick={handleLogin}
-              className="text-[13px] font-semibold text-zinc-700 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1.5"
-            >
-              <LogIn className="w-3.5 h-3.5" />
-              <span>Login</span>
             </button>
           )}
           <Link
