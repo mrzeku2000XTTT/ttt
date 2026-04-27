@@ -150,68 +150,62 @@ export default function ImageHistoryPage() {
     }
   };
 
-  const handleImageUpload = async (e, index) => {
-    const file = e.target.files?.[0];
+  // Generic uploader that supports both file-input change events and drag-drop File objects
+  const uploadFile = async (file, setUploading, onSuccess) => {
     if (!file) return;
-
-    setUploadingReference(true);
+    if (!file.type?.startsWith('image/')) {
+      alert('Please drop an image file');
+      return;
+    }
+    setUploading(true);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      const newImages = [...referenceImages];
-      newImages[index] = file_url;
-      setReferenceImages(newImages);
+      onSuccess(file_url);
     } catch (err) {
       console.error("Upload failed:", err);
       alert("Failed to upload image");
     } finally {
-      setUploadingReference(false);
+      setUploading(false);
     }
   };
 
-  const handleSubjectUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingSubject(true);
-    try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setSubjectImage(file_url);
-    } catch (err) {
-      console.error("Upload failed:", err);
-      alert("Failed to upload subject image");
-    } finally {
-      setUploadingSubject(false);
-    }
+  const handleImageUpload = (e, index) => {
+    const file = e.target.files?.[0] || e;
+    uploadFile(file, setUploadingReference, (file_url) => {
+      const newImages = [...referenceImages];
+      newImages[index] = file_url;
+      setReferenceImages(newImages);
+    });
   };
 
-  const handleStyleUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingStyle(true);
-    try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setStyleImage(file_url);
-    } catch (err) {
-      console.error("Upload failed:", err);
-      alert("Failed to upload style image");
-    } finally {
-      setUploadingStyle(false);
-    }
+  const handleSubjectUpload = (e) => {
+    const file = e.target?.files?.[0] || e;
+    uploadFile(file, setUploadingSubject, setSubjectImage);
   };
 
-  const handleSceneUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingScene(true);
-    try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setSceneImage(file_url);
-    } catch (err) {
-      console.error("Upload failed:", err);
-      alert("Failed to upload scene image");
-    } finally {
-      setUploadingScene(false);
-    }
+  const handleStyleUpload = (e) => {
+    const file = e.target?.files?.[0] || e;
+    uploadFile(file, setUploadingStyle, setStyleImage);
   };
+
+  const handleSceneUpload = (e) => {
+    const file = e.target?.files?.[0] || e;
+    uploadFile(file, setUploadingScene, setSceneImage);
+  };
+
+  // Drag-and-drop helpers
+  const dragHandlers = (onDropFile) => ({
+    onDragOver: (e) => { e.preventDefault(); e.stopPropagation(); },
+    onDragEnter: (e) => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.add('border-cyan-500'); },
+    onDragLeave: (e) => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove('border-cyan-500'); },
+    onDrop: (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      e.currentTarget.classList.remove('border-cyan-500');
+      const file = e.dataTransfer?.files?.[0];
+      if (file) onDropFile(file);
+    },
+  });
 
   const handleRMXClick = async () => {
     if (!prompt.trim()) {
@@ -736,7 +730,7 @@ export default function ImageHistoryPage() {
         {/* SUBJECT Section */}
         <div className="space-y-2">
           <div className="text-white text-[10px] font-bold tracking-wider">SUBJECT</div>
-          <div className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden hover:border-zinc-600 transition-colors block aspect-square">
+          <div {...dragHandlers(handleSubjectUpload)} className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden hover:border-zinc-600 transition-colors block aspect-square">
             <label className="absolute inset-0 cursor-pointer">
               <input
                 type="file"
@@ -755,6 +749,7 @@ export default function ImageHistoryPage() {
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <Upload className="w-5 h-5 text-zinc-700" />
                   <span className="text-zinc-700 text-[8px] mt-1">Character</span>
+                  <span className="text-zinc-700 text-[7px]">or drop</span>
                 </div>
               )}
             </label>
@@ -772,7 +767,7 @@ export default function ImageHistoryPage() {
         {/* STYLE Section */}
         <div className="space-y-2">
           <div className="text-white text-[10px] font-bold tracking-wider">STYLE</div>
-          <div className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden hover:border-zinc-600 transition-colors block aspect-square">
+          <div {...dragHandlers(handleStyleUpload)} className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden hover:border-zinc-600 transition-colors block aspect-square">
             <label className="absolute inset-0 cursor-pointer">
               <input
                 type="file"
@@ -791,6 +786,7 @@ export default function ImageHistoryPage() {
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <Upload className="w-5 h-5 text-zinc-700" />
                   <span className="text-zinc-700 text-[8px] mt-1">UI/Style</span>
+                  <span className="text-zinc-700 text-[7px]">or drop</span>
                 </div>
               )}
             </label>
@@ -808,7 +804,7 @@ export default function ImageHistoryPage() {
         {/* SCENE Section */}
         <div className="space-y-2">
           <div className="text-white text-[10px] font-bold tracking-wider">SCENE</div>
-          <div className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden hover:border-zinc-600 transition-colors block aspect-square">
+          <div {...dragHandlers(handleSceneUpload)} className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden hover:border-zinc-600 transition-colors block aspect-square">
             <label className="absolute inset-0 cursor-pointer">
               <input
                 type="file"
@@ -827,6 +823,7 @@ export default function ImageHistoryPage() {
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <Upload className="w-5 h-5 text-zinc-700" />
                   <span className="text-zinc-700 text-[8px] mt-1">Background</span>
+                  <span className="text-zinc-700 text-[7px]">or drop</span>
                 </div>
               )}
             </label>
@@ -926,7 +923,11 @@ export default function ImageHistoryPage() {
           {/* Reference Images Row - Responsive */}
           <div className="grid grid-cols-2 gap-2 lg:gap-4 mt-4 lg:mt-6">
             {referenceImages.map((img, idx) => (
-              <div key={`ref-${idx}`} className="relative bg-zinc-900/50 rounded-xl overflow-hidden border-2 border-dashed border-zinc-700/50 hover:border-zinc-600/50 transition-colors h-32">
+              <div
+                key={`ref-${idx}`}
+                {...dragHandlers((file) => handleImageUpload(file, idx))}
+                className="relative bg-zinc-900/50 rounded-xl overflow-hidden border-2 border-dashed border-zinc-700/50 hover:border-zinc-600/50 transition-colors h-32"
+              >
                 {img ? (
                   <>
                     <img src={img} alt={`Reference ${idx + 1}`} className="w-full h-full object-cover" />
@@ -956,6 +957,7 @@ export default function ImageHistoryPage() {
                       <>
                         <ImageIcon className="w-8 h-8 text-zinc-700 group-hover:text-zinc-600 transition-colors" />
                         <p className="text-zinc-700 text-xs mt-1">Reference {idx + 1}</p>
+                        <p className="text-zinc-700 text-[10px]">click or drop</p>
                       </>
                     )}
                   </label>
@@ -1278,7 +1280,7 @@ export default function ImageHistoryPage() {
                 {/* SUBJECT Section */}
                 <div className="space-y-2">
                   <div className="text-white text-[10px] font-bold tracking-wider">SUBJECT</div>
-                  <div className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden hover:border-zinc-600 transition-colors block aspect-square">
+                  <div {...dragHandlers(handleSubjectUpload)} className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden hover:border-zinc-600 transition-colors block aspect-square">
                     <label className="absolute inset-0 cursor-pointer">
                       <input type="file" accept="image/*" onChange={handleSubjectUpload} className="hidden" disabled={uploadingSubject} />
                       {subjectImage ? (
@@ -1300,7 +1302,7 @@ export default function ImageHistoryPage() {
                 {/* STYLE Section */}
                 <div className="space-y-2">
                   <div className="text-white text-[10px] font-bold tracking-wider">STYLE</div>
-                  <div className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden hover:border-zinc-600 transition-colors block aspect-square">
+                  <div {...dragHandlers(handleStyleUpload)} className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden hover:border-zinc-600 transition-colors block aspect-square">
                     <label className="absolute inset-0 cursor-pointer">
                       <input type="file" accept="image/*" onChange={handleStyleUpload} className="hidden" disabled={uploadingStyle} />
                       {styleImage ? (
@@ -1322,7 +1324,7 @@ export default function ImageHistoryPage() {
                 {/* SCENE Section */}
                 <div className="space-y-2">
                   <div className="text-white text-[10px] font-bold tracking-wider">SCENE</div>
-                  <div className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden hover:border-zinc-600 transition-colors block aspect-square">
+                  <div {...dragHandlers(handleSceneUpload)} className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden hover:border-zinc-600 transition-colors block aspect-square">
                     <label className="absolute inset-0 cursor-pointer">
                       <input type="file" accept="image/*" onChange={handleSceneUpload} className="hidden" disabled={uploadingScene} />
                       {sceneImage ? (
