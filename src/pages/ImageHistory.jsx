@@ -153,18 +153,21 @@ export default function ImageHistoryPage() {
 
   // Generic uploader that supports both file-input change events and drag-drop File objects
   const uploadFile = async (file, setUploading, onSuccess) => {
-    if (!file) return;
+    console.log('[uploadFile] called with:', file?.name, file?.type, file?.size);
+    if (!file) { console.warn('[uploadFile] no file'); return; }
     if (!file.type?.startsWith('image/')) {
       alert('Please drop an image file');
       return;
     }
     setUploading(true);
     try {
+      console.log('[uploadFile] uploading to base44...');
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      console.log('[uploadFile] upload success, url:', file_url);
       onSuccess(file_url);
     } catch (err) {
-      console.error("Upload failed:", err);
-      alert("Failed to upload image");
+      console.error("[uploadFile] Upload failed:", err);
+      alert("Failed to upload image: " + err.message);
     } finally {
       setUploading(false);
     }

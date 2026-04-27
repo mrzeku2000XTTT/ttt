@@ -57,10 +57,14 @@ export default function UploadDropZone({
     e.stopPropagation();
     setIsDragOver(false);
     const file = e.dataTransfer?.files?.[0];
+    console.log('[UploadDropZone] drop fired:', { file, type: file?.type, name: file?.name });
     if (file && file.type?.startsWith('image/')) {
+      console.log('[UploadDropZone] calling onUpload with file');
       onUpload(file);
     } else if (file) {
       alert('Please drop an image file');
+    } else {
+      console.warn('[UploadDropZone] No file in drop event');
     }
   };
 
