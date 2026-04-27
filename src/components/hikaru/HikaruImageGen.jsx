@@ -21,9 +21,13 @@ export default function HikaruImageGen() {
     try {
       const fullPrompt = style ? `${prompt}, ${style} style, high quality, detailed` : `${prompt}, high quality, detailed`;
       const res = await base44.integrations.Core.GenerateImage({ prompt: fullPrompt });
-      setResult(res.url);
+      console.log("[Hikaru] GenerateImage response:", res);
+      const url = res?.url || res?.data?.url || res?.image_url || (typeof res === "string" ? res : null);
+      if (!url) throw new Error("No image URL returned");
+      setResult(url);
       toast.success("Image generated!");
     } catch (err) {
+      console.error("[Hikaru] Generation error:", err);
       toast.error("Generation failed: " + (err.message || "Try again"));
     }
     setLoading(false);
