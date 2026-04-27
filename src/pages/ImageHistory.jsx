@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Home, Sparkles, Loader2, Image as ImageIcon, Upload, History, Settings, Pause, StopCircle, Info, X, Share2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import UploadDropZone from "@/components/rmx/UploadDropZone";
 
 export default function ImageHistoryPage() {
   const navigate = useNavigate();
@@ -744,112 +745,46 @@ export default function ImageHistoryPage() {
         {/* SUBJECT Section */}
         <div className="space-y-2">
           <div className="text-white text-[10px] font-bold tracking-wider">SUBJECT</div>
-          <div {...dragHandlers(handleSubjectUpload)} className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden hover:border-zinc-600 transition-colors block aspect-square">
-            <label className="absolute inset-0 cursor-pointer">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleSubjectUpload}
-                className="hidden"
-                disabled={uploadingSubject}
-              />
-              {subjectImage ? (
-                <img src={subjectImage} alt="Subject" className="w-full h-full object-cover" />
-              ) : uploadingSubject ? (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Loader2 className="w-6 h-6 text-zinc-600 animate-spin" />
-                </div>
-              ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <Upload className="w-5 h-5 text-zinc-700" />
-                  <span className="text-zinc-700 text-[8px] mt-1">Character</span>
-                  <span className="text-zinc-700 text-[7px]">or drop</span>
-                </div>
-              )}
-            </label>
-            {subjectImage && (
-              <button
-                onClick={() => setSubjectImage(null)}
-                className="absolute top-2 right-2 w-6 h-6 bg-black/80 hover:bg-red-500 rounded-full flex items-center justify-center transition-colors z-10"
-              >
-                <X className="w-4 h-4 text-white" />
-              </button>
-            )}
-          </div>
+          <UploadDropZone
+            value={subjectImage}
+            onUpload={(file) => uploadFile(file, setUploadingSubject, setSubjectImage)}
+            onClear={() => setSubjectImage(null)}
+            uploading={uploadingSubject}
+            label="Character"
+            hint="or drop"
+            className="aspect-square"
+            iconSlot={<Upload className="w-5 h-5 text-zinc-700" />}
+          />
         </div>
 
         {/* STYLE Section */}
         <div className="space-y-2">
           <div className="text-white text-[10px] font-bold tracking-wider">STYLE</div>
-          <div {...dragHandlers(handleStyleUpload)} className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden hover:border-zinc-600 transition-colors block aspect-square">
-            <label className="absolute inset-0 cursor-pointer">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleStyleUpload}
-                className="hidden"
-                disabled={uploadingStyle}
-              />
-              {styleImage ? (
-                <img src={styleImage} alt="Style" className="w-full h-full object-cover" />
-              ) : uploadingStyle ? (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Loader2 className="w-6 h-6 text-zinc-600 animate-spin" />
-                </div>
-              ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <Upload className="w-5 h-5 text-zinc-700" />
-                  <span className="text-zinc-700 text-[8px] mt-1">UI/Style</span>
-                  <span className="text-zinc-700 text-[7px]">or drop</span>
-                </div>
-              )}
-            </label>
-            {styleImage && (
-              <button
-                onClick={() => setStyleImage(null)}
-                className="absolute top-2 right-2 w-6 h-6 bg-black/80 hover:bg-red-500 rounded-full flex items-center justify-center transition-colors z-10"
-              >
-                <X className="w-4 h-4 text-white" />
-              </button>
-            )}
-          </div>
+          <UploadDropZone
+            value={styleImage}
+            onUpload={(file) => uploadFile(file, setUploadingStyle, setStyleImage)}
+            onClear={() => setStyleImage(null)}
+            uploading={uploadingStyle}
+            label="UI/Style"
+            hint="or drop"
+            className="aspect-square"
+            iconSlot={<Upload className="w-5 h-5 text-zinc-700" />}
+          />
         </div>
 
         {/* SCENE Section */}
         <div className="space-y-2">
           <div className="text-white text-[10px] font-bold tracking-wider">SCENE</div>
-          <div {...dragHandlers(handleSceneUpload)} className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden hover:border-zinc-600 transition-colors block aspect-square">
-            <label className="absolute inset-0 cursor-pointer">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleSceneUpload}
-                className="hidden"
-                disabled={uploadingScene}
-              />
-              {sceneImage ? (
-                <img src={sceneImage} alt="Scene" className="w-full h-full object-cover" />
-              ) : uploadingScene ? (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Loader2 className="w-6 h-6 text-zinc-600 animate-spin" />
-                </div>
-              ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <Upload className="w-5 h-5 text-zinc-700" />
-                  <span className="text-zinc-700 text-[8px] mt-1">Background</span>
-                  <span className="text-zinc-700 text-[7px]">or drop</span>
-                </div>
-              )}
-            </label>
-            {sceneImage && (
-              <button
-                onClick={() => setSceneImage(null)}
-                className="absolute top-2 right-2 w-6 h-6 bg-black/80 hover:bg-red-500 rounded-full flex items-center justify-center transition-colors z-10"
-              >
-                <X className="w-4 h-4 text-white" />
-              </button>
-            )}
-          </div>
+          <UploadDropZone
+            value={sceneImage}
+            onUpload={(file) => uploadFile(file, setUploadingScene, setSceneImage)}
+            onClear={() => setSceneImage(null)}
+            uploading={uploadingScene}
+            label="Background"
+            hint="or drop"
+            className="aspect-square"
+            iconSlot={<Upload className="w-5 h-5 text-zinc-700" />}
+          />
         </div>
 
         <button 
@@ -937,46 +872,25 @@ export default function ImageHistoryPage() {
           {/* Reference Images Row - Responsive */}
           <div className="grid grid-cols-2 gap-2 lg:gap-4 mt-4 lg:mt-6">
             {referenceImages.map((img, idx) => (
-              <div
+              <UploadDropZone
                 key={`ref-${idx}`}
-                {...dragHandlers((file) => handleImageUpload(file, idx))}
-                className="relative bg-zinc-900/50 rounded-xl overflow-hidden border-2 border-dashed border-zinc-700/50 hover:border-zinc-600/50 transition-colors h-32"
-              >
-                {img ? (
-                  <>
-                    <img src={img} alt={`Reference ${idx + 1}`} className="w-full h-full object-cover" />
-                    <button
-                      onClick={() => {
-                        const newImages = [...referenceImages];
-                        newImages[idx] = null;
-                        setReferenceImages(newImages);
-                      }}
-                      className="absolute top-2 right-2 w-6 h-6 bg-black/80 hover:bg-red-500 rounded-full flex items-center justify-center transition-colors"
-                    >
-                      <X className="w-4 h-4 text-white" />
-                    </button>
-                  </>
-                ) : (
-                  <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer group">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(e, idx)}
-                      className="hidden"
-                      disabled={uploadingReference}
-                    />
-                    {uploadingReference ? (
-                      <Loader2 className="w-8 h-8 text-zinc-600 animate-spin" />
-                    ) : (
-                      <>
-                        <ImageIcon className="w-8 h-8 text-zinc-700 group-hover:text-zinc-600 transition-colors" />
-                        <p className="text-zinc-700 text-xs mt-1">Reference {idx + 1}</p>
-                        <p className="text-zinc-700 text-[10px]">click or drop</p>
-                      </>
-                    )}
-                  </label>
-                )}
-              </div>
+                value={img}
+                onUpload={(file) => uploadFile(file, setUploadingReference, (file_url) => {
+                  const newImages = [...referenceImages];
+                  newImages[idx] = file_url;
+                  setReferenceImages(newImages);
+                })}
+                onClear={() => {
+                  const newImages = [...referenceImages];
+                  newImages[idx] = null;
+                  setReferenceImages(newImages);
+                }}
+                uploading={uploadingReference}
+                label={`Reference ${idx + 1}`}
+                hint="click or drop"
+                className="h-32 bg-zinc-900/50"
+                iconSlot={<ImageIcon className="w-8 h-8 text-zinc-700" />}
+              />
             ))}
           </div>
 
@@ -1291,72 +1205,43 @@ export default function ImageHistoryPage() {
 
               {/* Mobile Upload Sections */}
               <div className="lg:hidden grid grid-cols-3 gap-3">
-                {/* SUBJECT Section */}
                 <div className="space-y-2">
                   <div className="text-white text-[10px] font-bold tracking-wider">SUBJECT</div>
-                  <div {...dragHandlers(handleSubjectUpload)} className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden hover:border-zinc-600 transition-colors block aspect-square">
-                    <label className="absolute inset-0 cursor-pointer">
-                      <input type="file" accept="image/*" onChange={handleSubjectUpload} className="hidden" disabled={uploadingSubject} />
-                      {subjectImage ? (
-                        <img src={subjectImage} alt="Subject" className="w-full h-full object-cover" />
-                      ) : uploadingSubject ? (
-                        <div className="absolute inset-0 flex items-center justify-center"><Loader2 className="w-5 h-5 text-zinc-600 animate-spin" /></div>
-                      ) : (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center"><Upload className="w-4 h-4 text-zinc-700" /><span className="text-zinc-700 text-[8px] mt-1">Character</span></div>
-                      )}
-                    </label>
-                    {subjectImage && (
-                      <button onClick={() => setSubjectImage(null)} className="absolute top-1 right-1 w-5 h-5 bg-black/80 hover:bg-red-500 rounded-full flex items-center justify-center transition-colors z-10">
-                        <X className="w-3 h-3 text-white" />
-                      </button>
-                    )}
-                  </div>
+                  <UploadDropZone
+                    value={subjectImage}
+                    onUpload={(file) => uploadFile(file, setUploadingSubject, setSubjectImage)}
+                    onClear={() => setSubjectImage(null)}
+                    uploading={uploadingSubject}
+                    label="Character"
+                    className="aspect-square"
+                    iconSlot={<Upload className="w-4 h-4 text-zinc-700" />}
+                  />
                 </div>
-
-                {/* STYLE Section */}
                 <div className="space-y-2">
                   <div className="text-white text-[10px] font-bold tracking-wider">STYLE</div>
-                  <div {...dragHandlers(handleStyleUpload)} className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden hover:border-zinc-600 transition-colors block aspect-square">
-                    <label className="absolute inset-0 cursor-pointer">
-                      <input type="file" accept="image/*" onChange={handleStyleUpload} className="hidden" disabled={uploadingStyle} />
-                      {styleImage ? (
-                        <img src={styleImage} alt="Style" className="w-full h-full object-cover" />
-                      ) : uploadingStyle ? (
-                        <div className="absolute inset-0 flex items-center justify-center"><Loader2 className="w-5 h-5 text-zinc-600 animate-spin" /></div>
-                      ) : (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center"><Upload className="w-4 h-4 text-zinc-700" /><span className="text-zinc-700 text-[8px] mt-1">Style</span></div>
-                      )}
-                    </label>
-                    {styleImage && (
-                      <button onClick={() => setStyleImage(null)} className="absolute top-1 right-1 w-5 h-5 bg-black/80 hover:bg-red-500 rounded-full flex items-center justify-center transition-colors z-10">
-                        <X className="w-3 h-3 text-white" />
-                      </button>
-                    )}
-                  </div>
+                  <UploadDropZone
+                    value={styleImage}
+                    onUpload={(file) => uploadFile(file, setUploadingStyle, setStyleImage)}
+                    onClear={() => setStyleImage(null)}
+                    uploading={uploadingStyle}
+                    label="Style"
+                    className="aspect-square"
+                    iconSlot={<Upload className="w-4 h-4 text-zinc-700" />}
+                  />
                 </div>
-
-                {/* SCENE Section */}
                 <div className="space-y-2">
                   <div className="text-white text-[10px] font-bold tracking-wider">SCENE</div>
-                  <div {...dragHandlers(handleSceneUpload)} className="relative bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden hover:border-zinc-600 transition-colors block aspect-square">
-                    <label className="absolute inset-0 cursor-pointer">
-                      <input type="file" accept="image/*" onChange={handleSceneUpload} className="hidden" disabled={uploadingScene} />
-                      {sceneImage ? (
-                        <img src={sceneImage} alt="Scene" className="w-full h-full object-cover" />
-                      ) : uploadingScene ? (
-                        <div className="absolute inset-0 flex items-center justify-center"><Loader2 className="w-5 h-5 text-zinc-600 animate-spin" /></div>
-                      ) : (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center"><Upload className="w-4 h-4 text-zinc-700" /><span className="text-zinc-700 text-[8px] mt-1">Scene</span></div>
-                      )}
-                    </label>
-                    {sceneImage && (
-                      <button onClick={() => setSceneImage(null)} className="absolute top-1 right-1 w-5 h-5 bg-black/80 hover:bg-red-500 rounded-full flex items-center justify-center transition-colors z-10">
-                        <X className="w-3 h-3 text-white" />
-                      </button>
-                    )}
-                  </div>
+                  <UploadDropZone
+                    value={sceneImage}
+                    onUpload={(file) => uploadFile(file, setUploadingScene, setSceneImage)}
+                    onClear={() => setSceneImage(null)}
+                    uploading={uploadingScene}
+                    label="Scene"
+                    className="aspect-square"
+                    iconSlot={<Upload className="w-4 h-4 text-zinc-700" />}
+                  />
                 </div>
-                </div>
+              </div>
                     </div>
                     )}
 
