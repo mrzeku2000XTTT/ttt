@@ -61,50 +61,71 @@ ${prompt}`,
 
   // Build a previewable HTML doc from the generated component code
   const buildPreviewHtml = () => {
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+    // Strip imports — we provide React + lucide-react via ESM
+    let body = code
+      .replace(/^\s*import[^\n;]*;?\s*$/gm, "")
+      .replace(/^\s*export\s+default\s+/gm, "const __DEFAULT_EXPORT__ = ")
+      .replace(/^\s*export\s+/gm, "");
+
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <script src="https://cdn.tailwindcss.com"></script>
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
-<style>body{margin:0;background:#010828;}</style>
+<style>html,body,#root{margin:0;padding:0;background:#010828;min-height:100vh;}</style>
 </head><body><div id="root"></div>
-<script type="text/babel" data-presets="react">
-const { useState, useEffect, useRef, useMemo, useCallback } = React;
-// Stub lucide-react imports → use lucide global
-const LucideIcon = (name) => (props) => {
-  const ref = useRef(null);
-  useEffect(() => {
-    if (ref.current && window.lucide) {
-      ref.current.innerHTML = '';
-      const el = document.createElement('i');
-      el.setAttribute('data-lucide', name.toLowerCase());
-      ref.current.appendChild(el);
-      window.lucide.createIcons();
-    }
-  }, []);
-  return React.createElement('span', { ref, style: { display: 'inline-flex', width: props.size || 20, height: props.size || 20 }, className: props.className });
-};
-const Mail = LucideIcon('mail');
-const Twitter = LucideIcon('twitter');
-const Github = LucideIcon('github');
-const ArrowRight = LucideIcon('arrow-right');
-const ChevronRight = LucideIcon('chevron-right');
+<script type="importmap">
+{ "imports": {
+  "react": "https://esm.sh/react@18.3.1",
+  "react-dom": "https://esm.sh/react-dom@18.3.1",
+  "react-dom/client": "https://esm.sh/react-dom@18.3.1/client"
+}}
+</script>
+<script type="module">
+import React, { useState, useEffect, useRef, useMemo, useCallback, useLayoutEffect, Fragment } from "react";
+import { createRoot } from "react-dom/client";
+import * as LucideAll from "https://esm.sh/lucide-react@0.475.0?deps=react@18.3.1";
+import * as Babel from "https://esm.sh/@babel/standalone@7.25.6";
 
-${code.replace(/^\s*import[^\n;]*;?\s*$/gm, "")}
+window.React = React;
+Object.assign(window, { useState, useEffect, useRef, useMemo, useCallback, useLayoutEffect, Fragment });
 
-const __root = ReactDOM.createRoot(document.getElementById('root'));
-// Find the default-exported component
+const root = createRoot(document.getElementById("root"));
+const showError = (msg) => root.render(
+  React.createElement("pre",
+    { style: { color: "#fca5a5", padding: 24, fontFamily: "ui-monospace,monospace", fontSize: 12, whiteSpace: "pre-wrap", background: "#0a0a0f", minHeight: "100vh" } },
+    String(msg)
+  )
+);
+
 try {
-  const Comp = (typeof OrbisNftLanding !== 'undefined') ? OrbisNftLanding :
-               (typeof LandingPage !== 'undefined') ? LandingPage :
-               (typeof App !== 'undefined') ? App : null;
-  if (Comp) __root.render(React.createElement(Comp));
-  else __root.render(React.createElement('div', {style:{color:'#fff',padding:40,fontFamily:'monospace'}}, 'No exported component found'));
-} catch(e) {
-  __root.render(React.createElement('pre', {style:{color:'#f88',padding:24,fontFamily:'monospace',whiteSpace:'pre-wrap'}}, String(e)));
+  const SOURCE = ${JSON.stringify(body)};
+  const transformed = Babel.transform(SOURCE, {
+    presets: [["react", { runtime: "classic" }]],
+    filename: "preview.jsx"
+  }).code;
+
+  // Build destructured lucide bindings used in the source
+  const lucideNames = Object.keys(LucideAll).filter(n => /^[A-Z]/.test(n));
+  const lucideBindings = lucideNames.map(n => \`var \${n} = __L.\${n};\`).join("\\n");
+
+  const factory = new Function("React", "__L",
+    "const { useState, useEffect, useRef, useMemo, useCallback, useLayoutEffect, Fragment } = React;\\n" +
+    lucideBindings + "\\n" +
+    "var __DEFAULT_EXPORT__ = null;\\n" +
+    transformed + "\\n" +
+    "return __DEFAULT_EXPORT__;"
+  );
+
+  const Comp = factory(React, LucideAll);
+  if (typeof Comp !== "function") {
+    showError("Generated code did not export a default React component.");
+  } else {
+    root.render(React.createElement(Comp));
+  }
+} catch (e) {
+  showError((e && e.stack) || String(e));
 }
-</script></body></html>`;
+</script>
+</body></html>`;
   };
 
   if (authLoading) {
