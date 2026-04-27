@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import HeroHeader from "@/components/tttv2/HeroHeader";
+import LoginButton from "@/components/tttv2/LoginButton";
 
 import WhatsNew from "@/components/tttv2/WhatsNew";
 import TTTVMini from "@/components/tttv2/TTTVMini";
@@ -234,16 +235,6 @@ export default function TTTV2Page() {
           <a href="#roadmap" className="hover:text-zinc-900 transition-colors">Roadmap</a>
         </div>
         <div className="flex items-center gap-2">
-          {currentUser && (
-            <button
-              onClick={handleLogout}
-              className="text-[13px] font-semibold text-zinc-700 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1.5"
-              title={currentUser.full_name || currentUser.email}
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Logout</span>
-            </button>
-          )}
           <Link
             to="/Home"
             onClick={() => setNavigating(true)}
@@ -251,6 +242,7 @@ export default function TTTV2Page() {
           >
             Open TTT
           </Link>
+          <LoginButton currentUser={currentUser} onLogout={handleLogout} />
         </div>
       </nav>
 
