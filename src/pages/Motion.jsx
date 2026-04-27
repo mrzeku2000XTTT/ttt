@@ -1,110 +1,134 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, ImageOff, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Lock, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import MotionScene from "@/components/motion/MotionScene";
-import MotionControls from "@/components/motion/MotionControls";
-
-const DEFAULT_SETTINGS = {
-  tiltX: -8,
-  tiltY: 18,
-  roll: 0,
-  zoom: 1.1,
-  panX: 0,
-  panY: 0,
-  blur: 0,
-  shadow: 24,
-};
-
-const DEFAULT_BG = "linear-gradient(135deg, #f5f5f7 0%, #e8e8ec 100%)";
+import MotionPromptPanel from "@/components/motion/MotionPromptPanel";
+import MotionCodeOutput from "@/components/motion/MotionCodeOutput";
+import { ORBIS_NFT_PROMPT } from "@/components/motion/orbisPrompt";
 
 export default function MotionPage() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [imageUrl, setImageUrl] = useState("");
-  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
-  const [bg, setBg] = useState(DEFAULT_BG);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const canvasRef = useRef(null);
-  const playRafRef = useRef(null);
+  const [prompt, setPrompt] = useState(ORBIS_NFT_PROMPT);
+  const [code, setCode] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     base44.auth.me()
-      .then(u => setUser(u))
+      .then((u) => setUser(u))
       .catch(() => setUser(null))
       .finally(() => setAuthLoading(false));
   }, []);
 
-  // Auto-orbit motion when "Play" is on
-  useEffect(() => {
-    if (!isPlaying) {
-      if (playRafRef.current) cancelAnimationFrame(playRafRef.current);
-      return;
+  const handleGenerate = async () => {
+    if (!prompt.trim()) return;
+    setGenerating(true);
+    setCode("");
+    try {
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are a senior React + Tailwind engineer who specializes in vibe-coded landing page templates.
+
+Build a single self-contained React component based on the spec below. Output ONLY the raw JSX/JS source code — no markdown fences, no commentary, no explanations.
+
+Requirements:
+- Default export, component name should match the brand in the spec
+- All Tailwind classes inline
+- Include any custom CSS via a <style>{\`...\`}</style> tag inside the component
+- Inject Google Fonts via useEffect that appends a <link> to document.head
+- Only import from "react" and "lucide-react"
+- Make it pixel-faithful to the spec
+- Render every section described
+
+SPEC:
+${prompt}`,
+        model: "claude_sonnet_4_6",
+      });
+
+      // Strip code fences if model included them anyway
+      let clean = String(result || "").trim();
+      clean = clean.replace(/^```(?:jsx?|tsx?|javascript|typescript)?\s*/i, "");
+      clean = clean.replace(/\s*```\s*$/i, "");
+      setCode(clean);
+    } catch (err) {
+      setCode(`// Generation failed: ${err.message || "unknown error"}\n// Try again or simplify the prompt.`);
+    } finally {
+      setGenerating(false);
     }
-    let t = 0;
-    const tick = () => {
-      t += 0.01;
-      setSettings(s => ({
-        ...s,
-        tiltY: Math.sin(t) * 22,
-        tiltX: Math.cos(t * 0.7) * 10 - 4,
-        roll: Math.sin(t * 0.5) * 3,
-      }));
-      playRafRef.current = requestAnimationFrame(tick);
-    };
-    playRafRef.current = requestAnimationFrame(tick);
-    return () => {
-      if (playRafRef.current) cancelAnimationFrame(playRafRef.current);
-    };
-  }, [isPlaying]);
-
-  const handleUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => setImageUrl(ev.target.result);
-    reader.readAsDataURL(file);
   };
 
-  const handleReset = () => {
-    setSettings(DEFAULT_SETTINGS);
-    setBg(DEFAULT_BG);
-    setIsPlaying(false);
+  const handleReset = () => setPrompt(ORBIS_NFT_PROMPT);
+
+  // Build a previewable HTML doc from the generated component code
+  const buildPreviewHtml = () => {
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>body{margin:0;background:#010828;}</style>
+</head><body><div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
+// Stub lucide-react imports → use lucide global
+const LucideIcon = (name) => (props) => {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (ref.current && window.lucide) {
+      ref.current.innerHTML = '';
+      const el = document.createElement('i');
+      el.setAttribute('data-lucide', name.toLowerCase());
+      ref.current.appendChild(el);
+      window.lucide.createIcons();
+    }
+  }, []);
+  return React.createElement('span', { ref, style: { display: 'inline-flex', width: props.size || 20, height: props.size || 20 }, className: props.className });
+};
+const Mail = LucideIcon('mail');
+const Twitter = LucideIcon('twitter');
+const Github = LucideIcon('github');
+const ArrowRight = LucideIcon('arrow-right');
+const ChevronRight = LucideIcon('chevron-right');
+
+${code.replace(/^\s*import[^\n;]*;?\s*$/gm, "")}
+
+const __root = ReactDOM.createRoot(document.getElementById('root'));
+// Find the default-exported component
+try {
+  const Comp = (typeof OrbisNftLanding !== 'undefined') ? OrbisNftLanding :
+               (typeof LandingPage !== 'undefined') ? LandingPage :
+               (typeof App !== 'undefined') ? App : null;
+  if (Comp) __root.render(React.createElement(Comp));
+  else __root.render(React.createElement('div', {style:{color:'#fff',padding:40,fontFamily:'monospace'}}, 'No exported component found'));
+} catch(e) {
+  __root.render(React.createElement('pre', {style:{color:'#f88',padding:24,fontFamily:'monospace',whiteSpace:'pre-wrap'}}, String(e)));
+}
+</script></body></html>`;
   };
 
-  const handleExport = () => {
-    const canvas = document.querySelector(".motion-canvas-wrap canvas");
-    if (!canvas) return;
-    const link = document.createElement("a");
-    link.download = `motion-mockup-${Date.now()}.png`;
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-  };
-
-  // Loading
   if (authLoading) {
     return (
-      <div className="fixed inset-0 bg-[#F5F5F7] flex items-center justify-center">
-        <Loader2 className="w-6 h-6 text-zinc-400 animate-spin" />
+      <div className="fixed inset-0 bg-[#0a0a0f] flex items-center justify-center">
+        <Loader2 className="w-6 h-6 text-white/40 animate-spin" />
       </div>
     );
   }
 
-  // Admin gate
   if (!user || user.role !== "admin") {
     return (
-      <div className="fixed inset-0 bg-[#F5F5F7] flex items-center justify-center px-5">
+      <div className="fixed inset-0 bg-[#0a0a0f] flex items-center justify-center px-5">
         <div className="max-w-sm text-center">
-          <div className="w-14 h-14 rounded-2xl bg-zinc-900 mx-auto mb-5 flex items-center justify-center">
-            <ImageOff className="w-7 h-7 text-white" />
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-purple-500 mx-auto mb-5 flex items-center justify-center">
+            <Lock className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-2xl font-[900] text-zinc-900 mb-2">Motion</h1>
-          <p className="text-[13px] text-zinc-500 mb-6">
-            This tool is currently in private beta — admin access only.
+          <h1 className="text-2xl font-[900] text-white mb-2">Motion</h1>
+          <p className="text-[13px] text-white/50 mb-6">
+            Vibe-code landing page generator — admin access only.
           </p>
           <Link
             to="/"
-            className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-zinc-700 bg-white ring-1 ring-zinc-200 hover:ring-zinc-300 px-4 py-2 rounded-full transition-all"
+            className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-white/80 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full transition-all"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back
           </Link>
@@ -113,82 +137,56 @@ export default function MotionPage() {
     );
   }
 
-  // Combine bg + blur shadow as inline style for the wrap (so blur applies to background, not the canvas DOM)
-  const previewStyle = {
-    background: bg,
-    filter: settings.blur > 0 ? `blur(${0}px)` : "none", // canvas sharp; blur applies via DOM filter on wrapper bg layer
-    boxShadow: settings.shadow > 0 ? `0 ${settings.shadow}px ${settings.shadow * 2}px rgba(0,0,0,0.25)` : "none",
-  };
-
   return (
-    <div className="min-h-screen bg-[#F5F5F7] text-zinc-900">
+    <div className="fixed inset-0 bg-[#0a0a0f] text-white flex flex-col">
       {/* Top bar */}
-      <nav className="h-14 flex items-center justify-between px-5 bg-white/70 backdrop-blur-xl border-b border-zinc-200/60 sticky top-0 z-40">
-        <Link to="/" className="flex items-center gap-2 text-[13px] font-semibold text-zinc-600 hover:text-zinc-900">
+      <nav className="h-14 flex items-center justify-between px-5 bg-black/60 backdrop-blur-xl border-b border-white/10 z-40 flex-shrink-0">
+        <Link to="/" className="flex items-center gap-2 text-[13px] font-semibold text-white/60 hover:text-white">
           <ArrowLeft className="w-4 h-4" /> Back
         </Link>
         <div className="flex items-center gap-2">
-          <span className="text-[15px] font-[900] tracking-tight">Motion</span>
-          <span className="text-[9px] font-bold bg-cyan-500 text-white px-1.5 py-[1px] rounded">BETA</span>
+          <span className="text-[15px] font-[900] tracking-tight bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">Motion</span>
+          <span className="text-[9px] font-bold bg-cyan-500 text-white px-1.5 py-[1px] rounded">VIBE-CODE</span>
         </div>
-        <span className="text-[11px] text-zinc-400 font-medium hidden sm:block">Admin only</span>
+        <span className="text-[11px] text-white/40 font-medium hidden sm:block">Admin only</span>
       </nav>
 
-      <div className="p-5 lg:p-6 flex flex-col lg:flex-row gap-5">
-        {/* Preview */}
-        <div className="flex-1">
-          <div
-            className="motion-canvas-wrap relative rounded-2xl overflow-hidden ring-1 ring-zinc-200/60"
-            style={{ ...previewStyle, height: "calc(100vh - 7rem)", minHeight: 480 }}
-          >
-            {/* Background blur layer (separate from canvas so canvas stays sharp) */}
-            {settings.blur > 0 && (
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: bg,
-                  filter: `blur(${settings.blur}px)`,
-                  transform: "scale(1.1)",
-                }}
-              />
-            )}
-            <div className="absolute inset-0">
-              <MotionScene
-                imageUrl={imageUrl}
-                settings={settings}
-                canvasRef={canvasRef}
-                bgGradient="transparent"
-              />
-            </div>
-
-            {!imageUrl && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="text-center">
-                  <div className="w-14 h-14 rounded-2xl bg-white/80 backdrop-blur ring-1 ring-zinc-200 mx-auto mb-3 flex items-center justify-center">
-                    <ImageOff className="w-6 h-6 text-zinc-400" />
-                  </div>
-                  <p className="text-[13px] font-semibold text-zinc-700">Upload a screenshot to begin</p>
-                  <p className="text-[11px] text-zinc-500 mt-1">PNG, JPG, or WEBP</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Controls */}
-        <MotionControls
-          settings={settings}
-          setSettings={setSettings}
-          onUpload={handleUpload}
+      {/* Two-pane workspace */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 min-h-0">
+        <MotionPromptPanel
+          prompt={prompt}
+          setPrompt={setPrompt}
+          onGenerate={handleGenerate}
+          generating={generating}
           onReset={handleReset}
-          onExport={handleExport}
-          onTogglePlay={() => setIsPlaying(p => !p)}
-          isPlaying={isPlaying}
-          hasImage={!!imageUrl}
-          bg={bg}
-          setBg={setBg}
+        />
+        <MotionCodeOutput
+          code={code}
+          onPreview={() => setShowPreview(true)}
+          hasPreview={!!code && !generating}
         />
       </div>
+
+      {/* Live preview modal */}
+      {showPreview && code && (
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex flex-col">
+          <div className="h-12 flex items-center justify-between px-4 border-b border-white/10 bg-black/60">
+            <span className="text-white/80 text-sm font-semibold">Live Preview</span>
+            <button
+              onClick={() => setShowPreview(false)}
+              className="text-white/60 hover:text-white p-1.5 rounded-lg hover:bg-white/10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <iframe
+            title="motion-preview"
+            srcDoc={buildPreviewHtml()}
+            sandbox="allow-scripts allow-same-origin"
+            className="flex-1 w-full bg-white border-0"
+          />
+        </div>
+      )}
     </div>
   );
 }
