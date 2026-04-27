@@ -1,5 +1,6 @@
 import React from "react";
 import { X, Trash2 } from "lucide-react";
+import NodeImageOutput from "@/components/rmx/NodeImageOutput";
 
 export default function RMXNodeConfig({ node, onUpdate, onClose, onDelete }) {
   const setField = (key, val) => {
@@ -64,11 +65,15 @@ export default function RMXNodeConfig({ node, onUpdate, onClose, onDelete }) {
       {node.output !== null && node.output !== undefined && (
         <div className="mb-4">
           <label className="block text-white/70 text-xs font-bold mb-1.5">Last Output</label>
-          <div className="p-3 bg-green-500/5 border border-green-500/20 rounded-lg max-h-48 overflow-y-auto">
-            <pre className="text-green-300 text-[11px] whitespace-pre-wrap break-words font-mono">
-              {typeof node.output === "string" ? node.output : JSON.stringify(node.output, null, 2)}
-            </pre>
-          </div>
+          {node.type === "ai_image" && typeof node.output === "string" && node.output ? (
+            <NodeImageOutput url={node.output} />
+          ) : (
+            <div className="p-3 bg-green-500/5 border border-green-500/20 rounded-lg max-h-48 overflow-y-auto">
+              <pre className="text-green-300 text-[11px] whitespace-pre-wrap break-words font-mono">
+                {typeof node.output === "string" ? node.output : JSON.stringify(node.output, null, 2)}
+              </pre>
+            </div>
+          )}
         </div>
       )}
 
