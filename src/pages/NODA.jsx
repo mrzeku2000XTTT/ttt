@@ -142,7 +142,7 @@ export default function NODAPage() {
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
   return (
-    <div className={`fixed inset-0 bg-gradient-to-br from-zinc-950 via-cyan-950/20 to-zinc-950 overflow-hidden flex flex-col ${worldOpen ? "invisible" : ""}`}>
+    <div className={`fixed inset-0 bg-gradient-to-br from-zinc-950 via-cyan-950/20 to-zinc-950 overflow-hidden flex-col ${worldOpen ? "hidden" : "flex"}`}>
       {/* Floating restore button when layout is hidden */}
       {layoutHidden && (
         <button
