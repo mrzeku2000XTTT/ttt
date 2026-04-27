@@ -1,10 +1,12 @@
 import React, { useState } from "react";
-import { Download, ExternalLink, Copy, Check, Loader2, ImageOff } from "lucide-react";
+import { Download, ExternalLink, Copy, Check, Loader2, ImageOff, Globe } from "lucide-react";
+import World360Viewer from "@/components/rmx/World360Viewer";
 
 export default function NodeImageOutput({ url }) {
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [errored, setErrored] = useState(false);
+  const [world, setWorld] = useState(false);
 
   if (!url) return null;
 
@@ -56,6 +58,14 @@ export default function NodeImageOutput({ url }) {
         )}
       </div>
 
+      <button
+        onClick={() => setWorld(true)}
+        disabled={errored}
+        className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border-t border-cyan-500/30 text-cyan-200 text-xs font-black tracking-wider disabled:opacity-40"
+      >
+        <Globe className="w-3.5 h-3.5" /> ENTER 360° WORLD
+      </button>
+
       <div className="grid grid-cols-3 divide-x divide-white/10 border-t border-white/10">
         <button
           onClick={handleDownload}
@@ -81,6 +91,8 @@ export default function NodeImageOutput({ url }) {
           {copied ? "Copied" : "URL"}
         </button>
       </div>
+
+      {world && <World360Viewer imageUrl={url} onClose={() => setWorld(false)} />}
     </div>
   );
 }
