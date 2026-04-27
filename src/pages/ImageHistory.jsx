@@ -193,15 +193,29 @@ export default function ImageHistoryPage() {
     uploadFile(file, setUploadingScene, setSceneImage);
   };
 
-  // Drag-and-drop helpers
+  // Drag-and-drop helpers — attach to drop zone and let events bubble through children
   const dragHandlers = (onDropFile) => ({
-    onDragOver: (e) => { e.preventDefault(); e.stopPropagation(); },
-    onDragEnter: (e) => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.add('border-cyan-500'); },
-    onDragLeave: (e) => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove('border-cyan-500'); },
+    onDragOver: (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      e.dataTransfer.dropEffect = 'copy';
+    },
+    onDragEnter: (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      e.currentTarget.classList.add('border-cyan-500', 'bg-cyan-500/10');
+    },
+    onDragLeave: (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // Only remove highlight if leaving the drop zone (not entering a child)
+      if (e.currentTarget.contains(e.relatedTarget)) return;
+      e.currentTarget.classList.remove('border-cyan-500', 'bg-cyan-500/10');
+    },
     onDrop: (e) => {
       e.preventDefault();
       e.stopPropagation();
-      e.currentTarget.classList.remove('border-cyan-500');
+      e.currentTarget.classList.remove('border-cyan-500', 'bg-cyan-500/10');
       const file = e.dataTransfer?.files?.[0];
       if (file) onDropFile(file);
     },
