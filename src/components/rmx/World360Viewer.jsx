@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import * as THREE from "three";
 import { X, MessageCircle, Send, Loader2, Compass, Maximize2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
@@ -175,7 +176,7 @@ export default function World360Viewer({ imageUrl, onClose }) {
     }
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[9999] bg-black">
       {/* 3D viewport — fills the whole screen */}
       <div className="absolute inset-0">
@@ -260,6 +261,7 @@ export default function World360Viewer({ imageUrl, onClose }) {
           </div>
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   );
 }
