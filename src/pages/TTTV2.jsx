@@ -366,6 +366,12 @@ export default function TTTV2Page() {
                 Get Started <ArrowUpRight className="w-4 h-4" />
               </motion.button>
             </Link>
+            <Link to="/LaunchBrand">
+              <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+                className="h-10 px-6 text-[13px] font-semibold rounded-full bg-gradient-to-r from-cyan-400 via-violet-400 to-pink-400 text-black shadow-lg shadow-violet-500/30 flex items-center gap-2">
+                Launch My Own Brand <ArrowUpRight className="w-4 h-4" />
+              </motion.button>
+            </Link>
             <a href="#products">
               <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
                 className="h-10 px-6 text-white text-[13px] font-semibold rounded-full border border-white/30 hover:border-white/50 hover:bg-white/10 transition-colors flex items-center gap-2">
