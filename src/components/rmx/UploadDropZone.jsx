@@ -88,7 +88,7 @@ export default function UploadDropZone({
 
       {value ? (
         <>
-          <img src={value} alt={label || 'upload'} className="w-full h-full object-cover pointer-events-none" />
+          <img src={value} alt={label || 'upload'} className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
           {onClear && (
             <button
               onClick={(e) => { e.stopPropagation(); onClear(); }}
