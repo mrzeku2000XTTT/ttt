@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft, Zap, Plus, Play, Sparkles, Loader2,
+  ArrowLeft, Zap, Plus, Play, Sparkles, Loader2, Eye, EyeOff,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import RMXNodeLibrary from "@/components/rmx/RMXNodeLibrary";
@@ -20,6 +20,7 @@ export default function NODAPage() {
   const [showRunPanel, setShowRunPanel] = useState(false);
   const [workflowName, setWorkflowName] = useState("Untitled NODA Workflow");
   const [worldOpen, setWorldOpen] = useState(false);
+  const [layoutHidden, setLayoutHidden] = useState(false);
 
   const addNode = (template) => {
     const id = `node_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -142,6 +143,15 @@ export default function NODAPage() {
 
   return (
     <div className={`fixed inset-0 bg-gradient-to-br from-zinc-950 via-cyan-950/20 to-zinc-950 overflow-hidden flex flex-col ${worldOpen ? "invisible" : ""}`}>
+      {/* Floating restore button when layout is hidden */}
+      {layoutHidden && (
+        <button
+          onClick={() => setLayoutHidden(false)}
+          className="fixed top-3 right-3 z-50 flex items-center gap-1.5 px-3 py-1.5 bg-black/70 backdrop-blur-md border border-white/20 hover:bg-white/10 rounded-full text-white text-xs font-bold shadow-lg"
+        >
+          <Eye className="w-3.5 h-3.5" /> Show NODA
+        </button>
+      )}
       {/* Background grid */}
       <div
         className="absolute inset-0 opacity-[0.05] pointer-events-none"
@@ -153,7 +163,7 @@ export default function NODAPage() {
       />
 
       {/* Top bar */}
-      <div className="relative z-10 flex items-center justify-between px-4 py-3 border-b border-white/10 bg-black/40 backdrop-blur-xl">
+      <div className={`relative z-10 flex items-center justify-between px-4 py-3 border-b border-white/10 bg-black/40 backdrop-blur-xl ${layoutHidden ? "hidden" : ""}`}>
         <div className="flex items-center gap-3 min-w-0">
           <Link
             to={createPageUrl("AppStoreV2")}
@@ -187,6 +197,13 @@ export default function NODAPage() {
             <Plus className="w-4 h-4" /> Add
           </button>
           <button
+            onClick={() => setLayoutHidden(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 hover:text-white text-sm font-bold"
+            title="Hide NODA layout"
+          >
+            <EyeOff className="w-4 h-4" />
+          </button>
+          <button
             onClick={runWorkflow}
             disabled={running || nodes.length === 0}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg text-white text-sm font-bold shadow-lg shadow-cyan-500/20"
@@ -198,7 +215,7 @@ export default function NODAPage() {
       </div>
 
       {/* Workspace */}
-      <div className="relative z-10 flex-1 flex overflow-hidden">
+      <div className={`relative z-10 flex-1 flex overflow-hidden ${layoutHidden ? "hidden" : ""}`}>
         <RMXCanvas
           nodes={nodes}
           selectedNodeId={selectedNodeId}
