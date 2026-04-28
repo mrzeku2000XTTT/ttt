@@ -2365,7 +2365,7 @@ export default function FeedPage() {
             </Button>
           )}
 
-          {post.author_wallet_address && post.created_by !== user?.email && (
+          {post.author_wallet_address && (!user?.email || post.created_by !== user.email) && (
             <Button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleOpenTipModal(post); }} variant="ghost" size="sm" className="text-white/40 hover:text-green-400 h-auto p-0 group" title="Send KAS tip">
               <div className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2 bg-white/10 border border-white/20 rounded-full flex items-center justify-center group-hover:bg-green-500/20 group-hover:border-green-500/30 transition-all"><span className="text-[10px] md:text-xs font-bold">$</span></div>
               {post.tips_received > 0 && <span className="text-[10px] md:text-xs">{post.tips_received.toFixed(2)}</span>}
