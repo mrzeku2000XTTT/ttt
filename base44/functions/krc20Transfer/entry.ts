@@ -19,7 +19,6 @@
 //   - Minimum output enforced at 0.1 KAS per KASPACOM
 //   - Enhanced retry with exponential backoff
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 import { KaspaWallet } from 'npm:@okxweb3/coin-kaspa@2.4.9';
 import { blake2b } from 'npm:@noble/hashes@1.4.0/blake2b';
 import { schnorr } from 'npm:@noble/curves@1.4.0/secp256k1';
@@ -629,9 +628,9 @@ async function buildAndSubmitRevealTx({
 // ==========================================
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    // Note: This function signs transactions using the caller-provided mnemonic/privateKey.
+    // No user-scoped data is read, so we allow guest (non-logged-in) callers — required for
+    // tipping from the public Feed without forcing a login.
 
     const body = await req.json();
     const {
