@@ -66,7 +66,11 @@ export default function NODAPage() {
         const result = await executeNode(node, context);
         context[node.id] = result;
         updateNode(node.id, { output: result });
-        log(`✓ ${node.label} complete`, "success");
+        if (node.type === "send_email" && result?.sent) {
+          log(`✓ Email sent to ${result.to}`, "success");
+        } else {
+          log(`✓ ${node.label} complete`, "success");
+        }
       } catch (err) {
         log(`✗ ${node.label} failed: ${err.message}`, "error");
         break;
@@ -77,14 +81,32 @@ export default function NODAPage() {
   };
 
   const executeNode = async (node, context) => {
+    // Find most recent previous node's output (walk backward from current node)
+    const getPrevOutput = () => {
+      const idx = nodes.findIndex((n) => n.id === node.id);
+      for (let i = idx - 1; i >= 0; i--) {
+        const out = context[nodes[i].id];
+        if (out !== undefined && out !== null) return out;
+      }
+      return "";
+    };
+
+    const stringify = (val) => {
+      if (val === null || val === undefined) return "";
+      if (typeof val === "string") return val;
+      if (typeof val === "object") {
+        try { return JSON.stringify(val, null, 2); } catch { return String(val); }
+      }
+      return String(val);
+    };
+
     const interpolate = (str) => {
       if (typeof str !== "string") return str;
       return str.replace(/\{\{(\w+)\}\}/g, (_, key) => {
-        const lastNode = nodes[nodes.length - 1];
-        const lastOutput = context[lastNode?.id];
-        if (typeof lastOutput === "string") return lastOutput;
-        if (lastOutput && typeof lastOutput === "object") return lastOutput[key] || "";
-        return "";
+        const prev = getPrevOutput();
+        if (key === "result") return stringify(prev);
+        if (prev && typeof prev === "object") return stringify(prev[key] ?? "");
+        return stringify(prev);
       });
     };
 
