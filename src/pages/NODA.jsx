@@ -34,6 +34,7 @@ export default function NODAPage() {
   const autoRunTimerRef = useRef(null);
   const runningRef = useRef(false);
   const isAutoRunRef = useRef(false);
+  const skipNextAutoRunRef = useRef(false); // suppresses one auto-run cycle after Brain build
   useEffect(() => { runningRef.current = running; }, [running]);
 
   useEffect(() => {
@@ -41,10 +42,14 @@ export default function NODAPage() {
   }, []);
 
   const handleBrainBuild = (newNodes, name) => {
+    // Cancel any pending auto-run timer + flag the next auto-run cycle to be skipped,
+    // so we don't get a duplicate run after the explicit Brain run.
+    if (autoRunTimerRef.current) clearTimeout(autoRunTimerRef.current);
+    skipNextAutoRunRef.current = true;
+    setAutoRun(false);
     setNodes(newNodes);
     if (name) setWorkflowName(name);
     setSelectedNodeId(null);
-    setAutoRun(false); // disable auto-run so the debounce effect doesn't fire a second time
     showToast(`Brain built ${newNodes.length} step${newNodes.length === 1 ? "" : "s"} — running now`);
     // Kick off the run immediately with the FRESH nodes (state isn't committed yet,
     // so we must pass them explicitly — otherwise runWorkflow sees the old empty array).
@@ -64,6 +69,11 @@ export default function NODAPage() {
   // Auto-run: debounce-trigger workflow whenever nodes/config change
   useEffect(() => {
     if (!autoRun || nodes.length === 0) return;
+    // Skip ONE auto-run cycle right after Brain builds — Brain triggers its own explicit run.
+    if (skipNextAutoRunRef.current) {
+      skipNextAutoRunRef.current = false;
+      return;
+    }
     if (autoRunTimerRef.current) clearTimeout(autoRunTimerRef.current);
     autoRunTimerRef.current = setTimeout(() => {
       if (!runningRef.current) {
