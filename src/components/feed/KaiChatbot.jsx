@@ -189,16 +189,24 @@ export default function KaiChatbot() {
       return;
     }
 
-    // Detect image/drawing intent — suggest apps with clickable buttons
+    // Detect image/drawing intent → generate image inline
     if (isImageRequest(userMsg)) {
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: "For creating images and drawings, check out **Xunhua** — our AI sketch-to-image studio! 🎨 You can draw on a canvas and AI will render it into a full image. Or try **Hikaru** for text-to-image generation.",
-        links: [
-          { label: "Open Xunhua 🎨", path: "Xunhua" },
-          { label: "Open Hikaru 🖼️", path: "Hikaru" },
-        ]
-      }]);
+      setMessages(prev => [...prev, { role: "action", content: "Generating image... 🎨" }]);
+      try {
+        const cleanPrompt = userMsg
+          .replace(/^(please\s+|can\s+you\s+|could\s+you\s+)?(draw|sketch|paint|create|generate|make|design|illustrate|show|visualize)\s+(me\s+)?(a|an|the)?\s*(image|picture|pic|photo|art|artwork|drawing|illustration)?\s*(of\s+|about\s+|showing\s+|for\s+)?/i, '')
+          .trim() || userMsg;
+        const { url } = await base44.integrations.Core.GenerateImage({ prompt: cleanPrompt });
+        setMessages(prev => [
+          ...prev.filter(m => m.role !== 'action'),
+          { role: "assistant", content: `🎨 Here's your image:`, imageUrl: url, imagePrompt: cleanPrompt },
+        ]);
+      } catch (err) {
+        setMessages(prev => [
+          ...prev.filter(m => m.role !== 'action'),
+          { role: "assistant", content: "❌ Image generation failed. Try **Xunhua** or **Hikaru** instead.", links: [{ label: "Open Xunhua 🎨", path: "Xunhua" }, { label: "Open Hikaru 🖼️", path: "Hikaru" }] },
+        ]);
+      }
       setIsLoading(false);
       return;
     }
@@ -419,6 +427,15 @@ export default function KaiChatbot() {
                       }}
                     >
                       {msg.content}
+                      {msg.imageUrl && (
+                        <div className="mt-2 rounded-xl overflow-hidden" style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(6,182,212,0.3)' }}>
+                          <img src={msg.imageUrl} alt={msg.imagePrompt || 'generated'} className="w-full block" style={{ maxHeight: 320, objectFit: 'contain' }} />
+                          <div className="flex items-center justify-between px-2.5 py-1.5 text-[10px]">
+                            <span className="text-cyan-400/80 font-semibold truncate">🖼️ {(msg.imagePrompt || '').slice(0, 40)}</span>
+                            <a href={msg.imageUrl} download target="_blank" rel="noopener noreferrer" className="text-white/60 hover:text-white">download</a>
+                          </div>
+                        </div>
+                      )}
                       {msg.browserLink && (
                         <button
                           onClick={() => { setBrowserUrl(msg.browserLink); setShowBrowser(true); }}

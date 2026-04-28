@@ -321,13 +321,25 @@ Original prompt: ${input.trim()}`,
         setIsLoading(false); return;
       }
 
-      // Image request → suggest apps
+      // Image request → generate image inline
       if (isImageRequest(userMsg)) {
-        setMessages(prev => [...prev, {
-          role: "assistant",
-          content: "For creating images and drawings, check out **Xunhua** — our AI sketch-to-image studio! 🎨 You can draw on a canvas and AI will render it into a full image. Or try **Hikaru** for text-to-image generation.",
-          links: [{ label: "Open Xunhua 🎨", path: "Xunhua" }, { label: "Open Hikaru 🖼️", path: "Hikaru" }]
-        }]);
+        // Show loader
+        setMessages(prev => [...prev, { role: "assistant", content: null, imposterImageLoading: true }]);
+        try {
+          const cleanPrompt = userMsg
+            .replace(/^(please\s+|can\s+you\s+|could\s+you\s+)?(draw|sketch|paint|create|generate|make|design|illustrate|show|visualize)\s+(me\s+)?(a|an|the)?\s*(image|picture|pic|photo|art|artwork|drawing|illustration)?\s*(of\s+|about\s+|showing\s+|for\s+)?/i, '')
+            .trim() || userMsg;
+          const { url } = await base44.integrations.Core.GenerateImage({ prompt: cleanPrompt });
+          setMessages(prev => [
+            ...prev.filter(m => !m.imposterImageLoading),
+            { role: "assistant", content: null, imposterImage: { image_url: url, prompt: cleanPrompt } },
+          ]);
+        } catch (err) {
+          setMessages(prev => [
+            ...prev.filter(m => !m.imposterImageLoading),
+            { role: "assistant", content: "❌ Image generation failed. Try again or open **Xunhua** / **Hikaru**.", links: [{ label: "Open Xunhua 🎨", path: "Xunhua" }, { label: "Open Hikaru 🖼️", path: "Hikaru" }] },
+          ]);
+        }
         setIsLoading(false); return;
       }
 
