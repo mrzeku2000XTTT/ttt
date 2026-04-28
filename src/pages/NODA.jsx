@@ -40,7 +40,8 @@ export default function NODAPage() {
     setNodes(newNodes);
     if (name) setWorkflowName(name);
     setSelectedNodeId(null);
-    showToast(`Brain built ${newNodes.length} step${newNodes.length === 1 ? "" : "s"}`);
+    setAutoRun(true);
+    showToast(`Brain built ${newNodes.length} step${newNodes.length === 1 ? "" : "s"} — Auto-run ON`);
   };
 
   const showToast = (msg, type = "success") => {
