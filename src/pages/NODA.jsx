@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft, Zap, Plus, Play, Sparkles, Loader2, Eye, EyeOff,
+  ArrowLeft, Zap, Plus, Play, Sparkles, Loader2, Eye, EyeOff, Wand2,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import RMXNodeLibrary from "@/components/rmx/RMXNodeLibrary";
@@ -45,6 +45,47 @@ export default function NODAPage() {
   const deleteNode = (id) => {
     setNodes((prev) => prev.filter((n) => n.id !== id));
     if (selectedNodeId === id) setSelectedNodeId(null);
+  };
+
+  const loadExample = () => {
+    const myEmail = (typeof window !== "undefined" && window.prompt(
+      "Enter the email address to send the daily Kaspa briefing to:",
+      ""
+    )) || "";
+    if (!myEmail.trim()) return;
+
+    const t = Date.now();
+    const example = [
+      {
+        id: `node_${t}_a`,
+        type: "ai_prompt",
+        label: "AI Prompt",
+        icon: "Brain",
+        color: "from-purple-500 to-pink-500",
+        config: {
+          prompt:
+            "Write a short, friendly daily briefing about Kaspa (KAS) — 3 bullet points covering what's interesting today, in plain English. Keep it under 120 words.",
+        },
+        output: null,
+      },
+      {
+        id: `node_${t}_b`,
+        type: "send_email",
+        label: "Send Email",
+        icon: "Mail",
+        color: "from-amber-500 to-orange-500",
+        config: {
+          to: myEmail.trim(),
+          from_name: "NODA Daily Briefing",
+          subject: "Your Kaspa briefing for today",
+          body: "Hey 👋\n\nHere's your Kaspa briefing:\n\n{{result}}\n\n— NODA",
+        },
+        output: null,
+      },
+    ];
+    setNodes(example);
+    setWorkflowName("Daily Kaspa Email Briefing");
+    setSelectedNodeId(null);
   };
 
   const runWorkflow = async () => {
@@ -220,6 +261,13 @@ export default function NODAPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={loadExample}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 rounded-lg text-purple-200 text-sm font-bold"
+            title="Load example: Daily Kaspa email briefing"
+          >
+            <Wand2 className="w-4 h-4" /> Example
+          </button>
           <button
             onClick={() => setShowLibrary(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white text-sm font-bold"
