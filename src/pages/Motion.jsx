@@ -86,6 +86,9 @@ TECHNICAL REQUIREMENTS:
 - Use useState + useEffect for scroll position, mouse position, intersection observer
 - Make it pixel-faithful to the spec AND animation-faithful to the energy described
 - Render every section described — do not skip sections
+- IMPORTANT: When the spec contains a literal "\\n" (backslash-n) inside a headline or copy string, treat it as a line break — render it as a JSX <br/> or split the text across multiple spans on separate lines. NEVER output the literal characters "\\n" as visible text on the page.
+- IMPORTANT: When the spec mentions clamp(...) values for font sizes, output them via inline style={{ fontSize: 'clamp(...)' }} since Tailwind cannot parse arbitrary clamp expressions reliably.
+- IMPORTANT: All Google Fonts referenced in the spec MUST be injected via a useEffect that appends a <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=..."/> to document.head, and applied via inline style fontFamily — Tailwind cannot reach custom font names without config.
 - The result must FEEL like a $50k design agency landing page, not a static template${refNote}
 
 SPEC:
