@@ -487,25 +487,16 @@ Be specific. Cite numbers, dates, names, quotes. No filler. No "as an AI". Use r
         const content = (overrideText || textPart || "").trim();
         if (!content) throw new Error("No content to post — add an AI Prompt or text-producing step before this");
 
-        // Pull author info from current user
-        let authorName = (node.config.author_name || "").trim();
-        let authorWallet = "";
-        let authorRole = "user";
-        try {
-          const me = await base44.auth.me();
-          if (!authorName) authorName = me?.username || me?.full_name || me?.email?.split("@")[0] || "NODA";
-          authorWallet = me?.created_wallet_address || me?.wallet_address || "";
-          authorRole = me?.role === "admin" ? "admin" : "user";
-        } catch {
-          if (!authorName) authorName = "NODA";
-        }
+        // Anonymous posting — no wallet, no role, no identifiable info.
+        // Author name override is allowed but defaults to a generic anon label.
+        const overrideName = (node.config.author_name || "").trim();
+        const authorName = overrideName || "Anonymous";
 
         const payload = {
           content,
           author_name: authorName,
-          author_role: authorRole,
+          author_role: "user",
         };
-        if (authorWallet) payload.author_wallet_address = authorWallet;
         if (imageUrl) {
           payload.image_url = imageUrl;
           payload.media_files = [{ url: imageUrl, type: "image/png", name: "noda-generated.png", size: 0 }];
@@ -516,6 +507,7 @@ Be specific. Cite numbers, dates, names, quotes. No filler. No "as an AI". Use r
           posted: true,
           post_id: created?.id,
           author: authorName,
+          anonymous: true,
           has_image: !!imageUrl,
           chars: content.length,
         };

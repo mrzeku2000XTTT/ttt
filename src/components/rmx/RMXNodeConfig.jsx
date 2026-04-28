@@ -105,7 +105,7 @@ function getFields(type) {
       ];
     case "post_to_ttt":
       return [
-        { key: "author_name", label: "Author name (optional)", placeholder: "Defaults to your username", hint: "Leave blank to post as you" },
+        { key: "author_name", label: "Display name (optional)", placeholder: "Anonymous", hint: "Posts are anonymous — no wallet or identity attached. Leave blank for 'Anonymous'." },
         { key: "content_override", label: "Custom content (optional)", type: "textarea", placeholder: "Leave blank to use {{result}} from previous step", hint: "Supports {{result}}. If empty, uses last text step. Image from prior ai_image attaches automatically." },
       ];
     case "send_email":
