@@ -112,8 +112,13 @@ export default function RMXNodeLibrary({ onPick, onClose }) {
                 className="text-left p-4 bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 hover:border-purple-500/40 rounded-xl transition-all group"
               >
                 <div className="flex items-start gap-3">
-                  <div className={`w-10 h-10 bg-gradient-to-br ${tpl.color} rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg`}>
-                    <Icon className="w-5 h-5 text-white" />
+                  <div className="relative w-11 h-11 flex-shrink-0">
+                    <div className={`absolute inset-0 bg-gradient-to-br ${tpl.color} rounded-2xl blur-md opacity-50 group-hover:opacity-80 transition-opacity`} />
+                    <div className={`relative w-full h-full bg-gradient-to-br ${tpl.color} rounded-2xl flex items-center justify-center shadow-xl border border-white/20 overflow-hidden`}>
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-black/20" />
+                      <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/25 to-transparent" />
+                      <Icon className="relative w-5 h-5 text-white drop-shadow" />
+                    </div>
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-white font-bold text-sm mb-0.5">{tpl.label}</h3>

@@ -45,6 +45,7 @@ import MotionLandingPage from './pages/MotionLanding';
 import MotionIdeasPage from './pages/MotionIdeas';
 import MotionPromptsPage from './pages/MotionPrompts';
 import NODAPage from './pages/NODA';
+import NODALandingPage from './pages/NODALanding';
 import LaunchBrandPage from './pages/LaunchBrand';
 import KaSshiPlayer from './components/KaSshiPlayer';
 
@@ -133,7 +134,8 @@ const AuthenticatedApp = () => {
       <Route path="/MotionStudio" element={<MotionPage />} />
       <Route path="/MotionIdeas" element={<MotionIdeasPage />} />
       <Route path="/MotionPrompts" element={<MotionPromptsPage />} />
-      <Route path="/NODA" element={<NODAPage />} />
+      <Route path="/NODA" element={<NODALandingPage />} />
+      <Route path="/NODAStudio" element={<NODAPage />} />
       <Route path="/LaunchBrand" element={<LaunchBrandPage />} />
       <Route path="/login" element={<AuthRedirect />} />
       <Route path="/Login" element={<AuthRedirect />} />
