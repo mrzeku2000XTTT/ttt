@@ -75,7 +75,10 @@ ${prompt}`,
   const buildPreviewHtml = () => {
     // Strip imports — we provide React + lucide-react via ESM
     let body = code
-      .replace(/^\s*import[^\n;]*;?\s*$/gm, "")
+      // Strip multi-line imports: import ... from "x"; (handles braces across newlines)
+      .replace(/^\s*import\s+[\s\S]*?from\s*["'][^"']+["']\s*;?/gm, "")
+      // Strip side-effect imports: import "x";
+      .replace(/^\s*import\s+["'][^"']+["']\s*;?/gm, "")
       .replace(/^\s*export\s+default\s+/gm, "__DEFAULT_EXPORT__ = ")
       .replace(/^\s*export\s+/gm, "");
 
