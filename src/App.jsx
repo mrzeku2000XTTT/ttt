@@ -41,6 +41,7 @@ import OneShotStudioPage from './pages/OneShotStudio';
 import SlideDeckBuilderPage from './pages/SlideDeckBuilder';
 import AuthRedirect from './pages/AuthRedirect';
 import MotionPage from './pages/Motion';
+import MotionLandingPage from './pages/MotionLanding';
 import NODAPage from './pages/NODA';
 import LaunchBrandPage from './pages/LaunchBrand';
 import KaSshiPlayer from './components/KaSshiPlayer';
@@ -126,7 +127,8 @@ const AuthenticatedApp = () => {
       <Route path="/TELE" element={<TELEPage />} />
       <Route path="/RMX" element={<ImageHistoryPage />} />
       <Route path="/RMXWorkflow" element={<RMXPage />} />
-      <Route path="/Motion" element={<MotionPage />} />
+      <Route path="/Motion" element={<MotionLandingPage />} />
+      <Route path="/MotionStudio" element={<MotionPage />} />
       <Route path="/NODA" element={<NODAPage />} />
       <Route path="/LaunchBrand" element={<LaunchBrandPage />} />
       <Route path="/login" element={<AuthRedirect />} />
