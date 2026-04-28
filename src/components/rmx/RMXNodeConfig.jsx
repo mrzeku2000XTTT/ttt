@@ -95,9 +95,10 @@ function getFields(type) {
       return [{ key: "prompt", label: "Image Prompt", type: "textarea", placeholder: "Describe the image" }];
     case "send_email":
       return [
-        { key: "to", label: "To Email", placeholder: "you@example.com" },
+        { key: "to", label: "To Email", placeholder: "you@example.com", hint: "Real email address — sent via Base44" },
+        { key: "from_name", label: "From Name (optional)", placeholder: "NODA Workflow" },
         { key: "subject", label: "Subject", placeholder: "Your workflow finished" },
-        { key: "body", label: "Body", type: "textarea", placeholder: "Use {{result}} to insert previous output" },
+        { key: "body", label: "Body", type: "textarea", placeholder: "Use {{result}} to insert previous output", hint: "{{result}} pulls in the last step's output" },
       ];
     case "delay":
       return [{ key: "seconds", label: "Seconds", type: "number", placeholder: "2" }];

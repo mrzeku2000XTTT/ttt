@@ -100,11 +100,19 @@ export default function NODAPage() {
         return res?.url || "";
       }
       case "send_email": {
-        const to = interpolate(node.config.to || "");
-        const subject = interpolate(node.config.subject || "");
+        const to = interpolate(node.config.to || "").trim();
+        const subject = interpolate(node.config.subject || "").trim();
         const body = interpolate(node.config.body || "");
-        await base44.integrations.Core.SendEmail({ to, subject, body });
-        return { sent: true, to };
+        const fromName = (node.config.from_name || "").trim();
+        if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+          throw new Error(`Invalid recipient email: "${to}"`);
+        }
+        if (!subject) throw new Error("Subject is required");
+        if (!body) throw new Error("Body is required");
+        const payload = { to, subject, body };
+        if (fromName) payload.from_name = fromName;
+        await base44.integrations.Core.SendEmail(payload);
+        return { sent: true, to, subject, sent_at: new Date().toISOString() };
       }
       case "delay": {
         const ms = (Number(node.config.seconds) || 1) * 1000;
