@@ -3,13 +3,14 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft, Zap, Plus, Play, Sparkles, Loader2, Eye, EyeOff, Wand2, Mail, X, Repeat,
+  ArrowLeft, Zap, Plus, Play, Sparkles, Loader2, Eye, EyeOff, Wand2, Mail, X, Repeat, Brain,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import RMXNodeLibrary from "@/components/rmx/RMXNodeLibrary";
 import RMXCanvas from "@/components/rmx/RMXCanvas";
 import RMXNodeConfig from "@/components/rmx/RMXNodeConfig";
 import RMXRunPanel from "@/components/rmx/RMXRunPanel";
+import RMXBrainBox from "@/components/rmx/RMXBrainBox";
 
 export default function NODAPage() {
   const [nodes, setNodes] = useState([]);
@@ -25,9 +26,22 @@ export default function NODAPage() {
   const [exampleEmail, setExampleEmail] = useState("");
   const [toast, setToast] = useState(null);
   const [autoRun, setAutoRun] = useState(false);
+  const [brainOpen, setBrainOpen] = useState(false);
+  const [currentUserEmail, setCurrentUserEmail] = useState("");
   const autoRunTimerRef = useRef(null);
   const runningRef = useRef(false);
   useEffect(() => { runningRef.current = running; }, [running]);
+
+  useEffect(() => {
+    base44.auth.me().then((u) => setCurrentUserEmail(u?.email || "")).catch(() => {});
+  }, []);
+
+  const handleBrainBuild = (newNodes, name) => {
+    setNodes(newNodes);
+    if (name) setWorkflowName(name);
+    setSelectedNodeId(null);
+    showToast(`Brain built ${newNodes.length} step${newNodes.length === 1 ? "" : "s"}`);
+  };
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
@@ -160,6 +174,23 @@ export default function NODAPage() {
       return "";
     };
 
+    // For email body: collect ALL prior outputs (text + image URLs) in order
+    const getAllPriorOutputs = () => {
+      const idx = nodes.findIndex((n) => n.id === node.id);
+      const parts = [];
+      for (let i = 0; i < idx; i++) {
+        const prev = nodes[i];
+        const out = context[prev.id];
+        if (out === undefined || out === null) continue;
+        if (prev.type === "ai_image" && typeof out === "string") {
+          parts.push(out); // raw URL — email step will turn into <img>
+        } else {
+          parts.push(stringify(out));
+        }
+      }
+      return parts.join("\n\n");
+    };
+
     const stringify = (val) => {
       if (val === null || val === undefined) return "";
       if (typeof val === "string") return val;
@@ -172,8 +203,14 @@ export default function NODAPage() {
     const interpolate = (str) => {
       if (typeof str !== "string") return str;
       return str.replace(/\{\{(\w+)\}\}/g, (_, key) => {
+        if (key === "result") {
+          // For email steps, expand {{result}} to ALL prior outputs (text + image URLs).
+          // For other steps, just use the most recent output.
+          if (node.type === "send_email") return getAllPriorOutputs();
+          const prev = getPrevOutput();
+          return stringify(prev);
+        }
         const prev = getPrevOutput();
-        if (key === "result") return stringify(prev);
         if (prev && typeof prev === "object") return stringify(prev[key] ?? "");
         return stringify(prev);
       });
@@ -193,17 +230,57 @@ export default function NODAPage() {
       case "send_email": {
         const to = interpolate(node.config.to || "").trim();
         const subject = interpolate(node.config.subject || "").trim();
-        const body = interpolate(node.config.body || "");
         const fromName = (node.config.from_name || "").trim();
         if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
           throw new Error(`Invalid recipient email: "${to}"`);
         }
         if (!subject) throw new Error("Subject is required");
+
+        // Collect every image URL produced by previous ai_image steps
+        const idx = nodes.findIndex((n) => n.id === node.id);
+        const imageUrls = [];
+        const textOutputs = [];
+        for (let i = 0; i < idx; i++) {
+          const prev = nodes[i];
+          const out = context[prev.id];
+          if (prev.type === "ai_image" && typeof out === "string" && /^https?:\/\//.test(out)) {
+            imageUrls.push(out);
+          } else if (prev.type === "ai_prompt" && out) {
+            textOutputs.push(stringify(out));
+          }
+        }
+
+        let body = interpolate(node.config.body || "");
         if (!body) throw new Error("Body is required");
-        const payload = { to, subject, body };
+
+        // Convert to HTML and embed images. If body looks like plain text, wrap it.
+        const isHtml = /<[a-z][\s\S]*>/i.test(body);
+        let htmlBody = isHtml ? body : body.replace(/\n/g, "<br/>");
+
+        // Replace any raw image URLs in body with <img> tags
+        htmlBody = htmlBody.replace(
+          /(https?:\/\/[^\s<"']+\.(?:png|jpg|jpeg|gif|webp)(?:\?[^\s<"']*)?)/gi,
+          (url) => `<img src="${url}" alt="" style="max-width:100%;border-radius:12px;margin:12px 0;display:block;" />`
+        );
+
+        // If there are image URLs from prior ai_image steps that aren't already in the body, append them
+        const stillMissing = imageUrls.filter((u) => !htmlBody.includes(u));
+        if (stillMissing.length) {
+          htmlBody += stillMissing
+            .map((u) => `<img src="${u}" alt="" style="max-width:100%;border-radius:12px;margin:12px 0;display:block;" />`)
+            .join("");
+        }
+
+        const payload = { to, subject, body: htmlBody };
         if (fromName) payload.from_name = fromName;
         await base44.integrations.Core.SendEmail(payload);
-        return { sent: true, to, subject, sent_at: new Date().toISOString() };
+        return {
+          sent: true,
+          to,
+          subject,
+          images_embedded: imageUrls.length,
+          sent_at: new Date().toISOString(),
+        };
       }
       case "delay": {
         const ms = (Number(node.config.seconds) || 1) * 1000;
@@ -289,6 +366,13 @@ export default function NODAPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setBrainOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-fuchsia-500/20 to-cyan-500/20 hover:from-fuchsia-500/30 hover:to-cyan-500/30 border border-fuchsia-500/40 rounded-lg text-fuchsia-100 text-sm font-bold shadow-lg shadow-fuchsia-500/10"
+            title="Describe what you want — AI builds the workflow"
+          >
+            <Brain className="w-4 h-4" /> Brain
+          </button>
           <button
             onClick={loadExample}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 rounded-lg text-purple-200 text-sm font-bold"
@@ -376,6 +460,15 @@ export default function NODAPage() {
           <RMXNodeLibrary onPick={addNode} onClose={() => setShowLibrary(false)} />
         )}
       </AnimatePresence>
+
+      {/* Brain modal — natural-language workflow builder */}
+      <RMXBrainBox
+        open={brainOpen}
+        onClose={() => setBrainOpen(false)}
+        onBuild={handleBrainBuild}
+        currentEmail={currentUserEmail}
+      />
+
 
       {/* Run logs panel */}
       <AnimatePresence>
