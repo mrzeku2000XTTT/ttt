@@ -32,6 +32,7 @@ export default function NODAPage() {
   const [currentUserEmail, setCurrentUserEmail] = useState("");
   const autoRunTimerRef = useRef(null);
   const runningRef = useRef(false);
+  const isAutoRunRef = useRef(false);
   useEffect(() => { runningRef.current = running; }, [running]);
 
   useEffect(() => {
@@ -60,7 +61,10 @@ export default function NODAPage() {
     if (!autoRun || nodes.length === 0) return;
     if (autoRunTimerRef.current) clearTimeout(autoRunTimerRef.current);
     autoRunTimerRef.current = setTimeout(() => {
-      if (!runningRef.current) runWorkflow();
+      if (!runningRef.current) {
+        isAutoRunRef.current = true;
+        runWorkflow();
+      }
     }, 1200);
     return () => clearTimeout(autoRunTimerRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -168,6 +172,7 @@ export default function NODAPage() {
     }
     log(`■ Finished`, "success");
     setRunning(false);
+    isAutoRunRef.current = false;
   };
 
   const executeNode = async (node, context) => {
@@ -321,7 +326,10 @@ export default function NODAPage() {
         const tweetText = fullText.length > 275
           ? fullText.slice(0, 272).trimEnd() + "…"
           : fullText;
-        // Always copy the FULL text so user can paste the rest if needed
+        // Skip opening X during auto-run — only fire on explicit Run clicks
+        if (isAutoRunRef.current) {
+          return { skipped: "auto-run", chars: tweetText.length };
+        }
         try { await navigator.clipboard.writeText(fullText); } catch {}
         const intent = `https://x.com/intent/post?text=${encodeURIComponent(tweetText)}`;
         window.open(intent, "_blank", "noopener,noreferrer");
