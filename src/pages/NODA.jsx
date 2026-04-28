@@ -780,21 +780,37 @@ export default function NODAPage() {
                   <button
                     onClick={async () => {
                       try { await navigator.clipboard.writeText(xPostModal.fullText); } catch {}
-                      showToast("Text copied");
+                      showToast("Text copied — paste in X");
                     }}
                     className="flex-1 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 text-xs font-bold"
                   >
                     Copy text
                   </button>
                   {xPostModal.imageUrl && (
-                    <a
-                      href={xPostModal.imageUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 text-center px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 text-xs font-bold"
+                    <button
+                      onClick={async () => {
+                        try {
+                          const resp = await fetch(xPostModal.imageUrl);
+                          const blob = await resp.blob();
+                          let finalBlob = blob;
+                          if (blob.type !== "image/png") {
+                            const bitmap = await createImageBitmap(blob);
+                            const canvas = document.createElement("canvas");
+                            canvas.width = bitmap.width;
+                            canvas.height = bitmap.height;
+                            canvas.getContext("2d").drawImage(bitmap, 0, 0);
+                            finalBlob = await new Promise((r) => canvas.toBlob(r, "image/png"));
+                          }
+                          await navigator.clipboard.write([new ClipboardItem({ "image/png": finalBlob })]);
+                          showToast("Image copied — paste in X with Ctrl/Cmd+V");
+                        } catch (e) {
+                          showToast("Couldn't copy. Right-click the preview → Copy image", "error");
+                        }
+                      }}
+                      className="flex-1 px-3 py-2 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-sky-100 text-xs font-bold"
                     >
-                      Open image
-                    </a>
+                      Copy image
+                    </button>
                   )}
                 </div>
               </div>
