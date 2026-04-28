@@ -59,48 +59,74 @@ export default function BrandStudio() {
     setBusy(true);
     setInput("");
 
-    const userMsg = await base44.entities.BrandMessage.create({
-      brand_id: brand.id,
-      owner_email: user.email,
-      role: "user",
-      kind: "text",
-      content: text,
-    });
-    setMessages((m) => [...m, userMsg]);
+    try {
+      const userMsg = await base44.entities.BrandMessage.create({
+        brand_id: brand.id,
+        owner_email: user.email,
+        role: "user",
+        kind: "text",
+        content: text,
+      });
+      setMessages((m) => [...m, userMsg]);
 
-    let currentBrand = brand;
-    let history = [...messages, userMsg];
-    let lastUserText = text;
-    let advance = true;
-    let safety = 0;
+      let currentBrand = brand;
+      let history = [...messages, userMsg];
+      let lastUserText = text;
+      let advance = true;
+      let safety = 0;
 
-    while (advance && safety < 5) {
-      safety += 1;
-      const result = await runBrandAgent({ brand: currentBrand, userMessage: lastUserText, history });
+      while (advance && safety < 5) {
+        safety += 1;
+        let result;
+        try {
+          result = await runBrandAgent({ brand: currentBrand, userMessage: lastUserText, history });
+        } catch (err) {
+          console.warn("[BrandStudio] agent step failed:", err);
+          const errMsg = await base44.entities.BrandMessage.create({
+            brand_id: currentBrand.id,
+            owner_email: user.email,
+            role: "assistant",
+            kind: "text",
+            content: "Hit a snag on that step. Try sending again or rephrase what you'd like.",
+          });
+          setMessages((prev) => [...prev, errMsg]);
+          break;
+        }
 
-      if (result.brandUpdates && Object.keys(result.brandUpdates).length > 0) {
-        currentBrand = await base44.entities.Brand.update(currentBrand.id, result.brandUpdates);
-        setBrand(currentBrand);
+        if (result.brandUpdates && Object.keys(result.brandUpdates).length > 0) {
+          try {
+            currentBrand = await base44.entities.Brand.update(currentBrand.id, result.brandUpdates);
+            setBrand(currentBrand);
+          } catch (err) {
+            console.warn("[BrandStudio] brand update failed:", err);
+          }
+        }
+
+        for (const m of result.messages || []) {
+          try {
+            const saved = await base44.entities.BrandMessage.create({
+              brand_id: currentBrand.id,
+              owner_email: user.email,
+              role: m.role,
+              kind: m.kind || "text",
+              content: m.content,
+              data: m.data || {},
+            });
+            setMessages((prev) => [...prev, saved]);
+            history = [...history, saved];
+          } catch (err) {
+            console.warn("[BrandStudio] message save failed:", err);
+          }
+        }
+
+        advance = !!result.autoAdvance;
+        lastUserText = "";
       }
-
-      for (const m of result.messages || []) {
-        const saved = await base44.entities.BrandMessage.create({
-          brand_id: currentBrand.id,
-          owner_email: user.email,
-          role: m.role,
-          kind: m.kind || "text",
-          content: m.content,
-          data: m.data || {},
-        });
-        setMessages((prev) => [...prev, saved]);
-        history = [...history, saved];
-      }
-
-      advance = !!result.autoAdvance;
-      lastUserText = "";
+    } catch (err) {
+      console.warn("[BrandStudio] send failed:", err);
+    } finally {
+      setBusy(false);
     }
-
-    setBusy(false);
   };
 
   const onPickName = (n) => send(n);
