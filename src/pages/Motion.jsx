@@ -64,7 +64,7 @@ ${prompt}`,
     // Strip imports — we provide React + lucide-react via ESM
     let body = code
       .replace(/^\s*import[^\n;]*;?\s*$/gm, "")
-      .replace(/^\s*export\s+default\s+/gm, "const __DEFAULT_EXPORT__ = ")
+      .replace(/^\s*export\s+default\s+/gm, "__DEFAULT_EXPORT__ = ")
       .replace(/^\s*export\s+/gm, "");
 
     return `<!DOCTYPE html><html><head><meta charset="utf-8"/>
