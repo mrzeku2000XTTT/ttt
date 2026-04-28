@@ -7,21 +7,99 @@ import {
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import RMXNodeLibrary from "@/components/rmx/RMXNodeLibrary";
-import RMXCanvas from "@/components/rmx/RMXCanvas";
+import RMXInfiniteCanvas from "@/components/rmx/RMXInfiniteCanvas";
 import RMXNodeConfig from "@/components/rmx/RMXNodeConfig";
 import RMXRunPanel from "@/components/rmx/RMXRunPanel";
 import RMXBrainBox from "@/components/rmx/RMXBrainBox";
 import NodaSaveModal from "@/components/rmx/NodaSaveModal";
+import NodaWorkflowTabs from "@/components/rmx/NodaWorkflowTabs";
+import SplitDivider from "@/components/rmx/SplitDivider";
+
+// Tab factory
+const makeTab = (name = "Untitled NODA Workflow") => ({
+  id: `tab_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+  name,
+  nodes: [],
+  selectedNodeId: null,
+});
 
 export default function NODAPage() {
-  const [nodes, setNodes] = useState([]);
-  const [selectedNodeId, setSelectedNodeId] = useState(null);
+  // Multi-workflow tabs
+  const [tabs, setTabs] = useState(() => [makeTab()]);
+  const [activeTabId, setActiveTabId] = useState(() => null);
+
+  // Active tab is always derived
+  const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
+
+  // Mirrored convenience accessors — keep existing logic untouched
+  const nodes = activeTab?.nodes || [];
+  const selectedNodeId = activeTab?.selectedNodeId || null;
+  const workflowName = activeTab?.name || "Untitled NODA Workflow";
+
+  // Initialize active tab id once
+  useEffect(() => {
+    if (!activeTabId && tabs[0]) setActiveTabId(tabs[0].id);
+  }, [activeTabId, tabs]);
+
+  const updateActiveTab = (updater) => {
+    setTabs((prev) =>
+      prev.map((t) => (t.id === (activeTabId || prev[0].id) ? { ...t, ...updater(t) } : t))
+    );
+  };
+
+  const setNodes = (nextOrFn) => {
+    updateActiveTab((t) => ({
+      nodes: typeof nextOrFn === "function" ? nextOrFn(t.nodes) : nextOrFn,
+    }));
+  };
+
+  const setSelectedNodeId = (id) => updateActiveTab(() => ({ selectedNodeId: id }));
+  const setWorkflowName = (name) => updateActiveTab(() => ({ name }));
+
+  // Tab actions
+  const handleNewTab = () => {
+    const t = makeTab(`Workflow ${tabs.length + 1}`);
+    setTabs((prev) => [...prev, t]);
+    setActiveTabId(t.id);
+  };
+  const handleCloseTab = (id) => {
+    setTabs((prev) => {
+      const idx = prev.findIndex((t) => t.id === id);
+      const next = prev.filter((t) => t.id !== id);
+      if (next.length === 0) {
+        const fresh = makeTab();
+        setActiveTabId(fresh.id);
+        return [fresh];
+      }
+      if (id === activeTabId) {
+        const fallback = next[Math.max(0, idx - 1)];
+        setActiveTabId(fallback.id);
+      }
+      return next;
+    });
+  };
+  const handleRenameTab = (id, name) => {
+    setTabs((prev) => prev.map((t) => (t.id === id ? { ...t, name } : t)));
+  };
+
   const [showLibrary, setShowLibrary] = useState(false);
   const [running, setRunning] = useState(false);
   const [runLogs, setRunLogs] = useState([]);
   const [showRunPanel, setShowRunPanel] = useState(false);
-  const [workflowName, setWorkflowName] = useState("Untitled NODA Workflow");
   const [worldOpen, setWorldOpen] = useState(false);
+
+  // Resizable config-panel width (desktop only)
+  const [configPanelWidth, setConfigPanelWidth] = useState(() => {
+    try {
+      const saved = parseInt(localStorage.getItem("noda_config_w") || "", 10);
+      return Number.isFinite(saved) ? Math.max(280, Math.min(720, saved)) : 384;
+    } catch {
+      return 384;
+    }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("noda_config_w", String(configPanelWidth)); } catch {}
+  }, [configPanelWidth]);
   const [layoutHidden, setLayoutHidden] = useState(false);
   const [exampleModalOpen, setExampleModalOpen] = useState(false);
   const [exampleEmail, setExampleEmail] = useState("");
@@ -729,9 +807,22 @@ Be specific. Cite numbers, dates, names, quotes. No filler. No "as an AI". Use r
         </div>
       </div>
 
+      {/* Workflow tabs */}
+      <div className={layoutHidden ? "hidden" : ""}>
+        <NodaWorkflowTabs
+          tabs={tabs}
+          activeTabId={activeTab?.id}
+          onSelect={setActiveTabId}
+          onNew={handleNewTab}
+          onClose={handleCloseTab}
+          onRename={handleRenameTab}
+        />
+      </div>
+
       {/* Workspace */}
       <div className={`relative z-10 flex-1 flex overflow-hidden ${layoutHidden ? "hidden" : ""}`}>
-        <RMXCanvas
+        <RMXInfiniteCanvas
+          key={activeTab?.id}
           nodes={nodes}
           selectedNodeId={selectedNodeId}
           onSelect={setSelectedNodeId}
@@ -739,26 +830,33 @@ Be specific. Cite numbers, dates, names, quotes. No filler. No "as an AI". Use r
           onAdd={() => setShowLibrary(true)}
         />
 
-        {/* Right config panel - split screen */}
+        {/* Right config panel - resizable split screen (desktop) */}
         <AnimatePresence>
           {selectedNode && (
-            <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: "auto", opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="flex-shrink-0 border-l border-white/10 bg-black/60 backdrop-blur-xl overflow-hidden"
-            >
-              <div className="w-80 sm:w-96 h-full overflow-y-auto">
-                <RMXNodeConfig
-                  node={selectedNode}
-                  onUpdate={(updates) => updateNode(selectedNode.id, updates)}
-                  onClose={() => setSelectedNodeId(null)}
-                  onDelete={() => deleteNode(selectedNode.id)}
-                  onWorldToggle={setWorldOpen}
-                />
+            <>
+              {/* Drag handle — desktop only */}
+              <div className="hidden lg:block">
+                <SplitDivider onResize={setConfigPanelWidth} minWidth={280} maxWidth={720} />
               </div>
-            </motion.div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="flex-shrink-0 border-l border-white/10 bg-black/60 backdrop-blur-xl overflow-hidden"
+                style={{ width: typeof window !== "undefined" && window.innerWidth >= 1024 ? configPanelWidth : undefined }}
+              >
+                <div className="w-full sm:w-96 lg:w-full h-full overflow-y-auto">
+                  <RMXNodeConfig
+                    node={selectedNode}
+                    onUpdate={(updates) => updateNode(selectedNode.id, updates)}
+                    onClose={() => setSelectedNodeId(null)}
+                    onDelete={() => deleteNode(selectedNode.id)}
+                    onWorldToggle={setWorldOpen}
+                  />
+                </div>
+              </motion.div>
+            </>
           )}
         </AnimatePresence>
       </div>
