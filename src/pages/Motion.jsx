@@ -17,6 +17,11 @@ export default function MotionPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [showMarketplace, setShowMarketplace] = useState(false);
   const [activePreset, setActivePreset] = useState(MOTION_PRESETS[0]);
+  const [attachedRefs, setAttachedRefs] = useState([]);
+
+  const handleAttachReference = (ref) => setAttachedRefs((prev) => [...prev, ref]);
+  const handleRemoveRef = (idx) => setAttachedRefs((prev) => prev.filter((_, i) => i !== idx));
+  const handleAppendToPrompt = (text) => setPrompt((prev) => `${prev}\n\nADDITIONAL INSTRUCTION:\n${text}`);
 
   useEffect(() => {
     base44.auth.me()
@@ -30,6 +35,9 @@ export default function MotionPage() {
     setGenerating(true);
     setCode("");
     try {
+      const refNote = attachedRefs.length > 0
+        ? `\n\nVISUAL REFERENCES: ${attachedRefs.length} reference image(s) attached. Match their visual style, color palette, and composition.`
+        : "";
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `You are a senior React + Tailwind engineer who specializes in vibe-coded landing page templates.
 
@@ -42,11 +50,12 @@ Requirements:
 - Inject Google Fonts via useEffect that appends a <link> to document.head
 - Only import from "react" and "lucide-react"
 - Make it pixel-faithful to the spec
-- Render every section described
+- Render every section described${refNote}
 
 SPEC:
 ${prompt}`,
         model: "claude_sonnet_4_6",
+        file_urls: attachedRefs.map((r) => r.url),
       });
 
       // Strip code fences if model included them anyway
@@ -197,6 +206,10 @@ try {
           onReset={handleReset}
           onBrowsePresets={() => setShowMarketplace(true)}
           activePreset={activePreset}
+          attachedRefs={attachedRefs}
+          onAttachReference={handleAttachReference}
+          onRemoveRef={handleRemoveRef}
+          onAppendToPrompt={handleAppendToPrompt}
         />
         <MotionCodeOutput
           code={code}

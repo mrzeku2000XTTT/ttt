@@ -1,5 +1,6 @@
 import React from "react";
 import { Sparkles, Loader2, Wand2, RotateCcw, LayoutGrid } from "lucide-react";
+import MotionPromptChat from "./MotionPromptChat";
 
 export default function MotionPromptPanel({
   prompt,
@@ -9,6 +10,10 @@ export default function MotionPromptPanel({
   onReset,
   onBrowsePresets,
   activePreset,
+  attachedRefs,
+  onAttachReference,
+  onRemoveRef,
+  onAppendToPrompt,
 }) {
   return (
     <div className="flex flex-col h-full bg-zinc-950 border-r border-white/10">
@@ -53,6 +58,13 @@ export default function MotionPromptPanel({
         />
       </div>
 
+      <MotionPromptChat
+        attachedRefs={attachedRefs}
+        onAttachReference={onAttachReference}
+        onRemoveRef={onRemoveRef}
+        onAppendToPrompt={onAppendToPrompt}
+      />
+
       <div className="p-4 border-t border-white/10">
         <button
           onClick={onGenerate}
@@ -70,7 +82,9 @@ export default function MotionPromptPanel({
           )}
         </button>
         <p className="text-[10px] text-white/40 mt-2 text-center">
-          Outputs a single self-contained React component
+          {attachedRefs?.length > 0
+            ? `${attachedRefs.length} reference image${attachedRefs.length > 1 ? "s" : ""} will be sent`
+            : "Outputs a single self-contained React component"}
         </p>
       </div>
     </div>
