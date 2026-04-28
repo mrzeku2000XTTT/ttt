@@ -1,7 +1,8 @@
 import { ORBIS_NFT_PROMPT } from "@/components/motion/orbisPrompt";
+import { MOTION_PRESETS_NEW } from "@/components/motion/motionPresetsNew";
 
 // Marketplace of vibe-code presets for Motion
-export const MOTION_PRESETS = [
+const _BASE_PRESETS = [
   {
     id: "orbis-nft",
     name: "Orbis.Nft",
@@ -392,5 +393,7 @@ OUTPUT
 - No markdown fences`,
   },
 ];
+
+export const MOTION_PRESETS = [..._BASE_PRESETS, ...MOTION_PRESETS_NEW];
 
 export const PRESET_CATEGORIES = ["All", ...Array.from(new Set(MOTION_PRESETS.map(p => p.category)))];

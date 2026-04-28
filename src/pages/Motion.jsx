@@ -28,6 +28,13 @@ export default function MotionPage() {
       .then((u) => setUser(u))
       .catch(() => setUser(null))
       .finally(() => setAuthLoading(false));
+
+    // Pick up seeded prompt from Idea Generator
+    const seeded = sessionStorage.getItem("motion_seeded_prompt");
+    if (seeded) {
+      setPrompt(seeded);
+      sessionStorage.removeItem("motion_seeded_prompt");
+    }
   }, []);
 
   const handleGenerate = async () => {

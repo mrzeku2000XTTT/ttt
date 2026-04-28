@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Lightbulb } from "lucide-react";
 import MotionLandingHero from "@/components/motion/MotionLandingHero";
 import MotionLandingFeatures from "@/components/motion/MotionLandingFeatures";
 import MotionLandingPresets from "@/components/motion/MotionLandingPresets";
@@ -19,12 +19,20 @@ export default function MotionLandingPage() {
             Motion
           </span>
         </div>
-        <Link
-          to="/MotionStudio"
-          className="text-[12px] font-bold px-4 py-2 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white transition-all"
-        >
-          Launch
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/MotionIdeas"
+            className="text-[12px] font-bold px-3 py-2 rounded-full bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 hover:text-yellow-200 flex items-center gap-1.5 transition-all"
+          >
+            <Lightbulb className="w-3.5 h-3.5" /> Ideas
+          </Link>
+          <Link
+            to="/MotionStudio"
+            className="text-[12px] font-bold px-4 py-2 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white transition-all"
+          >
+            Launch
+          </Link>
+        </div>
       </nav>
 
       <MotionLandingHero />
