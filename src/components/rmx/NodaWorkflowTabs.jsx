@@ -1,5 +1,5 @@
 import React from "react";
-import { Plus, X, Zap } from "lucide-react";
+import { Plus, X, Zap, Loader2 } from "lucide-react";
 
 /**
  * NodaWorkflowTabs — Chrome-style tab bar for managing multiple workflows in one session.
@@ -21,7 +21,11 @@ export default function NodaWorkflowTabs({ tabs, activeTabId, onSelect, onNew, o
             }`}
             style={{ maxWidth: 200 }}
           >
-            <Zap className={`w-3 h-3 flex-shrink-0 ${active ? "text-cyan-400" : "text-white/40"}`} />
+            {tab.isRunning ? (
+              <Loader2 className="w-3 h-3 flex-shrink-0 text-emerald-400 animate-spin" />
+            ) : (
+              <Zap className={`w-3 h-3 flex-shrink-0 ${active ? "text-cyan-400" : "text-white/40"}`} />
+            )}
             <input
               value={tab.name}
               onChange={(e) => onRename(tab.id, e.target.value)}

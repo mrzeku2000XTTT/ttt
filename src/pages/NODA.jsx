@@ -15,12 +15,16 @@ import NodaSaveModal from "@/components/rmx/NodaSaveModal";
 import NodaWorkflowTabs from "@/components/rmx/NodaWorkflowTabs";
 import SplitDivider from "@/components/rmx/SplitDivider";
 
-// Tab factory
+// Tab factory — each tab carries its own run state so multiple tabs can run concurrently.
 const makeTab = (name = "Untitled NODA Workflow") => ({
   id: `tab_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
   name,
   nodes: [],
   selectedNodeId: null,
+  running: false,
+  runLogs: [],
+  showRunPanel: false,
+  autoRun: false,
 });
 
 export default function NODAPage() {
@@ -83,10 +87,23 @@ export default function NODAPage() {
   };
 
   const [showLibrary, setShowLibrary] = useState(false);
-  const [running, setRunning] = useState(false);
-  const [runLogs, setRunLogs] = useState([]);
-  const [showRunPanel, setShowRunPanel] = useState(false);
   const [worldOpen, setWorldOpen] = useState(false);
+
+  // Per-tab run state — derived from active tab so each tab runs independently.
+  const running = !!activeTab?.running;
+  const runLogs = activeTab?.runLogs || [];
+  const showRunPanel = !!activeTab?.showRunPanel;
+
+  // Helper: update a SPECIFIC tab by id (not the active one) — critical for concurrent runs
+  // because the user may switch tabs mid-run.
+  const updateTabById = (tabId, updater) => {
+    setTabs((prev) =>
+      prev.map((t) => (t.id === tabId ? { ...t, ...(typeof updater === "function" ? updater(t) : updater) } : t))
+    );
+  };
+
+  // Track currently-running tab ids in a ref so we can guard against double-run on the same tab.
+  const runningTabsRef = useRef(new Set());
 
   // Resizable config-panel width (desktop only)
   const [configPanelWidth, setConfigPanelWidth] = useState(() => {
@@ -104,37 +121,52 @@ export default function NODAPage() {
   const [exampleModalOpen, setExampleModalOpen] = useState(false);
   const [exampleEmail, setExampleEmail] = useState("");
   const [toast, setToast] = useState(null);
-  const [autoRun, setAutoRun] = useState(false);
   const [brainOpen, setBrainOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
   const [currentUserEmail, setCurrentUserEmail] = useState("");
   const [xPostModal, setXPostModal] = useState(null); // { text, intent }
-  const autoRunTimerRef = useRef(null);
-  const runningRef = useRef(false);
-  const isAutoRunRef = useRef(false);
-  const skipNextAutoRunRef = useRef(false); // suppresses one auto-run cycle after Brain build
-  useEffect(() => { runningRef.current = running; }, [running]);
+
+  // Auto-run state is per-tab now.
+  const autoRun = !!activeTab?.autoRun;
+  const setAutoRun = (val) => updateActiveTab(() => ({ autoRun: val }));
+
+  // Per-tab auto-run timers + skip flags (keyed by tab id)
+  const autoRunTimersRef = useRef({}); // { [tabId]: timeoutId }
+  const skipNextAutoRunRef = useRef({}); // { [tabId]: boolean }
+  // Track if a run was triggered by auto-run (per tab) — used to suppress popups during auto runs.
+  const autoRunFlagRef = useRef({}); // { [tabId]: boolean }
 
   useEffect(() => {
     base44.auth.me().then((u) => setCurrentUserEmail(u?.email || "")).catch(() => {});
   }, []);
 
   const handleBrainBuild = (newNodes, name) => {
-    // Cancel any pending auto-run timer + flag the next auto-run cycle to be skipped,
-    // so we don't get a duplicate run after the explicit Brain run.
-    if (autoRunTimerRef.current) clearTimeout(autoRunTimerRef.current);
-    skipNextAutoRunRef.current = true;
-    setAutoRun(false);
-    setNodes(newNodes);
-    if (name) setWorkflowName(name);
-    setSelectedNodeId(null);
+    // Brain always builds + runs into the CURRENTLY ACTIVE tab. Capture id NOW
+    // so concurrent Brain calls from different tabs each target their own tab.
+    const targetTabId = activeTab?.id;
+    if (!targetTabId) return;
+
+    // Cancel pending auto-run timer for THIS tab and skip the next auto cycle.
+    if (autoRunTimersRef.current[targetTabId]) {
+      clearTimeout(autoRunTimersRef.current[targetTabId]);
+    }
+    skipNextAutoRunRef.current[targetTabId] = true;
+
+    // Apply build to the target tab (use updateTabById — works even if user switches tabs)
+    updateTabById(targetTabId, () => ({
+      nodes: newNodes,
+      ...(name ? { name } : {}),
+      selectedNodeId: null,
+      autoRun: false,
+    }));
+
     showToast(`Brain built ${newNodes.length} step${newNodes.length === 1 ? "" : "s"} — running now`);
-    // Kick off the run immediately with the FRESH nodes (state isn't committed yet,
-    // so we must pass them explicitly — otherwise runWorkflow sees the old empty array).
+
+    // Kick off the run immediately with the FRESH nodes for this specific tab.
     setTimeout(() => {
-      if (!runningRef.current) {
-        isAutoRunRef.current = false;
-        runWorkflow(newNodes);
+      if (!runningTabsRef.current.has(targetTabId)) {
+        autoRunFlagRef.current[targetTabId] = false;
+        runWorkflowForTab(targetTabId, newNodes, name);
       }
     }, 100);
   };
@@ -144,24 +176,32 @@ export default function NODAPage() {
     setTimeout(() => setToast(null), 2800);
   };
 
-  // Auto-run: debounce-trigger workflow whenever nodes/config change
+  // Auto-run: debounce-trigger workflow whenever ANY tab's nodes/config change
+  // and that tab has autoRun enabled. Each tab gets its own debounce timer.
   useEffect(() => {
-    if (!autoRun || nodes.length === 0) return;
-    // Skip ONE auto-run cycle right after Brain builds — Brain triggers its own explicit run.
-    if (skipNextAutoRunRef.current) {
-      skipNextAutoRunRef.current = false;
-      return;
-    }
-    if (autoRunTimerRef.current) clearTimeout(autoRunTimerRef.current);
-    autoRunTimerRef.current = setTimeout(() => {
-      if (!runningRef.current) {
-        isAutoRunRef.current = true;
-        runWorkflow();
+    tabs.forEach((tab) => {
+      if (!tab.autoRun || tab.nodes.length === 0) return;
+      if (skipNextAutoRunRef.current[tab.id]) {
+        skipNextAutoRunRef.current[tab.id] = false;
+        return;
       }
-    }, 1200);
-    return () => clearTimeout(autoRunTimerRef.current);
+      if (autoRunTimersRef.current[tab.id]) clearTimeout(autoRunTimersRef.current[tab.id]);
+      autoRunTimersRef.current[tab.id] = setTimeout(() => {
+        if (!runningTabsRef.current.has(tab.id)) {
+          autoRunFlagRef.current[tab.id] = true;
+          runWorkflowForTab(tab.id);
+        }
+      }, 1200);
+    });
+    return () => {
+      // Don't clear timers globally — each tab manages its own.
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoRun, JSON.stringify(nodes.map((n) => ({ id: n.id, type: n.type, config: n.config })))]);
+  }, [JSON.stringify(tabs.map((t) => ({
+    id: t.id,
+    autoRun: t.autoRun,
+    sig: t.nodes.map((n) => ({ id: n.id, type: n.type, config: n.config })),
+  })))]);
 
   const addNode = (template) => {
     const id = `node_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -234,20 +274,36 @@ export default function NODAPage() {
     showToast(`Example loaded — will email ${myEmail.trim()}`);
   };
 
-  const runWorkflow = async (overrideNodes) => {
-    // Use overrideNodes when called right after a state-setting build (Brain),
-    // because React hasn't committed the new nodes yet.
-    const activeNodes = Array.isArray(overrideNodes) && overrideNodes.length > 0 ? overrideNodes : nodes;
+  // Run a workflow on a SPECIFIC tab. Multiple tabs can run concurrently —
+  // each invocation captures its own tab id, nodes, and run state.
+  const runWorkflowForTab = async (tabId, overrideNodes, overrideName) => {
+    if (!tabId) return;
+    if (runningTabsRef.current.has(tabId)) return; // already running on this tab — guard
+
+    // Snapshot the tab at the moment we start (handles user switching tabs mid-run)
+    const tabAtStart = tabs.find((t) => t.id === tabId);
+    const activeNodes = Array.isArray(overrideNodes) && overrideNodes.length > 0
+      ? overrideNodes
+      : (tabAtStart?.nodes || []);
     if (activeNodes.length === 0) return;
-    setRunning(true);
-    setRunLogs([]);
-    setShowRunPanel(true);
+    const wfName = overrideName || tabAtStart?.name || "Untitled NODA Workflow";
+
+    runningTabsRef.current.add(tabId);
+    updateTabById(tabId, () => ({ running: true, runLogs: [], showRunPanel: true }));
 
     const log = (msg, type = "info") => {
-      setRunLogs((prev) => [...prev, { msg, type, time: new Date().toLocaleTimeString() }]);
+      const entry = { msg, type, time: new Date().toLocaleTimeString() };
+      updateTabById(tabId, (t) => ({ runLogs: [...(t.runLogs || []), entry] }));
     };
 
-    log(`▶ Starting "${workflowName}"`);
+    // Per-tab node updater — must NOT use updateNode (which targets the active tab)
+    const updateNodeInTab = (nodeId, updates) => {
+      updateTabById(tabId, (t) => ({
+        nodes: t.nodes.map((n) => (n.id === nodeId ? { ...n, ...updates } : n)),
+      }));
+    };
+
+    log(`▶ Starting "${wfName}"`);
     let context = {};
     const startedAt = Date.now();
     let allSucceeded = true;
@@ -255,9 +311,9 @@ export default function NODAPage() {
     for (const node of activeNodes) {
       log(`→ ${node.label}...`);
       try {
-        const result = await executeNode(node, context, activeNodes);
+        const result = await executeNode(node, context, activeNodes, tabId);
         context[node.id] = result;
-        updateNode(node.id, { output: result });
+        updateNodeInTab(node.id, { output: result });
         if (node.type === "send_email" && result?.sent) {
           log(`✓ Email sent to ${result.to}`, "success");
         } else {
@@ -272,11 +328,10 @@ export default function NODAPage() {
     log(`■ Finished`, "success");
 
     // APEX zero-knowledge proof — seal only on full success.
-    // We hash metadata only (workflow id + node count + timestamp) — no payload data.
     if (allSucceeded && currentUserEmail) {
       try {
         const durationMs = Date.now() - startedAt;
-        const proofPayload = `${workflowName}|${activeNodes.length}|${durationMs}|${startedAt}|${currentUserEmail}`;
+        const proofPayload = `${wfName}|${activeNodes.length}|${durationMs}|${startedAt}|${currentUserEmail}`;
         const buf = new TextEncoder().encode(proofPayload);
         const hashBuf = await crypto.subtle.digest("SHA-256", buf);
         const proofHash = Array.from(new Uint8Array(hashBuf))
@@ -285,7 +340,7 @@ export default function NODAPage() {
         await base44.entities.ApexProof.create({
           owner_email: currentUserEmail,
           workflow_id: `local-${startedAt}`,
-          workflow_name: workflowName,
+          workflow_name: wfName,
           node_count: activeNodes.length,
           duration_ms: durationMs,
           proof_hash: proofHash,
@@ -297,12 +352,22 @@ export default function NODAPage() {
       }
     }
 
-    setRunning(false);
-    isAutoRunRef.current = false;
+    updateTabById(tabId, () => ({ running: false }));
+    runningTabsRef.current.delete(tabId);
+    autoRunFlagRef.current[tabId] = false;
   };
 
-  const executeNode = async (node, context, overrideNodes) => {
+  // Thin wrapper: Run button always runs the currently active tab.
+  const runWorkflow = (overrideNodes) => {
+    const tabId = activeTab?.id;
+    if (!tabId) return;
+    autoRunFlagRef.current[tabId] = false;
+    return runWorkflowForTab(tabId, overrideNodes);
+  };
+
+  const executeNode = async (node, context, overrideNodes, tabId) => {
     const nodeList = Array.isArray(overrideNodes) && overrideNodes.length > 0 ? overrideNodes : nodes;
+    const isAutoRun = !!(tabId && autoRunFlagRef.current[tabId]);
     // Find most recent previous node's output (walk backward from current node)
     const getPrevOutput = () => {
       const idx = nodeList.findIndex((n) => n.id === node.id);
@@ -611,7 +676,7 @@ Be specific. Cite numbers, dates, names, quotes. No filler. No "as an AI". Use r
           ? fullText.slice(0, 272).trimEnd() + "…"
           : fullText;
         // Skip opening X during auto-run — only fire on explicit Run clicks
-        if (isAutoRunRef.current) {
+        if (isAutoRun) {
           return { skipped: "auto-run", chars: tweetText.length };
         }
         // Try to fetch the image as a Blob so the user can paste it into the X composer
@@ -810,7 +875,7 @@ Be specific. Cite numbers, dates, names, quotes. No filler. No "as an AI". Use r
       {/* Workflow tabs */}
       <div className={layoutHidden ? "hidden" : ""}>
         <NodaWorkflowTabs
-          tabs={tabs}
+          tabs={tabs.map((t) => ({ ...t, isRunning: !!t.running }))}
           activeTabId={activeTab?.id}
           onSelect={setActiveTabId}
           onNew={handleNewTab}
@@ -890,13 +955,13 @@ Be specific. Cite numbers, dates, names, quotes. No filler. No "as an AI". Use r
       />
 
 
-      {/* Run logs panel */}
+      {/* Run logs panel — shows the active tab's logs */}
       <AnimatePresence>
         {showRunPanel && (
           <RMXRunPanel
             logs={runLogs}
             running={running}
-            onClose={() => setShowRunPanel(false)}
+            onClose={() => updateActiveTab(() => ({ showRunPanel: false }))}
           />
         )}
       </AnimatePresence>
