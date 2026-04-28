@@ -321,7 +321,25 @@ export default function NODAPage() {
         };
       }
       case "send_to_x": {
-        const fullText = stringify(getPrevOutput()).trim();
+        // Prefer the most recent TEXT output (skip ai_image URLs).
+        // Also collect the most recent image URL so we can append it to the tweet.
+        const idx = nodes.findIndex((n) => n.id === node.id);
+        let textPart = "";
+        let imageUrl = "";
+        for (let i = idx - 1; i >= 0; i--) {
+          const prev = nodes[i];
+          const out = context[prev.id];
+          if (out === undefined || out === null) continue;
+          if (prev.type === "ai_image" && typeof out === "string") {
+            if (!imageUrl) imageUrl = out;
+          } else if (!textPart) {
+            textPart = stringify(out).trim();
+          }
+          if (textPart && imageUrl) break;
+        }
+        // If no text was found (only images), fall back to the most recent output
+        const baseText = textPart || stringify(getPrevOutput()).trim();
+        const fullText = imageUrl ? `${baseText}\n\n${imageUrl}` : baseText;
         // X limits tweets to 280 chars — truncate so text actually loads in compose
         const tweetText = fullText.length > 275
           ? fullText.slice(0, 272).trimEnd() + "…"
@@ -338,6 +356,7 @@ export default function NODAPage() {
           copied: true,
           chars: tweetText.length,
           truncated: fullText.length > 275,
+          image_attached: !!imageUrl,
         };
       }
       case "delay": {
