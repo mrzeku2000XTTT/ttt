@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 import BrandMessageBubble from "@/components/launchbrand/BrandMessageBubble";
 import BrandWorkspace from "@/components/launchbrand/BrandWorkspace";
 import BrandPreview from "@/components/launchbrand/BrandPreview";
+import BrandCodeExport from "@/components/launchbrand/BrandCodeExport";
 import { runBrandAgent } from "@/components/launchbrand/brandAgent";
 
 export default function BrandStudio() {
@@ -199,12 +200,13 @@ export default function BrandStudio() {
             </div>
           </div>
 
-          {/* Right panel - desktop (Preview / Workspace tabs) */}
+          {/* Right panel - desktop (Preview / Assets / Code tabs) */}
           <div className="hidden lg:flex flex-col border-l border-white/10 bg-black/40 min-h-0">
             <div className="flex items-center gap-1 px-3 py-2 border-b border-white/10 flex-shrink-0">
               {[
                 { id: "preview", label: "Preview" },
                 { id: "workspace", label: "Assets" },
+                { id: "code", label: "Code" },
               ].map((t) => (
                 <button
                   key={t.id}
@@ -220,7 +222,9 @@ export default function BrandStudio() {
               ))}
             </div>
             <div className="flex-1 min-h-0 overflow-hidden">
-              {rightTab === "preview" ? <BrandPreview brand={brand} /> : <BrandWorkspace brand={brand} />}
+              {rightTab === "preview" && <BrandPreview brand={brand} />}
+              {rightTab === "workspace" && <BrandWorkspace brand={brand} />}
+              {rightTab === "code" && <BrandCodeExport brand={brand} />}
             </div>
           </div>
 
@@ -238,6 +242,7 @@ export default function BrandStudio() {
                   {[
                     { id: "preview", label: "Preview" },
                     { id: "workspace", label: "Assets" },
+                    { id: "code", label: "Code" },
                   ].map((t) => (
                     <button
                       key={t.id}
@@ -253,7 +258,9 @@ export default function BrandStudio() {
                   ))}
                 </div>
                 <div className="flex-1 min-h-0 overflow-hidden">
-                  {rightTab === "preview" ? <BrandPreview brand={brand} /> : <BrandWorkspace brand={brand} />}
+                  {rightTab === "preview" && <BrandPreview brand={brand} />}
+                  {rightTab === "workspace" && <BrandWorkspace brand={brand} />}
+                  {rightTab === "code" && <BrandCodeExport brand={brand} />}
                 </div>
               </motion.div>
             )}
