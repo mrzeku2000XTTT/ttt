@@ -39,18 +39,31 @@ export default function MotionPage() {
         ? `\n\nVISUAL REFERENCES: ${attachedRefs.length} reference image(s) attached. Match their visual style, color palette, and composition.`
         : "";
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a senior React + Tailwind engineer who specializes in vibe-coded landing page templates.
+        prompt: `You are a senior React + Tailwind engineer who specializes in HIGH-MOTION, vibe-coded landing pages with cinematic animation. Your output must FEEL ALIVE — never static, never flat.
 
 Build a single self-contained React component based on the spec below. Output ONLY the raw JSX/JS source code — no markdown fences, no commentary, no explanations.
 
-Requirements:
+CRITICAL ANIMATION REQUIREMENTS (match the energy of the Orbis NFT reference):
+- Use background looping <video> tags with autoPlay/muted/loop/playsInline whenever the spec mentions cinematic, hero, video, or atmospheric backgrounds. Use placeholder MP4 URLs from sample-videos.com or coverr-style CDN if no specific URL is given.
+- Add custom @keyframes animations in the <style> tag for: floating elements (translateY loops), pulsing glows (box-shadow + opacity), shimmer effects (background-position sweep), marquee scrolls (translateX infinite), fade-in-up entrances, gradient shifts, and subtle parallax tilts on hover.
+- Use scroll-triggered fade/slide-in via IntersectionObserver in useEffect — elements should animate IN as they enter viewport, not appear instantly.
+- Mouse-tracking effects: at minimum, hero sections should respond to mouse movement (gradient follow, parallax tilt, or spotlight effect) using onMouseMove handlers.
+- Hover states must be RICH: scale transforms, shadow lifts, border glows, color shifts, icon rotations — all with transition-all duration-300 or longer.
+- Animated counters/stats where appropriate (numbers that count up on scroll-in).
+- Liquid/glass effects with backdrop-blur, layered gradients, and animated noise/grain overlays via CSS.
+- Buttons must have hover micro-interactions (arrow slide, glow pulse, shimmer sweep).
+- Include floating/orbiting decorative elements (blurred gradient orbs, animated SVG paths, particle dots) in hero sections.
+
+TECHNICAL REQUIREMENTS:
 - Default export, component name should match the brand in the spec
 - All Tailwind classes inline
-- Include any custom CSS via a <style>{\`...\`}</style> tag inside the component
+- All custom keyframes & animations via <style>{\`...\`}</style> tag inside the component
 - Inject Google Fonts via useEffect that appends a <link> to document.head
 - Only import from "react" and "lucide-react"
-- Make it pixel-faithful to the spec
-- Render every section described${refNote}
+- Use useState + useEffect for scroll position, mouse position, intersection observer
+- Make it pixel-faithful to the spec AND animation-faithful to the energy described
+- Render every section described — do not skip sections
+- The result must FEEL like a $50k design agency landing page, not a static template${refNote}
 
 SPEC:
 ${prompt}`,
