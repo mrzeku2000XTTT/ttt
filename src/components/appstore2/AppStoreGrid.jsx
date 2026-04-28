@@ -179,37 +179,78 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
     );
   }
 
+  // Re-key the container on filter change so the stagger replays when user
+  // searches or switches categories — adds a satisfying re-shuffle feel.
+  const containerKey = `${category}|${search}|${filtered.length}`;
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.025, delayChildren: 0.05 },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 12, scale: 0.85 },
+    show: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: { type: "spring", stiffness: 380, damping: 26 },
+    },
+  };
+
   return (
     <div>
       {category === "All" && !search && (
         <h2 className="text-lg font-[800] mb-4">All Apps</h2>
       )}
-      <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-x-3 gap-y-5">
+      <motion.div
+        key={containerKey}
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+        className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-x-3 gap-y-5"
+      >
         {filtered.map((app, i) => {
           const inner = (
             <motion.div
-              initial={{ opacity: 0, scale: 0.92 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: Math.min(i * 0.015, 0.4) }}
-              whileHover={{ y: -3 }}
-              whileTap={{ scale: 0.95 }}
+              variants={itemVariants}
+              whileHover={{ y: -5, scale: 1.06, transition: { type: "spring", stiffness: 400, damping: 18 } }}
+              whileTap={{ scale: 0.92 }}
               className="flex flex-col items-center gap-1.5 cursor-pointer group"
             >
-              <div className="relative w-[60px] h-[60px] sm:w-[64px] sm:h-[64px] rounded-2xl overflow-hidden shadow-sm group-hover:shadow-md transition-shadow">
+              <motion.div
+                className="relative w-[60px] h-[60px] sm:w-[64px] sm:h-[64px] rounded-2xl overflow-hidden shadow-sm group-hover:shadow-xl transition-shadow"
+                animate={{ y: [0, -1.5, 0] }}
+                transition={{
+                  duration: 3 + (i % 5) * 0.4,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: (i % 7) * 0.15,
+                }}
+              >
                 <AppIcon app={app} />
+                {/* Glossy hover sheen */}
+                <div className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-white/30 via-transparent to-transparent" />
                 {app.premium && (
-                  <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center shadow-sm">
+                  <motion.div
+                    className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center shadow-sm"
+                    animate={{ scale: [1, 1.15, 1] }}
+                    transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+                  >
                     <Crown className="w-2.5 h-2.5 text-yellow-900" />
-                  </div>
+                  </motion.div>
                 )}
                 {app.community && (
                   <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-cyan-500 rounded-full flex items-center justify-center shadow-sm" title="Community submission">
                     <ExternalLink className="w-2.5 h-2.5 text-white" />
                   </div>
                 )}
-              </div>
+              </motion.div>
               <div className="text-center max-w-[72px]">
-                <p className="text-[11px] font-semibold text-zinc-800 truncate leading-tight">{app.name}</p>
+                <p className="text-[11px] font-semibold text-zinc-800 truncate leading-tight group-hover:text-zinc-950 transition-colors">{app.name}</p>
                 <p className="text-[9px] text-zinc-400 truncate">{app.desc}</p>
               </div>
             </motion.div>
@@ -232,7 +273,7 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
             </Link>
           );
         })}
-      </div>
+      </motion.div>
     </div>
   );
 }
