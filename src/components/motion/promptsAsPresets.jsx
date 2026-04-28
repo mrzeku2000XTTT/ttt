@@ -21,15 +21,18 @@ You are building a HIGH-END, motion-rich, agency-grade landing page. Match the c
 
 `;
 
-// Category → unsplash preview thumbnail
-const PREVIEW_BY_CATEGORY = {
-  "E-commerce": "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&q=70",
-  "Ad Creative": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&q=70",
-  "Editorial": "https://images.unsplash.com/photo-1519682337058-a94d519337bc?w=800&q=70",
-  "SaaS": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=70",
-  "Brand": "https://images.unsplash.com/photo-1561070791-2526d30994b8?w=800&q=70",
-  "Event": "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=800&q=70",
-  "Comparison": "https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&q=70",
+// Per-prompt AI-generated previews (matched to each prompt's spec)
+const PREVIEW_BY_ID = {
+  "ecom-luxury-perfume": "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/84dd7bfc2_generated_image.png",
+  "ecom-skincare":       "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4d1d77ef3_generated_image.png",
+  "ad-streetwear":       "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/234c4e07c_generated_image.png",
+  "ad-watch":            "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/c321e92b7_generated_image.png",
+  "editorial-magazine":  "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/dc98e95cd_generated_image.png",
+  "ui-saas-dashboard":   "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/a8fd54e90_generated_image.png",
+  "ui-livestream":       "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1d756f0f3_generated_image.png",
+  "brand-mascot":        "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1a0f25b0e_generated_image.png",
+  "event-conference":    "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/d9f75af87_generated_image.png",
+  "comparison-vs":       "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/a6f59d8b8_generated_image.png",
 };
 
 const ACCENT_BY_CATEGORY = {
@@ -49,7 +52,7 @@ export const PROMPT_LIBRARY_AS_PRESETS = WEBSITE_PROMPTS.map((p) => ({
   category: p.category,
   vibe: `${p.case} · ${p.author}`,
   accent: ACCENT_BY_CATEGORY[p.category] || "from-cyan-400 to-purple-500",
-  preview: PREVIEW_BY_CATEGORY[p.category] || "https://images.unsplash.com/photo-1545239351-1141bd82e8a6?w=800&q=70",
+  preview: PREVIEW_BY_ID[p.id] || "https://images.unsplash.com/photo-1545239351-1141bd82e8a6?w=800&q=70",
   prompt: HIGH_END_HEADER(p.title) + p.prompt,
   fromLibrary: true,
 }));
