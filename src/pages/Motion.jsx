@@ -29,10 +29,20 @@ export default function MotionPage() {
       .catch(() => setUser(null))
       .finally(() => setAuthLoading(false));
 
-    // Pick up seeded prompt from Idea Generator
+    // Pick up seeded prompt from Idea Generator or Prompt Library
     const seeded = sessionStorage.getItem("motion_seeded_prompt");
+    const seededTitle = sessionStorage.getItem("motion_seeded_title");
     if (seeded) {
       setPrompt(seeded);
+      if (seededTitle) {
+        setActivePreset({
+          id: "seeded",
+          name: seededTitle,
+          tagline: "From Prompt Library",
+          prompt: seeded,
+        });
+        sessionStorage.removeItem("motion_seeded_title");
+      }
       sessionStorage.removeItem("motion_seeded_prompt");
     }
   }, []);

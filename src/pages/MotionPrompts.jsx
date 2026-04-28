@@ -21,14 +21,36 @@ export default function MotionPromptsPage() {
     });
   }, [activeCat, query]);
 
+  // High-end cinematic vibe header — same energy as the default Orbis preset
+  // Prepended to every library prompt so output quality is consistent
+  const HIGH_END_HEADER = (title) => `# ${title}
+
+You are building a HIGH-END, motion-rich, agency-grade landing page. Match the cinematic energy of premium NFT / luxury brand sites:
+- Background looping video or animated gradient mesh in the hero
+- Layered scroll-triggered reveals via IntersectionObserver
+- Mouse-tracking parallax / spotlight on hero
+- Floating decorative orbs, animated SVG paths, particle dots
+- Liquid glass / backdrop-blur layered cards
+- Rich hover micro-interactions (lift, glow, shimmer, icon slide)
+- Animated count-up numbers on stats
+- Marquee scrolls where appropriate
+- Custom @keyframes for floating, pulsing, shimmer, gradient shifts
+- Inject Google Fonts via useEffect
+- Pixel-faithful AND animation-faithful — every section must feel alive
+
+`;
+
+  const buildFullPrompt = (p) => HIGH_END_HEADER(p.title) + p.prompt;
+
   const handleCopy = async (p) => {
-    await navigator.clipboard.writeText(p.prompt);
+    await navigator.clipboard.writeText(buildFullPrompt(p));
     setCopiedId(p.id);
     setTimeout(() => setCopiedId(null), 1500);
   };
 
   const handleSendToStudio = (p) => {
-    sessionStorage.setItem("motion_seeded_prompt", p.prompt);
+    sessionStorage.setItem("motion_seeded_prompt", buildFullPrompt(p));
+    sessionStorage.setItem("motion_seeded_title", p.title);
     window.location.href = "/MotionStudio";
   };
 
