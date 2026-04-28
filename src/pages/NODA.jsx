@@ -308,18 +308,17 @@ export default function NODAPage() {
         // Collect every image URL produced by previous ai_image steps
         const idx = nodeList.findIndex((n) => n.id === node.id);
         const imageUrls = [];
-        const textOutputs = [];
         for (let i = 0; i < idx; i++) {
           const prev = nodeList[i];
           const out = context[prev.id];
           if (prev.type === "ai_image" && typeof out === "string" && /^https?:\/\//.test(out)) {
             imageUrls.push(out);
-          } else if (prev.type === "ai_prompt" && out) {
-            textOutputs.push(stringify(out));
           }
         }
 
-        let body = interpolate(node.config.body || "");
+        const rawBody = node.config.body || "";
+        const hasResultToken = /\{\{\s*result\s*\}\}/i.test(rawBody);
+        let body = interpolate(rawBody);
         if (!body) throw new Error("Body is required");
 
         // Convert to HTML and embed images. If body looks like plain text, wrap it.
@@ -333,10 +332,10 @@ export default function NODAPage() {
           (url) => `<img src="${url}" alt="" style="max-width:100%;border-radius:12px;margin:12px 0;display:block;" />`
         );
 
-        // If there are image URLs from prior ai_image steps that aren't already in the body, append them
-        const stillMissing = imageUrls.filter((u) => !htmlBody.includes(u));
-        if (stillMissing.length) {
-          htmlBody += stillMissing
+        // Only append images if the body did NOT use {{result}} — otherwise images are already embedded
+        // via the {{result}} expansion (which includes all prior outputs including image URLs).
+        if (!hasResultToken && imageUrls.length) {
+          htmlBody += imageUrls
             .map((u) => `<img src="${u}" alt="" style="max-width:100%;border-radius:12px;margin:12px 0;display:block;" />`)
             .join("");
         }
