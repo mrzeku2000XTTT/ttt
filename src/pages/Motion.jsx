@@ -18,6 +18,7 @@ export default function MotionPage() {
   const [showMarketplace, setShowMarketplace] = useState(false);
   const [activePreset, setActivePreset] = useState(MOTION_PRESETS[0]);
   const [attachedRefs, setAttachedRefs] = useState([]);
+  const [mobileTab, setMobileTab] = useState("prompt"); // 'prompt' | 'code'
 
   const handleAttachReference = (ref) => setAttachedRefs((prev) => [...prev, ref]);
   const handleRemoveRef = (idx) => setAttachedRefs((prev) => prev.filter((_, i) => i !== idx));
@@ -93,8 +94,11 @@ ${prompt}`,
       clean = clean.replace(/^```(?:jsx?|tsx?|javascript|typescript)?\s*/i, "");
       clean = clean.replace(/\s*```\s*$/i, "");
       setCode(clean);
+      // Auto-switch to code tab on mobile when generation completes
+      setMobileTab("code");
     } catch (err) {
       setCode(`// Generation failed: ${err.message || "unknown error"}\n// Try again or simplify the prompt.`);
+      setMobileTab("code");
     } finally {
       setGenerating(false);
     }
@@ -226,26 +230,56 @@ try {
         <span className="text-[11px] text-white/40 font-medium hidden sm:block">Admin only</span>
       </nav>
 
-      {/* Two-pane workspace */}
+      {/* Mobile tab switcher (hidden on lg+) */}
+      <div className="lg:hidden flex items-center gap-1 px-3 py-2 bg-black/40 border-b border-white/10 flex-shrink-0">
+        <button
+          onClick={() => setMobileTab("prompt")}
+          className={`flex-1 h-9 rounded-lg text-[12px] font-bold transition-all ${
+            mobileTab === "prompt"
+              ? "bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-white border border-white/15"
+              : "text-white/50 hover:text-white/80"
+          }`}
+        >
+          Prompt
+        </button>
+        <button
+          onClick={() => setMobileTab("code")}
+          className={`flex-1 h-9 rounded-lg text-[12px] font-bold transition-all flex items-center justify-center gap-1.5 ${
+            mobileTab === "code"
+              ? "bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-white border border-white/15"
+              : "text-white/50 hover:text-white/80"
+          }`}
+        >
+          Code
+          {generating && <Loader2 className="w-3 h-3 animate-spin" />}
+          {!generating && code && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />}
+        </button>
+      </div>
+
+      {/* Two-pane workspace — stacked on mobile, side-by-side on lg+ */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 min-h-0">
-        <MotionPromptPanel
-          prompt={prompt}
-          setPrompt={setPrompt}
-          onGenerate={handleGenerate}
-          generating={generating}
-          onReset={handleReset}
-          onBrowsePresets={() => setShowMarketplace(true)}
-          activePreset={activePreset}
-          attachedRefs={attachedRefs}
-          onAttachReference={handleAttachReference}
-          onRemoveRef={handleRemoveRef}
-          onAppendToPrompt={handleAppendToPrompt}
-        />
-        <MotionCodeOutput
-          code={code}
-          onPreview={() => setShowPreview(true)}
-          hasPreview={!!code && !generating}
-        />
+        <div className={`${mobileTab === "prompt" ? "flex" : "hidden"} lg:flex flex-col min-h-0`}>
+          <MotionPromptPanel
+            prompt={prompt}
+            setPrompt={setPrompt}
+            onGenerate={handleGenerate}
+            generating={generating}
+            onReset={handleReset}
+            onBrowsePresets={() => setShowMarketplace(true)}
+            activePreset={activePreset}
+            attachedRefs={attachedRefs}
+            onAttachReference={handleAttachReference}
+            onRemoveRef={handleRemoveRef}
+            onAppendToPrompt={handleAppendToPrompt}
+          />
+        </div>
+        <div className={`${mobileTab === "code" ? "flex" : "hidden"} lg:flex flex-col min-h-0`}>
+          <MotionCodeOutput
+            code={code}
+            onPreview={() => setShowPreview(true)}
+            hasPreview={!!code && !generating}
+          />
+        </div>
       </div>
 
       {/* Preset marketplace */}
