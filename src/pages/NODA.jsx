@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft, Zap, Plus, Play, Sparkles, Loader2, Eye, EyeOff, Wand2, Mail, X, Repeat, Brain,
+  ArrowLeft, Zap, Plus, Play, Sparkles, Loader2, Eye, EyeOff, Wand2, Mail, X, Repeat, Brain, Save,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import RMXNodeLibrary from "@/components/rmx/RMXNodeLibrary";
@@ -11,6 +11,7 @@ import RMXCanvas from "@/components/rmx/RMXCanvas";
 import RMXNodeConfig from "@/components/rmx/RMXNodeConfig";
 import RMXRunPanel from "@/components/rmx/RMXRunPanel";
 import RMXBrainBox from "@/components/rmx/RMXBrainBox";
+import NodaSaveModal from "@/components/rmx/NodaSaveModal";
 
 export default function NODAPage() {
   const [nodes, setNodes] = useState([]);
