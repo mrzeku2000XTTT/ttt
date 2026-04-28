@@ -321,26 +321,20 @@ export default function NODAPage() {
         };
       }
       case "send_to_x": {
-        // Prefer the most recent TEXT output (skip ai_image URLs).
-        // Also collect the most recent image URL so we can append it to the tweet.
+        // Use the most recent TEXT output (skip ai_image URLs — X can't preview them inline anyway).
         const idx = nodes.findIndex((n) => n.id === node.id);
         let textPart = "";
-        let imageUrl = "";
         for (let i = idx - 1; i >= 0; i--) {
           const prev = nodes[i];
           const out = context[prev.id];
           if (out === undefined || out === null) continue;
-          if (prev.type === "ai_image" && typeof out === "string") {
-            if (!imageUrl) imageUrl = out;
-          } else if (!textPart) {
-            textPart = stringify(out).trim();
-          }
-          if (textPart && imageUrl) break;
+          if (prev.type === "ai_image") continue; // skip image steps
+          textPart = stringify(out).trim();
+          break;
         }
-        // If no text was found (only images), fall back to the most recent output
-        const baseText = textPart || stringify(getPrevOutput()).trim();
-        const fullText = imageUrl ? `${baseText}\n\n${imageUrl}` : baseText;
-        // X limits tweets to 280 chars — truncate so text actually loads in compose
+        // Fallback: if no text step exists, use whatever the previous output was
+        const fullText = textPart || stringify(getPrevOutput()).trim();
+        // X limits tweets to 280 chars
         const tweetText = fullText.length > 275
           ? fullText.slice(0, 272).trimEnd() + "…"
           : fullText;
@@ -356,7 +350,6 @@ export default function NODAPage() {
           copied: true,
           chars: tweetText.length,
           truncated: fullText.length > 275,
-          image_attached: !!imageUrl,
         };
       }
       case "delay": {
