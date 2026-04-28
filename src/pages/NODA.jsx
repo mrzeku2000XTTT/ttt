@@ -45,9 +45,12 @@ export default function NODAPage() {
     setSelectedNodeId(null);
     setAutoRun(true);
     showToast(`Brain built ${newNodes.length} step${newNodes.length === 1 ? "" : "s"} — running now`);
-    // Kick off the run immediately instead of waiting for the auto-run debounce
+    // Kick off the run immediately as an EXPLICIT run (not auto-run) so X compose opens
     setTimeout(() => {
-      if (!runningRef.current) runWorkflow();
+      if (!runningRef.current) {
+        isAutoRunRef.current = false;
+        runWorkflow();
+      }
     }, 250);
   };
 
