@@ -253,15 +253,28 @@ export default function NODAPage() {
       });
     };
 
+    // Retry helper for flaky network calls (AI image gen especially)
+    const withRetry = async (fn, attempts = 2) => {
+      let lastErr;
+      for (let i = 0; i < attempts; i++) {
+        try { return await fn(); }
+        catch (e) {
+          lastErr = e;
+          if (i < attempts - 1) await new Promise((r) => setTimeout(r, 800));
+        }
+      }
+      throw lastErr;
+    };
+
     switch (node.type) {
       case "ai_prompt": {
         const prompt = interpolate(node.config.prompt || "");
-        const res = await base44.integrations.Core.InvokeLLM({ prompt });
+        const res = await withRetry(() => base44.integrations.Core.InvokeLLM({ prompt }));
         return res;
       }
       case "ai_image": {
         const prompt = interpolate(node.config.prompt || "");
-        const res = await base44.integrations.Core.GenerateImage({ prompt });
+        const res = await withRetry(() => base44.integrations.Core.GenerateImage({ prompt }));
         return res?.url || "";
       }
       case "send_email": {
