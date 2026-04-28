@@ -113,7 +113,35 @@ export default function HeroHeader() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-radial from-cyan-100/40 via-transparent to-transparent rounded-full blur-3xl" />
       </div>
 
-      <div className="relative max-w-3xl mx-auto text-center">
+      {/* Floating white dragon — animated hero element */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.85, y: -40 }}
+        animate={{
+          opacity: [0, 0.85, 0.85],
+          scale: [0.85, 1, 1],
+          y: [-40, 0, 0],
+        }}
+        transition={{ duration: 1.6, ease: "easeOut", times: [0, 0.7, 1] }}
+        className="absolute inset-x-0 top-0 flex justify-center pointer-events-none z-0"
+      >
+        <motion.img
+          src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/18bc89c23_generated_image.png"
+          alt=""
+          draggable={false}
+          animate={{
+            y: [0, -18, 0],
+            rotate: [-1.5, 1.5, -1.5],
+          }}
+          transition={{
+            y: { duration: 6, repeat: Infinity, ease: "easeInOut" },
+            rotate: { duration: 9, repeat: Infinity, ease: "easeInOut" },
+          }}
+          className="w-[min(90vw,820px)] max-w-none object-contain opacity-90 mix-blend-screen drop-shadow-[0_25px_60px_rgba(186,230,253,0.55)] -mt-6 sm:-mt-12"
+          style={{ filter: "drop-shadow(0 0 60px rgba(165, 243, 252, 0.4))" }}
+        />
+      </motion.div>
+
+      <div className="relative max-w-3xl mx-auto text-center z-10">
         {/* TapToTip */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
