@@ -9,15 +9,27 @@ const ALL_PRESETS = [...MOTION_PRESETS, ...MOTION_PRESETS_EXTRA, ...PROMPT_LIBRA
 const ALL_CATEGORIES = ["All", ...Array.from(new Set(ALL_PRESETS.map((p) => p.category)))];
 
 export default function MotionPresetMarketplace({ open, onClose, onPick }) {
+  const [source, setSource] = useState("all"); // 'all' | 'presets' | 'library'
   const [category, setCategory] = useState("All");
   const [query, setQuery] = useState("");
 
-  const filtered = ALL_PRESETS.filter((p) => {
+  const sourceFiltered = ALL_PRESETS.filter((p) => {
+    if (source === "presets") return !p.fromLibrary;
+    if (source === "library") return !!p.fromLibrary;
+    return true;
+  });
+
+  const visibleCategories = ["All", ...Array.from(new Set(sourceFiltered.map((p) => p.category)))];
+
+  const filtered = sourceFiltered.filter((p) => {
     const inCat = category === "All" || p.category === category;
     const q = query.trim().toLowerCase();
     const inQ = !q || p.name.toLowerCase().includes(q) || p.tagline.toLowerCase().includes(q) || p.vibe.toLowerCase().includes(q);
     return inCat && inQ;
   });
+
+  const libraryCount = ALL_PRESETS.filter((p) => p.fromLibrary).length;
+  const presetCount = ALL_PRESETS.length - libraryCount;
 
   return (
     <AnimatePresence>
@@ -56,6 +68,30 @@ export default function MotionPresetMarketplace({ open, onClose, onPick }) {
               </button>
             </div>
 
+            {/* Source tabs */}
+            <div className="px-6 pt-3 border-b border-white/5 flex items-center gap-1.5 flex-shrink-0">
+              {[
+                { id: "all", label: "All", count: ALL_PRESETS.length },
+                { id: "presets", label: "Presets", count: presetCount },
+                { id: "library", label: "Prompt Library", count: libraryCount },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => { setSource(tab.id); setCategory("All"); }}
+                  className={`px-3.5 py-2 text-[12px] font-bold border-b-2 transition-colors flex items-center gap-1.5 ${
+                    source === tab.id
+                      ? "border-cyan-400 text-white"
+                      : "border-transparent text-white/40 hover:text-white/70"
+                  }`}
+                >
+                  {tab.label}
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${source === tab.id ? "bg-cyan-500/20 text-cyan-300" : "bg-white/5 text-white/40"}`}>
+                    {tab.count}
+                  </span>
+                </button>
+              ))}
+            </div>
+
             {/* Filters */}
             <div className="px-6 py-3 border-b border-white/10 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center flex-shrink-0">
               <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 flex-1 max-w-sm">
@@ -63,12 +99,12 @@ export default function MotionPresetMarketplace({ open, onClose, onPick }) {
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search presets…"
+                  placeholder="Search…"
                   className="bg-transparent outline-none text-sm text-white placeholder:text-white/30 flex-1"
                 />
               </div>
               <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
-                {ALL_CATEGORIES.map((c) => (
+                {visibleCategories.map((c) => (
                   <button
                     key={c}
                     onClick={() => setCategory(c)}
@@ -117,10 +153,15 @@ function PresetCard({ preset, onPick }) {
           loading="lazy"
         />
         <div className={`absolute inset-0 bg-gradient-to-tr ${preset.accent} opacity-30 mix-blend-overlay`} />
-        <div className="absolute top-2 left-2">
+        <div className="absolute top-2 left-2 flex gap-1.5">
           <span className="px-2 py-0.5 rounded-full bg-black/60 backdrop-blur text-white text-[9px] font-bold tracking-widest uppercase">
             {preset.category}
           </span>
+          {preset.fromLibrary && (
+            <span className="px-2 py-0.5 rounded-full bg-cyan-500/90 backdrop-blur text-black text-[9px] font-black tracking-widest uppercase">
+              Library
+            </span>
+          )}
         </div>
       </div>
       <div className="p-4">
