@@ -1,13 +1,17 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Search, Sparkles, ArrowRight } from "lucide-react";
-import { MOTION_PRESETS, PRESET_CATEGORIES } from "@/components/motion/motionPresets";
+import { MOTION_PRESETS } from "@/components/motion/motionPresets";
+import { MOTION_PRESETS_EXTRA } from "@/components/motion/motionPresetsExtra";
+
+const ALL_PRESETS = [...MOTION_PRESETS, ...MOTION_PRESETS_EXTRA];
+const ALL_CATEGORIES = ["All", ...Array.from(new Set(ALL_PRESETS.map((p) => p.category)))];
 
 export default function MotionPresetMarketplace({ open, onClose, onPick }) {
   const [category, setCategory] = useState("All");
   const [query, setQuery] = useState("");
 
-  const filtered = MOTION_PRESETS.filter((p) => {
+  const filtered = ALL_PRESETS.filter((p) => {
     const inCat = category === "All" || p.category === category;
     const q = query.trim().toLowerCase();
     const inQ = !q || p.name.toLowerCase().includes(q) || p.tagline.toLowerCase().includes(q) || p.vibe.toLowerCase().includes(q);
@@ -63,7 +67,7 @@ export default function MotionPresetMarketplace({ open, onClose, onPick }) {
                 />
               </div>
               <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
-                {PRESET_CATEGORIES.map((c) => (
+                {ALL_CATEGORIES.map((c) => (
                   <button
                     key={c}
                     onClick={() => setCategory(c)}
