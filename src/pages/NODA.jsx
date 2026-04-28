@@ -353,18 +353,20 @@ export default function NODAPage() {
         };
       }
       case "send_to_x": {
-        // Use the most recent TEXT output (skip ai_image URLs — X can't preview them inline anyway).
+        // Find most recent TEXT output AND most recent IMAGE URL from prior steps.
         const idx = nodeList.findIndex((n) => n.id === node.id);
         let textPart = "";
+        let imageUrl = "";
         for (let i = idx - 1; i >= 0; i--) {
           const prev = nodeList[i];
           const out = context[prev.id];
           if (out === undefined || out === null) continue;
-          if (prev.type === "ai_image") continue; // skip image steps
-          textPart = stringify(out).trim();
-          break;
+          if (prev.type === "ai_image" && typeof out === "string" && /^https?:\/\//.test(out)) {
+            if (!imageUrl) imageUrl = out;
+            continue;
+          }
+          if (!textPart) textPart = stringify(out).trim();
         }
-        // Fallback: if no text step exists, use whatever the previous output was
         const fullText = textPart || stringify(getPrevOutput()).trim();
         // X limits tweets to 280 chars
         const tweetText = fullText.length > 275
@@ -374,22 +376,49 @@ export default function NODAPage() {
         if (isAutoRunRef.current) {
           return { skipped: "auto-run", chars: tweetText.length };
         }
-        try { await navigator.clipboard.writeText(fullText); } catch {}
+        // Try to fetch the image as a Blob so the user can paste it into the X composer
+        // (X intent URL doesn't support image params — clipboard is the reliable path).
+        let imageCopied = false;
+        if (imageUrl && navigator.clipboard && window.ClipboardItem) {
+          try {
+            const resp = await fetch(imageUrl);
+            const blob = await resp.blob();
+            // Clipboard API needs PNG — convert if needed
+            let finalBlob = blob;
+            if (blob.type !== "image/png") {
+              const bitmap = await createImageBitmap(blob);
+              const canvas = document.createElement("canvas");
+              canvas.width = bitmap.width;
+              canvas.height = bitmap.height;
+              canvas.getContext("2d").drawImage(bitmap, 0, 0);
+              finalBlob = await new Promise((r) => canvas.toBlob(r, "image/png"));
+            }
+            await navigator.clipboard.write([new ClipboardItem({ "image/png": finalBlob })]);
+            imageCopied = true;
+          } catch (e) {
+            // image clipboard failed — fall back to copying text
+          }
+        }
+        // If we couldn't put the image on the clipboard, copy the text instead
+        if (!imageCopied) {
+          try { await navigator.clipboard.writeText(fullText); } catch {}
+        }
         const intent = `https://x.com/intent/post?text=${encodeURIComponent(tweetText)}`;
-        // Try popup first (works if browser allows), but ALWAYS show fallback modal
-        // with a real <a> link the user can click — popups get blocked after async awaits.
         let popup = null;
         try {
           popup = window.open(intent, "_blank", "noopener,noreferrer");
         } catch {}
         const popupBlocked = !popup || popup.closed || typeof popup.closed === "undefined";
-        if (popupBlocked) {
-          setXPostModal({ text: tweetText, intent, fullText });
+        if (popupBlocked || imageUrl) {
+          // Always show the modal when we have an image — user needs to paste it
+          setXPostModal({ text: tweetText, intent, fullText, imageUrl, imageCopied });
         }
         return {
           opened: !popupBlocked,
-          fallback_modal: popupBlocked,
-          copied: true,
+          fallback_modal: popupBlocked || !!imageUrl,
+          copied: !imageCopied,
+          image_copied: imageCopied,
+          image_url: imageUrl || null,
           chars: tweetText.length,
           truncated: fullText.length > 275,
         };
@@ -713,12 +742,31 @@ export default function NODAPage() {
                 </button>
               </div>
               <div className="p-5 space-y-4">
+                {xPostModal.imageUrl && (
+                  <div className="rounded-xl overflow-hidden border border-white/10 bg-black">
+                    <img src={xPostModal.imageUrl} alt="" className="w-full h-auto block" />
+                  </div>
+                )}
                 <div className="px-3 py-3 bg-white/5 border border-white/10 rounded-xl">
                   <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">{xPostModal.text}</p>
                 </div>
-                <p className="text-white/50 text-xs">
-                  Browser blocked the popup. Click below to open X compose with your post pre-filled.
-                </p>
+                {xPostModal.imageUrl ? (
+                  <div className="px-3 py-2.5 bg-sky-500/10 border border-sky-500/30 rounded-lg text-sky-100 text-xs leading-relaxed">
+                    {xPostModal.imageCopied ? (
+                      <>
+                        <strong>Image copied to clipboard.</strong> Open X, then press <kbd className="px-1.5 py-0.5 bg-black/40 border border-white/20 rounded text-[10px] font-mono">Ctrl/Cmd+V</kbd> in the composer to attach it.
+                      </>
+                    ) : (
+                      <>
+                        Couldn't auto-copy the image. Right-click the preview above → <em>Copy image</em>, then paste in X.
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-white/50 text-xs">
+                    Click below to open X compose with your post pre-filled.
+                  </p>
+                )}
                 <a
                   href={xPostModal.intent}
                   target="_blank"
@@ -728,15 +776,27 @@ export default function NODAPage() {
                 >
                   <span className="font-black text-base">𝕏</span> Open X to Post
                 </a>
-                <button
-                  onClick={async () => {
-                    try { await navigator.clipboard.writeText(xPostModal.fullText); } catch {}
-                    showToast("Copied to clipboard");
-                  }}
-                  className="w-full px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 text-xs font-bold"
-                >
-                  Copy text instead
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={async () => {
+                      try { await navigator.clipboard.writeText(xPostModal.fullText); } catch {}
+                      showToast("Text copied");
+                    }}
+                    className="flex-1 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 text-xs font-bold"
+                  >
+                    Copy text
+                  </button>
+                  {xPostModal.imageUrl && (
+                    <a
+                      href={xPostModal.imageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 text-center px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 text-xs font-bold"
+                    >
+                      Open image
+                    </a>
+                  )}
+                </div>
               </div>
             </motion.div>
           </motion.div>
