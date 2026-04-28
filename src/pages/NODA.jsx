@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft, Zap, Plus, Play, Sparkles, Loader2, Eye, EyeOff, Wand2,
+  ArrowLeft, Zap, Plus, Play, Sparkles, Loader2, Eye, EyeOff, Wand2, Mail, X,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import RMXNodeLibrary from "@/components/rmx/RMXNodeLibrary";
@@ -21,6 +21,14 @@ export default function NODAPage() {
   const [workflowName, setWorkflowName] = useState("Untitled NODA Workflow");
   const [worldOpen, setWorldOpen] = useState(false);
   const [layoutHidden, setLayoutHidden] = useState(false);
+  const [exampleModalOpen, setExampleModalOpen] = useState(false);
+  const [exampleEmail, setExampleEmail] = useState("");
+  const [toast, setToast] = useState(null);
+
+  const showToast = (msg, type = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 2800);
+  };
 
   const addNode = (template) => {
     const id = `node_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -48,12 +56,15 @@ export default function NODAPage() {
   };
 
   const loadExample = () => {
-    const myEmail = (typeof window !== "undefined" && window.prompt(
-      "Enter the email address to send the daily Kaspa briefing to:",
-      ""
-    )) || "";
-    if (!myEmail.trim()) return;
+    setExampleEmail("");
+    setExampleModalOpen(true);
+  };
 
+  const buildExampleWorkflow = (myEmail) => {
+    if (!myEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(myEmail.trim())) {
+      showToast("Please enter a valid email", "error");
+      return;
+    }
     const t = Date.now();
     const example = [
       {
@@ -86,6 +97,8 @@ export default function NODAPage() {
     setNodes(example);
     setWorkflowName("Daily Kaspa Email Briefing");
     setSelectedNodeId(null);
+    setExampleModalOpen(false);
+    showToast(`Example loaded — will email ${myEmail.trim()}`);
   };
 
   const runWorkflow = async () => {
@@ -341,6 +354,95 @@ export default function NODAPage() {
             running={running}
             onClose={() => setShowRunPanel(false)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Example email modal */}
+      <AnimatePresence>
+        {exampleModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+            onClick={() => setExampleModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 10, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 10, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
+            >
+              <div className="flex items-center justify-between px-5 py-3 border-b border-white/10">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                    <Wand2 className="w-3.5 h-3.5 text-white" />
+                  </div>
+                  <span className="text-white font-bold text-sm">Load example</span>
+                </div>
+                <button
+                  onClick={() => setExampleModalOpen(false)}
+                  className="text-white/50 hover:text-white p-1 rounded-md hover:bg-white/5"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="p-5">
+                <p className="text-white/60 text-xs mb-3 leading-relaxed">
+                  Daily Kaspa briefing → AI writes it → emails to you. Where should we send it?
+                </p>
+                <div className="relative">
+                  <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+                  <input
+                    autoFocus
+                    type="email"
+                    value={exampleEmail}
+                    onChange={(e) => setExampleEmail(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && buildExampleWorkflow(exampleEmail)}
+                    placeholder="you@example.com"
+                    className="w-full bg-black/40 border border-white/10 focus:border-cyan-400/60 focus:bg-black/60 rounded-lg pl-9 pr-3 py-2.5 text-white text-sm outline-none transition-colors"
+                  />
+                </div>
+                <div className="flex items-center gap-2 mt-4">
+                  <button
+                    onClick={() => setExampleModalOpen(false)}
+                    className="flex-1 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 text-sm font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => buildExampleWorkflow(exampleEmail)}
+                    className="flex-1 px-3 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white text-sm font-bold shadow-lg shadow-cyan-500/20"
+                  >
+                    Load
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-5 right-5 z-[110] max-w-xs"
+          >
+            <div className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl backdrop-blur-xl border shadow-2xl ${
+              toast.type === "error"
+                ? "bg-red-500/15 border-red-500/40 text-red-200"
+                : "bg-emerald-500/15 border-emerald-500/40 text-emerald-200"
+            }`}>
+              <div className={`w-1.5 h-1.5 rounded-full ${toast.type === "error" ? "bg-red-400" : "bg-emerald-400"} animate-pulse`} />
+              <span className="text-xs font-semibold">{toast.msg}</span>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
