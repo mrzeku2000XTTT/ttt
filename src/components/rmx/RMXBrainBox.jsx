@@ -80,16 +80,49 @@ USER REQUEST:
       });
 
       if (!result?.steps?.length) {
+        console.warn("[Brain] LLM returned no steps. Full result:", result);
         setError("Couldn't figure out the steps. Try rephrasing.");
         setThinking(false);
         return;
       }
 
+      console.log("[Brain] LLM returned steps:", result.steps);
+
+      // Aliases — handle common LLM type-name drifts
+      const TYPE_ALIASES = {
+        prompt: "ai_prompt",
+        llm: "ai_prompt",
+        text: "ai_prompt",
+        ai_text: "ai_prompt",
+        image: "ai_image",
+        generate_image: "ai_image",
+        research: "deep_research",
+        web_research: "deep_research",
+        scrape: "deep_research",
+        ttt_feed: "read_ttt_feed",
+        read_feed: "read_ttt_feed",
+        post_ttt: "post_to_ttt",
+        publish_ttt: "post_to_ttt",
+        ttt_post: "post_to_ttt",
+        post: "post_to_ttt",
+        x_post: "send_to_x",
+        tweet: "send_to_x",
+        email: "send_email",
+        wait: "delay",
+        sleep: "delay",
+      };
+
+      const droppedSteps = [];
       // Map each step to a node template
       const nodes = result.steps
         .map((step) => {
-          const tpl = NODE_TEMPLATES.find((t) => t.type === step.type);
-          if (!tpl) return null;
+          const rawType = (step?.type || "").toLowerCase().trim();
+          const resolvedType = TYPE_ALIASES[rawType] || rawType;
+          const tpl = NODE_TEMPLATES.find((t) => t.type === resolvedType);
+          if (!tpl) {
+            droppedSteps.push(rawType);
+            return null;
+          }
           const mergedConfig = { ...(tpl.defaultConfig || {}), ...(step.config || {}) };
           // Guarantee send_email always has a valid recipient — fall back to current user
           if (tpl.type === "send_email") {
@@ -114,9 +147,17 @@ USER REQUEST:
         .filter(Boolean);
 
       if (!nodes.length) {
-        setError("AI returned no valid steps.");
+        console.warn("[Brain] All steps dropped. Raw types:", droppedSteps, "Full result:", result);
+        setError(
+          droppedSteps.length
+            ? `AI returned unknown step types: ${droppedSteps.join(", ")}. Try rephrasing.`
+            : "AI returned no valid steps."
+        );
         setThinking(false);
         return;
+      }
+      if (droppedSteps.length) {
+        console.warn("[Brain] Dropped unknown steps:", droppedSteps);
       }
 
       onBuild(nodes, result.workflow_name);
