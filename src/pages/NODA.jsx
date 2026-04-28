@@ -30,6 +30,7 @@ export default function NODAPage() {
   const [brainOpen, setBrainOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
   const [currentUserEmail, setCurrentUserEmail] = useState("");
+  const [xPostModal, setXPostModal] = useState(null); // { text, intent }
   const autoRunTimerRef = useRef(null);
   const runningRef = useRef(false);
   const isAutoRunRef = useRef(false);
@@ -360,9 +361,19 @@ export default function NODAPage() {
         }
         try { await navigator.clipboard.writeText(fullText); } catch {}
         const intent = `https://x.com/intent/post?text=${encodeURIComponent(tweetText)}`;
-        window.open(intent, "_blank", "noopener,noreferrer");
+        // Try popup first (works if browser allows), but ALWAYS show fallback modal
+        // with a real <a> link the user can click — popups get blocked after async awaits.
+        let popup = null;
+        try {
+          popup = window.open(intent, "_blank", "noopener,noreferrer");
+        } catch {}
+        const popupBlocked = !popup || popup.closed || typeof popup.closed === "undefined";
+        if (popupBlocked) {
+          setXPostModal({ text: tweetText, intent, fullText });
+        }
         return {
-          opened: true,
+          opened: !popupBlocked,
+          fallback_modal: popupBlocked,
           copied: true,
           chars: tweetText.length,
           truncated: fullText.length > 275,
@@ -649,6 +660,68 @@ export default function NODAPage() {
                     Load
                   </button>
                 </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* X post fallback modal — for when popup is blocked */}
+      <AnimatePresence>
+        {xPostModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[105] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+            onClick={() => setXPostModal(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 10, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 10, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md bg-zinc-950 border border-sky-500/30 rounded-2xl shadow-2xl shadow-sky-500/10 overflow-hidden"
+            >
+              <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-gradient-to-r from-sky-500/15 to-blue-500/15">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-black flex items-center justify-center border border-white/20">
+                    <span className="text-white font-black text-sm">𝕏</span>
+                  </div>
+                  <span className="text-white font-bold text-sm">Ready to post</span>
+                </div>
+                <button
+                  onClick={() => setXPostModal(null)}
+                  className="text-white/50 hover:text-white p-1 rounded-md hover:bg-white/5"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="p-5 space-y-4">
+                <div className="px-3 py-3 bg-white/5 border border-white/10 rounded-xl">
+                  <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">{xPostModal.text}</p>
+                </div>
+                <p className="text-white/50 text-xs">
+                  Browser blocked the popup. Click below to open X compose with your post pre-filled.
+                </p>
+                <a
+                  href={xPostModal.intent}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setTimeout(() => setXPostModal(null), 200)}
+                  className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-black hover:bg-zinc-800 border border-white/20 text-white font-bold text-sm shadow-lg"
+                >
+                  <span className="font-black text-base">𝕏</span> Open X to Post
+                </a>
+                <button
+                  onClick={async () => {
+                    try { await navigator.clipboard.writeText(xPostModal.fullText); } catch {}
+                    showToast("Copied to clipboard");
+                  }}
+                  className="w-full px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 text-xs font-bold"
+                >
+                  Copy text instead
+                </button>
               </div>
             </motion.div>
           </motion.div>
