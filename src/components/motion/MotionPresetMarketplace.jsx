@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Search, Sparkles, ArrowRight } from "lucide-react";
 import { MOTION_PRESETS } from "@/components/motion/motionPresets";
 import { MOTION_PRESETS_EXTRA } from "@/components/motion/motionPresetsExtra";
+import { PROMPT_LIBRARY_AS_PRESETS } from "@/components/motion/promptsAsPresets";
 
-const ALL_PRESETS = [...MOTION_PRESETS, ...MOTION_PRESETS_EXTRA];
+const ALL_PRESETS = [...MOTION_PRESETS, ...MOTION_PRESETS_EXTRA, ...PROMPT_LIBRARY_AS_PRESETS];
 const ALL_CATEGORIES = ["All", ...Array.from(new Set(ALL_PRESETS.map((p) => p.category)))];
 
 export default function MotionPresetMarketplace({ open, onClose, onPick }) {
