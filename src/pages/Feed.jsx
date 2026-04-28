@@ -610,13 +610,13 @@ export default function FeedPage() {
 
   const handleOpenTipModal = (post) => {
     const tttWallet = user?.created_wallet_address || localStorage.getItem('ttt_wallet_address');
-    const hasAnyWallet = kaswareWallet.connected || tttWallet;
-    if (!hasAnyWallet) { setError('Please connect a wallet to send tips'); return; }
+    let hasTerra = false;
+    try { const t = JSON.parse(localStorage.getItem('terra_wallets') || '[]'); hasTerra = Array.isArray(t) && t.some(w => w?.address && w?.mnemonic); } catch {}
+    const hasKasware = kaswareWallet.connected || (typeof window !== 'undefined' && !!window.kasware);
+    if (!(hasKasware || tttWallet || hasTerra)) { setError('Connect Kasware, Terra, or a TTT wallet to tip — no login required.'); return; }
     if (!post.author_wallet_address) { setError('Post author needs a wallet to receive tips'); return; }
-    if (post.created_by === user?.email) { setError('You cannot tip your own post'); return; }
-    setTippingPost(post);
-    setShowTipModal(true);
-    setTipAmount('');
+    if (user?.email && post.created_by === user.email) { setError('You cannot tip your own post'); return; }
+    setTippingPost(post); setShowTipModal(true); setTipAmount('');
   };
 
   const handlePost = async () => {
