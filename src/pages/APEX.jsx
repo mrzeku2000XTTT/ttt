@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Shield } from "lucide-react";
 import ApexDragonScene from "@/components/apex/ApexDragonScene";
+import ApexScrollFrames from "@/components/apex/ApexScrollFrames";
 import ApexHero from "@/components/apex/ApexHero";
 import ApexFeatures from "@/components/apex/ApexFeatures";
 import ApexHowItWorks from "@/components/apex/ApexHowItWorks";
@@ -25,6 +26,9 @@ export default function APEXPage() {
     <div className="relative min-h-screen bg-black text-white overflow-x-hidden">
       {/* Cinematic dragon parallax background */}
       <ApexDragonScene />
+
+      {/* Layered scroll-driven frames */}
+      <ApexScrollFrames />
 
       {/* Top nav */}
       <nav className="relative z-20 flex items-center justify-between px-5 sm:px-8 py-5">
