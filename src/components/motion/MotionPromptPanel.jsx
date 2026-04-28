@@ -1,5 +1,5 @@
 import React from "react";
-import { Sparkles, Loader2, Wand2, RotateCcw } from "lucide-react";
+import { Sparkles, Loader2, Wand2, RotateCcw, LayoutGrid } from "lucide-react";
 
 export default function MotionPromptPanel({
   prompt,
@@ -7,6 +7,8 @@ export default function MotionPromptPanel({
   onGenerate,
   generating,
   onReset,
+  onBrowsePresets,
+  activePreset,
 }) {
   return (
     <div className="flex flex-col h-full bg-zinc-950 border-r border-white/10">
@@ -16,17 +18,30 @@ export default function MotionPromptPanel({
             <Wand2 className="w-4 h-4 text-white" />
           </div>
           <div>
-            <h2 className="text-white text-sm font-bold">Vibe Prompt</h2>
-            <p className="text-white/40 text-[10px]">Describe your landing page</p>
+            <h2 className="text-white text-sm font-bold">
+              {activePreset ? activePreset.name : "Vibe Prompt"}
+            </h2>
+            <p className="text-white/40 text-[10px]">
+              {activePreset ? activePreset.tagline : "Describe your landing page"}
+            </p>
           </div>
         </div>
-        <button
-          onClick={onReset}
-          className="text-white/50 hover:text-white text-[11px] flex items-center gap-1"
-          title="Reset prompt"
-        >
-          <RotateCcw className="w-3 h-3" /> Reset
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={onBrowsePresets}
+            className="text-white/70 hover:text-white text-[11px] font-bold flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500/20 to-purple-500/20 hover:from-cyan-500/30 hover:to-purple-500/30 border border-white/10"
+            title="Browse preset marketplace"
+          >
+            <LayoutGrid className="w-3 h-3" /> Presets
+          </button>
+          <button
+            onClick={onReset}
+            className="text-white/50 hover:text-white text-[11px] flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-white/5"
+            title="Reset prompt"
+          >
+            <RotateCcw className="w-3 h-3" /> Reset
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 p-4 overflow-y-auto">

@@ -4,7 +4,9 @@ import { ArrowLeft, Loader2, Lock, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import MotionPromptPanel from "@/components/motion/MotionPromptPanel";
 import MotionCodeOutput from "@/components/motion/MotionCodeOutput";
+import MotionPresetMarketplace from "@/components/motion/MotionPresetMarketplace";
 import { ORBIS_NFT_PROMPT } from "@/components/motion/orbisPrompt";
+import { MOTION_PRESETS } from "@/components/motion/motionPresets";
 
 export default function MotionPage() {
   const [user, setUser] = useState(null);
@@ -13,6 +15,8 @@ export default function MotionPage() {
   const [code, setCode] = useState("");
   const [generating, setGenerating] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showMarketplace, setShowMarketplace] = useState(false);
+  const [activePreset, setActivePreset] = useState(MOTION_PRESETS[0]);
 
   useEffect(() => {
     base44.auth.me()
@@ -57,7 +61,15 @@ ${prompt}`,
     }
   };
 
-  const handleReset = () => setPrompt(ORBIS_NFT_PROMPT);
+  const handleReset = () => {
+    setPrompt(activePreset?.prompt || ORBIS_NFT_PROMPT);
+  };
+
+  const handlePickPreset = (preset) => {
+    setActivePreset(preset);
+    setPrompt(preset.prompt);
+    setCode("");
+  };
 
   // Build a previewable HTML doc from the generated component code
   const buildPreviewHtml = () => {
@@ -180,6 +192,8 @@ try {
           onGenerate={handleGenerate}
           generating={generating}
           onReset={handleReset}
+          onBrowsePresets={() => setShowMarketplace(true)}
+          activePreset={activePreset}
         />
         <MotionCodeOutput
           code={code}
@@ -187,6 +201,13 @@ try {
           hasPreview={!!code && !generating}
         />
       </div>
+
+      {/* Preset marketplace */}
+      <MotionPresetMarketplace
+        open={showMarketplace}
+        onClose={() => setShowMarketplace(false)}
+        onPick={handlePickPreset}
+      />
 
       {/* Live preview modal */}
       {showPreview && code && (
