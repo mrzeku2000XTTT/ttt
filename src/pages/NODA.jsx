@@ -316,11 +316,21 @@ export default function NODAPage() {
         };
       }
       case "send_to_x": {
-        const text = stringify(getPrevOutput()).trim();
-        try { await navigator.clipboard.writeText(text); } catch {}
-        const intent = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+        const fullText = stringify(getPrevOutput()).trim();
+        // X limits tweets to 280 chars — truncate so text actually loads in compose
+        const tweetText = fullText.length > 275
+          ? fullText.slice(0, 272).trimEnd() + "…"
+          : fullText;
+        // Always copy the FULL text so user can paste the rest if needed
+        try { await navigator.clipboard.writeText(fullText); } catch {}
+        const intent = `https://x.com/intent/post?text=${encodeURIComponent(tweetText)}`;
         window.open(intent, "_blank", "noopener,noreferrer");
-        return { opened: true, copied: true, chars: text.length };
+        return {
+          opened: true,
+          copied: true,
+          chars: tweetText.length,
+          truncated: fullText.length > 275,
+        };
       }
       case "delay": {
         const ms = (Number(node.config.seconds) || 1) * 1000;
