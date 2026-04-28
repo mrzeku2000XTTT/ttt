@@ -68,7 +68,11 @@ USER REQUEST:
               items: {
                 type: "object",
                 properties: {
-                  type: { type: "string" },
+                  type: {
+                    type: "string",
+                    enum: NODE_TEMPLATES.map((t) => t.type),
+                    description: "MUST be one of the allowed node type strings — NOT 'object'.",
+                  },
                   config: { type: "object", additionalProperties: true },
                 },
                 required: ["type", "config"],
@@ -112,18 +116,52 @@ USER REQUEST:
         sleep: "delay",
       };
 
+      // Fallback: infer node type from the keys in a config object.
+      // Used when the LLM returns literal "object" as the type (it confused the JSON schema).
+      const inferTypeFromConfig = (cfg) => {
+        if (!cfg || typeof cfg !== "object") return null;
+        const keys = Object.keys(cfg);
+        if (keys.includes("topic") && keys.includes("depth")) return "deep_research";
+        if (keys.includes("topic")) return "deep_research";
+        if (keys.includes("to") && keys.includes("subject")) return "send_email";
+        if (keys.includes("url") && keys.includes("method")) return "webhook";
+        if (keys.includes("limit") || keys.includes("keyword")) return "read_ttt_feed";
+        if (keys.includes("seconds")) return "delay";
+        if (keys.includes("contains")) return "filter";
+        if (keys.includes("author_name") || keys.includes("content_override")) return "post_to_ttt";
+        if (keys.includes("prompt")) {
+          const p = String(cfg.prompt || "").toLowerCase();
+          // image-y wording → ai_image, otherwise ai_prompt
+          if (/\b(image|visual|frame|illustrat|depict|render|render|render|picture|photo|art|scene|drawing)\b/.test(p)) {
+            return "ai_image";
+          }
+          return "ai_prompt";
+        }
+        return null;
+      };
+
       const droppedSteps = [];
       // Map each step to a node template
       const nodes = result.steps
         .map((step) => {
           const rawType = (step?.type || "").toLowerCase().trim();
-          const resolvedType = TYPE_ALIASES[rawType] || rawType;
+          let resolvedType = TYPE_ALIASES[rawType] || rawType;
+          // If the LLM glitched and returned the schema literal "object", infer from config keys.
+          // Configs may live under .config OR .properties depending on how the LLM messed up.
+          let stepConfig = step?.config && Object.keys(step.config).length ? step.config : (step?.properties || {});
+          if (resolvedType === "object" || !NODE_TEMPLATES.find((t) => t.type === resolvedType)) {
+            const inferred = inferTypeFromConfig(stepConfig);
+            if (inferred) {
+              console.warn(`[Brain] Rescued step — inferred "${inferred}" from config keys:`, Object.keys(stepConfig));
+              resolvedType = inferred;
+            }
+          }
           const tpl = NODE_TEMPLATES.find((t) => t.type === resolvedType);
           if (!tpl) {
-            droppedSteps.push(rawType);
+            droppedSteps.push(rawType || "(empty)");
             return null;
           }
-          const mergedConfig = { ...(tpl.defaultConfig || {}), ...(step.config || {}) };
+          const mergedConfig = { ...(tpl.defaultConfig || {}), ...stepConfig };
           // Guarantee send_email always has a valid recipient — fall back to current user
           if (tpl.type === "send_email") {
             const to = (mergedConfig.to || "").trim();
