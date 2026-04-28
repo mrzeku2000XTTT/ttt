@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft, Zap, Plus, Play, Sparkles, Loader2, Eye, EyeOff, Wand2, Mail, X,
+  ArrowLeft, Zap, Plus, Play, Sparkles, Loader2, Eye, EyeOff, Wand2, Mail, X, Repeat,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import RMXNodeLibrary from "@/components/rmx/RMXNodeLibrary";
@@ -24,11 +24,26 @@ export default function NODAPage() {
   const [exampleModalOpen, setExampleModalOpen] = useState(false);
   const [exampleEmail, setExampleEmail] = useState("");
   const [toast, setToast] = useState(null);
+  const [autoRun, setAutoRun] = useState(false);
+  const autoRunTimerRef = useRef(null);
+  const runningRef = useRef(false);
+  useEffect(() => { runningRef.current = running; }, [running]);
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 2800);
   };
+
+  // Auto-run: debounce-trigger workflow whenever nodes/config change
+  useEffect(() => {
+    if (!autoRun || nodes.length === 0) return;
+    if (autoRunTimerRef.current) clearTimeout(autoRunTimerRef.current);
+    autoRunTimerRef.current = setTimeout(() => {
+      if (!runningRef.current) runWorkflow();
+    }, 1200);
+    return () => clearTimeout(autoRunTimerRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoRun, JSON.stringify(nodes.map((n) => ({ id: n.id, type: n.type, config: n.config })))]);
 
   const addNode = (template) => {
     const id = `node_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -293,6 +308,22 @@ export default function NODAPage() {
             title="Hide NODA layout"
           >
             <EyeOff className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => {
+              const next = !autoRun;
+              setAutoRun(next);
+              showToast(next ? "Auto-run ON — runs on changes" : "Auto-run OFF");
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold border transition-colors ${
+              autoRun
+                ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-200 shadow-lg shadow-emerald-500/10"
+                : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
+            }`}
+            title="Auto-run workflow on every change"
+          >
+            <Repeat className={`w-4 h-4 ${autoRun ? "animate-pulse" : ""}`} />
+            Auto
           </button>
           <button
             onClick={runWorkflow}
