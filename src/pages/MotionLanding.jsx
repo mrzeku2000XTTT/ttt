@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Lightbulb } from "lucide-react";
+import { ArrowLeft, Lightbulb, BookOpen } from "lucide-react";
 import MotionLandingHero from "@/components/motion/MotionLandingHero";
 import MotionLandingFeatures from "@/components/motion/MotionLandingFeatures";
 import MotionLandingPresets from "@/components/motion/MotionLandingPresets";
@@ -20,6 +20,12 @@ export default function MotionLandingPage() {
           </span>
         </div>
         <div className="flex items-center gap-2">
+          <Link
+            to="/MotionPrompts"
+            className="text-[12px] font-bold px-3 py-2 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 hover:text-emerald-200 flex items-center gap-1.5 transition-all"
+          >
+            <BookOpen className="w-3.5 h-3.5" /> Prompts
+          </Link>
           <Link
             to="/MotionIdeas"
             className="text-[12px] font-bold px-3 py-2 rounded-full bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 hover:text-yellow-200 flex items-center gap-1.5 transition-all"
