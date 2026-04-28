@@ -9,14 +9,36 @@ import { ORBIS_NFT_PROMPT } from "@/components/motion/orbisPrompt";
 import { MOTION_PRESETS } from "@/components/motion/motionPresets";
 
 export default function MotionPage() {
+  // Read seed from sessionStorage at mount-time so we never flash the Orbis default
+  const seededInit = (() => {
+    try {
+      const seeded = sessionStorage.getItem("motion_seeded_prompt");
+      const seededTitle = sessionStorage.getItem("motion_seeded_title");
+      if (seeded) {
+        sessionStorage.removeItem("motion_seeded_prompt");
+        sessionStorage.removeItem("motion_seeded_title");
+        return {
+          prompt: seeded,
+          preset: {
+            id: "seeded",
+            name: seededTitle || "From Prompt Library",
+            tagline: "Seeded prompt",
+            prompt: seeded,
+          },
+        };
+      }
+    } catch {}
+    return null;
+  })();
+
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [prompt, setPrompt] = useState(ORBIS_NFT_PROMPT);
+  const [prompt, setPrompt] = useState(seededInit?.prompt || ORBIS_NFT_PROMPT);
   const [code, setCode] = useState("");
   const [generating, setGenerating] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showMarketplace, setShowMarketplace] = useState(false);
-  const [activePreset, setActivePreset] = useState(MOTION_PRESETS[0]);
+  const [activePreset, setActivePreset] = useState(seededInit?.preset || MOTION_PRESETS[0]);
   const [attachedRefs, setAttachedRefs] = useState([]);
   const [mobileTab, setMobileTab] = useState("prompt"); // 'prompt' | 'code'
 
@@ -29,23 +51,6 @@ export default function MotionPage() {
       .then((u) => setUser(u))
       .catch(() => setUser(null))
       .finally(() => setAuthLoading(false));
-
-    // Pick up seeded prompt from Idea Generator or Prompt Library
-    const seeded = sessionStorage.getItem("motion_seeded_prompt");
-    const seededTitle = sessionStorage.getItem("motion_seeded_title");
-    if (seeded) {
-      setPrompt(seeded);
-      if (seededTitle) {
-        setActivePreset({
-          id: "seeded",
-          name: seededTitle,
-          tagline: "From Prompt Library",
-          prompt: seeded,
-        });
-        sessionStorage.removeItem("motion_seeded_title");
-      }
-      sessionStorage.removeItem("motion_seeded_prompt");
-    }
   }, []);
 
   const handleGenerate = async () => {
