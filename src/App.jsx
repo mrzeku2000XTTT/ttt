@@ -47,6 +47,7 @@ import MotionPromptsPage from './pages/MotionPrompts';
 import NODAPage from './pages/NODA';
 import NODALandingPage from './pages/NODALanding';
 import LaunchBrandPage from './pages/LaunchBrand';
+import APEXPage from './pages/APEX';
 import KaSshiPlayer from './components/KaSshiPlayer';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -137,6 +138,7 @@ const AuthenticatedApp = () => {
       <Route path="/NODA" element={<NODALandingPage />} />
       <Route path="/NODAStudio" element={<NODAPage />} />
       <Route path="/LaunchBrand" element={<LaunchBrandPage />} />
+      <Route path="/APEX" element={<APEXPage />} />
       <Route path="/login" element={<AuthRedirect />} />
       <Route path="/Login" element={<AuthRedirect />} />
       <Route path="*" element={<PageNotFound />} />

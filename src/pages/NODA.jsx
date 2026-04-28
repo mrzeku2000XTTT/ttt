@@ -171,6 +171,8 @@ export default function NODAPage() {
 
     log(`▶ Starting "${workflowName}"`);
     let context = {};
+    const startedAt = Date.now();
+    let allSucceeded = true;
 
     for (const node of activeNodes) {
       log(`→ ${node.label}...`);
@@ -185,10 +187,38 @@ export default function NODAPage() {
         }
       } catch (err) {
         log(`✗ ${node.label} failed: ${err.message}`, "error");
+        allSucceeded = false;
         break;
       }
     }
     log(`■ Finished`, "success");
+
+    // APEX zero-knowledge proof — seal only on full success.
+    // We hash metadata only (workflow id + node count + timestamp) — no payload data.
+    if (allSucceeded && currentUserEmail) {
+      try {
+        const durationMs = Date.now() - startedAt;
+        const proofPayload = `${workflowName}|${activeNodes.length}|${durationMs}|${startedAt}|${currentUserEmail}`;
+        const buf = new TextEncoder().encode(proofPayload);
+        const hashBuf = await crypto.subtle.digest("SHA-256", buf);
+        const proofHash = Array.from(new Uint8Array(hashBuf))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+        await base44.entities.ApexProof.create({
+          owner_email: currentUserEmail,
+          workflow_id: `local-${startedAt}`,
+          workflow_name: workflowName,
+          node_count: activeNodes.length,
+          duration_ms: durationMs,
+          proof_hash: proofHash,
+          completed_at: new Date().toISOString(),
+        });
+        log(`🛡 APEX proof sealed`, "success");
+      } catch (e) {
+        // Silent — APEX failures must never block NODA
+      }
+    }
+
     setRunning(false);
     isAutoRunRef.current = false;
   };

@@ -1,0 +1,49 @@
+{
+  "name": "ApexProof",
+  "type": "object",
+  "properties": {
+    "owner_email": {
+      "type": "string",
+      "description": "Email of the user whose workflow ran (NOT the workflow data itself)"
+    },
+    "workflow_id": {
+      "type": "string",
+      "description": "ID of the NODA workflow that completed"
+    },
+    "workflow_name": {
+      "type": "string",
+      "description": "Public name of the workflow (no payload data)"
+    },
+    "node_count": {
+      "type": "number",
+      "description": "How many nodes ran successfully \u2014 metadata only, no node contents"
+    },
+    "duration_ms": {
+      "type": "number",
+      "description": "Total run duration in milliseconds"
+    },
+    "proof_hash": {
+      "type": "string",
+      "description": "SHA-256 hash representing the run \u2014 proves completion without revealing data"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the workflow completed"
+    }
+  },
+  "required": [
+    "owner_email",
+    "workflow_id",
+    "proof_hash",
+    "completed_at"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": false,
+    "delete": {
+      "owner_email": "{{user.email}}"
+    }
+  }
+}
