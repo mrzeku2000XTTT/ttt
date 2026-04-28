@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X, Brain, Image as ImageIcon, Mail, Clock, Filter, Webhook, Database, GitBranch,
-  Search, Sparkles, Zap, Cog, Send,
+  Search, Sparkles, Zap, Cog, Send, Twitter,
 } from "lucide-react";
 
 export const NODE_TEMPLATES = [
@@ -35,6 +35,16 @@ export const NODE_TEMPLATES = [
     category: "Action",
     tags: ["email", "notify", "send"],
     defaultConfig: { to: "", subject: "RMX Workflow", body: "{{result}}" },
+  },
+  {
+    type: "send_to_x",
+    label: "Send to X",
+    icon: "Twitter",
+    color: "from-sky-500 to-blue-600",
+    desc: "Copy previous output and open X compose",
+    category: "Action",
+    tags: ["x", "twitter", "tweet", "share"],
+    defaultConfig: {},
   },
   {
     type: "webhook",
@@ -88,7 +98,7 @@ export const NODE_TEMPLATES = [
   },
 ];
 
-const ICONS = { Brain, ImageIcon, Mail, Clock, Filter, Webhook, Database, GitBranch };
+const ICONS = { Brain, ImageIcon, Mail, Clock, Filter, Webhook, Database, GitBranch, Twitter };
 
 const CATEGORIES = [
   { id: "All", label: "All", icon: Sparkles },

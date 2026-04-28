@@ -315,6 +315,13 @@ export default function NODAPage() {
           sent_at: new Date().toISOString(),
         };
       }
+      case "send_to_x": {
+        const text = stringify(getPrevOutput()).trim();
+        try { await navigator.clipboard.writeText(text); } catch {}
+        const intent = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+        window.open(intent, "_blank", "noopener,noreferrer");
+        return { opened: true, copied: true, chars: text.length };
+      }
       case "delay": {
         const ms = (Number(node.config.seconds) || 1) * 1000;
         await new Promise((r) => setTimeout(r, ms));
