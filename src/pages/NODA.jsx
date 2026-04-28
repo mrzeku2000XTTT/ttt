@@ -27,6 +27,7 @@ export default function NODAPage() {
   const [toast, setToast] = useState(null);
   const [autoRun, setAutoRun] = useState(false);
   const [brainOpen, setBrainOpen] = useState(false);
+  const [saveOpen, setSaveOpen] = useState(false);
   const [currentUserEmail, setCurrentUserEmail] = useState("");
   const autoRunTimerRef = useRef(null);
   const runningRef = useRef(false);
@@ -414,6 +415,14 @@ export default function NODAPage() {
             <Plus className="w-4 h-4" /> Add
           </button>
           <button
+            onClick={() => setSaveOpen(true)}
+            disabled={nodes.length === 0 || !currentUserEmail}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg text-emerald-200 text-sm font-bold"
+            title="Save workflow so other apps can call it"
+          >
+            <Save className="w-4 h-4" /> Save
+          </button>
+          <button
             onClick={() => setLayoutHidden(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 hover:text-white text-sm font-bold"
             title="Hide NODA layout"
@@ -494,6 +503,19 @@ export default function NODAPage() {
         onClose={() => setBrainOpen(false)}
         onBuild={handleBrainBuild}
         currentEmail={currentUserEmail}
+      />
+
+      {/* Save & Publish modal — exposes workflow to other apps */}
+      <NodaSaveModal
+        open={saveOpen}
+        onClose={() => setSaveOpen(false)}
+        nodes={nodes}
+        workflowName={workflowName}
+        ownerEmail={currentUserEmail}
+        onSaved={(saved) => {
+          if (saved?.name) setWorkflowName(saved.name);
+          showToast(`Saved "${saved.name}" — callable by other apps`);
+        }}
       />
 
 
