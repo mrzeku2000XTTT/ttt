@@ -29,6 +29,8 @@ Available node types: ${allowedTypes}
 Node config schemas:
 - ai_prompt: { prompt: string }   // returns text
 - ai_image: { prompt: string }    // returns an image URL
+- deep_research: { topic: string, depth: "shallow"|"deep" }   // ACTUALLY scrapes the live web, multi-pass — returns a full markdown research report. Use this whenever the user wants real, current info.
+- read_ttt_feed: { limit: number, keyword?: string }   // pulls real recent posts from the TTT social feed inside this app. Use whenever user mentions "TTT feed", "the feed", "TTT posts", "what people are saying on TTT".
 - send_email: { to: string, subject: string, body: string, from_name?: string }
    - body supports {{result}} which inserts the previous step's output (text OR image — images auto-embed)
 - delay: { seconds: number }
@@ -47,6 +49,8 @@ Rules:
    2. (Optional) ai_image → only add this if the user explicitly asks for an image to go with the post.
    3. send_to_x → with empty config {}. This step automatically picks up the most recent text output and opens X compose.
 - CRITICAL: If the user asks for N images (e.g. "10 images", "5 frames", "a slide deck of 8"), output EXACTLY N separate ai_image steps — one per image — each with its own unique, story-progressing prompt. DO NOT collapse them into fewer steps. The send_email step (if any) must come AFTER all ai_image steps so the email auto-embeds every generated image.
+- RESEARCH: If the user wants real current information ("research X", "find me", "what's happening with", "latest", "news on", "investigate"), use deep_research — NOT ai_prompt — because deep_research actually scrapes the live web. After deep_research you can chain an ai_prompt to summarize or transform its output via {{result}}.
+- TTT FEED: If the user references the TTT feed / posts / community / "what people are saying", use read_ttt_feed to pull real posts FIRST, then chain an ai_prompt or deep_research that processes {{result}}.
 - When generating a sequence of story frames, make each ai_image prompt advance the narrative (frame 1, frame 2, ... frame N) with consistent characters, setting, and style across frames.
 - Default recipient email if user mentions "me" or "my email": ${currentEmail || "user@example.com"}
 - Keep prompts concrete and detailed.

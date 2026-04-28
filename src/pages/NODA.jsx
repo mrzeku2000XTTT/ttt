@@ -326,6 +326,92 @@ export default function NODAPage() {
         const res = await withRetry(() => base44.integrations.Core.GenerateImage({ prompt }));
         return res?.url || "";
       }
+      case "deep_research": {
+        const topic = interpolate(node.config.topic || "").trim();
+        const depth = (node.config.depth || "deep").toLowerCase();
+        if (!topic) throw new Error("Research topic is required");
+        // Phase 1 — discovery: ask the model (with internet) for sources, key questions, and angles
+        const discovery = await withRetry(() =>
+          base44.integrations.Core.InvokeLLM({
+            prompt: `You are a deep research agent. Topic: """${topic}"""
+
+Search the web RIGHT NOW for current information. Return:
+- 8-12 distinct authoritative sources (URLs + 1-line summary each)
+- 6-8 key questions a thorough investigator should answer about this topic
+- 3-4 distinct angles / sub-topics to dig into
+
+Be thorough. Use real, current web data — not training data.`,
+            add_context_from_internet: true,
+            response_json_schema: {
+              type: "object",
+              properties: {
+                sources: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: { url: { type: "string" }, title: { type: "string" }, summary: { type: "string" } },
+                  },
+                },
+                key_questions: { type: "array", items: { type: "string" } },
+                angles: { type: "array", items: { type: "string" } },
+              },
+            },
+            model: "gemini_3_flash",
+          })
+        );
+
+        // Phase 2 — synthesis: deep dive answering each question with web context
+        const questions = (discovery?.key_questions || []).slice(0, depth === "shallow" ? 3 : 8);
+        const synthesis = await withRetry(() =>
+          base44.integrations.Core.InvokeLLM({
+            prompt: `You are completing a deep research report on: """${topic}"""
+
+Already-found sources:
+${(discovery?.sources || []).map((s, i) => `${i + 1}. ${s.title || s.url} — ${s.url}\n   ${s.summary || ""}`).join("\n")}
+
+Key questions to answer (use live web search for each):
+${questions.map((q, i) => `${i + 1}. ${q}`).join("\n")}
+
+Angles to cover:
+${(discovery?.angles || []).map((a) => `- ${a}`).join("\n")}
+
+Write a comprehensive research report (markdown). Structure:
+# ${topic}
+## Executive Summary  (3-5 bullet key findings)
+## Detailed Findings  (one section per key question, with concrete facts, numbers, dates, names)
+## Different Perspectives  (cover the angles)
+## Sources  (numbered list of URLs you actually used)
+
+Be specific. Cite numbers, dates, names, quotes. No filler. No "as an AI". Use real current data.`,
+            add_context_from_internet: true,
+            model: "gemini_3_flash",
+          })
+        );
+
+        return typeof synthesis === "string" ? synthesis : JSON.stringify(synthesis);
+      }
+      case "read_ttt_feed": {
+        const limit = Math.max(1, Math.min(100, Number(node.config.limit) || 20));
+        const keyword = (node.config.keyword || "").trim().toLowerCase();
+        const posts = await base44.entities.Post.list("-created_date", limit * 2);
+        const filtered = keyword
+          ? posts.filter((p) => (p.content || "").toLowerCase().includes(keyword))
+          : posts;
+        const top = filtered.slice(0, limit);
+        if (top.length === 0) return "No TTT posts found.";
+        // Format as readable markdown so downstream AI steps can reason over it
+        const formatted = top
+          .map((p, i) => {
+            const date = p.created_date ? new Date(p.created_date).toISOString().split("T")[0] : "";
+            const author = p.author_name || "anon";
+            const stamp = p.is_stamped ? " ✓" : "";
+            const tips = p.tips_received ? ` · ${p.tips_received} KAS tipped` : "";
+            const content = (p.content || "").trim().slice(0, 600);
+            return `**${i + 1}. @${author}${stamp}** _(${date}${tips})_\n${content}`;
+          })
+          .join("\n\n---\n\n");
+        return `# TTT Feed — ${top.length} recent post${top.length === 1 ? "" : "s"}${keyword ? ` matching "${keyword}"` : ""}\n\n${formatted}`;
+      }
       case "send_email": {
         const to = interpolate(node.config.to || "").trim();
         const subject = interpolate(node.config.subject || "").trim();

@@ -93,6 +93,16 @@ function getFields(type) {
       return [{ key: "prompt", label: "Prompt", type: "textarea", placeholder: "What should the AI do?", hint: "Use {{result}} to insert the previous step's output" }];
     case "ai_image":
       return [{ key: "prompt", label: "Image Prompt", type: "textarea", placeholder: "Describe the image" }];
+    case "deep_research":
+      return [
+        { key: "topic", label: "Research Topic", type: "textarea", placeholder: "e.g. Latest Kaspa ecosystem developments in the past 30 days", hint: "Live web scraping + multi-pass synthesis. Use {{result}} to research a previous step's output." },
+        { key: "depth", label: "Depth", type: "select", options: ["shallow", "deep"] },
+      ];
+    case "read_ttt_feed":
+      return [
+        { key: "limit", label: "How many posts?", type: "number", placeholder: "20" },
+        { key: "keyword", label: "Filter keyword (optional)", placeholder: "kaspa", hint: "Only return posts containing this word" },
+      ];
     case "send_email":
       return [
         { key: "to", label: "To Email", placeholder: "you@example.com", hint: "Real email address — sent via Base44" },

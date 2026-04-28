@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X, Brain, Image as ImageIcon, Mail, Clock, Filter, Webhook, Database, GitBranch,
-  Search, Sparkles, Zap, Cog, Send, Twitter,
+  Search, Sparkles, Zap, Cog, Send, Twitter, Telescope, Rss,
 } from "lucide-react";
 
 export const NODE_TEMPLATES = [
@@ -25,6 +25,29 @@ export const NODE_TEMPLATES = [
     category: "AI",
     tags: ["image", "art", "visual"],
     defaultConfig: { prompt: "A glowing crystal in space, cinematic" },
+  },
+  {
+    type: "deep_research",
+    label: "Deep Research",
+    icon: "Telescope",
+    color: "from-emerald-500 to-teal-500",
+    desc: "Scrape the web and synthesize a deep research report",
+    category: "AI",
+    tags: ["research", "web", "scrape", "search"],
+    defaultConfig: {
+      topic: "Latest Kaspa ecosystem developments",
+      depth: "deep",
+    },
+  },
+  {
+    type: "read_ttt_feed",
+    label: "Read TTT Feed",
+    icon: "Rss",
+    color: "from-fuchsia-500 to-purple-500",
+    desc: "Pull recent posts from the TTT social feed",
+    category: "Data",
+    tags: ["feed", "ttt", "posts", "social"],
+    defaultConfig: { limit: 20, keyword: "" },
   },
   {
     type: "send_email",
@@ -98,7 +121,7 @@ export const NODE_TEMPLATES = [
   },
 ];
 
-const ICONS = { Brain, ImageIcon, Mail, Clock, Filter, Webhook, Database, GitBranch, Twitter };
+const ICONS = { Brain, ImageIcon, Mail, Clock, Filter, Webhook, Database, GitBranch, Twitter, Telescope, Rss };
 
 const CATEGORIES = [
   { id: "All", label: "All", icon: Sparkles },

@@ -2,10 +2,10 @@ import React from "react";
 import { motion } from "framer-motion";
 import {
   Plus, Brain, Image as ImageIcon, Mail, Clock, Filter, Webhook,
-  Database, GitBranch, ChevronDown, Trash2, CheckCircle2, Twitter
+  Database, GitBranch, ChevronDown, Trash2, CheckCircle2, Twitter, Telescope, Rss
 } from "lucide-react";
 
-const ICONS = { Brain, ImageIcon, Mail, Clock, Filter, Webhook, Database, GitBranch, Twitter };
+const ICONS = { Brain, ImageIcon, Mail, Clock, Filter, Webhook, Database, GitBranch, Twitter, Telescope, Rss };
 
 export default function RMXCanvas({ nodes, selectedNodeId, onSelect, onDelete, onAdd }) {
   if (nodes.length === 0) {
