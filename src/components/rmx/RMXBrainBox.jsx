@@ -78,13 +78,24 @@ USER REQUEST:
         .map((step) => {
           const tpl = NODE_TEMPLATES.find((t) => t.type === step.type);
           if (!tpl) return null;
+          const mergedConfig = { ...(tpl.defaultConfig || {}), ...(step.config || {}) };
+          // Guarantee send_email always has a valid recipient — fall back to current user
+          if (tpl.type === "send_email") {
+            const to = (mergedConfig.to || "").trim();
+            const looksValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to);
+            if (!looksValid && currentEmail) {
+              mergedConfig.to = currentEmail;
+            }
+            if (!mergedConfig.subject) mergedConfig.subject = "Your NODA workflow result";
+            if (!mergedConfig.body) mergedConfig.body = "Hey 👋\n\n{{result}}\n\n— NODA";
+          }
           return {
             id: `node_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
             type: tpl.type,
             label: tpl.label,
             icon: tpl.icon,
             color: tpl.color,
-            config: { ...(tpl.defaultConfig || {}), ...(step.config || {}) },
+            config: mergedConfig,
             output: null,
           };
         })

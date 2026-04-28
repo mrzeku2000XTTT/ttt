@@ -43,7 +43,11 @@ export default function NODAPage() {
     if (name) setWorkflowName(name);
     setSelectedNodeId(null);
     setAutoRun(true);
-    showToast(`Brain built ${newNodes.length} step${newNodes.length === 1 ? "" : "s"} — Auto-run ON`);
+    showToast(`Brain built ${newNodes.length} step${newNodes.length === 1 ? "" : "s"} — running now`);
+    // Kick off the run immediately instead of waiting for the auto-run debounce
+    setTimeout(() => {
+      if (!runningRef.current) runWorkflow();
+    }, 250);
   };
 
   const showToast = (msg, type = "success") => {
