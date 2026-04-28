@@ -467,6 +467,59 @@ Be specific. Cite numbers, dates, names, quotes. No filler. No "as an AI". Use r
           sent_at: new Date().toISOString(),
         };
       }
+      case "post_to_ttt": {
+        // Walk back to find most recent text output AND most recent image URL
+        const idx = nodeList.findIndex((n) => n.id === node.id);
+        let textPart = "";
+        let imageUrl = "";
+        for (let i = idx - 1; i >= 0; i--) {
+          const prev = nodeList[i];
+          const out = context[prev.id];
+          if (out === undefined || out === null) continue;
+          if (prev.type === "ai_image" && typeof out === "string" && /^https?:\/\//.test(out)) {
+            if (!imageUrl) imageUrl = out;
+            continue;
+          }
+          if (!textPart) textPart = stringify(out).trim();
+        }
+
+        const overrideText = interpolate(node.config.content_override || "").trim();
+        const content = (overrideText || textPart || "").trim();
+        if (!content) throw new Error("No content to post — add an AI Prompt or text-producing step before this");
+
+        // Pull author info from current user
+        let authorName = (node.config.author_name || "").trim();
+        let authorWallet = "";
+        let authorRole = "user";
+        try {
+          const me = await base44.auth.me();
+          if (!authorName) authorName = me?.username || me?.full_name || me?.email?.split("@")[0] || "NODA";
+          authorWallet = me?.created_wallet_address || me?.wallet_address || "";
+          authorRole = me?.role === "admin" ? "admin" : "user";
+        } catch {
+          if (!authorName) authorName = "NODA";
+        }
+
+        const payload = {
+          content,
+          author_name: authorName,
+          author_role: authorRole,
+        };
+        if (authorWallet) payload.author_wallet_address = authorWallet;
+        if (imageUrl) {
+          payload.image_url = imageUrl;
+          payload.media_files = [{ url: imageUrl, type: "image/png", name: "noda-generated.png", size: 0 }];
+        }
+
+        const created = await base44.entities.Post.create(payload);
+        return {
+          posted: true,
+          post_id: created?.id,
+          author: authorName,
+          has_image: !!imageUrl,
+          chars: content.length,
+        };
+      }
       case "send_to_x": {
         // Find most recent TEXT output AND most recent IMAGE URL from prior steps.
         const idx = nodeList.findIndex((n) => n.id === node.id);

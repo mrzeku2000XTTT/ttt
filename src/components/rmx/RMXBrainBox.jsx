@@ -31,6 +31,7 @@ Node config schemas:
 - ai_image: { prompt: string }    // returns an image URL
 - deep_research: { topic: string, depth: "shallow"|"deep" }   // ACTUALLY scrapes the live web, multi-pass — returns a full markdown research report. Use this whenever the user wants real, current info.
 - read_ttt_feed: { limit: number, keyword?: string }   // pulls real recent posts from the TTT social feed inside this app. Use whenever user mentions "TTT feed", "the feed", "TTT posts", "what people are saying on TTT".
+- post_to_ttt: { author_name?: string, content_override?: string }   // Auto-posts to the TTT social feed. Empty config = uses previous text step + auto-attaches previous ai_image. Use when user says "post to TTT", "publish to feed", "share on TTT", "auto-post".
 - send_email: { to: string, subject: string, body: string, from_name?: string }
    - body supports {{result}} which inserts the previous step's output (text OR image — images auto-embed)
 - delay: { seconds: number }
@@ -51,6 +52,7 @@ Rules:
 - CRITICAL: If the user asks for N images (e.g. "10 images", "5 frames", "a slide deck of 8"), output EXACTLY N separate ai_image steps — one per image — each with its own unique, story-progressing prompt. DO NOT collapse them into fewer steps. The send_email step (if any) must come AFTER all ai_image steps so the email auto-embeds every generated image.
 - RESEARCH: If the user wants real current information ("research X", "find me", "what's happening with", "latest", "news on", "investigate"), use deep_research — NOT ai_prompt — because deep_research actually scrapes the live web. After deep_research you can chain an ai_prompt to summarize or transform its output via {{result}}.
 - TTT FEED: If the user references the TTT feed / posts / community / "what people are saying", use read_ttt_feed to pull real posts FIRST, then chain an ai_prompt or deep_research that processes {{result}}.
+- POSTING TO TTT: If user wants to post / publish / share TO the TTT feed, end the workflow with post_to_ttt (config can stay {}). For "post a thought + image to TTT" use: ai_prompt (write the post) → ai_image (the visual) → post_to_ttt {}. The image attaches automatically.
 - When generating a sequence of story frames, make each ai_image prompt advance the narrative (frame 1, frame 2, ... frame N) with consistent characters, setting, and style across frames.
 - Default recipient email if user mentions "me" or "my email": ${currentEmail || "user@example.com"}
 - Keep prompts concrete and detailed.

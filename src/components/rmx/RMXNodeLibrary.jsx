@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X, Brain, Image as ImageIcon, Mail, Clock, Filter, Webhook, Database, GitBranch,
-  Search, Sparkles, Zap, Cog, Send, Twitter, Telescope, Rss,
+  Search, Sparkles, Zap, Cog, Send, Twitter, Telescope, Rss, MessageSquarePlus,
 } from "lucide-react";
 
 export const NODE_TEMPLATES = [
@@ -70,6 +70,16 @@ export const NODE_TEMPLATES = [
     defaultConfig: {},
   },
   {
+    type: "post_to_ttt",
+    label: "Post to TTT Feed",
+    icon: "MessageSquarePlus",
+    color: "from-fuchsia-500 to-pink-500",
+    desc: "Auto-post previous output (with image if attached) to the TTT feed",
+    category: "Action",
+    tags: ["ttt", "feed", "post", "publish", "auto"],
+    defaultConfig: { author_name: "", content_override: "" },
+  },
+  {
     type: "webhook",
     label: "Webhook",
     icon: "Webhook",
@@ -121,7 +131,7 @@ export const NODE_TEMPLATES = [
   },
 ];
 
-const ICONS = { Brain, ImageIcon, Mail, Clock, Filter, Webhook, Database, GitBranch, Twitter, Telescope, Rss };
+const ICONS = { Brain, ImageIcon, Mail, Clock, Filter, Webhook, Database, GitBranch, Twitter, Telescope, Rss, MessageSquarePlus };
 
 const CATEGORIES = [
   { id: "All", label: "All", icon: Sparkles },

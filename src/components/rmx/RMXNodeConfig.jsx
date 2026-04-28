@@ -103,6 +103,11 @@ function getFields(type) {
         { key: "limit", label: "How many posts?", type: "number", placeholder: "20" },
         { key: "keyword", label: "Filter keyword (optional)", placeholder: "kaspa", hint: "Only return posts containing this word" },
       ];
+    case "post_to_ttt":
+      return [
+        { key: "author_name", label: "Author name (optional)", placeholder: "Defaults to your username", hint: "Leave blank to post as you" },
+        { key: "content_override", label: "Custom content (optional)", type: "textarea", placeholder: "Leave blank to use {{result}} from previous step", hint: "Supports {{result}}. If empty, uses last text step. Image from prior ai_image attaches automatically." },
+      ];
     case "send_email":
       return [
         { key: "to", label: "To Email", placeholder: "you@example.com", hint: "Real email address — sent via Base44" },
