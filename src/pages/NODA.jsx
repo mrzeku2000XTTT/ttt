@@ -44,15 +44,16 @@ export default function NODAPage() {
     setNodes(newNodes);
     if (name) setWorkflowName(name);
     setSelectedNodeId(null);
-    setAutoRun(true);
+    setAutoRun(false); // disable auto-run so the debounce effect doesn't fire a second time
     showToast(`Brain built ${newNodes.length} step${newNodes.length === 1 ? "" : "s"} — running now`);
-    // Kick off the run immediately as an EXPLICIT run (not auto-run) so X compose opens
+    // Kick off the run immediately with the FRESH nodes (state isn't committed yet,
+    // so we must pass them explicitly — otherwise runWorkflow sees the old empty array).
     setTimeout(() => {
       if (!runningRef.current) {
         isAutoRunRef.current = false;
-        runWorkflow();
+        runWorkflow(newNodes);
       }
-    }, 250);
+    }, 100);
   };
 
   const showToast = (msg, type = "success") => {
@@ -145,8 +146,11 @@ export default function NODAPage() {
     showToast(`Example loaded — will email ${myEmail.trim()}`);
   };
 
-  const runWorkflow = async () => {
-    if (nodes.length === 0) return;
+  const runWorkflow = async (overrideNodes) => {
+    // Use overrideNodes when called right after a state-setting build (Brain),
+    // because React hasn't committed the new nodes yet.
+    const activeNodes = Array.isArray(overrideNodes) && overrideNodes.length > 0 ? overrideNodes : nodes;
+    if (activeNodes.length === 0) return;
     setRunning(true);
     setRunLogs([]);
     setShowRunPanel(true);
@@ -158,10 +162,10 @@ export default function NODAPage() {
     log(`▶ Starting "${workflowName}"`);
     let context = {};
 
-    for (const node of nodes) {
+    for (const node of activeNodes) {
       log(`→ ${node.label}...`);
       try {
-        const result = await executeNode(node, context);
+        const result = await executeNode(node, context, activeNodes);
         context[node.id] = result;
         updateNode(node.id, { output: result });
         if (node.type === "send_email" && result?.sent) {
@@ -179,12 +183,13 @@ export default function NODAPage() {
     isAutoRunRef.current = false;
   };
 
-  const executeNode = async (node, context) => {
+  const executeNode = async (node, context, overrideNodes) => {
+    const nodeList = Array.isArray(overrideNodes) && overrideNodes.length > 0 ? overrideNodes : nodes;
     // Find most recent previous node's output (walk backward from current node)
     const getPrevOutput = () => {
-      const idx = nodes.findIndex((n) => n.id === node.id);
+      const idx = nodeList.findIndex((n) => n.id === node.id);
       for (let i = idx - 1; i >= 0; i--) {
-        const out = context[nodes[i].id];
+        const out = context[nodeList[i].id];
         if (out !== undefined && out !== null) return out;
       }
       return "";
@@ -192,10 +197,10 @@ export default function NODAPage() {
 
     // For email body: collect ALL prior outputs (text + image URLs) in order
     const getAllPriorOutputs = () => {
-      const idx = nodes.findIndex((n) => n.id === node.id);
+      const idx = nodeList.findIndex((n) => n.id === node.id);
       const parts = [];
       for (let i = 0; i < idx; i++) {
-        const prev = nodes[i];
+        const prev = nodeList[i];
         const out = context[prev.id];
         if (out === undefined || out === null) continue;
         if (prev.type === "ai_image" && typeof out === "string") {
@@ -291,11 +296,11 @@ export default function NODAPage() {
         if (!subject) throw new Error("Subject is required");
 
         // Collect every image URL produced by previous ai_image steps
-        const idx = nodes.findIndex((n) => n.id === node.id);
+        const idx = nodeList.findIndex((n) => n.id === node.id);
         const imageUrls = [];
         const textOutputs = [];
         for (let i = 0; i < idx; i++) {
-          const prev = nodes[i];
+          const prev = nodeList[i];
           const out = context[prev.id];
           if (prev.type === "ai_image" && typeof out === "string" && /^https?:\/\//.test(out)) {
             imageUrls.push(out);
@@ -339,10 +344,10 @@ export default function NODAPage() {
       }
       case "send_to_x": {
         // Use the most recent TEXT output (skip ai_image URLs — X can't preview them inline anyway).
-        const idx = nodes.findIndex((n) => n.id === node.id);
+        const idx = nodeList.findIndex((n) => n.id === node.id);
         let textPart = "";
         for (let i = idx - 1; i >= 0; i--) {
-          const prev = nodes[i];
+          const prev = nodeList[i];
           const out = context[prev.id];
           if (out === undefined || out === null) continue;
           if (prev.type === "ai_image") continue; // skip image steps
