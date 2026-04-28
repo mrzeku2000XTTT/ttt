@@ -201,6 +201,31 @@ export default function NODAPage() {
       return String(val);
     };
 
+    // Convert basic Markdown (**bold**, ## headings, etc.) to clean HTML for emails
+    const markdownToHtml = (str) => {
+      if (typeof str !== "string") return str;
+      let s = str;
+      // Headings: ###### → ## (h6 → h2)
+      s = s.replace(/^######\s+(.+)$/gm, "<h6 style=\"margin:12px 0 6px;font-size:13px;font-weight:700;\">$1</h6>");
+      s = s.replace(/^#####\s+(.+)$/gm, "<h5 style=\"margin:12px 0 6px;font-size:14px;font-weight:700;\">$1</h5>");
+      s = s.replace(/^####\s+(.+)$/gm, "<h4 style=\"margin:14px 0 6px;font-size:15px;font-weight:700;\">$1</h4>");
+      s = s.replace(/^###\s+(.+)$/gm, "<h3 style=\"margin:16px 0 8px;font-size:17px;font-weight:700;\">$1</h3>");
+      s = s.replace(/^##\s+(.+)$/gm, "<h2 style=\"margin:18px 0 8px;font-size:20px;font-weight:800;\">$1</h2>");
+      s = s.replace(/^#\s+(.+)$/gm, "<h1 style=\"margin:20px 0 10px;font-size:24px;font-weight:800;\">$1</h1>");
+      // Bold + italic
+      s = s.replace(/\*\*\*([^*]+)\*\*\*/g, "<strong><em>$1</em></strong>");
+      s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+      s = s.replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s).,!?]|$)/g, "$1<em>$2</em>");
+      // Inline code
+      s = s.replace(/`([^`]+)`/g, "<code style=\"background:#f4f4f5;padding:2px 5px;border-radius:4px;font-family:monospace;font-size:0.9em;\">$1</code>");
+      // Bullet lists
+      s = s.replace(/^[\-\*]\s+(.+)$/gm, "<li>$1</li>");
+      s = s.replace(/(<li>[\s\S]*?<\/li>)(?=\n(?!<li>)|$)/g, "<ul style=\"margin:8px 0;padding-left:20px;\">$1</ul>");
+      // Links [text](url)
+      s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, "<a href=\"$2\" style=\"color:#06b6d4;\">$1</a>");
+      return s;
+    };
+
     const interpolate = (str) => {
       if (typeof str !== "string") return str;
       return str.replace(/\{\{(\w+)\}\}/g, (_, key) => {
@@ -256,7 +281,8 @@ export default function NODAPage() {
 
         // Convert to HTML and embed images. If body looks like plain text, wrap it.
         const isHtml = /<[a-z][\s\S]*>/i.test(body);
-        let htmlBody = isHtml ? body : body.replace(/\n/g, "<br/>");
+        // Convert Markdown (**, ##, lists, links) to HTML so emails don't show raw markup
+        let htmlBody = isHtml ? body : markdownToHtml(body).replace(/\n/g, "<br/>");
 
         // Replace any raw image URLs in body with <img> tags
         htmlBody = htmlBody.replace(
