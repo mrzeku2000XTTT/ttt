@@ -42,6 +42,10 @@ Rules:
 - Order matters: steps run top to bottom, each step receives the previous step's output via {{result}}.
 - If the user wants an email with an AI-generated image, use TWO steps: ai_image then send_email with body containing {{result}}.
 - If the user wants an email with AI-written text + image, use THREE steps: ai_prompt, ai_image, then send_email. The email body can reference {{result}} which auto-embeds the most recent image AND prior text.
+- CRITICAL — POSTING TO X / TWITTER: If the user wants to post / tweet / share something on X (Twitter), use this exact pattern:
+   1. ai_prompt → write the post text. The prompt MUST instruct the AI to output ONLY the final tweet text, under 275 characters, no preamble, no quotes, no hashtags unless the user asked for them. Example prompt: "Write a single tweet (max 275 chars, no quotes, no preamble) about [topic]. Output only the tweet text itself."
+   2. (Optional) ai_image → only add this if the user explicitly asks for an image to go with the post.
+   3. send_to_x → with empty config {}. This step automatically picks up the most recent text output and opens X compose.
 - CRITICAL: If the user asks for N images (e.g. "10 images", "5 frames", "a slide deck of 8"), output EXACTLY N separate ai_image steps — one per image — each with its own unique, story-progressing prompt. DO NOT collapse them into fewer steps. The send_email step (if any) must come AFTER all ai_image steps so the email auto-embeds every generated image.
 - When generating a sequence of story frames, make each ai_image prompt advance the narrative (frame 1, frame 2, ... frame N) with consistent characters, setting, and style across frames.
 - Default recipient email if user mentions "me" or "my email": ${currentEmail || "user@example.com"}
