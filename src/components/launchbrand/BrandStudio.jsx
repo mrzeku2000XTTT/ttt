@@ -4,6 +4,7 @@ import { Send, Loader2, Sparkles, PanelRight } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import BrandMessageBubble from "@/components/launchbrand/BrandMessageBubble";
 import BrandWorkspace from "@/components/launchbrand/BrandWorkspace";
+import BrandPreview from "@/components/launchbrand/BrandPreview";
 import { runBrandAgent } from "@/components/launchbrand/brandAgent";
 
 export default function BrandStudio() {
@@ -13,6 +14,7 @@ export default function BrandStudio() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [showWorkspace, setShowWorkspace] = useState(false);
+  const [rightTab, setRightTab] = useState("preview"); // "preview" | "workspace"
   const scrollRef = useRef(null);
 
   useEffect(() => { init(); }, []);
@@ -114,7 +116,7 @@ export default function BrandStudio() {
           </p>
         </div>
 
-        <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.03] to-white/[0.01] backdrop-blur-xl overflow-hidden grid lg:grid-cols-[1fr_320px] h-[640px]">
+        <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.03] to-white/[0.01] backdrop-blur-xl overflow-hidden grid lg:grid-cols-[1fr_420px] h-[640px]">
           {/* Chat */}
           <div className="flex flex-col min-h-0 relative">
             <div className="flex items-center justify-between px-5 py-3 border-b border-white/10">
@@ -171,12 +173,32 @@ export default function BrandStudio() {
             </div>
           </div>
 
-          {/* Workspace - desktop */}
-          <div className="hidden lg:block border-l border-white/10 bg-black/30">
-            <BrandWorkspace brand={brand} />
+          {/* Right panel - desktop (Preview / Workspace tabs) */}
+          <div className="hidden lg:flex flex-col border-l border-white/10 bg-black/40 min-h-0">
+            <div className="flex items-center gap-1 px-3 py-2 border-b border-white/10 flex-shrink-0">
+              {[
+                { id: "preview", label: "Preview" },
+                { id: "workspace", label: "Assets" },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setRightTab(t.id)}
+                  className={`px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wide transition-colors ${
+                    rightTab === t.id
+                      ? "bg-white text-black"
+                      : "bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex-1 min-h-0 overflow-hidden">
+              {rightTab === "preview" ? <BrandPreview brand={brand} /> : <BrandWorkspace brand={brand} />}
+            </div>
           </div>
 
-          {/* Workspace - mobile drawer */}
+          {/* Mobile drawer */}
           <AnimatePresence>
             {showWorkspace && (
               <motion.div
@@ -184,9 +206,29 @@ export default function BrandStudio() {
                 animate={{ x: 0 }}
                 exit={{ x: "100%" }}
                 transition={{ duration: 0.25 }}
-                className="lg:hidden absolute inset-y-0 right-0 w-80 bg-black/95 border-l border-white/10 z-10"
+                className="lg:hidden absolute inset-y-0 right-0 w-[88%] max-w-sm bg-black/95 border-l border-white/10 z-10 flex flex-col"
               >
-                <BrandWorkspace brand={brand} />
+                <div className="flex items-center gap-1 px-3 py-2 border-b border-white/10 flex-shrink-0">
+                  {[
+                    { id: "preview", label: "Preview" },
+                    { id: "workspace", label: "Assets" },
+                  ].map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => setRightTab(t.id)}
+                      className={`px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wide transition-colors ${
+                        rightTab === t.id
+                          ? "bg-white text-black"
+                          : "bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white"
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex-1 min-h-0 overflow-hidden">
+                  {rightTab === "preview" ? <BrandPreview brand={brand} /> : <BrandWorkspace brand={brand} />}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
