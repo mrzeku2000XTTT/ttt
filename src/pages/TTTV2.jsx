@@ -5,7 +5,7 @@ import { base44 } from "@/api/base44Client";
 import {
   CheckCircle2, ExternalLink, ArrowUpRight,
   ChevronRight, ChevronDown, Monitor, Upload, X,
-  Volume2, VolumeX, LogIn, LogOut
+  Volume2, VolumeX, LogIn, LogOut, Sparkles
 } from "lucide-react";
 
 import HeroHeader from "@/components/tttv2/HeroHeader";
@@ -235,6 +235,15 @@ export default function TTTV2Page() {
           <a href="#roadmap" className="hover:text-zinc-900 transition-colors">Roadmap</a>
         </div>
         <div className="flex items-center gap-2">
+          {isAdmin && (
+            <Link
+              to="/TTTV3"
+              className="hidden sm:inline-flex items-center gap-1 text-[12px] font-bold text-white bg-gradient-to-r from-cyan-500 via-violet-500 to-pink-500 hover:opacity-90 px-3 py-1.5 rounded-full transition-opacity shadow-lg shadow-violet-500/30"
+              title="Admin: Preview TTT 3.0"
+            >
+              <Sparkles className="w-3 h-3" /> 3.0
+            </Link>
+          )}
           <Link
             to="/Home"
             onClick={() => setNavigating(true)}
