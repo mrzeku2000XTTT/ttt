@@ -108,17 +108,25 @@ function ScrollingRow({ apps, direction = "left", speed = 30 }) {
 export default function HeroHeader() {
   return (
     <section className="relative pt-24 sm:pt-32 pb-10 sm:pb-16 px-5 overflow-hidden bg-white">
-      {/* Chinese calligraphy: "Earth to Mars Transaction" — subtle background watermark */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
+      {/* Chinese calligraphy: "Earth to Mars Transaction" — background watermark */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[1] overflow-hidden">
         <div
-          className="text-[clamp(4rem,18vw,16rem)] font-black text-zinc-900 leading-none tracking-tighter whitespace-nowrap select-none"
+          className="text-[clamp(3rem,14vw,12rem)] font-black leading-none tracking-tighter whitespace-nowrap select-none"
           style={{
-            opacity: 0.04,
-            fontFamily: '"Noto Serif SC", "Songti SC", "STSong", serif',
+            color: "#0f172a",
+            opacity: 0.08,
+            fontFamily: '"Noto Serif SC", "Songti SC", "STSong", "Microsoft YaHei", serif',
             letterSpacing: "0.05em",
           }}
         >
           地球到火星交易
+        </div>
+      </div>
+
+      {/* English subtitle for the Chinese — small caption */}
+      <div className="absolute top-6 left-1/2 -translate-x-1/2 pointer-events-none z-[2] text-center">
+        <div className="text-[10px] font-bold tracking-[0.3em] text-zinc-300 uppercase">
+          地球到火星交易 · Earth → Mars Transaction
         </div>
       </div>
 
