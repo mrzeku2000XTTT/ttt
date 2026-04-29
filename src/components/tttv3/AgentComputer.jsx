@@ -16,6 +16,12 @@ const AgentComputer = forwardRef(function AgentComputer({ url, status, narration
   }));
   const fullUrl = url ? `${window.location.origin}${url}` : null;
 
+  // Detect if we're on the published site (custom domain) vs preview sandbox.
+  // Published sites send X-Frame-Options: DENY so they can't iframe themselves.
+  const isPublished = typeof window !== "undefined" &&
+    !window.location.hostname.includes("base44.app") &&
+    !window.location.hostname.includes("localhost");
+
   useEffect(() => {
     if (url) setLoading(true);
   }, [url]);
@@ -58,14 +64,18 @@ const AgentComputer = forwardRef(function AgentComputer({ url, status, narration
       {/* Viewport */}
       <div className="relative flex-1 bg-black overflow-hidden">
         {fullUrl ? (
-          <iframe
-            ref={iframeRef}
-            src={fullUrl}
-            onLoad={() => setLoading(false)}
-            className="w-full h-full border-0 bg-white"
-            title="Agent Computer"
-            sandbox="allow-same-origin allow-scripts allow-forms"
-          />
+          isPublished ? (
+            <PublishedNotice url={url} />
+          ) : (
+            <iframe
+              ref={iframeRef}
+              src={fullUrl}
+              onLoad={() => setLoading(false)}
+              className="w-full h-full border-0 bg-white"
+              title="Agent Computer"
+              sandbox="allow-same-origin allow-scripts allow-forms"
+            />
+          )
         ) : (
           <EmptyDesktop />
         )}
@@ -126,6 +136,30 @@ const AgentComputer = forwardRef(function AgentComputer({ url, status, narration
 });
 
 export default AgentComputer;
+
+function PublishedNotice({ url }) {
+  return (
+    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-zinc-900 via-zinc-950 to-black text-center px-6">
+      <div className="w-14 h-14 rounded-2xl bg-amber-500/10 ring-1 ring-amber-400/30 flex items-center justify-center mb-4">
+        <Lock className="w-6 h-6 text-amber-400" />
+      </div>
+      <h4 className="text-white font-bold text-base mb-2">Agent Computer · Preview Only</h4>
+      <p className="text-white/50 text-xs max-w-xs leading-relaxed mb-4">
+        The published site blocks iframing itself for security (<span className="font-mono text-amber-300">X-Frame-Options</span>).
+        The Agent Computer only runs in the preview sandbox.
+      </p>
+      <p className="text-white/30 text-[10px] font-mono">Requested: {url}</p>
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-5 px-4 py-2 rounded-full bg-white text-black text-[12px] font-semibold hover:bg-zinc-200 transition-colors"
+      >
+        Open {url} in new tab
+      </a>
+    </div>
+  );
+}
 
 function EmptyDesktop() {
   return (
