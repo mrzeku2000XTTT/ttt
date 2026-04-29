@@ -120,14 +120,14 @@ export default function AgentChatGPT() {
 
     abortRef.current = { aborted: false };
 
-    // Drop a "kickoff" reasoning bubble into chat so the user sees the sub-agent take over
+    // Drop a "kickoff" reasoning bubble into chat so the user sees the agent extension take over
     setMessages((m) => [
       ...m,
       {
         role: "reasoning",
         reasoning: {
           step: 0,
-          say: `Spinning up sub-agent to: ${goal}`,
+          say: `Activating my agent extension to: ${goal}`,
           status: "thinking",
         },
       },
@@ -169,7 +169,7 @@ export default function AgentChatGPT() {
         role: "reasoning",
         reasoning: {
           step: "✓",
-          say: "Sub-agent finished. Goal complete.",
+          say: "Job done — extension agent finished and you can see the result in the computer panel.",
           status: "done",
         },
       },
@@ -226,7 +226,7 @@ export default function AgentChatGPT() {
 You have TWO real tools you can use on every turn:
 
 1. **reply** (always): a short, ChatGPT-style text reply (1-3 sentences) shown in chat.
-2. **launch_computer** (optional): triggers the autonomous Agent Computer panel which navigates the live app, clicks buttons, types into inputs, and uses connected apps to ACHIEVE a goal. Use this whenever the user asks you to DO something inside the TTT ecosystem (open an app, post, send, build a workflow, play a video, navigate, paste a URL, automate, research live web, etc.).
+2. **launch_computer** (optional): activates YOUR OWN agent extension — a runtime arm of you (the same Vision Agent) that operates the Agent Computer panel: navigates the live app, clicks buttons, types into inputs, and uses connected apps to ACHIEVE a goal. It is NOT a separate sub-agent — it's literally you, just with eyes/hands inside the iframe. Use this whenever the user asks you to DO something inside the TTT ecosystem (open an app, post, send, build a workflow, play a video, navigate, paste a URL, automate, research live web, etc.).
 
 When you launch_computer, you MUST set "goal" to a clear, specific instruction the autonomous agent can execute (rephrased from the user's request). Examples:
 - User: "play this https://youtu.be/abc" → goal: "Open TTTV (/Browser), paste https://youtu.be/abc into the search input, and click play."

@@ -40,7 +40,7 @@ export default function AgentReasoningBubble({ msg }) {
 
       <div className="flex flex-col gap-1.5 min-w-0 flex-1 max-w-[85%]">
         <div className="flex items-center gap-1.5 text-[10px] text-white/40 font-medium px-1">
-          <span className="text-fuchsia-300/80">Sub-agent</span>
+          <span className="text-fuchsia-300/80">Vision Agent · extension</span>
           <span>·</span>
           <span>step {step}</span>
           {status === "thinking" && (
