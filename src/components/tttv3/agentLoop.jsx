@@ -156,12 +156,23 @@ async function executeAction(action, { setUrl, setStatus, setCursor, getIframe }
   const iframe = getIframe?.();
 
   switch (action.type) {
-    case "navigate":
+    case "navigate": {
       setStatus(`Navigating to ${action.url}…`);
       setUrl(action.url);
-      await waitForIframeReady(4000);
-      await sleep(800);
+      // Wait for the iframe page to announce ready, then a small settle pause
+      const ready = await waitForIframeReady(6000);
+      // Even if ready times out (e.g. Layout-wrapped pages), try a ping to check responsiveness
+      if (!ready.ok) {
+        await sleep(1500);
+        const ping = await sendCommand(getIframe?.(), { action: "ping" }, 1500);
+        if (!ping.ok) {
+          // Page may not have loaded the bridge — give it one more beat
+          await sleep(1000);
+        }
+      }
+      await sleep(600);
       return { ok: true };
+    }
 
     case "click_text": {
       setStatus(`Clicking "${action.text}"…`);
