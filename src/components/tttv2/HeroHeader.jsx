@@ -175,7 +175,7 @@ export default function HeroHeader() {
             y: { duration: 6, repeat: Infinity, ease: "easeInOut" },
             rotate: { duration: 9, repeat: Infinity, ease: "easeInOut" },
           }}
-          className="w-[min(140vw,1400px)] h-full max-w-none object-contain mix-blend-multiply"
+          className="w-[min(85vw,1400px)] sm:w-[min(140vw,1400px)] h-full max-w-none object-contain mix-blend-multiply"
         />
       </motion.div>
 
