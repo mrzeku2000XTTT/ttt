@@ -146,6 +146,8 @@ Rules:
 - YOU CAN TYPE into ANY input field shown in "Input fields available". The system simulates real typing — the user sees each character appear in the input one at a time. NEVER say "I can't type" or "you'll need to type it yourself" — if an input exists in the list, use type_into to fill it.
 - On TTTV (/Browser): the search input has placeholder "Paste YouTube URL..." and data-agent-id="search". Use label "search" to type a YouTube URL into it, then click_text "play" to play. Example: { type: "type_into", label: "search", text: "https://youtube.com/watch?v=..." }
 - If user pastes/says a URL, USE IT. Don't refuse, don't ask, just type_into the search input and click play.
+- CRITICAL: type_into REPLACES the input's value entirely (it does not append). Only use type_into ONCE per input. After typing, your next action should be to click play/submit — DO NOT type_into the same input again.
+- If your previous step already typed the correct text into an input, DO NOT type_into it again. Move on (usually click_text "play" or the submit button).
 - If the goal is done, set done=true and use finish.
 - If you've tried the same action 2x and it failed, try a different approach or finish.
 - Keep "say" short and conversational (1 sentence).
