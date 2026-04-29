@@ -25,7 +25,10 @@ export default function TTTV3Page() {
     setTimeout(() => {
       const chat = document.getElementById("chat");
       if (chat) {
-        const targetY = chat.getBoundingClientRect().top + window.pageYOffset - 40;
+        // Scroll so the BOTTOM of the chat section (input box) is visible — not the top.
+        const rect = chat.getBoundingClientRect();
+        const chatBottom = rect.bottom + window.pageYOffset;
+        const targetY = chatBottom - window.innerHeight + 40;
         // Custom long-duration smooth scroll so the user actually sees each section pass by
         const startY = window.pageYOffset;
         const distance = targetY - startY;
