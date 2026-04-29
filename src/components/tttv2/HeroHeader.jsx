@@ -108,11 +108,6 @@ function ScrollingRow({ apps, direction = "left", speed = 30 }) {
 export default function HeroHeader() {
   return (
     <section className="relative pt-24 sm:pt-32 pb-10 sm:pb-16 px-5 overflow-hidden bg-white">
-      {/* Subtle radial glow */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-radial from-cyan-100/40 via-transparent to-transparent rounded-full blur-3xl" />
-      </div>
-
       {/* Floating white dragon — fills the hero, blends into white background */}
       <motion.div
         initial={{ opacity: 0, scale: 0.92, y: -30 }}
@@ -137,7 +132,6 @@ export default function HeroHeader() {
             rotate: { duration: 9, repeat: Infinity, ease: "easeInOut" },
           }}
           className="w-[min(140vw,1400px)] h-full max-w-none object-contain mix-blend-darken"
-          style={{ filter: "drop-shadow(0 30px 80px rgba(165, 243, 252, 0.35))" }}
         />
       </motion.div>
 
