@@ -90,8 +90,8 @@ function ScrollingRow({ apps, direction = "left", speed = 30 }) {
   return (
     <div className="relative overflow-hidden w-full">
       {/* Edge fades */}
-      <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-r from-[#F5F5F7] to-transparent z-10 pointer-events-none" />
-      <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-l from-[#F5F5F7] to-transparent z-10 pointer-events-none" />
+      <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
       <motion.div
         className="flex items-end gap-5 sm:gap-6 w-max"
         animate={{ x: direction === "left" ? ["0%", "-33.333%"] : ["-33.333%", "0%"] }}
@@ -107,7 +107,7 @@ function ScrollingRow({ apps, direction = "left", speed = 30 }) {
 
 export default function HeroHeader() {
   return (
-    <section className="relative pt-24 sm:pt-32 pb-10 sm:pb-16 px-5 overflow-hidden">
+    <section className="relative pt-24 sm:pt-32 pb-10 sm:pb-16 px-5 overflow-hidden bg-white">
       {/* Subtle radial glow */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-radial from-cyan-100/40 via-transparent to-transparent rounded-full blur-3xl" />
