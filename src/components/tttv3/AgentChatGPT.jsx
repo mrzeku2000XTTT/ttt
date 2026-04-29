@@ -106,7 +106,10 @@ export default function AgentChatGPT() {
 
   // Detect if user message looks like a task the agent should DO (vs just chat)
   const isTaskGoal = (text) => {
-    return /\b(open|go to|navigate|post|send|tip|click|type|search|find|browse|show me|take me|fill|submit|read|watch|play)\b/i.test(text);
+    // Any URL → treat as task (user wants the agent to use it)
+    if (/https?:\/\/\S+/i.test(text)) return true;
+    // Action verbs
+    return /\b(open|go to|navigate|post|send|tip|click|type|paste|search|find|browse|show me|take me|fill|submit|read|watch|play)\b/i.test(text);
   };
 
   const runAutonomousGoal = async (goal) => {
