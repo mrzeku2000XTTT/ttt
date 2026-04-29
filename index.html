@@ -262,7 +262,11 @@
               var inputs = Array.from(document.querySelectorAll('input, textarea, [contenteditable="true"]')).slice(0, 20).map(function (i) {
                 var label = i.getAttribute('placeholder') || i.getAttribute('aria-label') || i.getAttribute('name') || i.getAttribute('data-agent-id') || '';
                 var type = i.tagName.toLowerCase() + (i.type ? ':' + i.type : '');
-                return label ? (label + ' (' + type + ')') : null;
+                var val = i.isContentEditable ? (i.textContent || '') : (i.value || '');
+                val = String(val).trim().slice(0, 80);
+                if (!label && !val) return null;
+                var base = label ? (label + ' (' + type + ')') : ('(' + type + ')');
+                return val ? (base + ' = "' + val + '"') : base;
               }).filter(Boolean);
               reply(id, { ok: true, title: document.title, url: location.pathname, headings: headings, buttons: buttons.slice(0, 25), inputs: inputs });
             } else if (cmd.action === 'ping') {
