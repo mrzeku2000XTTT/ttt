@@ -238,10 +238,11 @@ export default function TTTV2Page() {
           {isAdmin && (
             <Link
               to="/TTTV3"
-              className="inline-flex items-center gap-1 text-[11px] sm:text-[12px] font-bold text-white bg-gradient-to-r from-cyan-500 via-violet-500 to-pink-500 hover:opacity-90 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full transition-opacity shadow-lg shadow-violet-500/30"
+              className="relative z-[60] inline-flex items-center gap-1 text-[11px] sm:text-[12px] font-bold text-white bg-gradient-to-r from-cyan-500 via-violet-500 to-pink-500 hover:opacity-90 active:scale-95 px-3 sm:px-4 py-2 rounded-full transition-all shadow-lg shadow-violet-500/30 cursor-pointer touch-manipulation min-h-[36px]"
               title="Admin: Preview TTT 3.0"
+              style={{ pointerEvents: 'auto' }}
             >
-              <Sparkles className="w-3 h-3" /> 3.0
+              <Sparkles className="w-3.5 h-3.5" /> 3.0
             </Link>
           )}
           <Link
