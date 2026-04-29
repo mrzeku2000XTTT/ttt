@@ -126,5 +126,111 @@
         setTimeout(hideBoot, 6000);
       })();
     </script>
+    <script>
+      // ─── TTT 3.0 Agent Control Bridge ───
+      // When this page is loaded inside the Agent Computer iframe, listen for
+      // postMessage commands from the parent and execute them on the DOM.
+      // Only responds when the page is iframed (window !== window.top).
+      (function () {
+        if (window === window.top) return; // only in iframe
+        var AGENT_NS = 'ttt-agent';
+
+        function findByText(text, tagFilter) {
+          var t = (text || '').toLowerCase().trim();
+          if (!t) return null;
+          var els = document.querySelectorAll(tagFilter || 'button, a, [role="button"], [data-agent-id]');
+          for (var i = 0; i < els.length; i++) {
+            var label = (els[i].getAttribute('data-agent-id') || els[i].innerText || els[i].textContent || els[i].getAttribute('aria-label') || '').toLowerCase().trim();
+            if (label && (label === t || label.indexOf(t) !== -1)) return els[i];
+          }
+          return null;
+        }
+
+        function findInput(label) {
+          var l = (label || '').toLowerCase().trim();
+          // Exact match first: placeholder, name, aria-label, data-agent-id
+          var inputs = document.querySelectorAll('input, textarea, [contenteditable="true"]');
+          for (var i = 0; i < inputs.length; i++) {
+            var el = inputs[i];
+            var attrs = [el.getAttribute('placeholder'), el.getAttribute('name'), el.getAttribute('aria-label'), el.getAttribute('data-agent-id')];
+            for (var j = 0; j < attrs.length; j++) {
+              if (attrs[j] && attrs[j].toLowerCase().indexOf(l) !== -1) return el;
+            }
+          }
+          // Fallback: first visible input/textarea
+          for (var k = 0; k < inputs.length; k++) {
+            if (inputs[k].offsetParent !== null) return inputs[k];
+          }
+          return null;
+        }
+
+        function getRect(el) {
+          var r = el.getBoundingClientRect();
+          var vw = window.innerWidth, vh = window.innerHeight;
+          return {
+            x: ((r.left + r.width / 2) / vw) * 100,
+            y: ((r.top + r.height / 2) / vh) * 100,
+            visible: r.top >= 0 && r.bottom <= vh,
+          };
+        }
+
+        function setReactInputValue(el, value) {
+          var proto = el.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
+          var setter = Object.getOwnPropertyDescriptor(proto, 'value').set;
+          setter.call(el, value);
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        function reply(id, payload) {
+          window.parent.postMessage({ ns: AGENT_NS, type: 'response', id: id, payload: payload }, '*');
+        }
+
+        window.addEventListener('message', function (e) {
+          var msg = e.data;
+          if (!msg || msg.ns !== AGENT_NS || msg.type !== 'command') return;
+          var cmd = msg.command;
+          var id = msg.id;
+          try {
+            if (cmd.action === 'click_text') {
+              var btn = findByText(cmd.text, cmd.tagFilter);
+              if (!btn) return reply(id, { ok: false, error: 'not_found' });
+              btn.scrollIntoView({ block: 'center', behavior: 'smooth' });
+              var pos = getRect(btn);
+              setTimeout(function () { btn.click(); reply(id, { ok: true, position: pos }); }, 400);
+            } else if (cmd.action === 'type_into') {
+              var input = findInput(cmd.label);
+              if (!input) return reply(id, { ok: false, error: 'input_not_found' });
+              input.focus();
+              if (input.isContentEditable) {
+                input.textContent = cmd.text;
+                input.dispatchEvent(new InputEvent('input', { bubbles: true }));
+              } else {
+                setReactInputValue(input, cmd.text);
+              }
+              reply(id, { ok: true, position: getRect(input) });
+            } else if (cmd.action === 'scroll') {
+              window.scrollTo({ top: (cmd.y || 0), behavior: 'smooth' });
+              reply(id, { ok: true });
+            } else if (cmd.action === 'read_page') {
+              var headings = Array.from(document.querySelectorAll('h1, h2, h3, [role="heading"]')).slice(0, 10).map(function (h) { return h.innerText.trim(); }).filter(Boolean);
+              var buttons = Array.from(document.querySelectorAll('button, a[href]')).slice(0, 30).map(function (b) { return (b.innerText || b.getAttribute('aria-label') || '').trim(); }).filter(Boolean);
+              reply(id, { ok: true, title: document.title, url: location.pathname, headings: headings, buttons: buttons.slice(0, 20) });
+            } else if (cmd.action === 'ping') {
+              reply(id, { ok: true, ready: true, url: location.pathname });
+            } else {
+              reply(id, { ok: false, error: 'unknown_action' });
+            }
+          } catch (err) {
+            reply(id, { ok: false, error: String(err.message || err) });
+          }
+        });
+
+        // Announce ready
+        setTimeout(function () {
+          window.parent.postMessage({ ns: AGENT_NS, type: 'ready', url: location.pathname }, '*');
+        }, 100);
+      })();
+    </script>
   </body>
 </html>

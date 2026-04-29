@@ -99,6 +99,7 @@ export default function AgentChatGPT() {
   const [computerNarrations, setComputerNarrations] = useState([]);
   const [computerCursor, setComputerCursor] = useState({ x: 50, y: 50, clicking: false });
   const [agentRunning, setAgentRunning] = useState(false);
+  const computerRef = useRef(null);
 
   const detectAppIntent = (text) => {
     const lower = text.toLowerCase();
@@ -110,28 +111,89 @@ export default function AgentChatGPT() {
     );
   };
 
+  // Ask the LLM to plan a sequence of interactive actions for the agent computer
+  const planAgentActions = async (userQuery, app) => {
+    const schema = {
+      type: "object",
+      properties: {
+        actions: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              type: { type: "string", enum: ["narrate", "navigate", "wait", "click_text", "type_into", "scroll"] },
+              text: { type: "string" },
+              url: { type: "string" },
+              label: { type: "string" },
+              ms: { type: "number" },
+              y: { type: "number" },
+            },
+          },
+        },
+      },
+    };
+    try {
+      const res = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are the TTT 3.0 Agent Computer planner. The user said: "${userQuery}"
+
+You have an iframe browser pointed at the TTT app at "${app.path}" (${app.name}: ${app.description}).
+
+Plan a sequence of 4-8 actions to fulfill the user's request. Available actions:
+- narrate: speak to the user (e.g. "Opening Feed and finding the post box…")
+- navigate: change URL (only if going to a different app)
+- wait: pause in ms (use 1500-2500 after navigate, 800 after clicks)
+- click_text: click a button/link by its visible text label (e.g. "Post", "Send", "Sign in")
+- type_into: type text into an input matching a label (e.g. label "what's on your mind", text "hello world")
+- scroll: scroll iframe to y position
+
+Start with a narrate, then navigate (if needed), then wait. After interactions, narrate the result.
+Be specific with click_text and type_into labels — match real TTT button text.
+
+Examples:
+User: "post hello on feed"
+[
+  {"type":"narrate","text":"Posting 'hello' to Feed…"},
+  {"type":"navigate","url":"/Feed"},
+  {"type":"wait","ms":2000},
+  {"type":"type_into","label":"what's on your mind","text":"hello"},
+  {"type":"wait","ms":600},
+  {"type":"click_text","text":"Post"},
+  {"type":"narrate","text":"Posted! Check the feed."}
+]
+
+Return only the JSON action plan.`,
+        response_json_schema: schema,
+      });
+      return res?.actions || [];
+    } catch {
+      return null;
+    }
+  };
+
   const runAppDemo = async (app, userQuery) => {
     if (!computerOpen) setComputerOpen(true);
     setAgentRunning(true);
     setComputerNarrations([]);
 
-    const actions = [
-      { type: "narrate", text: `Opening ${app.name} for you…` },
-      { type: "navigate", url: app.path },
-      { type: "wait", ms: 1500 },
-      { type: "move_cursor", x: 30, y: 30 },
-      { type: "narrate", text: `${app.description}. Let me show you around.` },
-      { type: "move_cursor", x: 60, y: 50 },
-      { type: "click" },
-      { type: "wait", ms: 1200 },
-      { type: "narrate", text: `That's ${app.name} — you can interact with it directly anytime.` },
-    ];
+    // Try LLM-planned actions first
+    let actions = await planAgentActions(userQuery, app);
+
+    // Fallback to simple demo if planning fails
+    if (!actions || actions.length === 0) {
+      actions = [
+        { type: "narrate", text: `Opening ${app.name} for you…` },
+        { type: "navigate", url: app.path },
+        { type: "wait", ms: 1500 },
+        { type: "narrate", text: `${app.description}. You can interact with it directly anytime.` },
+      ];
+    }
 
     await runAgentActions(actions, {
       setUrl: setComputerUrl,
       setStatus: setComputerStatus,
       addNarration: (text) => setComputerNarrations((prev) => [...prev, text]),
       setCursor: setComputerCursor,
+      getIframe: () => computerRef.current?.getIframe(),
     });
 
     setAgentRunning(false);
@@ -392,6 +454,7 @@ Reply directly, conversationally, and concisely (2-5 sentences usually, longer o
               className="h-[640px]"
             >
               <AgentComputer
+                ref={computerRef}
                 url={computerUrl}
                 status={computerStatus}
                 narrations={computerNarrations}

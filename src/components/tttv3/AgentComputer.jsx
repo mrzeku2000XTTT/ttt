@@ -1,15 +1,19 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Monitor, RotateCw, ArrowLeft, ArrowRight, Lock, Loader2 } from "lucide-react";
 import AgentCursor from "./AgentCursor";
 
 /**
  * AgentComputer — a fake desktop browser the agent operates inside the chat.
- * Shows: chrome (URL bar, traffic lights), iframe of TTT routes, animated cursor, status strip.
+ * Exposes an imperative ref so the parent can grab the iframe element for postMessage.
  */
-export default function AgentComputer({ url, status, narrations, cursor, isActive }) {
+const AgentComputer = forwardRef(function AgentComputer({ url, status, narrations, cursor, isActive }, ref) {
   const iframeRef = useRef(null);
   const [loading, setLoading] = useState(false);
+
+  useImperativeHandle(ref, () => ({
+    getIframe: () => iframeRef.current,
+  }));
   const fullUrl = url ? `${window.location.origin}${url}` : null;
 
   useEffect(() => {
@@ -119,7 +123,9 @@ export default function AgentComputer({ url, status, narrations, cursor, isActiv
       </AnimatePresence>
     </div>
   );
-}
+});
+
+export default AgentComputer;
 
 function EmptyDesktop() {
   return (
