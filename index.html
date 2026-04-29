@@ -260,7 +260,7 @@
                 return aid ? (label ? label + ' [#' + aid + ']' : '#' + aid) : label;
               }).filter(Boolean);
               var inputs = Array.from(document.querySelectorAll('input, textarea, [contenteditable="true"]')).slice(0, 20).map(function (i) {
-                var label = i.getAttribute('placeholder') || i.getAttribute('aria-label') || i.getAttribute('name') || i.getAttribute('data-agent-id') || '';
+                var label = i.getAttribute('data-agent-id') || i.getAttribute('aria-label') || i.getAttribute('name') || i.getAttribute('placeholder') || '';
                 var type = i.tagName.toLowerCase() + (i.type ? ':' + i.type : '');
                 var val = i.isContentEditable ? (i.textContent || '') : (i.value || '');
                 val = String(val).trim().slice(0, 80);
