@@ -243,7 +243,7 @@ CRITICAL RULES:
   const empty = messages.length === 0;
 
   return (
-    <section id="chat" className="relative py-32 px-5">
+    <section id="chat" className="relative py-16 sm:py-32 px-3 sm:px-5">
       <div className={`mx-auto transition-all ${computerOpen ? "max-w-7xl" : "max-w-3xl"}`}>
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-10">
           <p className="text-[12px] font-semibold text-cyan-400 tracking-widest uppercase mb-3">Talk to the Agent</p>
@@ -282,11 +282,11 @@ CRITICAL RULES:
         </div>
 
         {/* Split: Chat + Computer */}
-        <div className={`grid gap-4 ${computerOpen ? "lg:grid-cols-2" : "grid-cols-1"}`}>
+        <div className={`grid gap-3 sm:gap-4 ${computerOpen ? "lg:grid-cols-2" : "grid-cols-1"}`}>
         {/* Chat shell */}
-        <div className="relative rounded-[28px] ring-1 ring-white/10 bg-zinc-950/60 backdrop-blur-2xl overflow-hidden flex flex-col h-[640px]">
+        <div className="relative rounded-2xl sm:rounded-[28px] ring-1 ring-white/10 bg-zinc-950/60 backdrop-blur-2xl overflow-hidden flex flex-col h-[70vh] sm:h-[640px] min-h-[480px]">
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-3 border-b border-white/5">
+          <div className="flex items-center justify-between px-3 sm:px-5 py-2.5 sm:py-3 border-b border-white/5">
             <div className="flex items-center gap-2.5">
               <div className="relative">
                 <div className="w-8 h-8 rounded-full overflow-hidden ring-1 ring-white/20 bg-black">
@@ -317,7 +317,7 @@ CRITICAL RULES:
           <div
             ref={scrollRef}
             onScroll={handleScroll}
-            className="flex-1 overflow-y-auto px-5 py-6 space-y-5"
+            className="flex-1 overflow-y-auto px-3 sm:px-5 py-4 sm:py-6 space-y-4 sm:space-y-5"
           >
             {empty ? (
               <div className="h-full flex flex-col items-center justify-center text-center px-4">
@@ -386,7 +386,7 @@ CRITICAL RULES:
           </AnimatePresence>
 
           {/* Input */}
-          <div className="p-4 border-t border-white/5">
+          <div className="p-2.5 sm:p-4 border-t border-white/5">
             <div className="relative flex items-end gap-2 bg-white/[0.05] rounded-3xl px-4 py-2.5 ring-1 ring-white/10 focus-within:ring-white/30 transition-all">
               <textarea
                 ref={inputRef}
@@ -431,7 +431,7 @@ CRITICAL RULES:
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.4 }}
-              className="h-[640px]"
+              className="h-[70vh] sm:h-[640px] min-h-[480px]"
             >
               <div className="h-full flex flex-col gap-2">
                 <div className="flex-1 min-h-0">
