@@ -58,7 +58,7 @@ function MessageBubble({ msg, isLast }) {
           <UserIcon className="w-4 h-4 text-white/70" />
         ) : (
           <img
-            src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4fb83b52e_generated_image.png"
+            src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/7e50a555a_generated_image.png"
             alt="Vision Agent"
             className="w-full h-full object-cover"
           />
@@ -99,7 +99,7 @@ export default function AgentChatGPT() {
   const inputRef = useRef(null);
 
   // Agent Computer state
-  const [computerOpen, setComputerOpen] = useState(false);
+  const [computerOpen, setComputerOpen] = useState(true);
   const [computerUrl, setComputerUrl] = useState(null);
   const [computerStatus, setComputerStatus] = useState("Idle");
   const [computerNarrations, setComputerNarrations] = useState([]);
@@ -356,7 +356,7 @@ CRITICAL: NEVER say "I can't" or "you'll need to do it yourself". The computer c
               <div className="relative">
                 <div className="w-8 h-8 rounded-full overflow-hidden ring-1 ring-white/20 bg-black">
                   <img
-                    src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4fb83b52e_generated_image.png"
+                    src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/7e50a555a_generated_image.png"
                     alt="Vision Agent"
                     className="w-full h-full object-cover"
                   />
@@ -392,7 +392,7 @@ CRITICAL: NEVER say "I can't" or "you'll need to do it yourself". The computer c
                   className="w-16 h-16 rounded-2xl overflow-hidden ring-1 ring-white/20 mb-5 shadow-[0_0_40px_rgba(167,139,250,0.4)]"
                 >
                   <img
-                    src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4fb83b52e_generated_image.png"
+                    src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/7e50a555a_generated_image.png"
                     alt="Vision Agent"
                     className="w-full h-full object-cover"
                   />
