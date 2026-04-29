@@ -52,7 +52,7 @@ export async function runAutonomousAgent({ goal, callbacks, signal }) {
     }
 
     // 1. OBSERVE — read the current page
-    setStatus(`Observing page (step ${step + 1})…`);
+    setStatus(`👀 Looking at the page (step ${step + 1})…`);
     const iframe = getIframe?.();
     let observation = { ok: false };
     if (iframe) {
@@ -60,7 +60,7 @@ export async function runAutonomousAgent({ goal, callbacks, signal }) {
     }
 
     // 2. THINK — ask LLM for next action
-    setStatus("Thinking…");
+    setStatus("🧠 Planning next move…");
     const plan = await planNextStep({ goal, history, observation });
     if (!plan) {
       addNarration("Lost my train of thought. Stopping.");
@@ -167,7 +167,7 @@ async function executeAction(action, { setUrl, setStatus, setCursor, getIframe }
 
   switch (action.type) {
     case "navigate": {
-      setStatus(`Navigating to ${action.url}…`);
+      setStatus(`🌐 Opening ${action.url}…`);
       setUrl(action.url);
       // Wait for the iframe page to announce ready, then a real settle pause
       const ready = await waitForIframeReady(8000);
@@ -182,14 +182,14 @@ async function executeAction(action, { setUrl, setStatus, setCursor, getIframe }
     }
 
     case "click_text": {
-      setStatus(`Locating "${action.text}"…`);
+      setStatus(`🎯 Finding "${action.text}" button…`);
       // First peek at where the element is so cursor can travel BEFORE clicking
       const peek = await sendCommand(iframe, { action: "locate", text: action.text });
       if (peek.ok && peek.position) {
         setCursor({ x: peek.position.x, y: peek.position.y, clicking: false });
         await sleep(1100); // let cursor glide there
       }
-      setStatus(`Clicking "${action.text}"…`);
+      setStatus(`👆 Clicking "${action.text}"…`);
       const res = await sendCommand(iframe, { action: "click_text", text: action.text });
       if (res.ok && res.position) {
         setCursor({ x: res.position.x, y: res.position.y, clicking: false });
@@ -204,7 +204,7 @@ async function executeAction(action, { setUrl, setStatus, setCursor, getIframe }
     }
 
     case "type_into": {
-      setStatus(`Locating input…`);
+      setStatus(`🎯 Finding the "${action.label || "input"}" field…`);
       // Move cursor to the input FIRST so user sees it travel there
       const peek = await sendCommand(iframe, { action: "locate_input", label: action.label });
       if (peek.ok && peek.position) {
@@ -215,7 +215,7 @@ async function executeAction(action, { setUrl, setStatus, setCursor, getIframe }
         setCursor((p) => ({ ...p, clicking: false }));
         await sleep(300);
       }
-      setStatus(`Typing "${action.text?.slice(0, 24)}…"`);
+      setStatus(`⌨️ Typing into Vision Chat: "${action.text?.slice(0, 32)}${action.text?.length > 32 ? "…" : ""}"`);
       // Now stream the typing — bridge animates char-by-char
       const charDelay = 70;
       const res = await sendCommand(
