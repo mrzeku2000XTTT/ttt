@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, Loader2, CheckCircle2, ChevronDown } from "lucide-react";
+import { Loader2, CheckCircle2, ChevronDown } from "lucide-react";
 
 /**
  * AgentReasoningBubble — renders the agent extension's "thinking" turn inline in the chat.
@@ -32,11 +32,15 @@ export default function AgentReasoningBubble({ msg }) {
       transition={{ duration: 0.3 }}
       className="flex gap-3"
     >
-      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-fuchsia-500/30 to-cyan-500/30 ring-1 ring-fuchsia-400/30 flex items-center justify-center">
+      <div className="flex-shrink-0 w-8 h-8 rounded-full ring-1 ring-fuchsia-400/30 flex items-center justify-center overflow-hidden bg-black relative">
         {status === "done" ? (
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 relative z-10" />
         ) : (
-          <Brain className="w-4 h-4 text-fuchsia-300" />
+          <img
+            src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/7e50a555a_generated_image.png"
+            alt="Vision Agent"
+            className="w-full h-full object-cover"
+          />
         )}
       </div>
 
