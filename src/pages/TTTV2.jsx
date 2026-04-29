@@ -10,6 +10,7 @@ import {
 
 import HeroHeader from "@/components/tttv2/HeroHeader";
 import LoginButton from "@/components/tttv2/LoginButton";
+import PortalTransition from "@/components/tttv2/PortalTransition";
 
 import WhatsNew from "@/components/tttv2/WhatsNew";
 import TTTVMini from "@/components/tttv2/TTTVMini";
@@ -85,6 +86,13 @@ export default function TTTV2Page() {
   const heroVideoRef = React.useRef(null);
   const [navigating, setNavigating] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [portalOrigin, setPortalOrigin] = useState(null);
+
+  const handleOpenV3 = (e) => {
+    e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    setPortalOrigin({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+  };
 
   useEffect(() => { loadContent(); loadKasPrice(); loadDailyKaspaUpdates(); checkAdmin(); loadHeroVideo(); }, []);
 
@@ -236,14 +244,13 @@ export default function TTTV2Page() {
         </div>
         <div className="flex items-center gap-2">
           {isAdmin && (
-            <Link
-              to="/TTTV3"
+            <button
+              onClick={handleOpenV3}
               className="relative z-[60] inline-flex items-center gap-1 text-[11px] sm:text-[12px] font-bold text-white bg-gradient-to-r from-cyan-500 via-violet-500 to-pink-500 hover:opacity-90 active:scale-95 px-3 sm:px-4 py-2 rounded-full transition-all shadow-lg shadow-violet-500/30 cursor-pointer touch-manipulation min-h-[36px]"
               title="Admin: Preview TTT 3.0"
-              style={{ pointerEvents: 'auto' }}
             >
               <Sparkles className="w-3.5 h-3.5" /> 3.0
-            </Link>
+            </button>
           )}
           <Link
             to="/Home"
@@ -261,6 +268,14 @@ export default function TTTV2Page() {
         <div className="fixed inset-0 z-[99999] bg-black flex items-center justify-center">
           <div className="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin" />
         </div>
+      )}
+
+      {/* 3.0 Portal transition canvas */}
+      {portalOrigin && (
+        <PortalTransition
+          origin={portalOrigin}
+          onComplete={() => navigate("/TTTV3")}
+        />
       )}
 
       {/* ── new hero ── */}
