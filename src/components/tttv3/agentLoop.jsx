@@ -360,6 +360,7 @@ NODA-SPECIFIC TIPS
 - Build button: data-agent-id="build", label "Build". After click, wait ~5s then verify nodes visible.
 - Run button: data-agent-id="run", label "Run".
 - After Build click, ALWAYS wait 5000ms before observing.
+- CRITICAL ORDER: NEVER click Build until the workflow description text is ACTUALLY visible inside the Brain textarea. The current step is to TYPE the prompt — only mark step_complete=true when the typed text snippet appears in the page observation (inputs section will echo the textarea content). If you don't see the text, retry type_into with the full description. Do not skip ahead to Build under any circumstance until typing is verified.
 
 TTTV-SPECIFIC TIPS
 - Search input: label "search" or "youtube" or "paste".
