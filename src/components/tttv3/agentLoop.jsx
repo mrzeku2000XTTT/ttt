@@ -59,8 +59,7 @@ const AVAILABLE_ROUTES = [
   { path: "/Wallet", desc: "User wallet" },
   { path: "/Profile", desc: "User profile" },
   { path: "/AppStoreV2", desc: "Browse all 80+ apps" },
-  { path: "/NODA", desc: "NODA landing — overview of the workflow engine" },
-  { path: "/NODAStudio", desc: "NODA workflow studio — build and run AI workflows (use 'Brain' to describe a workflow in plain English, then it auto-builds and runs)" },
+  { path: "/NODAStudio", desc: "NODA — AI workflow editor. THIS IS THE ONLY PLACE you can build/run workflows, send emails, post to TTT, do research, etc. Always navigate here for any NODA task. Click 'Brain' to describe a workflow in plain English — it auto-builds nodes (AI Prompt, Send Email, Post to TTT, Deep Research, etc.) and runs them." },
 ];
 
 export async function runAutonomousAgent({ goal, callbacks, signal }) {
@@ -135,13 +134,14 @@ ${routes}
 ${goal}
 
 # RULES
-- Each plan item = ONE visible milestone (e.g. "Open NODA Studio", "Click Brain to open the prompt modal", "Type the workflow description into Brain", "Click Build to generate the workflow", "Wait for nodes to appear on canvas").
+- Each plan item = ONE visible milestone.
 - Be specific. Don't say "set up email" — say "Type the email recipient into the email node's recipient field".
-- ALWAYS make the FIRST item the navigation step (e.g. "Open NODA Studio at /NODAStudio").
-- The LAST item should be the final visible result (e.g. "Verify workflow nodes are visible on canvas").
-- For a NODA workflow build, a typical plan is: Open NODAStudio → Click Brain → Type description → Click Build → Wait & verify nodes.
-- For a TTTV play, a typical plan is: Open /Browser → Type URL into search → Click play → Verify player loaded.
-- success_signal: a short hint of what to look for on screen to confirm the step is done (e.g. "Brain modal textarea visible", "URL changes to /NODAStudio", "Workflow nodes appear on canvas").
+- ALWAYS make the FIRST item the navigation step using the EXACT route path from AVAILABLE ROUTES (e.g. "Open /NODAStudio" — NOT "/NODA", that doesn't exist as a route here).
+- The LAST item should be the final visible result.
+- ANY task involving email, posting, research, AI workflow, automation, "send", "create", "build" → ALWAYS use /NODAStudio + Brain. Never invent custom steps like "Click Email" or "Click Send" — those buttons don't exist standalone. The Brain modal handles ALL of it: you describe the goal in plain English, click Build, and it generates the right nodes (Send Email, Post to TTT, Deep Research, AI Prompt, etc.) AND runs them.
+- For a NODA workflow build, the plan MUST be exactly: 1) Open /NODAStudio  2) Click Brain  3) Type the full description into the Brain textarea  4) Click Build  5) Wait & verify nodes appear.
+- For a TTTV play, plan: Open /Browser → Type URL into search → Click play → Verify player loaded.
+- success_signal: a short hint of what to look for on screen (e.g. "Brain modal textarea visible", "URL contains /NODAStudio", "Workflow nodes appear on canvas").
 - Keep it tight. 3-6 items is ideal. Never more than ${MAX_PLAN_ITEMS}.
 
 Return ONLY the JSON.`,
