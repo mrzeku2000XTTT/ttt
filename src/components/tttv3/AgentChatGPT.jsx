@@ -159,9 +159,11 @@ export default function AgentChatGPT() {
     setInput("");
     setLoading(true);
 
-    // If user gave a task-like instruction AND the computer is open, run autonomously
-    if (computerOpen && isTaskGoal(text)) {
-      runAutonomousGoal(text);
+    // If user gave a task-like instruction, auto-open the computer and run autonomously
+    if (isTaskGoal(text)) {
+      if (!computerOpen) setComputerOpen(true);
+      // Small delay so the iframe can mount before the loop starts
+      setTimeout(() => runAutonomousGoal(text), computerOpen ? 0 : 600);
     }
 
     try {
