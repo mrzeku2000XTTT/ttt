@@ -256,10 +256,15 @@ function matchesSuccessSignal(planItem, obs, action) {
     if (url.includes(target)) return true;
   }
 
-  // 2. Type into input → input now contains the typed text (best effort)
+  // 2. Type into input → the SPECIFIC input must echo the typed text in its value.
+  //    The read_page scanner reports textareas as: `brain (textarea) = "typed text"`.
+  //    We require the typed snippet to appear inside the inputs section specifically,
+  //    not anywhere on the page (e.g. in a heading or button label).
   if (action?.type === "type_into" && action.text) {
-    const snippet = action.text.toLowerCase().slice(0, 20);
-    if (haystack.includes(snippet)) return true;
+    const snippet = action.text.toLowerCase().slice(0, 25);
+    if (inputs.includes(snippet)) return true;
+    // Not yet — explicitly fail this verifier so the loop retries.
+    return false;
   }
 
   // 3. Click → button no longer visible OR new expected element appeared
@@ -354,7 +359,7 @@ CRITICAL RULES
 - DO NOT set step_complete=true just because you took an action — wait until you actually see the result.
 - After navigate, the next observation will show the new page — use that to verify the URL changed.
 - After click_text "Brain", look for the Brain modal textarea in inputs (label "brain") — that's the success signal.
-- After type_into Brain, the textarea now has text — go to the next step (click Build).
+- TYPING INTO BRAIN (step 3): the inputs section will report the textarea as: \`brain (textarea) = "your typed text here"\`. ONLY mark step 3 complete when you see your typed text inside those quotes after \`brain (textarea) =\`. If the inputs show \`brain (textarea)\` with NO \`= "..."\` value, the textarea is EMPTY — you MUST issue a type_into action with label="brain" and the full prompt as text. Never skip this. Never mark complete without seeing the value.
 - After click_text "Build", wait for nodes to appear (workflow names in headings/buttons) — THEN step_complete=true.
 
 ACTION TYPES
