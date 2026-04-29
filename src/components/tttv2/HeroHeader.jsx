@@ -120,7 +120,7 @@ export default function HeroHeader() {
         className="absolute inset-0 flex items-center justify-center pointer-events-none z-0"
       >
         <motion.img
-          src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/aa11f87b3_generated_image.png"
+          src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/6969b7825_generated_image.png"
           alt=""
           draggable={false}
           animate={{
