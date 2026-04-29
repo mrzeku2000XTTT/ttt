@@ -66,19 +66,19 @@ export default function TTTV3Page() {
     <div className="min-h-screen bg-black text-white overflow-x-hidden selection:bg-cyan-400/40">
       <FlyOverlay />
 
-      {/* Sakura ambient backdrop — glass blurred images */}
+      {/* Sakura ambient backdrop — sharp & vivid */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <img
           src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2bed8f0c0_generated_image.png"
           alt=""
-          className="absolute -right-20 top-20 w-[55%] max-w-[700px] opacity-30"
-          style={{ filter: "blur(8px) saturate(1.2) brightness(0.85)" }}
+          className="absolute -right-20 top-20 w-[55%] max-w-[700px] opacity-90"
+          style={{ filter: "saturate(1.3) contrast(1.1) brightness(1.05)" }}
         />
         <img
           src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2bed8f0c0_generated_image.png"
           alt=""
-          className="absolute -left-32 bottom-40 w-[45%] max-w-[600px] opacity-20 scale-x-[-1]"
-          style={{ filter: "blur(10px) saturate(1.2) brightness(0.85)" }}
+          className="absolute -left-32 bottom-40 w-[45%] max-w-[600px] opacity-75 scale-x-[-1]"
+          style={{ filter: "saturate(1.3) contrast(1.1) brightness(1.05)" }}
         />
       </div>
 
