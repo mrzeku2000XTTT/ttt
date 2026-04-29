@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Sparkles, Loader2, ArrowDown, Bot, User as UserIcon, Copy, Check, Zap, Monitor, MonitorOff } from "lucide-react";
+import { Send, Sparkles, Loader2, ArrowDown, Bot, User as UserIcon, Copy, Check, Zap, Monitor, MonitorOff, StopCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import AgentComputer from "./AgentComputer";
-import { runAgentActions, PHASE_1_APPS } from "./agentActions";
+import { runAutonomousAgent } from "./agentLoop";
+import AgentStepLog from "./AgentStepLog";
 
 const SUGGESTIONS = [
   { icon: "🚀", text: "What apps can a TTT 3.0 agent connect to?" },
@@ -99,104 +100,43 @@ export default function AgentChatGPT() {
   const [computerNarrations, setComputerNarrations] = useState([]);
   const [computerCursor, setComputerCursor] = useState({ x: 50, y: 50, clicking: false });
   const [agentRunning, setAgentRunning] = useState(false);
+  const [agentSteps, setAgentSteps] = useState([]);
   const computerRef = useRef(null);
+  const abortRef = useRef(null);
 
-  const detectAppIntent = (text) => {
-    const lower = text.toLowerCase();
-    return PHASE_1_APPS.find((app) =>
-      lower.includes(app.name.toLowerCase()) ||
-      (app.name === "Feed" && /feed|post|tip/.test(lower)) ||
-      (app.name === "Bridge" && /bridge|send kas|transfer/.test(lower)) ||
-      (app.name === "TTTV" && /video|watch|tttv|stream/.test(lower))
-    );
+  // Detect if user message looks like a task the agent should DO (vs just chat)
+  const isTaskGoal = (text) => {
+    return /\b(open|go to|navigate|post|send|tip|click|type|search|find|browse|show me|take me|fill|submit|read|watch|play)\b/i.test(text);
   };
 
-  // Ask the LLM to plan a sequence of interactive actions for the agent computer
-  const planAgentActions = async (userQuery, app) => {
-    const schema = {
-      type: "object",
-      properties: {
-        actions: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              type: { type: "string", enum: ["narrate", "navigate", "wait", "click_text", "type_into", "scroll"] },
-              text: { type: "string" },
-              url: { type: "string" },
-              label: { type: "string" },
-              ms: { type: "number" },
-              y: { type: "number" },
-            },
-          },
-        },
-      },
-    };
-    try {
-      const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are the TTT 3.0 Agent Computer planner. The user said: "${userQuery}"
-
-You have an iframe browser pointed at the TTT app at "${app.path}" (${app.name}: ${app.description}).
-
-Plan a sequence of 4-8 actions to fulfill the user's request. Available actions:
-- narrate: speak to the user (e.g. "Opening Feed and finding the post box…")
-- navigate: change URL (only if going to a different app)
-- wait: pause in ms (use 1500-2500 after navigate, 800 after clicks)
-- click_text: click a button/link by its visible text label (e.g. "Post", "Send", "Sign in")
-- type_into: type text into an input matching a label (e.g. label "what's on your mind", text "hello world")
-- scroll: scroll iframe to y position
-
-Start with a narrate, then navigate (if needed), then wait. After interactions, narrate the result.
-Be specific with click_text and type_into labels — match real TTT button text.
-
-Examples:
-User: "post hello on feed"
-[
-  {"type":"narrate","text":"Posting 'hello' to Feed…"},
-  {"type":"navigate","url":"/Feed"},
-  {"type":"wait","ms":2000},
-  {"type":"type_into","label":"what's on your mind","text":"hello"},
-  {"type":"wait","ms":600},
-  {"type":"click_text","text":"Post"},
-  {"type":"narrate","text":"Posted! Check the feed."}
-]
-
-Return only the JSON action plan.`,
-        response_json_schema: schema,
-      });
-      return res?.actions || [];
-    } catch {
-      return null;
-    }
-  };
-
-  const runAppDemo = async (app, userQuery) => {
+  const runAutonomousGoal = async (goal) => {
     if (!computerOpen) setComputerOpen(true);
     setAgentRunning(true);
+    setAgentSteps([]);
     setComputerNarrations([]);
 
-    // Try LLM-planned actions first
-    let actions = await planAgentActions(userQuery, app);
+    abortRef.current = { aborted: false };
 
-    // Fallback to simple demo if planning fails
-    if (!actions || actions.length === 0) {
-      actions = [
-        { type: "narrate", text: `Opening ${app.name} for you…` },
-        { type: "navigate", url: app.path },
-        { type: "wait", ms: 1500 },
-        { type: "narrate", text: `${app.description}. You can interact with it directly anytime.` },
-      ];
-    }
-
-    await runAgentActions(actions, {
-      setUrl: setComputerUrl,
-      setStatus: setComputerStatus,
-      addNarration: (text) => setComputerNarrations((prev) => [...prev, text]),
-      setCursor: setComputerCursor,
-      getIframe: () => computerRef.current?.getIframe(),
+    await runAutonomousAgent({
+      goal,
+      signal: abortRef.current,
+      callbacks: {
+        setUrl: setComputerUrl,
+        setStatus: setComputerStatus,
+        addNarration: (text) => setComputerNarrations((prev) => [...prev, text]),
+        setCursor: setComputerCursor,
+        getIframe: () => computerRef.current?.getIframe(),
+        onStep: (step) => setAgentSteps((prev) => [...prev, step]),
+      },
     });
 
     setAgentRunning(false);
+  };
+
+  const stopAgent = () => {
+    if (abortRef.current) abortRef.current.aborted = true;
+    setAgentRunning(false);
+    setComputerStatus("Stopped");
   };
 
   // Auto-scroll on new message
@@ -219,10 +159,9 @@ Return only the JSON action plan.`,
     setInput("");
     setLoading(true);
 
-    // Detect if user is asking the agent to use an app — fire the computer demo
-    const targetApp = detectAppIntent(text);
-    if (targetApp && computerOpen) {
-      runAppDemo(targetApp, text);
+    // If user gave a task-like instruction AND the computer is open, run autonomously
+    if (computerOpen && isTaskGoal(text)) {
+      runAutonomousGoal(text);
     }
 
     try {
@@ -301,19 +240,31 @@ Reply directly, conversationally, and concisely (2-5 sentences usually, longer o
         </motion.div>
 
         {/* Toggle bar */}
-        <div className="flex items-center justify-end mb-3 gap-2">
-          <span className="text-[11px] text-white/40">Phase 1 · Feed, Bridge, TTTV</span>
-          <button
-            onClick={() => setComputerOpen((v) => !v)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all ${
-              computerOpen
-                ? "bg-gradient-to-r from-cyan-400 to-violet-400 text-black"
-                : "bg-white/5 text-white/60 ring-1 ring-white/10 hover:bg-white/10"
-            }`}
-          >
-            {computerOpen ? <Monitor className="w-3.5 h-3.5" /> : <MonitorOff className="w-3.5 h-3.5" />}
-            {computerOpen ? "Computer ON" : "Show Agent Computer"}
-          </button>
+        <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+          <span className="text-[11px] text-white/40">
+            {computerOpen ? "Autonomous mode · agent observes & acts on its own" : "Phase 1 · Feed, Bridge, TTTV"}
+          </span>
+          <div className="flex items-center gap-2">
+            {agentRunning && (
+              <button
+                onClick={stopAgent}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold bg-red-500/20 text-red-300 ring-1 ring-red-400/30 hover:bg-red-500/30 transition-all"
+              >
+                <StopCircle className="w-3.5 h-3.5" /> Stop
+              </button>
+            )}
+            <button
+              onClick={() => setComputerOpen((v) => !v)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all ${
+                computerOpen
+                  ? "bg-gradient-to-r from-cyan-400 to-violet-400 text-black"
+                  : "bg-white/5 text-white/60 ring-1 ring-white/10 hover:bg-white/10"
+              }`}
+            >
+              {computerOpen ? <Monitor className="w-3.5 h-3.5" /> : <MonitorOff className="w-3.5 h-3.5" />}
+              {computerOpen ? "Computer ON" : "Show Agent Computer"}
+            </button>
+          </div>
         </div>
 
         {/* Split: Chat + Computer */}
@@ -453,14 +404,23 @@ Reply directly, conversationally, and concisely (2-5 sentences usually, longer o
               transition={{ duration: 0.4 }}
               className="h-[640px]"
             >
-              <AgentComputer
-                ref={computerRef}
-                url={computerUrl}
-                status={computerStatus}
-                narrations={computerNarrations}
-                cursor={computerCursor}
-                isActive={agentRunning}
-              />
+              <div className="h-full flex flex-col gap-2">
+                <div className="flex-1 min-h-0">
+                  <AgentComputer
+                    ref={computerRef}
+                    url={computerUrl}
+                    status={computerStatus}
+                    narrations={computerNarrations}
+                    cursor={computerCursor}
+                    isActive={agentRunning}
+                  />
+                </div>
+                {(agentSteps.length > 0 || agentRunning) && (
+                  <div className="rounded-2xl ring-1 ring-white/10 bg-zinc-950/80 backdrop-blur-xl overflow-hidden">
+                    <AgentStepLog steps={agentSteps} running={agentRunning} />
+                  </div>
+                )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
