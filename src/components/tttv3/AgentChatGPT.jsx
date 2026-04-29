@@ -47,16 +47,20 @@ function MessageBubble({ msg, isLast }) {
     >
       {/* Avatar */}
       <div
-        className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+        className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center overflow-hidden ${
           isUser
             ? "bg-white/10 ring-1 ring-white/20"
-            : "bg-gradient-to-br from-cyan-400 via-violet-400 to-pink-400"
+            : "ring-1 ring-white/20 bg-black"
         }`}
       >
         {isUser ? (
           <UserIcon className="w-4 h-4 text-white/70" />
         ) : (
-          <Sparkles className="w-4 h-4 text-black" />
+          <img
+            src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4fb83b52e_generated_image.png"
+            alt="Vision Agent"
+            className="w-full h-full object-cover"
+          />
         )}
       </div>
 
@@ -280,8 +284,12 @@ Reply directly, conversationally, and concisely (2-5 sentences usually, longer o
           <div className="flex items-center justify-between px-5 py-3 border-b border-white/5">
             <div className="flex items-center gap-2.5">
               <div className="relative">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 via-violet-400 to-pink-400 flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-black" />
+                <div className="w-8 h-8 rounded-full overflow-hidden ring-1 ring-white/20 bg-black">
+                  <img
+                    src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4fb83b52e_generated_image.png"
+                    alt="Vision Agent"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-zinc-950 animate-pulse" />
               </div>
@@ -311,9 +319,13 @@ Reply directly, conversationally, and concisely (2-5 sentences usually, longer o
                 <motion.div
                   animate={{ scale: [1, 1.05, 1], rotate: [0, 3, -3, 0] }}
                   transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                  className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 via-violet-400 to-pink-400 flex items-center justify-center mb-5 shadow-[0_0_40px_rgba(167,139,250,0.4)]"
+                  className="w-16 h-16 rounded-2xl overflow-hidden ring-1 ring-white/20 mb-5 shadow-[0_0_40px_rgba(167,139,250,0.4)]"
                 >
-                  <Sparkles className="w-7 h-7 text-black" />
+                  <img
+                    src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4fb83b52e_generated_image.png"
+                    alt="Vision Agent"
+                    className="w-full h-full object-cover"
+                  />
                 </motion.div>
                 <h3 className="text-2xl font-[900] tracking-tight text-white mb-2">How can I help?</h3>
                 <p className="text-white/40 text-sm mb-8 max-w-sm">
