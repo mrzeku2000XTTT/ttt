@@ -14,9 +14,10 @@ export default function VisionCanvas() {
       if (saved) return JSON.parse(saved);
     } catch {}
     return [
-      { id: "c1", x: 120, y: 80, w: 240, text: "The agent internet starts here.\n\nClick + to talk to the Vision Agent." },
+      { id: "c1", x: 120, y: 80, w: 240, text: "", fullText: "The agent internet starts here.\n\nClick + to talk to the Vision Agent.", typing: true },
     ];
   });
+  const typingTimers = useRef({});
   const [agentOpen, setAgentOpen] = useState(false);
   const [agentInput, setAgentInput] = useState("");
   const [agentLoading, setAgentLoading] = useState(false);
@@ -27,16 +28,56 @@ export default function VisionCanvas() {
   const dragOffset = useRef({ x: 0, y: 0 });
   const canvasRef = useRef(null);
 
-  // Persist
+  // Persist (only finished cards — skip cards mid-typing to avoid saving partial text)
   useEffect(() => {
-    try { localStorage.setItem("ttt_v3_vision_cards", JSON.stringify(cards)); } catch {}
+    try {
+      const toSave = cards.map((c) => ({ ...c, text: c.typing ? c.fullText : c.text, typing: false, fullText: undefined }));
+      localStorage.setItem("ttt_v3_vision_cards", JSON.stringify(toSave));
+    } catch {}
   }, [cards]);
 
-  const addCard = (text = "") => {
-    const id = `c${Date.now()}`;
+  // Typewriter engine — animates any card with `typing: true` and `fullText` set
+  useEffect(() => {
+    cards.forEach((card) => {
+      if (!card.typing || typingTimers.current[card.id]) return;
+      let i = card.text.length;
+      const tick = () => {
+        if (i >= card.fullText.length) {
+          updateCard(card.id, { typing: false, text: card.fullText, fullText: undefined });
+          delete typingTimers.current[card.id];
+          return;
+        }
+        i += 1;
+        const next = card.fullText.slice(0, i);
+        setCards((prev) => prev.map((c) => (c.id === card.id ? { ...c, text: next } : c)));
+        // Vary speed slightly for a natural feel; pause longer on punctuation
+        const ch = card.fullText[i - 1];
+        const delay = /[.,!?\n]/.test(ch) ? 120 + Math.random() * 80 : 25 + Math.random() * 35;
+        typingTimers.current[card.id] = setTimeout(tick, delay);
+      };
+      typingTimers.current[card.id] = setTimeout(tick, 200);
+    });
+    return () => {
+      // Cleanup happens on unmount only — let active timers continue between renders
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cards.length]);
+
+  // Cleanup all timers on unmount
+  useEffect(() => () => {
+    Object.values(typingTimers.current).forEach(clearTimeout);
+    typingTimers.current = {};
+  }, []);
+
+  const addCard = (text = "", { animate = false } = {}) => {
+    const id = `c${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const x = 200 + Math.random() * 400;
     const y = 150 + Math.random() * 300;
-    setCards((prev) => [...prev, { id, x, y, w: 240, text }]);
+    if (animate && text) {
+      setCards((prev) => [...prev, { id, x, y, w: 240, text: "", fullText: text, typing: true }]);
+    } else {
+      setCards((prev) => [...prev, { id, x, y, w: 240, text }]);
+    }
     return id;
   };
 
@@ -94,7 +135,7 @@ Generate 3 concise, bold vision items (each 1-2 sentences, ~20 words). Make them
       const reply = res?.reply || "Added a few ideas to your canvas.";
       setAgentMessages((m) => [...m, { role: "assistant", content: reply }]);
       (res?.cards || []).forEach((text, i) => {
-        setTimeout(() => addCard(text), i * 250);
+        setTimeout(() => addCard(text, { animate: true }), i * 600);
       });
     } catch {
       setAgentMessages((m) => [...m, { role: "assistant", content: "Hit a snag. Try again?" }]);
@@ -150,13 +191,23 @@ Generate 3 concise, bold vision items (each 1-2 sentences, ~20 words). Make them
                 <Trash2 className="w-3 h-3" />
               </button>
             </div>
-            <textarea
-              value={card.text}
-              onChange={(e) => updateCard(card.id, { text: e.target.value })}
-              placeholder="Type your vision…"
-              className="w-full bg-transparent text-white/85 text-[13px] leading-relaxed outline-none resize-none placeholder-white/25"
-              rows={Math.max(2, card.text.split("\n").length + Math.floor(card.text.length / 32))}
-            />
+            {card.typing ? (
+              <div
+                className="w-full text-white/85 text-[13px] leading-relaxed whitespace-pre-wrap min-h-[2.5em]"
+                style={{ fontFamily: '"JetBrains Mono", "Menlo", monospace' }}
+              >
+                {card.text}
+                <span className="inline-block w-[2px] h-[1em] bg-cyan-400 ml-[1px] align-middle animate-pulse" />
+              </div>
+            ) : (
+              <textarea
+                value={card.text}
+                onChange={(e) => updateCard(card.id, { text: e.target.value })}
+                placeholder="Type your vision…"
+                className="w-full bg-transparent text-white/85 text-[13px] leading-relaxed outline-none resize-none placeholder-white/25"
+                rows={Math.max(2, card.text.split("\n").length + Math.floor(card.text.length / 32))}
+              />
+            )}
           </div>
         </div>
       ))}
