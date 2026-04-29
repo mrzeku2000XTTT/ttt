@@ -20,9 +20,29 @@ export default function TTTV3Page() {
   const handleExploreVision = (e) => {
     e.preventDefault();
     setZoomingOut(true);
+    // After the zoom-out flash, smooth-scroll all the way down to the chat
+    // section, naturally passing through Vision → Connected Apps along the way.
     setTimeout(() => {
-      document.getElementById("vision")?.scrollIntoView({ behavior: "smooth" });
-      setTimeout(() => setZoomingOut(false), 1200);
+      const chat = document.getElementById("chat");
+      if (chat) {
+        const targetY = chat.getBoundingClientRect().top + window.pageYOffset - 40;
+        // Custom long-duration smooth scroll so the user actually sees each section pass by
+        const startY = window.pageYOffset;
+        const distance = targetY - startY;
+        const duration = 4500; // ms — slow cinematic scroll
+        const startTime = performance.now();
+        const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+        const tick = (now) => {
+          const elapsed = now - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          window.scrollTo(0, startY + distance * easeInOutCubic(progress));
+          if (progress < 1) requestAnimationFrame(tick);
+          else setZoomingOut(false);
+        };
+        requestAnimationFrame(tick);
+      } else {
+        setZoomingOut(false);
+      }
     }, 900);
   };
 
