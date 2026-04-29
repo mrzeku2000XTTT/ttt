@@ -3,6 +3,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { ArrowUpRight, Sparkles, Zap, Shield, Lock, Loader2 } from "lucide-react";
+import VisionCanvas from "@/components/tttv3/VisionCanvas";
 
 export default function TTTV3Page() {
   const navigate = useNavigate();
@@ -173,22 +174,20 @@ export default function TTTV3Page() {
 
       {/* Vision */}
       <section id="vision" className="relative py-32 px-5">
-        <div className="max-w-4xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-16">
+        <div className="max-w-6xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-10">
             <p className="text-[12px] font-semibold text-cyan-400 tracking-widest uppercase mb-3">Vision</p>
             <h2 className="text-4xl sm:text-6xl font-[900] tracking-tight leading-[1.05]">
               Every interaction is<br />
               <span className="bg-gradient-to-r from-cyan-400 to-violet-400 bg-clip-text text-transparent">an autonomous agent.</span>
             </h2>
+            <p className="text-white/50 text-sm mt-5 max-w-md mx-auto">
+              An open canvas. Drag cards, edit ideas, tap <span className="text-cyan-400 font-semibold">+</span> to talk to the Vision Agent.
+            </p>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 1 }}
-            className="bg-gradient-to-br from-white/[0.03] to-white/[0.01] rounded-[28px] p-8 sm:p-12 ring-1 ring-white/10 backdrop-blur-xl">
-            <p className="text-lg sm:text-xl text-white/80 leading-relaxed font-light">
-              In 2.0, you used apps. In <span className="text-cyan-400 font-semibold">3.0</span>, agents use them for you.
-              Identity, money, content, and reasoning collapse into one programmable layer — settled on Kaspa,
-              orchestrated by AI, owned by you.
-            </p>
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}>
+            <VisionCanvas />
           </motion.div>
         </div>
       </section>
