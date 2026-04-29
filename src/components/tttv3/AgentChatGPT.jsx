@@ -7,10 +7,10 @@ import { runAutonomousAgent } from "./agentLoop";
 import AgentStepLog from "./AgentStepLog";
 
 const SUGGESTIONS = [
+  { icon: "▶️", text: "Play this on TTTV: ", prefill: true },
   { icon: "🚀", text: "What apps can a TTT 3.0 agent connect to?" },
   { icon: "🧠", text: "Brainstorm 5 vision items for the agent internet" },
   { icon: "💸", text: "How would agent-to-agent KAS payments work?" },
-  { icon: "🔐", text: "Explain ZK identity in TTT 3.0" },
 ];
 
 function TypingDots() {
@@ -61,7 +61,7 @@ function MessageBubble({ msg, isLast }) {
       </div>
 
       {/* Bubble */}
-      <div className={`flex flex-col gap-1 max-w-[75%] ${isUser ? "items-end" : "items-start"}`}>
+      <div className={`flex flex-col gap-1 min-w-0 flex-1 max-w-[85%] ${isUser ? "items-end" : "items-start"}`}>
         <div
           className={`px-4 py-3 rounded-2xl text-[14px] leading-relaxed whitespace-pre-wrap break-words ${
             isUser
@@ -235,7 +235,7 @@ Reply directly, conversationally, and concisely (2-5 sentences usually, longer o
 
   return (
     <section id="chat" className="relative py-32 px-5">
-      <div className="max-w-3xl mx-auto">
+      <div className={`mx-auto transition-all ${computerOpen ? "max-w-7xl" : "max-w-3xl"}`}>
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-10">
           <p className="text-[12px] font-semibold text-cyan-400 tracking-widest uppercase mb-3">Talk to the Agent</p>
           <h2 className="text-4xl sm:text-5xl font-[900] tracking-tight mb-3">Chat with TTT 3.0.</h2>
@@ -273,7 +273,7 @@ Reply directly, conversationally, and concisely (2-5 sentences usually, longer o
         </div>
 
         {/* Split: Chat + Computer */}
-        <div className={`grid gap-4 ${computerOpen ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]" : "grid-cols-1"}`}>
+        <div className={`grid gap-4 ${computerOpen ? "lg:grid-cols-2" : "grid-cols-1"}`}>
         {/* Chat shell */}
         <div className="relative rounded-[28px] ring-1 ring-white/10 bg-zinc-950/60 backdrop-blur-2xl overflow-hidden flex flex-col h-[640px]">
           {/* Header */}
@@ -328,7 +328,14 @@ Reply directly, conversationally, and concisely (2-5 sentences usually, longer o
                       transition={{ delay: 0.1 + i * 0.05 }}
                       whileHover={{ scale: 1.02, y: -2 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => send(s.text)}
+                      onClick={() => {
+                        if (s.prefill) {
+                          setInput(s.text);
+                          inputRef.current?.focus();
+                        } else {
+                          send(s.text);
+                        }
+                      }}
                       className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] ring-1 ring-white/10 hover:ring-white/20 text-left transition-all"
                     >
                       <span className="text-lg">{s.icon}</span>
