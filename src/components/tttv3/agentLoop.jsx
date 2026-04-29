@@ -366,11 +366,14 @@ ACTION TYPES
 - skip: { type: "skip" } — current step is already satisfied or doesn't need an action
 
 NODA-SPECIFIC TIPS
-- Brain button: data-agent-id="brain", label "Brain". After click, modal opens with textarea (label "brain").
+- Brain BUTTON (toolbar): appears in buttons list as "Brain [#brain]". Clicking it OPENS the Brain modal.
+- Brain MODAL OPEN signal: the inputs list contains an item like "brain (textarea)" — a textarea, NOT a button.
+- DO NOT confuse the Brain button (toolbar, always visible) with the Brain modal (textarea in inputs).
+- Step "Click Brain to open modal" is ONLY complete when inputs list contains "brain (textarea)". If you only see "Brain [#brain]" in buttons → modal is NOT open yet → click_text "Brain" again.
 - Build button: data-agent-id="build", label "Build". After click, wait ~5s then verify nodes visible.
 - Run button: data-agent-id="run", label "Run".
 - After Build click, ALWAYS wait 5000ms before observing.
-- CRITICAL ORDER: NEVER click Build until the workflow description text is ACTUALLY visible inside the Brain textarea. The current step is to TYPE the prompt — only mark step_complete=true when the typed text snippet appears in the page observation (inputs section will echo the textarea content). If you don't see the text, retry type_into with the full description. Do not skip ahead to Build under any circumstance until typing is verified.
+- CRITICAL ORDER: NEVER click Build until the workflow description text is ACTUALLY visible inside the Brain textarea. The inputs report shows the textarea's value as: brain (textarea) = "your typed text here". Only mark the typing step complete when you see your description in those quotes. If the value is empty or missing, retry type_into.
 
 TTTV-SPECIFIC TIPS
 - Search input: label "search" or "youtube" or "paste".
