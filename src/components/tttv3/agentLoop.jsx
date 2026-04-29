@@ -88,8 +88,8 @@ export async function runAutonomousAgent({ goal, callbacks, signal }) {
       observed: observation.ok ? { url: observation.url, headings: observation.headings?.slice(0, 3), buttons: observation.buttons?.slice(0, 8) } : null,
     });
 
-    // small breather between steps
-    await sleep(600);
+    // breather between steps — let DOM/page settle before observing again
+    await sleep(1500);
   }
   setStatus("Idle");
 }
@@ -167,69 +167,71 @@ async function executeAction(action, { setUrl, setStatus, setCursor, getIframe }
     case "navigate": {
       setStatus(`Navigating to ${action.url}…`);
       setUrl(action.url);
-      // Wait for the iframe page to announce ready, then a small settle pause
-      const ready = await waitForIframeReady(6000);
-      // Even if ready times out (e.g. Layout-wrapped pages), try a ping to check responsiveness
+      // Wait for the iframe page to announce ready, then a real settle pause
+      const ready = await waitForIframeReady(8000);
       if (!ready.ok) {
-        await sleep(1500);
-        const ping = await sendCommand(getIframe?.(), { action: "ping" }, 1500);
-        if (!ping.ok) {
-          // Page may not have loaded the bridge — give it one more beat
-          await sleep(1000);
-        }
+        await sleep(2000);
+        const ping = await sendCommand(getIframe?.(), { action: "ping" }, 2000);
+        if (!ping.ok) await sleep(1500);
       }
-      await sleep(600);
+      // Let React finish hydrating + animations + lazy content
+      await sleep(1500);
       return { ok: true };
     }
 
     case "click_text": {
-      setStatus(`Clicking "${action.text}"…`);
+      setStatus(`Locating "${action.text}"…`);
       // First peek at where the element is so cursor can travel BEFORE clicking
       const peek = await sendCommand(iframe, { action: "locate", text: action.text });
       if (peek.ok && peek.position) {
         setCursor({ x: peek.position.x, y: peek.position.y, clicking: false });
-        await sleep(700); // let cursor glide there
+        await sleep(1100); // let cursor glide there
       }
+      setStatus(`Clicking "${action.text}"…`);
       const res = await sendCommand(iframe, { action: "click_text", text: action.text });
       if (res.ok && res.position) {
         setCursor({ x: res.position.x, y: res.position.y, clicking: false });
-        await sleep(200);
+        await sleep(300);
         setCursor((p) => ({ ...p, clicking: true }));
-        await sleep(350);
+        await sleep(500);
         setCursor((p) => ({ ...p, clicking: false }));
       }
-      await sleep(500);
+      // Let click side-effects (navigation, state updates, modals) fully resolve
+      await sleep(1200);
       return res;
     }
 
     case "type_into": {
-      setStatus(`Typing "${action.text?.slice(0, 24)}…"`);
+      setStatus(`Locating input…`);
       // Move cursor to the input FIRST so user sees it travel there
       const peek = await sendCommand(iframe, { action: "locate_input", label: action.label });
       if (peek.ok && peek.position) {
         setCursor({ x: peek.position.x, y: peek.position.y, clicking: false });
-        await sleep(700);
+        await sleep(1000);
         setCursor((p) => ({ ...p, clicking: true }));
-        await sleep(250);
+        await sleep(350);
         setCursor((p) => ({ ...p, clicking: false }));
+        await sleep(300);
       }
-      // Now stream the typing — bridge animates char-by-char (60ms each)
+      setStatus(`Typing "${action.text?.slice(0, 24)}…"`);
+      // Now stream the typing — bridge animates char-by-char
       const charDelay = 70;
       const res = await sendCommand(
         iframe,
         { action: "type_into", label: action.label, text: action.text, charDelay },
-        (action.text?.length || 0) * charDelay + 4000
+        (action.text?.length || 0) * charDelay + 6000
       );
       if (res.ok && res.position) {
         setCursor({ x: res.position.x, y: res.position.y, clicking: false });
       }
-      await sleep(400);
+      // Pause so the typed value visibly registers before next action
+      await sleep(900);
       return res;
     }
 
     case "scroll": {
       const res = await sendCommand(iframe, { action: "scroll", y: action.y || 0 });
-      await sleep(500);
+      await sleep(1000);
       return res;
     }
 
