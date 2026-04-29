@@ -1,13 +1,14 @@
-import React from "react";
-import { motion } from "framer-motion";
-import { Brain, Loader2, CheckCircle2 } from "lucide-react";
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Brain, Loader2, CheckCircle2, ChevronDown } from "lucide-react";
 
 /**
- * AgentReasoningBubble — renders a sub-agent "thinking" turn inline in the chat.
- * Shows: step number, current thought, action being taken, and a live status.
+ * AgentReasoningBubble — renders the agent extension's "thinking" turn inline in the chat.
+ * Collapsed by default — click to expand the full thought process & action.
  */
 export default function AgentReasoningBubble({ msg }) {
   const { step, thought, action, status = "thinking", say } = msg.reasoning || {};
+  const [expanded, setExpanded] = useState(false);
 
   const actionLabel = (() => {
     if (!action?.type) return null;
@@ -22,6 +23,8 @@ export default function AgentReasoningBubble({ msg }) {
     }
   })();
 
+  const hasDetails = !!(thought && thought !== say) || !!actionLabel;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -29,7 +32,6 @@ export default function AgentReasoningBubble({ msg }) {
       transition={{ duration: 0.3 }}
       className="flex gap-3"
     >
-      {/* Sub-agent avatar — distinct from main agent */}
       <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-fuchsia-500/30 to-cyan-500/30 ring-1 ring-fuchsia-400/30 flex items-center justify-center">
         {status === "done" ? (
           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -52,23 +54,59 @@ export default function AgentReasoningBubble({ msg }) {
           )}
         </div>
 
-        <div className="px-3.5 py-2.5 rounded-2xl rounded-tl-md bg-gradient-to-br from-fuchsia-500/[0.08] to-cyan-500/[0.05] ring-1 ring-fuchsia-400/20 backdrop-blur-sm space-y-1.5">
-          {say && (
-            <p className="text-[13px] text-white/85 leading-snug">{say}</p>
-          )}
-          {thought && thought !== say && (
-            <p className="text-[11px] text-white/50 italic leading-snug">
-              <span className="text-fuchsia-300/70 not-italic font-medium">thought: </span>
-              {thought}
-            </p>
-          )}
-          {actionLabel && (
-            <div className="flex items-center gap-1.5 text-[10px] font-mono text-cyan-300/90 bg-black/30 rounded-md px-2 py-1 mt-1">
-              <span className="text-white/30">→</span>
-              <span>{actionLabel}</span>
+        <button
+          onClick={() => hasDetails && setExpanded((v) => !v)}
+          disabled={!hasDetails}
+          className={`text-left px-3.5 py-2.5 rounded-2xl rounded-tl-md bg-gradient-to-br from-fuchsia-500/[0.08] to-cyan-500/[0.05] ring-1 ring-fuchsia-400/20 backdrop-blur-sm transition-all ${
+            hasDetails ? "hover:ring-fuchsia-400/40 cursor-pointer" : "cursor-default"
+          }`}
+        >
+          <div className="flex items-start gap-2">
+            <div className="flex-1 min-w-0">
+              {say && (
+                <p className="text-[13px] text-white/85 leading-snug">{say}</p>
+              )}
             </div>
-          )}
-        </div>
+            {hasDetails && (
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-fuchsia-300/60 flex-shrink-0 mt-0.5 transition-transform ${
+                  expanded ? "rotate-180" : ""
+                }`}
+              />
+            )}
+          </div>
+
+          <AnimatePresence initial={false}>
+            {expanded && hasDetails && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="pt-2 mt-2 border-t border-fuchsia-400/15 space-y-1.5">
+                  {thought && thought !== say && (
+                    <p className="text-[11px] text-white/55 italic leading-snug">
+                      <span className="text-fuchsia-300/70 not-italic font-medium">thought: </span>
+                      {thought}
+                    </p>
+                  )}
+                  {actionLabel && (
+                    <div className="flex items-center gap-1.5 text-[10px] font-mono text-cyan-300/90 bg-black/30 rounded-md px-2 py-1">
+                      <span className="text-white/30">→</span>
+                      <span>{actionLabel}</span>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </button>
+
+        {hasDetails && !expanded && (
+          <span className="text-[9px] text-fuchsia-300/40 px-1">click to see thought process</span>
+        )}
       </div>
     </motion.div>
   );
