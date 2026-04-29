@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Sparkles, Loader2, ArrowDown, Bot, User as UserIcon, Copy, Check, Zap, Monitor, MonitorOff, StopCircle } from "lucide-react";
+import { Send, Sparkles, Loader2, ArrowDown, Bot, User as UserIcon, Copy, Check, Zap, Monitor, MonitorOff, StopCircle, Play, Workflow, Lightbulb, Coins } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import AgentComputer from "./AgentComputer";
 import { runAutonomousAgent } from "./agentLoop";
@@ -8,10 +8,10 @@ import AgentStepLog from "./AgentStepLog";
 import AgentReasoningBubble from "./AgentReasoningBubble";
 
 const SUGGESTIONS = [
-  { icon: "▶️", text: "Play this on TTTV: ", prefill: true },
-  { icon: "⚡", text: "Open NODA and build a daily Kaspa briefing workflow" },
-  { icon: "🧠", text: "Brainstorm 5 vision items for the agent internet" },
-  { icon: "💸", text: "How would agent-to-agent KAS payments work?" },
+  { Icon: Play, color: "text-cyan-400", text: "Play this on TTTV: ", prefill: true },
+  { Icon: Workflow, color: "text-violet-400", text: "Open NODA and build a daily Kaspa briefing workflow" },
+  { Icon: Lightbulb, color: "text-amber-400", text: "Brainstorm 5 vision items for the agent internet" },
+  { Icon: Coins, color: "text-emerald-400", text: "How would agent-to-agent KAS payments work?" },
 ];
 
 function TypingDots() {
@@ -402,28 +402,31 @@ CRITICAL: NEVER say "I can't" or "you'll need to do it yourself". The computer c
                   Ask about the agent internet, the connected apps, or vibe out a new vision for TTT 3.0.
                 </p>
                 <div className="grid sm:grid-cols-2 gap-2 w-full max-w-lg">
-                  {SUGGESTIONS.map((s, i) => (
-                    <motion.button
-                      key={i}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 + i * 0.05 }}
-                      whileHover={{ scale: 1.02, y: -2 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => {
-                        if (s.prefill) {
-                          setInput(s.text);
-                          inputRef.current?.focus();
-                        } else {
-                          send(s.text);
-                        }
-                      }}
-                      className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] ring-1 ring-white/10 hover:ring-white/20 text-left transition-all"
-                    >
-                      <span className="text-lg">{s.icon}</span>
-                      <span className="text-[12px] text-white/70 leading-snug">{s.text}</span>
-                    </motion.button>
-                  ))}
+                  {SUGGESTIONS.map((s, i) => {
+                    const Icon = s.Icon;
+                    return (
+                      <motion.button
+                        key={i}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 + i * 0.05 }}
+                        whileHover={{ scale: 1.02, y: -2 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          if (s.prefill) {
+                            setInput(s.text);
+                            inputRef.current?.focus();
+                          } else {
+                            send(s.text);
+                          }
+                        }}
+                        className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] ring-1 ring-white/10 hover:ring-white/20 text-left transition-all"
+                      >
+                        <Icon className={`w-4 h-4 flex-shrink-0 ${s.color}`} />
+                        <span className="text-[12px] text-white/70 leading-snug">{s.text}</span>
+                      </motion.button>
+                    );
+                  })}
                 </div>
               </div>
             ) : (
