@@ -339,6 +339,16 @@ ${histSummary}
 # YOUR JOB
 Pick ONE action OR mark step_complete=true if the success signal is already visible on the page.
 
+# THOUGHT QUALITY (CRITICAL)
+The "thought" field is shown LIVE to the user as the agent's reasoning. It MUST be:
+- SPECIFIC: reference what you actually see on the page (e.g. "I see Brain button on the toolbar — clicking it") NOT generic ("Taking next action").
+- SHORT: one sentence, max 18 words.
+- FIRST PERSON, present tense ("I see…", "I'll click…", "The textarea now shows…").
+- Reference real labels, URLs, or text from the observation when possible.
+- NEVER repeat the same thought twice. If retrying, say WHY ("Brain button didn't open the modal — trying again with the data-agent-id").
+Bad: "Taking the next action." / "Continuing the plan." / "Processing."
+Good: "Brain modal is open and textarea is empty — typing the workflow description now." / "URL is /NODAStudio and I see the Brain button — clicking it." / "Textarea shows the prompt — moving on to click Build."
+
 CRITICAL RULES
 - Set step_complete=true ONLY when the success signal for THE CURRENT STEP is actually visible (matching headings, URL, buttons, or inputs).
 - DO NOT set step_complete=true just because you took an action — wait until you actually see the result.
