@@ -1,26 +1,46 @@
 /**
- * agentLoop — autonomous goal-seeking loop.
- * Repeatedly: observe iframe page state → ask LLM for next action → execute → observe again.
- * Stops when the agent declares the goal complete, hits max steps, or fails.
+ * agentLoop — plan-driven autonomous goal-seeking loop.
+ *
+ * Flow:
+ *   1. Vision Agent reads the goal and generates a numbered plan (sub-tasks).
+ *   2. For each plan item, runs an inner action loop: observe → act → verify.
+ *   3. Only advances to the next plan item once the current one is verified complete.
+ *   4. Stops on success, failure, or abort.
  */
 import { base44 } from "@/api/base44Client";
 import { sendCommand, waitForIframeReady } from "./agentBridge";
 
-const MAX_STEPS = 18;
+const MAX_ACTIONS_PER_STEP = 8;
+const MAX_PLAN_ITEMS = 10;
 
-const PLAN_SCHEMA = {
+const PLAN_BUILDER_SCHEMA = {
   type: "object",
   properties: {
-    thought: { type: "string", description: "Brief reasoning about what to do next" },
-    done: { type: "boolean", description: "True when the goal is fully achieved" },
-    say: { type: "string", description: "What to narrate to the user about this step" },
+    plan: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Short, action-oriented step title (5-12 words)" },
+          success_signal: { type: "string", description: "Visible signal that proves this step is complete" },
+        },
+        required: ["title", "success_signal"],
+      },
+    },
+  },
+  required: ["plan"],
+};
+
+const ACTION_SCHEMA = {
+  type: "object",
+  properties: {
+    thought: { type: "string", description: "Brief reasoning about what to do next for the CURRENT plan item" },
+    step_complete: { type: "boolean", description: "True ONLY when the current plan item's success signal is visible on the page" },
+    say: { type: "string", description: "Short narration for the user" },
     action: {
       type: "object",
       properties: {
-        type: {
-          type: "string",
-          enum: ["navigate", "click_text", "type_into", "scroll", "wait", "finish"],
-        },
+        type: { type: "string", enum: ["navigate", "click_text", "type_into", "scroll", "wait", "skip"] },
         url: { type: "string" },
         text: { type: "string" },
         label: { type: "string" },
@@ -44,59 +64,170 @@ const AVAILABLE_ROUTES = [
 ];
 
 export async function runAutonomousAgent({ goal, callbacks, signal }) {
-  const { setUrl, setStatus, addNarration, setCursor, getIframe, onStep } = callbacks;
-  const history = [];
+  const { setStatus, addNarration, onPlan, onPlanItemUpdate, onStep } = callbacks;
 
-  for (let step = 0; step < MAX_STEPS; step++) {
+  // ── PHASE 1: BUILD THE PLAN ────────────────────────────────────────────
+  setStatus("🧭 Reading your prompt and building a plan…");
+  addNarration("Reading the goal and breaking it into steps…");
+  const plan = await buildPlan(goal);
+  if (!plan || plan.length === 0) {
+    addNarration("Couldn't build a plan. Stopping.");
+    setStatus("Idle");
+    return;
+  }
+  onPlan?.(plan);
+  addNarration(`Plan ready · ${plan.length} step${plan.length > 1 ? "s" : ""}.`);
+
+  // ── PHASE 2: EXECUTE EACH PLAN ITEM ────────────────────────────────────
+  for (let pi = 0; pi < plan.length; pi++) {
+    if (signal?.aborted) break;
+    const item = plan[pi];
+    onPlanItemUpdate?.(pi, { status: "running", note: "starting…" });
+    setStatus(`▶ Step ${pi + 1}/${plan.length}: ${item.title}`);
+
+    const result = await executePlanItem({
+      goal,
+      planItem: item,
+      planIndex: pi,
+      fullPlan: plan,
+      callbacks,
+      signal,
+    });
+
     if (signal?.aborted) {
-      addNarration("Stopped.");
+      onPlanItemUpdate?.(pi, { status: "failed", note: "stopped" });
       break;
     }
 
-    // 1. OBSERVE — read the current page
-    setStatus(`👀 Looking at the page (step ${step + 1})…`);
+    if (result.completed) {
+      onPlanItemUpdate?.(pi, { status: "done", note: null });
+    } else {
+      onPlanItemUpdate?.(pi, { status: "failed", note: result.reason || "could not verify" });
+      addNarration(`Step ${pi + 1} didn't verify — continuing anyway.`);
+    }
+
+    // breather between plan items
+    await sleep(800);
+  }
+
+  setStatus("Goal complete ✓");
+  addNarration("All steps done.");
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// PLAN BUILDER
+// ─────────────────────────────────────────────────────────────────────────
+async function buildPlan(goal) {
+  try {
+    const routes = AVAILABLE_ROUTES.map((r) => `  ${r.path} — ${r.desc}`).join("\n");
+    const res = await base44.integrations.Core.InvokeLLM({
+      prompt: `You are the Vision Agent's planner. Read the user's goal and break it into a SHORT numbered plan of 2-${MAX_PLAN_ITEMS} concrete sub-tasks. Each sub-task should be one observable action that an autonomous agent can verify is done.
+
+# AVAILABLE ROUTES
+${routes}
+
+# GOAL
+${goal}
+
+# RULES
+- Each plan item = ONE visible milestone (e.g. "Open NODA Studio", "Click Brain to open the prompt modal", "Type the workflow description into Brain", "Click Build to generate the workflow", "Wait for nodes to appear on canvas").
+- Be specific. Don't say "set up email" — say "Type the email recipient into the email node's recipient field".
+- ALWAYS make the FIRST item the navigation step (e.g. "Open NODA Studio at /NODAStudio").
+- The LAST item should be the final visible result (e.g. "Verify workflow nodes are visible on canvas").
+- For a NODA workflow build, a typical plan is: Open NODAStudio → Click Brain → Type description → Click Build → Wait & verify nodes.
+- For a TTTV play, a typical plan is: Open /Browser → Type URL into search → Click play → Verify player loaded.
+- success_signal: a short hint of what to look for on screen to confirm the step is done (e.g. "Brain modal textarea visible", "URL changes to /NODAStudio", "Workflow nodes appear on canvas").
+- Keep it tight. 3-6 items is ideal. Never more than ${MAX_PLAN_ITEMS}.
+
+Return ONLY the JSON.`,
+      response_json_schema: PLAN_BUILDER_SCHEMA,
+    });
+    const items = (res?.plan || []).slice(0, MAX_PLAN_ITEMS).map((p, i) => ({
+      id: `p${i}`,
+      title: p.title,
+      success_signal: p.success_signal,
+      status: "pending",
+      note: null,
+    }));
+    return items;
+  } catch {
+    return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// PER-PLAN-ITEM EXECUTION LOOP
+// ─────────────────────────────────────────────────────────────────────────
+async function executePlanItem({ goal, planItem, planIndex, fullPlan, callbacks, signal }) {
+  const { setUrl, setStatus, addNarration, setCursor, getIframe, onStep, onPlanItemUpdate } = callbacks;
+  const history = [];
+
+  for (let actionStep = 0; actionStep < MAX_ACTIONS_PER_STEP; actionStep++) {
+    if (signal?.aborted) return { completed: false, reason: "aborted" };
+
+    // OBSERVE
+    setStatus(`👀 Step ${planIndex + 1} · checking page…`);
     const iframe = getIframe?.();
     let observation = { ok: false };
     if (iframe) {
       observation = await sendCommand(iframe, { action: "read_page" }, 2500);
     }
 
-    // 2. THINK — ask LLM for next action
-    setStatus("🧠 Planning next move…");
-    const plan = await planNextStep({ goal, history, observation });
-    if (!plan) {
-      addNarration("Lost my train of thought. Stopping.");
-      break;
+    // THINK
+    setStatus(`🧠 Step ${planIndex + 1} · planning next action…`);
+    const decision = await decideAction({ goal, planItem, planIndex, fullPlan, history, observation });
+    if (!decision) {
+      return { completed: false, reason: "planner_failed" };
     }
 
-    onStep?.({ step: step + 1, plan, observation });
-
-    // 3. NARRATE
-    if (plan.say) addNarration(plan.say);
-
-    // 4. CHECK DONE
-    if (plan.done || plan.action?.type === "finish") {
-      setStatus("Goal complete ✓");
-      break;
-    }
-
-    // 5. ACT
-    const result = await executeAction(plan.action, { setUrl, setStatus, setCursor, getIframe });
-    history.push({
-      step: step + 1,
-      thought: plan.thought,
-      action: plan.action,
-      result,
-      observed: observation.ok ? { url: observation.url, headings: observation.headings?.slice(0, 3), buttons: observation.buttons?.slice(0, 8) } : null,
+    // STREAM step into chat
+    onStep?.({
+      step: `${planIndex + 1}.${actionStep + 1}`,
+      planIndex,
+      plan: {
+        thought: decision.thought,
+        say: decision.say,
+        action: decision.action,
+        done: decision.step_complete,
+      },
+      observation,
     });
 
-    // breather between steps — let DOM/page settle before observing again
-    await sleep(1500);
+    if (decision.say) addNarration(decision.say);
+    if (decision.thought) {
+      onPlanItemUpdate?.(planIndex, { status: "running", note: decision.thought.slice(0, 60) });
+    }
+
+    // CHECK COMPLETION
+    if (decision.step_complete) {
+      addNarration(`✓ Step ${planIndex + 1} done`);
+      return { completed: true };
+    }
+
+    // SKIP (planner says this step doesn't need an action — already satisfied or N/A)
+    if (decision.action?.type === "skip") {
+      return { completed: true };
+    }
+
+    // ACT
+    const actResult = await executeAction(decision.action, { setUrl, setStatus, setCursor, getIframe });
+    history.push({
+      action: decision.action,
+      result: actResult,
+      thought: decision.thought,
+    });
+
+    // settle
+    await sleep(1200);
   }
-  setStatus("Idle");
+
+  return { completed: false, reason: "max_actions_reached" };
 }
 
-async function planNextStep({ goal, history, observation }) {
+// ─────────────────────────────────────────────────────────────────────────
+// PER-ACTION DECISION
+// ─────────────────────────────────────────────────────────────────────────
+async function decideAction({ goal, planItem, planIndex, fullPlan, history, observation }) {
   try {
     const obsSummary = observation.ok
       ? `URL: ${observation.url}
@@ -106,20 +237,35 @@ Visible buttons/links: ${(observation.buttons || []).slice(0, 18).join(" | ")}
 Input fields available: ${(observation.inputs || []).slice(0, 10).join(" | ") || "(none detected)"}`
       : "(iframe not ready or page empty)";
 
-    const histSummary = history
+    const planSummary = fullPlan
       .map(
-        (h) =>
-          `Step ${h.step}: thought="${h.thought}" → action=${JSON.stringify(h.action)} → ${h.result?.ok ? "ok" : "failed: " + (h.result?.error || "?")}`
+        (p, i) =>
+          `  ${i + 1}. ${p.title} ${i < planIndex ? "[done]" : i === planIndex ? "[CURRENT]" : "[upcoming]"}`
       )
-      .join("\n") || "(none)";
+      .join("\n");
+
+    const histSummary =
+      history
+        .map(
+          (h, i) =>
+            `  attempt ${i + 1}: ${JSON.stringify(h.action)} → ${h.result?.ok ? "ok" : "fail: " + (h.result?.error || "?")}`
+        )
+        .join("\n") || "  (none)";
 
     const routes = AVAILABLE_ROUTES.map((r) => `  ${r.path} — ${r.desc}`).join("\n");
 
     const res = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are an autonomous agent operating a TTT app inside an iframe browser. You can navigate, click buttons, type into inputs, and scroll. Decide ONE action to take next to make progress on the user's goal.
+      prompt: `You are an autonomous agent operating a TTT app inside an iframe. You have a multi-step PLAN. Right now you're working on ONE specific step. Decide ONE action to make progress on JUST that step. Don't jump ahead.
 
-# GOAL
+# OVERALL GOAL
 ${goal}
+
+# FULL PLAN
+${planSummary}
+
+# CURRENT STEP (focus only on this)
+"${planItem.title}"
+Success signal: ${planItem.success_signal}
 
 # AVAILABLE ROUTES (use with navigate)
 ${routes}
@@ -127,52 +273,41 @@ ${routes}
 # CURRENT PAGE (what you can see)
 ${obsSummary}
 
-# HISTORY OF YOUR ACTIONS SO FAR
+# WHAT YOU'VE TRIED FOR THIS STEP SO FAR
 ${histSummary}
 
 # YOUR JOB
-Decide ONE next action. Be efficient — pick the most useful action.
+Pick ONE action OR mark step_complete=true if the success signal is already visible on the page.
 
-Action types:
-- navigate: { type: "navigate", url: "/Feed" } — go to a route
-- click_text: { type: "click_text", text: "Post" } — click button/link by visible text (must match what's in "Visible buttons/links")
-- type_into: { type: "type_into", label: "what's on your mind", text: "hello" } — type into input matching placeholder/label
-- scroll: { type: "scroll", y: 500 } — scroll the page
-- wait: { type: "wait", ms: 1500 } — wait for content to load
-- finish: { type: "finish" } — goal is complete or impossible
+CRITICAL RULES
+- Set step_complete=true ONLY when the success signal for THE CURRENT STEP is actually visible (matching headings, URL, buttons, or inputs).
+- DO NOT set step_complete=true just because you took an action — wait until you actually see the result.
+- After navigate, the next observation will show the new page — use that to verify the URL changed.
+- After click_text "Brain", look for the Brain modal textarea in inputs (label "brain") — that's the success signal.
+- After type_into Brain, the textarea now has text — go to the next step (click Build).
+- After click_text "Build", wait for nodes to appear (workflow names in headings/buttons) — THEN step_complete=true.
 
-Rules:
-- After navigate, you should usually wait for the page to load before clicking.
-- Only use click_text values that appear in the visible buttons list above. If a button has [#agent-id], you can use that id as text (e.g. "play").
-- For type_into, the "label" must match part of an input's placeholder/aria-label/name from the "Input fields available" list. e.g. if you see "Paste YouTube URL... (input:text)", use label: "youtube" or "paste".
-- YOU CAN TYPE into ANY input field shown in "Input fields available". The system simulates real typing — the user sees each character appear in the input one at a time. NEVER say "I can't type" or "you'll need to type it yourself" — if an input exists in the list, use type_into to fill it.
+ACTION TYPES
+- navigate: { type: "navigate", url: "/NODAStudio" }
+- click_text: { type: "click_text", text: "Brain" } — click button by visible text or data-agent-id
+- type_into: { type: "type_into", label: "brain", text: "..." } — TYPES into input matching label/placeholder. ONE TIME ONLY per input.
+- scroll: { type: "scroll", y: 400 }
+- wait: { type: "wait", ms: 5000 } — wait for content to load (use after Build, after navigate)
+- skip: { type: "skip" } — current step is already satisfied or doesn't need an action
 
-# TTTV (/Browser) — playing a YouTube video
-- Search input: placeholder "Paste YouTube URL...", data-agent-id="search". Use label: "search".
-- Play button: data-agent-id="play". Use click_text: "play".
-- Flow: navigate /Browser → type_into label "search" with the YouTube URL → click_text "play".
-- SUCCESS SIGNAL: when headings include "TTTV Player" or buttons include "Back" + "YouTube" (the player view), the video is playing — call finish with done=true.
+NODA-SPECIFIC TIPS
+- Brain button: data-agent-id="brain", label "Brain". After click, modal opens with textarea (label "brain").
+- Build button: data-agent-id="build", label "Build". After click, wait ~5s then verify nodes visible.
+- Run button: data-agent-id="run", label "Run".
+- After Build click, ALWAYS wait 5000ms before observing.
 
-# NODA Studio (/NODAStudio) — building & running a workflow
-- Brain button: data-agent-id="brain", visible label "Brain". Use click_text: "brain".
-- After clicking Brain, a modal opens with a textarea (data-agent-id="brain", aria-label="brain"). Use type_into label "brain" to fill it with a clear plain-English description.
-- Build button: data-agent-id="build", visible label "Build". Use click_text: "build". This generates and auto-runs the workflow (~5 seconds).
-- For a quick demo: click_text: "example" instead of brain.
-- Run button: data-agent-id="run". Use click_text: "run".
-- After clicking Build, WAIT ~5 seconds (use { type: "wait", ms: 5000 }) for the workflow to generate, then read the page — you should see node names like "Web Research", "AI Agent", or "Email" in the headings/buttons.
-- SUCCESS SIGNAL: once nodes appear on the canvas (visible in headings/buttons) AND a Run button is present (or auto-run already triggered), call finish with done=true. The user can see the workflow built — that's the goal.
-- NODA branded loading animation plays automatically when navigating to /NODA or /NODAStudio — wait ~2.5 seconds after navigate before clicking anything.
-
-# General
-- CRITICAL: type_into REPLACES the input's value entirely (it does not append). Only use type_into ONCE per input. After typing, your next action should be to click play/submit — DO NOT type_into the same input again.
-- If your previous step already typed the correct text into an input, DO NOT type_into it again. Move on (usually click_text "play" or the submit button).
-- ALWAYS finish once the visible result of the goal is on screen. Don't keep clicking after success — declare done.
-- If the goal is done, set done=true and use finish.
-- If you've tried the same action 2x and it failed, try a different approach or finish.
-- Keep "say" short and conversational (1 sentence).
+TTTV-SPECIFIC TIPS
+- Search input: label "search" or "youtube" or "paste".
+- Play button: label "play".
+- Success: headings include "TTTV Player" or buttons include "Back" + "YouTube".
 
 Return ONLY the JSON.`,
-      response_json_schema: PLAN_SCHEMA,
+      response_json_schema: ACTION_SCHEMA,
     });
     return res;
   } catch {
@@ -180,6 +315,9 @@ Return ONLY the JSON.`,
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// ACTION EXECUTOR (unchanged behavior, slightly more patient settles)
+// ─────────────────────────────────────────────────────────────────────────
 async function executeAction(action, { setUrl, setStatus, setCursor, getIframe }) {
   if (!action) return { ok: false, error: "no_action" };
   const iframe = getIframe?.();
@@ -188,25 +326,22 @@ async function executeAction(action, { setUrl, setStatus, setCursor, getIframe }
     case "navigate": {
       setStatus(`🌐 Opening ${action.url}…`);
       setUrl(action.url);
-      // Wait for the iframe page to announce ready, then a real settle pause
       const ready = await waitForIframeReady(8000);
       if (!ready.ok) {
         await sleep(2000);
         const ping = await sendCommand(getIframe?.(), { action: "ping" }, 2000);
         if (!ping.ok) await sleep(1500);
       }
-      // Let React finish hydrating + animations + lazy content
-      await sleep(1500);
+      await sleep(1800);
       return { ok: true };
     }
 
     case "click_text": {
-      setStatus(`🎯 Finding "${action.text}" button…`);
-      // First peek at where the element is so cursor can travel BEFORE clicking
+      setStatus(`🎯 Finding "${action.text}"…`);
       const peek = await sendCommand(iframe, { action: "locate", text: action.text });
       if (peek.ok && peek.position) {
         setCursor({ x: peek.position.x, y: peek.position.y, clicking: false });
-        await sleep(1100); // let cursor glide there
+        await sleep(1100);
       }
       setStatus(`👆 Clicking "${action.text}"…`);
       const res = await sendCommand(iframe, { action: "click_text", text: action.text });
@@ -217,26 +352,23 @@ async function executeAction(action, { setUrl, setStatus, setCursor, getIframe }
         await sleep(500);
         setCursor((p) => ({ ...p, clicking: false }));
       }
-      // Let click side-effects (navigation, state updates, modals) fully resolve
-      await sleep(1200);
+      await sleep(1400);
       return res;
     }
 
     case "type_into": {
-      setStatus(`🎯 Finding the "${action.label || "input"}" field…`);
-      // Move cursor to the input FIRST so user sees it travel there
+      setStatus(`🎯 Finding "${action.label || "input"}" field…`);
       const peek = await sendCommand(iframe, { action: "locate_input", label: action.label });
       if (peek.ok && peek.position) {
         setCursor({ x: peek.position.x, y: peek.position.y, clicking: false });
-        await sleep(1000);
+        await sleep(900);
         setCursor((p) => ({ ...p, clicking: true }));
         await sleep(350);
         setCursor((p) => ({ ...p, clicking: false }));
         await sleep(300);
       }
-      setStatus(`⌨️ Typing into Vision Chat: "${action.text?.slice(0, 32)}${action.text?.length > 32 ? "…" : ""}"`);
-      // Now stream the typing — bridge animates char-by-char
-      const charDelay = 70;
+      setStatus(`⌨️ Typing: "${action.text?.slice(0, 32)}${action.text?.length > 32 ? "…" : ""}"`);
+      const charDelay = 60;
       const res = await sendCommand(
         iframe,
         { action: "type_into", label: action.label, text: action.text, charDelay },
@@ -245,22 +377,22 @@ async function executeAction(action, { setUrl, setStatus, setCursor, getIframe }
       if (res.ok && res.position) {
         setCursor({ x: res.position.x, y: res.position.y, clicking: false });
       }
-      // Pause so the typed value visibly registers before next action
-      await sleep(900);
+      await sleep(1000);
       return res;
     }
 
     case "scroll": {
       const res = await sendCommand(iframe, { action: "scroll", y: action.y || 0 });
-      await sleep(1000);
+      await sleep(900);
       return res;
     }
 
     case "wait":
+      setStatus(`⏳ Waiting ${Math.round((action.ms || 1000) / 1000)}s…`);
       await sleep(action.ms || 1000);
       return { ok: true };
 
-    case "finish":
+    case "skip":
       return { ok: true };
 
     default:

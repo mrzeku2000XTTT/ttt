@@ -6,6 +6,7 @@ import AgentComputer from "./AgentComputer";
 import { runAutonomousAgent } from "./agentLoop";
 import AgentStepLog from "./AgentStepLog";
 import AgentReasoningBubble from "./AgentReasoningBubble";
+import AgentPlanChecklist from "./AgentPlanChecklist";
 
 const SUGGESTIONS = [
   { Icon: Play, color: "text-cyan-400", text: "Play this on TTTV: ", prefill: true },
@@ -120,18 +121,22 @@ export default function AgentChatGPT() {
 
     abortRef.current = { aborted: false };
 
-    // Drop a "kickoff" reasoning bubble into chat so the user sees the agent extension take over
-    setMessages((m) => [
-      ...m,
-      {
-        role: "reasoning",
-        reasoning: {
-          step: 0,
-          say: `Activating my agent extension to: ${goal}`,
-          status: "thinking",
+    // Insert a placeholder "plan" message — will be filled when the planner returns
+    let planMsgIndex = -1;
+    setMessages((m) => {
+      planMsgIndex = m.length;
+      return [
+        ...m,
+        {
+          role: "reasoning",
+          reasoning: {
+            step: 0,
+            say: `Reading your prompt and building a plan…`,
+            status: "thinking",
+          },
         },
-      },
-    ]);
+      ];
+    });
 
     await runAutonomousAgent({
       goal,
@@ -142,34 +147,43 @@ export default function AgentChatGPT() {
         addNarration: (text) => setComputerNarrations((prev) => [...prev, text]),
         setCursor: setComputerCursor,
         getIframe: () => computerRef.current?.getIframe(),
+        onPlan: (plan) => {
+          // Replace the kickoff bubble with the live plan checklist
+          setMessages((prev) => {
+            const copy = [...prev];
+            const idx = copy.findIndex((m) => m.role === "reasoning" && m.reasoning?.step === 0);
+            const planMsg = { role: "plan", plan };
+            if (idx >= 0) copy[idx] = planMsg;
+            else copy.push(planMsg);
+            return copy;
+          });
+        },
+        onPlanItemUpdate: (index, patch) => {
+          setMessages((prev) => {
+            const copy = [...prev];
+            const idx = copy.findIndex((m) => m.role === "plan");
+            if (idx >= 0) {
+              const newPlan = [...copy[idx].plan];
+              newPlan[index] = { ...newPlan[index], ...patch };
+              copy[idx] = { ...copy[idx], plan: newPlan };
+            }
+            return copy;
+          });
+        },
         onStep: (step) => {
           setAgentSteps((prev) => [...prev, step]);
-          // Stream each sub-agent reasoning step into the chat as a live message
-          setMessages((prev) => [
-            ...prev,
-            {
-              role: "reasoning",
-              reasoning: {
-                step: step.step,
-                thought: step.plan?.thought,
-                say: step.plan?.say,
-                action: step.plan?.action,
-                status: step.plan?.done || step.plan?.action?.type === "finish" ? "done" : "thinking",
-              },
-            },
-          ]);
         },
       },
     });
 
-    // Final "done" bubble in chat
+    // Final "done" bubble
     setMessages((m) => [
       ...m,
       {
         role: "reasoning",
         reasoning: {
           step: "✓",
-          say: "Job done — extension agent finished and you can see the result in the computer panel.",
+          say: "All steps complete — see the result in the computer panel.",
           status: "done",
         },
       },
@@ -431,13 +445,15 @@ CRITICAL: NEVER say "I can't" or "you'll need to do it yourself". The computer c
               </div>
             ) : (
               <AnimatePresence initial={false}>
-                {messages.map((m, i) =>
-                  m.role === "reasoning" ? (
-                    <AgentReasoningBubble key={i} msg={m} />
-                  ) : (
-                    <MessageBubble key={i} msg={m} isLast={i === messages.length - 1 && loading} />
-                  )
-                )}
+                {messages.map((m, i) => {
+                  if (m.role === "plan") {
+                    return <AgentPlanChecklist key={i} plan={m.plan} />;
+                  }
+                  if (m.role === "reasoning") {
+                    return <AgentReasoningBubble key={i} msg={m} />;
+                  }
+                  return <MessageBubble key={i} msg={m} isLast={i === messages.length - 1 && loading} />;
+                })}
               </AnimatePresence>
             )}
           </div>
