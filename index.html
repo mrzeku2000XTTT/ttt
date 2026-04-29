@@ -254,8 +254,17 @@
               reply(id, { ok: true });
             } else if (cmd.action === 'read_page') {
               var headings = Array.from(document.querySelectorAll('h1, h2, h3, [role="heading"]')).slice(0, 10).map(function (h) { return h.innerText.trim(); }).filter(Boolean);
-              var buttons = Array.from(document.querySelectorAll('button, a[href]')).slice(0, 30).map(function (b) { return (b.innerText || b.getAttribute('aria-label') || '').trim(); }).filter(Boolean);
-              reply(id, { ok: true, title: document.title, url: location.pathname, headings: headings, buttons: buttons.slice(0, 20) });
+              var buttons = Array.from(document.querySelectorAll('button, a[href], [data-agent-id]')).slice(0, 40).map(function (b) {
+                var aid = b.getAttribute('data-agent-id');
+                var label = (b.innerText || b.getAttribute('aria-label') || '').trim();
+                return aid ? (label ? label + ' [#' + aid + ']' : '#' + aid) : label;
+              }).filter(Boolean);
+              var inputs = Array.from(document.querySelectorAll('input, textarea, [contenteditable="true"]')).slice(0, 20).map(function (i) {
+                var label = i.getAttribute('placeholder') || i.getAttribute('aria-label') || i.getAttribute('name') || i.getAttribute('data-agent-id') || '';
+                var type = i.tagName.toLowerCase() + (i.type ? ':' + i.type : '');
+                return label ? (label + ' (' + type + ')') : null;
+              }).filter(Boolean);
+              reply(id, { ok: true, title: document.title, url: location.pathname, headings: headings, buttons: buttons.slice(0, 25), inputs: inputs });
             } else if (cmd.action === 'ping') {
               reply(id, { ok: true, ready: true, url: location.pathname });
             } else {

@@ -97,7 +97,11 @@ export async function runAutonomousAgent({ goal, callbacks, signal }) {
 async function planNextStep({ goal, history, observation }) {
   try {
     const obsSummary = observation.ok
-      ? `URL: ${observation.url}\nTitle: ${observation.title || "?"}\nHeadings: ${(observation.headings || []).slice(0, 5).join(" | ")}\nVisible buttons/links: ${(observation.buttons || []).slice(0, 15).join(" | ")}`
+      ? `URL: ${observation.url}
+Title: ${observation.title || "?"}
+Headings: ${(observation.headings || []).slice(0, 5).join(" | ")}
+Visible buttons/links: ${(observation.buttons || []).slice(0, 18).join(" | ")}
+Input fields available: ${(observation.inputs || []).slice(0, 10).join(" | ") || "(none detected)"}`
       : "(iframe not ready or page empty)";
 
     const histSummary = history
@@ -137,7 +141,10 @@ Action types:
 
 Rules:
 - After navigate, you should usually wait for the page to load before clicking.
-- Only use click_text values that appear in the visible buttons list above.
+- Only use click_text values that appear in the visible buttons list above. If a button has [#agent-id], you can use that id as text (e.g. "play").
+- For type_into, the "label" must match part of an input's placeholder/aria-label/name from the "Input fields available" list. e.g. if you see "Paste YouTube URL... (input:text)", use label: "youtube" or "paste".
+- YOU CAN TYPE into ANY input field shown in "Input fields available" — never tell the user to do it themselves. If an input exists, use type_into.
+- On TTTV (/Browser): the search input has placeholder "Paste YouTube URL..." and data-agent-id="search". Use label "search" or "youtube" to type into it, then click_text "play" to play.
 - If the goal is done, set done=true and use finish.
 - If you've tried the same action 2x and it failed, try a different approach or finish.
 - Keep "say" short and conversational (1 sentence).
