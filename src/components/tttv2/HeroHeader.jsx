@@ -118,6 +118,12 @@ export default function HeroHeader() {
         }}
         transition={{ duration: 1.6, ease: "easeOut", times: [0, 0.7, 1] }}
         className="absolute inset-0 flex items-center justify-center pointer-events-none z-0"
+        style={{
+          WebkitMaskImage:
+            "radial-gradient(ellipse 60% 65% at center, rgba(0,0,0,1) 35%, rgba(0,0,0,0.6) 60%, rgba(0,0,0,0) 95%)",
+          maskImage:
+            "radial-gradient(ellipse 60% 65% at center, rgba(0,0,0,1) 35%, rgba(0,0,0,0.6) 60%, rgba(0,0,0,0) 95%)",
+        }}
       >
         <motion.img
           src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3673d7599_generated_image.png"
@@ -131,7 +137,7 @@ export default function HeroHeader() {
             y: { duration: 6, repeat: Infinity, ease: "easeInOut" },
             rotate: { duration: 9, repeat: Infinity, ease: "easeInOut" },
           }}
-          className="w-[min(140vw,1400px)] h-full max-w-none object-contain mix-blend-darken"
+          className="w-[min(140vw,1400px)] h-full max-w-none object-contain mix-blend-multiply"
         />
       </motion.div>
 
