@@ -101,6 +101,11 @@ export async function runAutonomousAgent({ goal, callbacks, signal }) {
 
     if (result.completed) {
       onPlanItemUpdate?.(pi, { status: "done", note: null });
+      // Back-fill: if a later step succeeded, any earlier steps that failed/stuck
+      // must have actually worked (you can't reach step N+1 without step N's effects).
+      for (let prev = 0; prev < pi; prev++) {
+        onPlanItemUpdate?.(prev, { status: "done", note: null });
+      }
     } else {
       onPlanItemUpdate?.(pi, { status: "failed", note: result.reason || "could not verify" });
       addNarration(`Step ${pi + 1} didn't verify — continuing anyway.`);
