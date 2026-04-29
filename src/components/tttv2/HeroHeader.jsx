@@ -108,25 +108,41 @@ function ScrollingRow({ apps, direction = "left", speed = 30 }) {
 export default function HeroHeader() {
   return (
     <section className="relative pt-24 sm:pt-32 pb-10 sm:pb-16 px-5 overflow-hidden bg-white">
-      {/* Chinese calligraphy: "Earth to Mars Transaction" — background watermark */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[1] overflow-hidden">
+      {/* Chinese calligraphy: "Earth to Mars Transaction" — vertical right-side lettering */}
+      <div className="absolute right-4 sm:right-10 top-1/2 -translate-y-1/2 pointer-events-none z-[15] hidden sm:flex flex-col items-center gap-3 select-none">
         <div
-          className="text-[clamp(3rem,14vw,12rem)] font-black leading-none tracking-tighter whitespace-nowrap select-none"
+          className="flex flex-col items-center text-zinc-900"
           style={{
-            color: "#0f172a",
-            opacity: 0.08,
-            fontFamily: '"Noto Serif SC", "Songti SC", "STSong", "Microsoft YaHei", serif',
+            fontFamily: '"Noto Serif SC", "Songti SC", "STSong", "Microsoft YaHei", "PingFang SC", serif',
+            fontWeight: 900,
+            fontSize: "clamp(2.5rem, 5vw, 4.5rem)",
+            lineHeight: 1,
             letterSpacing: "0.05em",
+            writingMode: "vertical-rl",
+            textOrientation: "upright",
           }}
         >
           地球到火星交易
         </div>
+        <div className="text-[9px] font-bold tracking-[0.25em] text-zinc-400 uppercase rotate-180" style={{ writingMode: "vertical-rl" }}>
+          Earth → Mars
+        </div>
       </div>
 
-      {/* English subtitle for the Chinese — small caption */}
-      <div className="absolute top-6 left-1/2 -translate-x-1/2 pointer-events-none z-[2] text-center">
-        <div className="text-[10px] font-bold tracking-[0.3em] text-zinc-300 uppercase">
-          地球到火星交易 · Earth → Mars Transaction
+      {/* Mobile: top banner with Chinese lettering */}
+      <div className="sm:hidden absolute top-3 left-0 right-0 pointer-events-none z-[15] text-center">
+        <div
+          className="text-zinc-900 font-black"
+          style={{
+            fontFamily: '"Noto Serif SC", "Songti SC", "STSong", "Microsoft YaHei", "PingFang SC", serif',
+            fontSize: "1.5rem",
+            letterSpacing: "0.1em",
+          }}
+        >
+          地球到火星交易
+        </div>
+        <div className="text-[8px] font-bold tracking-[0.3em] text-zinc-400 uppercase mt-0.5">
+          Earth → Mars Transaction
         </div>
       </div>
 
