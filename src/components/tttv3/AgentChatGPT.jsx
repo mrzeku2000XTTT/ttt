@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 import AgentComputer from "./AgentComputer";
 import { runAutonomousAgent } from "./agentLoop";
 import AgentStepLog from "./AgentStepLog";
+import AgentReasoningBubble from "./AgentReasoningBubble";
 
 const SUGGESTIONS = [
   { icon: "▶️", text: "Play this on TTTV: ", prefill: true },
@@ -119,6 +120,19 @@ export default function AgentChatGPT() {
 
     abortRef.current = { aborted: false };
 
+    // Drop a "kickoff" reasoning bubble into chat so the user sees the sub-agent take over
+    setMessages((m) => [
+      ...m,
+      {
+        role: "reasoning",
+        reasoning: {
+          step: 0,
+          say: `Spinning up sub-agent to: ${goal}`,
+          status: "thinking",
+        },
+      },
+    ]);
+
     await runAutonomousAgent({
       goal,
       signal: abortRef.current,
@@ -128,9 +142,38 @@ export default function AgentChatGPT() {
         addNarration: (text) => setComputerNarrations((prev) => [...prev, text]),
         setCursor: setComputerCursor,
         getIframe: () => computerRef.current?.getIframe(),
-        onStep: (step) => setAgentSteps((prev) => [...prev, step]),
+        onStep: (step) => {
+          setAgentSteps((prev) => [...prev, step]);
+          // Stream each sub-agent reasoning step into the chat as a live message
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: "reasoning",
+              reasoning: {
+                step: step.step,
+                thought: step.plan?.thought,
+                say: step.plan?.say,
+                action: step.plan?.action,
+                status: step.plan?.done || step.plan?.action?.type === "finish" ? "done" : "thinking",
+              },
+            },
+          ]);
+        },
       },
     });
+
+    // Final "done" bubble in chat
+    setMessages((m) => [
+      ...m,
+      {
+        role: "reasoning",
+        reasoning: {
+          step: "✓",
+          say: "Sub-agent finished. Goal complete.",
+          status: "done",
+        },
+      },
+    ]);
 
     setAgentRunning(false);
   };
@@ -377,9 +420,13 @@ CRITICAL: NEVER say "I can't" or "you'll need to do it yourself". The computer c
               </div>
             ) : (
               <AnimatePresence initial={false}>
-                {messages.map((m, i) => (
-                  <MessageBubble key={i} msg={m} isLast={i === messages.length - 1 && loading} />
-                ))}
+                {messages.map((m, i) =>
+                  m.role === "reasoning" ? (
+                    <AgentReasoningBubble key={i} msg={m} />
+                  ) : (
+                    <MessageBubble key={i} msg={m} isLast={i === messages.length - 1 && loading} />
+                  )
+                )}
               </AnimatePresence>
             )}
           </div>
