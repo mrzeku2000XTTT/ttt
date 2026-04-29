@@ -26,6 +26,7 @@ import SecurityAuditPage from './pages/SecurityAudit';
 import CanvasPage from './pages/Canvas';
 import HikaruPage from './pages/Hikaru';
 import TTTV2Page from './pages/TTTV2';
+import TTTV3Page from './pages/TTTV3';
 import WhatIsKaspaPage from './pages/WhatIsKaspa';
 import ExplorePage from './pages/Explore';
 import AppStoreV2Page from './pages/AppStoreV2';
@@ -117,6 +118,7 @@ const AuthenticatedApp = () => {
       <Route path="/Canvas" element={<CanvasPage />} />
       <Route path="/Hikaru" element={<HikaruPage />} />
       <Route path="/TTTV2" element={<TTTV2Page />} />
+      <Route path="/TTTV3" element={<TTTV3Page />} />
       <Route path="/WhatIsKaspa" element={<WhatIsKaspaPage />} />
       <Route path="/Explore" element={<ExplorePage />} />
       <Route path="/AppStoreV2" element={<AppStoreV2Page />} />
