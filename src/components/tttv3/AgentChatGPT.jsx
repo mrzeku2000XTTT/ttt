@@ -8,7 +8,7 @@ import AgentStepLog from "./AgentStepLog";
 
 const SUGGESTIONS = [
   { icon: "▶️", text: "Play this on TTTV: ", prefill: true },
-  { icon: "🚀", text: "What apps can a TTT 3.0 agent connect to?" },
+  { icon: "⚡", text: "Open NODA and build a daily Kaspa briefing workflow" },
   { icon: "🧠", text: "Brainstorm 5 vision items for the agent internet" },
   { icon: "💸", text: "How would agent-to-agent KAS payments work?" },
 ];
@@ -112,8 +112,8 @@ export default function AgentChatGPT() {
   const isTaskGoal = (text) => {
     // Any URL → treat as task (user wants the agent to use it)
     if (/https?:\/\/\S+/i.test(text)) return true;
-    // Action verbs
-    return /\b(open|go to|navigate|post|send|tip|click|type|paste|search|find|browse|show me|take me|fill|submit|read|watch|play)\b/i.test(text);
+    // Action verbs (incl. NODA-specific: build, automate, workflow)
+    return /\b(open|go to|navigate|post|send|tip|click|type|paste|search|find|browse|show me|take me|fill|submit|read|watch|play|build|automate|workflow|noda|run)\b/i.test(text);
   };
 
   const runAutonomousGoal = async (goal) => {

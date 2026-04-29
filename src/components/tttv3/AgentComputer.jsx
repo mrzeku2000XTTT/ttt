@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } f
 import { motion, AnimatePresence } from "framer-motion";
 import { Monitor, RotateCw, ArrowLeft, ArrowRight, Lock, Loader2 } from "lucide-react";
 import AgentCursor from "./AgentCursor";
+import NodaLoadingOverlay from "./NodaLoadingOverlay";
 
 /**
  * AgentComputer — a fake desktop browser the agent operates inside the chat.
@@ -10,15 +11,22 @@ import AgentCursor from "./AgentCursor";
 const AgentComputer = forwardRef(function AgentComputer({ url, status, narrations, cursor, isActive }, ref) {
   const iframeRef = useRef(null);
   const [loading, setLoading] = useState(false);
+  const [showNodaBoot, setShowNodaBoot] = useState(false);
 
   useImperativeHandle(ref, () => ({
     getIframe: () => iframeRef.current,
   }));
   const fullUrl = url ? `${window.location.origin}${url}` : null;
+  const isNodaRoute = url && /noda/i.test(url);
 
   useEffect(() => {
     if (url) setLoading(true);
-  }, [url]);
+    if (isNodaRoute) {
+      setShowNodaBoot(true);
+      const t = setTimeout(() => setShowNodaBoot(false), 2200);
+      return () => clearTimeout(t);
+    }
+  }, [url, isNodaRoute]);
 
   return (
     <div className="relative w-full h-full bg-zinc-900 rounded-2xl overflow-hidden ring-1 ring-white/10 flex flex-col">
@@ -72,6 +80,9 @@ const AgentComputer = forwardRef(function AgentComputer({ url, status, narration
 
         {/* Animated cursor overlay */}
         <AgentCursor x={cursor.x} y={cursor.y} clicking={cursor.clicking} visible={isActive && !!fullUrl} />
+
+        {/* NODA boot overlay — branded loading animation when entering NODA */}
+        <NodaLoadingOverlay visible={showNodaBoot} />
 
         {/* Loading veil on first navigation */}
         <AnimatePresence>
