@@ -215,7 +215,7 @@ USER REQUEST:
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto"
           onClick={onClose}
         >
           <motion.div
@@ -223,7 +223,7 @@ USER REQUEST:
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.95, y: 10, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg bg-gradient-to-br from-zinc-950 to-zinc-900 border border-fuchsia-500/30 rounded-2xl shadow-2xl shadow-fuchsia-500/10 overflow-hidden"
+            className="w-full max-w-lg my-auto bg-gradient-to-br from-zinc-950 to-zinc-900 border border-fuchsia-500/30 rounded-2xl shadow-2xl shadow-fuchsia-500/10 overflow-hidden max-h-[95vh] flex flex-col"
           >
             <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-gradient-to-r from-fuchsia-500/10 to-cyan-500/10">
               <div className="flex items-center gap-2">
@@ -243,7 +243,7 @@ USER REQUEST:
               </button>
             </div>
 
-            <div className="p-5">
+            <div className="p-3 sm:p-5 overflow-y-auto">
               <textarea
                 autoFocus
                 data-agent-id="brain"
@@ -254,8 +254,8 @@ USER REQUEST:
                   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) buildFromBrain();
                 }}
                 placeholder="e.g. Write a poem about Kaspa, generate a matching cosmic image, then email both to me at jane@example.com"
-                rows={5}
-                className="w-full bg-black/50 border border-white/10 focus:border-fuchsia-400/50 focus:bg-black/70 rounded-xl px-3 py-3 text-white text-sm outline-none resize-none transition-colors placeholder:text-white/25"
+                rows={4}
+                className="w-full bg-black/50 border border-white/10 focus:border-fuchsia-400/50 focus:bg-black/70 rounded-xl px-3 py-2.5 text-white text-sm outline-none resize-none transition-colors placeholder:text-white/25 min-h-[80px]"
               />
 
               {error && (
