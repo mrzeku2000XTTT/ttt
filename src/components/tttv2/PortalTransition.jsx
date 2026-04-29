@@ -45,8 +45,8 @@ export default function PortalTransition({ origin, onComplete }) {
 
       ctx.clearRect(0, 0, w, h);
 
-      // expanding portal radius
-      const r = maxR * e;
+      // expanding portal radius (clamped to >= 1 to avoid IndexSizeError on first frame)
+      const r = Math.max(1, maxR * e);
 
       // outer dim layer
       ctx.fillStyle = `rgba(0,0,0,${e * 0.95})`;
