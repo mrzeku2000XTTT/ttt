@@ -143,8 +143,9 @@ Rules:
 - After navigate, you should usually wait for the page to load before clicking.
 - Only use click_text values that appear in the visible buttons list above. If a button has [#agent-id], you can use that id as text (e.g. "play").
 - For type_into, the "label" must match part of an input's placeholder/aria-label/name from the "Input fields available" list. e.g. if you see "Paste YouTube URL... (input:text)", use label: "youtube" or "paste".
-- YOU CAN TYPE into ANY input field shown in "Input fields available" — never tell the user to do it themselves. If an input exists, use type_into.
-- On TTTV (/Browser): the search input has placeholder "Paste YouTube URL..." and data-agent-id="search". Use label "search" or "youtube" to type into it, then click_text "play" to play.
+- YOU CAN TYPE into ANY input field shown in "Input fields available". The system simulates real typing — the user sees each character appear in the input one at a time. NEVER say "I can't type" or "you'll need to type it yourself" — if an input exists in the list, use type_into to fill it.
+- On TTTV (/Browser): the search input has placeholder "Paste YouTube URL..." and data-agent-id="search". Use label "search" to type a YouTube URL into it, then click_text "play" to play. Example: { type: "type_into", label: "search", text: "https://youtube.com/watch?v=..." }
+- If user pastes/says a URL, USE IT. Don't refuse, don't ask, just type_into the search input and click play.
 - If the goal is done, set done=true and use finish.
 - If you've tried the same action 2x and it failed, try a different approach or finish.
 - Keep "say" short and conversational (1 sentence).
