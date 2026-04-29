@@ -1,0 +1,68 @@
+{
+  "name": "TTTAppRegistry",
+  "type": "object",
+  "properties": {
+    "app_name": {
+      "type": "string",
+      "description": "Display name of the app"
+    },
+    "path": {
+      "type": "string",
+      "description": "Internal route path (e.g. 'Feed', 'AgentZK')"
+    },
+    "external_url": {
+      "type": "string",
+      "description": "External URL if app is external"
+    },
+    "category": {
+      "type": "string",
+      "description": "App category (AI, Finance, Games, etc.)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Short description of what the app does"
+    },
+    "logo_url": {
+      "type": "string",
+      "description": "App icon URL"
+    },
+    "is_premium": {
+      "type": "boolean",
+      "default": false,
+      "description": "Premium-only app"
+    },
+    "is_admin_only": {
+      "type": "boolean",
+      "default": false,
+      "description": "Admin-only app"
+    },
+    "agent_capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Actions a TTT 3.0 agent can perform inside this app"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether the app is live in the registry"
+    }
+  },
+  "required": [
+    "app_name",
+    "category"
+  ],
+  "rls": {
+    "create": {
+      "user.role": "admin"
+    },
+    "read": true,
+    "update": {
+      "user.role": "admin"
+    },
+    "delete": {
+      "user.role": "admin"
+    }
+  }
+}
