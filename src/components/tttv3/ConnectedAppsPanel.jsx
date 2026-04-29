@@ -100,8 +100,8 @@ export default function ConnectedAppsPanel() {
             ))}
           </div>
           <div className="mt-5 pt-5 border-t border-white/5 flex items-center justify-between text-[11px]">
-            <code className="text-cyan-400/80 font-mono">base44.functions.invoke('tttAgentOpenApp', {`{action:'open',name:'Feed'}`})</code>
-            <span className="text-white/30">v3.0 SDK</span>
+            <span className="text-white/40">Agent runtime · live connector mesh</span>
+            <span className="text-white/30">v3.0</span>
           </div>
         </motion.div>
       </div>

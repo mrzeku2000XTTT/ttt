@@ -7,6 +7,7 @@ import VisionCanvas from "@/components/tttv3/VisionCanvas";
 import FlyOverlay from "@/components/tttv3/FlyOverlay";
 import SakuraPetals from "@/components/tttv3/SakuraPetals";
 import ConnectedAppsPanel from "@/components/tttv3/ConnectedAppsPanel";
+import AgentChatGPT from "@/components/tttv3/AgentChatGPT";
 
 export default function TTTV3Page() {
   const navigate = useNavigate();
@@ -216,6 +217,9 @@ export default function TTTV3Page() {
 
       {/* Connected Apps */}
       <ConnectedAppsPanel />
+
+      {/* Direct Chat with Agent */}
+      <AgentChatGPT />
 
       {/* Pillars */}
       <section id="pillars" className="relative py-32 px-5 bg-gradient-to-b from-black via-zinc-950 to-black">
