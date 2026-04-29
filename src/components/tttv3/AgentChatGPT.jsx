@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Sparkles, Loader2, ArrowDown, Bot, User as UserIcon, Copy, Check, Zap } from "lucide-react";
+import { Send, Sparkles, Loader2, ArrowDown, Bot, User as UserIcon, Copy, Check, Zap, Monitor, MonitorOff } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import AgentComputer from "./AgentComputer";
+import { runAgentActions, PHASE_1_APPS } from "./agentActions";
 
 const SUGGESTIONS = [
   { icon: "🚀", text: "What apps can a TTT 3.0 agent connect to?" },
@@ -90,6 +92,51 @@ export default function AgentChatGPT() {
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
 
+  // Agent Computer state
+  const [computerOpen, setComputerOpen] = useState(false);
+  const [computerUrl, setComputerUrl] = useState(null);
+  const [computerStatus, setComputerStatus] = useState("Idle");
+  const [computerNarrations, setComputerNarrations] = useState([]);
+  const [computerCursor, setComputerCursor] = useState({ x: 50, y: 50, clicking: false });
+  const [agentRunning, setAgentRunning] = useState(false);
+
+  const detectAppIntent = (text) => {
+    const lower = text.toLowerCase();
+    return PHASE_1_APPS.find((app) =>
+      lower.includes(app.name.toLowerCase()) ||
+      (app.name === "Feed" && /feed|post|tip/.test(lower)) ||
+      (app.name === "Bridge" && /bridge|send kas|transfer/.test(lower)) ||
+      (app.name === "TTTV" && /video|watch|tttv|stream/.test(lower))
+    );
+  };
+
+  const runAppDemo = async (app, userQuery) => {
+    if (!computerOpen) setComputerOpen(true);
+    setAgentRunning(true);
+    setComputerNarrations([]);
+
+    const actions = [
+      { type: "narrate", text: `Opening ${app.name} for you…` },
+      { type: "navigate", url: app.path },
+      { type: "wait", ms: 1500 },
+      { type: "move_cursor", x: 30, y: 30 },
+      { type: "narrate", text: `${app.description}. Let me show you around.` },
+      { type: "move_cursor", x: 60, y: 50 },
+      { type: "click" },
+      { type: "wait", ms: 1200 },
+      { type: "narrate", text: `That's ${app.name} — you can interact with it directly anytime.` },
+    ];
+
+    await runAgentActions(actions, {
+      setUrl: setComputerUrl,
+      setStatus: setComputerStatus,
+      addNarration: (text) => setComputerNarrations((prev) => [...prev, text]),
+      setCursor: setComputerCursor,
+    });
+
+    setAgentRunning(false);
+  };
+
   // Auto-scroll on new message
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -109,6 +156,12 @@ export default function AgentChatGPT() {
     setMessages((m) => [...m, userMsg, { role: "assistant", content: "" }]);
     setInput("");
     setLoading(true);
+
+    // Detect if user is asking the agent to use an app — fire the computer demo
+    const targetApp = detectAppIntent(text);
+    if (targetApp && computerOpen) {
+      runAppDemo(targetApp, text);
+    }
 
     try {
       // Pull live registry context so the agent knows what apps exist
@@ -185,6 +238,24 @@ Reply directly, conversationally, and concisely (2-5 sentences usually, longer o
           </p>
         </motion.div>
 
+        {/* Toggle bar */}
+        <div className="flex items-center justify-end mb-3 gap-2">
+          <span className="text-[11px] text-white/40">Phase 1 · Feed, Bridge, TTTV</span>
+          <button
+            onClick={() => setComputerOpen((v) => !v)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all ${
+              computerOpen
+                ? "bg-gradient-to-r from-cyan-400 to-violet-400 text-black"
+                : "bg-white/5 text-white/60 ring-1 ring-white/10 hover:bg-white/10"
+            }`}
+          >
+            {computerOpen ? <Monitor className="w-3.5 h-3.5" /> : <MonitorOff className="w-3.5 h-3.5" />}
+            {computerOpen ? "Computer ON" : "Show Agent Computer"}
+          </button>
+        </div>
+
+        {/* Split: Chat + Computer */}
+        <div className={`grid gap-4 ${computerOpen ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]" : "grid-cols-1"}`}>
         {/* Chat shell */}
         <div className="relative rounded-[28px] ring-1 ring-white/10 bg-zinc-950/60 backdrop-blur-2xl overflow-hidden flex flex-col h-[640px]">
           {/* Header */}
@@ -308,6 +379,28 @@ Reply directly, conversationally, and concisely (2-5 sentences usually, longer o
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Agent Computer */}
+        <AnimatePresence>
+          {computerOpen && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.4 }}
+              className="h-[640px]"
+            >
+              <AgentComputer
+                url={computerUrl}
+                status={computerStatus}
+                narrations={computerNarrations}
+                cursor={computerCursor}
+                isActive={agentRunning}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
         </div>
       </div>
     </section>
