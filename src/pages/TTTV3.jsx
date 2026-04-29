@@ -66,19 +66,29 @@ export default function TTTV3Page() {
     <div className="min-h-screen bg-black text-white overflow-x-hidden selection:bg-cyan-400/40">
       <FlyOverlay />
 
-      {/* Sakura ambient backdrop */}
+      {/* Sakura ambient backdrop — glass morphism */}
       <div className="fixed inset-0 pointer-events-none z-[1] overflow-hidden">
+        {/* Sakura images */}
         <img
           src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2bed8f0c0_generated_image.png"
           alt=""
-          className="absolute -right-20 top-20 w-[55%] max-w-[700px] opacity-40 mix-blend-screen"
-          style={{ filter: "blur(0.5px) saturate(1.1)" }}
+          className="absolute -right-20 top-20 w-[55%] max-w-[700px] opacity-50"
+          style={{ filter: "saturate(1.15) brightness(0.95)" }}
         />
         <img
           src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2bed8f0c0_generated_image.png"
           alt=""
-          className="absolute -left-32 bottom-40 w-[45%] max-w-[600px] opacity-25 mix-blend-screen scale-x-[-1]"
-          style={{ filter: "blur(1px) saturate(1.1)" }}
+          className="absolute -left-32 bottom-40 w-[45%] max-w-[600px] opacity-35 scale-x-[-1]"
+          style={{ filter: "saturate(1.15) brightness(0.95)" }}
+        />
+        {/* Frosted glass layer — diffuses the sakura into a soft, consistent backdrop */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backdropFilter: "blur(40px) saturate(140%)",
+            WebkitBackdropFilter: "blur(40px) saturate(140%)",
+            background: "rgba(0, 0, 0, 0.55)",
+          }}
         />
       </div>
 
