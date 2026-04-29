@@ -108,13 +108,8 @@ export default function AgentChatGPT() {
   const computerRef = useRef(null);
   const abortRef = useRef(null);
 
-  // Detect if user message looks like a task the agent should DO (vs just chat)
-  const isTaskGoal = (text) => {
-    // Any URL → treat as task (user wants the agent to use it)
-    if (/https?:\/\/\S+/i.test(text)) return true;
-    // Action verbs (incl. NODA-specific: build, automate, workflow)
-    return /\b(open|go to|navigate|post|send|tip|click|type|paste|search|find|browse|show me|take me|fill|submit|read|watch|play|build|automate|workflow|noda|run)\b/i.test(text);
-  };
+  // Quick fallback: treat URLs as tasks even if the LLM mis-classifies
+  const looksLikeTask = (text) => /https?:\/\/\S+/i.test(text);
 
   const runAutonomousGoal = async (goal) => {
     if (!computerOpen) setComputerOpen(true);
@@ -166,13 +161,6 @@ export default function AgentChatGPT() {
     setInput("");
     setLoading(true);
 
-    // If user gave a task-like instruction, auto-open the computer and run autonomously
-    if (isTaskGoal(text)) {
-      if (!computerOpen) setComputerOpen(true);
-      // Small delay so the iframe can mount before the loop starts
-      setTimeout(() => runAutonomousGoal(text), computerOpen ? 0 : 600);
-    }
-
     try {
       // Pull live registry context so the agent knows what apps exist
       let appsContext = "";
@@ -188,10 +176,20 @@ export default function AgentChatGPT() {
         .map((m) => `${m.role === "user" ? "User" : "Agent"}: ${m.content}`)
         .join("\n\n");
 
-      const reply = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are the TTT 3.0 Vision Agent — a sharp, futurist strategist for the TTT super-app on Kaspa (agent internet, ZK identity, autonomous agents, blockDAG).
+      // ── TOOL DECISION: ask the LLM to both reply AND decide whether to launch the computer
+      const decision = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are the TTT 3.0 Vision Agent — a sharp, futurist strategist for the TTT super-app on Kaspa.
 
-You have direct access to ${appsContext.split("\n").length} connected apps in the TTT ecosystem. When the user gives you a task (URL, "play X", "open Y"), an autonomous agent loop is ALREADY executing it in a side panel called the Agent Computer — you can see it typing, clicking, and navigating in real time.
+You have TWO real tools you can use on every turn:
+
+1. **reply** (always): a short, ChatGPT-style text reply (1-3 sentences) shown in chat.
+2. **launch_computer** (optional): triggers the autonomous Agent Computer panel which navigates the live app, clicks buttons, types into inputs, and uses connected apps to ACHIEVE a goal. Use this whenever the user asks you to DO something inside the TTT ecosystem (open an app, post, send, build a workflow, play a video, navigate, paste a URL, automate, research live web, etc.).
+
+When you launch_computer, you MUST set "goal" to a clear, specific instruction the autonomous agent can execute (rephrased from the user's request). Examples:
+- User: "play this https://youtu.be/abc" → goal: "Open TTTV (/Browser), paste https://youtu.be/abc into the search input, and click play."
+- User: "build a NODA workflow that emails me a daily Kaspa briefing" → goal: "Open NODA Studio, click Brain, type 'Write a daily Kaspa briefing and email it to me' into the Brain textarea, then click Build."
+- User: "post a hello to TTT" → goal: "Open the TTT Feed and create a post with the text 'hello'."
+- User: "what's TTT 3.0?" → DO NOT launch (just reply).
 
 ## Connected apps (live registry)
 ${appsContext || "(loading…)"}
@@ -199,15 +197,31 @@ ${appsContext || "(loading…)"}
 ## Conversation
 ${history}
 
-Reply directly, conversationally, and concisely (1-3 sentences). Don't use stage directions or roleplay — just respond like ChatGPT.
+Decide now. Always include a reply. Only set launch=true when there is a real, executable task. The reply should naturally narrate what the computer is about to do (e.g. "On it — building that workflow in NODA now.") OR just chat if launch=false.
 
-CRITICAL RULES:
-- NEVER say "I can't paste", "I can't click", "I can't type", "you'll need to do it yourself", or "I don't have the ability". The agent computer DOES this autonomously — you just confirm and narrate.
-- When the user pastes a URL or says play/open/post/send something, respond with a short confirmation like "On it — opening TTTV and playing that now." Then stop. The agent loop handles the rest visually.
-- When the user just chats (no task), reply normally and reference apps from the registry above.`,
+CRITICAL: NEVER say "I can't" or "you'll need to do it yourself". The computer can type, click, and navigate. If unsure whether to launch, prefer launching for any actionable verb (open / play / post / send / build / search / navigate / paste / automate / research).`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            reply: { type: "string", description: "Short conversational reply shown in chat" },
+            launch: { type: "boolean", description: "Whether to trigger the autonomous Agent Computer" },
+            goal: { type: "string", description: "Clear instruction for the autonomous agent (only when launch=true)" },
+          },
+          required: ["reply", "launch"],
+        },
       });
 
-      const replyText = typeof reply === "string" ? reply : "Hmm, didn't get that. Try again?";
+      const replyText = (decision?.reply && typeof decision.reply === "string")
+        ? decision.reply
+        : "Hmm, didn't get that. Try again?";
+
+      // Trigger the computer based on LLM decision (fallback to URL heuristic)
+      const shouldLaunch = decision?.launch === true || looksLikeTask(text);
+      if (shouldLaunch) {
+        const goal = (decision?.goal && decision.goal.trim()) || text;
+        if (!computerOpen) setComputerOpen(true);
+        setTimeout(() => runAutonomousGoal(goal), computerOpen ? 0 : 600);
+      }
 
       // Stream-in effect: reveal char by char
       let i = 0;
