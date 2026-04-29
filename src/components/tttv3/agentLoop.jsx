@@ -219,9 +219,64 @@ async function executePlanItem({ goal, planItem, planIndex, fullPlan, callbacks,
 
     // settle
     await sleep(1200);
+
+    // ── AUTO-VERIFY ── re-observe and check if success signal is now visible.
+    // If yes, mark step complete without burning another LLM round-trip.
+    if (actResult?.ok) {
+      const verifyObs = await sendCommand(getIframe?.(), { action: "read_page" }, 2500);
+      if (verifyObs.ok && matchesSuccessSignal(planItem, verifyObs, decision.action)) {
+        addNarration(`✓ Step ${planIndex + 1} verified`);
+        return { completed: true };
+      }
+    }
   }
 
   return { completed: false, reason: "max_actions_reached" };
+}
+
+// Lightweight heuristic verifier — checks the page after an action to see if the
+// step's success signal is plausibly satisfied. Catches cases the LLM misses.
+function matchesSuccessSignal(planItem, obs, action) {
+  const signal = (planItem.success_signal || "").toLowerCase();
+  const title = (planItem.title || "").toLowerCase();
+  const url = (obs.url || "").toLowerCase();
+  const headings = (obs.headings || []).join(" | ").toLowerCase();
+  const buttons = (obs.buttons || []).join(" | ").toLowerCase();
+  const inputs = (obs.inputs || []).join(" | ").toLowerCase();
+  const haystack = `${url} ${headings} ${buttons} ${inputs}`;
+
+  // 1. Navigate step → URL changed to expected route
+  if (action?.type === "navigate" && action.url) {
+    const target = action.url.toLowerCase().replace(/^\//, "");
+    if (url.includes(target)) return true;
+  }
+
+  // 2. Type into input → input now contains the typed text (best effort)
+  if (action?.type === "type_into" && action.text) {
+    const snippet = action.text.toLowerCase().slice(0, 20);
+    if (haystack.includes(snippet)) return true;
+  }
+
+  // 3. Click → button no longer visible OR new expected element appeared
+  if (action?.type === "click_text") {
+    // Specific NODA / TTTV milestones
+    if (action.text?.toLowerCase().includes("brain") && inputs.includes("brain")) return true;
+    if (action.text?.toLowerCase().includes("build") && (haystack.includes("agent") || haystack.includes("research") || haystack.includes("email") || haystack.includes("workflow") || haystack.includes("run"))) return true;
+    if (action.text?.toLowerCase().includes("play") && (headings.includes("tttv player") || buttons.includes("back"))) return true;
+  }
+
+  // 4. Generic — pull keywords from the success_signal/title and look for them
+  const keywords = (signal + " " + title)
+    .split(/[^a-z0-9]+/)
+    .filter((w) => w.length > 3 && !["into", "with", "from", "page", "step", "the", "and", "for", "click", "type", "open", "wait", "verify", "appear", "visible"].includes(w));
+
+  if (keywords.length > 0) {
+    const hits = keywords.filter((k) => haystack.includes(k)).length;
+    // If half or more of the meaningful keywords are visible, consider it done
+    if (hits >= Math.ceil(keywords.length / 2)) return true;
+  }
+
+  return false;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
