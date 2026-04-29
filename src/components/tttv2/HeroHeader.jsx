@@ -108,6 +108,20 @@ function ScrollingRow({ apps, direction = "left", speed = 30 }) {
 export default function HeroHeader() {
   return (
     <section className="relative pt-24 sm:pt-32 pb-10 sm:pb-16 px-5 overflow-hidden bg-white">
+      {/* Chinese calligraphy: "Earth to Mars Transaction" — subtle background watermark */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
+        <div
+          className="text-[clamp(4rem,18vw,16rem)] font-black text-zinc-900 leading-none tracking-tighter whitespace-nowrap select-none"
+          style={{
+            opacity: 0.04,
+            fontFamily: '"Noto Serif SC", "Songti SC", "STSong", serif',
+            letterSpacing: "0.05em",
+          }}
+        >
+          地球到火星交易
+        </div>
+      </div>
+
       {/* Floating white dragon — fills the hero, blends into white background */}
       <motion.div
         initial={{ opacity: 0, scale: 0.92, y: -30 }}
