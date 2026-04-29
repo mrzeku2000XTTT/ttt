@@ -613,12 +613,16 @@ export default function TTTVPage() {
               onChange={(e) => setUrl(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Paste YouTube URL..."
+              data-agent-id="search"
+              aria-label="search videos"
               className="flex-1 bg-transparent border-0 text-white placeholder:text-gray-500 focus-visible:ring-0 text-sm"
             />
             <Button
               onClick={() => handleLoadVideo()}
               disabled={isLoading}
               size="sm"
+              data-agent-id="play"
+              aria-label="Play"
               className="bg-cyan-500/20 border border-cyan-500 hover:bg-cyan-500/30 text-cyan-400 h-8 px-4 shadow-[0_0_10px_rgba(6,182,212,0.4)] hover:shadow-[0_0_15px_rgba(6,182,212,0.6)] transition-all"
             >
               {isLoading ? (

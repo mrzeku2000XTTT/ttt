@@ -198,17 +198,57 @@
               btn.scrollIntoView({ block: 'center', behavior: 'smooth' });
               var pos = getRect(btn);
               setTimeout(function () { btn.click(); reply(id, { ok: true, position: pos }); }, 400);
+            } else if (cmd.action === 'locate') {
+              var el = findByText(cmd.text, cmd.tagFilter);
+              if (!el) return reply(id, { ok: false, error: 'not_found' });
+              el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+              setTimeout(function () { reply(id, { ok: true, position: getRect(el) }); }, 250);
+            } else if (cmd.action === 'locate_input') {
+              var inEl = findInput(cmd.label);
+              if (!inEl) return reply(id, { ok: false, error: 'input_not_found' });
+              inEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+              setTimeout(function () { reply(id, { ok: true, position: getRect(inEl) }); }, 250);
             } else if (cmd.action === 'type_into') {
               var input = findInput(cmd.label);
               if (!input) return reply(id, { ok: false, error: 'input_not_found' });
-              input.focus();
-              if (input.isContentEditable) {
-                input.textContent = cmd.text;
-                input.dispatchEvent(new InputEvent('input', { bubbles: true }));
-              } else {
-                setReactInputValue(input, cmd.text);
-              }
-              reply(id, { ok: true, position: getRect(input) });
+              input.scrollIntoView({ block: 'center', behavior: 'smooth' });
+              setTimeout(function () {
+                input.focus();
+                var pos = getRect(input);
+                var fullText = cmd.text || '';
+                var charDelay = cmd.charDelay || 60;
+
+                if (input.isContentEditable) {
+                  // Stream into contenteditable
+                  var i = 0;
+                  input.textContent = '';
+                  var typeNext = function () {
+                    if (i >= fullText.length) {
+                      reply(id, { ok: true, position: pos });
+                      return;
+                    }
+                    input.textContent = fullText.slice(0, i + 1);
+                    input.dispatchEvent(new InputEvent('input', { bubbles: true }));
+                    i++;
+                    setTimeout(typeNext, charDelay);
+                  };
+                  typeNext();
+                } else {
+                  // Stream into native input — set value char by char so user sees it grow
+                  var j = 0;
+                  setReactInputValue(input, '');
+                  var typeNextNative = function () {
+                    if (j >= fullText.length) {
+                      reply(id, { ok: true, position: pos });
+                      return;
+                    }
+                    setReactInputValue(input, fullText.slice(0, j + 1));
+                    j++;
+                    setTimeout(typeNextNative, charDelay);
+                  };
+                  typeNextNative();
+                }
+              }, 350);
             } else if (cmd.action === 'scroll') {
               window.scrollTo({ top: (cmd.y || 0), behavior: 'smooth' });
               reply(id, { ok: true });
