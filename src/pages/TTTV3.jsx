@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { ArrowUpRight, Sparkles, Zap, Shield, Lock, Loader2 } from "lucide-react";
 import VisionCanvas from "@/components/tttv3/VisionCanvas";
+import FlyOverlay from "@/components/tttv3/FlyOverlay";
 
 export default function TTTV3Page() {
   const navigate = useNavigate();
@@ -63,6 +64,7 @@ export default function TTTV3Page() {
 
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden selection:bg-cyan-400/40">
+      <FlyOverlay />
       {/* Nav */}
       <nav className="fixed top-0 inset-x-0 z-50 h-12 flex items-center justify-between px-5 bg-black/60 backdrop-blur-2xl border-b border-white/5">
         <div className="flex items-center gap-2">
