@@ -246,6 +246,8 @@ USER REQUEST:
             <div className="p-5">
               <textarea
                 autoFocus
+                data-agent-id="brain"
+                aria-label="brain"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -268,6 +270,7 @@ USER REQUEST:
                   <span>AI picks the steps & wires them up</span>
                 </div>
                 <button
+                  data-agent-id="build"
                   onClick={buildFromBrain}
                   disabled={thinking || !input.trim()}
                   className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-fuchsia-500 to-cyan-500 hover:from-fuchsia-400 hover:to-cyan-400 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-bold shadow-lg shadow-fuchsia-500/20"

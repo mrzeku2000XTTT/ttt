@@ -811,6 +811,7 @@ Be specific. Cite numbers, dates, names, quotes. No filler. No "as an AI". Use r
 
         <div className="flex items-center gap-2">
           <button
+            data-agent-id="brain"
             onClick={() => setBrainOpen(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-fuchsia-500/20 to-cyan-500/20 hover:from-fuchsia-500/30 hover:to-cyan-500/30 border border-fuchsia-500/40 rounded-lg text-fuchsia-100 text-sm font-bold shadow-lg shadow-fuchsia-500/10"
             title="Describe what you want — AI builds the workflow"
@@ -862,6 +863,7 @@ Be specific. Cite numbers, dates, names, quotes. No filler. No "as an AI". Use r
             Auto
           </button>
           <button
+            data-agent-id="run"
             onClick={runWorkflow}
             disabled={running || nodes.length === 0}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg text-white text-sm font-bold shadow-lg shadow-cyan-500/20"
