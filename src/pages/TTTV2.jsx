@@ -238,7 +238,7 @@ export default function TTTV2Page() {
           {isAdmin && (
             <Link
               to="/TTTV3"
-              className="hidden sm:inline-flex items-center gap-1 text-[12px] font-bold text-white bg-gradient-to-r from-cyan-500 via-violet-500 to-pink-500 hover:opacity-90 px-3 py-1.5 rounded-full transition-opacity shadow-lg shadow-violet-500/30"
+              className="inline-flex items-center gap-1 text-[11px] sm:text-[12px] font-bold text-white bg-gradient-to-r from-cyan-500 via-violet-500 to-pink-500 hover:opacity-90 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full transition-opacity shadow-lg shadow-violet-500/30"
               title="Admin: Preview TTT 3.0"
             >
               <Sparkles className="w-3 h-3" /> 3.0
