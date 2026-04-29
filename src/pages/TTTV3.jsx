@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { ArrowUpRight, Sparkles, Zap, Shield, Lock, Loader2 } from "lucide-react";
 import VisionCanvas from "@/components/tttv3/VisionCanvas";
 import FlyOverlay from "@/components/tttv3/FlyOverlay";
+import SakuraPetals from "@/components/tttv3/SakuraPetals";
 
 export default function TTTV3Page() {
   const navigate = useNavigate();
@@ -65,6 +66,7 @@ export default function TTTV3Page() {
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden selection:bg-cyan-400/40">
       <FlyOverlay />
+      <SakuraPetals count={30} />
 
       {/* Sakura ambient backdrop — sharp & vivid */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
