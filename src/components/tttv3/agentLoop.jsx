@@ -148,14 +148,8 @@ Rules:
 - YOU CAN TYPE into ANY input field shown in "Input fields available". The system simulates real typing — the user sees each character appear in the input one at a time. NEVER say "I can't type" or "you'll need to type it yourself" — if an input exists in the list, use type_into to fill it.
 - On TTTV (/Browser): the search input has placeholder "Paste YouTube URL..." and data-agent-id="search". Use label "search" to type a YouTube URL into it, then click_text "play" to play. Example: { type: "type_into", label: "search", text: "https://youtube.com/watch?v=..." }
 - If user pastes/says a URL, USE IT. Don't refuse, don't ask, just type_into the search input and click play.
-- On NODA Studio (/NODAStudio): EXACT sequence to build a workflow from a description:
-   1. click_text "Brain" — opens the Brain modal with a textarea (data-agent-id="brain")
-   2. WAIT one step (action: { type: "wait", ms: 800 }) for the modal to mount
-   3. type_into label "brain" — text is the workflow description in plain English (e.g. "Write a daily Kaspa briefing and email it to me at user@example.com")
-   4. click_text "build" — Brain generates AND auto-runs the workflow (the modal closes, nodes appear on canvas, run starts immediately)
-- For a quick demo without typing, click_text "Example" instead of Brain.
-- To re-run an already-built workflow: click_text "Run".
-- NODA branded loading animation plays automatically when navigating to /NODA or /NODAStudio — wait ~2.5 seconds (action: { type: "wait", ms: 2500 }) after navigate before clicking anything.
+- On NODA Studio (/NODAStudio): to build a workflow, click_text "Brain" → an input/textarea appears for describing the workflow → type_into label "describe" or "brain" with the workflow description → click_text "Build" or "Generate". For a quick demo, click_text "Example" instead. To execute: click_text "Run". The user sees nodes appear on the canvas as the Brain wires them up.
+- NODA branded loading animation plays automatically when navigating to /NODA or /NODAStudio — wait ~2.5 seconds after navigate before clicking anything.
 - CRITICAL: type_into REPLACES the input's value entirely (it does not append). Only use type_into ONCE per input. After typing, your next action should be to click play/submit — DO NOT type_into the same input again.
 - If your previous step already typed the correct text into an input, DO NOT type_into it again. Move on (usually click_text "play" or the submit button).
 - If the goal is done, set done=true and use finish.

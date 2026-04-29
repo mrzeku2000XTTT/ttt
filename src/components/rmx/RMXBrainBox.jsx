@@ -253,9 +253,6 @@ USER REQUEST:
                 }}
                 placeholder="e.g. Write a poem about Kaspa, generate a matching cosmic image, then email both to me at jane@example.com"
                 rows={5}
-                data-agent-id="brain"
-                aria-label="brain workflow description"
-                name="brain"
                 className="w-full bg-black/50 border border-white/10 focus:border-fuchsia-400/50 focus:bg-black/70 rounded-xl px-3 py-3 text-white text-sm outline-none resize-none transition-colors placeholder:text-white/25"
               />
 
@@ -273,7 +270,6 @@ USER REQUEST:
                 <button
                   onClick={buildFromBrain}
                   disabled={thinking || !input.trim()}
-                  data-agent-id="build"
                   className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-fuchsia-500 to-cyan-500 hover:from-fuchsia-400 hover:to-cyan-400 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-bold shadow-lg shadow-fuchsia-500/20"
                 >
                   {thinking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
