@@ -7,9 +7,19 @@ import { ArrowUpRight, Sparkles, Zap, Shield, Lock, Loader2 } from "lucide-react
 export default function TTTV3Page() {
   const navigate = useNavigate();
   const [authState, setAuthState] = useState("checking"); // checking | allowed | denied
+  const [zoomingOut, setZoomingOut] = useState(false);
   const { scrollY } = useScroll();
   const heroOpacity = useTransform(scrollY, [0, 400], [1, 0]);
   const heroScale = useTransform(scrollY, [0, 400], [1, 1.1]);
+
+  const handleExploreVision = (e) => {
+    e.preventDefault();
+    setZoomingOut(true);
+    setTimeout(() => {
+      document.getElementById("vision")?.scrollIntoView({ behavior: "smooth" });
+      setTimeout(() => setZoomingOut(false), 1200);
+    }, 900);
+  };
 
   useEffect(() => {
     (async () => {
@@ -104,7 +114,12 @@ export default function TTTV3Page() {
           <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 80%, rgba(0,0,0,1) 100%)' }} />
         </motion.div>
 
-        <div className="relative max-w-3xl mx-auto text-center">
+        <motion.div
+          animate={zoomingOut ? { scale: 0.15, opacity: 0, filter: "blur(20px)" } : { scale: 1, opacity: 1, filter: "blur(0px)" }}
+          transition={{ duration: 1.1, ease: [0.7, 0, 0.3, 1] }}
+          className="relative max-w-3xl mx-auto text-center"
+          style={{ transformOrigin: "center center", perspective: "1000px" }}
+        >
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
             className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 ring-1 ring-white/10 mb-6">
             <Sparkles className="w-3 h-3 text-cyan-400" />
@@ -125,12 +140,14 @@ export default function TTTV3Page() {
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.4 }}
             className="flex flex-wrap items-center justify-center gap-3">
-            <a href="#vision">
-              <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                className="h-11 px-7 bg-white text-black text-[14px] font-semibold rounded-full shadow-[0_0_40px_rgba(255,255,255,0.15)] flex items-center gap-2">
-                Explore Vision <ArrowUpRight className="w-4 h-4" />
-              </motion.button>
-            </a>
+            <motion.button
+              onClick={handleExploreVision}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.97 }}
+              className="h-11 px-7 bg-white text-black text-[14px] font-semibold rounded-full shadow-[0_0_40px_rgba(255,255,255,0.15)] flex items-center gap-2"
+            >
+              Explore Vision <ArrowUpRight className="w-4 h-4" />
+            </motion.button>
             <Link to="/">
               <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
                 className="h-11 px-7 text-white text-[14px] font-semibold rounded-full ring-1 ring-white/20 hover:bg-white/5 transition-all">
@@ -138,7 +155,20 @@ export default function TTTV3Page() {
               </motion.button>
             </Link>
           </motion.div>
-        </div>
+        </motion.div>
+
+        {/* Zoom-out radial flash overlay */}
+        {zoomingOut && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 0.6, 0] }}
+            transition={{ duration: 1.1, times: [0, 0.4, 1] }}
+            className="absolute inset-0 pointer-events-none z-[5]"
+            style={{
+              background: "radial-gradient(circle at center, rgba(6,182,212,0.4) 0%, rgba(168,85,247,0.2) 40%, transparent 70%)",
+            }}
+          />
+        )}
       </section>
 
       {/* Vision */}
