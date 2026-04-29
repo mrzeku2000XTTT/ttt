@@ -54,9 +54,7 @@
     "category"
   ],
   "rls": {
-    "create": {
-      "user.role": "admin"
-    },
+    "create": true,
     "read": true,
     "update": {
       "user.role": "admin"
