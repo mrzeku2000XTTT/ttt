@@ -90,8 +90,8 @@ function ScrollingRow({ apps, direction = "left", speed = 30 }) {
   return (
     <div className="relative overflow-hidden w-full">
       {/* Edge fades */}
-      <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-r from-[#8b0000] to-transparent z-10 pointer-events-none" />
-      <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-l from-[#8b0000] to-transparent z-10 pointer-events-none" />
+      <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
       <motion.div
         className="flex items-end gap-5 sm:gap-6 w-max"
         animate={{ x: direction === "left" ? ["0%", "-33.333%"] : ["-33.333%", "0%"] }}
@@ -107,10 +107,10 @@ function ScrollingRow({ apps, direction = "left", speed = 30 }) {
 
 export default function HeroHeader() {
   return (
-    <section className="relative pt-24 sm:pt-32 pb-10 sm:pb-16 px-5 overflow-hidden bg-[#8b0000]">
-      {/* Chinese red background image — sits behind the dragon */}
+    <section className="relative pt-24 sm:pt-32 pb-10 sm:pb-16 px-5 overflow-hidden bg-black">
+      {/* Akatsuki-style background — black with red clouds, behind the dragon */}
       <img
-        src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/120c784fc_generated_image.png"
+        src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/bfd421c29_generated_image.png"
         alt=""
         draggable={false}
         className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
