@@ -222,16 +222,26 @@ Generate 3 concise, bold vision items (each 1-2 sentences, ~20 words). Make them
         <Plus className="w-6 h-6 text-black" strokeWidth={3} />
       </motion.button>
 
-      {/* Vision Agent panel */}
+      {/* Vision Agent panel — full-screen sheet on mobile, floating panel on desktop */}
       <AnimatePresence>
         {agentOpen && (
-          <motion.div
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 40 }}
-            transition={{ type: "spring", damping: 24, stiffness: 280 }}
-            className="absolute bottom-6 right-6 w-[min(380px,calc(100%-48px))] h-[min(500px,calc(100%-48px))] bg-zinc-950/95 backdrop-blur-2xl rounded-3xl ring-1 ring-white/15 shadow-2xl shadow-black/60 z-40 flex flex-col overflow-hidden"
-          >
+          <>
+            {/* Mobile backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setAgentOpen(false)}
+              className="sm:hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[60]"
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 40 }}
+              transition={{ type: "spring", damping: 24, stiffness: 280 }}
+              className="fixed sm:absolute inset-x-3 bottom-3 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[380px] h-[min(80vh,560px)] sm:h-[500px] max-h-[calc(100vh-1.5rem)] bg-zinc-950/95 backdrop-blur-2xl rounded-3xl ring-1 ring-white/15 shadow-2xl shadow-black/60 z-[70] flex flex-col overflow-hidden"
+              style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+            >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
               <div className="flex items-center gap-2.5">
@@ -294,7 +304,8 @@ Generate 3 concise, bold vision items (each 1-2 sentences, ~20 words). Make them
                 </button>
               </div>
             </div>
-          </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </div>
