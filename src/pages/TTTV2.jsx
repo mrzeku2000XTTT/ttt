@@ -311,7 +311,7 @@ export default function TTTV2Page() {
             }} />
           </div>
 
-          <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/20b6a8247_generated_image.png" alt="" className="absolute inset-0 w-full h-full object-cover opacity-60" />
+          <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/a24b93904_generated_image.png" alt="" className="absolute inset-0 w-full h-full object-cover" />
           {heroVideoUrl && (
             <>
               <video
