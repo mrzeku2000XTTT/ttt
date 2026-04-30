@@ -90,8 +90,8 @@ function ScrollingRow({ apps, direction = "left", speed = 30 }) {
   return (
     <div className="relative overflow-hidden w-full">
       {/* Edge fades */}
-      <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
-      <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
+      <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
       <motion.div
         className="flex items-end gap-5 sm:gap-6 w-max"
         animate={{ x: direction === "left" ? ["0%", "-33.333%"] : ["-33.333%", "0%"] }}
@@ -107,18 +107,11 @@ function ScrollingRow({ apps, direction = "left", speed = 30 }) {
 
 export default function HeroHeader() {
   return (
-    <section className="relative pt-24 sm:pt-32 pb-10 sm:pb-16 px-5 overflow-hidden bg-black">
-      {/* Akatsuki-style background — black with small red clouds, fills the entire hero */}
-      <img
-        src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/407e0f006_generated_image.png"
-        alt=""
-        draggable={false}
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
-      />
+    <section className="relative pt-24 sm:pt-32 pb-10 sm:pb-16 px-5 overflow-hidden bg-white">
       {/* Chinese calligraphy: "Earth to Mars Transaction" — vertical right-side lettering */}
       <div className="absolute right-4 sm:right-10 top-1/2 -translate-y-1/2 pointer-events-none z-[15] hidden sm:flex flex-col items-center gap-3 select-none">
         <div
-          className="flex flex-col items-center text-white"
+          className="flex flex-col items-center text-zinc-900"
           style={{
             fontFamily: '"Noto Serif SC", "Songti SC", "STSong", "Microsoft YaHei", "PingFang SC", serif',
             fontWeight: 900,
@@ -127,12 +120,11 @@ export default function HeroHeader() {
             letterSpacing: "0.05em",
             writingMode: "vertical-rl",
             textOrientation: "upright",
-            textShadow: "0 0 20px rgba(0,0,0,0.9), 0 2px 8px rgba(0,0,0,0.8)",
           }}
         >
           地球到火星交易
         </div>
-        <div className="text-[9px] font-bold tracking-[0.25em] text-white/80 uppercase rotate-180" style={{ writingMode: "vertical-rl", textShadow: "0 1px 4px rgba(0,0,0,0.9)" }}>
+        <div className="text-[9px] font-bold tracking-[0.25em] text-zinc-400 uppercase rotate-180" style={{ writingMode: "vertical-rl" }}>
           Earth → Mars
         </div>
       </div>
@@ -140,17 +132,16 @@ export default function HeroHeader() {
       {/* Mobile: top banner with Chinese lettering */}
       <div className="sm:hidden absolute top-3 left-0 right-0 pointer-events-none z-[15] text-center">
         <div
-          className="text-white font-black"
+          className="text-zinc-900 font-black"
           style={{
             fontFamily: '"Noto Serif SC", "Songti SC", "STSong", "Microsoft YaHei", "PingFang SC", serif',
             fontSize: "1.5rem",
             letterSpacing: "0.1em",
-            textShadow: "0 0 16px rgba(0,0,0,0.9), 0 2px 6px rgba(0,0,0,0.8)",
           }}
         >
           地球到火星交易
         </div>
-        <div className="text-[8px] font-bold tracking-[0.3em] text-white/80 uppercase mt-0.5" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.9)" }}>
+        <div className="text-[8px] font-bold tracking-[0.3em] text-zinc-400 uppercase mt-0.5">
           Earth → Mars Transaction
         </div>
       </div>
