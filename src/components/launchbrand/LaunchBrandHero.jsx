@@ -3,6 +3,13 @@ import { motion } from "framer-motion";
 import { Sparkles, ArrowRight, Star } from "lucide-react";
 
 export default function LaunchBrandHero() {
+  const handleStartBuilding = () => {
+    const studio = document.getElementById("brand-studio");
+    if (studio) {
+      studio.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   return (
     <section className="relative pt-12 min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background — deep cosmic gradient */}
@@ -116,6 +123,7 @@ export default function LaunchBrandHero() {
             className="flex flex-wrap items-center justify-center gap-3"
           >
             <motion.button
+              onClick={handleStartBuilding}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.97 }}
               className="group h-12 px-7 bg-white text-black text-[14px] font-bold rounded-full shadow-2xl shadow-cyan-500/20 flex items-center gap-2 hover:shadow-cyan-500/40 transition-shadow"

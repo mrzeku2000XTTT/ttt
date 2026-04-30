@@ -144,7 +144,7 @@ export default function BrandStudio() {
   const onPickName = (n) => send(n);
 
   return (
-    <section className="relative py-16 sm:py-24 px-5">
+    <section id="brand-studio" className="relative py-16 sm:py-24 px-5 scroll-mt-16">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8">
           <p className="text-[12px] font-semibold text-cyan-400 tracking-widest uppercase mb-3">Brand Studio</p>
