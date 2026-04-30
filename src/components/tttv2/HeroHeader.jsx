@@ -146,15 +146,8 @@ export default function HeroHeader() {
         </div>
       </div>
 
-      {/* Floating white dragon — fills the hero, blends into white background */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.92, y: -30 }}
-        animate={{
-          opacity: [0, 1, 1],
-          scale: [0.92, 1, 1],
-          y: [-30, 0, 0],
-        }}
-        transition={{ duration: 1.6, ease: "easeOut", times: [0, 0.7, 1] }}
+      {/* Static white dragon — fills the hero, blends into white background */}
+      <div
         className="absolute inset-0 flex items-center justify-center pointer-events-none z-0"
         style={{
           WebkitMaskImage:
@@ -163,21 +156,13 @@ export default function HeroHeader() {
             "radial-gradient(ellipse 60% 65% at center, rgba(0,0,0,1) 35%, rgba(0,0,0,0.6) 60%, rgba(0,0,0,0) 95%)",
         }}
       >
-        <motion.img
+        <img
           src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3673d7599_generated_image.png"
           alt=""
           draggable={false}
-          animate={{
-            y: [0, -22, 0],
-            rotate: [-1.5, 1.5, -1.5],
-          }}
-          transition={{
-            y: { duration: 6, repeat: Infinity, ease: "easeInOut" },
-            rotate: { duration: 9, repeat: Infinity, ease: "easeInOut" },
-          }}
           className="w-[min(85vw,1400px)] sm:w-[min(140vw,1400px)] h-full max-w-none object-contain mix-blend-multiply"
         />
-      </motion.div>
+      </div>
 
       <div className="relative max-w-3xl mx-auto text-center z-10">
         {/* TapToTip */}
