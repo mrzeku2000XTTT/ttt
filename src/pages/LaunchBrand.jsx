@@ -1,13 +1,44 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Sparkles, Rocket, Wand2, Zap, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, Sparkles, Rocket, Wand2, Zap, ArrowRight, Check, Lock, Loader2 } from "lucide-react";
 import LaunchBrandHero from "@/components/launchbrand/LaunchBrandHero";
 import BrandStudio from "@/components/launchbrand/BrandStudio";
+import { base44 } from "@/api/base44Client";
 
 export default function LaunchBrandPage() {
   const [mounted, setMounted] = useState(false);
+  const [authState, setAuthState] = useState("checking"); // checking | admin | denied
   useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    base44.auth.me()
+      .then((u) => setAuthState(u?.role === "admin" ? "admin" : "denied"))
+      .catch(() => setAuthState("denied"));
+  }, []);
+
+  if (authState === "checking") {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-white/60" />
+      </div>
+    );
+  }
+
+  if (authState === "denied") {
+    return (
+      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center px-6 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-violet-500/20 border border-white/10 flex items-center justify-center mb-5">
+          <Lock className="w-7 h-7 text-cyan-300" />
+        </div>
+        <h1 className="text-3xl font-[900] tracking-tight mb-2">Admins only</h1>
+        <p className="text-white/50 text-sm max-w-sm mb-6">Launch Brand is in private build. Only admins can access the studio right now.</p>
+        <Link to="/" className="h-10 px-5 rounded-full bg-white text-black text-[13px] font-bold hover:scale-105 transition-transform inline-flex items-center gap-2">
+          <ArrowLeft className="w-4 h-4" /> Back home
+        </Link>
+      </div>
+    );
+  }
 
   const features = [
     { icon: Wand2, title: "AI Brand Identity", desc: "Generate a logo, palette, and voice in seconds." },
