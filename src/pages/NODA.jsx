@@ -812,47 +812,54 @@ Be specific. Cite numbers, dates, names, quotes. No filler. No "as an AI". Use r
         <div className="flex items-center gap-2">
           <button
             data-agent-id="brain"
+            aria-label="Brain"
             onClick={() => setBrainOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-fuchsia-500/20 to-cyan-500/20 hover:from-fuchsia-500/30 hover:to-cyan-500/30 border border-fuchsia-500/40 rounded-lg text-fuchsia-100 text-sm font-bold shadow-lg shadow-fuchsia-500/10"
-            title="Describe what you want — AI builds the workflow"
+            className="flex items-center justify-center w-9 h-9 bg-gradient-to-r from-fuchsia-500/20 to-cyan-500/20 hover:from-fuchsia-500/30 hover:to-cyan-500/30 border border-fuchsia-500/40 rounded-lg text-fuchsia-100 shadow-lg shadow-fuchsia-500/10"
+            title="Brain — describe what you want, AI builds the workflow"
           >
-            <Brain className="w-4 h-4" /> Brain
+            <Brain className="w-4 h-4" />
           </button>
           <button
+            aria-label="Example"
             onClick={loadExample}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 rounded-lg text-purple-200 text-sm font-bold"
+            className="flex items-center justify-center w-9 h-9 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 rounded-lg text-purple-200"
             title="Load example: Daily Kaspa email briefing"
           >
-            <Wand2 className="w-4 h-4" /> Example
+            <Wand2 className="w-4 h-4" />
           </button>
           <button
+            aria-label="Add node"
             onClick={() => setShowLibrary(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white text-sm font-bold"
+            className="flex items-center justify-center w-9 h-9 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white"
+            title="Add node"
           >
-            <Plus className="w-4 h-4" /> Add
+            <Plus className="w-4 h-4" />
           </button>
           <button
+            aria-label="Save"
             onClick={() => setSaveOpen(true)}
             disabled={nodes.length === 0 || !currentUserEmail}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg text-emerald-200 text-sm font-bold"
+            className="flex items-center justify-center w-9 h-9 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg text-emerald-200"
             title="Save workflow so other apps can call it"
           >
-            <Save className="w-4 h-4" /> Save
+            <Save className="w-4 h-4" />
           </button>
           <button
+            aria-label="Hide layout"
             onClick={() => setLayoutHidden(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 hover:text-white text-sm font-bold"
+            className="flex items-center justify-center w-9 h-9 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 hover:text-white"
             title="Hide NODA layout"
           >
             <EyeOff className="w-4 h-4" />
           </button>
           <button
+            aria-label="Auto-run"
             onClick={() => {
               const next = !autoRun;
               setAutoRun(next);
               showToast(next ? "Auto-run ON — runs on changes" : "Auto-run OFF");
             }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold border transition-colors ${
+            className={`flex items-center justify-center w-9 h-9 rounded-lg border transition-colors ${
               autoRun
                 ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-200 shadow-lg shadow-emerald-500/10"
                 : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
@@ -860,16 +867,16 @@ Be specific. Cite numbers, dates, names, quotes. No filler. No "as an AI". Use r
             title="Auto-run workflow on every change"
           >
             <Repeat className={`w-4 h-4 ${autoRun ? "animate-pulse" : ""}`} />
-            Auto
           </button>
           <button
             data-agent-id="run"
+            aria-label="Run"
             onClick={runWorkflow}
             disabled={running || nodes.length === 0}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg text-white text-sm font-bold shadow-lg shadow-cyan-500/20"
+            className="flex items-center justify-center w-9 h-9 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg text-white shadow-lg shadow-cyan-500/20"
+            title={running ? "Running…" : "Run workflow"}
           >
             {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-            {running ? "Running" : "Run"}
           </button>
         </div>
       </div>
