@@ -12,69 +12,37 @@ export default function LaunchBrandHero() {
 
   return (
     <section className="relative pt-12 min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background — deep cosmic gradient */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0" style={{
-          background: "radial-gradient(ellipse at top, #1a0f2e 0%, #050510 50%, #000 100%)"
-        }} />
+      {/* Static cosmic background — fills entire hero */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `
+            radial-gradient(circle at 15% 20%, rgba(6,182,212,0.45) 0%, transparent 45%),
+            radial-gradient(circle at 85% 25%, rgba(168,85,247,0.4) 0%, transparent 50%),
+            radial-gradient(circle at 40% 85%, rgba(236,72,153,0.35) 0%, transparent 50%),
+            radial-gradient(ellipse at top, #1a0f2e 0%, #050510 50%, #000 100%)
+          `,
+        }}
+      />
 
-        {/* Animated aurora orbs */}
-        <div className="absolute inset-0 overflow-hidden">
-          <motion.div
-            animate={{ x: [0, 60, 0], y: [0, 40, 0], scale: [1, 1.2, 1] }}
-            transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-[10%] left-[10%] w-[500px] h-[500px] rounded-full opacity-50"
-            style={{ background: "radial-gradient(circle, #06b6d4 0%, transparent 60%)", filter: "blur(80px)" }}
-          />
-          <motion.div
-            animate={{ x: [0, -50, 0], y: [0, 60, 0], scale: [1.1, 1, 1.1] }}
-            transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-[20%] right-[10%] w-[600px] h-[600px] rounded-full opacity-40"
-            style={{ background: "radial-gradient(circle, #a855f7 0%, transparent 60%)", filter: "blur(90px)" }}
-          />
-          <motion.div
-            animate={{ x: [0, 40, 0], y: [0, -30, 0], scale: [1, 1.15, 1] }}
-            transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute bottom-[10%] left-[30%] w-[550px] h-[550px] rounded-full opacity-35"
-            style={{ background: "radial-gradient(circle, #ec4899 0%, transparent 60%)", filter: "blur(100px)" }}
-          />
-        </div>
+      {/* Subtle grid overlay */}
+      <div
+        className="absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
+          backgroundSize: "60px 60px",
+        }}
+      />
 
-        {/* Twinkling stars */}
-        <div className="absolute inset-0">
-          {Array.from({ length: 60 }).map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-1 h-1 bg-white rounded-full"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-              }}
-              animate={{ opacity: [0.2, 1, 0.2] }}
-              transition={{
-                duration: 2 + Math.random() * 3,
-                repeat: Infinity,
-                delay: Math.random() * 5,
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Subtle grid */}
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
-            backgroundSize: "60px 60px",
-          }}
-        />
-
-        {/* Vignette */}
-        <div className="absolute inset-0" style={{
-          background: "radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.6) 80%, #000 100%)"
-        }} />
-      </div>
+      {/* Vignette */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.6) 80%, #000 100%)",
+        }}
+      />
 
       {/* Content */}
       <div className="relative max-w-4xl mx-auto px-6 text-center">
