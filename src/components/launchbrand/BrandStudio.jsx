@@ -96,10 +96,21 @@ export default function BrandStudio() {
 
         if (result.brandUpdates && Object.keys(result.brandUpdates).length > 0) {
           try {
-            currentBrand = await base44.entities.Brand.update(currentBrand.id, result.brandUpdates);
+            await base44.entities.Brand.update(currentBrand.id, result.brandUpdates);
+            // Refetch to make sure we have the persisted record (some backends
+            // don't return the updated row from .update()).
+            const refreshed = await base44.entities.Brand.filter({ id: currentBrand.id }, "-updated_date", 1);
+            if (refreshed && refreshed[0]) {
+              currentBrand = refreshed[0];
+            } else {
+              currentBrand = { ...currentBrand, ...result.brandUpdates };
+            }
             setBrand(currentBrand);
           } catch (err) {
             console.warn("[BrandStudio] brand update failed:", err);
+            // Still merge optimistically so the loop doesn't re-run discovery
+            currentBrand = { ...currentBrand, ...result.brandUpdates };
+            setBrand(currentBrand);
           }
         }
 

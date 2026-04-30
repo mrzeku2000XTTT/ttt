@@ -9,33 +9,36 @@ import { base44 } from "@/api/base44Client";
  */
 
 const STAGE_PROMPTS = {
-  discovery: `You are a friendly brand strategist. The user wants to build a brand.
-Ask ONE focused question to understand: what they're building, who it's for, and the vibe.
-Be warm, brief (2-3 sentences max), and end with a clear question.`,
+  discovery: `You are a friendly, sharp brand strategist. Your job is to gather just enough info to build a real brand.
 
-  naming: `Generate 5 distinct, memorable brand name candidates based on what the user described.
-Each name should be short (1-2 words), brandable, and easy to remember.
-Return JSON.`,
+You need THREE things, all clearly stated by the user:
+  1. WHAT they're building (a specific product/service, not just "a brand" or "marketing")
+  2. WHO it's for (a specific audience, not just "businesses" or "people")
+  3. THE VIBE (mood/personality — playful, premium, tactical, calm, etc.)
+
+If ANY of these three is vague or missing, ask ONE focused question to fill the gap. Be warm, casual, 2 sentences max. Reference what they already told you.
+
+ONLY say ready=true when ALL three are clear AND specific. Otherwise ready=false.`,
+
+  naming: `Generate 5 distinct, memorable brand name candidates.
+Each name: 1-2 words, brandable, easy to remember, no generic words ("Tech", "Solutions", "Hub" etc are banned).
+Mix invented words, evocative real words, and short compounds.`,
 
   identity: `Generate a 5-color brand palette as hex codes that fits the brand vibe.
-Return one primary, one accent, one dark, one light, one neutral.
-Return JSON.`,
+Order: primary, accent, dark, light, neutral. Make it feel intentional, not random.`,
 
-  voice: `Define the brand voice: tone (3-4 adjectives), and a 2-sentence voice description.
-Return JSON.`,
+  voice: `Define the brand voice: 3-4 tone adjectives, and a 2-sentence voice description.`,
 
-  logo: `Create a detailed image generation prompt for a clean, modern, iconic logo for this brand.
-The logo should work as an app icon. Describe style, shape, colors (use the palette), mood.`,
+  logo: `Create a detailed image generation prompt for a clean, modern, iconic logo.
+The logo should work as an app icon. Describe style, shape, colors (use the palette), mood. ONE sentence.`,
 
-  social: `Write 3 social bios (Twitter 160 chars, Instagram 150 chars, LinkedIn 220 chars) and one hero tagline.
-Keep them sharp, on-brand, and audience-aligned.
-Return JSON.`,
+  social: `Write 3 social bios (Twitter 160 chars, Instagram 150 chars, LinkedIn 220 chars), one hero tagline (under 8 words), and one hero subhead (under 25 words).
+Sharp, on-brand, audience-aligned. No emoji unless the voice calls for it.`,
 };
 
 export async function runBrandAgent({ brand, userMessage, history }) {
   const stage = brand.stage || "discovery";
 
-  // Step the stage forward when the user confirms
   switch (stage) {
     case "discovery":
       return handleDiscovery(brand, userMessage, history);
@@ -57,19 +60,26 @@ export async function runBrandAgent({ brand, userMessage, history }) {
 }
 
 async function handleDiscovery(brand, userMessage, history) {
-  // Have enough info? Use LLM to decide
-  const convo = history.map(m => `${m.role}: ${m.content}`).join("\n");
+  const convo = history
+    .filter((m) => m.kind === "text" || !m.kind)
+    .map((m) => `${m.role}: ${m.content}`)
+    .join("\n");
 
   const res = await base44.integrations.Core.InvokeLLM({
     prompt: `${STAGE_PROMPTS.discovery}
 
 Conversation so far:
 ${convo}
-user: ${userMessage}
+${userMessage ? `user: ${userMessage}` : ""}
+
+Already known about the brand:
+- description: ${brand.description || "(unknown)"}
+- target_audience: ${brand.target_audience || "(unknown)"}
+- industry: ${brand.industry || "(unknown)"}
 
 Decide:
-- If you have enough info (what it is, who it's for, vibe) → set ready=true, summarize as "description", "target_audience", "industry".
-- Otherwise → set ready=false and ask the next question in "reply".`,
+- If the user has now clearly stated WHAT, WHO, and the VIBE → ready=true. Fill description (1 specific sentence about what it is and does), target_audience (specific group), industry (1-2 words).
+- Otherwise → ready=false, ask the next question in "reply" — be specific, reference their words.`,
     response_json_schema: {
       type: "object",
       properties: {
@@ -82,17 +92,19 @@ Decide:
     },
   });
 
-  if (res?.ready) {
+  if (res?.ready && res.description && res.target_audience) {
     return {
-      messages: [{
-        role: "assistant",
-        kind: "text",
-        content: `Got it. Building you ${res.industry || "a brand"} for ${res.target_audience || "your audience"}. Let me brainstorm names...`,
-      }],
+      messages: [
+        {
+          role: "assistant",
+          kind: "text",
+          content: `Locked in: **${res.description}** for **${res.target_audience}**.\n\nLet me brainstorm names…`,
+        },
+      ],
       brandUpdates: {
         description: res.description,
         target_audience: res.target_audience,
-        industry: res.industry,
+        industry: res.industry || "",
         stage: "naming",
         completion: 15,
       },
@@ -101,21 +113,40 @@ Decide:
   }
 
   return {
-    messages: [{ role: "assistant", kind: "text", content: res.reply || "Tell me more about what you're building." }],
+    messages: [
+      {
+        role: "assistant",
+        kind: "text",
+        content:
+          res?.reply ||
+          "Tell me a bit more — what exactly are you building, and who's it for?",
+      },
+    ],
     brandUpdates: {},
   };
 }
 
 async function handleNaming(brand, userMessage) {
-  // If user picked a name from a previous suggestion
-  if (userMessage && userMessage.length < 40 && /^[a-zA-Z0-9 ]+$/.test(userMessage)) {
+  // Did the user pick a name from a previous suggestion list, or type one cleanly?
+  const trimmed = (userMessage || "").trim();
+  const looksLikeName =
+    trimmed &&
+    trimmed.length > 0 &&
+    trimmed.length < 40 &&
+    !trimmed.includes("\n") &&
+    /^[a-zA-Z0-9 .'&-]+$/.test(trimmed) &&
+    trimmed.split(" ").length <= 4;
+
+  if (looksLikeName) {
     return {
-      messages: [{
-        role: "assistant",
-        kind: "text",
-        content: `"${userMessage}" — locked in. Now generating your color palette...`,
-      }],
-      brandUpdates: { name: userMessage, stage: "identity", completion: 30 },
+      messages: [
+        {
+          role: "assistant",
+          kind: "text",
+          content: `**${trimmed}** — locked. Picking your colors next…`,
+        },
+      ],
+      brandUpdates: { name: trimmed, stage: "identity", completion: 30 },
       autoAdvance: true,
     };
   }
@@ -123,7 +154,7 @@ async function handleNaming(brand, userMessage) {
   const res = await base44.integrations.Core.InvokeLLM({
     prompt: `${STAGE_PROMPTS.naming}
 
-Brand: ${brand.description}
+Brand description: ${brand.description}
 Audience: ${brand.target_audience}
 Industry: ${brand.industry}`,
     response_json_schema: {
@@ -134,10 +165,34 @@ Industry: ${brand.industry}`,
     },
   });
 
+  const names = (res?.names || []).filter(Boolean).slice(0, 5);
+
+  if (names.length === 0) {
+    return {
+      messages: [
+        {
+          role: "assistant",
+          kind: "text",
+          content: "Couldn't generate names. Type one you like and we'll lock it in.",
+        },
+      ],
+      brandUpdates: {},
+    };
+  }
+
   return {
     messages: [
-      { role: "assistant", kind: "text", content: "Here are 5 name ideas. Pick one or tell me to try again:" },
-      { role: "assistant", kind: "names", content: "Name suggestions", data: { names: res.names || [] } },
+      {
+        role: "assistant",
+        kind: "text",
+        content: "Here are 5 directions. Tap one — or type your own:",
+      },
+      {
+        role: "assistant",
+        kind: "names",
+        content: "Name suggestions",
+        data: { names },
+      },
     ],
     brandUpdates: {},
   };
@@ -157,13 +212,19 @@ Audience: ${brand.target_audience}`,
     },
   });
 
-  const palette = res.palette || ["#06b6d4", "#a855f7", "#0a0a0a", "#fafafa", "#71717a"];
+  const palette =
+    (res?.palette || []).filter((c) => /^#[0-9a-fA-F]{6}$/.test(c)).slice(0, 5);
+
+  if (palette.length < 5) {
+    while (palette.length < 5)
+      palette.push(["#06b6d4", "#a855f7", "#0a0a0a", "#fafafa", "#71717a"][palette.length]);
+  }
 
   return {
     messages: [
-      { role: "assistant", kind: "text", content: `Your palette for ${brand.name}:` },
+      { role: "assistant", kind: "text", content: `Palette for **${brand.name}**:` },
       { role: "assistant", kind: "palette", content: "Brand palette", data: { palette } },
-      { role: "assistant", kind: "text", content: "Locking it in and crafting your voice..." },
+      { role: "assistant", kind: "text", content: "Crafting your voice next…" },
     ],
     brandUpdates: { palette, stage: "voice", completion: 45 },
     autoAdvance: true,
@@ -185,12 +246,23 @@ Audience: ${brand.target_audience}`,
     },
   });
 
-  const voiceText = `${(res.tone || []).join(" · ")}\n\n${res.voice || ""}`;
+  const tone = (res?.tone || []).slice(0, 4);
+  const voice = res?.voice || "";
+  const voiceText = `${tone.join(" · ")}\n\n${voice}`.trim();
 
   return {
     messages: [
-      { role: "assistant", kind: "voice", content: "Brand voice", data: { tone: res.tone, voice: res.voice } },
-      { role: "assistant", kind: "text", content: "Now generating your logo — this takes a few seconds..." },
+      {
+        role: "assistant",
+        kind: "voice",
+        content: "Brand voice",
+        data: { tone, voice },
+      },
+      {
+        role: "assistant",
+        kind: "text",
+        content: "Now generating your logo — give me ~5 seconds…",
+      },
     ],
     brandUpdates: { voice: voiceText, stage: "logo", completion: 60 },
     autoAdvance: true,
@@ -198,8 +270,10 @@ Audience: ${brand.target_audience}`,
 }
 
 async function handleLogo(brand) {
-  const promptRes = await base44.integrations.Core.InvokeLLM({
-    prompt: `${STAGE_PROMPTS.logo}
+  let imagePrompt = `Modern minimalist logo for ${brand.name}, ${brand.description}`;
+  try {
+    const promptRes = await base44.integrations.Core.InvokeLLM({
+      prompt: `${STAGE_PROMPTS.logo}
 
 Brand: ${brand.name}
 Description: ${brand.description}
@@ -207,20 +281,45 @@ Palette: ${(brand.palette || []).join(", ")}
 Voice: ${brand.voice}
 
 Return only the image prompt as a single string.`,
-  });
+    });
+    imagePrompt =
+      typeof promptRes === "string"
+        ? promptRes
+        : promptRes?.prompt || imagePrompt;
+  } catch {
+    /* fall back to default */
+  }
 
-  const imagePrompt = typeof promptRes === "string" ? promptRes : (promptRes?.prompt || `Modern minimalist logo for ${brand.name}`);
-
-  const imgRes = await base44.integrations.Core.GenerateImage({
-    prompt: `${imagePrompt}. Centered, vector-style, clean white background, app-icon ready, premium brand mark.`,
-  });
-
-  const logo_url = imgRes?.url || "";
+  let logo_url = "";
+  try {
+    const imgRes = await base44.integrations.Core.GenerateImage({
+      prompt: `${imagePrompt}. Centered, vector-style, clean white background, app-icon ready, premium brand mark.`,
+    });
+    logo_url = imgRes?.url || "";
+  } catch (err) {
+    console.warn("[brandAgent] logo generation failed:", err);
+  }
 
   return {
     messages: [
-      { role: "assistant", kind: "logo", content: "Your logo", data: { url: logo_url, prompt: imagePrompt } },
-      { role: "assistant", kind: "text", content: "Logo done. Writing your social bios + tagline..." },
+      logo_url
+        ? {
+            role: "assistant",
+            kind: "logo",
+            content: "Your logo",
+            data: { url: logo_url, prompt: imagePrompt },
+          }
+        : {
+            role: "assistant",
+            kind: "text",
+            content:
+              "Logo generation hiccupped — moving on. You can ask me to regenerate it later.",
+          },
+      {
+        role: "assistant",
+        kind: "text",
+        content: "Writing your social bios + tagline…",
+      },
     ],
     brandUpdates: { logo_url, stage: "social", completion: 80 },
     autoAdvance: true,
@@ -253,26 +352,26 @@ Audience: ${brand.target_audience}`,
         kind: "social",
         content: "Social bios + tagline",
         data: {
-          twitter: res.twitter,
-          instagram: res.instagram,
-          linkedin: res.linkedin,
-          tagline: res.tagline,
-          hero_copy: res.hero_copy,
+          twitter: res?.twitter,
+          instagram: res?.instagram,
+          linkedin: res?.linkedin,
+          tagline: res?.tagline,
+          hero_copy: res?.hero_copy,
         },
       },
       {
         role: "assistant",
         kind: "summary",
-        content: `${brand.name} is ready. Ask me anything to refine — change the logo, rework copy, regenerate the palette, or draft a launch email.`,
+        content: `**${brand.name}** is ready. Ask me to refine anything — regenerate the logo, rework copy, swap the palette, or draft a launch email.`,
       },
     ],
     brandUpdates: {
-      tagline: res.tagline,
-      hero_copy: res.hero_copy,
+      tagline: res?.tagline || "",
+      hero_copy: res?.hero_copy || "",
       social_bios: {
-        twitter: res.twitter,
-        instagram: res.instagram,
-        linkedin: res.linkedin,
+        twitter: res?.twitter || "",
+        instagram: res?.instagram || "",
+        linkedin: res?.linkedin || "",
       },
       stage: "complete",
       completion: 100,
@@ -283,7 +382,12 @@ Audience: ${brand.target_audience}`,
 async function handleFreeChat(brand, userMessage, history) {
   const intent = await base44.integrations.Core.InvokeLLM({
     prompt: `User has a complete brand and is asking for a refinement.
-Brand: ${JSON.stringify({ name: brand.name, description: brand.description, palette: brand.palette, voice: brand.voice })}
+Brand: ${JSON.stringify({
+      name: brand.name,
+      description: brand.description,
+      palette: brand.palette,
+      voice: brand.voice,
+    })}
 
 User message: "${userMessage}"
 
@@ -308,16 +412,33 @@ Classify the intent. One of:
       return handleSocial(brand);
     case "launch_email": {
       const email = await base44.integrations.Core.InvokeLLM({
-        prompt: `Write a launch announcement email for the brand "${brand.name}". Tagline: "${brand.tagline}". Voice: ${brand.voice}. Subject + body, under 150 words total.`,
+        prompt: `Write a launch announcement email for "${brand.name}". Tagline: "${brand.tagline}". Voice: ${brand.voice}. Subject + body, under 150 words total.`,
       });
       return {
-        messages: [{ role: "assistant", kind: "text", content: typeof email === "string" ? email : (email?.body || "Draft ready.") }],
+        messages: [
+          {
+            role: "assistant",
+            kind: "text",
+            content:
+              typeof email === "string"
+                ? email
+                : email?.body || "Draft ready.",
+          },
+        ],
         brandUpdates: {},
       };
     }
     default:
       return {
-        messages: [{ role: "assistant", kind: "text", content: intent?.reply || "I can regenerate the logo, rework the palette, rewrite bios, or draft a launch email — what next?" }],
+        messages: [
+          {
+            role: "assistant",
+            kind: "text",
+            content:
+              intent?.reply ||
+              "I can regenerate the logo, rework the palette, rewrite bios, or draft a launch email — what next?",
+          },
+        ],
         brandUpdates: {},
       };
   }
