@@ -139,11 +139,26 @@
           var t = (text || '').toLowerCase().trim();
           if (!t) return null;
           var els = document.querySelectorAll(tagFilter || 'button, a, [role="button"], [data-agent-id]');
+          var visMatches = [];
+          var hiddenMatches = [];
+          var aidMatch = null;
           for (var i = 0; i < els.length; i++) {
-            var label = (els[i].getAttribute('data-agent-id') || els[i].innerText || els[i].textContent || els[i].getAttribute('aria-label') || '').toLowerCase().trim();
-            if (label && (label === t || label.indexOf(t) !== -1)) return els[i];
+            var el = els[i];
+            var aid = (el.getAttribute('data-agent-id') || '').toLowerCase().trim();
+            var txt = (el.innerText || el.textContent || el.getAttribute('aria-label') || el.getAttribute('title') || '').toLowerCase().trim();
+            var matches = false;
+            // Exact data-agent-id match wins outright
+            if (aid === t) { aidMatch = el; break; }
+            // Otherwise: match aid contains, or text equals/contains
+            if (aid && aid.indexOf(t) !== -1) matches = true;
+            else if (txt === t || txt.indexOf(t) !== -1) matches = true;
+            if (!matches) continue;
+            var r = el.getBoundingClientRect();
+            var visible = el.offsetParent !== null && r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < window.innerHeight;
+            if (visible) visMatches.push(el);
+            else hiddenMatches.push(el);
           }
-          return null;
+          return aidMatch || visMatches[0] || hiddenMatches[0] || null;
         }
 
         function findInput(label) {
@@ -254,11 +269,34 @@
               reply(id, { ok: true });
             } else if (cmd.action === 'read_page') {
               var headings = Array.from(document.querySelectorAll('h1, h2, h3, [role="heading"]')).slice(0, 10).map(function (h) { return h.innerText.trim(); }).filter(Boolean);
-              var buttons = Array.from(document.querySelectorAll('button, a[href], [data-agent-id]')).slice(0, 40).map(function (b) {
+              // Collect all interactive elements, then prioritize: 1) data-agent-id, 2) visible in viewport
+              var allBtns = Array.from(document.querySelectorAll('button, a[href], [role="button"], [data-agent-id]'));
+              var isVisible = function (el) {
+                if (!el || el.offsetParent === null) return false;
+                var r = el.getBoundingClientRect();
+                return r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < window.innerHeight;
+              };
+              var withMeta = allBtns.map(function (b) {
                 var aid = b.getAttribute('data-agent-id');
-                var label = (b.innerText || b.getAttribute('aria-label') || '').trim();
-                return aid ? (label ? label + ' [#' + aid + ']' : '#' + aid) : label;
+                var label = (b.innerText || b.getAttribute('aria-label') || b.getAttribute('title') || '').trim();
+                if (!aid && !label) return null;
+                return {
+                  el: b,
+                  aid: aid,
+                  label: label,
+                  visible: isVisible(b),
+                  hasAid: !!aid,
+                };
               }).filter(Boolean);
+              // Sort: data-agent-id first, then visible, preserving DOM order within groups
+              withMeta.sort(function (a, b) {
+                if (a.hasAid !== b.hasAid) return a.hasAid ? -1 : 1;
+                if (a.visible !== b.visible) return a.visible ? -1 : 1;
+                return 0;
+              });
+              var buttons = withMeta.slice(0, 40).map(function (m) {
+                return m.aid ? (m.label ? m.label + ' [#' + m.aid + ']' : '#' + m.aid) : m.label;
+              });
               var inputs = Array.from(document.querySelectorAll('input, textarea, [contenteditable="true"]')).slice(0, 20).map(function (i) {
                 var label = i.getAttribute('data-agent-id') || i.getAttribute('aria-label') || i.getAttribute('name') || i.getAttribute('placeholder') || '';
                 var type = i.tagName.toLowerCase() + (i.type ? ':' + i.type : '');
@@ -268,7 +306,7 @@
                 var base = label ? (label + ' (' + type + ')') : ('(' + type + ')');
                 return val ? (base + ' = "' + val + '"') : base;
               }).filter(Boolean);
-              reply(id, { ok: true, title: document.title, url: location.pathname, headings: headings, buttons: buttons.slice(0, 25), inputs: inputs });
+              reply(id, { ok: true, title: document.title, url: location.pathname, headings: headings, buttons: buttons.slice(0, 30), inputs: inputs });
             } else if (cmd.action === 'ping') {
               reply(id, { ok: true, ready: true, url: location.pathname });
             } else {
