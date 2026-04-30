@@ -1,4 +1,5 @@
 import { base44 } from "@/api/base44Client";
+import { tryColorEdit, refineCopy, detectRefineTarget } from "@/components/launchbrand/vibeCoder";
 
 /**
  * Brand Agent — guided wizard that decides the next action
@@ -561,7 +562,7 @@ Each prompt: 1 sentence, vivid, specific lighting + composition + subject. NO te
       {
         role: "assistant",
         kind: "summary",
-        content: `**${brand.name}** is ready — logo, palette, voice, social, and a 10-shot b-roll motion sequence. Ask me to regenerate the b-roll, swap the palette, or draft a launch email.`,
+        content: `**${brand.name}** is ready. Now we vibe-code: say things like _"make it more neon"_, _"swap accent to #ff6b00"_, _"darker moodier palette"_, _"rewrite the tagline punchier"_, _"shorter hero copy"_ — I'll re-render in place. Or ask for a new logo, b-roll, or launch email.`,
       },
     ],
     brandUpdates: { broll_images, stage: "complete", completion: 100 },
@@ -573,6 +574,55 @@ async function handleFreeChat(brand, userMessage, history) {
   const url = extractUrl(userMessage);
   if (url && url !== brand.source_url) {
     return handleUrlDiscovery(brand, url);
+  }
+
+  // ── VIBE CODER: iterative color edits (explicit hex OR vibe direction) ──
+  try {
+    const colorEdit = await tryColorEdit(brand, userMessage);
+    if (colorEdit) {
+      return {
+        messages: [
+          { role: "assistant", kind: "palette", content: "Updated palette", data: { palette: colorEdit.palette } },
+          { role: "assistant", kind: "text", content: colorEdit.summary + " Want me to push it further?" },
+        ],
+        brandUpdates: { palette: colorEdit.palette },
+      };
+    }
+  } catch (err) {
+    console.warn("[brandAgent] color edit failed:", err);
+  }
+
+  // ── VIBE CODER: copy refinements (tagline / hero / bios) ──
+  const refineTarget = detectRefineTarget(userMessage);
+  if (refineTarget) {
+    try {
+      const res = await refineCopy(brand, userMessage, refineTarget);
+      if (refineTarget === "bios") {
+        const social_bios = {
+          twitter: res?.twitter || brand.social_bios?.twitter || "",
+          instagram: res?.instagram || brand.social_bios?.instagram || "",
+          linkedin: res?.linkedin || brand.social_bios?.linkedin || "",
+        };
+        return {
+          messages: [
+            { role: "assistant", kind: "social", content: "Refreshed bios", data: { ...social_bios, tagline: brand.tagline, hero_copy: brand.hero_copy } },
+            { role: "assistant", kind: "text", content: "Tighter. Want another pass or new vibe?" },
+          ],
+          brandUpdates: { social_bios },
+        };
+      }
+      const text = res?.text || "";
+      if (!text) throw new Error("empty");
+      const update = refineTarget === "tagline" ? { tagline: text } : { hero_copy: text };
+      return {
+        messages: [
+          { role: "assistant", kind: "text", content: `**New ${refineTarget === "tagline" ? "tagline" : "hero copy"}:**\n\n_${text}_\n\nKeep iterating?` },
+        ],
+        brandUpdates: update,
+      };
+    } catch (err) {
+      console.warn("[brandAgent] copy refine failed:", err);
+    }
   }
 
   const intent = await base44.integrations.Core.InvokeLLM({
@@ -634,7 +684,7 @@ Classify the intent. One of:
             kind: "text",
             content:
               intent?.reply ||
-              "I can regenerate the logo, rework the palette, rewrite bios, redo the b-roll, or draft a launch email — what next?",
+              "Vibe-code with me — try _\"more neon\"_, _\"swap primary to #0a2540\"_, _\"shorter tagline\"_, _\"warmer palette\"_, _\"new logo\"_, or _\"redo b-roll\"_.",
           },
         ],
         brandUpdates: {},
