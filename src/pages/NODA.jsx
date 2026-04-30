@@ -792,18 +792,19 @@ Be specific. Cite numbers, dates, names, quotes. No filler. No "as an AI". Use r
             <ArrowLeft className="w-4 h-4" /> Back
           </Link>
           <div className="hidden sm:block w-px h-6 bg-white/10" />
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/30">
-              <Zap className="w-4 h-4 text-white" />
+          <Link to={createPageUrl("NODA")} className="flex items-center gap-2 min-w-0 hover:opacity-90 transition-opacity" title="NODA home">
+            <div className="relative w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-cyan-500/40 overflow-hidden">
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/30 to-transparent" />
+              <Zap className="relative w-4 h-4 text-white drop-shadow" />
             </div>
             <span className="text-white font-black text-base tracking-tight">NODA</span>
-            <span className="text-white/30">/</span>
-            <input
-              value={workflowName}
-              onChange={(e) => setWorkflowName(e.target.value)}
-              className="bg-transparent text-white font-bold text-sm outline-none border-b border-transparent focus:border-cyan-400 min-w-0 flex-shrink"
-            />
-          </div>
+          </Link>
+          <span className="text-white/30">/</span>
+          <input
+            value={workflowName}
+            onChange={(e) => setWorkflowName(e.target.value)}
+            className="bg-transparent text-white font-bold text-sm outline-none border-b border-transparent focus:border-cyan-400 min-w-0 flex-shrink"
+          />
           <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 bg-cyan-500/20 border border-cyan-500/40 rounded-full text-cyan-300 text-[9px] font-bold tracking-widest uppercase">
             <Sparkles className="w-2.5 h-2.5" /> Node Workflow
           </span>
