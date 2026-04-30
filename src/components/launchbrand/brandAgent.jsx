@@ -5,8 +5,23 @@ import { base44 } from "@/api/base44Client";
  * based on the current Brand state and the user's latest message.
  *
  * Stages:
- *  discovery → naming → identity → voice → logo → social → complete
+ *  discovery → naming → identity → voice → logo → social → broll → complete
+ *
+ * In discovery, if the user pastes a URL, the agent scrapes the site
+ * (root + up to 5 subpages) and uses it to fill description/audience/industry
+ * + visual_keywords for the b-roll stage.
  */
+
+const URL_REGEX = /\b((?:https?:\/\/|www\.)[^\s)<>"]+|[a-z0-9-]+\.(?:com|net|org|io|ai|co|app|dev|xyz|tech|store|shop|me|so|gg)(?:\/[^\s)<>"]*)?)\b/i;
+
+function extractUrl(text) {
+  if (!text) return null;
+  const m = text.match(URL_REGEX);
+  if (!m) return null;
+  let u = m[1];
+  if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+  try { return new URL(u).toString(); } catch { return null; }
+}
 
 const STAGE_PROMPTS = {
   discovery: `You are a friendly, sharp brand strategist. Your job is to gather just enough info to build a real brand.
@@ -52,6 +67,8 @@ export async function runBrandAgent({ brand, userMessage, history }) {
       return handleLogo(brand);
     case "social":
       return handleSocial(brand);
+    case "broll":
+      return handleBroll(brand);
     case "complete":
       return handleFreeChat(brand, userMessage, history);
     default:
@@ -60,6 +77,13 @@ export async function runBrandAgent({ brand, userMessage, history }) {
 }
 
 async function handleDiscovery(brand, userMessage, history) {
+  // ── URL fast-path: if the user pastes a URL, scrape the site
+  // (root + up to 5 subpages) and synthesize discovery fields from it.
+  const url = extractUrl(userMessage);
+  if (url) {
+    return handleUrlDiscovery(brand, url);
+  }
+
   const convo = history
     .filter((m) => m.kind === "text" || !m.kind)
     .map((m) => `${m.role}: ${m.content}`)
@@ -373,13 +397,184 @@ Audience: ${brand.target_audience}`,
         instagram: res?.instagram || "",
         linkedin: res?.linkedin || "",
       },
-      stage: "complete",
-      completion: 100,
+      stage: "broll",
+      completion: 88,
     },
+    autoAdvance: true,
+  };
+}
+
+async function handleUrlDiscovery(brand, url) {
+  let scraped;
+  try {
+    const resp = await base44.functions.invoke("brandSiteScraper", { url });
+    scraped = resp?.data;
+    if (!scraped || scraped.error) throw new Error(scraped?.error || "scrape_failed");
+  } catch (err) {
+    return {
+      messages: [
+        {
+          role: "assistant",
+          kind: "text",
+          content: `Couldn't load that URL (${err.message || "fetch failed"}). Want to describe the brand in your own words?`,
+        },
+      ],
+      brandUpdates: {},
+    };
+  }
+
+  // Build a corpus from root + subpages
+  const corpus = [
+    `URL: ${scraped.url}`,
+    `Title: ${scraped.title}`,
+    `Meta description: ${scraped.description}`,
+    `Site name: ${scraped.site_name || ""}`,
+    `\nROOT PAGE TEXT:\n${scraped.root_text || ""}`,
+    ...((scraped.sub_pages || []).map((p) => `\n--- SUBPAGE: ${p.url} (${p.label || p.title})\n${p.text || ""}`)),
+  ]
+    .join("\n")
+    .slice(0, 18000);
+
+  const synth = await base44.integrations.Core.InvokeLLM({
+    prompt: `You're a brand strategist analyzing a real website's content. Pull out everything needed to rebuild the brand.
+
+${corpus}
+
+Return:
+- name: the brand name (from the site title or content). If unclear, leave blank.
+- description: 1 specific sentence about what they do.
+- target_audience: a specific group, not "businesses" or "people".
+- industry: 1-2 words.
+- tone: 3-4 adjectives describing the existing brand voice.
+- visual_keywords: 8-12 short visual descriptors useful for generating b-roll imagery (e.g. "neon city", "soft daylight on linen", "macro shots of circuitry"). These should match the brand's actual aesthetic from the site.
+- existing_palette: up to 5 hex colors you can infer from the site's described/likely look. If unsure, leave empty.`,
+    response_json_schema: {
+      type: "object",
+      properties: {
+        name: { type: "string" },
+        description: { type: "string" },
+        target_audience: { type: "string" },
+        industry: { type: "string" },
+        tone: { type: "array", items: { type: "string" } },
+        visual_keywords: { type: "array", items: { type: "string" } },
+        existing_palette: { type: "array", items: { type: "string" } },
+      },
+    },
+  });
+
+  if (!synth?.description || !synth?.target_audience) {
+    return {
+      messages: [
+        {
+          role: "assistant",
+          kind: "text",
+          content: "I scraped the site but couldn't pull enough signal. Tell me in one line what they do and who it's for.",
+        },
+      ],
+      brandUpdates: { source_url: scraped.url },
+    };
+  }
+
+  const updates = {
+    source_url: scraped.url,
+    description: synth.description,
+    target_audience: synth.target_audience,
+    industry: synth.industry || "",
+    visual_keywords: (synth.visual_keywords || []).slice(0, 12),
+    stage: "naming",
+    completion: 20,
+  };
+  if (synth.name && synth.name.length < 40) {
+    updates.name = synth.name;
+    updates.stage = "identity";
+    updates.completion = 32;
+  }
+
+  const subCount = (scraped.sub_pages || []).length;
+  return {
+    messages: [
+      {
+        role: "assistant",
+        kind: "text",
+        content: `Read **${scraped.url}**${subCount ? ` + ${subCount} subpage${subCount === 1 ? "" : "s"}` : ""}.\n\n**${updates.name || "Brand"}** — ${synth.description}\nFor: ${synth.target_audience}\n\n${updates.name ? "Picking colors next…" : "Now let's name it…"}`,
+      },
+    ],
+    brandUpdates: updates,
+    autoAdvance: true,
+  };
+}
+
+async function handleBroll(brand) {
+  const palette = (brand.palette || []).slice(0, 5);
+  const visualKeywords = (brand.visual_keywords || []).slice(0, 12);
+
+  // Get 10 distinct cinematic b-roll prompts tied to this brand
+  const prompts = await base44.integrations.Core.InvokeLLM({
+    prompt: `Generate 10 distinct cinematic b-roll image prompts for this brand. Each should feel like a frame from a hero motion video — moody, premium, in motion. Variety across: macro, wide, human, abstract, product, environment.
+
+Brand: ${brand.name}
+What they do: ${brand.description}
+Audience: ${brand.target_audience}
+Voice: ${brand.voice}
+Palette (use these colors): ${palette.join(", ")}
+Visual keywords: ${visualKeywords.join(", ")}
+
+Each prompt: 1 sentence, vivid, specific lighting + composition + subject. NO text overlays. Cinematic, photographic or stylized illustration as fits the brand.`,
+    response_json_schema: {
+      type: "object",
+      properties: {
+        prompts: { type: "array", items: { type: "string" } },
+      },
+    },
+  });
+
+  const list = (prompts?.prompts || []).filter(Boolean).slice(0, 10);
+  const filled = [...list];
+  while (filled.length < 10) {
+    filled.push(`Cinematic b-roll for ${brand.name}: ${visualKeywords[filled.length % Math.max(1, visualKeywords.length)] || brand.description}, dramatic lighting, ${palette[0] || "#06b6d4"} accent`);
+  }
+
+  // Generate all 10 in parallel — failures are OK
+  const generated = await Promise.all(
+    filled.map(async (p) => {
+      try {
+        const r = await base44.integrations.Core.GenerateImage({
+          prompt: `${p}. Cinematic, premium, no text, no watermarks, high contrast, color grade matching palette ${palette.join(" / ")}.`,
+        });
+        return r?.url || null;
+      } catch {
+        return null;
+      }
+    })
+  );
+
+  const broll_images = generated.filter(Boolean);
+
+  return {
+    messages: [
+      {
+        role: "assistant",
+        kind: "broll",
+        content: `${broll_images.length} b-roll motion frames`,
+        data: { images: broll_images, prompts: filled },
+      },
+      {
+        role: "assistant",
+        kind: "summary",
+        content: `**${brand.name}** is ready — logo, palette, voice, social, and a 10-shot b-roll motion sequence. Ask me to regenerate the b-roll, swap the palette, or draft a launch email.`,
+      },
+    ],
+    brandUpdates: { broll_images, stage: "complete", completion: 100 },
   };
 }
 
 async function handleFreeChat(brand, userMessage, history) {
+  // If the user pastes a NEW url at any point, re-ingest from scratch.
+  const url = extractUrl(userMessage);
+  if (url && url !== brand.source_url) {
+    return handleUrlDiscovery(brand, url);
+  }
+
   const intent = await base44.integrations.Core.InvokeLLM({
     prompt: `User has a complete brand and is asking for a refinement.
 Brand: ${JSON.stringify({
@@ -395,6 +590,7 @@ Classify the intent. One of:
 - regenerate_logo
 - regenerate_palette
 - rewrite_bios
+- regenerate_broll
 - launch_email
 - general`,
     response_json_schema: {
@@ -410,6 +606,8 @@ Classify the intent. One of:
       return handlePalette(brand);
     case "rewrite_bios":
       return handleSocial(brand);
+    case "regenerate_broll":
+      return handleBroll(brand);
     case "launch_email": {
       const email = await base44.integrations.Core.InvokeLLM({
         prompt: `Write a launch announcement email for "${brand.name}". Tagline: "${brand.tagline}". Voice: ${brand.voice}. Subject + body, under 150 words total.`,
@@ -436,7 +634,7 @@ Classify the intent. One of:
             kind: "text",
             content:
               intent?.reply ||
-              "I can regenerate the logo, rework the palette, rewrite bios, or draft a launch email — what next?",
+              "I can regenerate the logo, rework the palette, rewrite bios, redo the b-roll, or draft a launch email — what next?",
           },
         ],
         brandUpdates: {},

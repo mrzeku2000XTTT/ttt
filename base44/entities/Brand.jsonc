@@ -60,6 +60,24 @@
       "type": "string",
       "description": "Landing page hero copy"
     },
+    "source_url": {
+      "type": "string",
+      "description": "URL the brand was scraped from (optional)"
+    },
+    "visual_keywords": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Visual keywords for b-roll generation"
+    },
+    "broll_images": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Generated b-roll motion image URLs"
+    },
     "stage": {
       "type": "string",
       "enum": [
@@ -69,6 +87,7 @@
         "voice",
         "logo",
         "social",
+        "broll",
         "complete"
       ],
       "default": "discovery",

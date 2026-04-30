@@ -47,7 +47,7 @@ export default function BrandStudio() {
       const opener = {
         role: "assistant",
         kind: "text",
-        content: "Hey — I'm your brand strategist. Let's build something real.\n\nIn one sentence: what are you launching, and who's it for?",
+        content: "Hey — I'm your brand strategist. Let's build something real.\n\nDrop a URL (I'll scrape it + subpages and reverse-engineer the brand) — or just tell me in one sentence what you're launching and who it's for.",
       };
       const saved = await base44.entities.BrandMessage.create({ ...opener, brand_id: b.id, owner_email: me.email });
       setMessages([saved]);

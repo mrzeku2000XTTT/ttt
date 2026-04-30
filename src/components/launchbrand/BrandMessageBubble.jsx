@@ -91,6 +91,49 @@ export default function BrandMessageBubble({ message, onPickName }) {
     );
   }
 
+  if (message.kind === "broll") {
+    const images = (message.data?.images || []).filter(Boolean);
+    return (
+      <BubbleShell isUser={false}>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="text-[10px] font-bold tracking-widest text-cyan-300 uppercase">
+              B-Roll · {images.length} frames
+            </div>
+            {images.length > 0 && (
+              <div className="text-[10px] text-white/40">tap to enlarge</div>
+            )}
+          </div>
+          {images.length === 0 ? (
+            <div className="text-white/50 text-xs">B-roll generation didn't produce images. Ask me to regenerate.</div>
+          ) : (
+            <div className="grid grid-cols-3 gap-1.5">
+              {images.map((url, i) => (
+                <a
+                  key={url + i}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group relative aspect-square overflow-hidden rounded-lg border border-white/10 hover:border-cyan-400/50 bg-black/40"
+                >
+                  <img
+                    src={url}
+                    alt={`b-roll ${i + 1}`}
+                    loading="lazy"
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                  <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-black/70 text-[9px] font-bold text-white/80">
+                    {String(i + 1).padStart(2, "0")}
+                  </div>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      </BubbleShell>
+    );
+  }
+
   if (message.kind === "summary") {
     return (
       <BubbleShell isUser={false}>
