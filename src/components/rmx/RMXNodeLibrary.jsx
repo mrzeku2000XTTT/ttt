@@ -4,6 +4,7 @@ import {
   X, Brain, Image as ImageIcon, Mail, Clock, Filter, Webhook, Database, GitBranch,
   Search, Sparkles, Zap, Cog, Send, Twitter, Telescope, Rss, MessageSquarePlus,
 } from "lucide-react";
+import { getNodeLogo } from "./nodeLogos";
 
 export const NODE_TEMPLATES = [
   {
@@ -264,6 +265,7 @@ export default function RMXNodeLibrary({ onPick, onClose }) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {filtered.map((tpl, idx) => {
                   const Icon = ICONS[tpl.icon];
+                  const logo = getNodeLogo(tpl.type);
                   return (
                     <motion.button
                       key={tpl.type}
@@ -280,12 +282,18 @@ export default function RMXNodeLibrary({ onPick, onClose }) {
 
                       <div className="relative flex items-start gap-3">
                         <div className="relative w-11 h-11 flex-shrink-0">
-                          <div className={`absolute inset-0 bg-gradient-to-br ${tpl.color} rounded-2xl blur-md opacity-50 group-hover:opacity-90 transition-opacity`} />
-                          <div className={`relative w-full h-full bg-gradient-to-br ${tpl.color} rounded-2xl flex items-center justify-center shadow-xl border border-white/20 overflow-hidden`}>
-                            <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-black/20" />
-                            <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/25 to-transparent" />
-                            <Icon className="relative w-5 h-5 text-white drop-shadow" />
-                          </div>
+                          <div className={`absolute inset-0 bg-gradient-to-br ${tpl.color} rounded-2xl blur-md opacity-40 group-hover:opacity-80 transition-opacity`} />
+                          {logo ? (
+                            <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-xl ring-1 ring-white/15 bg-black">
+                              <img src={logo} alt={tpl.label} className="w-full h-full object-cover" loading="lazy" />
+                            </div>
+                          ) : (
+                            <div className={`relative w-full h-full bg-gradient-to-br ${tpl.color} rounded-2xl flex items-center justify-center shadow-xl border border-white/20 overflow-hidden`}>
+                              <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-black/20" />
+                              <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/25 to-transparent" />
+                              {Icon && <Icon className="relative w-5 h-5 text-white drop-shadow" />}
+                            </div>
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 mb-0.5">

@@ -4,17 +4,23 @@ import { motion } from "framer-motion";
 import {
   Zap, ArrowRight, ArrowLeft, Sparkles, Brain, Image as ImageIcon, Mail,
   Webhook, Clock, Filter, Database, GitBranch, Play, Repeat, Wand2,
+  Telescope, Rss, MessageSquarePlus,
 } from "lucide-react";
+import { NODE_LOGOS } from "@/components/rmx/nodeLogos";
 
 const FEATURE_NODES = [
-  { icon: Brain, label: "AI Prompt", from: "#a855f7", to: "#ec4899" },
-  { icon: ImageIcon, label: "AI Image", from: "#06b6d4", to: "#3b82f6" },
-  { icon: Mail, label: "Send Email", from: "#f59e0b", to: "#f97316" },
-  { icon: Webhook, label: "Webhook", from: "#f43f5e", to: "#ef4444" },
-  { icon: Database, label: "Save Data", from: "#6366f1", to: "#8b5cf6" },
-  { icon: Clock, label: "Delay", from: "#71717a", to: "#52525b" },
-  { icon: Filter, label: "Filter", from: "#10b981", to: "#22c55e" },
-  { icon: GitBranch, label: "Branch", from: "#eab308", to: "#f59e0b" },
+  { logo: NODE_LOGOS.ai_prompt,    label: "AI Prompt",    from: "#a855f7", to: "#ec4899" },
+  { logo: NODE_LOGOS.ai_image,     label: "AI Image",     from: "#06b6d4", to: "#3b82f6" },
+  { logo: NODE_LOGOS.deep_research,label: "Research",     from: "#10b981", to: "#14b8a6" },
+  { logo: NODE_LOGOS.read_ttt_feed,label: "TTT Feed",     from: "#d946ef", to: "#a855f7" },
+  { logo: NODE_LOGOS.send_email,   label: "Send Email",   from: "#f59e0b", to: "#f97316" },
+  { logo: NODE_LOGOS.send_to_x,    label: "Post to X",    from: "#0ea5e9", to: "#2563eb" },
+  { logo: NODE_LOGOS.post_to_ttt,  label: "Post to TTT",  from: "#d946ef", to: "#ec4899" },
+  { logo: NODE_LOGOS.webhook,      label: "Webhook",      from: "#f43f5e", to: "#ef4444" },
+  { logo: NODE_LOGOS.delay,        label: "Delay",        from: "#71717a", to: "#52525b" },
+  { logo: NODE_LOGOS.filter,       label: "Filter",       from: "#10b981", to: "#22c55e" },
+  { logo: NODE_LOGOS.branch,       label: "Branch",       from: "#eab308", to: "#f59e0b" },
+  { logo: NODE_LOGOS.save_data,    label: "Save Data",    from: "#6366f1", to: "#8b5cf6" },
 ];
 
 const STEPS = [
@@ -104,30 +110,34 @@ export default function NODALandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="relative z-10 px-5 sm:px-8 pt-12 sm:pt-20 pb-24 max-w-6xl mx-auto">
+      <section className="relative z-10 px-5 sm:px-8 pt-10 sm:pt-16 pb-24 max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-6">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-6 backdrop-blur-md">
+            <span className="relative flex w-1.5 h-1.5">
+              <span className="absolute inset-0 rounded-full bg-cyan-400 animate-ping opacity-75" />
+              <span className="relative rounded-full w-1.5 h-1.5 bg-cyan-300" />
+            </span>
             <Sparkles className="w-3 h-3 text-cyan-300" />
             <span className="text-[10px] tracking-[0.2em] uppercase font-bold text-white/70">
-              Node Workflow Engine
+              Node Workflow Engine · Live
             </span>
           </div>
 
-          <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.95] mb-6">
-            Build workflows
+          <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.92] mb-6">
+            Workflows
             <br />
             <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-purple-500 bg-clip-text text-transparent">
-              that think for you.
+              that think.
             </span>
           </h1>
 
           <p className="text-white/60 text-base sm:text-xl max-w-2xl leading-relaxed mb-10">
-            NODA chains AI prompts, images, emails and webhooks into one-click automations.
-            Describe what you want — the AI Brain wires it up.
+            NODA chains AI prompts, images, research, emails, social posts and webhooks into one-click automations.
+            Describe what you want — the <span className="text-white font-semibold">AI Brain</span> wires it up for you.
           </p>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -143,57 +153,95 @@ export default function NODALandingPage() {
 
             <Link
               to="/NODAStudio"
-              className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 hover:text-white font-bold text-sm transition-all"
+              className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 hover:text-white font-bold text-sm transition-all backdrop-blur-md"
             >
               <Wand2 className="w-4 h-4" /> Try the Brain
             </Link>
           </div>
+
+          {/* Trust strip */}
+          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px] text-white/40 font-medium">
+            <div className="flex items-center gap-1.5">
+              <div className="w-1 h-1 rounded-full bg-emerald-400" /> No-code · drag, configure, run
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-1 h-1 rounded-full bg-cyan-400" /> 12 ready nodes
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-1 h-1 rounded-full bg-purple-400" /> APEX-sealed runs
+            </div>
+          </div>
         </motion.div>
 
-        {/* Floating node showcase */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="mt-16 sm:mt-24 grid grid-cols-4 sm:grid-cols-8 gap-3 sm:gap-4 max-w-3xl"
-        >
-          {FEATURE_NODES.map((n, i) => {
-            const Icon = n.icon;
-            return (
+        {/* Floating node showcase — premium logo grid */}
+        <div className="mt-16 sm:mt-24">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="flex items-center gap-2 mb-5"
+          >
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+            <span className="text-[10px] tracking-[0.25em] uppercase font-bold text-white/40">
+              12 nodes · plug-and-play
+            </span>
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4"
+          >
+            {FEATURE_NODES.map((n, i) => (
               <motion.div
                 key={n.label}
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.3 + i * 0.05, type: "spring", stiffness: 200 }}
-                whileHover={{ y: -4, scale: 1.05 }}
-                className="group relative aspect-square"
+                transition={{ delay: 0.3 + i * 0.04, type: "spring", stiffness: 200 }}
+                whileHover={{ y: -6, scale: 1.06 }}
+                className="group relative"
               >
+                {/* Outer halo */}
                 <div
-                  className="absolute inset-0 rounded-2xl blur-xl opacity-40 group-hover:opacity-80 transition-opacity"
+                  className="absolute -inset-1 rounded-3xl blur-2xl opacity-30 group-hover:opacity-70 transition-opacity duration-500"
                   style={{ background: `linear-gradient(135deg, ${n.from}, ${n.to})` }}
                 />
-                <div
-                  className="relative w-full h-full rounded-2xl flex items-center justify-center shadow-2xl border border-white/20 overflow-hidden"
-                  style={{
-                    background: `linear-gradient(135deg, ${n.from}, ${n.to})`,
-                  }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-white/0 to-black/30" />
-                  <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent" />
-                  <Icon className="relative w-6 h-6 sm:w-7 sm:h-7 text-white drop-shadow-lg" />
+                {/* Tile */}
+                <div className="relative aspect-square rounded-2xl overflow-hidden ring-1 ring-white/10 group-hover:ring-white/30 shadow-2xl bg-zinc-950 transition-all">
+                  <img
+                    src={n.logo}
+                    alt={n.label}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                  {/* Top sheen */}
+                  <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/15 to-transparent pointer-events-none" />
+                  {/* Bottom label on hover */}
+                  <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-black via-black/80 to-transparent flex items-end justify-center pb-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="text-[10px] sm:text-[11px] font-black text-white tracking-wide">{n.label}</span>
+                  </div>
                 </div>
               </motion.div>
-            );
-          })}
-        </motion.div>
+            ))}
+          </motion.div>
+        </div>
       </section>
 
       {/* How it works */}
       <section className="relative z-10 px-5 sm:px-8 py-20 max-w-6xl mx-auto border-t border-white/5">
-        <h2 className="text-3xl sm:text-5xl font-black tracking-tight mb-3">How it works</h2>
-        <p className="text-white/50 text-sm sm:text-base mb-12 max-w-xl">
-          Three steps from idea to automated workflow.
-        </p>
+        <div className="flex items-end justify-between mb-12 flex-wrap gap-4">
+          <div>
+            <span className="text-[10px] tracking-[0.25em] uppercase font-bold text-cyan-300/80 mb-3 block">
+              How it works
+            </span>
+            <h2 className="text-3xl sm:text-5xl font-black tracking-tight mb-2">From idea to flow.</h2>
+            <p className="text-white/50 text-sm sm:text-base max-w-xl">
+              Three steps. No code. No setup.
+            </p>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {STEPS.map((step, i) => {
@@ -221,30 +269,48 @@ export default function NODALandingPage() {
       </section>
 
       {/* Feature highlights */}
-      <section className="relative z-10 px-5 sm:px-8 py-20 max-w-6xl mx-auto">
+      <section className="relative z-10 px-5 sm:px-8 py-20 max-w-6xl mx-auto border-t border-white/5">
+        <div className="mb-12">
+          <span className="text-[10px] tracking-[0.25em] uppercase font-bold text-purple-300/80 mb-3 block">
+            What's inside
+          </span>
+          <h2 className="text-3xl sm:text-5xl font-black tracking-tight">Built for makers.</h2>
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <FeatureCard
             icon={Brain}
             title="AI Brain"
-            desc="Describe your goal in plain English. AI maps it to the right nodes with the right configs."
+            desc="Describe your goal in plain English. AI maps it to the right nodes with the right configs — instantly."
             gradient="from-fuchsia-500 to-pink-500"
           />
           <FeatureCard
             icon={Repeat}
             title="Auto-run"
-            desc="Toggle Auto and your workflow re-runs the moment you tweak any node — instant feedback."
+            desc="Toggle Auto and your workflow re-runs the moment you tweak any node — feedback at the speed of thought."
             gradient="from-emerald-500 to-teal-500"
+          />
+          <FeatureCard
+            icon={MessageSquarePlus}
+            title="Post anywhere"
+            desc="Push generated text + images straight to the TTT feed or X with one click. Zero copy-paste."
+            gradient="from-fuchsia-500 to-purple-500"
           />
           <FeatureCard
             icon={Mail}
             title="Smart email"
-            desc="Email steps auto-embed images from previous AI Image nodes. No manual wiring."
+            desc="Email steps auto-embed images from previous AI Image nodes. Markdown converts to HTML automatically."
             gradient="from-amber-500 to-orange-500"
+          />
+          <FeatureCard
+            icon={Telescope}
+            title="Deep research"
+            desc="Two-phase web research — discovery + synthesis — produces full markdown reports with live sources."
+            gradient="from-emerald-500 to-teal-500"
           />
           <FeatureCard
             icon={Sparkles}
             title="Stack anything"
-            desc="Mix LLM prompts, image generation, webhooks, delays, filters and saved data into one flow."
+            desc="Mix LLM prompts, image generation, webhooks, delays, filters, social posts and saved data into one flow."
             gradient="from-cyan-500 to-blue-500"
           />
         </div>
