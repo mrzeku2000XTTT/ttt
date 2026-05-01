@@ -2,6 +2,9 @@
 // These replace the default lucide icons in the Node Library and Landing page
 // for a more premium, branded look. Falls back to lucide if a logo is missing.
 
+// Master NODA brand logo (used in nav, hero, favicon-like spots)
+export const NODA_LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/b5dbf0472_generated_image.png";
+
 export const NODE_LOGOS = {
   ai_prompt: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/a15168d9d_generated_image.png",
   ai_image: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/61b92275e_generated_image.png",

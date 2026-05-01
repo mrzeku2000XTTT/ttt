@@ -2,11 +2,10 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  Zap, ArrowRight, ArrowLeft, Sparkles, Brain, Image as ImageIcon, Mail,
-  Webhook, Clock, Filter, Database, GitBranch, Play, Repeat, Wand2,
-  Telescope, Rss, MessageSquarePlus,
+  ArrowRight, ArrowLeft, Sparkles, Brain, Mail, GitBranch,
+  Play, Repeat, Wand2, Telescope, MessageSquarePlus,
 } from "lucide-react";
-import { NODE_LOGOS } from "@/components/rmx/nodeLogos";
+import { NODE_LOGOS, NODA_LOGO } from "@/components/rmx/nodeLogos";
 
 const FEATURE_NODES = [
   { logo: NODE_LOGOS.ai_prompt,    label: "AI Prompt",    from: "#a855f7", to: "#ec4899" },
@@ -95,11 +94,10 @@ export default function NODALandingPage() {
           <ArrowLeft className="w-4 h-4" /> Apps
         </Link>
         <div className="flex items-center gap-2">
-          <div className="relative w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-cyan-500/40">
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/30 to-transparent" />
-            <Zap className="relative w-4 h-4 text-white drop-shadow" />
+          <div className="relative w-8 h-8 rounded-xl overflow-hidden ring-1 ring-white/15 shadow-lg shadow-cyan-500/40">
+            <img src={NODA_LOGO} alt="NODA" className="w-full h-full object-cover" />
           </div>
-          <span className="text-white font-black text-base tracking-tight">NODA</span>
+          <span className="text-white font-black text-base tracking-[0.2em]">NODA</span>
         </div>
         <Link
           to="/NODAStudio"
@@ -109,72 +107,124 @@ export default function NODALandingPage() {
         </Link>
       </nav>
 
-      {/* Hero */}
-      <section className="relative z-10 px-5 sm:px-8 pt-10 sm:pt-16 pb-24 max-w-6xl mx-auto">
+      {/* Hero — centered, logo-led */}
+      <section className="relative z-10 px-5 sm:px-8 pt-8 sm:pt-12 pb-20 max-w-5xl mx-auto text-center">
+        {/* Giant glowing NODA logo */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          initial={{ opacity: 0, scale: 0.6, y: 30 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.9, type: "spring", damping: 14 }}
+          className="relative mx-auto mb-8 sm:mb-10"
+          style={{ width: "fit-content" }}
         >
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-6 backdrop-blur-md">
-            <span className="relative flex w-1.5 h-1.5">
-              <span className="absolute inset-0 rounded-full bg-cyan-400 animate-ping opacity-75" />
-              <span className="relative rounded-full w-1.5 h-1.5 bg-cyan-300" />
-            </span>
-            <Sparkles className="w-3 h-3 text-cyan-300" />
-            <span className="text-[10px] tracking-[0.2em] uppercase font-bold text-white/70">
-              Node Workflow Engine · Live
-            </span>
-          </div>
-
-          <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.92] mb-6">
-            Workflows
-            <br />
-            <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-purple-500 bg-clip-text text-transparent">
-              that think.
-            </span>
-          </h1>
-
-          <p className="text-white/60 text-base sm:text-xl max-w-2xl leading-relaxed mb-10">
-            NODA chains AI prompts, images, research, emails, social posts and webhooks into one-click automations.
-            Describe what you want — the <span className="text-white font-semibold">AI Brain</span> wires it up for you.
-          </p>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              to="/NODAStudio"
-              className="group relative inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-white font-bold text-sm shadow-2xl shadow-blue-500/40 hover:shadow-blue-500/60 transition-all hover:scale-[1.02]"
-            >
-              <span className="absolute inset-0 rounded-2xl bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <Play className="relative w-4 h-4 fill-white" />
-              <span className="relative">Launch NODA</span>
-              <ArrowRight className="relative w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-
-            <Link
-              to="/NODAStudio"
-              className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 hover:text-white font-bold text-sm transition-all backdrop-blur-md"
-            >
-              <Wand2 className="w-4 h-4" /> Try the Brain
-            </Link>
-          </div>
-
-          {/* Trust strip */}
-          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px] text-white/40 font-medium">
-            <div className="flex items-center gap-1.5">
-              <div className="w-1 h-1 rounded-full bg-emerald-400" /> No-code · drag, configure, run
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-1 h-1 rounded-full bg-cyan-400" /> 12 ready nodes
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-1 h-1 rounded-full bg-purple-400" /> APEX-sealed runs
-            </div>
+          {/* Pulsing color halo */}
+          <motion.div
+            className="absolute inset-0 rounded-full blur-[60px]"
+            animate={{ scale: [1, 1.25, 1], opacity: [0.6, 0.95, 0.6] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            style={{
+              background: "radial-gradient(circle, rgba(6,182,212,0.7), rgba(168,85,247,0.6) 50%, transparent 75%)",
+            }}
+          />
+          {/* Soft outer ring */}
+          <motion.div
+            className="absolute -inset-6 rounded-full border border-cyan-400/20"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+            style={{ borderStyle: "dashed" }}
+          />
+          {/* Logo */}
+          <div className="relative w-28 h-28 sm:w-36 sm:h-36 rounded-[2rem] overflow-hidden ring-2 ring-white/15 shadow-2xl shadow-cyan-500/40">
+            <img src={NODA_LOGO} alt="NODA" className="w-full h-full object-cover" />
+            <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
           </div>
         </motion.div>
 
-        {/* Floating node showcase — premium logo grid */}
-        <div className="mt-16 sm:mt-24">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.15 }}
+          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-6 backdrop-blur-md"
+        >
+          <span className="relative flex w-1.5 h-1.5">
+            <span className="absolute inset-0 rounded-full bg-cyan-400 animate-ping opacity-75" />
+            <span className="relative rounded-full w-1.5 h-1.5 bg-cyan-300" />
+          </span>
+          <Sparkles className="w-3 h-3 text-cyan-300" />
+          <span className="text-[10px] tracking-[0.2em] uppercase font-bold text-white/70">
+            Node Workflow Engine · Live
+          </span>
+        </motion.div>
+
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.2 }}
+          className="text-6xl sm:text-7xl lg:text-[8.5rem] font-black tracking-[-0.04em] leading-[0.88] mb-6"
+        >
+          Workflows
+          <br />
+          <span className="relative inline-block bg-gradient-to-r from-cyan-300 via-blue-400 to-purple-500 bg-clip-text text-transparent">
+            that think.
+          </span>
+        </motion.h1>
+
+        <motion.p
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.35 }}
+          className="text-white/60 text-base sm:text-xl max-w-2xl mx-auto leading-relaxed mb-10"
+        >
+          NODA chains AI prompts, images, research, emails, social posts and webhooks into one-click automations.
+          Describe what you want — the <span className="text-white font-semibold">AI Brain</span> wires it up for you.
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="flex flex-wrap items-center justify-center gap-3"
+        >
+          <Link
+            to="/NODAStudio"
+            className="group relative inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-white font-bold text-sm shadow-2xl shadow-blue-500/40 hover:shadow-blue-500/60 transition-all hover:scale-[1.02]"
+          >
+            <span className="absolute inset-0 rounded-2xl bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <Play className="relative w-4 h-4 fill-white" />
+            <span className="relative">Launch NODA</span>
+            <ArrowRight className="relative w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+
+          <Link
+            to="/NODAStudio"
+            className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 hover:text-white font-bold text-sm transition-all backdrop-blur-md"
+          >
+            <Wand2 className="w-4 h-4" /> Try the Brain
+          </Link>
+        </motion.div>
+
+        {/* Trust strip */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.7 }}
+          className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] text-white/40 font-medium"
+        >
+          <div className="flex items-center gap-1.5">
+            <div className="w-1 h-1 rounded-full bg-emerald-400" /> No-code · drag, configure, run
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-1 h-1 rounded-full bg-cyan-400" /> 12 ready nodes
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-1 h-1 rounded-full bg-purple-400" /> APEX-sealed runs
+          </div>
+        </motion.div>
+      </section>
+
+      {/* Node showcase as separate band */}
+      <section className="relative z-10 px-5 sm:px-8 pb-24 max-w-6xl mx-auto">
+        <div>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
