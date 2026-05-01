@@ -94,7 +94,10 @@ export default function TTTV2Page() {
     setPortalOrigin({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
   };
 
-  useEffect(() => { loadContent(); loadKasPrice(); loadDailyKaspaUpdates(); checkAdmin(); loadHeroVideo(); }, []);
+  useEffect(() => {
+    document.title = "TTT 2.0 — The Kaspa Super App";
+    loadContent(); loadKasPrice(); loadDailyKaspaUpdates(); checkAdmin(); loadHeroVideo();
+  }, []);
 
   const checkAdmin = async () => {
     try {
