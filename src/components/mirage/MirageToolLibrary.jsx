@@ -41,10 +41,10 @@ export default function MirageToolLibrary({ onPick, onClose }) {
         exit={{ scale: 0.94, y: 20, opacity: 0 }}
         transition={{ type: "spring", damping: 24, stiffness: 280 }}
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-3xl bg-gradient-to-br from-zinc-950 via-black to-zinc-950 border border-purple-500/20 rounded-3xl shadow-2xl shadow-purple-500/10 overflow-hidden"
+        className="relative w-full max-w-3xl bg-gradient-to-br from-zinc-950 via-black to-zinc-950 border border-emerald-500/20 rounded-3xl shadow-2xl shadow-emerald-500/10 overflow-hidden"
       >
-        <div className="absolute -top-32 -left-32 w-72 h-72 rounded-full bg-purple-500/15 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-32 -right-32 w-72 h-72 rounded-full bg-cyan-500/15 blur-3xl pointer-events-none" />
+        <div className="absolute -top-32 -left-32 w-72 h-72 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -right-32 w-72 h-72 rounded-full bg-amber-500/15 blur-3xl pointer-events-none" />
 
         <div className="relative flex items-center justify-between px-6 py-5 border-b border-white/10">
           <div>
@@ -64,7 +64,7 @@ export default function MirageToolLibrary({ onPick, onClose }) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search apps…"
-              className="w-full h-10 pl-10 pr-4 rounded-xl bg-white/5 border border-white/10 focus:border-purple-400/50 text-white text-sm outline-none placeholder:text-white/25"
+              className="w-full h-10 pl-10 pr-4 rounded-xl bg-white/5 border border-white/10 focus:border-emerald-400/50 text-white text-sm outline-none placeholder:text-white/25"
             />
           </div>
 
@@ -101,16 +101,18 @@ export default function MirageToolLibrary({ onPick, onClose }) {
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ delay: idx * 0.02 }}
                     onClick={() => onPick(tool)}
-                    className="group relative text-left p-3.5 bg-white/[0.025] hover:bg-white/[0.06] border border-white/10 hover:border-purple-400/40 rounded-2xl transition-all overflow-hidden"
+                    className="group relative text-left p-3.5 bg-white/[0.025] hover:bg-white/[0.06] border border-white/10 hover:border-emerald-400/40 rounded-2xl transition-all overflow-hidden"
                   >
                     <div className={`absolute -top-12 -right-12 w-32 h-32 rounded-full bg-gradient-to-br ${tool.color} opacity-0 group-hover:opacity-25 blur-3xl transition-opacity duration-500`} />
                     <div className="relative flex items-start gap-3">
-                      <div className="relative w-11 h-11 flex-shrink-0">
-                        <div className={`absolute inset-0 bg-gradient-to-br ${tool.color} rounded-2xl blur-md opacity-50 group-hover:opacity-90`} />
-                        <div className={`relative w-full h-full bg-gradient-to-br ${tool.color} rounded-2xl flex items-center justify-center shadow-xl border border-white/20 overflow-hidden`}>
-                          <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-black/20" />
-                          <Icon className="relative w-5 h-5 text-white drop-shadow" />
-                        </div>
+                      <div className="relative w-11 h-11 flex-shrink-0 rounded-2xl overflow-hidden shadow-xl ring-1 ring-white/20">
+                        {tool.logo ? (
+                          <img src={tool.logo} alt={tool.appName} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className={`w-full h-full bg-gradient-to-br ${tool.color} flex items-center justify-center`}>
+                            <Icon className="w-5 h-5 text-white drop-shadow" />
+                          </div>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
@@ -119,7 +121,7 @@ export default function MirageToolLibrary({ onPick, onClose }) {
                             {tool.category}
                           </span>
                         </div>
-                        <p className="text-purple-300 text-[11px] font-bold mb-1">{tool.sublabel}</p>
+                        <p className="text-emerald-300 text-[11px] font-bold mb-1">{tool.sublabel}</p>
                         <p className="text-white/45 text-xs leading-snug line-clamp-2">{tool.desc}</p>
                       </div>
                     </div>

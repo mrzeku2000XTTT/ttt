@@ -9,12 +9,12 @@ export default function MirageRunPanel({ logs, running, onClose }) {
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 300, opacity: 0 }}
       transition={{ type: "spring", damping: 26, stiffness: 240 }}
-      className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-[420px] z-30 bg-black/85 backdrop-blur-xl border border-purple-500/30 rounded-2xl shadow-2xl shadow-purple-500/20 overflow-hidden max-h-[300px] flex flex-col"
+      className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-[420px] z-30 bg-black/85 backdrop-blur-xl border border-emerald-500/30 rounded-2xl shadow-2xl shadow-emerald-500/20 overflow-hidden max-h-[300px] flex flex-col"
     >
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10 bg-gradient-to-r from-purple-500/10 to-cyan-500/10">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10 bg-gradient-to-r from-emerald-500/10 to-amber-500/10">
         <div className="flex items-center gap-2">
           {running ? (
-            <Loader2 className="w-3.5 h-3.5 text-purple-300 animate-spin" />
+            <Loader2 className="w-3.5 h-3.5 text-emerald-300 animate-spin" />
           ) : (
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           )}

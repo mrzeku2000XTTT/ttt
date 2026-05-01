@@ -45,13 +45,13 @@ export default function MirageCanvas({ nodes, selectedId, onSelect, onAdd, onDel
   const getStatus = (nodeId) => runStatus?.[nodeId];
 
   return (
-    <div ref={wrapRef} className="relative w-full h-full overflow-hidden bg-[radial-gradient(circle_at_center,#1a0b2e_0%,#0a0414_60%,#000_100%)]">
+    <div ref={wrapRef} className="relative w-full h-full overflow-hidden bg-[radial-gradient(circle_at_center,#0a1f1c_0%,#04100e_60%,#000_100%)]">
       {/* Grid */}
       <div
         className="absolute inset-0 opacity-[0.04] pointer-events-none"
         style={{
           backgroundImage:
-            "linear-gradient(#a855f7 1px, transparent 1px), linear-gradient(90deg, #a855f7 1px, transparent 1px)",
+            "linear-gradient(#10b981 1px, transparent 1px), linear-gradient(90deg, #10b981 1px, transparent 1px)",
           backgroundSize: "40px 40px",
         }}
       />
@@ -60,8 +60,8 @@ export default function MirageCanvas({ nodes, selectedId, onSelect, onAdd, onDel
       <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
         <defs>
           <linearGradient id="beam-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#a855f7" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.8" />
+            <stop offset="0%" stopColor="#10b981" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#fbbf24" stopOpacity="0.8" />
           </linearGradient>
           <filter id="beam-glow">
             <feGaussianBlur stdDeviation="3" result="blur" />
@@ -102,8 +102,8 @@ export default function MirageCanvas({ nodes, selectedId, onSelect, onAdd, onDel
 
       {/* Outer ring decoration */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 0 }}>
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#a855f7" strokeOpacity="0.08" strokeWidth="1" strokeDasharray="2 6" />
-        <circle cx={cx} cy={cy} r={r * 0.55} fill="none" stroke="#06b6d4" strokeOpacity="0.06" strokeWidth="1" strokeDasharray="1 4" />
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#10b981" strokeOpacity="0.1" strokeWidth="1" strokeDasharray="2 6" />
+        <circle cx={cx} cy={cy} r={r * 0.55} fill="none" stroke="#fbbf24" strokeOpacity="0.08" strokeWidth="1" strokeDasharray="1 4" />
       </svg>
 
       {/* MIRAGE Center */}
@@ -117,15 +117,15 @@ export default function MirageCanvas({ nodes, selectedId, onSelect, onAdd, onDel
         <div className="relative">
           {/* Pulsing aura */}
           <motion.div
-            className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-500 via-fuchsia-500 to-cyan-500 blur-2xl"
+            className="absolute inset-0 rounded-full bg-gradient-to-br from-emerald-500 via-teal-400 to-amber-400 blur-2xl"
             animate={{ scale: [1, 1.25, 1], opacity: [0.5, 0.8, 0.5] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
             style={{ width: 140, height: 140, left: -20, top: -20 }}
           />
-          <div className="relative w-[100px] h-[100px] rounded-full overflow-hidden ring-4 ring-purple-400/40 shadow-2xl shadow-purple-500/40">
+          <div className="relative w-[100px] h-[100px] rounded-full overflow-hidden ring-4 ring-emerald-400/40 shadow-2xl shadow-emerald-500/40">
             <img src={MIRAGE_LOGO} alt="MIRAGE" className="w-full h-full object-cover" />
           </div>
-          <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/80 backdrop-blur-md border border-purple-400/30 whitespace-nowrap">
+          <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/80 backdrop-blur-md border border-emerald-400/30 whitespace-nowrap">
             <span className="text-white font-black text-[11px] tracking-widest">MIRAGE</span>
           </div>
         </div>
@@ -160,7 +160,7 @@ export default function MirageCanvas({ nodes, selectedId, onSelect, onAdd, onDel
         onClick={onAdd}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className="absolute bottom-6 right-6 z-30 flex items-center gap-2 px-5 h-12 rounded-full bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-400 hover:to-cyan-400 text-white font-bold text-sm shadow-2xl shadow-purple-500/40"
+        className="absolute bottom-6 right-6 z-30 flex items-center gap-2 px-5 h-12 rounded-full bg-gradient-to-r from-emerald-500 to-amber-400 hover:from-emerald-400 hover:to-amber-300 text-black font-bold text-sm shadow-2xl shadow-emerald-500/40"
       >
         <Plus className="w-4 h-4" /> Connect a TTT App
       </motion.button>
@@ -193,7 +193,7 @@ function ToolNode({ node, index, selected, status, onSelect, onDelete }) {
             }`}
           />
           <div
-            className={`relative w-full h-full bg-gradient-to-br ${node.color} rounded-2xl flex items-center justify-center shadow-xl border-2 overflow-hidden ${
+            className={`relative w-full h-full rounded-2xl shadow-xl border-2 overflow-hidden ${
               selected
                 ? "border-white"
                 : isError
@@ -203,8 +203,13 @@ function ToolNode({ node, index, selected, status, onSelect, onDelete }) {
                 : "border-white/30"
             }`}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-black/20" />
-            <Icon className="relative w-7 h-7 text-white drop-shadow" />
+            {node.logo ? (
+              <img src={node.logo} alt={node.appName} className="w-full h-full object-cover" />
+            ) : (
+              <div className={`w-full h-full bg-gradient-to-br ${node.color} flex items-center justify-center`}>
+                <Icon className="w-7 h-7 text-white drop-shadow" />
+              </div>
+            )}
             {/* Status overlay */}
             {isRunning && (
               <div className="absolute inset-0 bg-black/40 flex items-center justify-center">

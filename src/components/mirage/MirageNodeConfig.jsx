@@ -21,16 +21,22 @@ export default function MirageNodeConfig({ node, onUpdate, onClose, onDelete }) 
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: 400, opacity: 0 }}
       transition={{ type: "spring", damping: 28, stiffness: 280 }}
-      className="absolute right-0 top-0 bottom-0 w-full sm:w-96 bg-black/90 backdrop-blur-xl border-l border-purple-500/20 z-40 flex flex-col"
+      className="absolute right-0 top-0 bottom-0 w-full sm:w-96 bg-black/90 backdrop-blur-xl border-l border-emerald-500/20 z-40 flex flex-col"
     >
       <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
         <div className="flex items-center gap-3 min-w-0">
-          <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${tool.color} flex items-center justify-center shadow-lg`}>
-            <span className="text-white font-black text-xs">{tool.appName.slice(0, 2).toUpperCase()}</span>
+          <div className="w-9 h-9 rounded-xl overflow-hidden shadow-lg ring-1 ring-white/20">
+            {tool.logo ? (
+              <img src={tool.logo} alt={tool.appName} className="w-full h-full object-cover" />
+            ) : (
+              <div className={`w-full h-full bg-gradient-to-br ${tool.color} flex items-center justify-center`}>
+                <span className="text-white font-black text-xs">{tool.appName.slice(0, 2).toUpperCase()}</span>
+              </div>
+            )}
           </div>
           <div className="min-w-0">
             <div className="text-white font-bold text-sm truncate">{tool.appName}</div>
-            <div className="text-purple-300 text-[10px] font-bold tracking-wide uppercase">{tool.sublabel}</div>
+            <div className="text-emerald-300 text-[10px] font-bold tracking-wide uppercase">{tool.sublabel}</div>
           </div>
         </div>
         <button onClick={onClose} className="text-white/50 hover:text-white p-1.5 rounded-lg hover:bg-white/10">
@@ -167,7 +173,7 @@ export default function MirageNodeConfig({ node, onUpdate, onClose, onDelete }) 
         {/* Output preview */}
         {node.output !== undefined && node.output !== null && (
           <div>
-            <div className="text-[10px] font-bold tracking-widest text-purple-300 uppercase mb-2">Last output</div>
+            <div className="text-[10px] font-bold tracking-widest text-emerald-300 uppercase mb-2">Last output</div>
             {typeof node.output === "string" && /^https?:\/\/.+\.(png|jpg|jpeg|gif|webp)/i.test(node.output) ? (
               <img src={node.output} alt="" className="w-full rounded-lg border border-white/10" />
             ) : (

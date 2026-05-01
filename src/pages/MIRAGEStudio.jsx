@@ -1,15 +1,43 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Play, Loader2, Sparkles, Trash2, Save } from "lucide-react";
+import { ArrowLeft, Play, Loader2, Sparkles, Trash2, Lock } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 import MirageCanvas from "@/components/mirage/MirageCanvas";
 import MirageToolLibrary from "@/components/mirage/MirageToolLibrary";
 import MirageNodeConfig from "@/components/mirage/MirageNodeConfig";
 import MirageRunPanel from "@/components/mirage/MirageRunPanel";
 import { MIRAGE_LOGO } from "@/components/mirage/mirageTools";
-import { runMirageWorkflow } from "@/components/mirage/mirageEngine";
 
 export default function MIRAGEStudioPage() {
+  const [authState, setAuthState] = useState("loading");
+  useEffect(() => {
+    base44.auth.me()
+      .then((u) => setAuthState(u?.role === "admin" ? "admin" : "denied"))
+      .catch(() => setAuthState("denied"));
+  }, []);
+
+  if (authState === "loading") {
+    return <div className="fixed inset-0 bg-black flex items-center justify-center"><Loader2 className="w-8 h-8 text-emerald-400 animate-spin" /></div>;
+  }
+  if (authState === "denied") {
+    return (
+      <div className="fixed inset-0 bg-black flex items-center justify-center p-6">
+        <div className="max-w-sm w-full text-center">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-zinc-900 border border-white/10 flex items-center justify-center">
+            <Lock className="w-7 h-7 text-zinc-500" />
+          </div>
+          <h1 className="text-2xl font-black text-white mb-2">Admin Only</h1>
+          <p className="text-white/50 text-sm mb-8">MIRAGE Studio is restricted to admins.</p>
+          <Link to="/" className="inline-flex items-center gap-2 px-5 h-11 rounded-full bg-white text-black text-sm font-bold"><ArrowLeft className="w-4 h-4" /> Home</Link>
+        </div>
+      </div>
+    );
+  }
+  return <StudioInner />;
+}
+
+function StudioInner() {
   const [nodes, setNodes] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [showLibrary, setShowLibrary] = useState(false);
@@ -27,6 +55,7 @@ export default function MIRAGEStudioPage() {
       appName: tool.appName,
       icon: tool.icon,
       color: tool.color,
+      logo: tool.logo,
       config: { ...(tool.defaultConfig || {}) },
       output: null,
     };
@@ -112,7 +141,7 @@ export default function MIRAGEStudioPage() {
           </Link>
           <div className="hidden sm:block w-px h-6 bg-white/10" />
           <Link to="/MIRAGE" className="flex items-center gap-2 min-w-0">
-            <div className="relative w-8 h-8 rounded-xl overflow-hidden ring-2 ring-purple-400/40 shadow-lg shadow-purple-500/30">
+            <div className="relative w-8 h-8 rounded-xl overflow-hidden ring-2 ring-emerald-400/40 shadow-lg shadow-emerald-500/30">
               <img src={MIRAGE_LOGO} alt="MIRAGE" className="w-full h-full object-cover" />
             </div>
             <span className="text-white font-black text-base tracking-tight">MIRAGE</span>
@@ -121,9 +150,9 @@ export default function MIRAGEStudioPage() {
           <input
             value={workflowName}
             onChange={(e) => setWorkflowName(e.target.value)}
-            className="bg-transparent text-white font-bold text-sm outline-none border-b border-transparent focus:border-purple-400 min-w-0"
+            className="bg-transparent text-white font-bold text-sm outline-none border-b border-transparent focus:border-emerald-400 min-w-0"
           />
-          <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 bg-purple-500/20 border border-purple-500/40 rounded-full text-purple-200 text-[9px] font-black tracking-widest uppercase">
+          <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500/20 border border-emerald-500/40 rounded-full text-emerald-200 text-[9px] font-black tracking-widest uppercase">
             <Sparkles className="w-2.5 h-2.5" /> Studio
           </span>
         </div>
@@ -141,7 +170,7 @@ export default function MIRAGEStudioPage() {
           <button
             onClick={runWorkflow}
             disabled={running || nodes.length === 0}
-            className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-gradient-to-r from-purple-500 via-fuchsia-500 to-cyan-500 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold shadow-lg shadow-purple-500/30"
+            className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-gradient-to-r from-emerald-500 to-amber-400 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-black text-xs font-bold shadow-lg shadow-emerald-500/30"
           >
             {running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
             {running ? "Running" : "Run MIRAGE"}
