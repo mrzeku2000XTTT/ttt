@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Play, Loader2, Sparkles, Trash2, Lock } from "lucide-react";
+import { ArrowLeft, Play, Loader2, Sparkles, Trash2, Lock, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import MirageCanvas from "@/components/mirage/MirageCanvas";
 import MirageToolLibrary from "@/components/mirage/MirageToolLibrary";
@@ -46,6 +46,7 @@ function StudioInner() {
   const [showRunPanel, setShowRunPanel] = useState(false);
   const [runStatus, setRunStatus] = useState({}); // { [nodeId]: 'running'|'done'|'error' }
   const [workflowName, setWorkflowName] = useState("Untitled MIRAGE");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const addTool = (tool) => {
     const id = `node_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -158,6 +159,14 @@ function StudioInner() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setSidebarOpen((s) => !s)}
+            className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 hover:text-white text-xs font-bold"
+            title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+          >
+            {sidebarOpen ? <PanelRightClose className="w-3.5 h-3.5" /> : <PanelRightOpen className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">{sidebarOpen ? "Hide" : "Show"} Panel</span>
+          </button>
           {nodes.length > 0 && (
             <button
               onClick={clearAll}
@@ -191,7 +200,7 @@ function StudioInner() {
 
         {/* Node config side panel */}
         <AnimatePresence>
-          {selectedNode && (
+          {selectedNode && sidebarOpen && (
             <MirageNodeConfig
               node={selectedNode}
               onUpdate={updateNode}
