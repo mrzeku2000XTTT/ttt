@@ -111,9 +111,10 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
       id: item.id,
       pointerId: e.pointerId,
       target: e.currentTarget,
-      // rect.width/height are already the visually-scaled dimensions.
-      surfaceW: rect.width,
-      surfaceH: rect.height,
+      // rect.width/height include the CSS zoom scale. Divide it out so a 1px
+      // finger movement always maps to the same % regardless of zoom level.
+      surfaceW: rect.width / zoom,
+      surfaceH: rect.height / zoom,
       startX: point.clientX,
       startY: point.clientY,
       origX: item.x,
@@ -143,7 +144,8 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
       if (!ds) return;
       if (e.cancelable) e.preventDefault?.();
       const point = e.touches ? e.touches[0] : e;
-      // rect.width/height already include zoom scaling, so % delta is direct.
+      // surfaceW/H are stored UN-zoomed, so % delta tracks the finger 1:1
+      // regardless of current zoom level.
       const dx = ((point.clientX - ds.startX) / ds.surfaceW) * 100;
       const dy = ((point.clientY - ds.startY) / ds.surfaceH) * 100;
       if (Math.abs(dx) + Math.abs(dy) > 0.3) ds.moved = true;
