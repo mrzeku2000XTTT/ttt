@@ -9,6 +9,8 @@ import MockTimeline from "@/components/ultramock/MockTimeline";
 import FreeCanvas from "@/components/ultramock/FreeCanvas";
 import TextControls from "@/components/ultramock/TextControls";
 import MockAgent from "@/components/ultramock/MockAgent";
+import MockMobileBar from "@/components/ultramock/MockMobileBar";
+import MockBottomSheet from "@/components/ultramock/MockBottomSheet";
 
 const newId = () => `dev_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
@@ -50,6 +52,7 @@ export default function UltraMockPage() {
   const [duration, setDuration] = useState(4);
   const [exporting, setExporting] = useState(false);
   const [agentOpen, setAgentOpen] = useState(false);
+  const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
   const canvasRef = useRef(null);
   const timelineRef = useRef(null);
 
@@ -243,31 +246,51 @@ export default function UltraMockPage() {
     setY: (v) => updateItem(selected.id, { y: v }),
   } : null;
 
+  // Auto-open the controls bottom sheet on mobile when an item is selected
+  const openMobileControls = useCallback(() => {
+    if (selected) setMobileSheetOpen(true);
+  }, [selected]);
+
   return (
-    <div className="fixed inset-0 bg-zinc-950 overflow-y-auto">
+    <div
+      className="fixed inset-0 bg-zinc-950 overflow-y-auto"
+      style={{
+        paddingTop: "env(safe-area-inset-top, 0px)",
+        // Reserve space for the mobile bottom bar so canvas isn't hidden behind it
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+      }}
+    >
       {/* Top bar */}
-      <nav className="sticky top-0 z-30 flex items-center justify-between px-4 py-3 border-b border-white/10 bg-black/70 backdrop-blur-xl">
-        <Link to="/AppStoreV2" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-white/10 text-white/60 hover:text-white text-sm">
-          <ArrowLeft className="w-4 h-4" /> Back
+      <nav className="sticky top-0 z-30 flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-white/10 bg-black/80 backdrop-blur-xl">
+        <Link
+          to="/AppStoreV2"
+          className="flex items-center justify-center sm:gap-1.5 w-10 h-10 sm:w-auto sm:h-auto sm:px-3 sm:py-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 text-white/60 hover:text-white text-sm flex-shrink-0"
+          aria-label="Back"
+        >
+          <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">Back</span>
         </Link>
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg overflow-hidden shadow-lg ring-1 ring-white/20">
+        <div className="flex items-center gap-2 min-w-0 flex-1 sm:flex-initial justify-center sm:justify-start">
+          <div className="w-7 h-7 rounded-lg overflow-hidden shadow-lg ring-1 ring-white/20 flex-shrink-0">
             <img
               src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/15c852849_generated_image.png"
               alt="Cháoxiào"
               className="w-full h-full object-cover"
             />
           </div>
-          <span className="text-white font-black text-base tracking-tight">Cháoxiào <span className="text-white/40 font-normal text-[11px] ml-1">嘲笑</span></span>
-          <span className="hidden sm:inline-flex px-2 py-0.5 bg-white/5 border border-white/10 rounded-full text-white/50 text-[9px] font-bold tracking-widest uppercase">
+          <span className="text-white font-black text-sm sm:text-base tracking-tight truncate">
+            Cháoxiào <span className="text-white/40 font-normal text-[10px] sm:text-[11px] ml-0.5">嘲笑</span>
+          </span>
+          <span className="hidden md:inline-flex px-2 py-0.5 bg-white/5 border border-white/10 rounded-full text-white/50 text-[9px] font-bold tracking-widest uppercase">
             Multi-Device · Video
           </span>
         </div>
-        <div className="flex items-center gap-2">
+
+        {/* Desktop actions */}
+        <div className="hidden lg:flex items-center gap-2">
           <button
             onClick={() => setAgentOpen(true)}
             className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-gradient-to-r from-fuchsia-500 to-orange-500 hover:opacity-90 text-white text-xs font-bold shadow-lg shadow-fuchsia-500/30"
-            title="Open Cháoxiào AI agent — describes what you want, it builds it"
+            title="Open Cháoxiào AI agent"
           >
             <Bot className="w-3.5 h-3.5" /> Ask AI
           </button>
@@ -278,20 +301,18 @@ export default function UltraMockPage() {
                 ? "bg-cyan-400 text-black shadow-lg shadow-cyan-500/30"
                 : "bg-white/5 hover:bg-white/10 border border-white/10 text-white/70"
             }`}
-            title="Click on the canvas to drop a new device"
           >
             <Plus className="w-3.5 h-3.5" /> Add Device
           </button>
           <button
             onClick={addText}
             className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-xs font-bold"
-            title="Add a text layer"
           >
             <Type className="w-3.5 h-3.5" /> Add Text
           </button>
           <button
             onClick={reset}
-            className="hidden sm:flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-xs font-bold"
+            className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-xs font-bold"
           >
             <RefreshCw className="w-3.5 h-3.5" /> Reset
           </button>
@@ -304,17 +325,29 @@ export default function UltraMockPage() {
             {exporting ? "Exporting…" : "Export PNG"}
           </button>
         </div>
+
+        {/* Mobile: just the AI button in top bar (other actions are in bottom bar) */}
+        <button
+          onClick={() => setAgentOpen(true)}
+          className="lg:hidden flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-r from-fuchsia-500 to-orange-500 text-white shadow-lg shadow-fuchsia-500/30 flex-shrink-0"
+          aria-label="Ask AI"
+        >
+          <Bot className="w-4 h-4" />
+        </button>
       </nav>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-0">
+      <div
+        className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-0"
+        style={{ paddingBottom: "calc(76px + env(safe-area-inset-bottom, 0px))" }}
+      >
         {/* Canvas */}
-        <div className="p-4 lg:p-8 flex flex-col items-center min-h-[60vh]">
+        <div className="p-2 sm:p-4 lg:p-8 flex flex-col items-center min-h-[60vh]">
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             className="w-full max-w-5xl"
           >
-            <div className="rounded-3xl overflow-hidden ring-1 ring-white/10 shadow-2xl">
+            <div className="rounded-2xl sm:rounded-3xl overflow-hidden ring-1 ring-white/10 shadow-2xl">
               <FreeCanvas
                 ref={canvasRef}
                 items={items}
@@ -329,9 +362,13 @@ export default function UltraMockPage() {
                 backgroundCss={backgroundCss}
               />
             </div>
-            <div className="flex items-center justify-center gap-1.5 text-white/30 text-[10px] font-medium mt-3">
-              <ImageIcon className="w-3 h-3" />
-              Click "+ Add Device" then click the canvas · Drag devices freely · Animate the selected one below
+            <div className="hidden sm:flex items-center justify-center gap-1.5 text-white/30 text-[10px] font-medium mt-3 px-2 text-center">
+              <ImageIcon className="w-3 h-3 flex-shrink-0" />
+              <span>Click "+ Add Device" then tap the canvas · Drag freely · Animate the selected one below</span>
+            </div>
+            <div className="sm:hidden flex items-center justify-center gap-1.5 text-white/30 text-[10px] font-medium mt-2 px-2 text-center">
+              <ImageIcon className="w-3 h-3 flex-shrink-0" />
+              <span>Tap a device to select · Use bottom bar to add more</span>
             </div>
 
             {/* Timeline only animates the selected device */}
@@ -347,8 +384,8 @@ export default function UltraMockPage() {
           </motion.div>
         </div>
 
-        {/* Sidebar */}
-        <aside className="border-t lg:border-t-0 lg:border-l border-white/10 bg-black/40 backdrop-blur-xl p-5 lg:sticky lg:top-[57px] lg:h-[calc(100vh-57px)] lg:overflow-y-auto">
+        {/* Desktop sidebar — hidden on mobile (replaced by bottom sheet) */}
+        <aside className="hidden lg:block border-l border-white/10 bg-black/40 backdrop-blur-xl p-5 lg:sticky lg:top-[57px] lg:h-[calc(100vh-57px)] lg:overflow-y-auto">
           {selected?.kind === "text" ? (
             <TextControls
               selected={selected}
@@ -367,6 +404,43 @@ export default function UltraMockPage() {
           )}
         </aside>
       </div>
+
+      {/* Mobile bottom action bar */}
+      <MockMobileBar
+        placementMode={placementMode}
+        onTogglePlacement={() => setPlacementMode((p) => !p)}
+        onAddText={addText}
+        onOpenAgent={() => setAgentOpen(true)}
+        onExport={handleExportPNG}
+        onReset={reset}
+        onOpenControls={openMobileControls}
+        exporting={exporting}
+        hasSelection={!!selected}
+      />
+
+      {/* Mobile controls bottom sheet */}
+      <MockBottomSheet
+        open={mobileSheetOpen}
+        onClose={() => setMobileSheetOpen(false)}
+        title={selected?.kind === "text" ? "Edit Text" : selected ? "Edit Device" : "Canvas Settings"}
+      >
+        {selected?.kind === "text" ? (
+          <TextControls
+            selected={selected}
+            onUpdate={(partial) => updateItem(selected.id, partial)}
+            onRemove={() => { removeItem(selected.id); setMobileSheetOpen(false); }}
+          />
+        ) : (
+          <MockControls
+            background={background} setBackground={setBackground}
+            padding={padding} setPadding={setPadding}
+            selected={selected}
+            onUpdate={(partial) => selected && updateItem(selected.id, partial)}
+            onRemove={() => { if (selected) { removeItem(selected.id); setMobileSheetOpen(false); } }}
+            onUploadMedia={onUploadMedia}
+          />
+        )}
+      </MockBottomSheet>
 
       <MockAgent
         open={agentOpen}

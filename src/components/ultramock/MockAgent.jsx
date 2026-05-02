@@ -130,7 +130,11 @@ export default function MockAgent({ open, onClose, getStateSnapshot, canvasRef, 
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: "100%", opacity: 0 }}
           transition={{ type: "spring", damping: 28, stiffness: 240 }}
-          className="fixed top-0 right-0 bottom-0 w-full sm:w-[420px] z-[60] bg-zinc-950/95 backdrop-blur-2xl border-l border-white/10 flex flex-col shadow-2xl"
+          className="fixed top-0 right-0 bottom-0 w-full sm:w-[420px] z-[60] bg-zinc-950/95 backdrop-blur-2xl sm:border-l border-white/10 flex flex-col shadow-2xl"
+          style={{
+            paddingTop: "env(safe-area-inset-top, 0px)",
+            paddingBottom: "env(safe-area-inset-bottom, 0px)",
+          }}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-gradient-to-r from-fuchsia-500/10 via-orange-500/10 to-pink-500/10">
@@ -148,9 +152,10 @@ export default function MockAgent({ open, onClose, getStateSnapshot, canvasRef, 
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white"
+              className="w-10 h-10 rounded-lg hover:bg-white/10 active:bg-white/20 flex items-center justify-center text-white/60 hover:text-white"
+              aria-label="Close"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </button>
           </div>
 
@@ -201,14 +206,16 @@ export default function MockAgent({ open, onClose, getStateSnapshot, canvasRef, 
                 placeholder="Tell me what to build…"
                 rows={2}
                 disabled={busy}
-                className="flex-1 px-3 py-2 bg-white/5 border border-white/10 focus:border-fuchsia-400 rounded-lg text-white text-sm outline-none resize-none disabled:opacity-50"
+                style={{ fontSize: "16px" }}
+                className="flex-1 px-3 py-2.5 bg-white/5 border border-white/10 focus:border-fuchsia-400 rounded-lg text-white outline-none resize-none disabled:opacity-50"
               />
               <button
                 onClick={() => send()}
                 disabled={busy || !input.trim()}
-                className="w-10 h-10 rounded-lg bg-gradient-to-r from-fuchsia-500 to-orange-500 hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center text-white shadow-lg shadow-fuchsia-500/30"
+                className="w-12 h-12 rounded-lg bg-gradient-to-r from-fuchsia-500 to-orange-500 hover:opacity-90 active:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center text-white shadow-lg shadow-fuchsia-500/30 flex-shrink-0"
+                aria-label="Send"
               >
-                {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
               </button>
             </div>
             <div className="text-[9px] text-white/30 mt-1.5 text-center">
