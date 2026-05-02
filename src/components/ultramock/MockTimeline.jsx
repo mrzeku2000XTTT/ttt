@@ -381,19 +381,12 @@ const MockTimeline = forwardRef(function MockTimeline({
     setRecordProgress(0);
     setPlaying(false);
 
-    const fps = 60;
+    // Target output: 30fps × duration. We push frames manually via requestFrame()
+    // so the video timeline matches `duration` exactly, regardless of how long
+    // each html2canvas() capture takes (which can be 200-500ms each).
+    const fps = 30;
     const totalFrames = Math.round(duration * fps);
-
-    // Background-tab safe waiter: when the tab is hidden, browsers throttle
-    // requestAnimationFrame to <1Hz which would freeze recording. Fall back
-    // to setTimeout (which keeps running in background) when document is hidden.
-    const waitNextPaint = () => new Promise((resolve) => {
-      if (typeof document !== "undefined" && document.hidden) {
-        setTimeout(resolve, 0);
-      } else {
-        requestAnimationFrame(() => requestAnimationFrame(resolve));
-      }
-    });
+    const frameMs = 1000 / fps;
 
     // Try to keep the screen / page awake during recording (best effort).
     let wakeLock = null;
@@ -405,7 +398,7 @@ const MockTimeline = forwardRef(function MockTimeline({
 
     try {
       applyAtTime(0);
-      await waitNextPaint();
+      await new Promise((r) => requestAnimationFrame(r));
       const first = await captureFrame();
       const W = first.width;
       const H = first.height;
@@ -415,36 +408,45 @@ const MockTimeline = forwardRef(function MockTimeline({
       const ctx = out.getContext("2d");
       ctx.drawImage(first, 0, 0);
 
-      const stream = out.captureStream(fps);
+      // captureStream(0) → only emit frames when we explicitly call requestFrame().
+      // This decouples recording from wall-clock so a slow html2canvas doesn't
+      // stretch the output video duration.
+      const stream = out.captureStream(0);
+      const track = stream.getVideoTracks()[0];
+      const canRequestFrame = typeof track?.requestFrame === "function";
+
       const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
         ? "video/webm;codecs=vp9"
         : "video/webm";
-      const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 16_000_000 });
+      const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 12_000_000 });
       const chunks = [];
       recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
       const done = new Promise((resolve) => {
         recorder.onstop = () => resolve(new Blob(chunks, { type: "video/webm" }));
       });
       recorder.start();
-      const recordStart = performance.now();
 
       for (let i = 0; i <= totalFrames; i++) {
         const t = (i / totalFrames) * duration;
         setPlayhead(t);
         applyAtTime(t);
-        await waitNextPaint();
+        // One paint tick is enough — we don't need a stable wall-clock cadence.
+        await new Promise((r) => requestAnimationFrame(r));
         const frame = await captureFrame();
         ctx.clearRect(0, 0, W, H);
         ctx.drawImage(frame, 0, 0, W, H);
+        if (canRequestFrame) {
+          // Push exactly one frame to the recorder.
+          track.requestFrame();
+        }
         setRecordProgress(i / totalFrames);
-        // Pace each frame to its target time so the recorder captures at exactly fps.
-        const targetMs = (i / totalFrames) * duration * 1000;
-        const elapsed = performance.now() - recordStart;
-        const wait = targetMs - elapsed;
-        if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+        // If the browser doesn't support requestFrame, fall back to pacing so
+        // the recorder samples at ~fps. (Otherwise: no waiting, render ASAP.)
+        if (!canRequestFrame) {
+          await new Promise((r) => setTimeout(r, frameMs));
+        }
       }
 
-      // Force progress to 100% and give the recorder one extra tick to flush
       setRecordProgress(1);
       try { recorder.requestData(); } catch { /* ignore */ }
       await new Promise((r) => setTimeout(r, 120));
