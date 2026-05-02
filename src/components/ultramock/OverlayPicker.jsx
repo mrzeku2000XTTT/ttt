@@ -36,13 +36,15 @@ export default function OverlayPicker({ open, onClose, onPickPreset, onPickImage
     setGenerating(true);
     try {
       const bgPreset = BACKGROUND_PRESETS.find((b) => b.id === bgPresetId);
-      const bgHint = bgPreset
-        ? ` The background should match a "${bgPreset.label}" color palette (${bgPreset.css}).`
-        : " Isolated subject on a fully transparent background, no scene, no shadow on the floor.";
+      // CRITICAL: always force transparent background — never let the AI fill the canvas with a color.
+      // The "background color" preset is only a palette/lighting hint applied to the SUBJECT itself.
+      const paletteHint = bgPreset
+        ? ` Tint the subject's colors, lighting, and glow to match a "${bgPreset.label}" palette (${bgPreset.css}) — but the image background itself MUST stay fully transparent.`
+        : "";
       const refHint = referenceUrl
         ? " Use the attached reference image purely for color, mood, and style inspiration — do not copy its content."
         : "";
-      const fullPrompt = `${prompt.trim()}.${bgHint}${refHint} Sticker style, crisp edges, high contrast, suitable for layering on top of a screenshot.`;
+      const fullPrompt = `${prompt.trim()}. CRITICAL REQUIREMENT: isolated subject on a 100% transparent PNG background. NO white corners, NO colored rectangle backdrop, NO scene, NO floor, NO shadow on the ground, NO border, NO frame — just the subject floating with full alpha transparency around it so it blends seamlessly when layered on any canvas.${paletteHint}${refHint} Sticker / die-cut style, crisp anti-aliased edges, high contrast, ready to composite on top of a screenshot.`;
       const args = { prompt: fullPrompt };
       if (referenceUrl) args.existing_image_urls = [referenceUrl];
       const res = await base44.integrations.Core.GenerateImage(args);
