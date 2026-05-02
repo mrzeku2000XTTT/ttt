@@ -315,6 +315,20 @@ export const MOTION_PRESETS = [
     },
   },
   {
+    id: "typewriter-zoom",
+    label: "Typewriter Zoom",
+    desc: "Slow cinematic zoom — pair with a typewriter text layer",
+    build: (d, start) => {
+      const sx = start?.x ?? 50;
+      const sy = start?.y ?? 50;
+      return [
+        { t: 0,        rotX: 0, rotY: 0, scale: 1,    x: sx, y: sy },
+        { t: d * 0.5,  rotX: 0, rotY: 0, scale: 1.25, x: sx, y: sy },
+        { t: d,        rotX: 0, rotY: 0, scale: 1.6,  x: sx, y: sy },
+      ];
+    },
+  },
+  {
     id: "words-pop",
     label: "Words Pop",
     desc: "Bouncy oversized pop — for words & captions",
