@@ -324,7 +324,6 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
                   style={{
                     transform: `rotateX(${item.rotX}deg) rotateY(${item.rotY}deg)`,
                     transformStyle: "preserve-3d",
-                    transition: dragState.current?.id === item.id ? "none" : "transform 0.2s ease-out",
                   }}
                 >
                   <DeviceFrame device={item.device} media={item.media} scale={item.scale} />
