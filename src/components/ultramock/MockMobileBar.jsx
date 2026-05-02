@@ -1,10 +1,10 @@
-import React from "react";
-import { Plus, Type, Bot, Download, Loader2, Settings2 } from "lucide-react";
+import React, { useRef } from "react";
+import { Plus, Type, Bot, Download, Loader2, Settings2, Upload } from "lucide-react";
 
 /**
  * Compact bottom action bar for phones.
  * Sticks to the bottom of the screen with safe-area padding.
- * Buttons are 44px tall (iOS HIG) with large tap targets.
+ * Buttons are 48px tall (iOS HIG) with large tap targets.
  */
 export default function MockMobileBar({
   placementMode,
@@ -14,14 +14,30 @@ export default function MockMobileBar({
   onExport,
   onReset,
   onOpenControls,
+  onUploadFile, // (file) => void — uploads to selected device, or auto-creates one
   exporting,
   hasSelection,
 }) {
+  const fileRef = useRef(null);
+
+  const handleFile = (e) => {
+    const file = e.target.files?.[0];
+    if (file && onUploadFile) onUploadFile(file);
+    e.target.value = "";
+  };
+
   return (
     <div
       className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-black/90 backdrop-blur-xl border-t border-white/10"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*,video/mp4,video/webm,video/quicktime"
+        onChange={handleFile}
+        className="hidden"
+      />
       <div className="flex items-stretch gap-1 px-2 py-2">
         <button
           onClick={onOpenAgent}
@@ -30,6 +46,14 @@ export default function MockMobileBar({
         >
           <Bot className="w-4 h-4" />
           <span className="text-[9px] font-bold mt-0.5">AI</span>
+        </button>
+        <button
+          onClick={() => fileRef.current?.click()}
+          className="flex-1 flex flex-col items-center justify-center h-12 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 text-white active:opacity-80"
+          aria-label="Upload image or video"
+        >
+          <Upload className="w-4 h-4" />
+          <span className="text-[9px] font-bold mt-0.5">Upload</span>
         </button>
         <button
           onClick={onTogglePlacement}

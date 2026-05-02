@@ -85,25 +85,48 @@ export default function UltraMockPage() {
     setSelectedId((cur) => (cur === id ? null : cur));
   }, []);
 
-  // Upload media (image OR video) into the selected item
-  const onUploadMedia = useCallback((file) => {
-    if (!selectedId) return;
+  // Apply a media file to a target device id
+  const applyMediaTo = useCallback((targetId, file) => {
     const isVideo = file.type.startsWith("video/");
     const isImage = file.type.startsWith("image/");
     if (!isVideo && !isImage) {
       alert("Only images or videos (MP4/WebM/MOV) are supported.");
       return;
     }
-    // Use object URL for video so it streams smoothly; data URL for image
     if (isVideo) {
       const url = URL.createObjectURL(file);
-      updateItem(selectedId, { media: { url, type: "video", name: file.name } });
+      updateItem(targetId, { media: { url, type: "video", name: file.name } });
     } else {
       const reader = new FileReader();
-      reader.onload = (e) => updateItem(selectedId, { media: { url: e.target.result, type: "image", name: file.name } });
+      reader.onload = (e) => updateItem(targetId, { media: { url: e.target.result, type: "image", name: file.name } });
       reader.readAsDataURL(file);
     }
-  }, [selectedId, updateItem]);
+  }, [updateItem]);
+
+  // Upload media (image OR video) into the selected item — used by sidebar
+  const onUploadMedia = useCallback((file) => {
+    if (!selectedId) return;
+    applyMediaTo(selectedId, file);
+  }, [selectedId, applyMediaTo]);
+
+  // Smart upload from mobile bar: targets selected device, or first device, or auto-creates one
+  const onMobileUpload = useCallback((file) => {
+    let targetId = selectedId;
+    const sel = items.find((i) => i.id === selectedId);
+    if (!sel || sel.kind !== "device") {
+      const firstDevice = items.find((i) => i.kind === "device");
+      if (firstDevice) {
+        targetId = firstDevice.id;
+        setSelectedId(firstDevice.id);
+      } else {
+        const it = makeItem();
+        setItems((prev) => [...prev, it]);
+        setSelectedId(it.id);
+        targetId = it.id;
+      }
+    }
+    applyMediaTo(targetId, file);
+  }, [items, selectedId, applyMediaTo]);
 
   const handleExportPNG = async () => {
     if (!canvasRef.current) return;
@@ -414,6 +437,7 @@ export default function UltraMockPage() {
         onExport={handleExportPNG}
         onReset={reset}
         onOpenControls={openMobileControls}
+        onUploadFile={onMobileUpload}
         exporting={exporting}
         hasSelection={!!selected}
       />
