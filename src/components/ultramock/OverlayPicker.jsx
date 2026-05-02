@@ -1,7 +1,8 @@
 import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sparkles, Loader2, Wand2, ImageIcon, Upload } from "lucide-react";
+import { X, Sparkles, Loader2, Wand2, ImageIcon, Upload, Paperclip, Palette } from "lucide-react";
 import { OVERLAY_PRESETS, OVERLAY_CATEGORIES } from "./overlayPresets";
+import { BACKGROUND_PRESETS } from "./MockBackground";
 import { base44 } from "@/api/base44Client";
 
 /**
@@ -18,7 +19,13 @@ export default function OverlayPicker({ open, onClose, onPickPreset, onPickImage
   const [generating, setGenerating] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
+  // Optional reference image attached by user (sent to AI for style/color guidance)
+  const [referenceUrl, setReferenceUrl] = useState(null);
+  const [attachingRef, setAttachingRef] = useState(false);
+  // Selected background preset id — appended to the AI prompt as a color hint
+  const [bgPresetId, setBgPresetId] = useState(null);
   const fileRef = useRef(null);
+  const refFileRef = useRef(null);
 
   const filtered = OVERLAY_PRESETS.filter(
     (p) => category === "all" || p.category === category
@@ -28,8 +35,17 @@ export default function OverlayPicker({ open, onClose, onPickPreset, onPickImage
     if (!prompt.trim() || generating) return;
     setGenerating(true);
     try {
-      const fullPrompt = `${prompt.trim()}. Isolated subject on a fully transparent background, no scene, no shadow on the floor, sticker style, crisp edges, high contrast, suitable for layering on top of a screenshot.`;
-      const res = await base44.integrations.Core.GenerateImage({ prompt: fullPrompt });
+      const bgPreset = BACKGROUND_PRESETS.find((b) => b.id === bgPresetId);
+      const bgHint = bgPreset
+        ? ` The background should match a "${bgPreset.label}" color palette (${bgPreset.css}).`
+        : " Isolated subject on a fully transparent background, no scene, no shadow on the floor.";
+      const refHint = referenceUrl
+        ? " Use the attached reference image purely for color, mood, and style inspiration — do not copy its content."
+        : "";
+      const fullPrompt = `${prompt.trim()}.${bgHint}${refHint} Sticker style, crisp edges, high contrast, suitable for layering on top of a screenshot.`;
+      const args = { prompt: fullPrompt };
+      if (referenceUrl) args.existing_image_urls = [referenceUrl];
+      const res = await base44.integrations.Core.GenerateImage(args);
       if (res?.url) setPreviewUrl(res.url);
     } catch (e) {
       alert("Generate failed: " + e.message);
@@ -49,6 +65,20 @@ export default function OverlayPicker({ open, onClose, onPickPreset, onPickImage
       alert("Upload failed: " + err.message);
     }
     setUploading(false);
+  };
+
+  const handleAttachReference = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setAttachingRef(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      if (file_url) setReferenceUrl(file_url);
+    } catch (err) {
+      alert("Attach failed: " + err.message);
+    }
+    setAttachingRef(false);
   };
 
   const usePreview = () => {
@@ -171,6 +201,77 @@ export default function OverlayPicker({ open, onClose, onPickPreset, onPickImage
                     style={{ fontSize: "16px" }}
                     className="w-full px-3 py-2.5 bg-white/5 border border-white/10 focus:border-fuchsia-400 rounded-lg text-white outline-none resize-none"
                   />
+
+                  {/* Reference image attachment */}
+                  <input
+                    ref={refFileRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAttachReference}
+                    className="hidden"
+                  />
+                  {referenceUrl ? (
+                    <div className="flex items-center gap-2 p-2 rounded-lg bg-white/5 border border-fuchsia-400/30">
+                      <img
+                        src={referenceUrl}
+                        alt="reference"
+                        className="w-12 h-12 rounded object-cover flex-shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[10px] font-black tracking-widest uppercase text-fuchsia-300">Reference attached</div>
+                        <div className="text-[10px] text-white/40 truncate">AI will use this for color/style inspiration</div>
+                      </div>
+                      <button
+                        onClick={() => setReferenceUrl(null)}
+                        className="w-7 h-7 rounded hover:bg-white/10 flex items-center justify-center text-white/60"
+                        title="Remove reference"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => refFileRef.current?.click()}
+                      disabled={attachingRef}
+                      className="w-full flex items-center justify-center gap-1.5 h-9 rounded-lg bg-white/[0.03] hover:bg-white/10 border border-dashed border-white/15 text-white/60 text-xs font-bold disabled:opacity-40"
+                    >
+                      {attachingRef ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Paperclip className="w-3.5 h-3.5" />}
+                      {attachingRef ? "Attaching…" : "Attach reference image (optional)"}
+                    </button>
+                  )}
+
+                  {/* Background color presets — for the generated image's background */}
+                  <div>
+                    <div className="flex items-center gap-1.5 text-[10px] font-black tracking-[0.2em] uppercase text-white/40 mb-1.5">
+                      <Palette className="w-3 h-3" /> Background Color
+                    </div>
+                    <div className="grid grid-cols-6 sm:grid-cols-10 gap-1.5">
+                      <button
+                        onClick={() => setBgPresetId(null)}
+                        title="Transparent"
+                        className={`aspect-square rounded-md transition-all bg-[linear-gradient(45deg,#222_25%,transparent_25%),linear-gradient(-45deg,#222_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#222_75%),linear-gradient(-45deg,transparent_75%,#222_75%)] bg-[length:8px_8px] bg-[position:0_0,0_4px,4px_-4px,-4px_0] ${
+                          bgPresetId === null ? "ring-2 ring-white scale-105" : "ring-1 ring-white/10 hover:ring-white/30"
+                        }`}
+                      />
+                      {BACKGROUND_PRESETS.map((bg) => (
+                        <button
+                          key={bg.id}
+                          onClick={() => setBgPresetId(bg.id)}
+                          title={bg.label}
+                          className={`aspect-square rounded-md transition-all ${
+                            bgPresetId === bg.id ? "ring-2 ring-white scale-105" : "ring-1 ring-white/10 hover:ring-white/30"
+                          }`}
+                          style={{ background: bg.css }}
+                        />
+                      ))}
+                    </div>
+                    {bgPresetId && (
+                      <div className="text-[10px] text-white/40 mt-1.5">
+                        Using <span className="text-white/70 font-bold">{BACKGROUND_PRESETS.find((b) => b.id === bgPresetId)?.label}</span> palette
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex items-center gap-2">
                     <button
                       onClick={generate}
