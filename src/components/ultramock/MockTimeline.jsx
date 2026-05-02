@@ -1,62 +1,56 @@
 import React, { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
-import { Plus, Play, Pause, Trash2, Video, Loader2, SkipBack, Film, Wand2, Layers, Replace } from "lucide-react";
+import { Plus, Play, Pause, Trash2, Video, Loader2, SkipBack, Film, Wand2, Layers, Replace, Eye, EyeOff } from "lucide-react";
 import { MOTION_PRESETS } from "./motionPresets";
 
 /**
- * Timeline that animates {rotX, rotY, scale} between keyframes.
- * - Add keyframes at the playhead from current values
- * - Scrub via the playhead bar
- * - Play interpolates and writes back to parent state every frame
- * - Record uses MediaRecorder over a copy <canvas> filled by html2canvas frames
- *   (we accept the html2canvas/getCanvasFrame callback from parent for accuracy)
+ * Multi-track timeline — like a real video editor.
  *
- * Exposes imperative API via ref:
- *   - applyPresetById(id, mode?)  // mode: "append" | "replace"
- *   - clearKeyframes()
+ * Tracks are stored as a Map<itemId, keyframes[]>. Each item with keyframes
+ * gets its own row. Playback samples every track in parallel and writes back
+ * to the matching items via `updateItem(id, partial)`.
+ *
+ * Imperative API (ref):
+ *   - applyPresetById(id, mode?)   // applies to currently selected item
+ *   - clearKeyframes()             // clears tracks of selected item
+ *   - clearAllTracks()             // clears every track
  *   - recordVideo()
- *   - getKeyframes()
+ *   - getKeyframes()               // selected item's keyframes
  */
 const MockTimeline = forwardRef(function MockTimeline({
-  rotX, rotY, scale,
-  setRotX, setRotY, setScale,
-  x, y, setX, setY, // optional position animation
-  duration = 4, // seconds
+  items,                  // all canvas items
+  selectedId,             // currently focused item id
+  updateItem,             // (id, partial) => void
+  duration = 4,
   setDuration,
-  captureFrame, // async () => HTMLCanvasElement
+  captureFrame,           // async () => HTMLCanvasElement
 }, ref) {
-  const [keyframes, setKeyframes] = useState([
-    { t: 0, rotX: 0, rotY: 0, scale: 1 },
-  ]);
+  // tracks: { [itemId]: Keyframe[] }
+  const [tracks, setTracks] = useState({});
   const [playhead, setPlayhead] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [recording, setRecording] = useState(false);
   const [recordProgress, setRecordProgress] = useState(0);
-  // "append" = chain preset at playhead (multi-add). "replace" = wipe & set.
   const [presetMode, setPresetMode] = useState("append");
-  // How long each appended preset takes (seconds). Independent of total duration.
   const [presetSegment, setPresetSegment] = useState(2);
+  const [hiddenTracks, setHiddenTracks] = useState({}); // mute a track without deleting
 
   const playStartRef = useRef(0);
   const playFromRef = useRef(0);
   const rafRef = useRef(null);
 
-  // Track whether the current keyframe set animates position (x/y).
-  // When false, we leave x/y untouched at playback time.
-  const animatesPosition = keyframes.some(
-    (k) => typeof k.x === "number" || typeof k.y === "number"
-  );
+  const selected = items.find((i) => i.id === selectedId) || null;
+  const selectedKfs = (selected && tracks[selected.id]) || [];
+  const trackEntries = Object.entries(tracks).filter(([, kfs]) => kfs && kfs.length > 0);
+  const hasAnyTrack = trackEntries.length > 0;
 
-  // Interpolate value at time t given sorted keyframes.
-  // x/y are returned only if at least one keyframe defines them.
+  // Sample keyframes at time t
   const sample = useCallback((t, kfs) => {
-    if (!kfs.length) return { rotX: 0, rotY: 0, scale: 1 };
+    if (!kfs || !kfs.length) return null;
     const sorted = [...kfs].sort((a, b) => a.t - b.t);
     const hasPos = sorted.some((k) => typeof k.x === "number" || typeof k.y === "number");
 
     const pick = (kf) => ({
-      rotX: kf.rotX,
-      rotY: kf.rotY,
-      scale: kf.scale,
+      rotX: kf.rotX, rotY: kf.rotY, scale: kf.scale,
       ...(hasPos ? { x: kf.x, y: kf.y } : {}),
     });
 
@@ -68,7 +62,6 @@ const MockTimeline = forwardRef(function MockTimeline({
       if (t >= a.t && t <= b.t) {
         const span = b.t - a.t || 1;
         const k = (t - a.t) / span;
-        // ease-in-out cubic
         const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
         const out = {
           rotX: a.rotX + (b.rotX - a.rotX) * e,
@@ -86,21 +79,21 @@ const MockTimeline = forwardRef(function MockTimeline({
         return out;
       }
     }
-    return { rotX: 0, rotY: 0, scale: 1 };
+    return null;
   }, []);
 
-  // Apply playhead → state when scrubbing or playing
-  const applyAtTime = useCallback(
-    (t) => {
-      const v = sample(t, keyframes);
-      setRotX(v.rotX);
-      setRotY(v.rotY);
-      setScale(v.scale);
-      if (typeof v.x === "number" && setX) setX(v.x);
-      if (typeof v.y === "number" && setY) setY(v.y);
-    },
-    [keyframes, sample, setRotX, setRotY, setScale, setX, setY]
-  );
+  // Apply ALL tracks at time t in parallel
+  const applyAtTime = useCallback((t) => {
+    Object.entries(tracks).forEach(([id, kfs]) => {
+      if (hiddenTracks[id]) return;
+      const v = sample(t, kfs);
+      if (!v) return;
+      const partial = { rotX: v.rotX, rotY: v.rotY, scale: v.scale };
+      if (typeof v.x === "number") partial.x = v.x;
+      if (typeof v.y === "number") partial.y = v.y;
+      updateItem(id, partial);
+    });
+  }, [tracks, sample, updateItem, hiddenTracks]);
 
   // Playback loop
   useEffect(() => {
@@ -130,83 +123,110 @@ const MockTimeline = forwardRef(function MockTimeline({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing]);
 
+  // ── Keyframe operations on the SELECTED item ────────────────────────────
   const addKeyframe = () => {
+    if (!selected) return;
     const t = Math.round(playhead * 100) / 100;
-    setKeyframes((prev) => {
-      const filtered = prev.filter((k) => Math.abs(k.t - t) > 0.01);
-      // If existing keyframes carry position, capture the new one with position too,
-      // so position keeps animating consistently.
-      const carriesPos = prev.some((k) => typeof k.x === "number" || typeof k.y === "number");
-      const next = { t, rotX, rotY, scale };
-      if (carriesPos && typeof x === "number" && typeof y === "number") {
-        next.x = x;
-        next.y = y;
+    setTracks((prev) => {
+      const cur = prev[selected.id] || [];
+      const filtered = cur.filter((k) => Math.abs(k.t - t) > 0.01);
+      const carriesPos = cur.some((k) => typeof k.x === "number" || typeof k.y === "number");
+      const next = {
+        t,
+        rotX: selected.rotX || 0,
+        rotY: selected.rotY || 0,
+        scale: selected.scale ?? 1,
+      };
+      if (carriesPos && typeof selected.x === "number" && typeof selected.y === "number") {
+        next.x = selected.x;
+        next.y = selected.y;
       }
-      return [...filtered, next].sort((a, b) => a.t - b.t);
+      return { ...prev, [selected.id]: [...filtered, next].sort((a, b) => a.t - b.t) };
     });
   };
 
-  const removeKeyframe = (idx) => {
-    setKeyframes((prev) => prev.filter((_, i) => i !== idx));
+  const removeKeyframe = (itemId, idx) => {
+    setTracks((prev) => {
+      const cur = prev[itemId] || [];
+      const next = cur.filter((_, i) => i !== idx);
+      const out = { ...prev };
+      if (next.length === 0) delete out[itemId];
+      else out[itemId] = next;
+      return out;
+    });
   };
 
-  const jumpToKey = (kf) => {
+  const removeTrack = (itemId) => {
+    setTracks((prev) => {
+      const out = { ...prev };
+      delete out[itemId];
+      return out;
+    });
+  };
+
+  const toggleTrackVisibility = (itemId) => {
+    setHiddenTracks((prev) => ({ ...prev, [itemId]: !prev[itemId] }));
+  };
+
+  const jumpToKey = (itemId, kf) => {
     setPlayhead(kf.t);
-    setRotX(kf.rotX);
-    setRotY(kf.rotY);
-    setScale(kf.scale);
-    if (typeof kf.x === "number" && setX) setX(kf.x);
-    if (typeof kf.y === "number" && setY) setY(kf.y);
+    const partial = { rotX: kf.rotX, rotY: kf.rotY, scale: kf.scale };
+    if (typeof kf.x === "number") partial.x = kf.x;
+    if (typeof kf.y === "number") partial.y = kf.y;
+    updateItem(itemId, partial);
   };
 
-  const applyPreset = (preset) => {
-    const start = (typeof x === "number" && typeof y === "number") ? { x, y } : undefined;
+  // Apply preset to SELECTED item's track
+  const applyPreset = (preset, targetId = null, modeOverride = null) => {
+    const id = targetId || selected?.id;
+    if (!id) return false;
+    const item = items.find((i) => i.id === id);
+    if (!item) return false;
 
-    if (presetMode === "replace") {
-      // REPLACE: wipe everything, set preset across the full duration.
+    const mode = modeOverride || presetMode;
+    const start = (typeof item.x === "number" && typeof item.y === "number") ? { x: item.x, y: item.y } : undefined;
+
+    if (mode === "replace") {
       const kfs = preset.build(duration, start).map((k) => ({
         ...k,
         t: Math.max(0, Math.min(duration, k.t)),
       }));
-      setKeyframes(kfs);
+      setTracks((prev) => ({ ...prev, [id]: kfs }));
       setPlayhead(0);
       if (kfs[0]) {
-        setRotX(kfs[0].rotX);
-        setRotY(kfs[0].rotY);
-        setScale(kfs[0].scale);
-        if (typeof kfs[0].x === "number" && setX) setX(kfs[0].x);
-        if (typeof kfs[0].y === "number" && setY) setY(kfs[0].y);
+        const p = { rotX: kfs[0].rotX, rotY: kfs[0].rotY, scale: kfs[0].scale };
+        if (typeof kfs[0].x === "number") p.x = kfs[0].x;
+        if (typeof kfs[0].y === "number") p.y = kfs[0].y;
+        updateItem(id, p);
       }
-      return;
+      return true;
     }
 
-    // APPEND: chain preset onto the timeline starting at the playhead (or at the
-    // last keyframe if it's later). Each preset gets `presetSegment` seconds.
+    // APPEND
     const segLen = Math.max(0.5, presetSegment);
-    const lastKeyT = keyframes.length ? Math.max(...keyframes.map((k) => k.t)) : 0;
+    const cur = tracks[id] || [];
+    const lastKeyT = cur.length ? Math.max(...cur.map((k) => k.t)) : 0;
     const startT = Math.max(playhead, lastKeyT);
-    const segDuration = segLen;
-
-    // Build preset relative to its own segment, then offset to startT.
-    const segKfs = preset.build(segDuration, start).map((k) => ({
+    const segKfs = preset.build(segLen, start).map((k) => ({
       ...k,
-      t: startT + Math.max(0, Math.min(segDuration, k.t)),
+      t: startT + Math.max(0, Math.min(segLen, k.t)),
     }));
 
-    // Auto-extend total duration if the chain runs past it.
-    const newEnd = startT + segDuration;
+    const newEnd = startT + segLen;
     if (newEnd > duration && setDuration) {
-      setDuration(Math.ceil(newEnd * 2) / 2); // round up to nearest 0.5s
+      setDuration(Math.ceil(newEnd * 2) / 2);
     }
 
-    setKeyframes((prev) => {
-      // Drop any keyframes inside the new segment to avoid clashing diamonds.
-      const kept = prev.filter((k) => k.t < startT - 0.01);
-      return [...kept, ...segKfs].sort((a, b) => a.t - b.t);
+    setTracks((prev) => {
+      const cur2 = prev[id] || [];
+      const kept = cur2.filter((k) => k.t < startT - 0.01);
+      return { ...prev, [id]: [...kept, ...segKfs].sort((a, b) => a.t - b.t) };
     });
     setPlayhead(startT);
+    return true;
   };
 
+  // ── Scrubbing ───────────────────────────────────────────────────────────
   const scrubTrackRef = useRef(null);
   const scrubbingRef = useRef(false);
 
@@ -228,13 +248,11 @@ const MockTimeline = forwardRef(function MockTimeline({
     try { e.currentTarget.setPointerCapture?.(e.pointerId); } catch {}
     scrubAtClientX(e.clientX);
   };
-
   const onScrubPointerMove = (e) => {
     if (!scrubbingRef.current) return;
     e.preventDefault();
     scrubAtClientX(e.clientX);
   };
-
   const onScrubPointerUp = (e) => {
     if (!scrubbingRef.current) return;
     scrubbingRef.current = false;
@@ -252,56 +270,23 @@ const MockTimeline = forwardRef(function MockTimeline({
     applyPresetById: (id, mode = "replace") => {
       const preset = MOTION_PRESETS.find((p) => p.id === id);
       if (!preset) return false;
-      const prevMode = presetMode;
-      setPresetMode(mode);
-      // Run apply with the requested mode by calling logic directly (avoids waiting on state)
-      const start = (typeof x === "number" && typeof y === "number") ? { x, y } : undefined;
-      if (mode === "replace") {
-        const kfs = preset.build(duration, start).map((k) => ({
-          ...k,
-          t: Math.max(0, Math.min(duration, k.t)),
-        }));
-        setKeyframes(kfs);
-        setPlayhead(0);
-        if (kfs[0]) {
-          setRotX(kfs[0].rotX); setRotY(kfs[0].rotY); setScale(kfs[0].scale);
-          if (typeof kfs[0].x === "number" && setX) setX(kfs[0].x);
-          if (typeof kfs[0].y === "number" && setY) setY(kfs[0].y);
-        }
-      } else {
-        const segLen = Math.max(0.5, presetSegment);
-        const lastKeyT = keyframes.length ? Math.max(...keyframes.map((k) => k.t)) : 0;
-        const startT = Math.max(playhead, lastKeyT);
-        const segKfs = preset.build(segLen, start).map((k) => ({
-          ...k,
-          t: startT + Math.max(0, Math.min(segLen, k.t)),
-        }));
-        const newEnd = startT + segLen;
-        if (newEnd > duration && setDuration) {
-          setDuration(Math.ceil(newEnd * 2) / 2);
-        }
-        setKeyframes((prev) => {
-          const kept = prev.filter((k) => k.t < startT - 0.01);
-          return [...kept, ...segKfs].sort((a, b) => a.t - b.t);
-        });
-        setPlayhead(startT);
-      }
-      // restore mode after
-      setTimeout(() => setPresetMode(prevMode), 0);
-      return true;
+      return applyPreset(preset, null, mode);
     },
     clearKeyframes: () => {
-      setKeyframes([{ t: 0, rotX: 0, rotY: 0, scale: 1 }]);
+      if (selected) removeTrack(selected.id);
+    },
+    clearAllTracks: () => {
+      setTracks({});
       setPlayhead(0);
     },
     recordVideo: () => recordVideo(),
-    getKeyframes: () => keyframes,
+    getKeyframes: () => selectedKfs,
     isRecording: () => recording,
   }));
 
-  // Record: walk timeline at fixed FPS, capture each frame, encode to WebM
+  // ── Recording ───────────────────────────────────────────────────────────
   const recordVideo = async () => {
-    if (!captureFrame || recording || keyframes.length < 2) return;
+    if (!captureFrame || recording || !hasAnyTrack) return;
     setRecording(true);
     setRecordProgress(0);
     setPlaying(false);
@@ -310,7 +295,6 @@ const MockTimeline = forwardRef(function MockTimeline({
     const totalFrames = Math.round(duration * fps);
 
     try {
-      // Get one frame to learn target size
       applyAtTime(0);
       await new Promise((r) => requestAnimationFrame(r));
       const first = await captureFrame();
@@ -318,8 +302,7 @@ const MockTimeline = forwardRef(function MockTimeline({
       const H = first.height;
 
       const out = document.createElement("canvas");
-      out.width = W;
-      out.height = H;
+      out.width = W; out.height = H;
       const ctx = out.getContext("2d");
       ctx.drawImage(first, 0, 0);
 
@@ -330,24 +313,20 @@ const MockTimeline = forwardRef(function MockTimeline({
       const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
       const chunks = [];
       recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
-
       const done = new Promise((resolve) => {
         recorder.onstop = () => resolve(new Blob(chunks, { type: "video/webm" }));
       });
-
       recorder.start();
 
       for (let i = 0; i <= totalFrames; i++) {
         const t = (i / totalFrames) * duration;
         setPlayhead(t);
         applyAtTime(t);
-        // wait two RAFs so React + transform settle
         await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
         const frame = await captureFrame();
         ctx.clearRect(0, 0, W, H);
         ctx.drawImage(frame, 0, 0, W, H);
         setRecordProgress(i / totalFrames);
-        // pace to fps
         await new Promise((r) => setTimeout(r, 1000 / fps));
       }
 
@@ -367,6 +346,19 @@ const MockTimeline = forwardRef(function MockTimeline({
     setRecordProgress(0);
   };
 
+  // ── Helpers for track row labels ────────────────────────────────────────
+  const labelFor = (item) => {
+    if (!item) return "—";
+    if (item.kind === "text") return `📝 ${(item.text || "Text").slice(0, 18)}`;
+    if (item.kind === "overlay") return `✨ Overlay`;
+    return `📱 ${item.device || "device"}`;
+  };
+
+  const trackColor = (idx) => {
+    const palette = ["#fb923c", "#22d3ee", "#a78bfa", "#34d399", "#f472b6", "#fbbf24", "#60a5fa"];
+    return palette[idx % palette.length];
+  };
+
   return (
     <div className="mt-4 rounded-2xl bg-black/60 border border-white/10 backdrop-blur-xl p-4 space-y-3">
       {/* Top row: transport + actions */}
@@ -382,17 +374,17 @@ const MockTimeline = forwardRef(function MockTimeline({
           </button>
           <button
             onClick={() => setPlaying((p) => !p)}
-            disabled={recording || keyframes.length < 2}
+            disabled={recording || !hasAnyTrack}
             className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-white text-black hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold"
           >
             {playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-            {playing ? "Pause" : "Play"}
+            {playing ? "Pause" : "Play All"}
           </button>
           <button
             onClick={addKeyframe}
-            disabled={recording}
+            disabled={recording || !selected}
             className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-orange-500/20 hover:bg-orange-500/30 border border-orange-500/40 text-orange-200 text-xs font-bold disabled:opacity-40"
-            title="Add keyframe at playhead with current rotation/scale"
+            title={selected ? "Add keyframe to selected item's track" : "Select an item first"}
           >
             <Plus className="w-3.5 h-3.5" /> Keyframe
           </button>
@@ -402,10 +394,7 @@ const MockTimeline = forwardRef(function MockTimeline({
           <label className="flex items-center gap-1.5 text-[10px] text-white/50">
             Duration
             <input
-              type="number"
-              min="1"
-              max="30"
-              step="0.5"
+              type="number" min="1" max="30" step="0.5"
               value={duration}
               onChange={(e) => setDuration(Number(e.target.value) || 1)}
               disabled={recording}
@@ -415,9 +404,9 @@ const MockTimeline = forwardRef(function MockTimeline({
           </label>
           <button
             onClick={recordVideo}
-            disabled={recording || keyframes.length < 2}
+            disabled={recording || !hasAnyTrack}
             className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-gradient-to-r from-red-500 to-pink-500 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold shadow-lg shadow-red-500/30"
-            title={keyframes.length < 2 ? "Add at least 2 keyframes" : "Record WebM video"}
+            title={!hasAnyTrack ? "Add keyframes to at least one item" : "Record WebM video"}
           >
             {recording ? (
               <>
@@ -433,19 +422,17 @@ const MockTimeline = forwardRef(function MockTimeline({
         </div>
       </div>
 
-      {/* Preset mode + segment length controls */}
+      {/* Preset mode + segment length */}
       <div className="flex items-center gap-2 flex-wrap">
         <div className="flex items-center gap-1 text-[10px] text-white/40 font-bold uppercase tracking-wider">
-          <Wand2 className="w-3 h-3" /> Presets
+          <Wand2 className="w-3 h-3" /> Presets {selected ? `→ ${labelFor(selected)}` : ""}
         </div>
         <div className="flex items-center bg-white/5 border border-white/10 rounded-lg p-0.5">
           <button
             onClick={() => setPresetMode("append")}
             disabled={recording}
             className={`flex items-center gap-1 px-2 h-6 rounded-md text-[10px] font-bold transition-colors ${
-              presetMode === "append"
-                ? "bg-orange-400 text-black"
-                : "text-white/60 hover:text-white"
+              presetMode === "append" ? "bg-orange-400 text-black" : "text-white/60 hover:text-white"
             }`}
             title="Chain preset onto the timeline at the current playhead"
           >
@@ -455,11 +442,9 @@ const MockTimeline = forwardRef(function MockTimeline({
             onClick={() => setPresetMode("replace")}
             disabled={recording}
             className={`flex items-center gap-1 px-2 h-6 rounded-md text-[10px] font-bold transition-colors ${
-              presetMode === "replace"
-                ? "bg-cyan-400 text-black"
-                : "text-white/60 hover:text-white"
+              presetMode === "replace" ? "bg-cyan-400 text-black" : "text-white/60 hover:text-white"
             }`}
-            title="Wipe timeline and apply preset across full duration"
+            title="Wipe this item's track and apply preset across full duration"
           >
             <Replace className="w-3 h-3" /> Replace
           </button>
@@ -468,10 +453,7 @@ const MockTimeline = forwardRef(function MockTimeline({
           <label className="flex items-center gap-1 text-[10px] text-white/50">
             Each
             <input
-              type="number"
-              min="0.5"
-              max="10"
-              step="0.5"
+              type="number" min="0.5" max="10" step="0.5"
               value={presetSegment}
               onChange={(e) => setPresetSegment(Number(e.target.value) || 1)}
               disabled={recording}
@@ -480,11 +462,14 @@ const MockTimeline = forwardRef(function MockTimeline({
             <span>s</span>
           </label>
         )}
-        <span className="text-[10px] text-white/30 ml-auto">
-          {presetMode === "append"
-            ? `Adds at ${Math.max(playhead, keyframes.length ? Math.max(...keyframes.map((k) => k.t)) : 0).toFixed(2)}s`
-            : "Replaces all keys"}
-        </span>
+        <button
+          onClick={() => { setTracks({}); setPlayhead(0); }}
+          disabled={recording || !hasAnyTrack}
+          className="ml-auto flex items-center gap-1 px-2 h-6 rounded-md bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-300 text-[10px] font-bold disabled:opacity-30"
+          title="Clear all tracks"
+        >
+          <Trash2 className="w-3 h-3" /> Clear All
+        </button>
       </div>
 
       {/* Motion preset chips */}
@@ -493,12 +478,10 @@ const MockTimeline = forwardRef(function MockTimeline({
           <button
             key={p.id}
             onClick={() => applyPreset(p)}
-            disabled={recording}
-            title={`${p.desc}${presetMode === "append" ? " — chains onto timeline" : " — replaces timeline"}`}
+            disabled={recording || !selected}
+            title={selected ? `${p.desc} → ${labelFor(selected)}` : "Select an item first"}
             className={`flex-shrink-0 px-2.5 h-7 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white/70 hover:text-white text-[11px] font-bold transition-colors disabled:opacity-40 ${
-              presetMode === "append"
-                ? "hover:border-orange-400/50"
-                : "hover:border-cyan-400/50"
+              presetMode === "append" ? "hover:border-orange-400/50" : "hover:border-cyan-400/50"
             }`}
           >
             {p.label}
@@ -513,72 +496,116 @@ const MockTimeline = forwardRef(function MockTimeline({
         onPointerMove={onScrubPointerMove}
         onPointerUp={onScrubPointerUp}
         onPointerCancel={onScrubPointerUp}
-        className="relative h-14 rounded-lg bg-white/[0.03] border border-white/10 cursor-pointer select-none overflow-hidden touch-none"
+        className="relative h-8 rounded-lg bg-white/[0.03] border border-white/10 cursor-pointer select-none overflow-hidden touch-none"
         style={{ touchAction: "none" }}
       >
-        {/* Tick marks */}
-        <div className="absolute inset-0 flex">
-          {Array.from({ length: Math.floor(duration) + 1 }).map((_, i) => (
-            <div
-              key={i}
-              className="absolute top-0 bottom-0 border-l border-white/10 text-[9px] text-white/30 pl-1 pt-0.5"
-              style={{ left: `${(i / duration) * 100}%` }}
-            >
-              {i}s
-            </div>
-          ))}
-        </div>
-
-        {/* Keyframe diamonds */}
-        {keyframes.map((kf, i) => (
-          <button
+        {Array.from({ length: Math.floor(duration) + 1 }).map((_, i) => (
+          <div
             key={i}
-            onClick={(e) => { e.stopPropagation(); jumpToKey(kf); }}
-            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-orange-400 border border-orange-200 rotate-45 hover:scale-125 transition-transform shadow-md shadow-orange-500/50 z-10"
-            style={{ left: `calc(${(kf.t / duration) * 100}% - 6px)` }}
-            title={`Keyframe @ ${kf.t.toFixed(2)}s · X${Math.round(kf.rotX)}° Y${Math.round(kf.rotY)}° S${Math.round(kf.scale * 100)}%`}
-          />
+            className="absolute top-0 bottom-0 border-l border-white/10 text-[9px] text-white/30 pl-1 pt-0.5"
+            style={{ left: `${(i / duration) * 100}%` }}
+          >
+            {i}s
+          </div>
         ))}
-
-        {/* Playhead */}
         <div
           className="absolute top-0 bottom-0 w-0.5 bg-cyan-400 z-20 pointer-events-none"
           style={{ left: `${(playhead / duration) * 100}%`, boxShadow: "0 0 8px rgba(34,211,238,0.8)" }}
         >
-          {/* Grabbable handle (visual only — track captures pointer) */}
-          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-5 h-5 bg-cyan-400 rounded-full shadow-lg shadow-cyan-500/60 ring-2 ring-white/30" />
-          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 bg-cyan-400 rounded-full shadow-lg shadow-cyan-500/60 ring-2 ring-white/30" />
+          <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3.5 h-3.5 bg-cyan-400 rounded-full shadow-lg shadow-cyan-500/60 ring-2 ring-white/30" />
         </div>
       </div>
 
-      {/* Keyframe list */}
-      {keyframes.length > 0 && (
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-          <div className="flex items-center gap-1 text-[10px] text-white/40 font-bold uppercase tracking-wider flex-shrink-0">
-            <Film className="w-3 h-3" /> {keyframes.length} key{keyframes.length === 1 ? "" : "s"}
-          </div>
-          {keyframes.map((kf, i) => (
-            <div
-              key={i}
-              className="flex-shrink-0 flex items-center gap-1.5 pl-2 pr-1 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] text-white/70 font-mono"
-            >
-              <button onClick={() => jumpToKey(kf)} className="hover:text-white">
-                {kf.t.toFixed(2)}s · {Math.round(kf.rotY)}°
-              </button>
-              <button
-                onClick={() => removeKeyframe(i)}
-                className="w-4 h-4 flex items-center justify-center rounded hover:bg-red-500/30 text-white/40 hover:text-red-300"
-                title="Delete keyframe"
+      {/* Multi-track lanes */}
+      {trackEntries.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-white/10 bg-white/[0.02] p-4 text-center text-white/40 text-[11px]">
+          Select an item, then click a preset to create its track. Each item gets its own animation lane.
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          {trackEntries.map(([itemId, kfs], rowIdx) => {
+            const item = items.find((i) => i.id === itemId);
+            const isSelected = itemId === selectedId;
+            const hidden = !!hiddenTracks[itemId];
+            const color = trackColor(rowIdx);
+            return (
+              <div
+                key={itemId}
+                className={`flex items-stretch gap-1.5 rounded-lg border transition-colors ${
+                  isSelected ? "border-cyan-400/60 bg-cyan-400/5" : "border-white/10 bg-white/[0.02]"
+                }`}
               >
-                <Trash2 className="w-2.5 h-2.5" />
-              </button>
-            </div>
-          ))}
+                {/* Track header */}
+                <div className="flex items-center gap-1 px-2 py-1.5 w-36 flex-shrink-0 border-r border-white/10">
+                  <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: color }} />
+                  <span className="text-[10px] font-bold text-white/80 truncate flex-1" title={labelFor(item)}>
+                    {labelFor(item)}
+                  </span>
+                  <button
+                    onClick={() => toggleTrackVisibility(itemId)}
+                    className="w-5 h-5 flex items-center justify-center rounded hover:bg-white/10 text-white/50 hover:text-white"
+                    title={hidden ? "Enable track" : "Mute track"}
+                  >
+                    {hidden ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                  </button>
+                  <button
+                    onClick={() => removeTrack(itemId)}
+                    className="w-5 h-5 flex items-center justify-center rounded hover:bg-red-500/30 text-white/50 hover:text-red-300"
+                    title="Delete track"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+
+                {/* Track lane */}
+                <div className={`relative flex-1 h-8 my-0.5 rounded ${hidden ? "opacity-30" : ""}`}
+                     style={{ background: `${color}10` }}>
+                  {/* Bar from first to last keyframe */}
+                  {kfs.length >= 2 && (() => {
+                    const sorted = [...kfs].sort((a, b) => a.t - b.t);
+                    const startPct = (sorted[0].t / duration) * 100;
+                    const endPct = (sorted[sorted.length - 1].t / duration) * 100;
+                    return (
+                      <div
+                        className="absolute top-1/2 -translate-y-1/2 h-1.5 rounded-full"
+                        style={{
+                          left: `${startPct}%`,
+                          width: `${Math.max(0, endPct - startPct)}%`,
+                          background: color,
+                          opacity: 0.55,
+                        }}
+                      />
+                    );
+                  })()}
+                  {/* Keyframe diamonds */}
+                  {kfs.map((kf, i) => (
+                    <button
+                      key={i}
+                      onClick={(e) => { e.stopPropagation(); jumpToKey(itemId, kf); }}
+                      onContextMenu={(e) => { e.preventDefault(); removeKeyframe(itemId, i); }}
+                      className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rotate-45 hover:scale-150 transition-transform shadow-md z-10 ring-1 ring-white/40"
+                      style={{
+                        left: `calc(${(kf.t / duration) * 100}% - 5px)`,
+                        background: color,
+                        boxShadow: `0 0 6px ${color}80`,
+                      }}
+                      title={`${kf.t.toFixed(2)}s · X${Math.round(kf.rotX)}° Y${Math.round(kf.rotY)}° S${Math.round(kf.scale * 100)}% — right-click to delete`}
+                    />
+                  ))}
+                  {/* Playhead overlay */}
+                  <div
+                    className="absolute top-0 bottom-0 w-px bg-cyan-400/60 pointer-events-none"
+                    style={{ left: `${(playhead / duration) * 100}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
       <p className="text-[10px] text-white/30">
-        💡 <span className="text-orange-300">Chain</span> mode stacks presets — click multiple presets in a row to build sequences (e.g. <em>Slide In → Chat Zoom → Words Pop</em>). Click a keyframe diamond first to insert there. Output: WebM video.
+        💡 Multi-track: every item with keyframes gets its own lane and animates in parallel — like a real video editor. Select an item → click a preset to add its track. Right-click a diamond to delete it. Toggle the eye to mute a lane.
       </p>
     </div>
   );

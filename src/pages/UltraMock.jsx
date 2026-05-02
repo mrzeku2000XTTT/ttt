@@ -312,20 +312,9 @@ export default function UltraMockPage() {
     },
   }), [items, selectedId, updateItem, removeItem]);
 
-  // Timeline animates the SELECTED device's rotX/rotY/scale.
-  // Text layers don't use the rotation timeline — hidden when text is selected.
-  const timelineProps = (selected && selected.kind !== "text") ? {
-    rotX: selected.rotX,
-    rotY: selected.rotY,
-    scale: selected.scale,
-    x: selected.x,
-    y: selected.y,
-    setRotX: (v) => updateItem(selected.id, { rotX: v }),
-    setRotY: (v) => updateItem(selected.id, { rotY: v }),
-    setScale: (v) => updateItem(selected.id, { scale: v }),
-    setX: (v) => updateItem(selected.id, { x: v }),
-    setY: (v) => updateItem(selected.id, { y: v }),
-  } : null;
+  // Multi-track timeline: every item gets its own animation lane.
+  // Always render — even with no selection — so existing tracks remain visible.
+  const showTimeline = items.length > 0;
 
   // Auto-open the controls bottom sheet on mobile when an item is selected
   const openMobileControls = useCallback(() => {
@@ -476,11 +465,13 @@ export default function UltraMockPage() {
               <span>Tap a device to select · Buttons above to add more</span>
             </div>
 
-            {/* Timeline only animates the selected device */}
-            {timelineProps && (
+            {/* Multi-track timeline — every item with keyframes gets its own lane */}
+            {showTimeline && (
               <MockTimeline
                 ref={timelineRef}
-                {...timelineProps}
+                items={items}
+                selectedId={selectedId}
+                updateItem={updateItem}
                 duration={duration}
                 setDuration={setDuration}
                 captureFrame={captureFrame}
