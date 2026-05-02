@@ -102,7 +102,11 @@ export default function UltraMockPage() {
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
   const [overlayPickerOpen, setOverlayPickerOpen] = useState(false);
   const [locked, setLocked] = useState(false);
-  const [pinchEnabled, setPinchEnabled] = useState(false);
+  // Pinch-to-zoom on by default on mobile so users can frame the canvas with 2 fingers
+  const [pinchEnabled, setPinchEnabled] = useState(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) return true;
+    return false;
+  });
   const canvasRef = useRef(null);
   const timelineRef = useRef(null);
 
@@ -490,7 +494,7 @@ export default function UltraMockPage() {
 
             <div className="sm:hidden flex items-center justify-center gap-1.5 text-white/30 text-[10px] font-medium mt-2 px-2 text-center">
               <ImageIcon className="w-3 h-3 flex-shrink-0" />
-              <span>Tap a device to select · Buttons above to add more</span>
+              <span>Pinch to zoom · Drag empty area to pan · Tap device to select</span>
             </div>
 
             {/* Multi-track timeline — every item with keyframes gets its own lane */}
