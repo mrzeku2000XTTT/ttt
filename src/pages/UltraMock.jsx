@@ -154,10 +154,14 @@ export default function UltraMockPage() {
           <ArrowLeft className="w-4 h-4" /> Back
         </Link>
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-400 via-pink-500 to-purple-600 flex items-center justify-center shadow-lg">
-            <Sparkles className="w-3.5 h-3.5 text-white" />
+          <div className="w-7 h-7 rounded-lg overflow-hidden shadow-lg ring-1 ring-white/20">
+            <img
+              src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/15c852849_generated_image.png"
+              alt="Cháoxiào"
+              className="w-full h-full object-cover"
+            />
           </div>
-          <span className="text-white font-black text-base tracking-tight">UltraMock</span>
+          <span className="text-white font-black text-base tracking-tight">Cháoxiào <span className="text-white/40 font-normal text-[11px] ml-1">嘲笑</span></span>
           <span className="hidden sm:inline-flex px-2 py-0.5 bg-white/5 border border-white/10 rounded-full text-white/50 text-[9px] font-bold tracking-widest uppercase">
             Multi-Device · Video
           </span>
