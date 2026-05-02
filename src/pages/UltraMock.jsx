@@ -1,49 +1,84 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Upload, Download, ImageIcon, Sparkles, Loader2, RefreshCw } from "lucide-react";
+import { ArrowLeft, Download, ImageIcon, Sparkles, Loader2, RefreshCw, Plus } from "lucide-react";
 import html2canvas from "html2canvas";
-import DeviceFrame from "@/components/ultramock/DeviceFrame";
-import MockBackground from "@/components/ultramock/MockBackground";
+import { BACKGROUND_PRESETS } from "@/components/ultramock/MockBackground";
 import MockControls from "@/components/ultramock/MockControls";
-import Orbit3D from "@/components/ultramock/Orbit3D";
 import MockTimeline from "@/components/ultramock/MockTimeline";
+import FreeCanvas from "@/components/ultramock/FreeCanvas";
+
+const newId = () => `dev_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+const makeItem = (partial = {}) => ({
+  id: newId(),
+  device: "iphone",
+  media: null,
+  x: 50, y: 50,
+  scale: 1,
+  rotX: 0,
+  rotY: 0,
+  ...partial,
+});
 
 export default function UltraMockPage() {
-  const [screenshot, setScreenshot] = useState(null);
-  const [device, setDevice] = useState("iphone");
+  const [items, setItems] = useState([makeItem()]);
+  const [selectedId, setSelectedId] = useState(null);
+  const [placementMode, setPlacementMode] = useState(false);
   const [background, setBackground] = useState("sunset");
-  const [padding, setPadding] = useState(80);
-  const [scale, setScale] = useState(1);
-  const [rotX, setRotX] = useState(0);
-  const [rotY, setRotY] = useState(0);
+  const [padding, setPadding] = useState(60);
   const [duration, setDuration] = useState(4);
   const [exporting, setExporting] = useState(false);
   const canvasRef = useRef(null);
-  const fileRef = useRef(null);
 
-  const onUpload = useCallback((file) => {
-    if (!file || !file.type?.startsWith("image/")) return;
-    const reader = new FileReader();
-    reader.onload = (e) => setScreenshot(e.target.result);
-    reader.readAsDataURL(file);
+  const selected = items.find((i) => i.id === selectedId) || null;
+
+  const backgroundCss = useMemo(() => {
+    return (BACKGROUND_PRESETS.find((b) => b.id === background) || BACKGROUND_PRESETS[0]).css;
+  }, [background]);
+
+  const updateItem = useCallback((id, partial) => {
+    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...partial } : it)));
   }, []);
 
-  const onFileChange = (e) => onUpload(e.target.files?.[0]);
-  const onDrop = (e) => {
-    e.preventDefault();
-    onUpload(e.dataTransfer?.files?.[0]);
-  };
+  const addAt = useCallback((x, y) => {
+    const item = makeItem({ x, y });
+    setItems((prev) => [...prev, item]);
+    setSelectedId(item.id);
+    setPlacementMode(false);
+  }, []);
 
-  const handleExport = async () => {
-    if (!canvasRef.current || !screenshot) return;
+  const removeItem = useCallback((id) => {
+    setItems((prev) => prev.filter((i) => i.id !== id));
+    setSelectedId((cur) => (cur === id ? null : cur));
+  }, []);
+
+  // Upload media (image OR video) into the selected item
+  const onUploadMedia = useCallback((file) => {
+    if (!selectedId) return;
+    const isVideo = file.type.startsWith("video/");
+    const isImage = file.type.startsWith("image/");
+    if (!isVideo && !isImage) {
+      alert("Only images or videos (MP4/WebM/MOV) are supported.");
+      return;
+    }
+    // Use object URL for video so it streams smoothly; data URL for image
+    if (isVideo) {
+      const url = URL.createObjectURL(file);
+      updateItem(selectedId, { media: { url, type: "video", name: file.name } });
+    } else {
+      const reader = new FileReader();
+      reader.onload = (e) => updateItem(selectedId, { media: { url: e.target.result, type: "image", name: file.name } });
+      reader.readAsDataURL(file);
+    }
+  }, [selectedId, updateItem]);
+
+  const handleExportPNG = async () => {
+    if (!canvasRef.current) return;
     setExporting(true);
     try {
       const canvas = await html2canvas(canvasRef.current, {
-        backgroundColor: null,
-        scale: 2,
-        useCORS: true,
-        logging: false,
+        backgroundColor: null, scale: 2, useCORS: true, logging: false,
       });
       const link = document.createElement("a");
       link.download = `ultramock-${Date.now()}.png`;
@@ -51,31 +86,37 @@ export default function UltraMockPage() {
       link.click();
     } catch (err) {
       console.error("Export failed:", err);
-      alert("Export failed. Try a different image.");
+      alert("Export failed. Try simpler media.");
     }
     setExporting(false);
   };
 
-  // Used by the timeline recorder — returns the rendered preview as a canvas
+  // Capture frame for the timeline recorder
   const captureFrame = useCallback(async () => {
     if (!canvasRef.current) return null;
     return await html2canvas(canvasRef.current, {
-      backgroundColor: null,
-      scale: 1.5,
-      useCORS: true,
-      logging: false,
+      backgroundColor: null, scale: 1.5, useCORS: true, logging: false,
     });
   }, []);
 
   const reset = () => {
-    setScreenshot(null);
-    setDevice("iphone");
+    setItems([makeItem()]);
+    setSelectedId(null);
+    setPlacementMode(false);
     setBackground("sunset");
-    setPadding(80);
-    setScale(1);
-    setRotX(0);
-    setRotY(0);
+    setPadding(60);
   };
+
+  // Timeline animates the SELECTED item's rotX/rotY/scale.
+  // If nothing is selected, timeline is hidden.
+  const timelineProps = selected ? {
+    rotX: selected.rotX,
+    rotY: selected.rotY,
+    scale: selected.scale,
+    setRotX: (v) => updateItem(selected.id, { rotX: v }),
+    setRotY: (v) => updateItem(selected.id, { rotY: v }),
+    setScale: (v) => updateItem(selected.id, { scale: v }),
+  } : null;
 
   return (
     <div className="fixed inset-0 bg-zinc-950 overflow-y-auto">
@@ -90,21 +131,30 @@ export default function UltraMockPage() {
           </div>
           <span className="text-white font-black text-base tracking-tight">UltraMock</span>
           <span className="hidden sm:inline-flex px-2 py-0.5 bg-white/5 border border-white/10 rounded-full text-white/50 text-[9px] font-bold tracking-widest uppercase">
-            Cinematic Mockups
+            Multi-Device · Video
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {screenshot && (
-            <button
-              onClick={reset}
-              className="hidden sm:flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-xs font-bold"
-            >
-              <RefreshCw className="w-3.5 h-3.5" /> Reset
-            </button>
-          )}
           <button
-            onClick={handleExport}
-            disabled={!screenshot || exporting}
+            onClick={() => setPlacementMode((p) => !p)}
+            className={`flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs font-bold transition-all ${
+              placementMode
+                ? "bg-cyan-400 text-black shadow-lg shadow-cyan-500/30"
+                : "bg-white/5 hover:bg-white/10 border border-white/10 text-white/70"
+            }`}
+            title="Click on the canvas to drop a new device"
+          >
+            <Plus className="w-3.5 h-3.5" /> Add Device
+          </button>
+          <button
+            onClick={reset}
+            className="hidden sm:flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-xs font-bold"
+          >
+            <RefreshCw className="w-3.5 h-3.5" /> Reset
+          </button>
+          <button
+            onClick={handleExportPNG}
+            disabled={exporting}
             className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-gradient-to-r from-orange-400 to-pink-500 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold shadow-lg shadow-pink-500/30"
           >
             {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
@@ -113,68 +163,56 @@ export default function UltraMockPage() {
         </div>
       </nav>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-0">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-0">
         {/* Canvas */}
-        <div className="p-4 lg:p-8 flex items-center justify-center min-h-[60vh]">
-          {!screenshot ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={onDrop}
-              onClick={() => fileRef.current?.click()}
-              className="w-full max-w-2xl aspect-[16/10] rounded-3xl border-2 border-dashed border-white/15 hover:border-white/30 bg-white/[0.02] hover:bg-white/[0.04] cursor-pointer flex flex-col items-center justify-center gap-3 transition-all"
-            >
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-400 via-pink-500 to-purple-600 flex items-center justify-center shadow-2xl shadow-pink-500/30">
-                <Upload className="w-6 h-6 text-white" />
-              </div>
-              <div className="text-center">
-                <div className="text-white font-black text-lg mb-1">Drop a screenshot</div>
-                <div className="text-white/50 text-xs">or click to upload · PNG, JPG, WebP</div>
-              </div>
-              <input ref={fileRef} type="file" accept="image/*" onChange={onFileChange} className="hidden" />
-            </motion.div>
-          ) : (
-            <div className="w-full max-w-4xl">
-              <div className="rounded-3xl overflow-hidden ring-1 ring-white/10 shadow-2xl">
-                <MockBackground ref={canvasRef} background={background} padding={padding}>
-                  <Orbit3D rotX={rotX} rotY={rotY} setRotX={setRotX} setRotY={setRotY}>
-                    <DeviceFrame device={device} screenshot={screenshot} scale={scale} />
-                  </Orbit3D>
-                </MockBackground>
-              </div>
-              <div className="flex items-center justify-center gap-1.5 text-white/30 text-[10px] font-medium mt-3">
-                <ImageIcon className="w-3 h-3" />
-                Drag to rotate · Double-click to reset · Exports at 2×
-              </div>
-
-              {/* Animation timeline */}
-              <MockTimeline
-                rotX={rotX} rotY={rotY} scale={scale}
-                setRotX={setRotX} setRotY={setRotY} setScale={setScale}
-                duration={duration} setDuration={setDuration}
-                captureFrame={captureFrame}
+        <div className="p-4 lg:p-8 flex flex-col items-center min-h-[60vh]">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full max-w-5xl"
+          >
+            <div className="rounded-3xl overflow-hidden ring-1 ring-white/10 shadow-2xl">
+              <FreeCanvas
+                ref={canvasRef}
+                items={items}
+                selectedId={selectedId}
+                setSelectedId={setSelectedId}
+                onUpdateItem={updateItem}
+                onAddAt={addAt}
+                onRemove={removeItem}
+                background={background}
+                padding={padding}
+                placementMode={placementMode}
+                backgroundCss={backgroundCss}
               />
             </div>
-          )}
+            <div className="flex items-center justify-center gap-1.5 text-white/30 text-[10px] font-medium mt-3">
+              <ImageIcon className="w-3 h-3" />
+              Click "+ Add Device" then click the canvas · Drag devices freely · Animate the selected one below
+            </div>
+
+            {/* Timeline only animates the selected device */}
+            {timelineProps && (
+              <MockTimeline
+                {...timelineProps}
+                duration={duration}
+                setDuration={setDuration}
+                captureFrame={captureFrame}
+              />
+            )}
+          </motion.div>
         </div>
 
         {/* Sidebar */}
         <aside className="border-t lg:border-t-0 lg:border-l border-white/10 bg-black/40 backdrop-blur-xl p-5 lg:sticky lg:top-[57px] lg:h-[calc(100vh-57px)] lg:overflow-y-auto">
-          {!screenshot ? (
-            <div className="text-white/40 text-xs text-center py-12">
-              Upload a screenshot to start customizing.
-            </div>
-          ) : (
-            <MockControls
-              device={device} setDevice={setDevice}
-              background={background} setBackground={setBackground}
-              padding={padding} setPadding={setPadding}
-              scale={scale} setScale={setScale}
-              rotX={rotX} setRotX={setRotX}
-              rotY={rotY} setRotY={setRotY}
-            />
-          )}
+          <MockControls
+            background={background} setBackground={setBackground}
+            padding={padding} setPadding={setPadding}
+            selected={selected}
+            onUpdate={(partial) => selected && updateItem(selected.id, partial)}
+            onRemove={() => selected && removeItem(selected.id)}
+            onUploadMedia={onUploadMedia}
+          />
         </aside>
       </div>
     </div>
