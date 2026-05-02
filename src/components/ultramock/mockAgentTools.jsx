@@ -1,0 +1,89 @@
+// Tool definitions + executor for the Cháoxiào AI agent.
+// The agent emits a JSON plan of tool calls; this file knows how to run them
+// against the page's state.
+import { MOTION_PRESETS } from "./motionPresets";
+
+export const TOOL_LIST = [
+  { name: "add_device", desc: "Add a new device to the canvas", args: "{ device?: 'iphone'|'android'|'ipad'|'macbook'|'imac'|'browser'|'none', x?: 0-100, y?: 0-100 }" },
+  { name: "add_text", desc: "Add a text layer", args: "{ text: string, x?: 0-100, y?: 0-100, fontSize?: 14-120, color?: hex, animation?: 'none'|'typewriter' }" },
+  { name: "update_item", desc: "Update the currently-selected item (or by id) — change device type, scale, rotation, corner radius, position, text, color, animation, etc.", args: "{ id?: string, device?: ..., scale?: 0.3-1.4, rotX?: -180..180, rotY?: -180..180, cornerRadius?: 0-2, x?: 0-100, y?: 0-100, text?: string, fontSize?: number, color?: hex, fontWeight?: 400|700|900, animation?: 'none'|'typewriter', boxWidth?: 15-100 }" },
+  { name: "select_item", desc: "Select an item by id or by index (0-based)", args: "{ id?: string, index?: number }" },
+  { name: "remove_item", desc: "Remove an item by id (or selected if no id)", args: "{ id?: string }" },
+  { name: "set_background", desc: "Change the canvas background preset", args: "{ background: 'sunset'|'ocean'|'forest'|'peach'|'mono'|'ivory'|'midnight'|'candy'|'white'|'black' }" },
+  { name: "set_padding", desc: "Change canvas padding in pixels (20-160)", args: "{ padding: number }" },
+  { name: "set_duration", desc: "Set total animation duration in seconds (1-30)", args: "{ seconds: number }" },
+  { name: "apply_preset", desc: "Apply a motion preset to the timeline of the SELECTED device. mode 'replace' wipes & sets across full duration; 'chain' appends at playhead.", args: "{ preset_id: string, mode?: 'replace'|'chain' }" },
+  { name: "chain_presets", desc: "Apply multiple presets in sequence (chain mode). Great for storytelling: e.g. ['slide-in-left','chat-zoom','words-pop'].", args: "{ preset_ids: string[] }" },
+  { name: "clear_timeline", desc: "Clear all keyframes from the selected device's timeline", args: "{}" },
+  { name: "render_mp4", desc: "Render and download the final WebM video. Requires at least 2 keyframes on the selected device.", args: "{}" },
+];
+
+// Build the system prompt with full preset knowledge
+export function buildSystemPrompt(stateSnapshot) {
+  const presetCatalog = MOTION_PRESETS
+    .map((p) => `  - ${p.id}: ${p.label} — ${p.desc}`)
+    .join("\n");
+
+  const toolCatalog = TOOL_LIST
+    .map((t) => `  - ${t.name}(${t.args}): ${t.desc}`)
+    .join("\n");
+
+  return `You are Cháoxiào (嘲笑), an expert AI motion designer assistant inside a 3D device mockup tool. You help humans build cinematic device animations and render them to MP4.
+
+You have VISION — you can see a screenshot of the user's canvas in each turn. Use it to make smart decisions.
+
+You can see and edit:
+- Devices on canvas (iPhone, Android, iPad, MacBook, iMac, browser, bare frame)
+- Text layers (with optional typewriter animation)
+- Background gradients and padding
+- Per-device 3D rotation, scale, position, corner radius
+- A motion timeline with keyframes that animates the SELECTED device
+- A library of motion presets you can replace OR chain together
+
+CURRENT STATE (live):
+${JSON.stringify(stateSnapshot, null, 2)}
+
+AVAILABLE MOTION PRESETS (use the id with apply_preset / chain_presets):
+${presetCatalog}
+
+AVAILABLE TOOLS:
+${toolCatalog}
+
+RESPONSE FORMAT — strict JSON only:
+{
+  "message": "Brief, friendly explanation (1-2 sentences) of what you're doing",
+  "tools": [
+    { "name": "tool_name", "args": { ... } }
+  ]
+}
+
+RULES:
+- Always reply with valid JSON. No markdown. No code fences. No prose outside the JSON.
+- Tools execute in order. Plan multi-step edits as a list.
+- Most preset/timeline tools act on the SELECTED item. If nothing is selected and the user wants animation, select_item first (index 0 if needed).
+- For "render an mp4" / "make a video" / "export": apply at least one preset (or use chain_presets) THEN call render_mp4.
+- Prefer chain_presets for cinematic sequences (e.g. "slide-in-left" → "chat-zoom" → "words-pop").
+- Be decisive. Don't ask clarifying questions for simple requests — just do the best version.
+- Keep "message" short — the user sees the canvas update visually.`;
+}
+
+// Execute a tool call list against the page handlers
+export async function runTools(tools, handlers) {
+  const results = [];
+  for (const call of tools || []) {
+    try {
+      const fn = handlers[call.name];
+      if (!fn) {
+        results.push({ name: call.name, ok: false, error: "unknown tool" });
+        continue;
+      }
+      const out = await fn(call.args || {});
+      results.push({ name: call.name, ok: true, out });
+      // small delay so React state updates settle between tools
+      await new Promise((r) => setTimeout(r, 80));
+    } catch (e) {
+      results.push({ name: call.name, ok: false, error: e.message });
+    }
+  }
+  return results;
+}

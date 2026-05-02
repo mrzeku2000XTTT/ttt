@@ -1,13 +1,14 @@
 import React, { useState, useRef, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Download, ImageIcon, Sparkles, Loader2, RefreshCw, Plus, Type } from "lucide-react";
+import { ArrowLeft, Download, ImageIcon, Sparkles, Loader2, RefreshCw, Plus, Type, Bot } from "lucide-react";
 import html2canvas from "html2canvas";
 import { BACKGROUND_PRESETS } from "@/components/ultramock/MockBackground";
 import MockControls from "@/components/ultramock/MockControls";
 import MockTimeline from "@/components/ultramock/MockTimeline";
 import FreeCanvas from "@/components/ultramock/FreeCanvas";
 import TextControls from "@/components/ultramock/TextControls";
+import MockAgent from "@/components/ultramock/MockAgent";
 
 const newId = () => `dev_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
@@ -48,7 +49,9 @@ export default function UltraMockPage() {
   const [padding, setPadding] = useState(60);
   const [duration, setDuration] = useState(4);
   const [exporting, setExporting] = useState(false);
+  const [agentOpen, setAgentOpen] = useState(false);
   const canvasRef = useRef(null);
+  const timelineRef = useRef(null);
 
   const selected = items.find((i) => i.id === selectedId) || null;
 
@@ -133,6 +136,98 @@ export default function UltraMockPage() {
     setPadding(60);
   };
 
+  // Snapshot of state for the agent's vision/context
+  const getStateSnapshot = useCallback(() => ({
+    background,
+    padding,
+    duration,
+    selected_id: selectedId,
+    items: items.map((it) => ({
+      id: it.id,
+      kind: it.kind,
+      ...(it.kind === "text"
+        ? { text: it.text, x: it.x, y: it.y, fontSize: it.fontSize, color: it.color, animation: it.animation, boxWidth: it.boxWidth }
+        : { device: it.device, x: it.x, y: it.y, scale: it.scale, rotX: it.rotX, rotY: it.rotY, cornerRadius: it.cornerRadius, has_media: !!it.media }),
+    })),
+  }), [items, selectedId, background, padding, duration]);
+
+  // Agent tool handlers — bind tool names → page state mutations
+  const agentHandlers = useMemo(() => ({
+    add_device: (a = {}) => {
+      const it = makeItem({
+        device: a.device || "iphone",
+        x: typeof a.x === "number" ? a.x : 50,
+        y: typeof a.y === "number" ? a.y : 50,
+      });
+      setItems((prev) => [...prev, it]);
+      setSelectedId(it.id);
+      return { id: it.id };
+    },
+    add_text: (a = {}) => {
+      const it = makeText({
+        text: a.text || "Your text",
+        x: typeof a.x === "number" ? a.x : 50,
+        y: typeof a.y === "number" ? a.y : 12,
+        fontSize: a.fontSize || 48,
+        color: a.color || "#ffffff",
+        animation: a.animation || "none",
+      });
+      setItems((prev) => [...prev, it]);
+      setSelectedId(it.id);
+      return { id: it.id };
+    },
+    update_item: (a = {}) => {
+      const id = a.id || selectedId;
+      if (!id) throw new Error("no item selected");
+      const { id: _ignore, ...rest } = a;
+      updateItem(id, rest);
+      return { id };
+    },
+    select_item: (a = {}) => {
+      let id = a.id;
+      if (!id && typeof a.index === "number" && items[a.index]) id = items[a.index].id;
+      if (!id) throw new Error("item not found");
+      setSelectedId(id);
+      return { id };
+    },
+    remove_item: (a = {}) => {
+      const id = a.id || selectedId;
+      if (!id) throw new Error("no item to remove");
+      removeItem(id);
+      return { id };
+    },
+    set_background: (a = {}) => { if (a.background) setBackground(a.background); return { background: a.background }; },
+    set_padding: (a = {}) => { if (typeof a.padding === "number") setPadding(Math.max(20, Math.min(160, a.padding))); return { padding: a.padding }; },
+    set_duration: (a = {}) => { if (typeof a.seconds === "number") setDuration(Math.max(1, Math.min(30, a.seconds))); return { duration: a.seconds }; },
+    apply_preset: (a = {}) => {
+      if (!timelineRef.current) throw new Error("no timeline available — select a device first");
+      const ok = timelineRef.current.applyPresetById(a.preset_id, a.mode === "chain" ? "append" : "replace");
+      if (!ok) throw new Error(`unknown preset: ${a.preset_id}`);
+      return { applied: a.preset_id };
+    },
+    chain_presets: async (a = {}) => {
+      if (!timelineRef.current) throw new Error("no timeline available — select a device first");
+      const ids = Array.isArray(a.preset_ids) ? a.preset_ids : [];
+      // First clear, then chain in order
+      timelineRef.current.clearKeyframes();
+      const applied = [];
+      for (let i = 0; i < ids.length; i++) {
+        // first one in replace, then append the rest
+        const mode = i === 0 ? "replace" : "append";
+        const ok = timelineRef.current.applyPresetById(ids[i], mode);
+        if (ok) applied.push(ids[i]);
+        await new Promise((r) => setTimeout(r, 120));
+      }
+      return { applied };
+    },
+    clear_timeline: () => { timelineRef.current?.clearKeyframes(); return { ok: true }; },
+    render_mp4: async () => {
+      if (!timelineRef.current) throw new Error("no timeline");
+      await timelineRef.current.recordVideo();
+      return { rendered: true };
+    },
+  }), [items, selectedId, updateItem, removeItem]);
+
   // Timeline animates the SELECTED device's rotX/rotY/scale.
   // Text layers don't use the rotation timeline — hidden when text is selected.
   const timelineProps = (selected && selected.kind !== "text") ? {
@@ -169,6 +264,13 @@ export default function UltraMockPage() {
           </span>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setAgentOpen(true)}
+            className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-gradient-to-r from-fuchsia-500 to-orange-500 hover:opacity-90 text-white text-xs font-bold shadow-lg shadow-fuchsia-500/30"
+            title="Open Cháoxiào AI agent — describes what you want, it builds it"
+          >
+            <Bot className="w-3.5 h-3.5" /> Ask AI
+          </button>
           <button
             onClick={() => setPlacementMode((p) => !p)}
             className={`flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs font-bold transition-all ${
@@ -235,6 +337,7 @@ export default function UltraMockPage() {
             {/* Timeline only animates the selected device */}
             {timelineProps && (
               <MockTimeline
+                ref={timelineRef}
                 {...timelineProps}
                 duration={duration}
                 setDuration={setDuration}
@@ -264,6 +367,14 @@ export default function UltraMockPage() {
           )}
         </aside>
       </div>
+
+      <MockAgent
+        open={agentOpen}
+        onClose={() => setAgentOpen(false)}
+        getStateSnapshot={getStateSnapshot}
+        canvasRef={canvasRef}
+        handlers={agentHandlers}
+      />
     </div>
   );
 }

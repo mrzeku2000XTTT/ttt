@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
 import { Plus, Play, Pause, Trash2, Video, Loader2, SkipBack, Film, Wand2, Layers, Replace } from "lucide-react";
 import { MOTION_PRESETS } from "./motionPresets";
 
@@ -9,15 +9,21 @@ import { MOTION_PRESETS } from "./motionPresets";
  * - Play interpolates and writes back to parent state every frame
  * - Record uses MediaRecorder over a copy <canvas> filled by html2canvas frames
  *   (we accept the html2canvas/getCanvasFrame callback from parent for accuracy)
+ *
+ * Exposes imperative API via ref:
+ *   - applyPresetById(id, mode?)  // mode: "append" | "replace"
+ *   - clearKeyframes()
+ *   - recordVideo()
+ *   - getKeyframes()
  */
-export default function MockTimeline({
+const MockTimeline = forwardRef(function MockTimeline({
   rotX, rotY, scale,
   setRotX, setRotY, setScale,
   x, y, setX, setY, // optional position animation
   duration = 4, // seconds
   setDuration,
   captureFrame, // async () => HTMLCanvasElement
-}) {
+}, ref) {
   const [keyframes, setKeyframes] = useState([
     { t: 0, rotX: 0, rotY: 0, scale: 1 },
   ]);
@@ -214,6 +220,58 @@ export default function MockTimeline({
     applyAtTime(0);
     setPlaying(false);
   };
+
+  // Imperative API for the AI agent
+  useImperativeHandle(ref, () => ({
+    applyPresetById: (id, mode = "replace") => {
+      const preset = MOTION_PRESETS.find((p) => p.id === id);
+      if (!preset) return false;
+      const prevMode = presetMode;
+      setPresetMode(mode);
+      // Run apply with the requested mode by calling logic directly (avoids waiting on state)
+      const start = (typeof x === "number" && typeof y === "number") ? { x, y } : undefined;
+      if (mode === "replace") {
+        const kfs = preset.build(duration, start).map((k) => ({
+          ...k,
+          t: Math.max(0, Math.min(duration, k.t)),
+        }));
+        setKeyframes(kfs);
+        setPlayhead(0);
+        if (kfs[0]) {
+          setRotX(kfs[0].rotX); setRotY(kfs[0].rotY); setScale(kfs[0].scale);
+          if (typeof kfs[0].x === "number" && setX) setX(kfs[0].x);
+          if (typeof kfs[0].y === "number" && setY) setY(kfs[0].y);
+        }
+      } else {
+        const segLen = Math.max(0.5, presetSegment);
+        const lastKeyT = keyframes.length ? Math.max(...keyframes.map((k) => k.t)) : 0;
+        const startT = Math.max(playhead, lastKeyT);
+        const segKfs = preset.build(segLen, start).map((k) => ({
+          ...k,
+          t: startT + Math.max(0, Math.min(segLen, k.t)),
+        }));
+        const newEnd = startT + segLen;
+        if (newEnd > duration && setDuration) {
+          setDuration(Math.ceil(newEnd * 2) / 2);
+        }
+        setKeyframes((prev) => {
+          const kept = prev.filter((k) => k.t < startT - 0.01);
+          return [...kept, ...segKfs].sort((a, b) => a.t - b.t);
+        });
+        setPlayhead(startT);
+      }
+      // restore mode after
+      setTimeout(() => setPresetMode(prevMode), 0);
+      return true;
+    },
+    clearKeyframes: () => {
+      setKeyframes([{ t: 0, rotX: 0, rotY: 0, scale: 1 }]);
+      setPlayhead(0);
+    },
+    recordVideo: () => recordVideo(),
+    getKeyframes: () => keyframes,
+    isRecording: () => recording,
+  }));
 
   // Record: walk timeline at fixed FPS, capture each frame, encode to WebM
   const recordVideo = async () => {
@@ -491,4 +549,6 @@ export default function MockTimeline({
       </p>
     </div>
   );
-}
+});
+
+export default MockTimeline;
