@@ -400,6 +400,9 @@ const MockTimeline = forwardRef(function MockTimeline({
       applyAtTime(0);
       await new Promise((r) => requestAnimationFrame(r));
       const first = await captureFrame();
+      if (!first || !first.width) {
+        throw new Error("Could not capture canvas. Make sure the preview is visible.");
+      }
       const W = first.width;
       const H = first.height;
 
@@ -452,8 +455,10 @@ const MockTimeline = forwardRef(function MockTimeline({
         // One paint tick is enough — we don't need a stable wall-clock cadence.
         await new Promise((r) => requestAnimationFrame(r));
         const frame = await captureFrame();
-        ctx.clearRect(0, 0, W, H);
-        ctx.drawImage(frame, 0, 0, W, H);
+        if (frame && frame.width) {
+          ctx.clearRect(0, 0, W, H);
+          ctx.drawImage(frame, 0, 0, W, H);
+        }
         if (canRequestFrame) {
           // Push exactly one frame to the recorder.
           track.requestFrame();
