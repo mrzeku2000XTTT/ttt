@@ -29,12 +29,15 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
 ) {
   const surfaceRef = useRef(null);
   const dragState = useRef(null);
+  const panState = useRef(null);
   const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
 
   const clampZoom = (z) => Math.max(0.25, Math.min(2, z));
   const zoomIn = () => setZoom((z) => clampZoom(z + 0.1));
   const zoomOut = () => setZoom((z) => clampZoom(z - 0.1));
-  const zoomReset = () => setZoom(1);
+  const zoomReset = () => { setZoom(1); setPan({ x: 0, y: 0 }); };
 
   // Plain scroll-to-zoom — no modifier key needed
   const onWheel = (e) => {
@@ -46,6 +49,11 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
   const onSurfaceClick = (e) => {
     // Only fire if clicking the surface itself (not a child device)
     if (e.target !== surfaceRef.current) return;
+    // If user just panned, swallow the click so we don't deselect/place
+    if (panState.current?.moved) {
+      panState.current = null;
+      return;
+    }
     if (placementMode) {
       const rect = surfaceRef.current.getBoundingClientRect();
       const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -54,6 +62,21 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
     } else {
       setSelectedId(null);
     }
+  };
+
+  // Left-click-drag on empty surface = pan the canvas
+  const onSurfaceMouseDown = (e) => {
+    if (e.target !== surfaceRef.current) return;
+    if (placementMode) return; // placement click handles this
+    if (e.button !== 0) return; // left button only
+    panState.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      origX: pan.x,
+      origY: pan.y,
+      moved: false,
+    };
+    setIsPanning(true);
   };
 
   const startDrag = (e, item) => {
@@ -76,6 +99,17 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
 
   const onMove = useCallback(
     (e) => {
+      // Pan path
+      const ps = panState.current;
+      if (ps) {
+        const point = e.touches ? e.touches[0] : e;
+        const dx = point.clientX - ps.startX;
+        const dy = point.clientY - ps.startY;
+        if (Math.abs(dx) + Math.abs(dy) > 3) ps.moved = true;
+        setPan({ x: ps.origX + dx, y: ps.origY + dy });
+        return;
+      }
+      // Item drag path
       const ds = dragState.current;
       if (!ds) return;
       const point = e.touches ? e.touches[0] : e;
@@ -91,7 +125,14 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
     [onUpdateItem]
   );
 
-  const endDrag = useCallback(() => { dragState.current = null; }, []);
+  const endDrag = useCallback(() => {
+    dragState.current = null;
+    if (panState.current) {
+      // Keep `moved` flag on panState until the click handler reads it,
+      // but stop the panning visual immediately.
+      setIsPanning(false);
+    }
+  }, []);
 
   useEffect(() => {
     window.addEventListener("mousemove", onMove);
@@ -165,12 +206,15 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
       <div
         ref={surfaceRef}
         onClick={onSurfaceClick}
-        className={`relative w-full h-full ${placementMode ? "cursor-copy" : "cursor-default"}`}
+        onMouseDown={onSurfaceMouseDown}
+        className={`relative w-full h-full ${
+          placementMode ? "cursor-copy" : isPanning ? "cursor-grabbing" : "cursor-grab"
+        }`}
         style={{
           minHeight: 200,
-          transform: `scale(${zoom})`,
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
           transformOrigin: "center center",
-          transition: dragState.current ? "none" : "transform 0.15s ease-out",
+          transition: dragState.current || isPanning ? "none" : "transform 0.15s ease-out",
         }}
       >
         {items.map((item) => {
