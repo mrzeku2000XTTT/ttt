@@ -65,32 +65,47 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
   };
 
   // Left-click-drag on empty surface = pan the canvas
-  const onSurfaceMouseDown = (e) => {
+  const onSurfacePointerDown = (e) => {
     if (e.target !== surfaceRef.current) return;
     if (placementMode) return; // placement click handles this
     if (e.button !== 0) return; // left button only
+    if (e.currentTarget?.setPointerCapture) {
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
+    }
     panState.current = {
       startX: e.clientX,
       startY: e.clientY,
       origX: pan.x,
       origY: pan.y,
       moved: false,
+      pointerId: e.pointerId,
+      target: e.currentTarget,
     };
     setIsPanning(true);
   };
 
   const startDrag = (e, item) => {
     e.stopPropagation();
+    // Only respond to left-mouse / touch / pen — ignore right-click etc.
+    if (e.button !== undefined && e.button !== 0) return;
     // Cancel any stale pan in progress
     panState.current = null;
     setIsPanning(false);
     setSelectedId(item.id);
     const rect = surfaceRef.current.getBoundingClientRect();
     const point = e.touches ? e.touches[0] : e;
+
+    // Capture the pointer so move + up events always come back to this element,
+    // even if the mouse leaves it or hovers a child <video>.
+    if (e.pointerId !== undefined && e.currentTarget?.setPointerCapture) {
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
+    }
+
     dragState.current = {
       id: item.id,
-      // rect.width/height are already the visually-scaled dimensions,
-      // so we DON'T need to multiply by zoom again.
+      pointerId: e.pointerId,
+      target: e.currentTarget,
+      // rect.width/height are already the visually-scaled dimensions.
       surfaceW: rect.width,
       surfaceH: rect.height,
       startX: point.clientX,
@@ -144,23 +159,37 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
   );
 
   const endDrag = useCallback(() => {
-    if (dragState.current?.raf) cancelAnimationFrame(dragState.current.raf);
-    dragState.current = null;
-    if (panState.current) {
-      setIsPanning(false);
+    const ds = dragState.current;
+    if (ds?.raf) cancelAnimationFrame(ds.raf);
+    if (ds?.target && ds.pointerId !== undefined) {
+      try { ds.target.releasePointerCapture?.(ds.pointerId); } catch {}
     }
+    dragState.current = null;
+    panState.current = null;
+    setIsPanning(false);
   }, []);
 
   useEffect(() => {
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", endDrag);
-    window.addEventListener("touchmove", onMove, { passive: false });
-    window.addEventListener("touchend", endDrag);
+    // Listen on the document so we always get the up event no matter what
+    // child element captured the pointer (e.g. a <video> inside a device frame).
+    const onUp = () => endDrag();
+    const onCancel = () => endDrag();
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+    document.addEventListener("pointercancel", onCancel);
+    document.addEventListener("mouseleave", onUp);
+    // Touch fallback for older Safari
+    document.addEventListener("touchmove", onMove, { passive: false });
+    document.addEventListener("touchend", onUp);
+    document.addEventListener("touchcancel", onCancel);
     return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", endDrag);
-      window.removeEventListener("touchmove", onMove);
-      window.removeEventListener("touchend", endDrag);
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      document.removeEventListener("pointercancel", onCancel);
+      document.removeEventListener("mouseleave", onUp);
+      document.removeEventListener("touchmove", onMove);
+      document.removeEventListener("touchend", onUp);
+      document.removeEventListener("touchcancel", onCancel);
     };
   }, [onMove, endDrag]);
 
@@ -223,7 +252,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
       <div
         ref={surfaceRef}
         onClick={onSurfaceClick}
-        onMouseDown={onSurfaceMouseDown}
+        onPointerDown={onSurfacePointerDown}
         className={`relative w-full h-full ${
           placementMode ? "cursor-copy" : isPanning ? "cursor-grabbing" : "cursor-grab"
         }`}
@@ -253,8 +282,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
           return (
             <div
               key={item.id}
-              onMouseDown={(e) => startDrag(e, item)}
-              onTouchStart={(e) => startDrag(e, item)}
+              onPointerDown={(e) => startDrag(e, item)}
               onClick={(e) => { e.stopPropagation(); setSelectedId(item.id); }}
               className="absolute select-none"
               style={{

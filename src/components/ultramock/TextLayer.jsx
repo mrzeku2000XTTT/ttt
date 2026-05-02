@@ -54,8 +54,7 @@ export default function TextLayer({
 
   return (
     <div
-      onMouseDown={(e) => onPointerDown(e, item)}
-      onTouchStart={(e) => onPointerDown(e, item)}
+      onPointerDown={(e) => onPointerDown(e, item)}
       onClick={(e) => { e.stopPropagation(); onSelect(item.id); }}
       className="absolute select-none"
       style={{
