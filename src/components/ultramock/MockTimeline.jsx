@@ -381,7 +381,7 @@ const MockTimeline = forwardRef(function MockTimeline({
     setRecordProgress(0);
     setPlaying(false);
 
-    const fps = 30;
+    const fps = 60;
     const totalFrames = Math.round(duration * fps);
 
     try {
@@ -400,13 +400,14 @@ const MockTimeline = forwardRef(function MockTimeline({
       const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
         ? "video/webm;codecs=vp9"
         : "video/webm";
-      const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
+      const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 16_000_000 });
       const chunks = [];
       recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
       const done = new Promise((resolve) => {
         recorder.onstop = () => resolve(new Blob(chunks, { type: "video/webm" }));
       });
       recorder.start();
+      const recordStart = performance.now();
 
       for (let i = 0; i <= totalFrames; i++) {
         const t = (i / totalFrames) * duration;
@@ -417,7 +418,11 @@ const MockTimeline = forwardRef(function MockTimeline({
         ctx.clearRect(0, 0, W, H);
         ctx.drawImage(frame, 0, 0, W, H);
         setRecordProgress(i / totalFrames);
-        await new Promise((r) => setTimeout(r, 1000 / fps));
+        // Pace each frame to its target time so the recorder captures at exactly fps.
+        const targetMs = (i / totalFrames) * duration * 1000;
+        const elapsed = performance.now() - recordStart;
+        const wait = targetMs - elapsed;
+        if (wait > 0) await new Promise((r) => setTimeout(r, wait));
       }
 
       recorder.stop();
