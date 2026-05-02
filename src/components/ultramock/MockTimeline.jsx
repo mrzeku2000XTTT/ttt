@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { Plus, Play, Pause, Trash2, Video, Loader2, SkipBack, Film } from "lucide-react";
+import { Plus, Play, Pause, Trash2, Video, Loader2, SkipBack, Film, Wand2 } from "lucide-react";
+import { MOTION_PRESETS } from "./motionPresets";
 
 /**
  * Timeline that animates {rotX, rotY, scale} between keyframes.
@@ -110,6 +111,20 @@ export default function MockTimeline({
     setRotX(kf.rotX);
     setRotY(kf.rotY);
     setScale(kf.scale);
+  };
+
+  const applyPreset = (preset) => {
+    const kfs = preset.build(duration).map((k) => ({
+      ...k,
+      t: Math.max(0, Math.min(duration, k.t)),
+    }));
+    setKeyframes(kfs);
+    setPlayhead(0);
+    if (kfs[0]) {
+      setRotX(kfs[0].rotX);
+      setRotY(kfs[0].rotY);
+      setScale(kfs[0].scale);
+    }
   };
 
   const onScrub = (e) => {
@@ -258,6 +273,24 @@ export default function MockTimeline({
             )}
           </button>
         </div>
+      </div>
+
+      {/* Motion preset chips */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+        <div className="flex items-center gap-1 text-[10px] text-white/40 font-bold uppercase tracking-wider flex-shrink-0">
+          <Wand2 className="w-3 h-3" /> Presets
+        </div>
+        {MOTION_PRESETS.map((p) => (
+          <button
+            key={p.id}
+            onClick={() => applyPreset(p)}
+            disabled={recording}
+            title={p.desc}
+            className="flex-shrink-0 px-2.5 h-7 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 hover:border-orange-400/50 text-white/70 hover:text-white text-[11px] font-bold transition-colors disabled:opacity-40"
+          >
+            {p.label}
+          </button>
+        ))}
       </div>
 
       {/* Time ruler + scrubber */}

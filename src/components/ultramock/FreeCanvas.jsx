@@ -81,19 +81,26 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
 
   const startDrag = (e, item) => {
     e.stopPropagation();
+    // Cancel any stale pan in progress
+    panState.current = null;
+    setIsPanning(false);
     setSelectedId(item.id);
     const rect = surfaceRef.current.getBoundingClientRect();
     const point = e.touches ? e.touches[0] : e;
     dragState.current = {
       id: item.id,
+      // rect.width/height are already the visually-scaled dimensions,
+      // so we DON'T need to multiply by zoom again.
       surfaceW: rect.width,
       surfaceH: rect.height,
       startX: point.clientX,
       startY: point.clientY,
       origX: item.x,
       origY: item.y,
-      zoom,
       moved: false,
+      pendingX: item.x,
+      pendingY: item.y,
+      raf: null,
     };
   };
 
@@ -102,6 +109,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
       // Pan path
       const ps = panState.current;
       if (ps) {
+        if (e.cancelable) e.preventDefault?.();
         const point = e.touches ? e.touches[0] : e;
         const dx = point.clientX - ps.startX;
         const dy = point.clientY - ps.startY;
@@ -112,24 +120,33 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
       // Item drag path
       const ds = dragState.current;
       if (!ds) return;
+      if (e.cancelable) e.preventDefault?.();
       const point = e.touches ? e.touches[0] : e;
-      // Divide by zoom so dragging feels 1:1 with what the user sees
-      const dx = ((point.clientX - ds.startX) / (ds.surfaceW * (ds.zoom || 1))) * 100;
-      const dy = ((point.clientY - ds.startY) / (ds.surfaceH * (ds.zoom || 1))) * 100;
+      // rect.width/height already include zoom scaling, so % delta is direct.
+      const dx = ((point.clientX - ds.startX) / ds.surfaceW) * 100;
+      const dy = ((point.clientY - ds.startY) / ds.surfaceH) * 100;
       if (Math.abs(dx) + Math.abs(dy) > 0.3) ds.moved = true;
-      onUpdateItem(ds.id, {
-        x: Math.max(0, Math.min(100, ds.origX + dx)),
-        y: Math.max(0, Math.min(100, ds.origY + dy)),
-      });
+      ds.pendingX = Math.max(0, Math.min(100, ds.origX + dx));
+      ds.pendingY = Math.max(0, Math.min(100, ds.origY + dy));
+      // RAF-throttle parent updates so we never re-render more than 60fps
+      if (!ds.raf) {
+        ds.raf = requestAnimationFrame(() => {
+          if (!dragState.current) return;
+          onUpdateItem(dragState.current.id, {
+            x: dragState.current.pendingX,
+            y: dragState.current.pendingY,
+          });
+          dragState.current.raf = null;
+        });
+      }
     },
     [onUpdateItem]
   );
 
   const endDrag = useCallback(() => {
+    if (dragState.current?.raf) cancelAnimationFrame(dragState.current.raf);
     dragState.current = null;
     if (panState.current) {
-      // Keep `moved` flag on panState until the click handler reads it,
-      // but stop the panning visual immediately.
       setIsPanning(false);
     }
   }, []);
