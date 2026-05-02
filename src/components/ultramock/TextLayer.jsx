@@ -54,7 +54,7 @@ export default function TextLayer({
 
   return (
     <div
-      onPointerDown={(e) => onPointerDown(e, item)}
+      onPointerDown={(e) => { e.stopPropagation(); onPointerDown(e, item); }}
       onClick={(e) => { e.stopPropagation(); onSelect(item.id); }}
       className="absolute select-none"
       style={{
@@ -64,6 +64,7 @@ export default function TextLayer({
         cursor: isDragging ? "grabbing" : "grab",
         zIndex: selected ? 25 : 15,
         touchAction: "none",
+        pointerEvents: "auto",
         width: `${Math.max(10, Math.min(100, item.boxWidth ?? 90))}%`,
         maxWidth: `${Math.max(10, Math.min(100, item.boxWidth ?? 90))}%`,
       }}
