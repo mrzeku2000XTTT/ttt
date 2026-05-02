@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles, Loader2, Wand2, ImageIcon, Upload, Paperclip, Palette } from "lucide-react";
 import { OVERLAY_PRESETS, OVERLAY_CATEGORIES } from "./overlayPresets";
 import { BACKGROUND_PRESETS } from "./MockBackground";
+import { removeWhiteBackground } from "./removeWhiteBg";
 import { base44 } from "@/api/base44Client";
 
 /**
@@ -48,7 +49,16 @@ export default function OverlayPicker({ open, onClose, onPickPreset, onPickImage
       const args = { prompt: fullPrompt };
       if (referenceUrl) args.existing_image_urls = [referenceUrl];
       const res = await base44.integrations.Core.GenerateImage(args);
-      if (res?.url) setPreviewUrl(res.url);
+      if (res?.url) {
+        // AI almost always returns a solid white background. Strip it client-side
+        // so the overlay actually blends into the canvas.
+        try {
+          const { url } = await removeWhiteBackground(res.url, { tolerance: 40 });
+          setPreviewUrl(url);
+        } catch {
+          setPreviewUrl(res.url);
+        }
+      }
     } catch (e) {
       alert("Generate failed: " + e.message);
     }
@@ -62,7 +72,14 @@ export default function OverlayPicker({ open, onClose, onPickPreset, onPickImage
     setUploading(true);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      if (file_url) setPreviewUrl(file_url);
+      if (file_url) {
+        try {
+          const { url } = await removeWhiteBackground(file_url, { tolerance: 40 });
+          setPreviewUrl(url);
+        } catch {
+          setPreviewUrl(file_url);
+        }
+      }
     } catch (err) {
       alert("Upload failed: " + err.message);
     }
