@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useRef, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Download, ImageIcon, Sparkles, Loader2, RefreshCw, Plus, Type } from "lucide-react";
@@ -8,10 +8,6 @@ import MockControls from "@/components/ultramock/MockControls";
 import MockTimeline from "@/components/ultramock/MockTimeline";
 import FreeCanvas from "@/components/ultramock/FreeCanvas";
 import TextControls from "@/components/ultramock/TextControls";
-import SplitDivider from "@/components/ultramock/SplitDivider";
-import AIMotionPrompt from "@/components/ultramock/AIMotionPrompt";
-
-const DEFAULT_KEYFRAMES = [{ t: 0, rotX: 0, rotY: 0, scale: 1 }];
 
 const newId = () => `dev_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
@@ -45,48 +41,14 @@ const makeText = (partial = {}) => ({
 export default function UltraMockPage() {
   const [items, setItems] = useState([makeItem()]);
   const [selectedId, setSelectedId] = useState(null);
-  const [lastDeviceId, setLastDeviceId] = useState(null); // remembers last selected device for timeline
   const [placementMode, setPlacementMode] = useState(false);
   const [background, setBackground] = useState("sunset");
   const [padding, setPadding] = useState(60);
   const [duration, setDuration] = useState(4);
   const [exporting, setExporting] = useState(false);
-  // Per-device keyframes — survives clicks anywhere on canvas
-  const [keyframesById, setKeyframesById] = useState({});
-  // Resizable right sidebar
-  const [sidebarWidth, setSidebarWidth] = useState(() => {
-    const saved = parseInt(localStorage.getItem("ultramock_sidebar_w") || "", 10);
-    return Number.isFinite(saved) ? saved : 340;
-  });
-  useEffect(() => {
-    localStorage.setItem("ultramock_sidebar_w", String(sidebarWidth));
-  }, [sidebarWidth]);
-
   const canvasRef = useRef(null);
 
   const selected = items.find((i) => i.id === selectedId) || null;
-
-  // Track last selected device so the timeline shows its keyframes even after deselect
-  useEffect(() => {
-    if (selected && selected.kind !== "text") setLastDeviceId(selected.id);
-  }, [selected]);
-
-  // The device the timeline currently controls (selected device, or last one if user clicked away)
-  const timelineDevice = useMemo(() => {
-    if (selected && selected.kind !== "text") return selected;
-    if (lastDeviceId) return items.find((i) => i.id === lastDeviceId && i.kind !== "text") || null;
-    return null;
-  }, [selected, lastDeviceId, items]);
-
-  const timelineKeyframes = (timelineDevice && keyframesById[timelineDevice.id]) || DEFAULT_KEYFRAMES;
-  const setTimelineKeyframes = useCallback((updater) => {
-    if (!timelineDevice) return;
-    setKeyframesById((prev) => {
-      const cur = prev[timelineDevice.id] || DEFAULT_KEYFRAMES;
-      const next = typeof updater === "function" ? updater(cur) : updater;
-      return { ...prev, [timelineDevice.id]: next };
-    });
-  }, [timelineDevice]);
 
   const backgroundCss = useMemo(() => {
     return (BACKGROUND_PRESETS.find((b) => b.id === background) || BACKGROUND_PRESETS[0]).css;
@@ -113,13 +75,6 @@ export default function UltraMockPage() {
   const removeItem = useCallback((id) => {
     setItems((prev) => prev.filter((i) => i.id !== id));
     setSelectedId((cur) => (cur === id ? null : cur));
-    setLastDeviceId((cur) => (cur === id ? null : cur));
-    setKeyframesById((prev) => {
-      if (!(id in prev)) return prev;
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
   }, []);
 
   // Upload media (image OR video) into the selected item
@@ -171,27 +126,21 @@ export default function UltraMockPage() {
   const reset = () => {
     setItems([makeItem()]);
     setSelectedId(null);
-    setLastDeviceId(null);
-    setKeyframesById({});
     setPlacementMode(false);
     setBackground("sunset");
     setPadding(60);
   };
 
-  // Timeline always points at `timelineDevice` (selected device, or last one).
-  const hasTimelineTarget = !!timelineDevice;
-  const timelineProps = {
-    rotX: timelineDevice?.rotX ?? 0,
-    rotY: timelineDevice?.rotY ?? 0,
-    scale: timelineDevice?.scale ?? 1,
-    setRotX: (v) => timelineDevice && updateItem(timelineDevice.id, { rotX: v }),
-    setRotY: (v) => timelineDevice && updateItem(timelineDevice.id, { rotY: v }),
-    setScale: (v) => timelineDevice && updateItem(timelineDevice.id, { scale: v }),
-    keyframes: timelineKeyframes,
-    setKeyframes: setTimelineKeyframes,
-    selectedLabel: timelineDevice ? `${timelineDevice.device}` : "",
-    hasSelection: hasTimelineTarget,
-  };
+  // Timeline animates the SELECTED device's rotX/rotY/scale.
+  // Text layers don't use the rotation timeline — hidden when text is selected.
+  const timelineProps = (selected && selected.kind !== "text") ? {
+    rotX: selected.rotX,
+    rotY: selected.rotY,
+    scale: selected.scale,
+    setRotX: (v) => updateItem(selected.id, { rotX: v }),
+    setRotY: (v) => updateItem(selected.id, { rotY: v }),
+    setScale: (v) => updateItem(selected.id, { scale: v }),
+  } : null;
 
   return (
     <div className="fixed inset-0 bg-zinc-950 overflow-y-auto">
@@ -245,9 +194,9 @@ export default function UltraMockPage() {
         </div>
       </nav>
 
-      <div className="flex flex-col lg:flex-row">
-        {/* Canvas + Timeline + AI */}
-        <div className="flex-1 min-w-0 p-4 lg:p-8 flex flex-col items-center min-h-[60vh]">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-0">
+        {/* Canvas */}
+        <div className="p-4 lg:p-8 flex flex-col items-center min-h-[60vh]">
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -270,41 +219,23 @@ export default function UltraMockPage() {
             </div>
             <div className="flex items-center justify-center gap-1.5 text-white/30 text-[10px] font-medium mt-3">
               <ImageIcon className="w-3 h-3" />
-              Click "+ Add Device" then click the canvas · Drag devices freely · Animate below
+              Click "+ Add Device" then click the canvas · Drag devices freely · Animate the selected one below
             </div>
 
-            {/* AI prompt under preview */}
-            <AIMotionPrompt
-              disabled={!hasTimelineTarget}
-              duration={duration}
-              onApplyKeyframes={(kfs) => {
-                setTimelineKeyframes(kfs);
-                if (timelineDevice && kfs[0]) {
-                  updateItem(timelineDevice.id, {
-                    rotX: kfs[0].rotX,
-                    rotY: kfs[0].rotY,
-                    scale: kfs[0].scale,
-                  });
-                }
-              }}
-            />
-
-            {/* Timeline — ALWAYS visible, persists per-device */}
-            <MockTimeline
-              {...timelineProps}
-              duration={duration}
-              setDuration={setDuration}
-              captureFrame={captureFrame}
-            />
+            {/* Timeline only animates the selected device */}
+            {timelineProps && (
+              <MockTimeline
+                {...timelineProps}
+                duration={duration}
+                setDuration={setDuration}
+                captureFrame={captureFrame}
+              />
+            )}
           </motion.div>
         </div>
 
-        {/* Resizable Sidebar */}
-        <aside
-          className="relative border-t lg:border-t-0 lg:border-l border-white/10 bg-black/40 backdrop-blur-xl p-5 lg:sticky lg:top-[57px] lg:h-[calc(100vh-57px)] lg:overflow-y-auto flex-shrink-0"
-          style={{ width: typeof window !== "undefined" && window.innerWidth >= 1024 ? sidebarWidth : "100%" }}
-        >
-          <SplitDivider onResize={setSidebarWidth} minWidth={280} maxWidth={640} />
+        {/* Sidebar */}
+        <aside className="border-t lg:border-t-0 lg:border-l border-white/10 bg-black/40 backdrop-blur-xl p-5 lg:sticky lg:top-[57px] lg:h-[calc(100vh-57px)] lg:overflow-y-auto">
           {selected?.kind === "text" ? (
             <TextControls
               selected={selected}
