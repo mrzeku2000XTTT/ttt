@@ -294,25 +294,6 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
                 touchAction: "none",
               }}
             >
-              {/* Selection ring + handles */}
-              {selected && (
-                <>
-                  <div
-                    className="absolute inset-0 ring-2 ring-cyan-400 rounded-[2.5rem] pointer-events-none"
-                    style={{ boxShadow: "0 0 0 4px rgba(34,211,238,0.15)" }}
-                  />
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onRemove(item.id); }}
-                    className="absolute -top-3 -right-3 z-30 w-7 h-7 rounded-full bg-red-500 hover:bg-red-400 text-white flex items-center justify-center shadow-lg"
-                    title="Remove device"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                  <div className="absolute -top-3 -left-3 z-30 w-7 h-7 rounded-full bg-cyan-400 text-black flex items-center justify-center shadow-lg pointer-events-none">
-                    <Move className="w-3.5 h-3.5" />
-                  </div>
-                </>
-              )}
               {/* 3D rotation + scale per item — scale via transform for smooth GPU animation */}
               <div
                 style={{
@@ -321,6 +302,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
                 }}
               >
                 <div
+                  className="relative"
                   style={{
                     transform: `rotateX(${item.rotX}deg) rotateY(${item.rotY}deg) scale(${item.scale})`,
                     transformStyle: "preserve-3d",
@@ -328,6 +310,26 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
                   }}
                 >
                   <DeviceFrame device={item.device} media={item.media} scale={1} />
+
+                  {/* Selection ring + handles — INSIDE scaled wrapper so they zoom with the device */}
+                  {selected && (
+                    <>
+                      <div
+                        className="absolute inset-0 ring-2 ring-cyan-400 rounded-[2.5rem] pointer-events-none"
+                        style={{ boxShadow: "0 0 0 4px rgba(34,211,238,0.15)" }}
+                      />
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onRemove(item.id); }}
+                        className="absolute -top-3 -right-3 z-30 w-7 h-7 rounded-full bg-red-500 hover:bg-red-400 text-white flex items-center justify-center shadow-lg"
+                        title="Remove device"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                      <div className="absolute -top-3 -left-3 z-30 w-7 h-7 rounded-full bg-cyan-400 text-black flex items-center justify-center shadow-lg pointer-events-none">
+                        <Move className="w-3.5 h-3.5" />
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
