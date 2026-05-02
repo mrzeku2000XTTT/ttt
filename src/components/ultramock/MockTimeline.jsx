@@ -415,14 +415,33 @@ const MockTimeline = forwardRef(function MockTimeline({
       const track = stream.getVideoTracks()[0];
       const canRequestFrame = typeof track?.requestFrame === "function";
 
-      const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
-        ? "video/webm;codecs=vp9"
-        : "video/webm";
+      // Prefer real MP4 when the browser supports it (Safari 14.1+, Chrome 126+).
+      // Fall back to webm otherwise.
+      const mp4Candidates = [
+        "video/mp4;codecs=avc1.640028",
+        "video/mp4;codecs=avc1.42E01E",
+        "video/mp4",
+      ];
+      const webmCandidates = [
+        "video/webm;codecs=vp9",
+        "video/webm;codecs=vp8",
+        "video/webm",
+      ];
+      let mime = "";
+      for (const c of mp4Candidates) {
+        if (MediaRecorder.isTypeSupported(c)) { mime = c; break; }
+      }
+      if (!mime) {
+        for (const c of webmCandidates) {
+          if (MediaRecorder.isTypeSupported(c)) { mime = c; break; }
+        }
+      }
+      const isMp4 = mime.startsWith("video/mp4");
       const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 12_000_000 });
       const chunks = [];
       recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
       const done = new Promise((resolve) => {
-        recorder.onstop = () => resolve(new Blob(chunks, { type: "video/webm" }));
+        recorder.onstop = () => resolve(new Blob(chunks, { type: mime || (isMp4 ? "video/mp4" : "video/webm") }));
       });
       recorder.start();
 
@@ -458,7 +477,7 @@ const MockTimeline = forwardRef(function MockTimeline({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `ultramock-${Date.now()}.webm`;
+      a.download = `ultramock-${Date.now()}.${isMp4 ? "mp4" : "webm"}`;
       a.rel = "noopener";
       // Anchor MUST be in the DOM for the click to download in some browsers (Safari/Firefox)
       document.body.appendChild(a);
