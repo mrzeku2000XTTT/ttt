@@ -1,5 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect } from "react";
 import DeviceFrame from "./DeviceFrame";
+import TextLayer from "./TextLayer";
 import { Trash2, Plus, Move, X, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 
 /**
@@ -35,10 +36,11 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
   const zoomOut = () => setZoom((z) => clampZoom(z - 0.1));
   const zoomReset = () => setZoom(1);
 
+  // Plain scroll-to-zoom — no modifier key needed
   const onWheel = (e) => {
-    if (!(e.ctrlKey || e.metaKey)) return;
     e.preventDefault();
-    setZoom((z) => clampZoom(z - Math.sign(e.deltaY) * 0.05));
+    const delta = Math.sign(e.deltaY) * 0.08;
+    setZoom((z) => clampZoom(z - delta));
   };
 
   const onSurfaceClick = (e) => {
@@ -104,6 +106,19 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
     };
   }, [onMove, endDrag]);
 
+  // Native wheel listener with { passive: false } so we can preventDefault page scroll
+  useEffect(() => {
+    const el = surfaceRef.current;
+    if (!el) return;
+    const handler = (e) => {
+      e.preventDefault();
+      const delta = Math.sign(e.deltaY) * 0.08;
+      setZoom((z) => clampZoom(z - delta));
+    };
+    el.addEventListener("wheel", handler, { passive: false });
+    return () => el.removeEventListener("wheel", handler);
+  }, []);
+
   return (
     <div
       ref={ref}
@@ -150,7 +165,6 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
       <div
         ref={surfaceRef}
         onClick={onSurfaceClick}
-        onWheel={onWheel}
         className={`relative w-full h-full ${placementMode ? "cursor-copy" : "cursor-default"}`}
         style={{
           minHeight: 200,
@@ -161,6 +175,20 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
       >
         {items.map((item) => {
           const selected = item.id === selectedId;
+          // Render text items via TextLayer
+          if (item.kind === "text") {
+            return (
+              <TextLayer
+                key={item.id}
+                item={item}
+                selected={selected}
+                onSelect={setSelectedId}
+                onRemove={onRemove}
+                onPointerDown={startDrag}
+                isDragging={dragState.current?.id === item.id}
+              />
+            );
+          }
           return (
             <div
               key={item.id}

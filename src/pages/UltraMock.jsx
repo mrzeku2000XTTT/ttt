@@ -1,23 +1,40 @@
 import React, { useState, useRef, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Download, ImageIcon, Sparkles, Loader2, RefreshCw, Plus } from "lucide-react";
+import { ArrowLeft, Download, ImageIcon, Sparkles, Loader2, RefreshCw, Plus, Type } from "lucide-react";
 import html2canvas from "html2canvas";
 import { BACKGROUND_PRESETS } from "@/components/ultramock/MockBackground";
 import MockControls from "@/components/ultramock/MockControls";
 import MockTimeline from "@/components/ultramock/MockTimeline";
 import FreeCanvas from "@/components/ultramock/FreeCanvas";
+import TextControls from "@/components/ultramock/TextControls";
 
 const newId = () => `dev_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
 const makeItem = (partial = {}) => ({
   id: newId(),
+  kind: "device",
   device: "iphone",
   media: null,
   x: 50, y: 50,
   scale: 1,
   rotX: 0,
   rotY: 0,
+  ...partial,
+});
+
+const makeText = (partial = {}) => ({
+  id: newId(),
+  kind: "text",
+  text: "Your tagline here",
+  x: 50, y: 12,
+  fontSize: 48,
+  fontWeight: 900,
+  color: "#ffffff",
+  fontFamily: "ui-sans-serif, system-ui, sans-serif",
+  animation: "none",
+  typeSpeed: 14,
+  loopDelay: 1.5,
   ...partial,
 });
 
@@ -43,6 +60,13 @@ export default function UltraMockPage() {
 
   const addAt = useCallback((x, y) => {
     const item = makeItem({ x, y });
+    setItems((prev) => [...prev, item]);
+    setSelectedId(item.id);
+    setPlacementMode(false);
+  }, []);
+
+  const addText = useCallback(() => {
+    const item = makeText();
     setItems((prev) => [...prev, item]);
     setSelectedId(item.id);
     setPlacementMode(false);
@@ -107,9 +131,9 @@ export default function UltraMockPage() {
     setPadding(60);
   };
 
-  // Timeline animates the SELECTED item's rotX/rotY/scale.
-  // If nothing is selected, timeline is hidden.
-  const timelineProps = selected ? {
+  // Timeline animates the SELECTED device's rotX/rotY/scale.
+  // Text layers don't use the rotation timeline — hidden when text is selected.
+  const timelineProps = (selected && selected.kind !== "text") ? {
     rotX: selected.rotX,
     rotY: selected.rotY,
     scale: selected.scale,
@@ -145,6 +169,13 @@ export default function UltraMockPage() {
             title="Click on the canvas to drop a new device"
           >
             <Plus className="w-3.5 h-3.5" /> Add Device
+          </button>
+          <button
+            onClick={addText}
+            className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-xs font-bold"
+            title="Add a text layer"
+          >
+            <Type className="w-3.5 h-3.5" /> Add Text
           </button>
           <button
             onClick={reset}
@@ -205,14 +236,22 @@ export default function UltraMockPage() {
 
         {/* Sidebar */}
         <aside className="border-t lg:border-t-0 lg:border-l border-white/10 bg-black/40 backdrop-blur-xl p-5 lg:sticky lg:top-[57px] lg:h-[calc(100vh-57px)] lg:overflow-y-auto">
-          <MockControls
-            background={background} setBackground={setBackground}
-            padding={padding} setPadding={setPadding}
-            selected={selected}
-            onUpdate={(partial) => selected && updateItem(selected.id, partial)}
-            onRemove={() => selected && removeItem(selected.id)}
-            onUploadMedia={onUploadMedia}
-          />
+          {selected?.kind === "text" ? (
+            <TextControls
+              selected={selected}
+              onUpdate={(partial) => updateItem(selected.id, partial)}
+              onRemove={() => removeItem(selected.id)}
+            />
+          ) : (
+            <MockControls
+              background={background} setBackground={setBackground}
+              padding={padding} setPadding={setPadding}
+              selected={selected}
+              onUpdate={(partial) => selected && updateItem(selected.id, partial)}
+              onRemove={() => selected && removeItem(selected.id)}
+              onUploadMedia={onUploadMedia}
+            />
+          )}
         </aside>
       </div>
     </div>

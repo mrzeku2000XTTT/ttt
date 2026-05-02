@@ -144,6 +144,30 @@ export default function MockControls({
             />
           </Section>
 
+          <Section title="Position Presets">
+            <div className="grid grid-cols-3 gap-1.5">
+              {[
+                { id: "tl", l: "Top L",   x: 25, y: 30 },
+                { id: "tc", l: "Top",     x: 50, y: 30 },
+                { id: "tr", l: "Top R",   x: 75, y: 30 },
+                { id: "ml", l: "Left",    x: 25, y: 50 },
+                { id: "mc", l: "Center",  x: 50, y: 50 },
+                { id: "mr", l: "Right",   x: 75, y: 50 },
+                { id: "bl", l: "Bot L",   x: 25, y: 70 },
+                { id: "bc", l: "Bottom",  x: 50, y: 70 },
+                { id: "br", l: "Bot R",   x: 75, y: 70 },
+              ].map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => onUpdate({ x: p.x, y: p.y })}
+                  className="px-2 py-2 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-[10px] font-bold"
+                >
+                  {p.l}
+                </button>
+              ))}
+            </div>
+          </Section>
+
           <Section title={<span className="flex items-center gap-1.5"><Move3d className="w-3 h-3" /> 3D Rotation</span>}>
             <div className="space-y-3">
               <div>
