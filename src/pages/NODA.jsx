@@ -461,8 +461,174 @@ export default function NODAPage() {
     switch (node.type) {
       case "ai_prompt": {
         const prompt = interpolate(node.config.prompt || "");
-        const res = await withRetry(() => base44.integrations.Core.InvokeLLM({ prompt }));
+        const model = node.config.model && node.config.model !== "automatic" ? node.config.model : null;
+        const useInternet = node.config.use_internet === "yes";
+        const payload = { prompt };
+        if (model) payload.model = model;
+        // add_context_from_internet only works with gemini_3_flash / gemini_3_1_pro
+        if (useInternet && (!model || model === "gemini_3_flash" || model === "gemini_3_1_pro")) {
+          payload.add_context_from_internet = true;
+          if (!model) payload.model = "gemini_3_flash";
+        }
+        const res = await withRetry(() => base44.integrations.Core.InvokeLLM(payload));
         return res;
+      }
+      case "ai_summarize": {
+        const prev = stringify(getPrevOutput());
+        if (!prev) throw new Error("Nothing to summarize — add a step before this");
+        const style = node.config.style || "bullets";
+        const length = node.config.length || "short";
+        const styleHint = {
+          bullets: "5-7 concise bullet points",
+          paragraph: "a single tight paragraph",
+          tldr: "a one-line TLDR",
+          tweet: "under 280 characters, punchy, tweet-style",
+        }[style];
+        const lengthHint = { short: "very short", medium: "moderate", long: "detailed" }[length];
+        const res = await withRetry(() => base44.integrations.Core.InvokeLLM({
+          prompt: `Summarize the following content as ${styleHint}. Keep it ${lengthHint}. No filler, no preamble.\n\n---\n${prev}`,
+        }));
+        return res;
+      }
+      case "ai_translate": {
+        const prev = stringify(getPrevOutput());
+        if (!prev) throw new Error("Nothing to translate");
+        const lang = (node.config.target_language || "Spanish").trim();
+        const res = await withRetry(() => base44.integrations.Core.InvokeLLM({
+          prompt: `Translate the following into ${lang}. Output ONLY the translation, no explanation.\n\n---\n${prev}`,
+        }));
+        return res;
+      }
+      case "ai_extract": {
+        const prev = stringify(getPrevOutput());
+        if (!prev) throw new Error("Nothing to extract from");
+        const fieldsRaw = (node.config.fields || "title, summary").split(",").map((s) => s.trim()).filter(Boolean);
+        const properties = {};
+        fieldsRaw.forEach((f) => { properties[f.replace(/\s+/g, "_")] = { type: "string" }; });
+        const res = await withRetry(() => base44.integrations.Core.InvokeLLM({
+          prompt: `Extract the following fields from the text below: ${fieldsRaw.join(", ")}. If a field is missing, return empty string.\n\n---\n${prev}`,
+          response_json_schema: { type: "object", properties },
+        }));
+        return res;
+      }
+      case "ai_classify": {
+        const prev = stringify(getPrevOutput());
+        if (!prev) throw new Error("Nothing to classify");
+        const mode = node.config.mode || "sentiment";
+        const cats = (node.config.categories || "positive, neutral, negative").split(",").map((s) => s.trim()).filter(Boolean);
+        let prompt = "";
+        let schema;
+        if (mode === "score") {
+          prompt = `Score the following text from 0 to 100 on overall quality / relevance. Return ONLY a number.\n\n---\n${prev}`;
+          schema = { type: "object", properties: { score: { type: "number" }, reason: { type: "string" } } };
+        } else {
+          prompt = `Classify the following text into ONE of these categories: ${cats.join(", ")}. Return the category name and a brief reason.\n\n---\n${prev}`;
+          schema = { type: "object", properties: { category: { type: "string" }, reason: { type: "string" } } };
+        }
+        const res = await withRetry(() => base44.integrations.Core.InvokeLLM({ prompt, response_json_schema: schema }));
+        return res;
+      }
+      case "fetch_url": {
+        const url = interpolate(node.config.url || "").trim();
+        if (!/^https?:\/\//.test(url)) throw new Error("Provide a full https:// URL");
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const html = await resp.text();
+        // Strip tags for clean text
+        const text = html
+          .replace(/<script[\s\S]*?<\/script>/gi, "")
+          .replace(/<style[\s\S]*?<\/style>/gi, "")
+          .replace(/<[^>]+>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 8000);
+        return text;
+      }
+      case "fetch_rss": {
+        const url = interpolate(node.config.url || "").trim();
+        const limit = Math.max(1, Math.min(50, Number(node.config.limit) || 10));
+        if (!/^https?:\/\//.test(url)) throw new Error("Provide a full RSS URL");
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const xml = await resp.text();
+        const items = [...xml.matchAll(/<item[^>]*>([\s\S]*?)<\/item>/gi)].slice(0, limit);
+        const parsed = items.map((m) => {
+          const block = m[1];
+          const get = (tag) => {
+            const r = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i").exec(block);
+            return r ? r[1].replace(/<!\[CDATA\[|\]\]>/g, "").replace(/<[^>]+>/g, "").trim() : "";
+          };
+          return { title: get("title"), link: get("link"), pubDate: get("pubDate"), description: get("description").slice(0, 300) };
+        });
+        return `# RSS — ${parsed.length} items\n\n` + parsed.map((it, i) => `**${i + 1}. ${it.title}**\n${it.pubDate}\n${it.link}\n${it.description}`).join("\n\n---\n\n");
+      }
+      case "hacker_news": {
+        const feed = node.config.feed || "top";
+        const limit = Math.max(1, Math.min(30, Number(node.config.limit) || 10));
+        const feedMap = { top: "topstories", new: "newstories", best: "beststories", ask: "askstories", show: "showstories" };
+        const idsResp = await fetch(`https://hacker-news.firebaseio.com/v0/${feedMap[feed] || "topstories"}.json`);
+        const ids = (await idsResp.json()).slice(0, limit);
+        const stories = await Promise.all(ids.map((id) => fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then((r) => r.json())));
+        return `# Hacker News — ${feed} (${stories.length})\n\n` + stories.map((s, i) => `**${i + 1}. ${s.title}** _(${s.score} pts · ${s.descendants || 0} comments)_\n${s.url || `https://news.ycombinator.com/item?id=${s.id}`}`).join("\n\n");
+      }
+      case "reddit": {
+        const sub = (node.config.subreddit || "kaspa").replace(/^r\//, "").trim();
+        const sort = node.config.sort || "hot";
+        const limit = Math.max(1, Math.min(50, Number(node.config.limit) || 10));
+        const resp = await fetch(`https://www.reddit.com/r/${sub}/${sort}.json?limit=${limit}`);
+        if (!resp.ok) throw new Error(`Reddit returned HTTP ${resp.status}`);
+        const data = await resp.json();
+        const posts = (data?.data?.children || []).map((c) => c.data);
+        return `# r/${sub} — ${sort} (${posts.length})\n\n` + posts.map((p, i) => `**${i + 1}. ${p.title}** _(${p.score} ↑ · ${p.num_comments} 💬 · u/${p.author})_\nhttps://reddit.com${p.permalink}\n${(p.selftext || "").slice(0, 280)}`).join("\n\n---\n\n");
+      }
+      case "weather": {
+        const city = (interpolate(node.config.city || "Austin")).trim();
+        // Geocode (free, no key)
+        const geo = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1`).then((r) => r.json());
+        const loc = geo?.results?.[0];
+        if (!loc) throw new Error(`Couldn't find city: ${city}`);
+        const w = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto&forecast_days=3`).then((r) => r.json());
+        const c = w.current || {};
+        const d = w.daily || {};
+        const codeText = (code) => ({ 0: "Clear", 1: "Mostly clear", 2: "Partly cloudy", 3: "Overcast", 45: "Foggy", 51: "Drizzle", 61: "Rain", 71: "Snow", 80: "Showers", 95: "Thunderstorm" })[code] || `Code ${code}`;
+        const days = (d.time || []).map((day, i) => `- ${day}: ${Math.round(d.temperature_2m_min[i])}°-${Math.round(d.temperature_2m_max[i])}°F · ${codeText(d.weather_code[i])}`).join("\n");
+        return `# Weather — ${loc.name}, ${loc.country}\n\n**Now:** ${Math.round(c.temperature_2m)}°F · ${codeText(c.weather_code)} · Humidity ${c.relative_humidity_2m}% · Wind ${Math.round(c.wind_speed_10m)} mph\n\n**Forecast:**\n${days}`;
+      }
+      case "crypto_price": {
+        const coin = (node.config.coin || "kaspa").trim().toLowerCase();
+        const currency = (node.config.currency || "usd").trim().toLowerCase();
+        const resp = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(coin)}&vs_currencies=${encodeURIComponent(currency)}&include_24hr_change=true&include_market_cap=true&include_24hr_vol=true`);
+        if (!resp.ok) throw new Error(`CoinGecko HTTP ${resp.status}`);
+        const data = await resp.json();
+        const d = data[coin];
+        if (!d) throw new Error(`Coin not found: ${coin}`);
+        const price = d[currency];
+        const change = d[`${currency}_24h_change`];
+        const mcap = d[`${currency}_market_cap`];
+        const vol = d[`${currency}_24h_vol`];
+        return `# ${coin.toUpperCase()} / ${currency.toUpperCase()}\n\n**Price:** ${price}\n**24h:** ${change?.toFixed(2)}%\n**Market Cap:** ${Math.round(mcap).toLocaleString()}\n**24h Volume:** ${Math.round(vol).toLocaleString()}`;
+      }
+      case "wikipedia": {
+        const topic = (interpolate(node.config.topic || "")).trim();
+        if (!topic) throw new Error("Topic is required");
+        const resp = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topic)}`);
+        if (!resp.ok) throw new Error(`Wikipedia HTTP ${resp.status}`);
+        const d = await resp.json();
+        return `# ${d.title}\n\n${d.extract || "No summary available."}\n\n${d.content_urls?.desktop?.page || ""}`;
+      }
+      case "math_eval": {
+        const expr = interpolate(node.config.expression || "").trim();
+        if (!expr) throw new Error("Expression is required");
+        // Strict whitelist — only digits, operators, parens, decimals, whitespace
+        if (!/^[\d+\-*/().\s]+$/.test(expr)) {
+          throw new Error("Math expression must contain only numbers and + - * / ( )");
+        }
+        // eslint-disable-next-line no-new-func
+        const result = Function(`"use strict"; return (${expr})`)();
+        if (typeof result !== "number" || !Number.isFinite(result)) {
+          throw new Error("Math evaluation produced non-numeric result");
+        }
+        return result;
       }
       case "ai_image": {
         const prompt = interpolate(node.config.prompt || "");

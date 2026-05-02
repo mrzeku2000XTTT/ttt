@@ -90,7 +90,74 @@ export default function RMXNodeConfig({ node, onUpdate, onClose, onDelete, onWor
 function getFields(type) {
   switch (type) {
     case "ai_prompt":
-      return [{ key: "prompt", label: "Prompt", type: "textarea", placeholder: "What should the AI do?", hint: "Use {{result}} to insert the previous step's output" }];
+      return [
+        { key: "prompt", label: "Prompt", type: "textarea", placeholder: "What should the AI do?", hint: "Use {{result}} to insert the previous step's output" },
+        {
+          key: "model",
+          label: "Model",
+          type: "select",
+          options: [
+            "automatic",
+            "gpt_5_mini",
+            "gpt_5_4",
+            "gpt_5_5",
+            "gemini_3_flash",
+            "gemini_3_1_pro",
+            "claude_sonnet_4_6",
+            "claude_opus_4_6",
+            "claude_opus_4_7",
+          ],
+          hint: "Automatic = fast & cheap. Claude Opus = deepest reasoning. Gemini 3 = web-aware. Non-default models cost more credits.",
+        },
+        { key: "use_internet", label: "Use live web context", type: "select", options: ["no", "yes"], hint: "Only works with gemini_3_flash or gemini_3_1_pro" },
+      ];
+    case "ai_summarize":
+      return [
+        { key: "style", label: "Style", type: "select", options: ["bullets", "paragraph", "tldr", "tweet"] },
+        { key: "length", label: "Length", type: "select", options: ["short", "medium", "long"] },
+      ];
+    case "ai_translate":
+      return [
+        { key: "target_language", label: "Target Language", placeholder: "Spanish, French, Japanese, etc." },
+      ];
+    case "ai_extract":
+      return [
+        { key: "fields", label: "Fields to extract", type: "textarea", placeholder: "title, author, date, summary", hint: "Comma-separated list. Output is JSON." },
+      ];
+    case "ai_classify":
+      return [
+        { key: "mode", label: "Mode", type: "select", options: ["sentiment", "category", "score"] },
+        { key: "categories", label: "Categories (comma-separated)", placeholder: "positive, neutral, negative" },
+      ];
+    case "fetch_url":
+      return [{ key: "url", label: "URL", placeholder: "https://example.com", hint: "Fetches the page text. Some sites block direct fetch (CORS)." }];
+    case "fetch_rss":
+      return [
+        { key: "url", label: "RSS URL", placeholder: "https://hnrss.org/frontpage" },
+        { key: "limit", label: "Items to return", type: "number", placeholder: "10" },
+      ];
+    case "hacker_news":
+      return [
+        { key: "feed", label: "Feed", type: "select", options: ["top", "new", "best", "ask", "show"] },
+        { key: "limit", label: "How many?", type: "number", placeholder: "10" },
+      ];
+    case "reddit":
+      return [
+        { key: "subreddit", label: "Subreddit", placeholder: "kaspa" },
+        { key: "sort", label: "Sort", type: "select", options: ["hot", "new", "top", "rising"] },
+        { key: "limit", label: "How many?", type: "number", placeholder: "10" },
+      ];
+    case "weather":
+      return [{ key: "city", label: "City", placeholder: "Austin", hint: "Live weather via Open-Meteo (free, no key)" }];
+    case "crypto_price":
+      return [
+        { key: "coin", label: "Coin ID", placeholder: "kaspa", hint: "CoinGecko ID, e.g. kaspa, bitcoin, ethereum" },
+        { key: "currency", label: "Currency", placeholder: "usd" },
+      ];
+    case "wikipedia":
+      return [{ key: "topic", label: "Topic", placeholder: "Kaspa cryptocurrency" }];
+    case "math_eval":
+      return [{ key: "expression", label: "Expression", placeholder: "{{result}} * 1.1", hint: "Supports + - * / ( ) and {{result}}. Numbers only." }];
     case "ai_image":
       return [{ key: "prompt", label: "Image Prompt", type: "textarea", placeholder: "Describe the image" }];
     case "deep_research":
