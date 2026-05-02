@@ -327,7 +327,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
                     transition: dragState.current?.id === item.id ? "none" : "transform 0.2s ease-out",
                   }}
                 >
-                  <DeviceFrame device={item.device} media={item.media} scale={item.scale} />
+                  <DeviceFrame device={item.device} media={item.media} scale={item.scale} cornerRadius={item.cornerRadius ?? 1} />
                 </div>
               </div>
             </div>

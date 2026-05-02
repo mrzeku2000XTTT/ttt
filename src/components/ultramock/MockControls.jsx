@@ -144,6 +144,34 @@ export default function MockControls({
             />
           </Section>
 
+          <Section title={`Corner Radius · ${Math.round((selected.cornerRadius ?? 1) * 100)}%`}>
+            <input
+              type="range"
+              min="0"
+              max="2"
+              step="0.05"
+              value={selected.cornerRadius ?? 1}
+              onChange={(e) => onUpdate({ cornerRadius: Number(e.target.value) })}
+              className="w-full accent-white"
+            />
+            <div className="grid grid-cols-4 gap-1.5 mt-2">
+              {[
+                { l: "Sharp", v: 0 },
+                { l: "Subtle", v: 0.5 },
+                { l: "Default", v: 1 },
+                { l: "Pillow", v: 1.6 },
+              ].map((p) => (
+                <button
+                  key={p.l}
+                  onClick={() => onUpdate({ cornerRadius: p.v })}
+                  className="px-2 py-1.5 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-[10px] font-bold"
+                >
+                  {p.l}
+                </button>
+              ))}
+            </div>
+          </Section>
+
           <Section title="Position Presets">
             <div className="grid grid-cols-3 gap-1.5">
               {[

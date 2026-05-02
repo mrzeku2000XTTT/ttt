@@ -112,6 +112,31 @@ export default function TextControls({ selected, onUpdate, onRemove }) {
         />
       </Section>
 
+      <Section title={`Box Width · ${Math.round(selected.boxWidth ?? 90)}%`}>
+        <input
+          type="range" min="15" max="100" step="1"
+          value={selected.boxWidth ?? 90}
+          onChange={(e) => onUpdate({ boxWidth: Number(e.target.value) })}
+          className="w-full accent-white"
+        />
+        <div className="grid grid-cols-4 gap-1.5 mt-2">
+          {[
+            { l: "Narrow", v: 30 },
+            { l: "Half", v: 50 },
+            { l: "Wide", v: 75 },
+            { l: "Full", v: 100 },
+          ].map((p) => (
+            <button
+              key={p.l}
+              onClick={() => onUpdate({ boxWidth: p.v })}
+              className="px-2 py-1.5 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-[10px] font-bold"
+            >
+              {p.l}
+            </button>
+          ))}
+        </div>
+      </Section>
+
       <Section title="Weight">
         <div className="grid grid-cols-3 gap-1.5">
           {[

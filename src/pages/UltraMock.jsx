@@ -20,6 +20,7 @@ const makeItem = (partial = {}) => ({
   scale: 1,
   rotX: 0,
   rotY: 0,
+  cornerRadius: 1, // multiplier — 0 = sharp, 1 = default, up to 2 = extra round
   ...partial,
 });
 
@@ -35,6 +36,7 @@ const makeText = (partial = {}) => ({
   animation: "none",
   typeSpeed: 14,
   loopDelay: 1.5,
+  boxWidth: 90, // max width of the text box as % of canvas (90 ≈ "auto")
   ...partial,
 });
 

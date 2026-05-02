@@ -64,7 +64,8 @@ export default function TextLayer({
         cursor: isDragging ? "grabbing" : "grab",
         zIndex: selected ? 25 : 15,
         touchAction: "none",
-        maxWidth: "90%",
+        width: `${Math.max(10, Math.min(100, item.boxWidth ?? 90))}%`,
+        maxWidth: `${Math.max(10, Math.min(100, item.boxWidth ?? 90))}%`,
       }}
     >
       {selected && (
