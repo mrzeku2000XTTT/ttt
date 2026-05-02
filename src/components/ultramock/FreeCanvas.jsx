@@ -313,7 +313,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
                   </div>
                 </>
               )}
-              {/* 3D rotation per item */}
+              {/* 3D rotation + scale per item — scale via transform for smooth GPU animation */}
               <div
                 style={{
                   perspective: "1600px",
@@ -322,11 +322,12 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
               >
                 <div
                   style={{
-                    transform: `rotateX(${item.rotX}deg) rotateY(${item.rotY}deg)`,
+                    transform: `rotateX(${item.rotX}deg) rotateY(${item.rotY}deg) scale(${item.scale})`,
                     transformStyle: "preserve-3d",
+                    willChange: "transform",
                   }}
                 >
-                  <DeviceFrame device={item.device} media={item.media} scale={item.scale} />
+                  <DeviceFrame device={item.device} media={item.media} scale={1} />
                 </div>
               </div>
             </div>
