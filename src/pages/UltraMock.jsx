@@ -6,6 +6,7 @@ import html2canvas from "html2canvas";
 import DeviceFrame from "@/components/ultramock/DeviceFrame";
 import MockBackground from "@/components/ultramock/MockBackground";
 import MockControls from "@/components/ultramock/MockControls";
+import Orbit3D from "@/components/ultramock/Orbit3D";
 
 export default function UltraMockPage() {
   const [screenshot, setScreenshot] = useState(null);
@@ -13,6 +14,8 @@ export default function UltraMockPage() {
   const [background, setBackground] = useState("sunset");
   const [padding, setPadding] = useState(80);
   const [scale, setScale] = useState(1);
+  const [rotX, setRotX] = useState(0);
+  const [rotY, setRotY] = useState(0);
   const [exporting, setExporting] = useState(false);
   const canvasRef = useRef(null);
   const fileRef = useRef(null);
@@ -57,6 +60,8 @@ export default function UltraMockPage() {
     setBackground("sunset");
     setPadding(80);
     setScale(1);
+    setRotX(0);
+    setRotY(0);
   };
 
   return (
@@ -120,12 +125,14 @@ export default function UltraMockPage() {
             <div className="w-full max-w-4xl">
               <div className="rounded-3xl overflow-hidden ring-1 ring-white/10 shadow-2xl">
                 <MockBackground ref={canvasRef} background={background} padding={padding}>
-                  <DeviceFrame device={device} screenshot={screenshot} scale={scale} />
+                  <Orbit3D rotX={rotX} rotY={rotY} setRotX={setRotX} setRotY={setRotY}>
+                    <DeviceFrame device={device} screenshot={screenshot} scale={scale} />
+                  </Orbit3D>
                 </MockBackground>
               </div>
               <div className="flex items-center justify-center gap-1.5 text-white/30 text-[10px] font-medium mt-3">
                 <ImageIcon className="w-3 h-3" />
-                Preview · exports at 2× resolution
+                Drag to rotate · Double-click to reset · Exports at 2×
               </div>
             </div>
           )}
@@ -143,6 +150,8 @@ export default function UltraMockPage() {
               background={background} setBackground={setBackground}
               padding={padding} setPadding={setPadding}
               scale={scale} setScale={setScale}
+              rotX={rotX} setRotX={setRotX}
+              rotY={rotY} setRotY={setRotY}
             />
           )}
         </aside>

@@ -1,5 +1,5 @@
 import React from "react";
-import { Smartphone, Monitor, Tablet, Globe, Square, Laptop, ChevronDown } from "lucide-react";
+import { Smartphone, Monitor, Tablet, Globe, Square, Laptop, RotateCcw, Move3d } from "lucide-react";
 import { BACKGROUND_PRESETS } from "./MockBackground";
 
 const DEVICES = [
@@ -17,7 +17,11 @@ export default function MockControls({
   background, setBackground,
   padding, setPadding,
   scale, setScale,
+  rotX, setRotX,
+  rotY, setRotY,
 }) {
+  const resetRotation = () => { setRotX(0); setRotY(0); };
+  const presetAngle = (x, y) => { setRotX(x); setRotY(y); };
   return (
     <div className="space-y-5">
       {/* Device */}
@@ -87,6 +91,72 @@ export default function MockControls({
           onChange={(e) => setScale(Number(e.target.value))}
           className="w-full accent-white"
         />
+      </Section>
+
+      {/* 3D rotation */}
+      <Section
+        title={
+          <span className="flex items-center gap-1.5">
+            <Move3d className="w-3 h-3" /> 3D Rotation
+          </span>
+        }
+      >
+        <div className="space-y-3">
+          <div>
+            <div className="flex items-center justify-between text-[10px] text-white/50 mb-1">
+              <span>Tilt (X)</span>
+              <span className="tabular-nums font-mono">{Math.round(rotX)}°</span>
+            </div>
+            <input
+              type="range"
+              min="-180"
+              max="180"
+              value={rotX}
+              onChange={(e) => setRotX(Number(e.target.value))}
+              className="w-full accent-white"
+            />
+          </div>
+          <div>
+            <div className="flex items-center justify-between text-[10px] text-white/50 mb-1">
+              <span>Spin (Y)</span>
+              <span className="tabular-nums font-mono">{Math.round(rotY)}°</span>
+            </div>
+            <input
+              type="range"
+              min="-180"
+              max="180"
+              value={rotY}
+              onChange={(e) => setRotY(Number(e.target.value))}
+              className="w-full accent-white"
+            />
+          </div>
+          {/* Quick angle presets */}
+          <div className="grid grid-cols-4 gap-1.5">
+            {[
+              { label: "Front", x: 0, y: 0 },
+              { label: "Left", x: 0, y: -25 },
+              { label: "Right", x: 0, y: 25 },
+              { label: "Hero", x: -8, y: -18 },
+            ].map((p) => (
+              <button
+                key={p.label}
+                onClick={() => presetAngle(p.x, p.y)}
+                className="px-2 py-1.5 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-[10px] font-bold"
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={resetRotation}
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-[11px] font-bold"
+          >
+            <RotateCcw className="w-3 h-3" /> Reset Rotation
+          </button>
+          <p className="text-[10px] text-white/30 leading-relaxed">
+            💡 Drag the device in the preview to orbit freely. Double-click to reset.
+          </p>
+        </div>
       </Section>
     </div>
   );
