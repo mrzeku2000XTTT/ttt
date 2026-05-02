@@ -27,6 +27,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
     backgroundCss,
     locked = false,        // Lock preview: freezes pan/zoom/interactions for MP4 framing
     pinchEnabled = false,  // Mobile 2-finger pinch-to-zoom
+    camera,                // { zoom, x, y } — animated by the timeline camera track
   },
   ref
 ) {
@@ -314,6 +315,18 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
       </div>
       )}
 
+      {/* Camera viewport — wraps the surface and applies the timeline camera transform */}
+      <div
+        className="relative w-full h-full"
+        style={{
+          transform: camera
+            ? `scale(${camera.zoom}) translate(${(50 - camera.x)}%, ${(50 - camera.y)}%)`
+            : undefined,
+          transformOrigin: "center center",
+          transition: "none",
+          willChange: "transform",
+        }}
+      >
       <div
         ref={surfaceRef}
         onClick={onSurfaceClick}
@@ -428,6 +441,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

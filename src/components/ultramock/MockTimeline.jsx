@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
-import { Plus, Play, Pause, Trash2, Video, Loader2, SkipBack, Film, Wand2, Layers, Replace, Eye, EyeOff } from "lucide-react";
+import { Plus, Play, Pause, Trash2, Video, Loader2, SkipBack, Film, Wand2, Layers, Replace, Eye, EyeOff, Camera } from "lucide-react";
 import { MOTION_PRESETS } from "./motionPresets";
+import { CAMERA_PRESETS } from "./cameraPresets";
 
 /**
  * Multi-track timeline — like a real video editor.
@@ -23,9 +24,14 @@ const MockTimeline = forwardRef(function MockTimeline({
   duration = 4,
   setDuration,
   captureFrame,           // async () => HTMLCanvasElement
+  camera,                 // { zoom, x, y } — current camera state
+  setCamera,              // setter to drive the canvas viewport
 }, ref) {
   // tracks: { [itemId]: Keyframe[] }
   const [tracks, setTracks] = useState({});
+  // Camera track — list of camera keyframes { t, zoom, x, y }
+  const [cameraTrack, setCameraTrack] = useState([]);
+  const [cameraHidden, setCameraHidden] = useState(false);
   const [playhead, setPlayhead] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [recording, setRecording] = useState(false);
@@ -41,7 +47,7 @@ const MockTimeline = forwardRef(function MockTimeline({
   const selected = items.find((i) => i.id === selectedId) || null;
   const selectedKfs = (selected && tracks[selected.id]) || [];
   const trackEntries = Object.entries(tracks).filter(([, kfs]) => kfs && kfs.length > 0);
-  const hasAnyTrack = trackEntries.length > 0;
+  const hasAnyTrack = trackEntries.length > 0 || cameraTrack.length > 0;
 
   // Sample keyframes at time t
   const sample = useCallback((t, kfs) => {
@@ -82,6 +88,28 @@ const MockTimeline = forwardRef(function MockTimeline({
     return null;
   }, []);
 
+  // Sample camera keyframes at time t — interpolates zoom/x/y
+  const sampleCamera = useCallback((t, kfs) => {
+    if (!kfs || !kfs.length) return null;
+    const sorted = [...kfs].sort((a, b) => a.t - b.t);
+    if (t <= sorted[0].t) return { ...sorted[0] };
+    if (t >= sorted[sorted.length - 1].t) return { ...sorted[sorted.length - 1] };
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const a = sorted[i], b = sorted[i + 1];
+      if (t >= a.t && t <= b.t) {
+        const span = b.t - a.t || 1;
+        const k = (t - a.t) / span;
+        const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+        return {
+          zoom: a.zoom + (b.zoom - a.zoom) * e,
+          x: a.x + (b.x - a.x) * e,
+          y: a.y + (b.y - a.y) * e,
+        };
+      }
+    }
+    return null;
+  }, []);
+
   // Apply ALL tracks at time t in parallel
   const applyAtTime = useCallback((t) => {
     Object.entries(tracks).forEach(([id, kfs]) => {
@@ -93,7 +121,12 @@ const MockTimeline = forwardRef(function MockTimeline({
       if (typeof v.y === "number") partial.y = v.y;
       updateItem(id, partial);
     });
-  }, [tracks, sample, updateItem, hiddenTracks]);
+    // Camera track
+    if (!cameraHidden && cameraTrack.length > 0 && setCamera) {
+      const c = sampleCamera(t, cameraTrack);
+      if (c) setCamera(c);
+    }
+  }, [tracks, sample, updateItem, hiddenTracks, cameraTrack, cameraHidden, sampleCamera, setCamera]);
 
   // Playback loop
   useEffect(() => {
@@ -224,6 +257,63 @@ const MockTimeline = forwardRef(function MockTimeline({
     });
     setPlayhead(startT);
     return true;
+  };
+
+  // ── Camera track operations ─────────────────────────────────────────────
+  const applyCameraPreset = (preset, modeOverride = null) => {
+    const mode = modeOverride || presetMode;
+    // Use the currently selected item as the camera focus target
+    const target = (selected && typeof selected.x === "number" && typeof selected.y === "number")
+      ? { x: selected.x, y: selected.y }
+      : null;
+
+    if (mode === "replace" || cameraTrack.length === 0) {
+      const kfs = preset.build(duration, target).map((k) => ({
+        ...k, t: Math.max(0, Math.min(duration, k.t)),
+      }));
+      setCameraTrack(kfs);
+      setPlayhead(0);
+      if (kfs[0] && setCamera) setCamera({ zoom: kfs[0].zoom, x: kfs[0].x, y: kfs[0].y });
+      return true;
+    }
+
+    // APPEND
+    const segLen = Math.max(0.5, presetSegment);
+    const lastKeyT = cameraTrack.length ? Math.max(...cameraTrack.map((k) => k.t)) : 0;
+    const startT = Math.max(playhead, lastKeyT);
+    const segKfs = preset.build(segLen, target).map((k) => ({
+      ...k, t: startT + Math.max(0, Math.min(segLen, k.t)),
+    }));
+    const newEnd = startT + segLen;
+    if (newEnd > duration && setDuration) setDuration(Math.ceil(newEnd * 2) / 2);
+
+    const kept = cameraTrack.filter((k) => k.t < startT - 0.01);
+    setCameraTrack([...kept, ...segKfs].sort((a, b) => a.t - b.t));
+    setPlayhead(startT);
+    return true;
+  };
+
+  const addCameraKeyframe = () => {
+    if (!camera) return;
+    const t = Math.round(playhead * 100) / 100;
+    setCameraTrack((prev) => {
+      const filtered = prev.filter((k) => Math.abs(k.t - t) > 0.01);
+      return [...filtered, { t, zoom: camera.zoom, x: camera.x, y: camera.y }].sort((a, b) => a.t - b.t);
+    });
+  };
+
+  const removeCameraKeyframe = (idx) => {
+    setCameraTrack((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const clearCameraTrack = () => {
+    setCameraTrack([]);
+    if (setCamera) setCamera({ zoom: 1, x: 50, y: 50 });
+  };
+
+  const jumpToCameraKey = (kf) => {
+    setPlayhead(kf.t);
+    if (setCamera) setCamera({ zoom: kf.zoom, x: kf.x, y: kf.y });
   };
 
   // ── Scrubbing ───────────────────────────────────────────────────────────
@@ -463,7 +553,7 @@ const MockTimeline = forwardRef(function MockTimeline({
           </label>
         )}
         <button
-          onClick={() => { setTracks({}); setPlayhead(0); }}
+          onClick={() => { setTracks({}); setCameraTrack([]); if (setCamera) setCamera({ zoom: 1, x: 50, y: 50 }); setPlayhead(0); }}
           disabled={recording || !hasAnyTrack}
           className="ml-auto flex items-center gap-1 px-2 h-6 rounded-md bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-300 text-[10px] font-bold disabled:opacity-30"
           title="Clear all tracks"
@@ -487,6 +577,32 @@ const MockTimeline = forwardRef(function MockTimeline({
             {p.label}
           </button>
         ))}
+      </div>
+
+      {/* Camera preset chips */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+        <div className="flex-shrink-0 flex items-center gap-1 text-[10px] text-pink-300/80 font-bold uppercase tracking-wider pr-1">
+          <Camera className="w-3 h-3" /> Camera
+        </div>
+        {CAMERA_PRESETS.map((p) => (
+          <button
+            key={p.id}
+            onClick={() => applyCameraPreset(p)}
+            disabled={recording}
+            title={`${p.desc}${selected ? ` (target: ${labelFor(selected)})` : ""}`}
+            className="flex-shrink-0 px-2.5 h-7 rounded-full bg-pink-500/10 hover:bg-pink-500/25 border border-pink-500/30 text-pink-200 hover:text-white text-[11px] font-bold transition-colors disabled:opacity-40"
+          >
+            {p.label}
+          </button>
+        ))}
+        <button
+          onClick={addCameraKeyframe}
+          disabled={recording}
+          className="flex-shrink-0 flex items-center gap-1 px-2.5 h-7 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white/70 text-[11px] font-bold disabled:opacity-40"
+          title="Add camera keyframe at playhead (uses current camera state)"
+        >
+          <Plus className="w-3 h-3" /> Cam Key
+        </button>
       </div>
 
       {/* Time ruler + scrubber */}
@@ -516,10 +632,75 @@ const MockTimeline = forwardRef(function MockTimeline({
         </div>
       </div>
 
+      {/* Camera lane (always visible if it has keyframes) */}
+      {cameraTrack.length > 0 && (
+        <div
+          className={`flex items-stretch gap-1.5 rounded-lg border transition-colors border-pink-500/40 bg-pink-500/5`}
+        >
+          <div className="flex items-center gap-1 px-2 py-1.5 w-36 flex-shrink-0 border-r border-white/10">
+            <Camera className="w-3 h-3 text-pink-400 flex-shrink-0" />
+            <span className="text-[10px] font-bold text-pink-200 truncate flex-1" title="Camera">
+              Camera
+            </span>
+            <button
+              onClick={() => setCameraHidden((h) => !h)}
+              className="w-5 h-5 flex items-center justify-center rounded hover:bg-white/10 text-white/50 hover:text-white"
+              title={cameraHidden ? "Enable camera" : "Mute camera"}
+            >
+              {cameraHidden ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+            </button>
+            <button
+              onClick={clearCameraTrack}
+              className="w-5 h-5 flex items-center justify-center rounded hover:bg-red-500/30 text-white/50 hover:text-red-300"
+              title="Delete camera track"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          </div>
+          <div className={`relative flex-1 h-8 my-0.5 rounded ${cameraHidden ? "opacity-30" : ""}`}
+               style={{ background: "rgba(236,72,153,0.07)" }}>
+            {cameraTrack.length >= 2 && (() => {
+              const sorted = [...cameraTrack].sort((a, b) => a.t - b.t);
+              const startPct = (sorted[0].t / duration) * 100;
+              const endPct = (sorted[sorted.length - 1].t / duration) * 100;
+              return (
+                <div
+                  className="absolute top-1/2 -translate-y-1/2 h-1.5 rounded-full"
+                  style={{
+                    left: `${startPct}%`,
+                    width: `${Math.max(0, endPct - startPct)}%`,
+                    background: "#ec4899",
+                    opacity: 0.55,
+                  }}
+                />
+              );
+            })()}
+            {cameraTrack.map((kf, i) => (
+              <button
+                key={i}
+                onClick={(e) => { e.stopPropagation(); jumpToCameraKey(kf); }}
+                onContextMenu={(e) => { e.preventDefault(); removeCameraKeyframe(i); }}
+                className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rotate-45 hover:scale-150 transition-transform shadow-md z-10 ring-1 ring-white/40"
+                style={{
+                  left: `calc(${(kf.t / duration) * 100}% - 5px)`,
+                  background: "#ec4899",
+                  boxShadow: "0 0 6px #ec489980",
+                }}
+                title={`${kf.t.toFixed(2)}s · zoom ${kf.zoom.toFixed(2)}× · focus (${Math.round(kf.x)}%, ${Math.round(kf.y)}%) — right-click to delete`}
+              />
+            ))}
+            <div
+              className="absolute top-0 bottom-0 w-px bg-cyan-400/60 pointer-events-none"
+              style={{ left: `${(playhead / duration) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Multi-track lanes */}
-      {trackEntries.length === 0 ? (
+      {trackEntries.length === 0 && cameraTrack.length === 0 ? (
         <div className="rounded-lg border border-dashed border-white/10 bg-white/[0.02] p-4 text-center text-white/40 text-[11px]">
-          Select an item, then click a preset to create its track. Each item gets its own animation lane.
+          Click a Camera preset (e.g. "Zoom to Target") to animate the whole preview, or select an item and click a motion preset to animate it.
         </div>
       ) : (
         <div className="space-y-1.5">
@@ -605,7 +786,7 @@ const MockTimeline = forwardRef(function MockTimeline({
       )}
 
       <p className="text-[10px] text-white/30">
-        💡 Multi-track: every item with keyframes gets its own lane and animates in parallel — like a real video editor. Select an item → click a preset to add its track. Right-click a diamond to delete it. Toggle the eye to mute a lane.
+        💡 Multi-track: every item gets its own lane. The <span className="text-pink-300 font-bold">Camera</span> lane animates the whole preview — zoom into a target, dolly in, orbit, etc. Select an item first so "Zoom to Target" knows where to focus. Right-click a diamond to delete.
       </p>
     </div>
   );

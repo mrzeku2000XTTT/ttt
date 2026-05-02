@@ -70,6 +70,8 @@ export default function UltraMockPage() {
   const [background, setBackground] = useState("sunset");
   const [padding, setPadding] = useState(60);
   const [duration, setDuration] = useState(4);
+  // Camera state — animated by the timeline's camera track
+  const [camera, setCamera] = useState({ zoom: 1, x: 50, y: 50 });
   const [exporting, setExporting] = useState(false);
   const [agentOpen, setAgentOpen] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
@@ -435,6 +437,7 @@ export default function UltraMockPage() {
                 backgroundCss={backgroundCss}
                 locked={locked}
                 pinchEnabled={pinchEnabled}
+                camera={camera}
               />
             </div>
             <div className="hidden sm:flex items-center justify-center gap-1.5 text-white/30 text-[10px] font-medium mt-3 px-2 text-center">
@@ -475,6 +478,8 @@ export default function UltraMockPage() {
                 duration={duration}
                 setDuration={setDuration}
                 captureFrame={captureFrame}
+                camera={camera}
+                setCamera={setCamera}
               />
             )}
           </motion.div>
