@@ -55,7 +55,10 @@ const makeOverlay = (partial = {}) => ({
   x: 50, y: 50,
   widthPct: 25,                // % of canvas width
   aspect: 1,                   // w/h
-  rotation: 0,
+  rotation: 0,                 // 2D rotation (z-axis) from OverlayControls
+  rotX: 0,                     // 3D tilt — animated by motion presets
+  rotY: 0,                     // 3D spin — animated by motion presets
+  scale: 1,                    // animated by motion presets
   opacity: 1,
   ...partial,
 });

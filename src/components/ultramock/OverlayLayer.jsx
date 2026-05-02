@@ -19,6 +19,11 @@ export default function OverlayLayer({
   const isPreset = item.overlayType === "preset";
   const preset = isPreset ? OVERLAY_PRESETS.find((p) => p.id === item.presetId) : null;
   const aspect = item.aspect || (preset ? preset.defaultW / preset.defaultH : 1);
+  // Motion preset compatibility — same animation track as devices.
+  const rotX = item.rotX || 0;
+  const rotY = item.rotY || 0;
+  const scale = item.scale ?? 1;
+  const z = item.rotation || 0; // 2D rotation from OverlayControls
 
   return (
     <div
@@ -30,11 +35,13 @@ export default function OverlayLayer({
         top: `${item.y}%`,
         width: `${item.widthPct}%`,
         aspectRatio: `${aspect}`,
-        transform: `translate(-50%, -50%) rotate(${item.rotation || 0}deg)`,
+        transform: `translate(-50%, -50%) perspective(1600px) rotateX(${rotX}deg) rotateY(${rotY}deg) rotateZ(${z}deg) scale(${scale})`,
+        transformStyle: "preserve-3d",
         cursor: isDragging ? "grabbing" : "grab",
         zIndex: selected ? 25 : 14,
         touchAction: "none",
         opacity: item.opacity ?? 1,
+        transition: isDragging ? "none" : "transform 0.2s ease-out",
       }}
     >
       {selected && (
