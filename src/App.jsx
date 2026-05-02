@@ -51,6 +51,7 @@ import LaunchBrandPage from './pages/LaunchBrand';
 import APEXPage from './pages/APEX';
 import MIRAGEPage from './pages/MIRAGE';
 import MIRAGEStudioPage from './pages/MIRAGEStudio';
+import TTTGatePage from './pages/TTTGate';
 import KaSshiPlayer from './components/KaSshiPlayer';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -88,7 +89,8 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route path="/Xunhua" element={<XunhuaPage />} />
-      <Route path="/" element={<TTTV2Page />} />
+      <Route path="/" element={<TTTGatePage />} />
+      <Route path="/TTTGate" element={<TTTGatePage />} />
       <Route path="/Home" element={
         <LayoutWrapper currentPageName={mainPageKey}>
           <MainPage />
