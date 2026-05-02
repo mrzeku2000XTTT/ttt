@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { Plus, Type, Bot, Download, Loader2, Settings2, Upload, Lock, Unlock, Hand } from "lucide-react";
+import { Plus, Type, Bot, Download, Loader2, Settings2, Upload, Lock, Unlock, Hand, Sparkles } from "lucide-react";
 
 /**
  * Compact bottom action bar for phones.
@@ -21,6 +21,7 @@ export default function MockMobileBar({
   onToggleLock,
   pinchEnabled,
   onTogglePinch,
+  onOpenOverlay,
 }) {
   const fileRef = useRef(null);
 
@@ -103,6 +104,14 @@ export default function MockMobileBar({
         >
           <Type className="w-4 h-4" />
           <span className="text-[9px] font-bold mt-0.5">Text</span>
+        </button>
+        <button
+          onClick={onOpenOverlay}
+          className="flex-1 flex flex-col items-center justify-center h-12 rounded-xl bg-gradient-to-r from-pink-500 to-purple-500 text-white active:opacity-80"
+          aria-label="Add overlay"
+        >
+          <Sparkles className="w-4 h-4" />
+          <span className="text-[9px] font-bold mt-0.5">Overlay</span>
         </button>
         <button
           onClick={onOpenControls}

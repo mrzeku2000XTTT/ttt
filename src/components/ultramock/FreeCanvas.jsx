@@ -1,6 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from "react";
 import DeviceFrame from "./DeviceFrame";
 import TextLayer from "./TextLayer";
+import OverlayLayer from "./OverlayLayer";
 import { Trash2, Plus, Move, X, ZoomIn, ZoomOut, Maximize2, Lock } from "lucide-react";
 
 /**
@@ -335,6 +336,20 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
           if (item.kind === "text") {
             return (
               <TextLayer
+                key={item.id}
+                item={item}
+                selected={selected}
+                onSelect={setSelectedId}
+                onRemove={onRemove}
+                onPointerDown={startDrag}
+                isDragging={dragState.current?.id === item.id}
+              />
+            );
+          }
+          // Render overlay items (preset SVG or AI image)
+          if (item.kind === "overlay") {
+            return (
+              <OverlayLayer
                 key={item.id}
                 item={item}
                 selected={selected}

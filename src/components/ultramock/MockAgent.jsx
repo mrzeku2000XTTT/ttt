@@ -125,17 +125,38 @@ export default function MockAgent({ open, onClose, getStateSnapshot, canvasRef, 
   return (
     <AnimatePresence>
       {open && (
-        <motion.div
-          initial={{ x: "100%", opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: "100%", opacity: 0 }}
-          transition={{ type: "spring", damping: 28, stiffness: 240 }}
-          className="fixed top-0 right-0 bottom-0 w-full sm:w-[420px] z-[60] bg-zinc-950/95 backdrop-blur-2xl sm:border-l border-white/10 flex flex-col shadow-2xl"
-          style={{
-            paddingTop: "env(safe-area-inset-top, 0px)",
-            paddingBottom: "env(safe-area-inset-bottom, 0px)",
-          }}
-        >
+        <>
+          {/* Backdrop on mobile only — taps to close */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="sm:hidden fixed inset-0 z-[59] bg-black/50 backdrop-blur-sm"
+          />
+          <motion.div
+            // Mobile: slide UP from bottom (drawer). Desktop: slide IN from right (panel).
+            initial={{ y: "100%", x: 0, opacity: 0 }}
+            animate={{ y: 0, x: 0, opacity: 1 }}
+            exit={{ y: "100%", x: 0, opacity: 0 }}
+            transition={{ type: "spring", damping: 30, stiffness: 280 }}
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 0.5 }}
+            onDragEnd={(_, info) => {
+              if (info.offset.y > 120 || info.velocity.y > 600) onClose();
+            }}
+            className="fixed inset-x-0 bottom-0 z-[60] sm:inset-x-auto sm:top-0 sm:right-0 sm:bottom-0 sm:left-auto sm:w-[420px] bg-zinc-950/95 backdrop-blur-2xl border-t sm:border-t-0 sm:border-l border-white/10 rounded-t-3xl sm:rounded-none flex flex-col shadow-2xl"
+            style={{
+              paddingTop: "env(safe-area-inset-top, 0px)",
+              paddingBottom: "env(safe-area-inset-bottom, 0px)",
+              maxHeight: "90vh",
+            }}
+          >
+            {/* Mobile drag handle */}
+            <div className="flex justify-center pt-2 pb-1 sm:hidden cursor-grab active:cursor-grabbing">
+              <div className="w-10 h-1 rounded-full bg-white/25" />
+            </div>
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-gradient-to-r from-fuchsia-500/10 via-orange-500/10 to-pink-500/10">
             <div className="flex items-center gap-2">
@@ -223,6 +244,7 @@ export default function MockAgent({ open, onClose, getStateSnapshot, canvasRef, 
             </div>
           </div>
         </motion.div>
+        </>
       )}
     </AnimatePresence>
   );

@@ -8,6 +8,8 @@ import MockControls from "@/components/ultramock/MockControls";
 import MockTimeline from "@/components/ultramock/MockTimeline";
 import FreeCanvas from "@/components/ultramock/FreeCanvas";
 import TextControls from "@/components/ultramock/TextControls";
+import OverlayControls from "@/components/ultramock/OverlayControls";
+import OverlayPicker from "@/components/ultramock/OverlayPicker";
 import MockAgent from "@/components/ultramock/MockAgent";
 import MockMobileBar from "@/components/ultramock/MockMobileBar";
 import MockBottomSheet from "@/components/ultramock/MockBottomSheet";
@@ -43,6 +45,21 @@ const makeText = (partial = {}) => ({
   ...partial,
 });
 
+const makeOverlay = (partial = {}) => ({
+  id: newId(),
+  kind: "overlay",
+  overlayType: "preset",       // "preset" | "image"
+  presetId: null,
+  imageUrl: null,
+  color: null,
+  x: 50, y: 50,
+  widthPct: 25,                // % of canvas width
+  aspect: 1,                   // w/h
+  rotation: 0,
+  opacity: 1,
+  ...partial,
+});
+
 export default function UltraMockPage() {
   const [items, setItems] = useState([makeItem()]);
   const [selectedId, setSelectedId] = useState(null);
@@ -53,6 +70,7 @@ export default function UltraMockPage() {
   const [exporting, setExporting] = useState(false);
   const [agentOpen, setAgentOpen] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
+  const [overlayPickerOpen, setOverlayPickerOpen] = useState(false);
   const [locked, setLocked] = useState(false);
   const [pinchEnabled, setPinchEnabled] = useState(false);
   const canvasRef = useRef(null);
@@ -80,6 +98,41 @@ export default function UltraMockPage() {
     setItems((prev) => [...prev, item]);
     setSelectedId(item.id);
     setPlacementMode(false);
+  }, []);
+
+  // Add an overlay from a library preset
+  const addOverlayPreset = useCallback((preset) => {
+    const item = makeOverlay({
+      overlayType: "preset",
+      presetId: preset.id,
+      color: preset.color,
+      aspect: preset.defaultW / preset.defaultH,
+      // sensible default size: ~28% wide for most things
+      widthPct: 28,
+    });
+    setItems((prev) => [...prev, item]);
+    setSelectedId(item.id);
+  }, []);
+
+  // Add an overlay from an AI-generated / uploaded image URL
+  const addOverlayImage = useCallback(({ url }) => {
+    const img = new Image();
+    img.onload = () => {
+      const item = makeOverlay({
+        overlayType: "image",
+        imageUrl: url,
+        aspect: img.width / img.height || 1,
+        widthPct: 35,
+      });
+      setItems((prev) => [...prev, item]);
+      setSelectedId(item.id);
+    };
+    img.onerror = () => {
+      const item = makeOverlay({ overlayType: "image", imageUrl: url, aspect: 1, widthPct: 35 });
+      setItems((prev) => [...prev, item]);
+      setSelectedId(item.id);
+    };
+    img.src = url;
   }, []);
 
   const removeItem = useCallback((id) => {
@@ -336,6 +389,12 @@ export default function UltraMockPage() {
             <Type className="w-3.5 h-3.5" /> Add Text
           </button>
           <button
+            onClick={() => setOverlayPickerOpen(true)}
+            className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-gradient-to-r from-pink-500 to-purple-500 hover:opacity-90 text-white text-xs font-bold shadow-lg shadow-pink-500/30"
+          >
+            <Sparkles className="w-3.5 h-3.5" /> Overlay
+          </button>
+          <button
             onClick={reset}
             className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-xs font-bold"
           >
@@ -406,6 +465,7 @@ export default function UltraMockPage() {
               onToggleLock={() => setLocked((l) => !l)}
               pinchEnabled={pinchEnabled}
               onTogglePinch={() => setPinchEnabled((p) => !p)}
+              onOpenOverlay={() => setOverlayPickerOpen(true)}
             />
 
             <div className="sm:hidden flex items-center justify-center gap-1.5 text-white/30 text-[10px] font-medium mt-2 px-2 text-center">
@@ -434,6 +494,12 @@ export default function UltraMockPage() {
               onUpdate={(partial) => updateItem(selected.id, partial)}
               onRemove={() => removeItem(selected.id)}
             />
+          ) : selected?.kind === "overlay" ? (
+            <OverlayControls
+              selected={selected}
+              onUpdate={(partial) => updateItem(selected.id, partial)}
+              onRemove={() => removeItem(selected.id)}
+            />
           ) : (
             <MockControls
               background={background} setBackground={setBackground}
@@ -451,10 +517,21 @@ export default function UltraMockPage() {
       <MockBottomSheet
         open={mobileSheetOpen}
         onClose={() => setMobileSheetOpen(false)}
-        title={selected?.kind === "text" ? "Edit Text" : selected ? "Edit Device" : "Canvas Settings"}
+        title={
+          selected?.kind === "text" ? "Edit Text"
+            : selected?.kind === "overlay" ? "Edit Overlay"
+            : selected ? "Edit Device"
+            : "Canvas Settings"
+        }
       >
         {selected?.kind === "text" ? (
           <TextControls
+            selected={selected}
+            onUpdate={(partial) => updateItem(selected.id, partial)}
+            onRemove={() => { removeItem(selected.id); setMobileSheetOpen(false); }}
+          />
+        ) : selected?.kind === "overlay" ? (
+          <OverlayControls
             selected={selected}
             onUpdate={(partial) => updateItem(selected.id, partial)}
             onRemove={() => { removeItem(selected.id); setMobileSheetOpen(false); }}
@@ -470,6 +547,14 @@ export default function UltraMockPage() {
           />
         )}
       </MockBottomSheet>
+
+      {/* Overlay picker (mobile bottom sheet / desktop modal) */}
+      <OverlayPicker
+        open={overlayPickerOpen}
+        onClose={() => setOverlayPickerOpen(false)}
+        onPickPreset={addOverlayPreset}
+        onPickImage={addOverlayImage}
+      />
 
       <MockAgent
         open={agentOpen}
