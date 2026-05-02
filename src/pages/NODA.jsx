@@ -619,16 +619,68 @@ export default function NODAPage() {
       case "math_eval": {
         const expr = interpolate(node.config.expression || "").trim();
         if (!expr) throw new Error("Expression is required");
-        // Strict whitelist — only digits, operators, parens, decimals, whitespace
-        if (!/^[\d+\-*/().\s]+$/.test(expr)) {
-          throw new Error("Math expression must contain only numbers and + - * / ( )");
+
+        // Fast path — pure math: digits, operators, parens, decimals, whitespace only.
+        const isPureMath = /^[\d+\-*/().\s]+$/.test(expr);
+        const evalSafe = (s) => {
+          // eslint-disable-next-line no-new-func
+          const r = Function(`"use strict"; return (${s})`)();
+          if (typeof r !== "number" || !Number.isFinite(r)) {
+            throw new Error("Math evaluation produced non-numeric result");
+          }
+          return r;
+        };
+        if (isPureMath) return evalSafe(expr);
+
+        // Natural language path — let the LLM convert it to a safe arithmetic expression.
+        // We pull in any prior output as context so phrases like "10% of {{result}}" work.
+        const prevContext = stringify(getPrevOutput()).slice(0, 2000);
+        const llmRes = await withRetry(() =>
+          base44.integrations.Core.InvokeLLM({
+            prompt: `Convert this natural-language math request into a single arithmetic expression I can evaluate in JavaScript. Only use digits, decimals, and the operators + - * / ( ). NO variables, NO functions, NO words.
+
+Request: """${expr}"""
+
+${prevContext ? `Previous step output (use any numbers from this if relevant):\n"""${prevContext}"""` : ""}
+
+Also return the final numeric answer.`,
+            response_json_schema: {
+              type: "object",
+              properties: {
+                expression: { type: "string", description: "Pure arithmetic, e.g. (1500 * 0.15) + 200" },
+                answer: { type: "number" },
+                explanation: { type: "string" },
+              },
+              required: ["expression", "answer"],
+            },
+          })
+        );
+
+        const cleanExpr = (llmRes?.expression || "").trim();
+        // Validate the LLM output is safe before evaluating ourselves
+        if (cleanExpr && /^[\d+\-*/().\s]+$/.test(cleanExpr)) {
+          try {
+            const verified = evalSafe(cleanExpr);
+            return {
+              answer: verified,
+              expression: cleanExpr,
+              from: expr,
+              explanation: llmRes?.explanation || "",
+            };
+          } catch {
+            // fall through to LLM's own answer
+          }
         }
-        // eslint-disable-next-line no-new-func
-        const result = Function(`"use strict"; return (${expr})`)();
-        if (typeof result !== "number" || !Number.isFinite(result)) {
-          throw new Error("Math evaluation produced non-numeric result");
+        // Trust the LLM's numeric answer if local eval failed
+        if (typeof llmRes?.answer === "number" && Number.isFinite(llmRes.answer)) {
+          return {
+            answer: llmRes.answer,
+            expression: cleanExpr || expr,
+            from: expr,
+            explanation: llmRes?.explanation || "",
+          };
         }
-        return result;
+        throw new Error(`Couldn't compute: "${expr}"`);
       }
       case "ai_image": {
         const prompt = interpolate(node.config.prompt || "");

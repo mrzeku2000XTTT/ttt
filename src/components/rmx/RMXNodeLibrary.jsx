@@ -167,10 +167,10 @@ export const NODE_TEMPLATES = [
     label: "Math",
     icon: "Calculator",
     color: "from-emerald-500 to-green-500",
-    desc: "Evaluate a math expression (sum, average, %)",
+    desc: "Plain-English or numeric math (15% tip, average of, etc.)",
     category: "Logic",
-    tags: ["math", "calc", "number"],
-    defaultConfig: { expression: "{{result}} * 1.1" },
+    tags: ["math", "calc", "number", "percent", "natural language"],
+    defaultConfig: { expression: "15% of {{result}}" },
   },
   {
     type: "send_email",

@@ -157,7 +157,7 @@ function getFields(type) {
     case "wikipedia":
       return [{ key: "topic", label: "Topic", placeholder: "Kaspa cryptocurrency" }];
     case "math_eval":
-      return [{ key: "expression", label: "Expression", placeholder: "{{result}} * 1.1", hint: "Supports + - * / ( ) and {{result}}. Numbers only." }];
+      return [{ key: "expression", label: "Expression", type: "textarea", placeholder: "15% tip on $42, or {{result}} * 1.1", hint: "Plain English works: 'add 7% tax to {{result}}' or 'average of 10, 20, 30'. Pure math also works." }];
     case "ai_image":
       return [{ key: "prompt", label: "Image Prompt", type: "textarea", placeholder: "Describe the image" }];
     case "deep_research":
