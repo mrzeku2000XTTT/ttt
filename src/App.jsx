@@ -52,6 +52,7 @@ import APEXPage from './pages/APEX';
 import MIRAGEPage from './pages/MIRAGE';
 import MIRAGEStudioPage from './pages/MIRAGEStudio';
 import TTTGatePage from './pages/TTTGate';
+import UltraMockPage from './pages/UltraMock';
 import KaSshiPlayer from './components/KaSshiPlayer';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -147,6 +148,7 @@ const AuthenticatedApp = () => {
       <Route path="/APEX" element={<APEXPage />} />
       <Route path="/MIRAGE" element={<MIRAGEPage />} />
       <Route path="/MIRAGEStudio" element={<MIRAGEStudioPage />} />
+      <Route path="/UltraMock" element={<UltraMockPage />} />
       <Route path="/login" element={<AuthRedirect />} />
       <Route path="/Login" element={<AuthRedirect />} />
       <Route path="*" element={<PageNotFound />} />
