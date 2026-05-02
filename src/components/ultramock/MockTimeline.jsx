@@ -16,10 +16,11 @@ export default function MockTimeline({
   duration = 4, // seconds
   setDuration,
   captureFrame, // async () => HTMLCanvasElement
+  keyframes,        // lifted: persists across selection changes
+  setKeyframes,     // lifted setter
+  selectedLabel,    // string shown in header (e.g. "iPhone")
+  hasSelection,     // false → show empty/disabled state but timeline stays mounted
 }) {
-  const [keyframes, setKeyframes] = useState([
-    { t: 0, rotX: 0, rotY: 0, scale: 1 },
-  ]);
   const [playhead, setPlayhead] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [recording, setRecording] = useState(false);
@@ -58,12 +59,13 @@ export default function MockTimeline({
   // Apply playhead → state when scrubbing or playing
   const applyAtTime = useCallback(
     (t) => {
+      if (!hasSelection) return;
       const v = sample(t, keyframes);
       setRotX(v.rotX);
       setRotY(v.rotY);
       setScale(v.scale);
     },
-    [keyframes, sample, setRotX, setRotY, setScale]
+    [keyframes, sample, setRotX, setRotY, setScale, hasSelection]
   );
 
   // Playback loop
@@ -209,14 +211,32 @@ export default function MockTimeline({
     setRecordProgress(0);
   };
 
+  const disabled = !hasSelection;
+
   return (
-    <div className="mt-4 rounded-2xl bg-black/60 border border-white/10 backdrop-blur-xl p-4 space-y-3">
+    <div className="mt-3 rounded-2xl bg-black/60 border border-white/10 backdrop-blur-xl p-4 space-y-3 relative">
+      {/* Header w/ selection label */}
+      <div className="flex items-center justify-between -mt-1">
+        <div className="flex items-center gap-2">
+          <Film className="w-3 h-3 text-cyan-400" />
+          <span className="text-[10px] font-black tracking-[0.2em] uppercase text-white/60">Timeline</span>
+          {selectedLabel && (
+            <span className="text-[10px] font-bold text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 rounded-full px-2 py-0.5">
+              {selectedLabel}
+            </span>
+          )}
+        </div>
+        {disabled && (
+          <span className="text-[10px] text-white/40 italic">Select a device to edit</span>
+        )}
+      </div>
+
       {/* Top row: transport + actions */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-1.5">
           <button
             onClick={reset}
-            disabled={recording}
+            disabled={recording || disabled}
             className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 disabled:opacity-40"
             title="Reset to start"
           >
@@ -224,7 +244,7 @@ export default function MockTimeline({
           </button>
           <button
             onClick={() => setPlaying((p) => !p)}
-            disabled={recording || keyframes.length < 2}
+            disabled={recording || disabled || keyframes.length < 2}
             className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-white text-black hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold"
           >
             {playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
@@ -232,7 +252,7 @@ export default function MockTimeline({
           </button>
           <button
             onClick={addKeyframe}
-            disabled={recording}
+            disabled={recording || disabled}
             className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-orange-500/20 hover:bg-orange-500/30 border border-orange-500/40 text-orange-200 text-xs font-bold disabled:opacity-40"
             title="Add keyframe at playhead with current rotation/scale"
           >
@@ -257,7 +277,7 @@ export default function MockTimeline({
           </label>
           <button
             onClick={recordVideo}
-            disabled={recording || keyframes.length < 2}
+            disabled={recording || disabled || keyframes.length < 2}
             className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-gradient-to-r from-red-500 to-pink-500 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold shadow-lg shadow-red-500/30"
             title={keyframes.length < 2 ? "Add at least 2 keyframes" : "Record WebM video"}
           >
@@ -284,7 +304,7 @@ export default function MockTimeline({
           <button
             key={p.id}
             onClick={() => applyPreset(p)}
-            disabled={recording}
+            disabled={recording || disabled}
             title={p.desc}
             className="flex-shrink-0 px-2.5 h-7 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 hover:border-orange-400/50 text-white/70 hover:text-white text-[11px] font-bold transition-colors disabled:opacity-40"
           >
