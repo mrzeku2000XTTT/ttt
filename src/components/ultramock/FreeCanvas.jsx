@@ -214,6 +214,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
         background: backgroundCss,
         padding,
         aspectRatio: "16/10",
+        touchAction: "none",
       }}
     >
       {/* Zoom controls — overlay, not part of the exported canvas (sits outside surface) */}
@@ -261,6 +262,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
           transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
           transformOrigin: "center center",
           transition: dragState.current || isPanning ? "none" : "transform 0.15s ease-out",
+          touchAction: "none", // disable browser pan/zoom so we can pan the canvas with one finger
         }}
       >
         {items.map((item) => {
