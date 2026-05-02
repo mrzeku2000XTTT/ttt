@@ -27,10 +27,7 @@ export default function MockMobileBar({
   };
 
   return (
-    <div
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-black/90 backdrop-blur-xl border-t border-white/10"
-      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
-    >
+    <div className="lg:hidden bg-black/90 backdrop-blur-xl border border-white/10 rounded-2xl mt-3">
       <input
         ref={fileRef}
         type="file"

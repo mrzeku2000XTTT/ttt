@@ -359,10 +359,7 @@ export default function UltraMockPage() {
         </button>
       </nav>
 
-      <div
-        className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-0"
-        style={{ paddingBottom: "calc(76px + env(safe-area-inset-bottom, 0px))" }}
-      >
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-0">
         {/* Canvas */}
         <div className="p-2 sm:p-4 lg:p-8 flex flex-col items-center min-h-[60vh]">
           <motion.div
@@ -389,9 +386,23 @@ export default function UltraMockPage() {
               <ImageIcon className="w-3 h-3 flex-shrink-0" />
               <span>Click "+ Add Device" then tap the canvas · Drag freely · Animate the selected one below</span>
             </div>
+            {/* Mobile action bar — sits directly under the preview */}
+            <MockMobileBar
+              placementMode={placementMode}
+              onTogglePlacement={() => setPlacementMode((p) => !p)}
+              onAddText={addText}
+              onOpenAgent={() => setAgentOpen(true)}
+              onExport={handleExportPNG}
+              onReset={reset}
+              onOpenControls={openMobileControls}
+              onUploadFile={onMobileUpload}
+              exporting={exporting}
+              hasSelection={!!selected}
+            />
+
             <div className="sm:hidden flex items-center justify-center gap-1.5 text-white/30 text-[10px] font-medium mt-2 px-2 text-center">
               <ImageIcon className="w-3 h-3 flex-shrink-0" />
-              <span>Tap a device to select · Use bottom bar to add more</span>
+              <span>Tap a device to select · Buttons above to add more</span>
             </div>
 
             {/* Timeline only animates the selected device */}
@@ -427,20 +438,6 @@ export default function UltraMockPage() {
           )}
         </aside>
       </div>
-
-      {/* Mobile bottom action bar */}
-      <MockMobileBar
-        placementMode={placementMode}
-        onTogglePlacement={() => setPlacementMode((p) => !p)}
-        onAddText={addText}
-        onOpenAgent={() => setAgentOpen(true)}
-        onExport={handleExportPNG}
-        onReset={reset}
-        onOpenControls={openMobileControls}
-        onUploadFile={onMobileUpload}
-        exporting={exporting}
-        hasSelection={!!selected}
-      />
 
       {/* Mobile controls bottom sheet */}
       <MockBottomSheet
