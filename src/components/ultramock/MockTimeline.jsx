@@ -444,14 +444,27 @@ const MockTimeline = forwardRef(function MockTimeline({
         if (wait > 0) await new Promise((r) => setTimeout(r, wait));
       }
 
+      // Force progress to 100% and give the recorder one extra tick to flush
+      setRecordProgress(1);
+      try { recorder.requestData(); } catch { /* ignore */ }
+      await new Promise((r) => setTimeout(r, 120));
       recorder.stop();
       const blob = await done;
+      if (!blob || blob.size === 0) {
+        throw new Error("Recording produced an empty file. Try a shorter duration.");
+      }
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = `ultramock-${Date.now()}.webm`;
+      a.rel = "noopener";
+      // Anchor MUST be in the DOM for the click to download in some browsers (Safari/Firefox)
+      document.body.appendChild(a);
       a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setTimeout(() => {
+        try { document.body.removeChild(a); } catch { /* ignore */ }
+        URL.revokeObjectURL(url);
+      }, 2000);
     } catch (err) {
       console.error("Recording failed:", err);
       alert("Recording failed: " + err.message);
