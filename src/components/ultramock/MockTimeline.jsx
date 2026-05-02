@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { Plus, Play, Pause, Trash2, Video, Loader2, SkipBack, Film, Wand2 } from "lucide-react";
+import { Plus, Play, Pause, Trash2, Video, Loader2, SkipBack, Film, Wand2, Layers, Replace } from "lucide-react";
 import { MOTION_PRESETS } from "./motionPresets";
 
 /**
@@ -25,6 +25,10 @@ export default function MockTimeline({
   const [playing, setPlaying] = useState(false);
   const [recording, setRecording] = useState(false);
   const [recordProgress, setRecordProgress] = useState(0);
+  // "append" = chain preset at playhead (multi-add). "replace" = wipe & set.
+  const [presetMode, setPresetMode] = useState("append");
+  // How long each appended preset takes (seconds). Independent of total duration.
+  const [presetSegment, setPresetSegment] = useState(2);
 
   const playStartRef = useRef(0);
   const playFromRef = useRef(0);
@@ -150,21 +154,51 @@ export default function MockTimeline({
   };
 
   const applyPreset = (preset) => {
-    // Pass the device's current position so position presets animate from there.
     const start = (typeof x === "number" && typeof y === "number") ? { x, y } : undefined;
-    const kfs = preset.build(duration, start).map((k) => ({
-      ...k,
-      t: Math.max(0, Math.min(duration, k.t)),
-    }));
-    setKeyframes(kfs);
-    setPlayhead(0);
-    if (kfs[0]) {
-      setRotX(kfs[0].rotX);
-      setRotY(kfs[0].rotY);
-      setScale(kfs[0].scale);
-      if (typeof kfs[0].x === "number" && setX) setX(kfs[0].x);
-      if (typeof kfs[0].y === "number" && setY) setY(kfs[0].y);
+
+    if (presetMode === "replace") {
+      // REPLACE: wipe everything, set preset across the full duration.
+      const kfs = preset.build(duration, start).map((k) => ({
+        ...k,
+        t: Math.max(0, Math.min(duration, k.t)),
+      }));
+      setKeyframes(kfs);
+      setPlayhead(0);
+      if (kfs[0]) {
+        setRotX(kfs[0].rotX);
+        setRotY(kfs[0].rotY);
+        setScale(kfs[0].scale);
+        if (typeof kfs[0].x === "number" && setX) setX(kfs[0].x);
+        if (typeof kfs[0].y === "number" && setY) setY(kfs[0].y);
+      }
+      return;
     }
+
+    // APPEND: chain preset onto the timeline starting at the playhead (or at the
+    // last keyframe if it's later). Each preset gets `presetSegment` seconds.
+    const segLen = Math.max(0.5, presetSegment);
+    const lastKeyT = keyframes.length ? Math.max(...keyframes.map((k) => k.t)) : 0;
+    const startT = Math.max(playhead, lastKeyT);
+    const segDuration = segLen;
+
+    // Build preset relative to its own segment, then offset to startT.
+    const segKfs = preset.build(segDuration, start).map((k) => ({
+      ...k,
+      t: startT + Math.max(0, Math.min(segDuration, k.t)),
+    }));
+
+    // Auto-extend total duration if the chain runs past it.
+    const newEnd = startT + segDuration;
+    if (newEnd > duration && setDuration) {
+      setDuration(Math.ceil(newEnd * 2) / 2); // round up to nearest 0.5s
+    }
+
+    setKeyframes((prev) => {
+      // Drop any keyframes inside the new segment to avoid clashing diamonds.
+      const kept = prev.filter((k) => k.t < startT - 0.01);
+      return [...kept, ...segKfs].sort((a, b) => a.t - b.t);
+    });
+    setPlayhead(startT);
   };
 
   const onScrub = (e) => {
@@ -315,18 +349,73 @@ export default function MockTimeline({
         </div>
       </div>
 
-      {/* Motion preset chips */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
-        <div className="flex items-center gap-1 text-[10px] text-white/40 font-bold uppercase tracking-wider flex-shrink-0">
+      {/* Preset mode + segment length controls */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1 text-[10px] text-white/40 font-bold uppercase tracking-wider">
           <Wand2 className="w-3 h-3" /> Presets
         </div>
+        <div className="flex items-center bg-white/5 border border-white/10 rounded-lg p-0.5">
+          <button
+            onClick={() => setPresetMode("append")}
+            disabled={recording}
+            className={`flex items-center gap-1 px-2 h-6 rounded-md text-[10px] font-bold transition-colors ${
+              presetMode === "append"
+                ? "bg-orange-400 text-black"
+                : "text-white/60 hover:text-white"
+            }`}
+            title="Chain preset onto the timeline at the current playhead"
+          >
+            <Layers className="w-3 h-3" /> Chain
+          </button>
+          <button
+            onClick={() => setPresetMode("replace")}
+            disabled={recording}
+            className={`flex items-center gap-1 px-2 h-6 rounded-md text-[10px] font-bold transition-colors ${
+              presetMode === "replace"
+                ? "bg-cyan-400 text-black"
+                : "text-white/60 hover:text-white"
+            }`}
+            title="Wipe timeline and apply preset across full duration"
+          >
+            <Replace className="w-3 h-3" /> Replace
+          </button>
+        </div>
+        {presetMode === "append" && (
+          <label className="flex items-center gap-1 text-[10px] text-white/50">
+            Each
+            <input
+              type="number"
+              min="0.5"
+              max="10"
+              step="0.5"
+              value={presetSegment}
+              onChange={(e) => setPresetSegment(Number(e.target.value) || 1)}
+              disabled={recording}
+              className="w-12 h-6 px-1.5 rounded bg-white/5 border border-white/10 text-white text-[10px] outline-none focus:border-white/30"
+            />
+            <span>s</span>
+          </label>
+        )}
+        <span className="text-[10px] text-white/30 ml-auto">
+          {presetMode === "append"
+            ? `Adds at ${Math.max(playhead, keyframes.length ? Math.max(...keyframes.map((k) => k.t)) : 0).toFixed(2)}s`
+            : "Replaces all keys"}
+        </span>
+      </div>
+
+      {/* Motion preset chips */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
         {MOTION_PRESETS.map((p) => (
           <button
             key={p.id}
             onClick={() => applyPreset(p)}
             disabled={recording}
-            title={p.desc}
-            className="flex-shrink-0 px-2.5 h-7 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 hover:border-orange-400/50 text-white/70 hover:text-white text-[11px] font-bold transition-colors disabled:opacity-40"
+            title={`${p.desc}${presetMode === "append" ? " — chains onto timeline" : " — replaces timeline"}`}
+            className={`flex-shrink-0 px-2.5 h-7 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white/70 hover:text-white text-[11px] font-bold transition-colors disabled:opacity-40 ${
+              presetMode === "append"
+                ? "hover:border-orange-400/50"
+                : "hover:border-cyan-400/50"
+            }`}
           >
             {p.label}
           </button>
@@ -398,7 +487,7 @@ export default function MockTimeline({
       )}
 
       <p className="text-[10px] text-white/30">
-        💡 Move/rotate the device → click <span className="text-orange-300">+ Keyframe</span> to record that pose. Add 2+ keys, then Play or Record. Output: WebM video (plays everywhere).
+        💡 <span className="text-orange-300">Chain</span> mode stacks presets — click multiple presets in a row to build sequences (e.g. <em>Slide In → Chat Zoom → Words Pop</em>). Click a keyframe diamond first to insert there. Output: WebM video.
       </p>
     </div>
   );

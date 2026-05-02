@@ -299,4 +299,35 @@ export const MOTION_PRESETS = [
       ];
     },
   },
+  {
+    id: "chat-zoom",
+    label: "Chat Zoom In",
+    desc: "Punches into the screen — perfect for chat reveals",
+    build: (d, start) => {
+      const sx = start?.x ?? 50;
+      const sy = start?.y ?? 50;
+      return [
+        { t: 0,        rotX: 0, rotY: 0, scale: 0.85, x: sx, y: sy },
+        { t: d * 0.4,  rotX: 0, rotY: 0, scale: 1.4,  x: sx, y: sy },
+        { t: d * 0.7,  rotX: 0, rotY: 0, scale: 1.85, x: sx, y: sy },
+        { t: d,        rotX: 0, rotY: 0, scale: 2.2,  x: sx, y: sy },
+      ];
+    },
+  },
+  {
+    id: "words-pop",
+    label: "Words Pop",
+    desc: "Bouncy oversized pop — for words & captions",
+    build: (d, start) => {
+      const sx = start?.x ?? 50;
+      const sy = start?.y ?? 50;
+      return [
+        { t: 0,           rotX: 0, rotY: 0, scale: 0.2,  x: sx, y: sy },
+        { t: d * 0.35,    rotX: 0, rotY: 0, scale: 1.25, x: sx, y: sy },
+        { t: d * 0.55,    rotX: 0, rotY: 0, scale: 0.92, x: sx, y: sy },
+        { t: d * 0.75,    rotX: 0, rotY: 0, scale: 1.08, x: sx, y: sy },
+        { t: d,           rotX: 0, rotY: 0, scale: 1,    x: sx, y: sy },
+      ];
+    },
+  },
 ];
