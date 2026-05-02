@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, Sparkles, Loader2, Image as ImageIcon, Upload, History, Settings, Pause, StopCircle, Info, X, Share2 } from "lucide-react";
+import { Home, Sparkles, Loader2, Image as ImageIcon, Upload, History, Settings, Pause, StopCircle, Info, X, Share2, Link2, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import UploadDropZone from "@/components/rmx/UploadDropZone";
@@ -610,6 +610,24 @@ export default function ImageHistoryPage() {
     localStorage.removeItem('rmx_active_generation');
   };
 
+  // Toggle a generated image as a reference image. If already a reference, remove it.
+  // Otherwise, add it to the first empty reference slot (or replace slot 0 if both full).
+  const toggleAsReference = (imgUrl) => {
+    if (!imgUrl) return;
+    const existingIdx = referenceImages.indexOf(imgUrl);
+    if (existingIdx !== -1) {
+      const newImages = [...referenceImages];
+      newImages[existingIdx] = null;
+      setReferenceImages(newImages);
+      return;
+    }
+    const emptyIdx = referenceImages.findIndex((r) => !r);
+    const targetIdx = emptyIdx === -1 ? 0 : emptyIdx;
+    const newImages = [...referenceImages];
+    newImages[targetIdx] = imgUrl;
+    setReferenceImages(newImages);
+  };
+
   const handleDownloadAll = async (projectImages) => {
     for (let i = 0; i < projectImages.length; i++) {
       const img = projectImages[i];
@@ -811,14 +829,47 @@ export default function ImageHistoryPage() {
         <div className="w-full max-w-6xl">
           {/* 5x2 Grid for 10 images - Responsive */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 lg:gap-4">
-            {generatedImages.map((img, idx) => (
-              <div key={`gen-${idx}`} className="relative bg-zinc-900/50 rounded-xl overflow-hidden border-2 border-zinc-700/50 aspect-square group cursor-pointer" onClick={() => img && setViewingImage(img)}>
+            {generatedImages.map((img, idx) => {
+              const isReference = img && referenceImages.includes(img);
+              return (
+              <div
+                key={`gen-${idx}`}
+                className={`relative bg-zinc-900/50 rounded-xl overflow-hidden border-2 aspect-square group cursor-pointer transition-colors ${
+                  isReference ? "border-cyan-500" : "border-zinc-700/50"
+                }`}
+                onClick={() => img && setViewingImage(img)}
+              >
                 {img ? (
                   <>
                     <img src={img} alt={`Generated ${idx + 1}`} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                    {/* Reference toggle button — top-right corner */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleAsReference(img); }}
+                      title={isReference ? "Remove from references" : "Use as reference image"}
+                      className={`absolute top-2 right-2 z-10 flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold transition-all backdrop-blur-md ${
+                        isReference
+                          ? "bg-cyan-500 text-white opacity-100 shadow-lg shadow-cyan-500/40"
+                          : "bg-black/70 text-white opacity-0 group-hover:opacity-100 hover:bg-cyan-500"
+                      }`}
+                    >
+                      {isReference ? (
+                        <>
+                          <Check className="w-3 h-3" /> Reference
+                        </>
+                      ) : (
+                        <>
+                          <Link2 className="w-3 h-3" /> Use as Ref
+                        </>
+                      )}
+                    </button>
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
                       <span className="text-white text-xs font-semibold">Click to view</span>
                     </div>
+                    {isReference && (
+                      <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-cyan-500/90 rounded text-[9px] font-bold text-white tracking-wider uppercase">
+                        Ref {referenceImages.indexOf(img) + 1}
+                      </div>
+                    )}
                   </>
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center">
@@ -833,7 +884,8 @@ export default function ImageHistoryPage() {
                   </div>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Image Viewer Modal */}
@@ -842,6 +894,24 @@ export default function ImageHistoryPage() {
               <div className="relative w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
                 <img src={viewingImage} alt="Full view" className="max-w-full max-h-full object-contain rounded-lg" />
                 <div className="absolute top-4 right-4 flex gap-2">
+                  <Button
+                    onClick={() => toggleAsReference(viewingImage)}
+                    className={`font-semibold ${
+                      referenceImages.includes(viewingImage)
+                        ? "bg-cyan-500 hover:bg-cyan-600 text-white"
+                        : "bg-black/60 hover:bg-cyan-500 text-white border border-white/20"
+                    }`}
+                  >
+                    {referenceImages.includes(viewingImage) ? (
+                      <>
+                        <Check className="w-4 h-4 mr-2" /> Reference Active
+                      </>
+                    ) : (
+                      <>
+                        <Link2 className="w-4 h-4 mr-2" /> Use as Reference
+                      </>
+                    )}
+                  </Button>
                   <Button
                     onClick={() => {
                       const feedDraft = {
