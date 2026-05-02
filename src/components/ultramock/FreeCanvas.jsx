@@ -35,9 +35,9 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
   const dragState = useRef(null);
   const panState = useRef(null);
   const pinchState = useRef(null);
-  // On mobile, start zoomed out so the full canvas fits the viewport
+  // On mobile, start zoomed out so the full phone is visible (device sits at y:58 with scale 1)
   const [zoom, setZoom] = useState(() => {
-    if (typeof window !== "undefined" && window.innerWidth < 640) return 0.6;
+    if (typeof window !== "undefined" && window.innerWidth < 640) return 0.5;
     return 1;
   });
   const [pan, setPan] = useState({ x: 0, y: 0 });

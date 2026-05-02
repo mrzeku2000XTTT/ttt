@@ -80,8 +80,8 @@ const buildDefaultTemplate = () => [
   }),
   makeItem({
     device: "iphone",
-    x: 50, y: 58,
-    scale: 1,
+    x: 50, y: 55,
+    scale: 0.85,
     rotX: 0,
     rotY: 0,
     media: { url: DEFAULT_TTT_LOGO, type: "image", name: "TTT Logo" },
