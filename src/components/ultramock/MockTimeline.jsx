@@ -207,12 +207,38 @@ const MockTimeline = forwardRef(function MockTimeline({
     setPlayhead(startT);
   };
 
-  const onScrub = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const t = Math.max(0, Math.min(duration, (x / rect.width) * duration));
+  const scrubTrackRef = useRef(null);
+  const scrubbingRef = useRef(false);
+
+  const scrubAtClientX = useCallback((clientX) => {
+    const el = scrubTrackRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const px = clientX - rect.left;
+    const t = Math.max(0, Math.min(duration, (px / rect.width) * duration));
     setPlayhead(t);
     applyAtTime(t);
+  }, [duration, applyAtTime]);
+
+  const onScrubPointerDown = (e) => {
+    if (recording) return;
+    e.preventDefault();
+    scrubbingRef.current = true;
+    setPlaying(false);
+    try { e.currentTarget.setPointerCapture?.(e.pointerId); } catch {}
+    scrubAtClientX(e.clientX);
+  };
+
+  const onScrubPointerMove = (e) => {
+    if (!scrubbingRef.current) return;
+    e.preventDefault();
+    scrubAtClientX(e.clientX);
+  };
+
+  const onScrubPointerUp = (e) => {
+    if (!scrubbingRef.current) return;
+    scrubbingRef.current = false;
+    try { e.currentTarget.releasePointerCapture?.(e.pointerId); } catch {}
   };
 
   const reset = () => {
@@ -482,8 +508,13 @@ const MockTimeline = forwardRef(function MockTimeline({
 
       {/* Time ruler + scrubber */}
       <div
-        onClick={onScrub}
-        className="relative h-14 rounded-lg bg-white/[0.03] border border-white/10 cursor-pointer select-none overflow-hidden"
+        ref={scrubTrackRef}
+        onPointerDown={onScrubPointerDown}
+        onPointerMove={onScrubPointerMove}
+        onPointerUp={onScrubPointerUp}
+        onPointerCancel={onScrubPointerUp}
+        className="relative h-14 rounded-lg bg-white/[0.03] border border-white/10 cursor-pointer select-none overflow-hidden touch-none"
+        style={{ touchAction: "none" }}
       >
         {/* Tick marks */}
         <div className="absolute inset-0 flex">
@@ -514,7 +545,9 @@ const MockTimeline = forwardRef(function MockTimeline({
           className="absolute top-0 bottom-0 w-0.5 bg-cyan-400 z-20 pointer-events-none"
           style={{ left: `${(playhead / duration) * 100}%`, boxShadow: "0 0 8px rgba(34,211,238,0.8)" }}
         >
-          <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-cyan-400 rounded-full shadow-lg shadow-cyan-500/50" />
+          {/* Grabbable handle (visual only — track captures pointer) */}
+          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-5 h-5 bg-cyan-400 rounded-full shadow-lg shadow-cyan-500/60 ring-2 ring-white/30" />
+          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 bg-cyan-400 rounded-full shadow-lg shadow-cyan-500/60 ring-2 ring-white/30" />
         </div>
       </div>
 
