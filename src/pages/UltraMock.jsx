@@ -7,6 +7,7 @@ import DeviceFrame from "@/components/ultramock/DeviceFrame";
 import MockBackground from "@/components/ultramock/MockBackground";
 import MockControls from "@/components/ultramock/MockControls";
 import Orbit3D from "@/components/ultramock/Orbit3D";
+import MockTimeline from "@/components/ultramock/MockTimeline";
 
 export default function UltraMockPage() {
   const [screenshot, setScreenshot] = useState(null);
@@ -16,6 +17,7 @@ export default function UltraMockPage() {
   const [scale, setScale] = useState(1);
   const [rotX, setRotX] = useState(0);
   const [rotY, setRotY] = useState(0);
+  const [duration, setDuration] = useState(4);
   const [exporting, setExporting] = useState(false);
   const canvasRef = useRef(null);
   const fileRef = useRef(null);
@@ -53,6 +55,17 @@ export default function UltraMockPage() {
     }
     setExporting(false);
   };
+
+  // Used by the timeline recorder — returns the rendered preview as a canvas
+  const captureFrame = useCallback(async () => {
+    if (!canvasRef.current) return null;
+    return await html2canvas(canvasRef.current, {
+      backgroundColor: null,
+      scale: 1.5,
+      useCORS: true,
+      logging: false,
+    });
+  }, []);
 
   const reset = () => {
     setScreenshot(null);
@@ -134,6 +147,14 @@ export default function UltraMockPage() {
                 <ImageIcon className="w-3 h-3" />
                 Drag to rotate · Double-click to reset · Exports at 2×
               </div>
+
+              {/* Animation timeline */}
+              <MockTimeline
+                rotX={rotX} rotY={rotY} scale={scale}
+                setRotX={setRotX} setRotY={setRotY} setScale={setScale}
+                duration={duration} setDuration={setDuration}
+                captureFrame={captureFrame}
+              />
             </div>
           )}
         </div>
