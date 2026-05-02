@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { Plus, Type, Bot, Download, Loader2, Settings2, Upload } from "lucide-react";
+import { Plus, Type, Bot, Download, Loader2, Settings2, Upload, Lock, Unlock, Hand } from "lucide-react";
 
 /**
  * Compact bottom action bar for phones.
@@ -17,6 +17,10 @@ export default function MockMobileBar({
   onUploadFile, // (file) => void — uploads to selected device, or auto-creates one
   exporting,
   hasSelection,
+  locked,
+  onToggleLock,
+  pinchEnabled,
+  onTogglePinch,
 }) {
   const fileRef = useRef(null);
 
@@ -35,6 +39,34 @@ export default function MockMobileBar({
         onChange={handleFile}
         className="hidden"
       />
+      {/* Mode toggles row */}
+      <div className="flex items-stretch gap-1 px-2 pt-2">
+        <button
+          onClick={onToggleLock}
+          className={`flex-1 flex items-center justify-center gap-1.5 h-9 rounded-xl text-[10px] font-bold active:opacity-80 ${
+            locked
+              ? "bg-orange-400 text-black"
+              : "bg-white/5 border border-white/10 text-white/70"
+          }`}
+          aria-label="Lock preview for render"
+        >
+          {locked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+          {locked ? "Locked (Render)" : "Lock Preview"}
+        </button>
+        <button
+          onClick={onTogglePinch}
+          className={`flex-1 flex items-center justify-center gap-1.5 h-9 rounded-xl text-[10px] font-bold active:opacity-80 ${
+            pinchEnabled
+              ? "bg-cyan-400 text-black"
+              : "bg-white/5 border border-white/10 text-white/70"
+          }`}
+          aria-label="Toggle pinch to zoom"
+        >
+          <Hand className="w-3.5 h-3.5" />
+          {pinchEnabled ? "Pinch: On" : "Pinch: Off"}
+        </button>
+      </div>
+
       <div className="flex items-stretch gap-1 px-2 py-2">
         <button
           onClick={onOpenAgent}

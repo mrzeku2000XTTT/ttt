@@ -53,6 +53,8 @@ export default function UltraMockPage() {
   const [exporting, setExporting] = useState(false);
   const [agentOpen, setAgentOpen] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const [pinchEnabled, setPinchEnabled] = useState(false);
   const canvasRef = useRef(null);
   const timelineRef = useRef(null);
 
@@ -380,6 +382,8 @@ export default function UltraMockPage() {
                 padding={padding}
                 placementMode={placementMode}
                 backgroundCss={backgroundCss}
+                locked={locked}
+                pinchEnabled={pinchEnabled}
               />
             </div>
             <div className="hidden sm:flex items-center justify-center gap-1.5 text-white/30 text-[10px] font-medium mt-3 px-2 text-center">
@@ -398,6 +402,10 @@ export default function UltraMockPage() {
               onUploadFile={onMobileUpload}
               exporting={exporting}
               hasSelection={!!selected}
+              locked={locked}
+              onToggleLock={() => setLocked((l) => !l)}
+              pinchEnabled={pinchEnabled}
+              onTogglePinch={() => setPinchEnabled((p) => !p)}
             />
 
             <div className="sm:hidden flex items-center justify-center gap-1.5 text-white/30 text-[10px] font-medium mt-2 px-2 text-center">

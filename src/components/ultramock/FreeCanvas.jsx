@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from "react";
 import DeviceFrame from "./DeviceFrame";
 import TextLayer from "./TextLayer";
-import { Trash2, Plus, Move, X, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
+import { Trash2, Plus, Move, X, ZoomIn, ZoomOut, Maximize2, Lock } from "lucide-react";
 
 /**
  * Free-form canvas where users can:
@@ -24,12 +24,15 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
     onUpdateItem, onAddAt, onRemove,
     background, padding, placementMode,
     backgroundCss,
+    locked = false,        // Lock preview: freezes pan/zoom/interactions for MP4 framing
+    pinchEnabled = false,  // Mobile 2-finger pinch-to-zoom
   },
   ref
 ) {
   const surfaceRef = useRef(null);
   const dragState = useRef(null);
   const panState = useRef(null);
+  const pinchState = useRef(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
@@ -47,6 +50,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
   };
 
   const onSurfaceClick = (e) => {
+    if (locked) return;
     // Only fire if clicking the surface itself (not a child device)
     if (e.target !== surfaceRef.current) return;
     // If user just panned, swallow the click so we don't deselect/place
@@ -66,6 +70,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
 
   // Left-click-drag on empty surface = pan the canvas
   const onSurfacePointerDown = (e) => {
+    if (locked) return;
     if (e.target !== surfaceRef.current) return;
     if (placementMode) return; // placement click handles this
     if (e.button !== 0) return; // left button only
@@ -85,6 +90,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
   };
 
   const startDrag = (e, item) => {
+    if (locked) { e.stopPropagation(); return; }
     e.stopPropagation();
     // Only respond to left-mouse / touch / pen — ignore right-click etc.
     if (e.button !== undefined && e.button !== 0) return;
@@ -198,13 +204,59 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
     const el = surfaceRef.current;
     if (!el) return;
     const handler = (e) => {
+      if (locked) return;
       e.preventDefault();
       const delta = Math.sign(e.deltaY) * 0.08;
       setZoom((z) => clampZoom(z - delta));
     };
     el.addEventListener("wheel", handler, { passive: false });
     return () => el.removeEventListener("wheel", handler);
-  }, []);
+  }, [locked]);
+
+  // Pinch-to-zoom (mobile, 2 fingers) — only when explicitly enabled
+  useEffect(() => {
+    if (!pinchEnabled || locked) return;
+    const el = surfaceRef.current;
+    if (!el) return;
+
+    const dist = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+
+    const onTouchStart = (e) => {
+      if (e.touches.length === 2) {
+        // Cancel any pan/drag — pinch takes over
+        panState.current = null;
+        dragState.current = null;
+        setIsPanning(false);
+        pinchState.current = {
+          startDist: dist(e.touches[0], e.touches[1]),
+          startZoom: zoom,
+        };
+        e.preventDefault();
+      }
+    };
+    const onTouchMove = (e) => {
+      if (pinchState.current && e.touches.length === 2) {
+        const d = dist(e.touches[0], e.touches[1]);
+        const ratio = d / pinchState.current.startDist;
+        setZoom(clampZoom(pinchState.current.startZoom * ratio));
+        e.preventDefault();
+      }
+    };
+    const onTouchEnd = (e) => {
+      if (e.touches.length < 2) pinchState.current = null;
+    };
+
+    el.addEventListener("touchstart", onTouchStart, { passive: false });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd);
+    el.addEventListener("touchcancel", onTouchEnd);
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("touchcancel", onTouchEnd);
+    };
+  }, [pinchEnabled, locked, zoom]);
 
   return (
     <div
@@ -217,7 +269,15 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
         touchAction: "none",
       }}
     >
+      {/* Locked indicator (replaces zoom controls when preview is locked) */}
+      {locked && (
+        <div className="absolute top-3 right-3 z-40 flex items-center gap-1.5 bg-orange-500/90 text-black px-3 py-1.5 rounded-full text-[10px] font-black tracking-wider uppercase shadow-lg">
+          <Lock className="w-3 h-3" /> Locked · Render Mode
+        </div>
+      )}
+
       {/* Zoom controls — overlay, not part of the exported canvas (sits outside surface) */}
+      {!locked && (
       <div className="absolute top-3 right-3 z-40 flex items-center gap-1 bg-black/60 backdrop-blur-md rounded-full p-1 ring-1 ring-white/15 shadow-lg">
         <button
           onClick={zoomOut}
@@ -249,20 +309,22 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
           <Maximize2 className="w-3.5 h-3.5" />
         </button>
       </div>
+      )}
 
       <div
         ref={surfaceRef}
         onClick={onSurfaceClick}
         onPointerDown={onSurfacePointerDown}
         className={`relative w-full h-full ${
-          placementMode ? "cursor-copy" : isPanning ? "cursor-grabbing" : "cursor-grab"
+          locked ? "cursor-default" : placementMode ? "cursor-copy" : isPanning ? "cursor-grabbing" : "cursor-grab"
         }`}
         style={{
           minHeight: 200,
           transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
           transformOrigin: "center center",
           transition: dragState.current || isPanning ? "none" : "transform 0.15s ease-out",
-          touchAction: "none", // disable browser pan/zoom so we can pan the canvas with one finger
+          touchAction: "none", // disable browser pan/zoom so we handle gestures ourselves
+          pointerEvents: locked ? "none" : "auto",
         }}
       >
         {items.map((item) => {
