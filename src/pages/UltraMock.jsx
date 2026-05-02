@@ -137,9 +137,13 @@ export default function UltraMockPage() {
     rotX: selected.rotX,
     rotY: selected.rotY,
     scale: selected.scale,
+    x: selected.x,
+    y: selected.y,
     setRotX: (v) => updateItem(selected.id, { rotX: v }),
     setRotY: (v) => updateItem(selected.id, { rotY: v }),
     setScale: (v) => updateItem(selected.id, { scale: v }),
+    setX: (v) => updateItem(selected.id, { x: v }),
+    setY: (v) => updateItem(selected.id, { y: v }),
   } : null;
 
   return (

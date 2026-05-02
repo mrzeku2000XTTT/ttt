@@ -13,6 +13,7 @@ import { MOTION_PRESETS } from "./motionPresets";
 export default function MockTimeline({
   rotX, rotY, scale,
   setRotX, setRotY, setScale,
+  x, y, setX, setY, // optional position animation
   duration = 4, // seconds
   setDuration,
   captureFrame, // async () => HTMLCanvasElement
@@ -29,15 +30,29 @@ export default function MockTimeline({
   const playFromRef = useRef(0);
   const rafRef = useRef(null);
 
-  // Interpolate value at time t given sorted keyframes
+  // Track whether the current keyframe set animates position (x/y).
+  // When false, we leave x/y untouched at playback time.
+  const animatesPosition = keyframes.some(
+    (k) => typeof k.x === "number" || typeof k.y === "number"
+  );
+
+  // Interpolate value at time t given sorted keyframes.
+  // x/y are returned only if at least one keyframe defines them.
   const sample = useCallback((t, kfs) => {
     if (!kfs.length) return { rotX: 0, rotY: 0, scale: 1 };
     const sorted = [...kfs].sort((a, b) => a.t - b.t);
-    if (t <= sorted[0].t) return { rotX: sorted[0].rotX, rotY: sorted[0].rotY, scale: sorted[0].scale };
-    if (t >= sorted[sorted.length - 1].t) {
-      const last = sorted[sorted.length - 1];
-      return { rotX: last.rotX, rotY: last.rotY, scale: last.scale };
-    }
+    const hasPos = sorted.some((k) => typeof k.x === "number" || typeof k.y === "number");
+
+    const pick = (kf) => ({
+      rotX: kf.rotX,
+      rotY: kf.rotY,
+      scale: kf.scale,
+      ...(hasPos ? { x: kf.x, y: kf.y } : {}),
+    });
+
+    if (t <= sorted[0].t) return pick(sorted[0]);
+    if (t >= sorted[sorted.length - 1].t) return pick(sorted[sorted.length - 1]);
+
     for (let i = 0; i < sorted.length - 1; i++) {
       const a = sorted[i], b = sorted[i + 1];
       if (t >= a.t && t <= b.t) {
@@ -45,11 +60,20 @@ export default function MockTimeline({
         const k = (t - a.t) / span;
         // ease-in-out cubic
         const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
-        return {
+        const out = {
           rotX: a.rotX + (b.rotX - a.rotX) * e,
           rotY: a.rotY + (b.rotY - a.rotY) * e,
           scale: a.scale + (b.scale - a.scale) * e,
         };
+        if (hasPos) {
+          const ax = typeof a.x === "number" ? a.x : (typeof b.x === "number" ? b.x : undefined);
+          const bx = typeof b.x === "number" ? b.x : ax;
+          const ay = typeof a.y === "number" ? a.y : (typeof b.y === "number" ? b.y : undefined);
+          const by = typeof b.y === "number" ? b.y : ay;
+          if (typeof ax === "number" && typeof bx === "number") out.x = ax + (bx - ax) * e;
+          if (typeof ay === "number" && typeof by === "number") out.y = ay + (by - ay) * e;
+        }
+        return out;
       }
     }
     return { rotX: 0, rotY: 0, scale: 1 };
@@ -62,8 +86,10 @@ export default function MockTimeline({
       setRotX(v.rotX);
       setRotY(v.rotY);
       setScale(v.scale);
+      if (typeof v.x === "number" && setX) setX(v.x);
+      if (typeof v.y === "number" && setY) setY(v.y);
     },
-    [keyframes, sample, setRotX, setRotY, setScale]
+    [keyframes, sample, setRotX, setRotY, setScale, setX, setY]
   );
 
   // Playback loop
@@ -98,7 +124,15 @@ export default function MockTimeline({
     const t = Math.round(playhead * 100) / 100;
     setKeyframes((prev) => {
       const filtered = prev.filter((k) => Math.abs(k.t - t) > 0.01);
-      return [...filtered, { t, rotX, rotY, scale }].sort((a, b) => a.t - b.t);
+      // If existing keyframes carry position, capture the new one with position too,
+      // so position keeps animating consistently.
+      const carriesPos = prev.some((k) => typeof k.x === "number" || typeof k.y === "number");
+      const next = { t, rotX, rotY, scale };
+      if (carriesPos && typeof x === "number" && typeof y === "number") {
+        next.x = x;
+        next.y = y;
+      }
+      return [...filtered, next].sort((a, b) => a.t - b.t);
     });
   };
 
@@ -111,10 +145,14 @@ export default function MockTimeline({
     setRotX(kf.rotX);
     setRotY(kf.rotY);
     setScale(kf.scale);
+    if (typeof kf.x === "number" && setX) setX(kf.x);
+    if (typeof kf.y === "number" && setY) setY(kf.y);
   };
 
   const applyPreset = (preset) => {
-    const kfs = preset.build(duration).map((k) => ({
+    // Pass the device's current position so position presets animate from there.
+    const start = (typeof x === "number" && typeof y === "number") ? { x, y } : undefined;
+    const kfs = preset.build(duration, start).map((k) => ({
       ...k,
       t: Math.max(0, Math.min(duration, k.t)),
     }));
@@ -124,6 +162,8 @@ export default function MockTimeline({
       setRotX(kfs[0].rotX);
       setRotY(kfs[0].rotY);
       setScale(kfs[0].scale);
+      if (typeof kfs[0].x === "number" && setX) setX(kfs[0].x);
+      if (typeof kfs[0].y === "number" && setY) setY(kfs[0].y);
     }
   };
 
