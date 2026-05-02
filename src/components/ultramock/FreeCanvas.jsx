@@ -1,6 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect } from "react";
 import DeviceFrame from "./DeviceFrame";
-import { Trash2, Plus, Move, X } from "lucide-react";
+import { Trash2, Plus, Move, X, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 
 /**
  * Free-form canvas where users can:
@@ -28,6 +28,18 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
 ) {
   const surfaceRef = useRef(null);
   const dragState = useRef(null);
+  const [zoom, setZoom] = useState(1);
+
+  const clampZoom = (z) => Math.max(0.25, Math.min(2, z));
+  const zoomIn = () => setZoom((z) => clampZoom(z + 0.1));
+  const zoomOut = () => setZoom((z) => clampZoom(z - 0.1));
+  const zoomReset = () => setZoom(1);
+
+  const onWheel = (e) => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    setZoom((z) => clampZoom(z - Math.sign(e.deltaY) * 0.05));
+  };
 
   const onSurfaceClick = (e) => {
     // Only fire if clicking the surface itself (not a child device)
@@ -55,6 +67,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
       startY: point.clientY,
       origX: item.x,
       origY: item.y,
+      zoom,
       moved: false,
     };
   };
@@ -64,8 +77,9 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
       const ds = dragState.current;
       if (!ds) return;
       const point = e.touches ? e.touches[0] : e;
-      const dx = ((point.clientX - ds.startX) / ds.surfaceW) * 100;
-      const dy = ((point.clientY - ds.startY) / ds.surfaceH) * 100;
+      // Divide by zoom so dragging feels 1:1 with what the user sees
+      const dx = ((point.clientX - ds.startX) / (ds.surfaceW * (ds.zoom || 1))) * 100;
+      const dy = ((point.clientY - ds.startY) / (ds.surfaceH * (ds.zoom || 1))) * 100;
       if (Math.abs(dx) + Math.abs(dy) > 0.3) ds.moved = true;
       onUpdateItem(ds.id, {
         x: Math.max(0, Math.min(100, ds.origX + dx)),
@@ -100,11 +114,50 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
         aspectRatio: "16/10",
       }}
     >
+      {/* Zoom controls — overlay, not part of the exported canvas (sits outside surface) */}
+      <div className="absolute top-3 right-3 z-40 flex items-center gap-1 bg-black/60 backdrop-blur-md rounded-full p-1 ring-1 ring-white/15 shadow-lg">
+        <button
+          onClick={zoomOut}
+          className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/10 text-white/80"
+          title="Zoom out (Ctrl/Cmd + scroll)"
+        >
+          <ZoomOut className="w-3.5 h-3.5" />
+        </button>
+        <button
+          onClick={zoomReset}
+          className="px-2 h-7 flex items-center justify-center rounded-full hover:bg-white/10 text-white/80 text-[10px] font-bold tabular-nums min-w-[44px]"
+          title="Reset zoom"
+        >
+          {Math.round(zoom * 100)}%
+        </button>
+        <button
+          onClick={zoomIn}
+          className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/10 text-white/80"
+          title="Zoom in"
+        >
+          <ZoomIn className="w-3.5 h-3.5" />
+        </button>
+        <div className="w-px h-4 bg-white/15 mx-0.5" />
+        <button
+          onClick={zoomReset}
+          className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/10 text-white/80"
+          title="Fit"
+        >
+          <Maximize2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
       <div
         ref={surfaceRef}
         onClick={onSurfaceClick}
+        onWheel={onWheel}
         className={`relative w-full h-full ${placementMode ? "cursor-copy" : "cursor-default"}`}
-        style={{ minHeight: 200 }}
+        style={{
+          minHeight: 200,
+          transform: `scale(${zoom})`,
+          transformOrigin: "center center",
+          transition: dragState.current ? "none" : "transform 0.15s ease-out",
+        }}
       >
         {items.map((item) => {
           const selected = item.id === selectedId;
