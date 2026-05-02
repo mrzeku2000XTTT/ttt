@@ -113,14 +113,19 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
       try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
     }
 
+    // Use offsetWidth/Height which ignores CSS transforms — gives the true
+    // unscaled surface size. Then divide finger pixel delta by it directly.
+    // This works correctly regardless of zoom OR camera scale.
+    const camZoom = camera?.zoom || 1;
     dragState.current = {
       id: item.id,
       pointerId: e.pointerId,
       target: e.currentTarget,
-      // rect.width/height include the CSS zoom scale. Divide it out so a 1px
-      // finger movement always maps to the same % regardless of zoom level.
-      surfaceW: rect.width / zoom,
-      surfaceH: rect.height / zoom,
+      // Effective pixel-to-percent ratio accounts for both surface zoom and camera zoom.
+      surfaceW: (surfaceRef.current.offsetWidth || rect.width / (zoom * camZoom)),
+      surfaceH: (surfaceRef.current.offsetHeight || rect.height / (zoom * camZoom)),
+      // Total visual scale to compensate finger movement
+      visualScale: zoom * camZoom,
       startX: point.clientX,
       startY: point.clientY,
       origX: item.x,
@@ -150,10 +155,11 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
       if (!ds) return;
       if (e.cancelable) e.preventDefault?.();
       const point = e.touches ? e.touches[0] : e;
-      // surfaceW/H are stored UN-zoomed, so % delta tracks the finger 1:1
-      // regardless of current zoom level.
-      const dx = ((point.clientX - ds.startX) / ds.surfaceW) * 100;
-      const dy = ((point.clientY - ds.startY) / ds.surfaceH) * 100;
+      // surfaceW/H are unscaled; divide finger pixel delta by visualScale
+      // to convert screen-pixels back into surface-pixels, then to %.
+      const vs = ds.visualScale || 1;
+      const dx = (((point.clientX - ds.startX) / vs) / ds.surfaceW) * 100;
+      const dy = (((point.clientY - ds.startY) / vs) / ds.surfaceH) * 100;
       if (Math.abs(dx) + Math.abs(dy) > 0.3) ds.moved = true;
       ds.pendingX = Math.max(0, Math.min(100, ds.origX + dx));
       ds.pendingY = Math.max(0, Math.min(100, ds.origY + dy));
