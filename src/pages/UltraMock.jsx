@@ -63,8 +63,33 @@ const makeOverlay = (partial = {}) => ({
   ...partial,
 });
 
+// Default template every user sees on first load
+const DEFAULT_TTT_LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/250a7d13f_0f6ddf56-7324-4499-875d-b02d69da9423.png";
+
+const buildDefaultTemplate = () => [
+  makeText({
+    text: "Welcome to TTT",
+    x: 50, y: 14,
+    fontSize: 56,
+    fontWeight: 900,
+    color: "#ffffff",
+    animation: "typewriter",
+    typeSpeed: 14,
+    loopDelay: 1.5,
+    boxWidth: 90,
+  }),
+  makeItem({
+    device: "iphone",
+    x: 50, y: 58,
+    scale: 1,
+    rotX: 0,
+    rotY: 0,
+    media: { url: DEFAULT_TTT_LOGO, type: "image", name: "TTT Logo" },
+  }),
+];
+
 export default function UltraMockPage() {
-  const [items, setItems] = useState([makeItem()]);
+  const [items, setItems] = useState(() => buildDefaultTemplate());
   const [selectedId, setSelectedId] = useState(null);
   const [placementMode, setPlacementMode] = useState(false);
   const [background, setBackground] = useState("sunset");
@@ -215,7 +240,7 @@ export default function UltraMockPage() {
   }, []);
 
   const reset = () => {
-    setItems([makeItem()]);
+    setItems(buildDefaultTemplate());
     setSelectedId(null);
     setPlacementMode(false);
     setBackground("sunset");
