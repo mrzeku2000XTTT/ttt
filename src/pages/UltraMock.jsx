@@ -383,16 +383,16 @@ export default function UltraMockPage() {
             <Plus className="w-3.5 h-3.5" /> Add Device
           </button>
           <button
-            onClick={addText}
-            className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-xs font-bold"
-          >
-            <Type className="w-3.5 h-3.5" /> Add Text
-          </button>
-          <button
             onClick={() => setOverlayPickerOpen(true)}
             className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-gradient-to-r from-pink-500 to-purple-500 hover:opacity-90 text-white text-xs font-bold shadow-lg shadow-pink-500/30"
           >
             <Sparkles className="w-3.5 h-3.5" /> Overlay
+          </button>
+          <button
+            onClick={addText}
+            className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-xs font-bold"
+          >
+            <Type className="w-3.5 h-3.5" /> Add Text
           </button>
           <button
             onClick={reset}
