@@ -384,9 +384,28 @@ const MockTimeline = forwardRef(function MockTimeline({
     const fps = 60;
     const totalFrames = Math.round(duration * fps);
 
+    // Background-tab safe waiter: when the tab is hidden, browsers throttle
+    // requestAnimationFrame to <1Hz which would freeze recording. Fall back
+    // to setTimeout (which keeps running in background) when document is hidden.
+    const waitNextPaint = () => new Promise((resolve) => {
+      if (typeof document !== "undefined" && document.hidden) {
+        setTimeout(resolve, 0);
+      } else {
+        requestAnimationFrame(() => requestAnimationFrame(resolve));
+      }
+    });
+
+    // Try to keep the screen / page awake during recording (best effort).
+    let wakeLock = null;
+    try {
+      if (navigator.wakeLock?.request) {
+        wakeLock = await navigator.wakeLock.request("screen");
+      }
+    } catch { /* ignore — non-critical */ }
+
     try {
       applyAtTime(0);
-      await new Promise((r) => requestAnimationFrame(r));
+      await waitNextPaint();
       const first = await captureFrame();
       const W = first.width;
       const H = first.height;
@@ -413,7 +432,7 @@ const MockTimeline = forwardRef(function MockTimeline({
         const t = (i / totalFrames) * duration;
         setPlayhead(t);
         applyAtTime(t);
-        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        await waitNextPaint();
         const frame = await captureFrame();
         ctx.clearRect(0, 0, W, H);
         ctx.drawImage(frame, 0, 0, W, H);
@@ -437,6 +456,7 @@ const MockTimeline = forwardRef(function MockTimeline({
       console.error("Recording failed:", err);
       alert("Recording failed: " + err.message);
     }
+    try { await wakeLock?.release?.(); } catch { /* ignore */ }
     setRecording(false);
     setRecordProgress(0);
   };
