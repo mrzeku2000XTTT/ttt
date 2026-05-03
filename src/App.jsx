@@ -15,6 +15,7 @@ import XunhuaPage from './pages/Xunhua';
 import ValorantArenaPage from './pages/ValorantArena';
 import FreedomPage from './pages/Freedom';
 import VoxaPage from './pages/Voxa';
+import VoxaLearnPage from './pages/VoxaLearn';
 import DAGVisualizerPage from './pages/DAGVisualizer';
 import PromptPage from './pages/Prompto';
 import CinekasPage from './pages/Cinemata';
@@ -111,6 +112,7 @@ const AuthenticatedApp = () => {
       ))}
       <Route path="/Hwork" element={<HworkPage />} />
       <Route path="/Voxa" element={<VoxaPage />} />
+      <Route path="/VoxaLearn" element={<VoxaLearnPage />} />
       <Route path="/Freedom" element={<FreedomPage />} />
       <Route path="/DAGVisualizer" element={<DAGVisualizerPage />} />
       <Route path="/Prompto" element={<PromptPage />} />

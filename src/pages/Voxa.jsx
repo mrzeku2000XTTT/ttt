@@ -235,6 +235,12 @@ export default function VoxaPage() {
               <p className="text-white/40 text-xs">200+ languages · Instant</p>
             </div>
           </div>
+          <Link to={createPageUrl("VoxaLearn")} className="ml-auto">
+            <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-gradient-to-br from-blue-500/30 to-purple-500/30 backdrop-blur-md border border-blue-400/40 text-white text-xs font-semibold hover:scale-105 transition-transform shadow-lg shadow-blue-500/20">
+              <BookOpen className="w-3.5 h-3.5" />
+              Learn
+            </button>
+          </Link>
         </div>
 
         {/* Language Selector Bar */}
