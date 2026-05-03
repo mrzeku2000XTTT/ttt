@@ -50,7 +50,7 @@ export default function VoxaLearnPage() {
           </Link>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center shadow-lg">
-              <span className="text-xl">📚</span>
+              <span className="text-white font-black text-sm">L</span>
             </div>
             <div>
               <h1 className="text-white text-2xl font-bold tracking-tight">Voxa Learn</h1>

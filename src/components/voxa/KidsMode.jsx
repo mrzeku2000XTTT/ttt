@@ -10,12 +10,12 @@ import { LEARN_LANGUAGES, MULTILANG_FONT, speakText } from "./voxaLanguages";
 //  - emoji/picture-word matching
 //  - bright big tiles, instant feedback, celebrations
 const THEMES = [
-  { id: "animals", label: "Animals", emoji: "🐻", color: "from-amber-400/40 to-orange-500/40" },
-  { id: "colors", label: "Colors", emoji: "🎨", color: "from-pink-400/40 to-rose-500/40" },
-  { id: "numbers", label: "Numbers", emoji: "🔢", color: "from-blue-400/40 to-cyan-500/40" },
-  { id: "food", label: "Food", emoji: "🍎", color: "from-red-400/40 to-orange-500/40" },
-  { id: "family", label: "Family", emoji: "👨‍👩‍👧", color: "from-purple-400/40 to-fuchsia-500/40" },
-  { id: "body", label: "Body", emoji: "🖐️", color: "from-emerald-400/40 to-teal-500/40" },
+  { id: "animals", label: "Animals", color: "from-amber-400/40 to-orange-500/40" },
+  { id: "colors", label: "Colors", color: "from-pink-400/40 to-rose-500/40" },
+  { id: "numbers", label: "Numbers", color: "from-blue-400/40 to-cyan-500/40" },
+  { id: "food", label: "Food", color: "from-red-400/40 to-orange-500/40" },
+  { id: "family", label: "Family", color: "from-purple-400/40 to-fuchsia-500/40" },
+  { id: "body", label: "Body", color: "from-emerald-400/40 to-teal-500/40" },
 ];
 
 // Curated emoji+English seed words per theme. We send these to the LLM and ask
@@ -23,34 +23,34 @@ const THEMES = [
 // (no risk of made-up emojis or weird answers).
 const SEED_WORDS = {
   animals: [
-    { word: "Dog", emoji: "🐶" }, { word: "Cat", emoji: "🐱" }, { word: "Cow", emoji: "🐮" },
-    { word: "Pig", emoji: "🐷" }, { word: "Lion", emoji: "🦁" }, { word: "Bear", emoji: "🐻" },
-    { word: "Frog", emoji: "🐸" }, { word: "Bird", emoji: "🐦" },
+    { word: "Dog" }, { word: "Cat" }, { word: "Cow" },
+    { word: "Pig" }, { word: "Lion" }, { word: "Bear" },
+    { word: "Frog" }, { word: "Bird" },
   ],
   colors: [
-    { word: "Red", emoji: "🟥" }, { word: "Blue", emoji: "🟦" }, { word: "Yellow", emoji: "🟨" },
-    { word: "Green", emoji: "🟩" }, { word: "Pink", emoji: "🩷" }, { word: "Orange", emoji: "🟧" },
-    { word: "Purple", emoji: "🟪" }, { word: "Black", emoji: "⬛" },
+    { word: "Red" }, { word: "Blue" }, { word: "Yellow" },
+    { word: "Green" }, { word: "Pink" }, { word: "Orange" },
+    { word: "Purple" }, { word: "Black" },
   ],
   numbers: [
-    { word: "One", emoji: "1️⃣" }, { word: "Two", emoji: "2️⃣" }, { word: "Three", emoji: "3️⃣" },
-    { word: "Four", emoji: "4️⃣" }, { word: "Five", emoji: "5️⃣" }, { word: "Six", emoji: "6️⃣" },
-    { word: "Seven", emoji: "7️⃣" }, { word: "Eight", emoji: "8️⃣" },
+    { word: "One" }, { word: "Two" }, { word: "Three" },
+    { word: "Four" }, { word: "Five" }, { word: "Six" },
+    { word: "Seven" }, { word: "Eight" },
   ],
   food: [
-    { word: "Apple", emoji: "🍎" }, { word: "Banana", emoji: "🍌" }, { word: "Bread", emoji: "🍞" },
-    { word: "Milk", emoji: "🥛" }, { word: "Egg", emoji: "🥚" }, { word: "Cheese", emoji: "🧀" },
-    { word: "Pizza", emoji: "🍕" }, { word: "Cake", emoji: "🍰" },
+    { word: "Apple" }, { word: "Banana" }, { word: "Bread" },
+    { word: "Milk" }, { word: "Egg" }, { word: "Cheese" },
+    { word: "Pizza" }, { word: "Cake" },
   ],
   family: [
-    { word: "Mom", emoji: "👩" }, { word: "Dad", emoji: "👨" }, { word: "Baby", emoji: "👶" },
-    { word: "Sister", emoji: "👧" }, { word: "Brother", emoji: "👦" }, { word: "Grandma", emoji: "👵" },
-    { word: "Grandpa", emoji: "👴" }, { word: "Family", emoji: "👨‍👩‍👧" },
+    { word: "Mom" }, { word: "Dad" }, { word: "Baby" },
+    { word: "Sister" }, { word: "Brother" }, { word: "Grandma" },
+    { word: "Grandpa" }, { word: "Family" },
   ],
   body: [
-    { word: "Hand", emoji: "✋" }, { word: "Eye", emoji: "👁️" }, { word: "Ear", emoji: "👂" },
-    { word: "Nose", emoji: "👃" }, { word: "Mouth", emoji: "👄" }, { word: "Foot", emoji: "🦶" },
-    { word: "Hair", emoji: "💇" }, { word: "Tooth", emoji: "🦷" },
+    { word: "Hand" }, { word: "Eye" }, { word: "Ear" },
+    { word: "Nose" }, { word: "Mouth" }, { word: "Foot" },
+    { word: "Hair" }, { word: "Tooth" },
   ],
 };
 
@@ -110,7 +110,7 @@ export default function KidsMode({ language }) {
         (r?.items || []).forEach((it) => { map[(it.english || "").toLowerCase()] = it; });
         const merged = seeds.map((s) => {
           const t = map[s.word.toLowerCase()] || {};
-          return { word: s.word, emoji: s.emoji, translation: t.translation || s.word, pronunciation: t.pronunciation || "" };
+          return { word: s.word, translation: t.translation || s.word, pronunciation: t.pronunciation || "" };
         });
         setWords(merged);
       } catch {}
@@ -128,7 +128,7 @@ export default function KidsMode({ language }) {
     const options = [target, ...distractors].sort(() => Math.random() - 0.5);
     setMatchRound({ target, options });
     setPicked(null);
-    // Auto-speak the target word so non-readers can play
+    // Auto-speak the target translation so kids hear what to find
     setTimeout(() => speakText(target.translation, language), 250);
   };
 
@@ -159,7 +159,7 @@ export default function KidsMode({ language }) {
 
   const matchInstruction = useMemo(() => {
     if (!matchRound) return "";
-    return `Tap the picture for "${matchRound.target.translation}"`;
+    return `Tap the word that means "${matchRound.target.word}"`;
   }, [matchRound]);
 
   return (
@@ -178,8 +178,7 @@ export default function KidsMode({ language }) {
                   : "bg-white/6 border-white/10 hover:bg-white/12"
               }`}
             >
-              <span className="text-2xl">{t.emoji}</span>
-              <span className={`text-[10px] font-bold ${active ? "text-white" : "text-white/70"}`}>
+              <span className={`text-sm font-bold ${active ? "text-white" : "text-white/70"}`}>
                 {t.label}
               </span>
             </button>
@@ -206,17 +205,16 @@ export default function KidsMode({ language }) {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: i * 0.04 }}
                 onClick={() => speakText(w.translation, language)}
-                className="rounded-3xl bg-gradient-to-br from-white/12 to-white/4 backdrop-blur-2xl border-2 border-white/15 p-4 flex flex-col items-center text-center hover:border-pink-400/50 hover:scale-[1.03] active:scale-95 transition-all shadow-xl"
+                className="rounded-3xl bg-gradient-to-br from-white/12 to-white/4 backdrop-blur-2xl border-2 border-white/15 p-5 flex flex-col items-center text-center hover:border-pink-400/50 hover:scale-[1.03] active:scale-95 transition-all shadow-xl"
               >
-                <div className="text-6xl mb-2">{w.emoji}</div>
                 <p className="text-white text-2xl font-black leading-tight" style={{ fontFamily: MULTILANG_FONT }}>
                   {w.translation}
                 </p>
                 {w.pronunciation && (
                   <p className="text-cyan-300/80 text-sm font-bold mt-1 italic">{w.pronunciation}</p>
                 )}
-                <p className="text-white/40 text-xs mt-1">{w.word}</p>
-                <div className="mt-2 w-9 h-9 rounded-full bg-pink-500/30 border border-pink-300/50 flex items-center justify-center">
+                <p className="text-white/40 text-xs mt-2">{w.word}</p>
+                <div className="mt-3 w-9 h-9 rounded-full bg-pink-500/30 border border-pink-300/50 flex items-center justify-center">
                   <Volume2 className="w-4 h-4 text-white" />
                 </div>
               </motion.button>
@@ -227,7 +225,7 @@ export default function KidsMode({ language }) {
             disabled={words.length < 4}
             className="mt-5 w-full py-4 rounded-3xl bg-gradient-to-r from-pink-500 to-purple-500 text-white text-lg font-black shadow-xl shadow-pink-500/30 hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-40 flex items-center justify-center gap-2"
           >
-            <Sparkles className="w-5 h-5" /> Play Match Game!
+            <Sparkles className="w-5 h-5" /> Play Match Game
           </button>
         </>
       )}
@@ -242,21 +240,21 @@ export default function KidsMode({ language }) {
             >
               ← Back
             </button>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               {Array.from({ length: 5 }).map((_, i) => (
-                <span key={i} className={`text-2xl ${i < stars ? "" : "grayscale opacity-30"}`}>⭐</span>
+                <span
+                  key={i}
+                  className={`w-3 h-3 rounded-full ${i < stars ? "bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.7)]" : "bg-white/15"}`}
+                />
               ))}
             </div>
           </div>
 
           <div className="rounded-3xl bg-gradient-to-br from-purple-500/25 to-pink-500/25 backdrop-blur-2xl border-2 border-white/20 p-5 mb-4 text-center">
             <p className="text-white/60 text-xs uppercase tracking-widest font-bold mb-2">Find this word</p>
-            <p className="text-white text-4xl font-black mb-2" style={{ fontFamily: MULTILANG_FONT }}>
-              {matchRound.target.translation}
+            <p className="text-white text-4xl font-black mb-3">
+              {matchRound.target.word}
             </p>
-            {matchRound.target.pronunciation && (
-              <p className="text-cyan-300/90 text-base italic font-bold mb-3">{matchRound.target.pronunciation}</p>
-            )}
             <button
               onClick={() => speakText(matchRound.target.translation, language)}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/15 hover:bg-white/25 transition-colors"
@@ -282,9 +280,14 @@ export default function KidsMode({ language }) {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => handlePick(opt)}
                   disabled={!!picked}
-                  className={`aspect-square rounded-3xl border-2 backdrop-blur-2xl flex items-center justify-center text-7xl shadow-xl transition-all ${cls}`}
+                  className={`aspect-square rounded-3xl border-2 backdrop-blur-2xl flex flex-col items-center justify-center p-4 shadow-xl transition-all ${cls}`}
                 >
-                  {opt.emoji}
+                  <p className="text-white text-2xl font-black leading-tight text-center" style={{ fontFamily: MULTILANG_FONT }}>
+                    {opt.translation}
+                  </p>
+                  {opt.pronunciation && (
+                    <p className="text-cyan-300/80 text-xs italic font-bold mt-2">{opt.pronunciation}</p>
+                  )}
                 </motion.button>
               );
             })}
@@ -310,9 +313,13 @@ export default function KidsMode({ language }) {
               <Trophy className="w-20 h-20 text-yellow-300 drop-shadow-2xl" />
             </motion.div>
           </AnimatePresence>
-          <h2 className="text-white text-3xl font-black mb-2">You did it! 🎉</h2>
-          <p className="text-white/80 text-base mb-1">5 stars in {langName}!</p>
-          <div className="text-4xl mb-5">⭐⭐⭐⭐⭐</div>
+          <h2 className="text-white text-3xl font-black mb-2">You did it!</h2>
+          <p className="text-white/80 text-base mb-4">5 in a row in {langName}</p>
+          <div className="flex items-center justify-center gap-2 mb-5">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <span key={i} className="w-4 h-4 rounded-full bg-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.8)]" />
+            ))}
+          </div>
           <button
             onClick={goToMatch}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-purple-700 font-black shadow-xl hover:scale-105 active:scale-95 transition-transform"

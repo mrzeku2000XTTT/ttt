@@ -16,7 +16,6 @@ export default function LearnLanguagePicker({ value, onChange }) {
                 : "bg-white/8 border-white/15 text-white/70 hover:bg-white/15 hover:text-white"
             }`}
           >
-            <span className="text-lg">{l.flag}</span>
             <span className="text-sm font-semibold">{l.name}</span>
           </button>
         );

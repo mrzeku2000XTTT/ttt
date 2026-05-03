@@ -4,12 +4,12 @@ import { base44 } from "@/api/base44Client";
 import { LEARN_LANGUAGES, MULTILANG_FONT, speakText } from "./voxaLanguages";
 
 const SCENARIOS = [
-  { id: "intro", label: "Introducing Yourself", icon: "👋" },
-  { id: "coffee", label: "Ordering Coffee", icon: "☕" },
-  { id: "directions", label: "Asking Directions", icon: "🗺️" },
-  { id: "shopping", label: "Shopping at a Market", icon: "🛍️" },
-  { id: "hotel", label: "Checking Into a Hotel", icon: "🏨" },
-  { id: "restaurant", label: "At a Restaurant", icon: "🍝" },
+  { id: "intro", label: "Introducing Yourself" },
+  { id: "coffee", label: "Ordering Coffee" },
+  { id: "directions", label: "Asking Directions" },
+  { id: "shopping", label: "Shopping at a Market" },
+  { id: "hotel", label: "Checking Into a Hotel" },
+  { id: "restaurant", label: "At a Restaurant" },
 ];
 
 export default function ConversationMode({ language }) {
@@ -99,7 +99,6 @@ Reply ONLY in ${langName} with a natural, helpful next line (1-2 sentences). Sta
               onClick={() => startScenario(s)}
               className="p-4 rounded-2xl bg-white/8 backdrop-blur-2xl border border-white/15 text-left hover:bg-white/12 hover:scale-[1.02] transition-all"
             >
-              <div className="text-2xl mb-2">{s.icon}</div>
               <p className="text-white font-semibold text-sm">{s.label}</p>
             </button>
           ))}
@@ -118,7 +117,6 @@ Reply ONLY in ${langName} with a natural, helpful next line (1-2 sentences). Sta
       </button>
 
       <div className="flex items-center gap-2">
-        <span className="text-2xl">{scenario.icon}</span>
         <div>
           <p className="text-white font-bold text-sm">{scenario.label}</p>
           <p className="text-white/40 text-[10px]">Practicing in {langName}</p>
@@ -150,7 +148,7 @@ Reply ONLY in ${langName} with a natural, helpful next line (1-2 sentences). Sta
                   {m.translation && <p className="text-white/50 text-xs mt-1">{m.translation}</p>}
                   {m.correction && (
                     <p className="text-amber-300/90 text-xs mt-2 pt-2 border-t border-white/10">
-                      💡 {m.correction}
+                      Tip: {m.correction}
                     </p>
                   )}
                   <button

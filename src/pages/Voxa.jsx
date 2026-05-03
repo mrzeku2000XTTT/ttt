@@ -228,7 +228,7 @@ export default function VoxaPage() {
           </Link>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-white to-gray-300 flex items-center justify-center shadow-lg">
-              <span className="text-xl">🗣️</span>
+              <span className="text-black font-black text-sm">V</span>
             </div>
             <div>
               <h1 className="text-white text-2xl font-bold tracking-tight">Voxa</h1>
