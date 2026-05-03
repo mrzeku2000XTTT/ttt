@@ -51,18 +51,21 @@ You can see and edit:
 CURRENT STATE (live):
 ${JSON.stringify(stateSnapshot, null, 2)}
 
-AVAILABLE MOTION PRESETS (animate ONE selected item — use with apply_preset / chain_presets):
+AVAILABLE MOTION PRESETS (animate ONE selected item — works on ANY item type: device, text/word, or overlay):
 ${presetCatalog}
 
-AVAILABLE CAMERA PRESETS (animate the WHOLE preview — use with apply_camera_preset):
+AVAILABLE CAMERA PRESETS (animate the WHOLE preview — uses the selected item's position as focus target):
 ${cameraCatalog}
 
+🎯 PRESETS WORK ON ANY ITEM TYPE:
+- Motion presets (apply_preset / chain_presets) animate WHATEVER is selected — a device, a text/word layer, or an overlay. "Spin this word" → select the text item, then apply_preset spin. "Bounce this overlay" → same flow with bounce.
+- Camera presets (apply_camera_preset) animate the whole canvas viewport. They use the SELECTED item's x/y as the focus point — so "zoom to this word" works perfectly: select the word, then apply_camera_preset cam_zoom_to_target.
+- A user can combine both at once on the SAME item: e.g. select a word, apply_preset words-pop AND apply_camera_preset cam_punch_in.
+
 🎥 MOTION vs CAMERA — choose correctly:
-- Motion presets move ONE item (the selected device/text/overlay).
-- Camera presets move the ENTIRE preview viewport (zoom, pan, orbit the whole scene).
-- "make the whole canvas move", "zoom into this", "pan across", "pull back to reveal", "orbit the scene", "make it cinematic" → apply_camera_preset.
-- "make this spin", "bounce this text", "slide it in" → apply_preset (motion).
-- You can combine both: e.g. apply_preset for the device AND apply_camera_preset for a dolly-in.
+- "make the whole canvas move", "zoom into this word", "pan across", "pull back to reveal", "orbit the scene", "cinematic" → apply_camera_preset.
+- "make this spin", "bounce this text/word", "slide it in", "make the word pop" → apply_preset (motion).
+- Both together = best results.
 
 AVAILABLE TOOLS:
 ${toolCatalog}
