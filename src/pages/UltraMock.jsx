@@ -13,6 +13,7 @@ import OverlayPicker from "@/components/ultramock/OverlayPicker";
 import MockAgent from "@/components/ultramock/MockAgent";
 import MockMobileBar from "@/components/ultramock/MockMobileBar";
 import MockBottomSheet from "@/components/ultramock/MockBottomSheet";
+import AutoRenderStatus from "@/components/ultramock/AutoRenderStatus";
 
 const newId = () => `dev_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
@@ -252,8 +253,9 @@ export default function UltraMockPage() {
   };
 
   // Auto-render from URL params (used by NODA's "UltraMock MP4" node)
-  // Reads ?auto=1&text=...&device=...&background=...&preset=...&duration=...&media=...
-  // Then auto-builds the canvas, applies the preset, and triggers MP4 download.
+  // Reads ?auto=1&text=...&device=...&background=...&preset=...&duration=...&media=...&email=...
+  // Then auto-builds the canvas, applies the preset, triggers MP4 download, and emails it.
+  const [autoStatus, setAutoStatus] = useState(null); // { phase, message, error }
   const autoRanRef = useRef(false);
   useEffect(() => {
     if (autoRanRef.current) return;
@@ -291,6 +293,8 @@ export default function UltraMockPage() {
 
     // Wait for canvas to settle, then apply preset & record
     const run = async () => {
+      const validEmail = autoEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(autoEmail);
+      setAutoStatus({ phase: "building", message: "Building canvas…" });
       // Give React a couple of paints to mount items
       await new Promise((r) => setTimeout(r, 800));
       try {
@@ -300,19 +304,37 @@ export default function UltraMockPage() {
       } catch (e) { console.warn("preset apply failed", e); }
       // Wait for keyframes to commit, then start recording
       await new Promise((r) => setTimeout(r, 600));
+
+      setAutoStatus({ phase: "recording", message: `Recording ${autoDuration}s MP4…` });
       let result = null;
       try {
         if (timelineRef.current?.recordVideo) {
           result = await timelineRef.current.recordVideo();
         }
-      } catch (e) { console.error("auto-record failed", e); }
+      } catch (e) {
+        console.error("auto-record failed", e);
+        setAutoStatus({ phase: "error", message: "Recording failed", error: e?.message || "unknown" });
+        return;
+      }
+
+      if (!result?.blob) {
+        console.error("[ultramock auto] recording returned no blob", result);
+        setAutoStatus({ phase: "error", message: "Recording produced no video", error: "Empty result" });
+        return;
+      }
 
       // If an email was requested, upload the blob and email a link
-      if (autoEmail && result?.blob && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(autoEmail)) {
+      if (validEmail) {
         try {
+          setAutoStatus({ phase: "uploading", message: "Uploading MP4…" });
+          console.log("[ultramock auto] uploading", { size: result.blob.size, type: result.mime, ext: result.ext });
           const { base44 } = await import("@/api/base44Client");
           const file = new File([result.blob], `ultramock-${Date.now()}.${result.ext}`, { type: result.mime });
           const { file_url } = await base44.integrations.Core.UploadFile({ file });
+          if (!file_url) throw new Error("Upload returned no URL");
+          console.log("[ultramock auto] uploaded:", file_url);
+
+          setAutoStatus({ phase: "sending", message: `Emailing ${autoEmail}…` });
           const subject = autoText ? `Your UltraMock: ${autoText.slice(0, 60)}` : "Your UltraMock video";
           const body = `<p>Your UltraMock video is ready 🎬</p>
 <p><a href="${file_url}" style="background:#06b6d4;color:#000;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;">Download MP4</a></p>
@@ -325,18 +347,16 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
             subject,
             body,
           });
-          // Visual confirmation in the page
-          try {
-            const banner = document.createElement("div");
-            banner.textContent = `✅ MP4 emailed to ${autoEmail}`;
-            banner.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#10b981;color:#000;padding:12px 24px;border-radius:12px;font-weight:bold;z-index:99999;box-shadow:0 10px 40px rgba(16,185,129,0.4);font-family:system-ui";
-            document.body.appendChild(banner);
-            setTimeout(() => banner.remove(), 8000);
-          } catch {}
+          console.log("[ultramock auto] email sent to", autoEmail);
+          setAutoStatus({ phase: "done", message: `✅ MP4 emailed to ${autoEmail}`, fileUrl: file_url });
         } catch (e) {
-          console.error("email send failed", e);
-          alert("MP4 downloaded, but email failed: " + (e?.message || "unknown error"));
+          console.error("[ultramock auto] email send failed", e);
+          setAutoStatus({ phase: "error", message: "Email failed", error: e?.message || "unknown error" });
         }
+      } else if (autoEmail) {
+        setAutoStatus({ phase: "error", message: "Invalid email address", error: autoEmail });
+      } else {
+        setAutoStatus({ phase: "done", message: "✅ MP4 ready" });
       }
     };
     run();
@@ -682,6 +702,9 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
         canvasRef={canvasRef}
         handlers={agentHandlers}
       />
+
+      {/* Auto-render progress overlay (shown when triggered by NODA workflow) */}
+      <AutoRenderStatus status={autoStatus} />
     </div>
   );
 }
