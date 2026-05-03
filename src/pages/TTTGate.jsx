@@ -22,6 +22,12 @@ export default function TTTGatePage() {
     img.src = HERO_IMAGE;
   }, []);
 
+  // Force the tab title to "TTT" on the landing page
+  // (overrides any stale auto-injected per-route title from Base44)
+  useEffect(() => {
+    document.title = "TTT — The Kaspa Super App";
+  }, []);
+
   const triggerTransition = () => {
     if (phase !== "idle") return;
     setPhase("zoom");
