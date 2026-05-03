@@ -379,6 +379,7 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
     padding,
     duration,
     selected_id: selectedId,
+    camera: { zoom: camera.zoom, x: camera.x, y: camera.y },
     items: items.map((it) => ({
       id: it.id,
       kind: it.kind,
@@ -458,6 +459,13 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
       return { applied };
     },
     clear_timeline: () => { timelineRef.current?.clearKeyframes(); return { ok: true }; },
+    apply_camera_preset: (a = {}) => {
+      if (!timelineRef.current?.applyCameraPresetById) throw new Error("camera not available");
+      const ok = timelineRef.current.applyCameraPresetById(a.preset_id, a.mode === "chain" ? "append" : "replace");
+      if (!ok) throw new Error(`unknown camera preset: ${a.preset_id}`);
+      return { applied: a.preset_id };
+    },
+    clear_camera: () => { timelineRef.current?.clearCameraTrack?.(); return { ok: true }; },
     render_mp4: async () => {
       if (!timelineRef.current) throw new Error("no timeline");
       await timelineRef.current.recordVideo();

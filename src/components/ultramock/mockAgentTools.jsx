@@ -2,6 +2,7 @@
 // The agent emits a JSON plan of tool calls; this file knows how to run them
 // against the page's state.
 import { MOTION_PRESETS } from "./motionPresets";
+import { CAMERA_PRESETS } from "./cameraPresets";
 
 export const TOOL_LIST = [
   { name: "add_device", desc: "Add a new device to the canvas", args: "{ device?: 'iphone'|'android'|'ipad'|'macbook'|'imac'|'browser'|'none', x?: 0-100, y?: 0-100 }" },
@@ -15,12 +16,18 @@ export const TOOL_LIST = [
   { name: "apply_preset", desc: "Apply a motion preset to the timeline of the SELECTED device. mode 'replace' wipes & sets across full duration; 'chain' appends at playhead.", args: "{ preset_id: string, mode?: 'replace'|'chain' }" },
   { name: "chain_presets", desc: "Apply multiple presets in sequence (chain mode). Great for storytelling: e.g. ['slide-in-left','chat-zoom','words-pop'].", args: "{ preset_ids: string[] }" },
   { name: "clear_timeline", desc: "Clear all keyframes from the selected device's timeline", args: "{}" },
+  { name: "apply_camera_preset", desc: "Apply a camera preset to the WHOLE preview (zoom, dolly, pan, orbit, punch-in). Use this when the user wants the entire canvas/scene to move — not just one item. The selected item is used as the focus target for zoom/orbit presets.", args: "{ preset_id: 'cam_dolly_in'|'cam_zoom_to_target'|'cam_pull_back'|'cam_pan_lr'|'cam_pan_rl'|'cam_orbit'|'cam_punch_in'|'cam_handheld', mode?: 'replace'|'chain' }" },
+  { name: "clear_camera", desc: "Clear all camera keyframes (resets camera to neutral)", args: "{}" },
   { name: "render_mp4", desc: "Render and download the final WebM video. Requires at least 2 keyframes on the selected device.", args: "{}" },
 ];
 
 // Build the system prompt with full preset knowledge
 export function buildSystemPrompt(stateSnapshot) {
   const presetCatalog = MOTION_PRESETS
+    .map((p) => `  - ${p.id}: ${p.label} — ${p.desc}`)
+    .join("\n");
+
+  const cameraCatalog = CAMERA_PRESETS
     .map((p) => `  - ${p.id}: ${p.label} — ${p.desc}`)
     .join("\n");
 
@@ -43,8 +50,18 @@ You can see and edit:
 CURRENT STATE (live):
 ${JSON.stringify(stateSnapshot, null, 2)}
 
-AVAILABLE MOTION PRESETS (use the id with apply_preset / chain_presets):
+AVAILABLE MOTION PRESETS (animate ONE selected item — use with apply_preset / chain_presets):
 ${presetCatalog}
+
+AVAILABLE CAMERA PRESETS (animate the WHOLE preview — use with apply_camera_preset):
+${cameraCatalog}
+
+🎥 MOTION vs CAMERA — choose correctly:
+- Motion presets move ONE item (the selected device/text/overlay).
+- Camera presets move the ENTIRE preview viewport (zoom, pan, orbit the whole scene).
+- "make the whole canvas move", "zoom into this", "pan across", "pull back to reveal", "orbit the scene", "make it cinematic" → apply_camera_preset.
+- "make this spin", "bounce this text", "slide it in" → apply_preset (motion).
+- You can combine both: e.g. apply_preset for the device AND apply_camera_preset for a dolly-in.
 
 AVAILABLE TOOLS:
 ${toolCatalog}

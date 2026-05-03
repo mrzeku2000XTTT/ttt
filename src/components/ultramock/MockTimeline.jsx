@@ -378,6 +378,12 @@ const MockTimeline = forwardRef(function MockTimeline({
       if (!preset) return false;
       return applyPreset(preset, null, mode);
     },
+    applyCameraPresetById: (id, mode = "replace") => {
+      const preset = CAMERA_PRESETS.find((p) => p.id === id);
+      if (!preset) return false;
+      return applyCameraPreset(preset, mode);
+    },
+    clearCameraTrack: () => clearCameraTrack(),
     clearKeyframes: () => {
       if (selected) removeTrack(selected.id);
     },
