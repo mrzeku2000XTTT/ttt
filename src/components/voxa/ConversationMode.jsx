@@ -181,8 +181,8 @@ Reply ONLY in ${langName} with a natural, helpful next line (1-2 sentences). Sta
           onKeyDown={(e) => e.key === "Enter" && send()}
           placeholder={`Reply in ${langName} (or English)…`}
           disabled={sending}
-          className="flex-1 px-4 py-3 rounded-2xl bg-white/8 backdrop-blur-md border border-white/15 text-white text-sm outline-none focus:border-blue-400/50 placeholder:text-white/30"
-          style={{ fontFamily: MULTILANG_FONT }}
+          className="flex-1 px-4 py-3 rounded-2xl border border-white/15 text-sm outline-none focus:border-blue-400/50 placeholder:text-white/40"
+          style={{ fontFamily: MULTILANG_FONT, backgroundColor: "rgba(0,0,0,0.55)", color: "#ffffff", WebkitTextFillColor: "#ffffff", caretColor: "#60a5fa" }}
         />
         <button
           onClick={send}
