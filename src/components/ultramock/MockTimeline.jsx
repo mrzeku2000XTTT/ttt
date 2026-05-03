@@ -340,6 +340,73 @@ const MockTimeline = forwardRef(function MockTimeline({
     if (setCamera) setCamera({ zoom: kf.zoom, x: kf.x, y: kf.y });
   };
 
+  // ── Keyframe drag (retime) ──────────────────────────────────────────────
+  // Lets the user drag any diamond left/right along its lane to change its time.
+  const dragKfRef = useRef(null); // { kind: "track"|"camera", itemId?, idx, laneEl, moved }
+
+  const moveKeyframeTime = (kind, itemId, idx, newT) => {
+    const clamped = Math.max(0, Math.min(duration, Math.round(newT * 100) / 100));
+    if (kind === "camera") {
+      setCameraTrack((prev) => {
+        const next = prev.map((k, i) => (i === idx ? { ...k, t: clamped } : k));
+        return next.sort((a, b) => a.t - b.t);
+      });
+    } else {
+      setTracks((prev) => {
+        const cur = prev[itemId] || [];
+        const next = cur.map((k, i) => (i === idx ? { ...k, t: clamped } : k));
+        return { ...prev, [itemId]: next.sort((a, b) => a.t - b.t) };
+      });
+    }
+  };
+
+  const onKfDragStart = (e, kind, itemId, idx, laneEl) => {
+    if (recording) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setPlaying(false);
+    try { e.currentTarget.setPointerCapture?.(e.pointerId); } catch {}
+    dragKfRef.current = {
+      kind, itemId, idx, laneEl,
+      moved: false,
+      pointerId: e.pointerId,
+      target: e.currentTarget,
+    };
+  };
+
+  const onKfDragMove = useCallback((e) => {
+    const d = dragKfRef.current;
+    if (!d || !d.laneEl) return;
+    e.preventDefault();
+    const rect = d.laneEl.getBoundingClientRect();
+    const px = e.clientX - rect.left;
+    const t = Math.max(0, Math.min(duration, (px / rect.width) * duration));
+    if (Math.abs(t - playhead) > 0.005) d.moved = true;
+    moveKeyframeTime(d.kind, d.itemId, d.idx, t);
+    setPlayhead(Math.max(0, Math.min(duration, t)));
+  }, [duration, playhead]);
+
+  const onKfDragEnd = useCallback((e) => {
+    const d = dragKfRef.current;
+    if (!d) return;
+    try { d.target?.releasePointerCapture?.(d.pointerId); } catch {}
+    // Mark moved on ref so click handler can ignore the trailing click
+    setTimeout(() => { dragKfRef.current = null; }, 0);
+  }, []);
+
+  useEffect(() => {
+    const move = (e) => onKfDragMove(e);
+    const up = (e) => onKfDragEnd(e);
+    document.addEventListener("pointermove", move);
+    document.addEventListener("pointerup", up);
+    document.addEventListener("pointercancel", up);
+    return () => {
+      document.removeEventListener("pointermove", move);
+      document.removeEventListener("pointerup", up);
+      document.removeEventListener("pointercancel", up);
+    };
+  }, [onKfDragMove, onKfDragEnd]);
+
   // ── Scrubbing ───────────────────────────────────────────────────────────
   const scrubTrackRef = useRef(null);
   const scrubbingRef = useRef(false);
@@ -823,15 +890,18 @@ const MockTimeline = forwardRef(function MockTimeline({
               <Trash2 className="w-3 h-3" />
             </button>
           </div>
-          <div className={`relative flex-1 h-8 my-0.5 rounded ${cameraHidden ? "opacity-30" : ""}`}
-               style={{ background: "rgba(236,72,153,0.07)" }}>
+          <div
+            ref={(el) => { if (el) el.dataset.lane = "camera"; }}
+            className={`relative flex-1 h-8 my-0.5 rounded ${cameraHidden ? "opacity-30" : ""}`}
+            style={{ background: "rgba(236,72,153,0.07)" }}
+          >
             {cameraTrack.length >= 2 && (() => {
               const sorted = [...cameraTrack].sort((a, b) => a.t - b.t);
               const startPct = (sorted[0].t / duration) * 100;
               const endPct = (sorted[sorted.length - 1].t / duration) * 100;
               return (
                 <div
-                  className="absolute top-1/2 -translate-y-1/2 h-1.5 rounded-full"
+                  className="absolute top-1/2 -translate-y-1/2 h-1.5 rounded-full pointer-events-none"
                   style={{
                     left: `${startPct}%`,
                     width: `${Math.max(0, endPct - startPct)}%`,
@@ -842,17 +912,23 @@ const MockTimeline = forwardRef(function MockTimeline({
               );
             })()}
             {cameraTrack.map((kf, i) => (
-              <button
+              <div
                 key={i}
-                onClick={(e) => { e.stopPropagation(); jumpToCameraKey(kf); }}
+                onPointerDown={(e) => onKfDragStart(e, "camera", null, i, e.currentTarget.parentElement)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (dragKfRef.current?.moved) return;
+                  jumpToCameraKey(kf);
+                }}
                 onContextMenu={(e) => { e.preventDefault(); removeCameraKeyframe(i); }}
-                className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rotate-45 hover:scale-150 transition-transform shadow-md z-10 ring-1 ring-white/40"
+                className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rotate-45 hover:scale-150 transition-transform shadow-md z-10 ring-1 ring-white/40 cursor-ew-resize touch-none"
                 style={{
-                  left: `calc(${(kf.t / duration) * 100}% - 5px)`,
+                  left: `calc(${(kf.t / duration) * 100}% - 6px)`,
                   background: "#ec4899",
                   boxShadow: "0 0 6px #ec489980",
+                  touchAction: "none",
                 }}
-                title={`${kf.t.toFixed(2)}s · zoom ${kf.zoom.toFixed(2)}× · focus (${Math.round(kf.x)}%, ${Math.round(kf.y)}%) — right-click to delete`}
+                title={`${kf.t.toFixed(2)}s · zoom ${kf.zoom.toFixed(2)}× — drag to retime · right-click to delete`}
               />
             ))}
             <div
@@ -905,8 +981,10 @@ const MockTimeline = forwardRef(function MockTimeline({
                 </div>
 
                 {/* Track lane */}
-                <div className={`relative flex-1 h-8 my-0.5 rounded ${hidden ? "opacity-30" : ""}`}
-                     style={{ background: `${color}10` }}>
+                <div
+                  className={`relative flex-1 h-8 my-0.5 rounded ${hidden ? "opacity-30" : ""}`}
+                  style={{ background: `${color}10` }}
+                >
                   {/* Bar from first to last keyframe */}
                   {kfs.length >= 2 && (() => {
                     const sorted = [...kfs].sort((a, b) => a.t - b.t);
@@ -914,7 +992,7 @@ const MockTimeline = forwardRef(function MockTimeline({
                     const endPct = (sorted[sorted.length - 1].t / duration) * 100;
                     return (
                       <div
-                        className="absolute top-1/2 -translate-y-1/2 h-1.5 rounded-full"
+                        className="absolute top-1/2 -translate-y-1/2 h-1.5 rounded-full pointer-events-none"
                         style={{
                           left: `${startPct}%`,
                           width: `${Math.max(0, endPct - startPct)}%`,
@@ -926,17 +1004,23 @@ const MockTimeline = forwardRef(function MockTimeline({
                   })()}
                   {/* Keyframe diamonds */}
                   {kfs.map((kf, i) => (
-                    <button
+                    <div
                       key={i}
-                      onClick={(e) => { e.stopPropagation(); jumpToKey(itemId, kf); }}
+                      onPointerDown={(e) => onKfDragStart(e, "track", itemId, i, e.currentTarget.parentElement)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (dragKfRef.current?.moved) return;
+                        jumpToKey(itemId, kf);
+                      }}
                       onContextMenu={(e) => { e.preventDefault(); removeKeyframe(itemId, i); }}
-                      className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rotate-45 hover:scale-150 transition-transform shadow-md z-10 ring-1 ring-white/40"
+                      className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rotate-45 hover:scale-150 transition-transform shadow-md z-10 ring-1 ring-white/40 cursor-ew-resize touch-none"
                       style={{
-                        left: `calc(${(kf.t / duration) * 100}% - 5px)`,
+                        left: `calc(${(kf.t / duration) * 100}% - 6px)`,
                         background: color,
                         boxShadow: `0 0 6px ${color}80`,
+                        touchAction: "none",
                       }}
-                      title={`${kf.t.toFixed(2)}s · X${Math.round(kf.rotX)}° Y${Math.round(kf.rotY)}° S${Math.round(kf.scale * 100)}% — right-click to delete`}
+                      title={`${kf.t.toFixed(2)}s · X${Math.round(kf.rotX)}° Y${Math.round(kf.rotY)}° S${Math.round(kf.scale * 100)}% — drag to retime · right-click to delete`}
                     />
                   ))}
                   {/* Playhead overlay */}
