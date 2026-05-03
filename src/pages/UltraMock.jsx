@@ -14,6 +14,7 @@ import MockAgent from "@/components/ultramock/MockAgent";
 import MockMobileBar from "@/components/ultramock/MockMobileBar";
 import MockBottomSheet from "@/components/ultramock/MockBottomSheet";
 import AutoRenderStatus from "@/components/ultramock/AutoRenderStatus";
+import ScreenRecorder from "@/components/ultramock/ScreenRecorder";
 
 const newId = () => `dev_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
@@ -544,6 +545,7 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
           >
             <RefreshCw className="w-3.5 h-3.5" /> Reset
           </button>
+          <ScreenRecorder />
           <button
             onClick={handleExportPNG}
             disabled={exporting}
