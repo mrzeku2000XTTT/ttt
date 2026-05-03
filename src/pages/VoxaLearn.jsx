@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Layers, BookOpen, MessageCircle } from "lucide-react";
+import { Layers, BookOpen, MessageCircle, Baby } from "lucide-react";
 
 import LearnLanguagePicker from "@/components/voxa/LearnLanguagePicker";
 import FlashcardsMode from "@/components/voxa/FlashcardsMode";
 import LessonsMode from "@/components/voxa/LessonsMode";
 import ConversationMode from "@/components/voxa/ConversationMode";
+import KidsMode from "@/components/voxa/KidsMode";
 
 const MODES = [
-  { id: "flashcards", label: "Flashcards", icon: Layers },
+  { id: "kids", label: "Kids", icon: Baby },
+  { id: "flashcards", label: "Cards", icon: Layers },
   { id: "lessons", label: "Lessons", icon: BookOpen },
   { id: "chat", label: "AI Chat", icon: MessageCircle },
 ];
@@ -64,7 +66,7 @@ export default function VoxaLearnPage() {
         </div>
 
         {/* Mode tabs */}
-        <div className="grid grid-cols-3 gap-2 mb-5 p-1 rounded-2xl bg-white/6 backdrop-blur-md border border-white/10">
+        <div className="grid grid-cols-4 gap-1 mb-5 p-1 rounded-2xl bg-white/6 backdrop-blur-md border border-white/10">
           {MODES.map((m) => {
             const Icon = m.icon;
             const active = mode === m.id;
@@ -72,9 +74,11 @@ export default function VoxaLearnPage() {
               <button
                 key={m.id}
                 onClick={() => setMode(m.id)}
-                className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                   active
-                    ? "bg-white text-black shadow-lg"
+                    ? m.id === "kids"
+                      ? "bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg"
+                      : "bg-white text-black shadow-lg"
                     : "text-white/60 hover:text-white hover:bg-white/5"
                 }`}
               >
@@ -87,6 +91,7 @@ export default function VoxaLearnPage() {
 
         {/* Mode body */}
         <div>
+          {mode === "kids" && <KidsMode key={`kd-${language}`} language={language} />}
           {mode === "flashcards" && <FlashcardsMode key={`fc-${language}`} language={language} />}
           {mode === "lessons" && <LessonsMode key={`ls-${language}`} language={language} />}
           {mode === "chat" && <ConversationMode key={`ch-${language}`} language={language} />}
