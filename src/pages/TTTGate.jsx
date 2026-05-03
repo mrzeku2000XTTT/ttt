@@ -58,36 +58,12 @@ export default function TTTGatePage() {
       {/* Subtle vignette + atmospheric red flicker */}
       <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(0,0,0,0.65)_100%)]" />
 
-      {/* Hover red glow on the logo */}
-      <AnimatePresence>
-        {hovered && phase === "idle" && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute pointer-events-none"
-            style={{
-              left: "50%",
-              top: "38%",
-              transform: "translate(-50%, -50%)",
-              width: "30%",
-              aspectRatio: "1",
-              background:
-                "radial-gradient(circle, rgba(255,30,30,0.55) 0%, rgba(255,0,0,0.15) 40%, transparent 70%)",
-              filter: "blur(20px)",
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Clickable logo hotspot — sits on top of the TTT mark in the image */}
+      {/* Invisible click hotspot — sits on top of the TTT mark in the image */}
       <button
         onClick={triggerTransition}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
         disabled={phase !== "idle"}
         aria-label="Enter TTT"
-        className="absolute z-20 group"
+        className="absolute z-20"
         style={{
           left: "50%",
           top: "38%",
@@ -95,24 +71,9 @@ export default function TTTGatePage() {
           width: "min(28vw, 28vh)",
           height: "min(28vw, 28vh)",
           cursor: phase === "idle" ? "pointer" : "default",
+          background: "transparent",
         }}
-      >
-        {/* Pulsing ring to invite the click */}
-        {phase === "idle" && (
-          <>
-            <motion.div
-              className="absolute inset-0 rounded-full border-2 border-red-500/60"
-              animate={{ scale: [1, 1.25, 1], opacity: [0.7, 0, 0.7] }}
-              transition={{ duration: 2.2, repeat: Infinity, ease: "easeOut" }}
-            />
-            <motion.div
-              className="absolute inset-0 rounded-full border border-red-400/40"
-              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
-              transition={{ duration: 2.2, repeat: Infinity, ease: "easeOut", delay: 0.7 }}
-            />
-          </>
-        )}
-      </button>
+      />
 
       {/* Bottom prompt */}
       <AnimatePresence>
