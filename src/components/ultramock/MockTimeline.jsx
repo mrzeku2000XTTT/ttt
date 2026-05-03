@@ -276,6 +276,11 @@ const MockTimeline = forwardRef(function MockTimeline({
   };
 
   // ── Camera track operations ─────────────────────────────────────────────
+  // Camera keyframes must START within the first 30 seconds — prevents users
+  // from accidentally placing the first camera key beyond the 30s boundary
+  // (which would leave the entire intro of a video without any camera motion).
+  const CAMERA_MAX_START = 30;
+
   const applyCameraPreset = (preset, modeOverride = null) => {
     const mode = modeOverride || presetMode;
     // Use the currently selected item as the camera focus target
@@ -293,10 +298,11 @@ const MockTimeline = forwardRef(function MockTimeline({
       return true;
     }
 
-    // APPEND
+    // APPEND — clamp the start so the first new key never lands past 30s
     const segLen = Math.max(0.5, presetSegment);
     const lastKeyT = cameraTrack.length ? Math.max(...cameraTrack.map((k) => k.t)) : 0;
-    const startT = Math.max(playhead, lastKeyT);
+    const rawStartT = Math.max(playhead, lastKeyT);
+    const startT = Math.min(rawStartT, CAMERA_MAX_START);
     const segKfs = preset.build(segLen, target).map((k) => ({
       ...k, t: startT + Math.max(0, Math.min(segLen, k.t)),
     }));
@@ -311,7 +317,9 @@ const MockTimeline = forwardRef(function MockTimeline({
 
   const addCameraKeyframe = () => {
     if (!camera) return;
-    const t = Math.round(playhead * 100) / 100;
+    // Clamp camera keyframe time so it can't start past 30s
+    const tRaw = Math.round(playhead * 100) / 100;
+    const t = Math.min(tRaw, CAMERA_MAX_START);
     setCameraTrack((prev) => {
       const filtered = prev.filter((k) => Math.abs(k.t - t) > 0.01);
       return [...filtered, { t, zoom: camera.zoom, x: camera.x, y: camera.y }].sort((a, b) => a.t - b.t);
