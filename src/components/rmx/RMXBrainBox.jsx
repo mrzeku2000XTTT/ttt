@@ -33,7 +33,7 @@ Node config schemas:
    // Renders an animated MP4 in a new browser tab. If email_to is set, the MP4 is uploaded and a download link is emailed.
    // Use whenever the user asks to "make a video", "animate", "render an MP4", "promo video", or wants to email an MP4.
    // tagline supports {{result}}. preset must be one of: spin, tilt, pop, float, reveal, flip, wobble, zoomin, showcase, shake, slide-in-left, slide-in-right, drop-in, orbit, swoop, chat-zoom.
-   // If user wants the MP4 emailed, set email_to to their address (default: ${currentEmail || "user@example.com"} if they say "email it to me").
+   // CRITICAL EMAIL RULE: If the user mentions ANY of: "email", "send", "mail", "deliver", "to me", "to my inbox" — you MUST set email_to. Use the email address they provided in the request. If they say "to me" or "my email", use: ${currentEmail || "user@example.com"}. NEVER leave email_to empty when emailing is implied. This is the ONLY way the MP4 gets emailed — if email_to is missing, the user gets nothing.
 - deep_research: { topic: string, depth: "shallow"|"deep" }   // ACTUALLY scrapes the live web, multi-pass — returns a full markdown research report. Use this whenever the user wants real, current info.
 - read_ttt_feed: { limit: number, keyword?: string }   // pulls real recent posts from the TTT social feed inside this app. Use whenever user mentions "TTT feed", "the feed", "TTT posts", "what people are saying on TTT".
 - post_to_ttt: { author_name?: string, content_override?: string }   // Auto-posts to the TTT social feed. Empty config = uses previous text step + auto-attaches previous ai_image. Use when user says "post to TTT", "publish to feed", "share on TTT", "auto-post".
@@ -167,6 +167,16 @@ USER REQUEST:
             return null;
           }
           const mergedConfig = { ...(tpl.defaultConfig || {}), ...stepConfig };
+          // Guarantee ultramock_mp4 has email_to filled when the user's request mentions emailing.
+          // The LLM sometimes forgets — this catches it. We extract any email from the user input,
+          // or fall back to the current user's email.
+          if (tpl.type === "ultramock_mp4") {
+            const wantsEmail = /\b(email|e-mail|send|mail|deliver|inbox|to me|my email)\b/i.test(input);
+            if (wantsEmail && !mergedConfig.email_to) {
+              const emailMatch = input.match(/[\w.+-]+@[\w-]+\.[\w.-]+/);
+              mergedConfig.email_to = emailMatch ? emailMatch[0] : (currentEmail || "");
+            }
+          }
           // Guarantee send_email always has a valid recipient — fall back to current user
           if (tpl.type === "send_email") {
             const to = (mergedConfig.to || "").trim();
