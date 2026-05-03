@@ -443,71 +443,88 @@ const MockTimeline = forwardRef(function MockTimeline({
         recorder.onstop = () => resolve(new Blob(chunks, { type: mime || (isMp4 ? "video/mp4" : "video/webm") }));
       });
 
-      // ── REAL-TIME PAINT LOOP (smooth) ────────────────────────────────────
-      // Two parallel loops:
-      //   A. State loop (rAF, ~60fps): updates React state → DOM transforms
-      //      so the source preview animates smoothly between captures.
-      //   B. Capture loop (as fast as html2canvas allows): grabs the current
-      //      DOM into the output canvas. The MediaRecorder samples `out` at
-      //      30fps, so even if html2canvas can only do 10-15fps, the OUTPUT
-      //      is smooth because each captured frame already represents the
-      //      true interpolated state at that wall-clock moment.
+      // ── PRERENDER → PLAYBACK STRATEGY ────────────────────────────────────
+      // The previous "real-time capture" approach was choppy because html2canvas
+      // is too slow (~80-150ms/frame) to keep up with 30fps wall-clock.
       //
-      // Total time = exact `duration` seconds. No more "frame by frame" feel.
-      recorder.start();
-      const startTime = performance.now();
-      const durationMs = duration * 1000;
-      let stopped = false;
+      // New strategy:
+      //   PHASE 1: Slowly pre-capture every single frame (30fps × duration).
+      //            We don't care how long this takes — quality over speed.
+      //            Each frame represents the EXACT correct moment in animation time.
+      //   PHASE 2: Play those pre-rendered frames back into the recorder at
+      //            EXACTLY 30fps wall-clock. The recorder captures the canvas
+      //            stream, so the resulting MP4 is genuinely smooth — every
+      //            frame is the true interpolated state at the right time.
+      //
+      // Result: video plays back exactly like "Play All" — real motion, not
+      // frame-by-frame stutter.
+      const FPS = 30;
+      const totalFrames = Math.max(2, Math.round(duration * FPS));
 
-      // Loop A — high-frequency state updater (drives the on-screen animation)
-      const stateLoop = () => {
-        if (stopped) return;
-        const elapsed = performance.now() - startTime;
-        if (elapsed >= durationMs) return;
-        const t = Math.min(duration, elapsed / 1000);
+      // PHASE 1: Pre-capture every frame
+      setRecordProgress(0);
+      const frames = [];
+      for (let i = 0; i < totalFrames; i++) {
+        const t = (i / (totalFrames - 1)) * duration;
         setPlayhead(t);
         applyAtTime(t);
-        setRecordProgress(elapsed / durationMs);
-        requestAnimationFrame(stateLoop);
-      };
-      requestAnimationFrame(stateLoop);
+        // Wait one paint so React commits the new transforms to DOM
+        await new Promise((r) => requestAnimationFrame(r));
+        await new Promise((r) => requestAnimationFrame(r));
+        try {
+          const frame = await captureFrame();
+          if (frame && frame.width) {
+            // Copy to a dedicated bitmap so source canvas can be reused
+            const bm = await createImageBitmap(frame);
+            frames.push(bm);
+          } else {
+            frames.push(null);
+          }
+        } catch {
+          frames.push(null);
+        }
+        // Update progress (phase 1 = first 80%)
+        setRecordProgress((i / totalFrames) * 0.8);
+      }
 
-      // Loop B — capture loop (writes to output canvas as fast as possible)
-      const captureLoop = async () => {
-        while (!stopped) {
-          const elapsed = performance.now() - startTime;
-          if (elapsed >= durationMs) break;
-          try {
-            const frame = await captureFrame();
-            if (frame && frame.width && !stopped) {
+      // PHASE 2: Play back at exact 30fps into the recorder
+      recorder.start();
+      const playbackStart = performance.now();
+      const frameInterval = 1000 / FPS;
+      let lastFrameDrawn = -1;
+
+      await new Promise((resolve) => {
+        const playLoop = () => {
+          const elapsed = performance.now() - playbackStart;
+          const frameIdx = Math.min(totalFrames - 1, Math.floor(elapsed / frameInterval));
+          if (frameIdx !== lastFrameDrawn) {
+            const bm = frames[frameIdx];
+            if (bm) {
               ctx.clearRect(0, 0, W, H);
-              ctx.drawImage(frame, 0, 0, W, H);
+              ctx.drawImage(bm, 0, 0, W, H);
             }
-          } catch { /* ignore individual frame errors */ }
-        }
-      };
+            lastFrameDrawn = frameIdx;
+            setRecordProgress(0.8 + (frameIdx / totalFrames) * 0.2);
+          }
+          if (elapsed >= duration * 1000 + 100) {
+            resolve();
+            return;
+          }
+          requestAnimationFrame(playLoop);
+        };
+        requestAnimationFrame(playLoop);
+      });
 
-      await captureLoop();
-
-      // Final frame at duration
-      setPlayhead(duration);
-      applyAtTime(duration);
-      await new Promise((r) => requestAnimationFrame(r));
-      try {
-        const lastFrame = await captureFrame();
-        if (lastFrame && lastFrame.width) {
-          ctx.clearRect(0, 0, W, H);
-          ctx.drawImage(lastFrame, 0, 0, W, H);
-        }
-      } catch { /* ignore */ }
-      // Give the recorder a beat to capture the final frame
+      // Hold last frame briefly so recorder catches it
       await new Promise((r) => setTimeout(r, 200));
 
-      stopped = true;
       setRecordProgress(1);
       try { recorder.requestData(); } catch { /* ignore */ }
       await new Promise((r) => setTimeout(r, 100));
       recorder.stop();
+
+      // Free bitmaps
+      frames.forEach((bm) => { try { bm?.close?.(); } catch {} });
       const blob = await done;
       if (!blob || blob.size === 0) {
         throw new Error("Recording produced an empty file. Try a shorter duration.");
@@ -603,7 +620,7 @@ const MockTimeline = forwardRef(function MockTimeline({
             {recording ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                {Math.round(recordProgress * 100)}%
+                {recordProgress < 0.8 ? `Rendering ${Math.round((recordProgress / 0.8) * 100)}%` : `Encoding ${Math.round(((recordProgress - 0.8) / 0.2) * 100)}%`}
               </>
             ) : (
               <>
