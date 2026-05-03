@@ -598,7 +598,7 @@ const MockTimeline = forwardRef(function MockTimeline({
 
   const newSlide = () => {
     setPlaying(false);
-    // Save the current timeline as a slide BEFORE clearing — so it stays
+    // Save the current timeline as a slide BEFORE continuing — so it stays
     // visible in the slides strip and can be re-loaded any time.
     // - If we're editing an existing slide → save changes back into it.
     // - If we're on the unsaved "Current" timeline → snapshot it as a new slide.
@@ -610,11 +610,20 @@ const MockTimeline = forwardRef(function MockTimeline({
     } else if (hasAnyTrack) {
       saveCurrentAsSlide();
     }
-    // Now reset to a fresh empty timeline (the previous slide is preserved above)
-    setTracks({});
-    setCameraTrack([]);
-    if (setCamera) setCamera({ zoom: 1, x: 50, y: 50 });
-    setPlayhead(0);
+    // CONTINUE from where the previous slide ended — don't wipe the timeline.
+    // We move the playhead to just after the last keyframe so any new presets
+    // chain naturally onto the end. Existing tracks stay so the user can keep
+    // building on top of them.
+    const allTimes = [
+      ...Object.values(tracks).flat().map((k) => k.t),
+      ...cameraTrack.map((k) => k.t),
+    ];
+    const lastT = allTimes.length ? Math.max(...allTimes) : 0;
+    // Make sure the timeline has room for the next segment
+    if (lastT + 0.5 > duration && setDuration) {
+      setDuration(Math.ceil((lastT + 2) * 2) / 2);
+    }
+    setPlayhead(lastT);
     setActiveSlideId(null);
   };
 
