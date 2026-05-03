@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
-import { Plus, Play, Pause, Trash2, Video, Loader2, SkipBack, Film, Wand2, Layers, Replace, Eye, EyeOff, Camera, Repeat, Scissors, Scissors as SplitIcon } from "lucide-react";
+import { Plus, Play, Pause, Trash2, Video, Loader2, SkipBack, Film, Wand2, Layers, Replace, Eye, EyeOff, Camera, Repeat, Scissors, Scissors as SplitIcon, FilePlus, X } from "lucide-react";
 import { MOTION_PRESETS } from "./motionPresets";
 import { CAMERA_PRESETS } from "./cameraPresets";
 
@@ -43,6 +43,13 @@ const MockTimeline = forwardRef(function MockTimeline({
   const [loop, setLoop] = useState(false); // auto-restart preview when it reaches the end
   const [dragPreset, setDragPreset] = useState(null); // { kind: "motion"|"camera", id, label }
   const [dropTarget, setDropTarget] = useState(null); // itemId | "camera" | null
+
+  // ── Slides ──────────────────────────────────────────────────────────────
+  // Each slide is a snapshot of { tracks, cameraTrack, duration }. The current
+  // working timeline lives in the regular state above. Saved slides are stored
+  // here so users can keep multiple animations alongside each other.
+  const [slides, setSlides] = useState([]); // [{ id, name, tracks, cameraTrack, duration }]
+  const [activeSlideId, setActiveSlideId] = useState(null); // null = unsaved/current
 
   const playStartRef = useRef(0);
   const playFromRef = useRef(0);
@@ -574,6 +581,70 @@ const MockTimeline = forwardRef(function MockTimeline({
     hasAnyTrack: () => hasAnyTrack,
   }));
 
+  // ── Slides ──────────────────────────────────────────────────────────────
+  // Save the current timeline as a slide and reset to a fresh empty timeline.
+  const saveCurrentAsSlide = (name) => {
+    if (!hasAnyTrack) return null;
+    const slide = {
+      id: `slide_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      name: name || `Slide ${slides.length + 1}`,
+      tracks: JSON.parse(JSON.stringify(tracks)),
+      cameraTrack: JSON.parse(JSON.stringify(cameraTrack)),
+      duration,
+    };
+    setSlides((prev) => [...prev, slide]);
+    return slide;
+  };
+
+  const newSlide = () => {
+    setPlaying(false);
+    // Save current timeline as a slide if it has any content
+    if (hasAnyTrack) {
+      saveCurrentAsSlide();
+    }
+    // Reset to a fresh empty timeline
+    setTracks({});
+    setCameraTrack([]);
+    if (setCamera) setCamera({ zoom: 1, x: 50, y: 50 });
+    setPlayhead(0);
+    setActiveSlideId(null);
+  };
+
+  const loadSlide = (slideId) => {
+    const slide = slides.find((s) => s.id === slideId);
+    if (!slide) return;
+    setPlaying(false);
+    // Save the currently-active timeline back into its slide before switching
+    if (activeSlideId) {
+      setSlides((prev) => prev.map((s) => s.id === activeSlideId
+        ? { ...s, tracks: JSON.parse(JSON.stringify(tracks)), cameraTrack: JSON.parse(JSON.stringify(cameraTrack)), duration }
+        : s
+      ));
+    } else if (hasAnyTrack) {
+      // Untracked working timeline → save it as a new slide first so it isn't lost
+      saveCurrentAsSlide();
+    }
+    setTracks(JSON.parse(JSON.stringify(slide.tracks)));
+    setCameraTrack(JSON.parse(JSON.stringify(slide.cameraTrack)));
+    if (setDuration) setDuration(slide.duration);
+    setPlayhead(0);
+    setActiveSlideId(slideId);
+  };
+
+  const deleteSlide = (slideId) => {
+    setSlides((prev) => prev.filter((s) => s.id !== slideId));
+    if (activeSlideId === slideId) {
+      setTracks({});
+      setCameraTrack([]);
+      setPlayhead(0);
+      setActiveSlideId(null);
+    }
+  };
+
+  const renameSlide = (slideId, name) => {
+    setSlides((prev) => prev.map((s) => s.id === slideId ? { ...s, name } : s));
+  };
+
   // ── Recording ───────────────────────────────────────────────────────────
   // REAL-TIME RECORDER: animates the canvas at wall-clock speed and lets
   // MediaRecorder sample it continuously. A 4s animation = exactly 4s of video.
@@ -856,6 +927,14 @@ const MockTimeline = forwardRef(function MockTimeline({
             <span>s</span>
           </label>
           <button
+            onClick={newSlide}
+            disabled={recording}
+            className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold shadow-lg shadow-fuchsia-500/30"
+            title={hasAnyTrack ? "Save current timeline as a slide and start a new one" : "Start a new empty slide"}
+          >
+            <FilePlus className="w-3.5 h-3.5" /> New Slide
+          </button>
+          <button
             onClick={recordVideo}
             disabled={recording || !hasAnyTrack}
             className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-gradient-to-r from-red-500 to-pink-500 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold shadow-lg shadow-red-500/30"
@@ -874,6 +953,62 @@ const MockTimeline = forwardRef(function MockTimeline({
           </button>
         </div>
       </div>
+
+      {/* Slides strip — only shows once user has saved at least one slide */}
+      {slides.length > 0 && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 border-t border-white/5 pt-2">
+          <div className="flex-shrink-0 flex items-center gap-1 text-[10px] text-violet-300/80 font-bold uppercase tracking-wider pr-1">
+            <Film className="w-3 h-3" /> Slides
+          </div>
+          {slides.map((s, i) => {
+            const isActive = activeSlideId === s.id;
+            return (
+              <div
+                key={s.id}
+                className={`group flex-shrink-0 flex items-center gap-1 pl-2.5 pr-1 h-7 rounded-full text-[11px] font-bold transition-colors border ${
+                  isActive
+                    ? "bg-violet-500 text-white border-violet-400 shadow-lg shadow-violet-500/30"
+                    : "bg-white/5 hover:bg-white/15 border-white/10 text-white/70 hover:text-white"
+                }`}
+              >
+                <button
+                  onClick={() => loadSlide(s.id)}
+                  className="truncate max-w-[100px]"
+                  title={`Load "${s.name}"`}
+                >
+                  {s.name}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const name = prompt("Rename slide:", s.name);
+                    if (name && name.trim()) renameSlide(s.id, name.trim());
+                  }}
+                  className="opacity-0 group-hover:opacity-60 hover:opacity-100 text-[9px] px-1"
+                  title="Rename"
+                >
+                  ✎
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm(`Delete slide "${s.name}"?`)) deleteSlide(s.id);
+                  }}
+                  className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-red-500/40 opacity-60 hover:opacity-100"
+                  title="Delete slide"
+                >
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              </div>
+            );
+          })}
+          {activeSlideId === null && hasAnyTrack && (
+            <span className="flex-shrink-0 px-2.5 h-7 flex items-center rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-200 text-[10px] font-bold">
+              ● Unsaved
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Preset mode + segment length */}
       <div className="flex items-center gap-2 flex-wrap">
