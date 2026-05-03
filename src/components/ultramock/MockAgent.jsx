@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bot, Send, Loader2, X, Sparkles, Eye, Wand2, ChevronDown } from "lucide-react";
+import { Bot, Send, Loader2, X, Sparkles, Eye, Wand2, ChevronDown, Paperclip, ImageIcon, Target } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import html2canvas from "html2canvas";
 import { buildSystemPrompt, runTools } from "./mockAgentTools";
@@ -18,7 +18,21 @@ export default function MockAgent({ open, onClose, getStateSnapshot, canvasRef, 
   ]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [attachments, setAttachments] = useState([]); // [{ url, name }]
+  const [uploading, setUploading] = useState(false);
   const scrollRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  // Live snapshot of the canvas state — used to show what the AI will act on
+  const liveState = getStateSnapshot ? getStateSnapshot() : null;
+  const selectedItem = liveState?.items?.find((it) => it.id === liveState.selected_id) || null;
+  const selectedLabel = selectedItem
+    ? selectedItem.kind === "text"
+      ? `📝 "${(selectedItem.text || "Text").slice(0, 22)}"`
+      : selectedItem.kind === "overlay"
+      ? `✨ Overlay`
+      : `📱 ${selectedItem.device || "device"}`
+    : null;
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -44,20 +58,58 @@ export default function MockAgent({ open, onClose, getStateSnapshot, canvasRef, 
     }
   };
 
+  const handleAttach = async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (!files.length) return;
+    setUploading(true);
+    try {
+      for (const file of files) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        if (file_url) {
+          setAttachments((prev) => [...prev, { url: file_url, name: file.name }]);
+        }
+      }
+    } catch (err) {
+      alert("Upload failed: " + err.message);
+    }
+    setUploading(false);
+  };
+
+  const removeAttachment = (idx) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== idx));
+  };
+
   const send = async (text) => {
     const userMsg = (text ?? input).trim();
-    if (!userMsg || busy) return;
+    if ((!userMsg && attachments.length === 0) || busy) return;
 
-    const newMessages = [...messages, { role: "user", content: userMsg }];
+    const userAttachments = [...attachments];
+    const newMessages = [
+      ...messages,
+      { role: "user", content: userMsg || "(image attached)", attachments: userAttachments },
+    ];
     setMessages(newMessages);
     setInput("");
+    setAttachments([]);
     setBusy(true);
 
     try {
       // Capture canvas for vision
       const canvasUrl = await captureCanvasUrl();
       const stateSnapshot = getStateSnapshot();
-      const systemPrompt = buildSystemPrompt(stateSnapshot);
+      let systemPrompt = buildSystemPrompt(stateSnapshot);
+
+      // Tell the agent which item is currently selected (focus target)
+      if (stateSnapshot?.selected_id) {
+        const sel = stateSnapshot.items?.find((it) => it.id === stateSnapshot.selected_id);
+        if (sel) {
+          systemPrompt += `\n\n🎯 USER FOCUS: The user has selected item id="${sel.id}" (${sel.kind}${sel.device ? ` · ${sel.device}` : ""}). When they say "this", "it", or give an instruction without specifying, act on THIS item. It is already selected — no need to call select_item again.`;
+        }
+      }
+      if (userAttachments.length > 0) {
+        systemPrompt += `\n\n📎 The user attached ${userAttachments.length} reference image(s). Inspect them visually for style, content, or context the user wants applied.`;
+      }
 
       // Build conversational context
       const history = newMessages
@@ -88,7 +140,10 @@ export default function MockAgent({ open, onClose, getStateSnapshot, canvasRef, 
           required: ["message"],
         },
       };
-      if (canvasUrl) llmArgs.file_urls = [canvasUrl];
+      const fileUrls = [];
+      if (canvasUrl) fileUrls.push(canvasUrl);
+      userAttachments.forEach((a) => fileUrls.push(a.url));
+      if (fileUrls.length) llmArgs.file_urls = fileUrls;
 
       const res = await base44.integrations.Core.InvokeLLM(llmArgs);
 
@@ -214,7 +269,53 @@ export default function MockAgent({ open, onClose, getStateSnapshot, canvasRef, 
 
           {/* Input */}
           <div className="p-3 border-t border-white/10 bg-black/40">
+            {/* Selected-target pin: tells the user (and AI) what's focused */}
+            {selectedLabel && (
+              <div className="flex items-center gap-1.5 mb-2 px-2.5 py-1.5 rounded-lg bg-cyan-400/10 border border-cyan-400/30">
+                <Target className="w-3 h-3 text-cyan-400 flex-shrink-0" />
+                <span className="text-[10px] font-bold text-cyan-300/80 uppercase tracking-widest">Acting on</span>
+                <span className="text-[11px] font-bold text-white truncate">{selectedLabel}</span>
+                <span className="ml-auto text-[9px] text-white/40">tap canvas to change</span>
+              </div>
+            )}
+
+            {/* Attached image previews */}
+            {attachments.length > 0 && (
+              <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                {attachments.map((a, i) => (
+                  <div key={i} className="relative group">
+                    <img src={a.url} alt={a.name} className="w-12 h-12 rounded-md object-cover ring-1 ring-white/20" />
+                    <button
+                      onClick={() => removeAttachment(i)}
+                      className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-500 hover:bg-red-400 text-white flex items-center justify-center shadow-md"
+                      aria-label="Remove"
+                    >
+                      <X className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleAttach}
+              className="hidden"
+            />
+
             <div className="flex items-end gap-2">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={busy || uploading}
+                className="w-12 h-12 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-30 flex items-center justify-center text-white/70 flex-shrink-0"
+                aria-label="Attach image"
+                title="Attach reference image"
+              >
+                {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
+              </button>
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -224,7 +325,7 @@ export default function MockAgent({ open, onClose, getStateSnapshot, canvasRef, 
                     send();
                   }
                 }}
-                placeholder="Tell me what to build…"
+                placeholder={selectedLabel ? `Tell me what to do with ${selectedLabel}…` : "Tell me what to build…"}
                 rows={2}
                 disabled={busy}
                 style={{ fontSize: "16px" }}
@@ -232,7 +333,7 @@ export default function MockAgent({ open, onClose, getStateSnapshot, canvasRef, 
               />
               <button
                 onClick={() => send()}
-                disabled={busy || !input.trim()}
+                disabled={busy || (!input.trim() && attachments.length === 0)}
                 className="w-12 h-12 rounded-lg bg-gradient-to-r from-fuchsia-500 to-orange-500 hover:opacity-90 active:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center text-white shadow-lg shadow-fuchsia-500/30 flex-shrink-0"
                 aria-label="Send"
               >
@@ -240,7 +341,7 @@ export default function MockAgent({ open, onClose, getStateSnapshot, canvasRef, 
               </button>
             </div>
             <div className="text-[9px] text-white/30 mt-1.5 text-center">
-              ⏎ to send · Shift+⏎ for newline
+              ⏎ to send · Shift+⏎ newline · 📎 attach image
             </div>
           </div>
         </motion.div>
@@ -259,6 +360,13 @@ function MessageBubble({ message }) {
           ? "bg-white text-black"
           : "bg-white/5 border border-white/10 text-white"
       }`}>
+        {message.attachments && message.attachments.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-1.5">
+            {message.attachments.map((a, i) => (
+              <img key={i} src={a.url} alt={a.name} className="w-16 h-16 rounded-md object-cover ring-1 ring-black/20" />
+            ))}
+          </div>
+        )}
         <p className="text-xs leading-relaxed whitespace-pre-wrap">{message.content}</p>
         {message.tools && message.tools.length > 0 && (
           <div className="mt-2 pt-2 border-t border-white/10 space-y-1">
