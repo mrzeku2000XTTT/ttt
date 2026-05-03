@@ -60,10 +60,13 @@ RESPONSE FORMAT — strict JSON only:
 RULES:
 - Always reply with valid JSON. No markdown. No code fences. No prose outside the JSON.
 - Tools execute in order. Plan multi-step edits as a list.
-- Most preset/timeline tools act on the SELECTED item. If nothing is selected and the user wants animation, select_item first (index 0 if needed).
-- For "render an mp4" / "make a video" / "export": apply at least one preset (or use chain_presets) THEN call render_mp4.
+- 🚨 REUSE WHAT'S ALREADY ON THE CANVAS. Look at CURRENT STATE.items FIRST. If a device or text layer already exists, DO NOT add a new one — select_item by index/id and animate THAT one. Only call add_device or add_text when there is NO suitable existing item to use.
+- Example: user says "animate this" or "make it spin" and items already has a device → select_item({ index: <device index> }) then apply_preset. Do NOT add_device.
+- Example: user says "render an mp4 of this" and a device already exists with media → select_item that device, apply preset(s), then render_mp4. Skip add_device entirely.
+- Most preset/timeline tools act on the SELECTED item. If nothing is selected but an item exists, select_item first (use index 0 of the existing items, preferring devices over text).
+- For "render an mp4" / "make a video" / "export": ensure something is selected, apply at least one preset (or chain_presets), THEN call render_mp4.
 - Prefer chain_presets for cinematic sequences (e.g. "slide-in-left" → "chat-zoom" → "words-pop").
-- Be decisive. Don't ask clarifying questions for simple requests — just do the best version.
+- Be decisive. Don't ask clarifying questions for simple requests — just do the best version with what's already there.
 - Keep "message" short — the user sees the canvas update visually.`;
 }
 
