@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback, useEffect } from "react";
 import DeviceFrame from "./DeviceFrame";
 import TextLayer from "./TextLayer";
 import OverlayLayer from "./OverlayLayer";
-import { Trash2, Plus, Move, X, ZoomIn, ZoomOut, Maximize2, Lock } from "lucide-react";
+import { Trash2, Plus, Move, X, ZoomIn, ZoomOut, Maximize2, Lock, Expand, Minimize } from "lucide-react";
 
 /**
  * Free-form canvas where users can:
@@ -42,6 +42,25 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
   });
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Track native fullscreen state so the icon stays in sync (Esc, F11, etc.)
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    const el = typeof ref === "function" ? null : ref?.current;
+    const target = el || surfaceRef.current?.parentElement;
+    if (!target) return;
+    if (!document.fullscreenElement) {
+      target.requestFullscreen?.().catch(() => {});
+    } else {
+      document.exitFullscreen?.().catch(() => {});
+    }
+  };
 
   const clampZoom = (z) => Math.max(0.25, Math.min(2, z));
   const zoomIn = () => setZoom((z) => clampZoom(z + 0.1));
@@ -321,6 +340,14 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
           title="Fit"
         >
           <Maximize2 className="w-3.5 h-3.5" />
+        </button>
+        <div className="w-px h-4 bg-white/15 mx-0.5" />
+        <button
+          onClick={toggleFullscreen}
+          className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/10 text-white/80"
+          title={isFullscreen ? "Exit fullscreen" : "View fullscreen preview"}
+        >
+          {isFullscreen ? <Minimize className="w-3.5 h-3.5" /> : <Expand className="w-3.5 h-3.5" />}
         </button>
       </div>
       )}
