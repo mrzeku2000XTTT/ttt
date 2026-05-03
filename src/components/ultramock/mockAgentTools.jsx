@@ -64,7 +64,8 @@ RULES:
 - Example: user says "animate this" or "make it spin" and items already has a device → select_item({ index: <device index> }) then apply_preset. Do NOT add_device.
 - Example: user says "render an mp4 of this" and a device already exists with media → select_item that device, apply preset(s), then render_mp4. Skip add_device entirely.
 - Most preset/timeline tools act on the SELECTED item. If nothing is selected but an item exists, select_item first (use index 0 of the existing items, preferring devices over text).
-- For "render an mp4" / "make a video" / "export": ensure something is selected, apply at least one preset (or chain_presets), THEN call render_mp4.
+- 🚫 NEVER call render_mp4 unless the user EXPLICITLY asks to render, export, download, or save an MP4/video/file. Recording takes 30+ seconds and downloads a file — it must never be a side-effect of styling/animation requests. If the user just says "animate this", "make it spin", "add motion", "make it cinematic", etc. → apply presets ONLY. Do NOT render.
+- Only call render_mp4 when the user literally says "render", "export", "download", "save mp4", "make me a video file", "give me the mp4", or similar explicit export language.
 - Prefer chain_presets for cinematic sequences (e.g. "slide-in-left" → "chat-zoom" → "words-pop").
 - Be decisive. Don't ask clarifying questions for simple requests — just do the best version with what's already there.
 - Keep "message" short — the user sees the canvas update visually.`;
