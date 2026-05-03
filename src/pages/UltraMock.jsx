@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo } from "react";
+import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Download, ImageIcon, Sparkles, Loader2, RefreshCw, Plus, Type, Bot } from "lucide-react";
@@ -250,6 +250,63 @@ export default function UltraMockPage() {
     setBackground("sunset");
     setPadding(60);
   };
+
+  // Auto-render from URL params (used by NODA's "UltraMock MP4" node)
+  // Reads ?auto=1&text=...&device=...&background=...&preset=...&duration=...&media=...
+  // Then auto-builds the canvas, applies the preset, and triggers MP4 download.
+  const autoRanRef = useRef(false);
+  useEffect(() => {
+    if (autoRanRef.current) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("auto") !== "1") return;
+    autoRanRef.current = true;
+
+    const autoText = params.get("text") || "";
+    const autoDevice = params.get("device") || "iphone";
+    const autoBackground = params.get("background") || "sunset";
+    const autoPreset = params.get("preset") || "spin";
+    const autoDuration = Math.max(1, Math.min(30, Number(params.get("duration")) || 4));
+    const autoMedia = params.get("media") || "";
+
+    setBackground(autoBackground);
+    setDuration(autoDuration);
+
+    // Build a fresh, simple template: tagline up top + one device in the middle
+    const textItem = autoText
+      ? makeText({
+          text: autoText,
+          x: 50, y: 14, fontSize: 56, fontWeight: 900, color: "#ffffff",
+          animation: "typewriter", typeSpeed: 14, loopDelay: 1.5, boxWidth: 90,
+        })
+      : null;
+    const deviceItem = makeItem({
+      device: autoDevice,
+      x: 50, y: 55, scale: 0.85,
+      media: autoMedia ? { url: autoMedia, type: "image", name: "auto" } : null,
+    });
+    const fresh = textItem ? [textItem, deviceItem] : [deviceItem];
+    setItems(fresh);
+    setSelectedId(deviceItem.id);
+
+    // Wait for canvas to settle, then apply preset & record
+    const run = async () => {
+      // Give React a couple of paints to mount items
+      await new Promise((r) => setTimeout(r, 800));
+      try {
+        if (timelineRef.current?.applyPresetById) {
+          timelineRef.current.applyPresetById(autoPreset, "replace");
+        }
+      } catch (e) { console.warn("preset apply failed", e); }
+      // Wait for keyframes to commit, then start recording
+      await new Promise((r) => setTimeout(r, 600));
+      try {
+        if (timelineRef.current?.recordVideo) {
+          await timelineRef.current.recordVideo();
+        }
+      } catch (e) { console.error("auto-record failed", e); }
+    };
+    run();
+  }, []);
 
   // Snapshot of state for the agent's vision/context
   const getStateSnapshot = useCallback(() => ({

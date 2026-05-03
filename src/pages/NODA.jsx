@@ -687,6 +687,60 @@ Also return the final numeric answer.`,
         const res = await withRetry(() => base44.integrations.Core.GenerateImage({ prompt }));
         return res?.url || "";
       }
+      case "ultramock_mp4": {
+        // Find most recent image URL from prior steps to use as device screen content
+        const idx = nodeList.findIndex((n) => n.id === node.id);
+        let mediaUrl = "";
+        for (let i = idx - 1; i >= 0; i--) {
+          const prev = nodeList[i];
+          const out = context[prev.id];
+          if (out === undefined || out === null) continue;
+          if (prev.type === "ai_image" && typeof out === "string" && /^https?:\/\//.test(out)) {
+            mediaUrl = out;
+            break;
+          }
+          if (typeof out === "string" && /^https?:\/\/[^\s"']+\.(png|jpg|jpeg|gif|webp)/i.test(out)) {
+            mediaUrl = out.match(/https?:\/\/[^\s"']+\.(?:png|jpg|jpeg|gif|webp)/i)[0];
+            break;
+          }
+        }
+
+        const tagline = interpolate(node.config.tagline || "").trim();
+        const device = node.config.device || "iphone";
+        const background = node.config.background || "sunset";
+        const preset = node.config.preset || "spinSlow";
+        const duration = Math.max(1, Math.min(30, Number(node.config.duration) || 4));
+
+        // Skip popups during auto-run — only fire on explicit Run clicks
+        if (isAutoRun) {
+          return { skipped: "auto-run", tagline, device, preset, duration, mediaUrl };
+        }
+
+        const params = new URLSearchParams({
+          auto: "1",
+          text: tagline,
+          device,
+          background,
+          preset,
+          duration: String(duration),
+        });
+        if (mediaUrl) params.set("media", mediaUrl);
+        const url = `/UltraMock?${params.toString()}`;
+
+        try { window.open(url, "_blank", "noopener,noreferrer"); } catch {}
+
+        return {
+          opened: true,
+          render_url: url,
+          tagline,
+          device,
+          background,
+          preset,
+          duration,
+          media: mediaUrl || null,
+          note: "UltraMock opened in a new tab — it will auto-build and download the MP4.",
+        };
+      }
       case "deep_research": {
         const topic = interpolate(node.config.topic || "").trim();
         const depth = (node.config.depth || "deep").toLowerCase();

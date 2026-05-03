@@ -4,7 +4,7 @@ import {
   X, Brain, Image as ImageIcon, Mail, Clock, Filter, Webhook, Database, GitBranch,
   Search, Sparkles, Zap, Cog, Send, Twitter, Telescope, Rss, MessageSquarePlus,
   Languages, FileText, Globe, Newspaper, CloudSun, TrendingUp, Music, MessageCircle,
-  Hash, Calculator, Bot,
+  Hash, Calculator, Bot, Film,
 } from "lucide-react";
 import { getNodeLogo } from "./nodeLogos";
 
@@ -68,6 +68,22 @@ export const NODE_TEMPLATES = [
     category: "AI",
     tags: ["image", "art", "visual"],
     defaultConfig: { prompt: "A glowing crystal in space, cinematic" },
+  },
+  {
+    type: "ultramock_mp4",
+    label: "UltraMock MP4",
+    icon: "Film",
+    color: "from-orange-500 to-pink-500",
+    desc: "Render an animated MP4 from UltraMock canvas (uses prior image + text)",
+    category: "Action",
+    tags: ["mp4", "video", "animation", "mockup", "ultramock", "canvas"],
+    defaultConfig: {
+      tagline: "{{result}}",
+      device: "iphone",
+      background: "sunset",
+      preset: "spin",
+      duration: 4,
+    },
   },
   {
     type: "deep_research",
@@ -257,7 +273,7 @@ export const NODE_TEMPLATES = [
 const ICONS = {
   Brain, ImageIcon, Mail, Clock, Filter, Webhook, Database, GitBranch, Twitter,
   Telescope, Rss, MessageSquarePlus, Languages, FileText, Globe, Newspaper,
-  CloudSun, TrendingUp, Music, MessageCircle, Hash, Calculator, Bot,
+  CloudSun, TrendingUp, Music, MessageCircle, Hash, Calculator, Bot, Film,
 };
 
 const CATEGORIES = [

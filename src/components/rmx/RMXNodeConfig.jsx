@@ -160,6 +160,14 @@ function getFields(type) {
       return [{ key: "expression", label: "Expression", type: "textarea", placeholder: "15% tip on $42, or {{result}} * 1.1", hint: "Plain English works: 'add 7% tax to {{result}}' or 'average of 10, 20, 30'. Pure math also works." }];
     case "ai_image":
       return [{ key: "prompt", label: "Image Prompt", type: "textarea", placeholder: "Describe the image" }];
+    case "ultramock_mp4":
+      return [
+        { key: "tagline", label: "Tagline / Headline", type: "textarea", placeholder: "Your tagline here", hint: "Use {{result}} to pull text from the previous step" },
+        { key: "device", label: "Device", type: "select", options: ["iphone", "android", "ipad", "macbook", "imac", "browser", "none"] },
+        { key: "background", label: "Background", type: "select", options: ["sunset", "ocean", "forest", "peach", "mono", "ivory", "midnight", "candy", "white", "black"] },
+        { key: "preset", label: "Animation Preset", type: "select", options: ["spin", "tilt", "pop", "float", "reveal", "flip", "wobble", "zoomin", "showcase", "shake", "slide-in-left", "slide-in-right", "drop-in", "orbit", "swoop", "chat-zoom"] },
+        { key: "duration", label: "Duration (seconds)", type: "number", placeholder: "4", hint: "1–30 seconds. Auto-renders & downloads MP4 in a new tab." },
+      ];
     case "deep_research":
       return [
         { key: "topic", label: "Research Topic", type: "textarea", placeholder: "e.g. Latest Kaspa ecosystem developments in the past 30 days", hint: "Live web scraping + multi-pass synthesis. Use {{result}} to research a previous step's output." },
