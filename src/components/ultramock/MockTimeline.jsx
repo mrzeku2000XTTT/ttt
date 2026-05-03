@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
-import { Plus, Play, Pause, Trash2, Video, Loader2, SkipBack, Film, Wand2, Layers, Replace, Eye, EyeOff, Camera } from "lucide-react";
+import { Plus, Play, Pause, Trash2, Video, Loader2, SkipBack, Film, Wand2, Layers, Replace, Eye, EyeOff, Camera, Repeat } from "lucide-react";
 import { MOTION_PRESETS } from "./motionPresets";
 import { CAMERA_PRESETS } from "./cameraPresets";
 
@@ -39,10 +39,13 @@ const MockTimeline = forwardRef(function MockTimeline({
   const [presetMode, setPresetMode] = useState("append");
   const [presetSegment, setPresetSegment] = useState(2);
   const [hiddenTracks, setHiddenTracks] = useState({}); // mute a track without deleting
+  const [loop, setLoop] = useState(false); // auto-restart preview when it reaches the end
 
   const playStartRef = useRef(0);
   const playFromRef = useRef(0);
   const rafRef = useRef(null);
+  const loopRef = useRef(false);
+  useEffect(() => { loopRef.current = loop; }, [loop]);
 
   const selected = items.find((i) => i.id === selectedId) || null;
   const selectedKfs = (selected && tracks[selected.id]) || [];
@@ -142,6 +145,15 @@ const MockTimeline = forwardRef(function MockTimeline({
       const elapsed = (performance.now() - playStartRef.current) / 1000;
       const t = playFromRef.current + elapsed;
       if (t >= duration) {
+        if (loopRef.current) {
+          // Restart from 0 without stopping playback
+          playStartRef.current = performance.now();
+          playFromRef.current = 0;
+          setPlayhead(0);
+          applyAtTime(0);
+          rafRef.current = requestAnimationFrame(tick);
+          return;
+        }
         setPlayhead(duration);
         applyAtTime(duration);
         setPlaying(false);
@@ -588,6 +600,18 @@ const MockTimeline = forwardRef(function MockTimeline({
           >
             {playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
             {playing ? "Pause" : "Play All"}
+          </button>
+          <button
+            onClick={() => setLoop((l) => !l)}
+            disabled={recording}
+            className={`w-8 h-8 flex items-center justify-center rounded-lg border text-xs font-bold transition-colors disabled:opacity-40 ${
+              loop
+                ? "bg-cyan-400 text-black border-cyan-400 shadow-lg shadow-cyan-500/30"
+                : "bg-white/5 hover:bg-white/10 border-white/10 text-white/70"
+            }`}
+            title={loop ? "Looping — preview auto-restarts" : "Loop preview (auto-restart)"}
+          >
+            <Repeat className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={addKeyframe}
