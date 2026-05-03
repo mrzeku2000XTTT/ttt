@@ -99,6 +99,7 @@ export default function UltraMockPage() {
   // Camera state — animated by the timeline's camera track
   const [camera, setCamera] = useState({ zoom: 1, x: 50, y: 50 });
   const [exporting, setExporting] = useState(false);
+  const [previewPlaying, setPreviewPlaying] = useState(false);
   const [agentOpen, setAgentOpen] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
   const [overlayPickerOpen, setOverlayPickerOpen] = useState(false);
@@ -587,6 +588,8 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
                 locked={locked}
                 pinchEnabled={pinchEnabled}
                 camera={camera}
+                isPlaying={previewPlaying}
+                onTogglePlay={() => timelineRef.current?.togglePlay?.()}
               />
             </div>
             <div className="hidden sm:flex items-center justify-center gap-1.5 text-white/30 text-[10px] font-medium mt-3 px-2 text-center">
@@ -629,6 +632,7 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
                 captureFrame={captureFrame}
                 camera={camera}
                 setCamera={setCamera}
+                onPlayingChange={setPreviewPlaying}
               />
             )}
           </motion.div>

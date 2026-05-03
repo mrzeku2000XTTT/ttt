@@ -26,6 +26,7 @@ const MockTimeline = forwardRef(function MockTimeline({
   captureFrame,           // async () => HTMLCanvasElement
   camera,                 // { zoom, x, y } — current camera state
   setCamera,              // setter to drive the canvas viewport
+  onPlayingChange,        // (playing: bool) => void — notify parent so the canvas overlay can show play/pause
 }, ref) {
   // tracks: { [itemId]: Keyframe[] }
   const [tracks, setTracks] = useState({});
@@ -46,6 +47,9 @@ const MockTimeline = forwardRef(function MockTimeline({
   const rafRef = useRef(null);
   const loopRef = useRef(false);
   useEffect(() => { loopRef.current = loop; }, [loop]);
+
+  // Expose playing state upward (so FreeCanvas's overlay can show a play/pause button)
+  useEffect(() => { if (onPlayingChange) onPlayingChange(playing); }, [playing, onPlayingChange]);
 
   const selected = items.find((i) => i.id === selectedId) || null;
   const selectedKfs = (selected && tracks[selected.id]) || [];
@@ -384,6 +388,11 @@ const MockTimeline = forwardRef(function MockTimeline({
     recordVideo: () => recordVideo(),
     getKeyframes: () => selectedKfs,
     isRecording: () => recording,
+    play: () => { if (hasAnyTrack && !recording) setPlaying(true); },
+    pause: () => setPlaying(false),
+    togglePlay: () => { if (hasAnyTrack && !recording) setPlaying((p) => !p); },
+    isPlaying: () => playing,
+    hasAnyTrack: () => hasAnyTrack,
   }));
 
   // ── Recording ───────────────────────────────────────────────────────────

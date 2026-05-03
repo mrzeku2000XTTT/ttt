@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback, useEffect } from "react";
 import DeviceFrame from "./DeviceFrame";
 import TextLayer from "./TextLayer";
 import OverlayLayer from "./OverlayLayer";
-import { Trash2, Plus, Move, X, ZoomIn, ZoomOut, Maximize2, Lock, Expand, Minimize } from "lucide-react";
+import { Trash2, Plus, Move, X, ZoomIn, ZoomOut, Maximize2, Lock, Expand, Minimize, Play, Pause, EyeOff, Eye } from "lucide-react";
 
 /**
  * Free-form canvas where users can:
@@ -28,6 +28,8 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
     locked = false,        // Lock preview: freezes pan/zoom/interactions for MP4 framing
     pinchEnabled = false,  // Mobile 2-finger pinch-to-zoom
     camera,                // { zoom, x, y } — animated by the timeline camera track
+    isPlaying = false,     // bool — preview animation playing state (from timeline)
+    onTogglePlay,          // () => void — toggle play/pause via the timeline ref
   },
   ref
 ) {
@@ -43,6 +45,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [controlsHidden, setControlsHidden] = useState(false);
 
   // Track native fullscreen state so the icon stays in sync (Esc, F11, etc.)
   useEffect(() => {
@@ -310,8 +313,24 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
       )}
 
       {/* Zoom controls — overlay, not part of the exported canvas (sits outside surface) */}
-      {!locked && (
+      {!locked && !controlsHidden && (
       <div className="absolute top-3 right-3 z-40 flex items-center gap-1 bg-black/60 backdrop-blur-md rounded-full p-1 ring-1 ring-white/15 shadow-lg">
+        {onTogglePlay && (
+          <>
+            <button
+              onClick={onTogglePlay}
+              className={`w-7 h-7 flex items-center justify-center rounded-full transition-colors ${
+                isPlaying
+                  ? "bg-cyan-400 text-black hover:bg-cyan-300"
+                  : "hover:bg-white/10 text-white/80"
+              }`}
+              title={isPlaying ? "Pause preview" : "Play preview"}
+            >
+              {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+            </button>
+            <div className="w-px h-4 bg-white/15 mx-0.5" />
+          </>
+        )}
         <button
           onClick={zoomOut}
           className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/10 text-white/80"
@@ -341,7 +360,6 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
         >
           <Maximize2 className="w-3.5 h-3.5" />
         </button>
-        <div className="w-px h-4 bg-white/15 mx-0.5" />
         <button
           onClick={toggleFullscreen}
           className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/10 text-white/80"
@@ -349,7 +367,26 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
         >
           {isFullscreen ? <Minimize className="w-3.5 h-3.5" /> : <Expand className="w-3.5 h-3.5" />}
         </button>
+        <div className="w-px h-4 bg-white/15 mx-0.5" />
+        <button
+          onClick={() => setControlsHidden(true)}
+          className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/10 text-white/60"
+          title="Hide controls"
+        >
+          <EyeOff className="w-3.5 h-3.5" />
+        </button>
       </div>
+      )}
+
+      {/* Restore button when controls are hidden */}
+      {!locked && controlsHidden && (
+        <button
+          onClick={() => setControlsHidden(false)}
+          className="absolute top-3 right-3 z-40 w-7 h-7 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-md hover:bg-black/70 text-white/50 hover:text-white ring-1 ring-white/10 shadow-lg transition-colors"
+          title="Show controls"
+        >
+          <Eye className="w-3.5 h-3.5" />
+        </button>
       )}
 
       {/* Camera viewport — wraps the surface and applies the timeline camera transform */}
