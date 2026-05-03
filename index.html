@@ -6,6 +6,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <link rel="manifest" href="/manifest.json" />
     <title>TTT 2.0 — The Kaspa Super App</title>
+    <script>
+      // Lock the page title against Base44's server-injected SEO override
+      // (which picks the first page in pages.config.js — currently "AIAnalytics").
+      // Runs synchronously before any other script — earliest possible defense.
+      (function () {
+        var LOCKED_TITLE = "TTT 2.0 — The Kaspa Super App";
+        document.title = LOCKED_TITLE;
+        try {
+          var titleEl = document.querySelector("title");
+          if (titleEl && "MutationObserver" in window) {
+            new MutationObserver(function () {
+              if (document.title !== LOCKED_TITLE) document.title = LOCKED_TITLE;
+            }).observe(titleEl, { childList: true, characterData: true, subtree: true });
+          }
+          // Re-assert across the entire SEO injection window
+          [0, 16, 50, 100, 250, 500, 1000, 2000, 4000].forEach(function (ms) {
+            setTimeout(function () {
+              if (document.title !== LOCKED_TITLE) document.title = LOCKED_TITLE;
+            }, ms);
+          });
+        } catch (e) {}
+      })();
+    </script>
     <meta name="description" content="TTT 2.0 — the unified Kaspa super app. Send KAS, browse TTTV, connect with Agent ZK, and explore the ecosystem." />
     <meta property="og:title" content="TTT 2.0 — The Kaspa Super App" />
     <meta property="og:description" content="The unified Kaspa super app." />
