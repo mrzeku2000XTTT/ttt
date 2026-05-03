@@ -598,11 +598,19 @@ const MockTimeline = forwardRef(function MockTimeline({
 
   const newSlide = () => {
     setPlaying(false);
-    // Save current timeline as a slide if it has any content
-    if (hasAnyTrack) {
+    // Save the current timeline as a slide BEFORE clearing — so it stays
+    // visible in the slides strip and can be re-loaded any time.
+    // - If we're editing an existing slide → save changes back into it.
+    // - If we're on the unsaved "Current" timeline → snapshot it as a new slide.
+    if (activeSlideId) {
+      setSlides((prev) => prev.map((s) => s.id === activeSlideId
+        ? { ...s, tracks: JSON.parse(JSON.stringify(tracks)), cameraTrack: JSON.parse(JSON.stringify(cameraTrack)), duration }
+        : s
+      ));
+    } else if (hasAnyTrack) {
       saveCurrentAsSlide();
     }
-    // Reset to a fresh empty timeline
+    // Now reset to a fresh empty timeline (the previous slide is preserved above)
     setTracks({});
     setCameraTrack([]);
     if (setCamera) setCamera({ zoom: 1, x: 50, y: 50 });
@@ -954,13 +962,15 @@ const MockTimeline = forwardRef(function MockTimeline({
         </div>
       </div>
 
-      {/* Slides strip — only shows once user has saved at least one slide */}
-      {slides.length > 0 && (
+      {/* Slides strip — always shows when there's more than one slide, OR
+          when there are saved slides (so you can switch between them).
+          The CURRENT working timeline appears as its own tab too. */}
+      {(slides.length > 0) && (
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 border-t border-white/5 pt-2">
           <div className="flex-shrink-0 flex items-center gap-1 text-[10px] text-violet-300/80 font-bold uppercase tracking-wider pr-1">
             <Film className="w-3 h-3" /> Slides
           </div>
-          {slides.map((s, i) => {
+          {slides.map((s) => {
             const isActive = activeSlideId === s.id;
             return (
               <div
@@ -1002,10 +1012,19 @@ const MockTimeline = forwardRef(function MockTimeline({
               </div>
             );
           })}
-          {activeSlideId === null && hasAnyTrack && (
-            <span className="flex-shrink-0 px-2.5 h-7 flex items-center rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-200 text-[10px] font-bold">
-              ● Unsaved
-            </span>
+          {/* Current/unsaved working timeline as its own tab */}
+          {activeSlideId === null && (
+            <div
+              className={`flex-shrink-0 flex items-center gap-1 px-2.5 h-7 rounded-full text-[11px] font-bold border ${
+                hasAnyTrack
+                  ? "bg-orange-500/20 border-orange-500/50 text-orange-100 shadow-lg shadow-orange-500/20"
+                  : "bg-white/5 border-white/10 text-white/50"
+              }`}
+              title="Current working timeline (not yet saved as a slide)"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-300 animate-pulse" />
+              {hasAnyTrack ? "Current (unsaved)" : "New blank"}
+            </div>
           )}
         </div>
       )}
