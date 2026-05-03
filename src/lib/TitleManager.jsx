@@ -8,7 +8,7 @@ import { useLocation } from "react-router-dom";
  * Also sets up a MutationObserver to revert any external script that tries
  * to change <title> after navigation (Base44's SEO injector runs async).
  */
-const DEFAULT_TITLE = "TTT — The Kaspa Super App";
+const DEFAULT_TITLE = "TTT 2.0 — The Kaspa Super App";
 
 // Per-route overrides if you ever want a custom title for a specific page.
 // Anything not listed falls back to DEFAULT_TITLE.
@@ -25,12 +25,9 @@ export default function TitleManager() {
     // Set immediately
     document.title = target;
 
-    // Re-assert after async injectors run (Base44's SEO inject is delayed)
-    const t1 = setTimeout(() => { if (document.title !== target) document.title = target; }, 100);
-    const t2 = setTimeout(() => { if (document.title !== target) document.title = target; }, 500);
-    const t3 = setTimeout(() => { if (document.title !== target) document.title = target; }, 1500);
-
-    // Watch <title> for external mutations and revert
+    // Watch <title> for external mutations and revert instantly.
+    // Base44's SEO injector replaces the <title> element with a per-page string
+    // (e.g. "AIAnalytics | TTT") — we revert it before the browser paints it.
     const titleEl = document.querySelector("title");
     let observer;
     if (titleEl) {
@@ -40,10 +37,17 @@ export default function TitleManager() {
       observer.observe(titleEl, { childList: true, characterData: true, subtree: true });
     }
 
+    // Aggressive re-assertion ladder — covers async injectors that fire at
+    // various delays. Microtask + rAF + multiple timeouts keeps the title
+    // pinned through the entire SEO injection window.
+    Promise.resolve().then(() => { if (document.title !== target) document.title = target; });
+    requestAnimationFrame(() => { if (document.title !== target) document.title = target; });
+    const timers = [10, 50, 100, 250, 500, 1000, 2000, 4000].map((ms) =>
+      setTimeout(() => { if (document.title !== target) document.title = target; }, ms)
+    );
+
     return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
+      timers.forEach(clearTimeout);
       observer?.disconnect();
     };
   }, [location.pathname]);
