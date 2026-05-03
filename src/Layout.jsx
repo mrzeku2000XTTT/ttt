@@ -296,7 +296,6 @@ export default function Layout({ children, currentPageName }) {
     { name: "Notifications", icon: Bell, path: "Settings" },
     ...(isAdmin ? [
       { name: "Hub", icon: Activity, path: "Hub" },
-      { name: "AI Analytics", icon: Brain, path: "AIAnalytics" },
       { name: "SSH Manager", icon: Settings, path: "SSHManager" },
       { name: "API Docs", icon: FileText, path: "APIDocumentation" }
     ] : [])
@@ -315,8 +314,7 @@ export default function Layout({ children, currentPageName }) {
 
   const allSubNavItems = isAdmin 
     ? [...subNavItems, 
-       { name: "Hub", icon: Activity, path: "Hub" }, 
-       { name: "AI Analytics", icon: Brain, path: "AIAnalytics" }
+       { name: "Hub", icon: Activity, path: "Hub" }
       ]
     : subNavItems;
 

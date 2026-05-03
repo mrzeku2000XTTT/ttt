@@ -47,7 +47,6 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import AIAnalytics from './pages/AIAnalytics';
 import AK from './pages/AK';
 import ALPHA from './pages/ALPHA';
 import APIDocumentation from './pages/APIDocumentation';
@@ -294,7 +293,6 @@ import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "AIAnalytics": AIAnalytics,
     "AK": AK,
     "ALPHA": ALPHA,
     "APIDocumentation": APIDocumentation,
