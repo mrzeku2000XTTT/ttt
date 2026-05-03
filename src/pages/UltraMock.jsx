@@ -267,6 +267,7 @@ export default function UltraMockPage() {
     const autoPreset = params.get("preset") || "spin";
     const autoDuration = Math.max(1, Math.min(30, Number(params.get("duration")) || 4));
     const autoMedia = params.get("media") || "";
+    const autoEmail = (params.get("email") || "").trim();
 
     setBackground(autoBackground);
     setDuration(autoDuration);
@@ -299,11 +300,44 @@ export default function UltraMockPage() {
       } catch (e) { console.warn("preset apply failed", e); }
       // Wait for keyframes to commit, then start recording
       await new Promise((r) => setTimeout(r, 600));
+      let result = null;
       try {
         if (timelineRef.current?.recordVideo) {
-          await timelineRef.current.recordVideo();
+          result = await timelineRef.current.recordVideo();
         }
       } catch (e) { console.error("auto-record failed", e); }
+
+      // If an email was requested, upload the blob and email a link
+      if (autoEmail && result?.blob && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(autoEmail)) {
+        try {
+          const { base44 } = await import("@/api/base44Client");
+          const file = new File([result.blob], `ultramock-${Date.now()}.${result.ext}`, { type: result.mime });
+          const { file_url } = await base44.integrations.Core.UploadFile({ file });
+          const subject = autoText ? `Your UltraMock: ${autoText.slice(0, 60)}` : "Your UltraMock video";
+          const body = `<p>Your UltraMock video is ready 🎬</p>
+<p><a href="${file_url}" style="background:#06b6d4;color:#000;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;">Download MP4</a></p>
+<p style="font-size:12px;color:#666;">Or paste this link: <br/><a href="${file_url}">${file_url}</a></p>
+${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText}</em></p>` : ""}
+<p style="font-size:11px;color:#999;margin-top:24px;">Sent by NODA · UltraMock</p>`;
+          await base44.integrations.Core.SendEmail({
+            to: autoEmail,
+            from_name: "NODA · UltraMock",
+            subject,
+            body,
+          });
+          // Visual confirmation in the page
+          try {
+            const banner = document.createElement("div");
+            banner.textContent = `✅ MP4 emailed to ${autoEmail}`;
+            banner.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#10b981;color:#000;padding:12px 24px;border-radius:12px;font-weight:bold;z-index:99999;box-shadow:0 10px 40px rgba(16,185,129,0.4);font-family:system-ui";
+            document.body.appendChild(banner);
+            setTimeout(() => banner.remove(), 8000);
+          } catch {}
+        } catch (e) {
+          console.error("email send failed", e);
+          alert("MP4 downloaded, but email failed: " + (e?.message || "unknown error"));
+        }
+      }
     };
     run();
   }, []);

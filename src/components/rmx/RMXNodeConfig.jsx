@@ -167,6 +167,7 @@ function getFields(type) {
         { key: "background", label: "Background", type: "select", options: ["sunset", "ocean", "forest", "peach", "mono", "ivory", "midnight", "candy", "white", "black"] },
         { key: "preset", label: "Animation Preset", type: "select", options: ["spin", "tilt", "pop", "float", "reveal", "flip", "wobble", "zoomin", "showcase", "shake", "slide-in-left", "slide-in-right", "drop-in", "orbit", "swoop", "chat-zoom"] },
         { key: "duration", label: "Duration (seconds)", type: "number", placeholder: "4", hint: "1–30 seconds. Auto-renders & downloads MP4 in a new tab." },
+        { key: "email_to", label: "Email MP4 to (optional)", placeholder: "you@example.com", hint: "If set, the rendered MP4 is uploaded and emailed as a download link." },
       ];
     case "deep_research":
       return [

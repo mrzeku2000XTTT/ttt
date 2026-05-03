@@ -83,6 +83,7 @@ export const NODE_TEMPLATES = [
       background: "sunset",
       preset: "spin",
       duration: 4,
+      email_to: "",
     },
   },
   {

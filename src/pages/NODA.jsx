@@ -716,6 +716,7 @@ Also return the final numeric answer.`,
           return { skipped: "auto-run", tagline, device, preset, duration, mediaUrl };
         }
 
+        const emailTo = (node.config.email_to || "").trim();
         const params = new URLSearchParams({
           auto: "1",
           text: tagline,
@@ -725,6 +726,7 @@ Also return the final numeric answer.`,
           duration: String(duration),
         });
         if (mediaUrl) params.set("media", mediaUrl);
+        if (emailTo) params.set("email", emailTo);
         const url = `/UltraMock?${params.toString()}`;
 
         try { window.open(url, "_blank", "noopener,noreferrer"); } catch {}
@@ -738,7 +740,10 @@ Also return the final numeric answer.`,
           preset,
           duration,
           media: mediaUrl || null,
-          note: "UltraMock opened in a new tab — it will auto-build and download the MP4.",
+          email_to: emailTo || null,
+          note: emailTo
+            ? `UltraMock opened in a new tab — it will auto-build, download the MP4, then email a download link to ${emailTo}.`
+            : "UltraMock opened in a new tab — it will auto-build and download the MP4.",
         };
       }
       case "deep_research": {

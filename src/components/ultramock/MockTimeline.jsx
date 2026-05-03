@@ -479,10 +479,11 @@ const MockTimeline = forwardRef(function MockTimeline({
       if (!blob || blob.size === 0) {
         throw new Error("Recording produced an empty file. Try a shorter duration.");
       }
+      const ext = isMp4 ? "mp4" : "webm";
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `ultramock-${Date.now()}.${isMp4 ? "mp4" : "webm"}`;
+      a.download = `ultramock-${Date.now()}.${ext}`;
       a.rel = "noopener";
       // Anchor MUST be in the DOM for the click to download in some browsers (Safari/Firefox)
       document.body.appendChild(a);
@@ -491,13 +492,18 @@ const MockTimeline = forwardRef(function MockTimeline({
         try { document.body.removeChild(a); } catch { /* ignore */ }
         URL.revokeObjectURL(url);
       }, 2000);
+      try { await wakeLock?.release?.(); } catch { /* ignore */ }
+      setRecording(false);
+      setRecordProgress(0);
+      return { blob, ext, mime: mime || (isMp4 ? "video/mp4" : "video/webm") };
     } catch (err) {
       console.error("Recording failed:", err);
       alert("Recording failed: " + err.message);
+      try { await wakeLock?.release?.(); } catch { /* ignore */ }
+      setRecording(false);
+      setRecordProgress(0);
+      return null;
     }
-    try { await wakeLock?.release?.(); } catch { /* ignore */ }
-    setRecording(false);
-    setRecordProgress(0);
   };
 
   // ── Helpers for track row labels ────────────────────────────────────────

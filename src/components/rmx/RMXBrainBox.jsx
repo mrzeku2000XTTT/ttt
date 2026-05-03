@@ -29,6 +29,11 @@ Available node types: ${allowedTypes}
 Node config schemas:
 - ai_prompt: { prompt: string }   // returns text
 - ai_image: { prompt: string }    // returns an image URL
+- ultramock_mp4: { tagline: string, device?: "iphone"|"android"|"ipad"|"macbook"|"imac"|"browser"|"none", background?: string, preset?: string, duration?: number, email_to?: string }
+   // Renders an animated MP4 in a new browser tab. If email_to is set, the MP4 is uploaded and a download link is emailed.
+   // Use whenever the user asks to "make a video", "animate", "render an MP4", "promo video", or wants to email an MP4.
+   // tagline supports {{result}}. preset must be one of: spin, tilt, pop, float, reveal, flip, wobble, zoomin, showcase, shake, slide-in-left, slide-in-right, drop-in, orbit, swoop, chat-zoom.
+   // If user wants the MP4 emailed, set email_to to their address (default: ${currentEmail || "user@example.com"} if they say "email it to me").
 - deep_research: { topic: string, depth: "shallow"|"deep" }   // ACTUALLY scrapes the live web, multi-pass — returns a full markdown research report. Use this whenever the user wants real, current info.
 - read_ttt_feed: { limit: number, keyword?: string }   // pulls real recent posts from the TTT social feed inside this app. Use whenever user mentions "TTT feed", "the feed", "TTT posts", "what people are saying on TTT".
 - post_to_ttt: { author_name?: string, content_override?: string }   // Auto-posts to the TTT social feed. Empty config = uses previous text step + auto-attaches previous ai_image. Use when user says "post to TTT", "publish to feed", "share on TTT", "auto-post".
