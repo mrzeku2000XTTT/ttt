@@ -437,10 +437,22 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
     set_background: (a = {}) => { if (a.background) setBackground(a.background); return { background: a.background }; },
     set_padding: (a = {}) => { if (typeof a.padding === "number") setPadding(Math.max(20, Math.min(160, a.padding))); return { padding: a.padding }; },
     set_duration: (a = {}) => { if (typeof a.seconds === "number") setDuration(Math.max(1, Math.min(30, a.seconds))); return { duration: a.seconds }; },
-    apply_preset: (a = {}) => {
-      if (!timelineRef.current) throw new Error("no timeline available — select a device first");
+    apply_preset: async (a = {}) => {
+      if (!timelineRef.current) throw new Error("no timeline available");
+      // Auto-select first item if nothing is selected — the preset needs a target
+      if (!selectedId) {
+        const firstDevice = items.find((i) => i.kind === "device") || items[0];
+        if (firstDevice) {
+          setSelectedId(firstDevice.id);
+          await new Promise((r) => setTimeout(r, 100));
+        } else {
+          throw new Error("no item on canvas to animate — add a device first");
+        }
+      }
+      const known = ["spin","tilt","pop","float","reveal","flip","wobble","zoomin","zoomout","tilt-up","showcase","shake","barrel","slide-in-left","slide-in-right","slide-up","drop-in","fly-across","orbit","bounce","pendulum","zigzag","swoop","chat-zoom","typewriter-zoom","words-pop"];
+      if (!known.includes(a.preset_id)) throw new Error(`unknown preset: ${a.preset_id}`);
       const ok = timelineRef.current.applyPresetById(a.preset_id, a.mode === "chain" ? "append" : "replace");
-      if (!ok) throw new Error(`unknown preset: ${a.preset_id}`);
+      if (!ok) throw new Error(`failed to apply ${a.preset_id} — no item selected`);
       return { applied: a.preset_id };
     },
     chain_presets: async (a = {}) => {
