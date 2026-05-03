@@ -710,13 +710,14 @@ Also return the final numeric answer.`,
         const background = node.config.background || "sunset";
         const preset = node.config.preset || "spinSlow";
         const duration = Math.max(1, Math.min(30, Number(node.config.duration) || 4));
+        const emailTo = (node.config.email_to || "").trim();
 
         // Skip popups during auto-run — only fire on explicit Run clicks
         if (isAutoRun) {
           return { skipped: "auto-run", tagline, device, preset, duration, mediaUrl };
         }
 
-        const emailTo = (node.config.email_to || "").trim();
+        // Build the UltraMock render URL (absolute so it works in emails)
         const params = new URLSearchParams({
           auto: "1",
           text: tagline,
@@ -727,13 +728,53 @@ Also return the final numeric answer.`,
         });
         if (mediaUrl) params.set("media", mediaUrl);
         if (emailTo) params.set("email", emailTo);
-        const url = `/UltraMock?${params.toString()}`;
+        const renderPath = `/UltraMock?${params.toString()}`;
+        const absoluteRenderUrl = `${window.location.origin}${renderPath}`;
 
-        try { window.open(url, "_blank", "noopener,noreferrer"); } catch {}
+        // ✅ RELIABLE EMAIL: Send the email IMMEDIATELY from NODA with the image attached
+        // and a "Generate MP4" button. This way the user always gets an email — even if
+        // they close the UltraMock tab. The MP4 is then generated on-demand when they
+        // click the link in the email (which auto-runs UltraMock and emails the MP4 link).
+        let emailSent = false;
+        let emailError = null;
+        if (emailTo && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTo)) {
+          try {
+            const subject = tagline ? `Your NODA video: ${tagline.slice(0, 60)}` : "Your NODA video is ready to render";
+            const imageBlock = mediaUrl
+              ? `<div style="text-align:center;margin:16px 0;"><img src="${mediaUrl}" alt="" style="max-width:100%;border-radius:12px;" /></div>`
+              : "";
+            const taglineBlock = tagline
+              ? `<p style="font-size:18px;font-weight:bold;text-align:center;margin:16px 0;color:#111;">${tagline}</p>`
+              : "";
+            const body = `<div style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:560px;margin:0 auto;">
+${taglineBlock}
+${imageBlock}
+<div style="text-align:center;margin:28px 0;">
+  <a href="${absoluteRenderUrl}" style="background:#06b6d4;color:#000;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:bold;display:inline-block;font-size:15px;">🎬 Generate & Download MP4</a>
+</div>
+<p style="font-size:13px;color:#555;text-align:center;line-height:1.5;">Click the button above to open UltraMock and auto-generate your <strong>${duration}s ${preset}</strong> animation. The MP4 will download automatically and a copy of the link will be emailed back to you.</p>
+<p style="font-size:11px;color:#999;text-align:center;margin-top:24px;border-top:1px solid #eee;padding-top:16px;">Sent by NODA · UltraMock</p>
+</div>`;
+            await base44.integrations.Core.SendEmail({
+              to: emailTo,
+              from_name: "NODA · UltraMock",
+              subject,
+              body,
+            });
+            emailSent = true;
+            console.log("[NODA] ✅ UltraMock email sent to", emailTo);
+          } catch (e) {
+            emailError = e.message || "send failed";
+            console.error("[NODA] UltraMock email failed:", e);
+          }
+        }
+
+        // Also open the render tab so the MP4 starts downloading right away
+        try { window.open(renderPath, "_blank", "noopener,noreferrer"); } catch {}
 
         return {
           opened: true,
-          render_url: url,
+          render_url: absoluteRenderUrl,
           tagline,
           device,
           background,
@@ -741,8 +782,12 @@ Also return the final numeric answer.`,
           duration,
           media: mediaUrl || null,
           email_to: emailTo || null,
-          note: emailTo
-            ? `UltraMock opened in a new tab — it will auto-build, download the MP4, then email a download link to ${emailTo}.`
+          email_sent: emailSent,
+          email_error: emailError,
+          note: emailSent
+            ? `✅ Email sent to ${emailTo} with image + MP4 generation link. UltraMock also opened to render the MP4 now.`
+            : emailTo
+            ? `⚠️ Email failed (${emailError}). UltraMock opened to render the MP4.`
             : "UltraMock opened in a new tab — it will auto-build and download the MP4.",
         };
       }
