@@ -236,11 +236,20 @@ export default function UltraMockPage() {
     setExporting(false);
   };
 
-  // Capture frame for the timeline recorder
+  // Capture frame for the timeline recorder.
+  // We capture at scale 0.75 during recording to maximize FPS — html2canvas
+  // is fundamentally slow (~80-150ms/frame at scale 1.5), so reducing the
+  // raster size 4× cuts capture time enough to get smooth source frames that
+  // the MediaRecorder can sample at 30fps without stuttering.
   const captureFrame = useCallback(async () => {
     if (!canvasRef.current) return null;
     return await html2canvas(canvasRef.current, {
-      backgroundColor: null, scale: 1.5, useCORS: true, logging: false,
+      backgroundColor: null,
+      scale: 0.75,
+      useCORS: true,
+      logging: false,
+      // Skip cloning expensive elements / shadow effects we don't need pixel-perfect
+      ignoreElements: (el) => el.classList?.contains?.("html2canvas-ignore"),
     });
   }, []);
 

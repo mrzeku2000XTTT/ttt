@@ -443,31 +443,40 @@ const MockTimeline = forwardRef(function MockTimeline({
         recorder.onstop = () => resolve(new Blob(chunks, { type: mime || (isMp4 ? "video/mp4" : "video/webm") }));
       });
 
-      // ── REAL-TIME PAINT LOOP ─────────────────────────────────────────────
-      // Start the recorder, then run an async loop that:
-      //   1. tracks wall-clock time elapsed
-      //   2. updates the timeline state to match wall-clock time
-      //   3. captures the canvas as fast as html2canvas allows (~10-15 fps)
-      //   4. paints each capture into the output canvas
-      // The recorder samples `out` continuously at 30fps, filling gaps by
-      // repeating the last painted frame — so the video plays at 1× speed.
+      // ── REAL-TIME PAINT LOOP (smooth) ────────────────────────────────────
+      // Two parallel loops:
+      //   A. State loop (rAF, ~60fps): updates React state → DOM transforms
+      //      so the source preview animates smoothly between captures.
+      //   B. Capture loop (as fast as html2canvas allows): grabs the current
+      //      DOM into the output canvas. The MediaRecorder samples `out` at
+      //      30fps, so even if html2canvas can only do 10-15fps, the OUTPUT
+      //      is smooth because each captured frame already represents the
+      //      true interpolated state at that wall-clock moment.
+      //
+      // Total time = exact `duration` seconds. No more "frame by frame" feel.
       recorder.start();
       const startTime = performance.now();
       const durationMs = duration * 1000;
       let stopped = false;
 
-      const paintLoop = async () => {
+      // Loop A — high-frequency state updater (drives the on-screen animation)
+      const stateLoop = () => {
+        if (stopped) return;
+        const elapsed = performance.now() - startTime;
+        if (elapsed >= durationMs) return;
+        const t = Math.min(duration, elapsed / 1000);
+        setPlayhead(t);
+        applyAtTime(t);
+        setRecordProgress(elapsed / durationMs);
+        requestAnimationFrame(stateLoop);
+      };
+      requestAnimationFrame(stateLoop);
+
+      // Loop B — capture loop (writes to output canvas as fast as possible)
+      const captureLoop = async () => {
         while (!stopped) {
           const elapsed = performance.now() - startTime;
           if (elapsed >= durationMs) break;
-          const t = Math.min(duration, elapsed / 1000);
-          setPlayhead(t);
-          applyAtTime(t);
-          setRecordProgress(elapsed / durationMs);
-          // Wait one paint so React commits the new transforms
-          await new Promise((r) => requestAnimationFrame(r));
-          // Capture and paint into output (this is the slow part — that's OK,
-          // the recorder keeps streaming the previous frame in the meantime)
           try {
             const frame = await captureFrame();
             if (frame && frame.width && !stopped) {
@@ -478,7 +487,7 @@ const MockTimeline = forwardRef(function MockTimeline({
         }
       };
 
-      await paintLoop();
+      await captureLoop();
 
       // Final frame at duration
       setPlayhead(duration);
