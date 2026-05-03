@@ -41,6 +41,8 @@ const MockTimeline = forwardRef(function MockTimeline({
   const [presetSegment, setPresetSegment] = useState(2);
   const [hiddenTracks, setHiddenTracks] = useState({}); // mute a track without deleting
   const [loop, setLoop] = useState(false); // auto-restart preview when it reaches the end
+  const [dragPreset, setDragPreset] = useState(null); // { kind: "motion"|"camera", id, label }
+  const [dropTarget, setDropTarget] = useState(null); // itemId | "camera" | null
 
   const playStartRef = useRef(0);
   const playFromRef = useRef(0);
@@ -665,6 +667,38 @@ const MockTimeline = forwardRef(function MockTimeline({
     return `📱 ${item.device || "device"}`;
   };
 
+  // ── Drag-preset-onto-lane drop handlers ────────────────────────────────
+  const handleLaneDragOver = (e) => {
+    if (!dragPreset) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  };
+  const handleLaneDrop = (e, target) => {
+    if (!dragPreset) return;
+    e.preventDefault();
+    e.stopPropagation();
+    // Compute the time at the drop point so "chain" mode places the segment there
+    const lane = e.currentTarget;
+    const rect = lane.getBoundingClientRect();
+    const px = e.clientX - rect.left;
+    const tAtDrop = Math.max(0, Math.min(duration, (px / rect.width) * duration));
+    setPlayhead(tAtDrop);
+
+    if (dragPreset.kind === "camera") {
+      // Camera presets always go on the camera lane regardless of where dropped
+      const preset = CAMERA_PRESETS.find((p) => p.id === dragPreset.id);
+      if (preset) applyCameraPreset(preset);
+    } else {
+      // Motion preset → apply to the dropped track's item
+      const preset = MOTION_PRESETS.find((p) => p.id === dragPreset.id);
+      if (preset && target && target !== "camera") {
+        applyPreset(preset, target);
+      }
+    }
+    setDragPreset(null);
+    setDropTarget(null);
+  };
+
   const trackColor = (idx) => {
     const palette = ["#fb923c", "#22d3ee", "#a78bfa", "#34d399", "#f472b6", "#fbbf24", "#60a5fa"];
     return palette[idx % palette.length];
@@ -801,9 +835,16 @@ const MockTimeline = forwardRef(function MockTimeline({
           <button
             key={p.id}
             onClick={() => applyPreset(p)}
-            disabled={recording || !selected}
-            title={selected ? `${p.desc} → ${labelFor(selected)}` : "Select an item first"}
-            className={`flex-shrink-0 px-2.5 h-7 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white/70 hover:text-white text-[11px] font-bold transition-colors disabled:opacity-40 ${
+            draggable={!recording}
+            onDragStart={(e) => {
+              setDragPreset({ kind: "motion", id: p.id, label: p.label });
+              e.dataTransfer.effectAllowed = "copy";
+              try { e.dataTransfer.setData("text/plain", `motion:${p.id}`); } catch {}
+            }}
+            onDragEnd={() => { setDragPreset(null); setDropTarget(null); }}
+            disabled={recording}
+            title={`${p.desc} — click to apply to selected, or drag onto any track`}
+            className={`flex-shrink-0 px-2.5 h-7 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white/70 hover:text-white text-[11px] font-bold transition-colors disabled:opacity-40 cursor-grab active:cursor-grabbing ${
               presetMode === "append" ? "hover:border-orange-400/50" : "hover:border-cyan-400/50"
             }`}
           >
@@ -821,9 +862,16 @@ const MockTimeline = forwardRef(function MockTimeline({
           <button
             key={p.id}
             onClick={() => applyCameraPreset(p)}
+            draggable={!recording}
+            onDragStart={(e) => {
+              setDragPreset({ kind: "camera", id: p.id, label: p.label });
+              e.dataTransfer.effectAllowed = "copy";
+              try { e.dataTransfer.setData("text/plain", `camera:${p.id}`); } catch {}
+            }}
+            onDragEnd={() => { setDragPreset(null); setDropTarget(null); }}
             disabled={recording}
-            title={`${p.desc}${selected ? ` (target: ${labelFor(selected)})` : ""}`}
-            className="flex-shrink-0 px-2.5 h-7 rounded-full bg-pink-500/10 hover:bg-pink-500/25 border border-pink-500/30 text-pink-200 hover:text-white text-[11px] font-bold transition-colors disabled:opacity-40"
+            title={`${p.desc} — click to apply, or drag onto the camera lane (or any track to also retarget focus)`}
+            className="flex-shrink-0 px-2.5 h-7 rounded-full bg-pink-500/10 hover:bg-pink-500/25 border border-pink-500/30 text-pink-200 hover:text-white text-[11px] font-bold transition-colors disabled:opacity-40 cursor-grab active:cursor-grabbing"
           >
             {p.label}
           </button>
@@ -868,7 +916,15 @@ const MockTimeline = forwardRef(function MockTimeline({
       {/* Camera lane (always visible if it has keyframes) */}
       {cameraTrack.length > 0 && (
         <div
-          className={`flex items-stretch gap-1.5 rounded-lg border transition-colors border-pink-500/40 bg-pink-500/5`}
+          onDragOver={handleLaneDragOver}
+          onDragEnter={() => dragPreset && setDropTarget("camera")}
+          onDragLeave={() => setDropTarget((cur) => cur === "camera" ? null : cur)}
+          onDrop={(e) => handleLaneDrop(e, "camera")}
+          className={`flex items-stretch gap-1.5 rounded-lg border transition-colors ${
+            dropTarget === "camera" && dragPreset?.kind === "camera"
+              ? "border-pink-400 bg-pink-500/15 ring-2 ring-pink-400/50"
+              : "border-pink-500/40 bg-pink-500/5"
+          }`}
         >
           <div className="flex items-center gap-1 px-2 py-1.5 w-36 flex-shrink-0 border-r border-white/10">
             <Camera className="w-3 h-3 text-pink-400 flex-shrink-0" />
@@ -941,21 +997,81 @@ const MockTimeline = forwardRef(function MockTimeline({
 
       {/* Multi-track lanes */}
       {trackEntries.length === 0 && cameraTrack.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-white/10 bg-white/[0.02] p-4 text-center text-white/40 text-[11px]">
-          Click a Camera preset (e.g. "Zoom to Target") to animate the whole preview, or select an item and click a motion preset to animate it.
+        <div
+          onDragOver={handleLaneDragOver}
+          onDrop={(e) => {
+            // Drop onto empty area: motion preset → first item; camera preset → camera
+            if (!dragPreset) return;
+            e.preventDefault();
+            if (dragPreset.kind === "camera") {
+              const preset = CAMERA_PRESETS.find((p) => p.id === dragPreset.id);
+              if (preset) applyCameraPreset(preset);
+            } else {
+              const firstItem = items[0];
+              if (firstItem) {
+                const preset = MOTION_PRESETS.find((p) => p.id === dragPreset.id);
+                if (preset) applyPreset(preset, firstItem.id);
+              }
+            }
+            setDragPreset(null);
+            setDropTarget(null);
+          }}
+          className={`rounded-lg border border-dashed p-4 text-center text-[11px] transition-colors ${
+            dragPreset ? "border-orange-400 bg-orange-400/10 text-orange-200" : "border-white/10 bg-white/[0.02] text-white/40"
+          }`}
+        >
+          {dragPreset
+            ? `Drop "${dragPreset.label}" here to apply`
+            : `Click a Camera preset to animate the whole preview, or select an item and click a motion preset. 💡 You can also drag any preset onto a track lane.`}
         </div>
       ) : (
         <div className="space-y-1.5">
+          {/* Ghost lanes: show items WITHOUT tracks during a motion drag so user can drop onto them */}
+          {dragPreset?.kind === "motion" && items
+            .filter((it) => !tracks[it.id])
+            .map((it) => {
+              const isDropHere = dropTarget === it.id;
+              return (
+                <div
+                  key={`ghost_${it.id}`}
+                  onDragOver={handleLaneDragOver}
+                  onDragEnter={() => setDropTarget(it.id)}
+                  onDragLeave={() => setDropTarget((cur) => cur === it.id ? null : cur)}
+                  onDrop={(e) => handleLaneDrop(e, it.id)}
+                  className={`flex items-stretch gap-1.5 rounded-lg border-2 border-dashed transition-colors ${
+                    isDropHere ? "border-orange-400 bg-orange-400/15" : "border-white/15 bg-white/[0.01]"
+                  }`}
+                >
+                  <div className="flex items-center gap-1 px-2 py-1.5 w-36 flex-shrink-0 border-r border-white/10">
+                    <span className="text-[10px] font-bold text-white/50 truncate flex-1" title={labelFor(it)}>
+                      {labelFor(it)}
+                    </span>
+                  </div>
+                  <div className="flex-1 h-8 my-0.5 flex items-center justify-center">
+                    <span className="text-[10px] text-white/40 font-bold">
+                      Drop "{dragPreset.label}" here
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           {trackEntries.map(([itemId, kfs], rowIdx) => {
             const item = items.find((i) => i.id === itemId);
             const isSelected = itemId === selectedId;
             const hidden = !!hiddenTracks[itemId];
             const color = trackColor(rowIdx);
+            const isDropHere = dropTarget === itemId && dragPreset?.kind === "motion";
             return (
               <div
                 key={itemId}
+                onDragOver={handleLaneDragOver}
+                onDragEnter={() => dragPreset?.kind === "motion" && setDropTarget(itemId)}
+                onDragLeave={() => setDropTarget((cur) => cur === itemId ? null : cur)}
+                onDrop={(e) => handleLaneDrop(e, itemId)}
                 className={`flex items-stretch gap-1.5 rounded-lg border transition-colors ${
-                  isSelected ? "border-cyan-400/60 bg-cyan-400/5" : "border-white/10 bg-white/[0.02]"
+                  isDropHere
+                    ? "border-orange-400 bg-orange-400/15 ring-2 ring-orange-400/50"
+                    : isSelected ? "border-cyan-400/60 bg-cyan-400/5" : "border-white/10 bg-white/[0.02]"
                 }`}
               >
                 {/* Track header */}
@@ -1036,7 +1152,7 @@ const MockTimeline = forwardRef(function MockTimeline({
       )}
 
       <p className="text-[10px] text-white/30">
-        💡 Multi-track: every item gets its own lane. The <span className="text-pink-300 font-bold">Camera</span> lane animates the whole preview — zoom into a target, dolly in, orbit, etc. Select an item first so "Zoom to Target" knows where to focus. Right-click a diamond to delete.
+        💡 Multi-track: every item gets its own lane. The <span className="text-pink-300 font-bold">Camera</span> lane animates the whole preview. <span className="text-orange-300 font-bold">Drag any preset chip onto a lane</span> to apply it there — drop position sets the chain start time. Right-click a diamond to delete.
       </p>
     </div>
   );
