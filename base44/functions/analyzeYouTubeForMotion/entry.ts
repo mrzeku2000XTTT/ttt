@@ -52,16 +52,17 @@ Deno.serve(async (req) => {
             `https://img.youtube.com/vi/${videoId}/3.jpg`,
         ];
 
-        const prompt = `You are analyzing a YouTube video to recreate its motion design inside a 3D device-mockup canvas tool called UltraMock. Watch the video (use web search for transcript / metadata) and study the attached thumbnail frames.
+        const prompt = `You are analyzing a YouTube video to recreate its motion design inside a 3D device-mockup canvas tool called UltraMock. Watch the video (use web search for transcript / metadata) and study the attached thumbnail frames (sampled across the video timeline).
 
 VIDEO: https://www.youtube.com/watch?v=${videoId}
 ${focus_hint ? `USER FOCUS: ${focus_hint}` : ""}
 
 Your job:
 1. Identify the core animation style (e.g. "smooth zoom-in to a chat bubble", "fast slide-ins with bouncy text pops", "slow cinematic dolly + barrel roll").
-2. Break the video into 3-6 scene beats with approximate timing.
-3. For each beat, recommend ONE motion preset (acts on a single device) and/or ONE camera preset (acts on the whole scene).
-4. Produce a short, ready-to-run plan the AI agent will execute on the canvas. The agent already has a device on screen — your plan should ASSUME a device is already selected and chain presets/camera moves to recreate the video's feel.
+2. Produce a FRAME-BY-FRAME breakdown describing what's happening visually at each sampled moment — camera position, subject motion, transitions, easing, speed. Be specific (e.g. "0:00–0:02 — fast dolly-in toward phone, screen punches up by 1.4×, subtle barrel roll on Y axis"). This is the most important field — the user wants to see HOW the motion was constructed.
+3. Break the video into 3-6 scene beats with approximate timing and the dominant motion preset for each.
+4. For each beat, recommend ONE motion preset (acts on a single device) and/or ONE camera preset (acts on the whole scene).
+5. Produce a short, ready-to-run plan the AI agent will execute on the canvas. The agent already has a device on screen — your plan should ASSUME a device is already selected and chain presets/camera moves to recreate the video's feel.
 
 AVAILABLE MOTION PRESETS (one item at a time): ${MOTION_PRESET_IDS.join(", ")}
 AVAILABLE CAMERA PRESETS (whole scene): ${CAMERA_PRESET_IDS.join(", ")}
@@ -70,6 +71,10 @@ Return JSON:
 {
   "title": "...",
   "style_summary": "1-2 sentence description of the animation style",
+  "frame_breakdown": [
+    { "timestamp": "0:00", "camera": "static wide shot", "subject_motion": "phone slides in from right with slight tilt", "easing": "ease-out", "notes": "screen flashes white at end" },
+    { "timestamp": "0:02", "camera": "slow dolly-in", "subject_motion": "phone scales up 1.2×, rotates -8° on Y", "easing": "ease-in-out", "notes": "..." }
+  ],
   "total_duration_seconds": 4-12,
   "background": "sunset|ocean|forest|peach|mono|ivory|midnight|candy|white|black",
   "tagline": "optional short text overlay (or empty)",
@@ -100,6 +105,19 @@ Rules:
                 properties: {
                     title: { type: "string" },
                     style_summary: { type: "string" },
+                    frame_breakdown: {
+                        type: "array",
+                        items: {
+                            type: "object",
+                            properties: {
+                                timestamp: { type: "string" },
+                                camera: { type: "string" },
+                                subject_motion: { type: "string" },
+                                easing: { type: "string" },
+                                notes: { type: "string" },
+                            }
+                        }
+                    },
                     total_duration_seconds: { type: "number" },
                     background: { type: "string" },
                     tagline: { type: "string" },
@@ -174,6 +192,7 @@ Rules:
             video_id: videoId,
             title: response.title || "",
             style_summary: response.style_summary || "",
+            frame_breakdown: response.frame_breakdown || [],
             total_duration_seconds: response.total_duration_seconds || 6,
             background: response.background || null,
             tagline: response.tagline || "",

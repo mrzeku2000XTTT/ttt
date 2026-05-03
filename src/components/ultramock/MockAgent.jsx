@@ -158,6 +158,41 @@ export default function MockAgent({ open, onClose, getStateSnapshot, canvasRef, 
       if (toolCalls.length > 0) {
         const results = await runTools(toolCalls, handlers);
         const failed = results.filter((r) => !r.ok);
+
+        // If analyze_youtube ran successfully, surface its frame-by-frame breakdown
+        // back into the chat so the user can actually SEE the motion analysis.
+        const ytResult = results.find((r) => r.name === "analyze_youtube" && r.ok && r.out);
+        if (ytResult?.out) {
+          const o = ytResult.out;
+          const fb = Array.isArray(o.frame_breakdown) ? o.frame_breakdown : [];
+          let breakdown = "";
+          if (o.title) breakdown += `**${o.title}**\n`;
+          if (o.style_summary) breakdown += `_${o.style_summary}_\n\n`;
+          if (fb.length > 0) {
+            breakdown += `🎬 **Frame-by-frame motion breakdown:**\n\n`;
+            breakdown += fb.map((f) => {
+              const ts = f.timestamp ? `**${f.timestamp}**` : "•";
+              const parts = [];
+              if (f.camera) parts.push(`📷 ${f.camera}`);
+              if (f.subject_motion) parts.push(`🎯 ${f.subject_motion}`);
+              if (f.easing) parts.push(`⚡ ${f.easing}`);
+              if (f.notes) parts.push(`📝 ${f.notes}`);
+              return `${ts} — ${parts.join(" · ")}`;
+            }).join("\n");
+          } else if (Array.isArray(o.beats) && o.beats.length > 0) {
+            breakdown += `🎬 **Scene beats:**\n\n`;
+            breakdown += o.beats.map((b) =>
+              `**${b.t_start}s–${b.t_end}s** — ${b.description}${b.motion_preset ? ` _(motion: ${b.motion_preset})_` : ""}${b.camera_preset ? ` _(camera: ${b.camera_preset})_` : ""}`
+            ).join("\n");
+          }
+          if (breakdown) {
+            setMessages((prev) => [
+              ...prev,
+              { role: "assistant", content: breakdown.trim() },
+            ]);
+          }
+        }
+
         if (failed.length > 0) {
           setMessages((prev) => [
             ...prev,
@@ -351,6 +386,29 @@ export default function MockAgent({ open, onClose, getStateSnapshot, canvasRef, 
   );
 }
 
+// Lightweight inline-markdown renderer: **bold** and _italic_ only.
+// Avoids pulling in react-markdown for tiny strings the agent emits.
+function renderInlineMarkdown(text) {
+  if (typeof text !== "string") return text;
+  const parts = [];
+  const regex = /(\*\*[^*]+\*\*|_[^_]+_)/g;
+  let lastIdx = 0;
+  let match;
+  let key = 0;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIdx) parts.push(text.slice(lastIdx, match.index));
+    const token = match[0];
+    if (token.startsWith("**")) {
+      parts.push(<strong key={key++} className="font-bold text-white">{token.slice(2, -2)}</strong>);
+    } else {
+      parts.push(<em key={key++} className="italic text-white/80">{token.slice(1, -1)}</em>);
+    }
+    lastIdx = match.index + token.length;
+  }
+  if (lastIdx < text.length) parts.push(text.slice(lastIdx));
+  return parts;
+}
+
 function MessageBubble({ message }) {
   const isUser = message.role === "user";
   return (
@@ -367,7 +425,7 @@ function MessageBubble({ message }) {
             ))}
           </div>
         )}
-        <p className="text-xs leading-relaxed whitespace-pre-wrap">{message.content}</p>
+        <div className="text-xs leading-relaxed whitespace-pre-wrap">{renderInlineMarkdown(message.content)}</div>
         {message.tools && message.tools.length > 0 && (
           <div className="mt-2 pt-2 border-t border-white/10 space-y-1">
             {message.tools.map((t, i) => (

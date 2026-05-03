@@ -493,6 +493,7 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
       return {
         title: data.title,
         style_summary: data.style_summary,
+        frame_breakdown: data.frame_breakdown || [],
         beats: data.beats,
         applied: safePlan.length,
         results,
