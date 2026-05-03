@@ -18,6 +18,7 @@ export const TOOL_LIST = [
   { name: "clear_timeline", desc: "Clear all keyframes from the selected device's timeline", args: "{}" },
   { name: "apply_camera_preset", desc: "Apply a camera preset to the WHOLE preview (zoom, dolly, pan, orbit, punch-in). Use this when the user wants the entire canvas/scene to move — not just one item. The selected item is used as the focus target for zoom/orbit presets.", args: "{ preset_id: 'cam_dolly_in'|'cam_zoom_to_target'|'cam_pull_back'|'cam_pan_lr'|'cam_pan_rl'|'cam_orbit'|'cam_punch_in'|'cam_handheld', mode?: 'replace'|'chain' }" },
   { name: "clear_camera", desc: "Clear all camera keyframes (resets camera to neutral)", args: "{}" },
+  { name: "analyze_youtube", desc: "Watch a YouTube video, study its motion design, and AUTOMATICALLY recreate that style on the canvas. Returns the analysis (style summary, beats) AND auto-applies background + duration + chained motion presets + camera moves so the user instantly sees a recreation. Use whenever a user pastes a YouTube URL or asks 'make it look like <YouTube link>'.", args: "{ url: string, focus_hint?: string }" },
   { name: "render_mp4", desc: "Render and download the final WebM video. Requires at least 2 keyframes on the selected device.", args: "{}" },
 ];
 
@@ -77,6 +78,7 @@ RESPONSE FORMAT — strict JSON only:
 RULES:
 - Always reply with valid JSON. No markdown. No code fences. No prose outside the JSON.
 - Tools execute in order. Plan multi-step edits as a list.
+- 📺 YOUTUBE LINKS — if the user pastes a youtube.com or youtu.be URL, or asks "make it look like <YouTube>", call analyze_youtube({ url, focus_hint }) FIRST and let it auto-build the scene. It already applies the recommended background, duration, motion presets and camera moves itself, so don't queue duplicate set_background / chain_presets calls after it. Just call analyze_youtube and (only if the user explicitly asked) optionally render_mp4.
 - 🚨 REUSE WHAT'S ALREADY ON THE CANVAS. Look at CURRENT STATE.items FIRST. If a device or text layer already exists, DO NOT add a new one — select_item by index/id and animate THAT one. Only call add_device or add_text when there is NO suitable existing item to use.
 - Example: user says "animate this" or "make it spin" and items already has a device → select_item({ index: <device index> }) then apply_preset. Do NOT add_device.
 - Example: user says "render an mp4 of this" and a device already exists with media → select_item that device, apply preset(s), then render_mp4. Skip add_device entirely.

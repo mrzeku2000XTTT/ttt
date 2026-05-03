@@ -466,6 +466,38 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
       return { applied: a.preset_id };
     },
     clear_camera: () => { timelineRef.current?.clearCameraTrack?.(); return { ok: true }; },
+    analyze_youtube: async (a = {}) => {
+      if (!a.url) throw new Error("url is required");
+      const { base44 } = await import("@/api/base44Client");
+      const res = await base44.functions.invoke("analyzeYouTubeForMotion", {
+        url: a.url,
+        focus_hint: a.focus_hint || "",
+      });
+      const data = res?.data || {};
+      if (!data.success) throw new Error(data.error || "YouTube analysis failed");
+
+      // Auto-execute the returned plan against the same agent handlers.
+      // We dynamically import runTools to avoid a circular import.
+      const { runTools } = await import("@/components/ultramock/mockAgentTools");
+      // Filter out analyze_youtube/render_mp4 to avoid recursion or accidental exports.
+      const safePlan = (data.agent_plan || []).filter(
+        (c) => c.name !== "analyze_youtube" && c.name !== "render_mp4"
+      );
+      // Make sure something is selected so motion presets have a target
+      if (!selectedId) {
+        const firstDevice = items.find((i) => i.kind === "device");
+        if (firstDevice) setSelectedId(firstDevice.id);
+        await new Promise((r) => setTimeout(r, 80));
+      }
+      const results = await runTools(safePlan, agentHandlers);
+      return {
+        title: data.title,
+        style_summary: data.style_summary,
+        beats: data.beats,
+        applied: safePlan.length,
+        results,
+      };
+    },
     render_mp4: async () => {
       if (!timelineRef.current) throw new Error("no timeline");
       await timelineRef.current.recordVideo();
