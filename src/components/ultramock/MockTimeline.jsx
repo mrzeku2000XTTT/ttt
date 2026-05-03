@@ -375,18 +375,15 @@ const MockTimeline = forwardRef(function MockTimeline({
   }));
 
   // ── Recording ───────────────────────────────────────────────────────────
+  // REAL-TIME RECORDER: animates the canvas at wall-clock speed and lets
+  // MediaRecorder sample it continuously. A 4s animation = exactly 4s of video.
+  // We use html2canvas at ~12 fps in the background and paint into an output
+  // canvas that the recorder is streaming from at its native cadence.
   const recordVideo = async () => {
     if (!captureFrame || recording || !hasAnyTrack) return;
     setRecording(true);
     setRecordProgress(0);
     setPlaying(false);
-
-    // Target output: 30fps × duration. We push frames manually via requestFrame()
-    // so the video timeline matches `duration` exactly, regardless of how long
-    // each html2canvas() capture takes (which can be 200-500ms each).
-    const fps = 30;
-    const totalFrames = Math.round(duration * fps);
-    const frameMs = 1000 / fps;
 
     // Try to keep the screen / page awake during recording (best effort).
     let wakeLock = null;
@@ -394,9 +391,10 @@ const MockTimeline = forwardRef(function MockTimeline({
       if (navigator.wakeLock?.request) {
         wakeLock = await navigator.wakeLock.request("screen");
       }
-    } catch { /* ignore — non-critical */ }
+    } catch { /* ignore */ }
 
     try {
+      // Prime: capture one frame to learn dimensions
       applyAtTime(0);
       await new Promise((r) => requestAnimationFrame(r));
       const first = await captureFrame();
@@ -406,20 +404,18 @@ const MockTimeline = forwardRef(function MockTimeline({
       const W = first.width;
       const H = first.height;
 
+      // Output canvas — recorder streams from this at real-time
       const out = document.createElement("canvas");
       out.width = W; out.height = H;
       const ctx = out.getContext("2d");
       ctx.drawImage(first, 0, 0);
 
-      // captureStream(0) → only emit frames when we explicitly call requestFrame().
-      // This decouples recording from wall-clock so a slow html2canvas doesn't
-      // stretch the output video duration.
-      const stream = out.captureStream(0);
-      const track = stream.getVideoTracks()[0];
-      const canRequestFrame = typeof track?.requestFrame === "function";
+      // captureStream(fps) — recorder samples the canvas at this rate AS WE PAINT.
+      // No requestFrame() needed: 4s of recording = 4s of video.
+      const RECORD_FPS = 30;
+      const stream = out.captureStream(RECORD_FPS);
 
-      // Prefer real MP4 when the browser supports it (Safari 14.1+, Chrome 126+).
-      // Fall back to webm otherwise.
+      // Pick best codec: MP4 if supported, else webm
       const mp4Candidates = [
         "video/mp4;codecs=avc1.640028",
         "video/mp4;codecs=avc1.42E01E",
@@ -440,40 +436,68 @@ const MockTimeline = forwardRef(function MockTimeline({
         }
       }
       const isMp4 = mime.startsWith("video/mp4");
-      const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 12_000_000 });
+      const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
       const chunks = [];
       recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
       const done = new Promise((resolve) => {
         recorder.onstop = () => resolve(new Blob(chunks, { type: mime || (isMp4 ? "video/mp4" : "video/webm") }));
       });
+
+      // ── REAL-TIME PAINT LOOP ─────────────────────────────────────────────
+      // Start the recorder, then run an async loop that:
+      //   1. tracks wall-clock time elapsed
+      //   2. updates the timeline state to match wall-clock time
+      //   3. captures the canvas as fast as html2canvas allows (~10-15 fps)
+      //   4. paints each capture into the output canvas
+      // The recorder samples `out` continuously at 30fps, filling gaps by
+      // repeating the last painted frame — so the video plays at 1× speed.
       recorder.start();
+      const startTime = performance.now();
+      const durationMs = duration * 1000;
+      let stopped = false;
 
-      for (let i = 0; i <= totalFrames; i++) {
-        const t = (i / totalFrames) * duration;
-        setPlayhead(t);
-        applyAtTime(t);
-        // One paint tick is enough — we don't need a stable wall-clock cadence.
-        await new Promise((r) => requestAnimationFrame(r));
-        const frame = await captureFrame();
-        if (frame && frame.width) {
+      const paintLoop = async () => {
+        while (!stopped) {
+          const elapsed = performance.now() - startTime;
+          if (elapsed >= durationMs) break;
+          const t = Math.min(duration, elapsed / 1000);
+          setPlayhead(t);
+          applyAtTime(t);
+          setRecordProgress(elapsed / durationMs);
+          // Wait one paint so React commits the new transforms
+          await new Promise((r) => requestAnimationFrame(r));
+          // Capture and paint into output (this is the slow part — that's OK,
+          // the recorder keeps streaming the previous frame in the meantime)
+          try {
+            const frame = await captureFrame();
+            if (frame && frame.width && !stopped) {
+              ctx.clearRect(0, 0, W, H);
+              ctx.drawImage(frame, 0, 0, W, H);
+            }
+          } catch { /* ignore individual frame errors */ }
+        }
+      };
+
+      await paintLoop();
+
+      // Final frame at duration
+      setPlayhead(duration);
+      applyAtTime(duration);
+      await new Promise((r) => requestAnimationFrame(r));
+      try {
+        const lastFrame = await captureFrame();
+        if (lastFrame && lastFrame.width) {
           ctx.clearRect(0, 0, W, H);
-          ctx.drawImage(frame, 0, 0, W, H);
+          ctx.drawImage(lastFrame, 0, 0, W, H);
         }
-        if (canRequestFrame) {
-          // Push exactly one frame to the recorder.
-          track.requestFrame();
-        }
-        setRecordProgress(i / totalFrames);
-        // If the browser doesn't support requestFrame, fall back to pacing so
-        // the recorder samples at ~fps. (Otherwise: no waiting, render ASAP.)
-        if (!canRequestFrame) {
-          await new Promise((r) => setTimeout(r, frameMs));
-        }
-      }
+      } catch { /* ignore */ }
+      // Give the recorder a beat to capture the final frame
+      await new Promise((r) => setTimeout(r, 200));
 
+      stopped = true;
       setRecordProgress(1);
       try { recorder.requestData(); } catch { /* ignore */ }
-      await new Promise((r) => setTimeout(r, 120));
+      await new Promise((r) => setTimeout(r, 100));
       recorder.stop();
       const blob = await done;
       if (!blob || blob.size === 0) {
@@ -485,7 +509,6 @@ const MockTimeline = forwardRef(function MockTimeline({
       a.href = url;
       a.download = `ultramock-${Date.now()}.${ext}`;
       a.rel = "noopener";
-      // Anchor MUST be in the DOM for the click to download in some browsers (Safari/Firefox)
       document.body.appendChild(a);
       a.click();
       setTimeout(() => {
